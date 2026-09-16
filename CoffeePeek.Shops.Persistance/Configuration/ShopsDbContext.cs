@@ -7,6 +7,7 @@ using CoffeePeek.Shops.Domain.Aggregates.MenuAggregate;
 using CoffeePeek.Shops.Domain.Aggregates.ShopTagAggregate;
 using CoffeePeek.Shops.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
+using CoffeePeek.Shops.Domain.Aggregates.ReviewAggregate;
 using Review = CoffeePeek.Shops.Domain.Aggregates.ReviewAggregate.Review;
 using CheckIn = CoffeePeek.Shops.Domain.Aggregates.CheckInAggregate.CheckIn;
 
@@ -20,6 +21,7 @@ public class ShopsDbContext(DbContextOptions<ShopsDbContext> options) : DbContex
     public virtual DbSet<CoffeeBean> CoffeeBeans { get; set; }
     
     public virtual DbSet<Review> Reviews { get; set; }
+    public virtual DbSet<ReviewHelpfulVote> ReviewHelpfulVotes { get; set; }
     public virtual DbSet<CheckIn> CheckIns { get; set; }
     
     public virtual DbSet<Roaster> Roasters { get; set; }
@@ -79,6 +81,10 @@ public class ShopsDbContext(DbContextOptions<ShopsDbContext> options) : DbContex
                 .HasMaxLength(BusinessConstants.MaxReviewHeaderLength);
             entity.Property(r => r.Comment).HasMaxLength(BusinessConstants.MaxReviewCommentLength);
             entity.Property(r => r.UserName).IsRequired().HasMaxLength(30);
+            entity.Property(r => r.HelpfulCount).HasDefaultValue(0);
+            entity.ToTable(t => t.HasCheckConstraint(
+                "CK_Reviews_HelpfulCount_NonNegative",
+                "\"HelpfulCount\" >= 0"));
 
             // Foreign key without navigation property (DDD aggregate separation)
             entity.HasOne<CoffeeShop>()
@@ -87,6 +93,18 @@ public class ShopsDbContext(DbContextOptions<ShopsDbContext> options) : DbContex
                 .OnDelete(DeleteBehavior.Cascade);
 
             entity.OwnsOne<Rating>(r => r.Rating);
+        });
+
+        modelBuilder.Entity<ReviewHelpfulVote>(entity =>
+        {
+            entity.HasKey(v => new { v.ReviewId, v.UserId });
+            entity.HasIndex(v => new { v.UserId, v.ReviewId });
+            entity.Property(v => v.CreatedAtUtc).IsRequired();
+
+            entity.HasOne<Review>()
+                .WithMany()
+                .HasForeignKey(v => v.ReviewId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
         
         modelBuilder.Entity<CheckIn>(entity =>

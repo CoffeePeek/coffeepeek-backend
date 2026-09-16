@@ -45,7 +45,16 @@ public static class MapsterConfiguration
                 MediaStorageUrlBuilder.BuildPublicUrl(
                     mediaOptions.PublicEndpoint,
                     mediaOptions.ShopBucketName,
-                    src.StorageKey) ?? string.Empty);
+                    src.StorageKey) ?? string.Empty)
+            .Map(dest => dest.IsPrimary, src => src.SortIndex == 0);
+
+        config.NewConfig<RoasterPhoto, ShortPhotoMetadataDto>()
+            .Map(dest => dest.FullUrl, src =>
+                MediaStorageUrlBuilder.BuildPublicUrl(
+                    mediaOptions.PublicEndpoint,
+                    mediaOptions.ShopBucketName,
+                    src.StorageKey) ?? string.Empty)
+            .Map(dest => dest.IsPrimary, src => src.SortIndex == 0);
 
         config.NewConfig<ShopPhoto, UploadedPhotoDto>()
             .Map(dest => dest.Size, src => src.SizeBytes);
@@ -57,7 +66,15 @@ public static class MapsterConfiguration
                 MediaStorageUrlBuilder.BuildPublicUrl(
                     mediaOptions.PublicEndpoint,
                     mediaOptions.ShopBucketName,
-                    src.Photos.OrderBy(p => p.SortIndex).Select(p => p.StorageKey).FirstOrDefault()));
+                    src.Photos
+                        .OrderBy(p => p.SortIndex)
+                        .ThenBy(p => p.CreatedAtUtc)
+                        .Select(p => p.StorageKey)
+                        .FirstOrDefault()))
+            .Map(dest => dest.CoverPhoto, src => src.Photos
+                .OrderBy(p => p.SortIndex)
+                .ThenBy(p => p.CreatedAtUtc)
+                .FirstOrDefault());
 
         // Mapster's default name matching is case-sensitive, so Review.UserName doesn't
         // auto-match ReviewDto.Username without this explicit map.

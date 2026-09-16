@@ -21,6 +21,23 @@ public class QueryReviewRepository(ShopsDbContext dbContext) : IQueryReviewRepos
 
         return review?.Id;
     }
+
+    public async Task<HashSet<Guid>> GetHelpfulReviewIds(
+        Guid userId,
+        IReadOnlyCollection<Guid> reviewIds,
+        CancellationToken ct)
+    {
+        if (reviewIds.Count == 0)
+            return [];
+
+        var ids = await dbContext.ReviewHelpfulVotes
+            .AsNoTracking()
+            .Where(v => v.UserId == userId && reviewIds.Contains(v.ReviewId))
+            .Select(v => v.ReviewId)
+            .ToListAsync(ct);
+
+        return ids.ToHashSet();
+    }
     
         public async Task<(IReadOnlyList<Review> reviews, int totalCount)> GetByCoffeeShopId(
         Guid coffeeShopId, 

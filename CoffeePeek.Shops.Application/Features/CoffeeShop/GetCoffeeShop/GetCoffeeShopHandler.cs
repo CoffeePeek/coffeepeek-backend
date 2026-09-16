@@ -46,10 +46,28 @@ public static class GetCoffeeShopHandler
             {
                 IsVisited = await checkInRepository.Exists(userId, query.Id, ct),
                 UserCheckIns = mapper.Map<CheckInDto[]>(
-                    await checkInRepository.GetByUserAndShopAsync(userId, query.Id, 1, 10, ct))
+                    await checkInRepository.GetByUserAndShopAsync(userId, query.Id, 1, 10, ct)),
+                Reviews = await PersonalizeHelpful(shopDto.Reviews, userId, reviewRepository, ct)
             };
         }
 
         return Response<GetCoffeeShopResponse>.Success(new GetCoffeeShopResponse(shopDto));
+    }
+
+    private static async Task<ReviewDto[]> PersonalizeHelpful(
+        ReviewDto[] reviews,
+        Guid userId,
+        IQueryReviewRepository reviewRepository,
+        CancellationToken ct)
+    {
+        if (reviews.Length == 0)
+            return reviews;
+
+        var reviewIds = reviews.Select(r => r.Id).ToArray();
+        var helpfulIds = await reviewRepository.GetHelpfulReviewIds(userId, reviewIds, ct);
+
+        return reviews
+            .Select(r => r with { IsHelpfulByCurrentUser = helpfulIds.Contains(r.Id) })
+            .ToArray();
     }
 }

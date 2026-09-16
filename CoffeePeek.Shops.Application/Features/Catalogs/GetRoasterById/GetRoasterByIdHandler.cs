@@ -53,11 +53,38 @@ public static class GetRoasterByIdHandler
                 StorageKey = p.StorageKey,
                 FullUrl = MediaStorageUrlBuilder.BuildPublicUrl(
                     mediaOptions.PublicEndpoint, mediaOptions.ShopBucketName, p.StorageKey) ?? string.Empty,
-                SortIndex = p.SortIndex
+                SortIndex = p.SortIndex,
+                IsPrimary = p.SortIndex == 0
             })
             .ToArray(),
         Shops = roaster.CoffeeShops
-            .Select(s => new RoasterLinkedShopDto { Id = s.Id, Name = s.Name })
+            .Select(s =>
+            {
+                var coverPhoto = s.ShopPhotos
+                    .OrderBy(p => p.SortIndex)
+                    .ThenBy(p => p.CreatedAtUtc)
+                    .FirstOrDefault();
+
+                return new RoasterLinkedShopDto
+                {
+                    Id = s.Id,
+                    Name = s.Name,
+                    CoverPhoto = coverPhoto is null
+                        ? null
+                        : new ShortPhotoMetadataDto
+                        {
+                            Id = coverPhoto.Id,
+                            FileName = coverPhoto.FileName,
+                            StorageKey = coverPhoto.StorageKey,
+                            FullUrl = MediaStorageUrlBuilder.BuildPublicUrl(
+                                mediaOptions.PublicEndpoint,
+                                mediaOptions.ShopBucketName,
+                                coverPhoto.StorageKey) ?? string.Empty,
+                            SortIndex = coverPhoto.SortIndex,
+                            IsPrimary = coverPhoto.SortIndex == 0
+                        }
+                };
+            })
             .ToArray()
     };
 }

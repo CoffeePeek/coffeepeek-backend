@@ -775,6 +775,11 @@ namespace CoffeePeek.Shops.Persistance.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
+                    b.Property<int>("HelpfulCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
                     b.Property<bool>("IsSoftDelete")
                         .HasColumnType("boolean");
 
@@ -795,7 +800,28 @@ namespace CoffeePeek.Shops.Persistance.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Reviews");
+                    b.ToTable("Reviews", t =>
+                        {
+                            t.HasCheckConstraint("CK_Reviews_HelpfulCount_NonNegative", "\"HelpfulCount\" >= 0");
+                        });
+                });
+
+            modelBuilder.Entity("CoffeePeek.Shops.Domain.Aggregates.ReviewAggregate.ReviewHelpfulVote", b =>
+                {
+                    b.Property<Guid>("ReviewId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("ReviewId", "UserId");
+
+                    b.HasIndex("UserId", "ReviewId");
+
+                    b.ToTable("ReviewHelpfulVotes");
                 });
 
             modelBuilder.Entity("CoffeePeek.Shops.Domain.Aggregates.ShopTagAggregate.ShopTag", b =>
@@ -1386,6 +1412,15 @@ namespace CoffeePeek.Shops.Persistance.Migrations
                         });
 
                     b.Navigation("Rating")
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("CoffeePeek.Shops.Domain.Aggregates.ReviewAggregate.ReviewHelpfulVote", b =>
+                {
+                    b.HasOne("CoffeePeek.Shops.Domain.Aggregates.ReviewAggregate.Review", null)
+                        .WithMany()
+                        .HasForeignKey("ReviewId")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 

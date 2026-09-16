@@ -13,6 +13,7 @@ public sealed partial class Review : Entity<Guid>
     public string UserName { get; private set; }
 
     public bool IsSoftDelete { get; private set; }
+    public int HelpfulCount { get; private set; }
 
     public Rating Rating { get; private set; }
     

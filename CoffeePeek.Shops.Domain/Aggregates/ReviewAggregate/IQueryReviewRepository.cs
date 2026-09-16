@@ -4,6 +4,10 @@ public interface IQueryReviewRepository
 {
     Task<Review?> GetById(Guid reviewId, CancellationToken ct);
     Task<Guid?> ExistsForCurrentUser(Guid shopId, Guid userId, CancellationToken ct);
+    Task<HashSet<Guid>> GetHelpfulReviewIds(
+        Guid userId,
+        IReadOnlyCollection<Guid> reviewIds,
+        CancellationToken ct);
 
     Task<(IReadOnlyList<Review> reviews, int totalCount)> GetByCoffeeShopId(
         Guid coffeeShopId,

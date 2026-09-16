@@ -24,7 +24,9 @@ public class QueryRoasterRepository(ShopsDbContext dbContext) : IQueryRoasterRep
         _repository
             .AsNoTracking()
             .Include(r => r.CoffeeShops)
+                .ThenInclude(s => s.ShopPhotos)
             .Include(r => r.Photos)
+            .AsSplitQuery()
             .FirstOrDefaultAsync(r => r.Id == id, ct);
 
     public Task<Guid?> GetIdByModerationId(Guid id, CancellationToken ct = default) =>
