@@ -3,7 +3,7 @@ using CoffeePeek.Shared.Kernel;
 using CoffeePeek.Shared.Kernel.Options;
 using CoffeePeek.Shared.Kernel.Response;
 using CoffeePeek.Shops.Application.Features.Admin.Shops;
-using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate.Repositories;
+using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
 using Microsoft.Extensions.Options;
 
 namespace CoffeePeek.Shops.Application.Features.Owner.ReorderPhotos;

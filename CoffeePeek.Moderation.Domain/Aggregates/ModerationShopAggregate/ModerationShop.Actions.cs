@@ -9,7 +9,7 @@ public sealed partial class ModerationShop
 {
     public static ModerationShop Create(
         string name,
-        Guid userId,
+        Guid? userId,
         Guid cityId,
         string? description,
         CoffeeFocus? coffeeFocus = null)

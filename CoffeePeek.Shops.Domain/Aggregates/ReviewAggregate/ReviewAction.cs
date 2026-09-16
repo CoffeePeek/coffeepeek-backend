@@ -15,8 +15,7 @@ public sealed partial class Review
             throw new DomainException($"{nameof(UserId)} cannot be empty.");
 
         var normalizedHeader = string.IsNullOrWhiteSpace(header) ? null : header.Trim();
-        if (normalizedHeader != null &&
-            normalizedHeader.Length is < BusinessConstants.MinReviewHeaderLength or > BusinessConstants.MaxReviewHeaderLength)
+        if (normalizedHeader is { Length: < BusinessConstants.MinReviewHeaderLength or > BusinessConstants.MaxReviewHeaderLength })
             throw new DomainException(
                 $"{nameof(header)} must be between {BusinessConstants.MinReviewHeaderLength} and {BusinessConstants.MaxReviewHeaderLength} characters.");
 
@@ -30,21 +29,6 @@ public sealed partial class Review
         var rating = Rating.Create(ratingPlace, ratingService, ratingCoffee);
         
         return new Review(shopId, userId, userName, normalizedHeader, comment.Trim(), rating);
-    }
-
-    public void UpdateUserName(string userName)
-    {
-        if (string.IsNullOrWhiteSpace(userName))
-        {
-            throw new DomainException("UserName cannot be empty.");
-        }
-        
-        if (userName == UserName)
-        {
-            return;
-        }
-        
-        UserName = userName;
     }
 
     public void SoftDelete()

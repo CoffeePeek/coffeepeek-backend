@@ -1,3 +1,4 @@
+using System.Net;
 using CoffeePeek.Contract.Dtos.Schedule;
 using CoffeePeek.Contract.Enums;
 using CoffeePeek.Shared.Kernel;
@@ -7,7 +8,6 @@ using CoffeePeek.Shared.Domain.Interfaces.Infrastructure;
 using CoffeePeek.Shops.Application.Features.CoffeeShop.ShopProfile;
 using CoffeePeek.Shops.Application.Features.Public.Stats;
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
-using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate.Repositories;
 using CoffeePeek.Shops.Domain.Aggregates.ShopTagAggregate;
 using CoffeePeek.Shops.Domain.Entities;
 using Microsoft.Extensions.Options;
@@ -49,7 +49,7 @@ public record AdminPublishedShopDto(
     Guid CityId,
     DomainCoffeeShopStatus Status,
     CoffeeShopType? Type,
-    Guid CreatorId,
+    Guid? CreatorId,
     Guid? OwnerUserId,
     Guid? ModerationId,
     DateTime CreatedAtUtc,
@@ -303,9 +303,9 @@ public static class SetAdminCoffeeShopFocusHandler
     {
         var shop = await repository.GetByIdAsync(command.ShopId, ct);
         if (shop is null)
-            return Response<AdminPublishedShopDto>.Error(System.Net.HttpStatusCode.NotFound, "Shop not found.");
+            return Response<AdminPublishedShopDto>.Error(HttpStatusCode.NotFound, "Shop not found.");
 
-        shop.SetCoffeeFocus((Domain.Aggregates.CoffeeShopAggregate.CoffeeFocusType)(int)command.Type);
+        shop.SetCoffeeFocus((CoffeeFocusType)(int)command.Type);
 
         var tagIds = shop.ShopTags.Select(t => t.TagId).ToList();
         if (command.Type == CoffeeShopType.Specialty)

@@ -10,7 +10,6 @@ using CoffeePeek.Shared.Kernel.Options;
 using CoffeePeek.Shops.Application.Features.Admin.Menu;
 using CoffeePeek.Shops.Application.Services;
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
-using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate.Repositories;
 using CoffeePeek.Shops.Domain.Aggregates.MenuAggregate;
 using FluentAssertions;
 using Microsoft.Extensions.Options;

@@ -17,7 +17,7 @@ public class ModerationShopDto
     public PriceRange PriceRange { get; set; }
     public CoffeeShopType? Type { get; set; }
     public Guid? CityId { get; set; }
-    public Guid UserId { get; set; }
+    public Guid? UserId { get; set; }
     public ModerationStatus ModerationStatus { get; set; }
     public ShopContactDto? ShopContact { get; set; }
     public List<ScheduleDto> Schedules { get; set; }

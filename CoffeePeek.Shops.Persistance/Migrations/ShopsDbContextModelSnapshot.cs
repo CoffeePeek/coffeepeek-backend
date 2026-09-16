@@ -310,7 +310,7 @@ namespace CoffeePeek.Shops.Persistance.Migrations
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("CreatorId")
+                    b.Property<Guid?>("CreatorId")
                         .HasColumnType("uuid");
 
                     b.Property<short>("DataCompletenessScore")
@@ -381,7 +381,7 @@ namespace CoffeePeek.Shops.Persistance.Migrations
                     b.Property<DateTime>("AssignedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("AssignedByUserId")
+                    b.Property<Guid?>("AssignedByUserId")
                         .HasColumnType("uuid");
 
                     b.HasKey("ShopId", "TagId");

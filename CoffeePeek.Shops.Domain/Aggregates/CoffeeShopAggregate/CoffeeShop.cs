@@ -15,7 +15,7 @@ public sealed class CoffeeShop : Entity<Guid>
     public CoffeeShopStatus Status { get; private set; } = CoffeeShopStatus.Active;
     public short DataCompletenessScore { get; private set; }
 
-    public Guid CreatorId { get; private set; }
+    public Guid? CreatorId { get; private set; }
     public Guid? OwnerUserId { get; private set; }
     public Guid? ModerationId {get; private set; }
     public DateTime? ImportedFromFileAt { get; private set; }
@@ -49,7 +49,7 @@ public sealed class CoffeeShop : Entity<Guid>
     {
     }
 
-    public CoffeeShop(Guid creatorId, string name, string? description, PriceRange priceRange, Guid moderationId)
+    public CoffeeShop(Guid? creatorId, string name, string? description, PriceRange priceRange, Guid moderationId)
     {
         Id = Guid.NewGuid();
         CreatorId = creatorId;
@@ -357,10 +357,11 @@ public sealed class CoffeeShop : Entity<Guid>
     /// Replaces the shop's tag set. Tag IDs are deduplicated; max
     /// <see cref="BusinessConstants.MaxShopTagsPerShop"/> enforced.
     /// </summary>
-    public void SetTags(IReadOnlyList<Guid> tagIds, Guid assignedByUserId)
+    public void SetTags(IReadOnlyList<Guid> tagIds, Guid? assignedByUserId)
     {
         ArgumentNullException.ThrowIfNull(tagIds);
 
+        // null = system/anonymous-originated tagging (e.g. approved anonymous submission); Guid.Empty is still invalid.
         if (assignedByUserId == Guid.Empty)
             throw new DomainException("AssignedByUserId is required.");
 

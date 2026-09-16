@@ -3,7 +3,6 @@
 public interface IQueryReviewRepository
 {
     Task<Review?> GetById(Guid reviewId, CancellationToken ct);
-    Task<Guid?> ExistsForCurrentUser(Guid shopId, Guid userId, CancellationToken ct);
     Task<HashSet<Guid>> GetHelpfulReviewIds(
         Guid userId,
         IReadOnlyCollection<Guid> reviewIds,
@@ -16,6 +15,4 @@ public interface IQueryReviewRepository
         CancellationToken ct = default);
 
     Task<(decimal averageRating, int count)> GetReviewStatsByCoffeeShopId(Guid coffeeShopId, CancellationToken ct);
-
-    Task<Dictionary<Guid, (decimal averageRating, int count)>> GetReviewStatsByShopIds(List<Guid> shopIds, CancellationToken ct);
 }

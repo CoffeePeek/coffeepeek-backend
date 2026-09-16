@@ -6,7 +6,7 @@ namespace CoffeePeek.Moderation.Application.Features.Roaster.SubmitRoaster;
 
 public record SubmitRoasterCommand
 {
-    [JsonIgnore] public Guid UserId { get; init; }
+    [JsonIgnore] public Guid? UserId { get; init; }
 
     [Required, MaxLength(100)] public string Name { get; init; }
 

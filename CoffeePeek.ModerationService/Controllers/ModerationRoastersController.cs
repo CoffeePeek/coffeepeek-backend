@@ -51,14 +51,15 @@ public class ModerationRoastersController(IMessageBus bus, IUserContext userCont
     }
 
     [HttpPost]
-    [Authorize]
+    [AllowAnonymous]
     [Description("Submits a new roaster to moderation")]
     [ProducesResponseType<Response<SubmitRoasterResponse>>(StatusCodes.Status201Created)]
     [ProducesResponseType<ErrorResponse>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType<ErrorResponse>(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> SubmitRoaster([FromBody] SubmitRoasterCommand command, CancellationToken ct)
     {
-        var commandWithUser = command with { UserId = userContext.GetUserIdOrThrow() };
+        // Anonymous submissions carry a null UserId.
+        var commandWithUser = command with { UserId = userContext.GetUserId() };
         var response = await bus.InvokeAsync<Response<SubmitRoasterResponse>>(commandWithUser, ct);
 
         if (!response.IsSuccess)

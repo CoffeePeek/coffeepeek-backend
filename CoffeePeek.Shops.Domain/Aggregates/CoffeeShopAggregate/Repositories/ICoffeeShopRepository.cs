@@ -1,7 +1,6 @@
-using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
 using CoffeePeek.Shops.Domain.Entities;
 
-namespace CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate.Repositories;
+namespace CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
 
 public interface ICoffeeShopRepository
 {
@@ -19,17 +18,4 @@ public interface ICoffeeShopRepository
         Guid? ownerUserId,
         IReadOnlyList<ShopPhoto> photos,
         CancellationToken ct = default);
-}
-
-public interface IAdminCoffeeShopQueryRepository
-{
-    Task<(IReadOnlyList<CoffeeShop> Items, int TotalCount)> GetPagedAsync(
-        int page,
-        int pageSize,
-        string? search,
-        CoffeeShopStatus? status,
-        CancellationToken ct = default,
-        bool? importedFromFile = null);
-
-    Task<IReadOnlyList<CoffeeShop>> GetByOwnerUserIdAsync(Guid ownerUserId, CancellationToken ct = default);
 }

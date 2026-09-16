@@ -5,7 +5,7 @@ namespace CoffeePeek.Moderation.Domain.Aggregates;
 
 public sealed partial class ModerationRoaster
 {
-    public static ModerationRoaster Create(string name, Guid userId, string? about)
+    public static ModerationRoaster Create(string name, Guid? userId, string? about)
     {
         if (string.IsNullOrWhiteSpace(name))
             throw new DomainException("Name is required");

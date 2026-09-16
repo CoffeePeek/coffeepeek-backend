@@ -146,7 +146,7 @@ namespace CoffeeShop.Moderation.Persistence.Migrations
                     b.Property<DateTime?>("UpdatedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("UserId")
+                    b.Property<Guid?>("UserId")
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
@@ -178,7 +178,7 @@ namespace CoffeeShop.Moderation.Persistence.Migrations
                     b.Property<Guid?>("ModerationRoasterId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("OwnerId")
+                    b.Property<Guid?>("OwnerId")
                         .HasColumnType("uuid");
 
                     b.Property<long>("SizeBytes")
@@ -238,7 +238,7 @@ namespace CoffeeShop.Moderation.Persistence.Migrations
                     b.Property<DateTime?>("UpdatedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("UserId")
+                    b.Property<Guid?>("UserId")
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
@@ -616,7 +616,7 @@ namespace CoffeeShop.Moderation.Persistence.Migrations
                     b.Property<Guid?>("ModerationShopId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("OwnerId")
+                    b.Property<Guid?>("OwnerId")
                         .HasColumnType("uuid");
 
                     b.Property<long>("SizeBytes")

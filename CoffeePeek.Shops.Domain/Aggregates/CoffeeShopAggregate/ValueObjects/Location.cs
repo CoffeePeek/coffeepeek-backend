@@ -42,6 +42,4 @@ public record Location
             IsAddressValidated = false
         };
     }
-    
-    public Location WithCity(Guid newCityId) => this with { CityId = newCityId };
 }

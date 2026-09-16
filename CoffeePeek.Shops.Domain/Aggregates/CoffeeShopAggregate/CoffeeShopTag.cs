@@ -6,7 +6,7 @@ public sealed class CoffeeShopTag
 {
     public Guid ShopId { get; private set; }
     public Guid TagId { get; private set; }
-    public Guid AssignedByUserId { get; private set; }
+    public Guid? AssignedByUserId { get; private set; }
     public DateTime AssignedAtUtc { get; private set; }
 
     public ShopTag? Tag { get; private set; }
@@ -16,7 +16,7 @@ public sealed class CoffeeShopTag
     {
     }
 
-    public CoffeeShopTag(Guid shopId, Guid tagId, Guid assignedByUserId, DateTime assignedAtUtc)
+    public CoffeeShopTag(Guid shopId, Guid tagId, Guid? assignedByUserId, DateTime assignedAtUtc)
     {
         ShopId = shopId;
         TagId = tagId;

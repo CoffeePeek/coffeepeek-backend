@@ -10,7 +10,7 @@ public partial class ModerationRoaster : Entity<Guid>
     public ModerationStatus ModerationStatus { get; private set; }
     public string? RejectedReason { get; private set; }
 
-    public Guid UserId { get; private init; }
+    public Guid? UserId { get; private init; }
     public Guid? CityId { get; private set; }
 
     public ModerationRoasterContact? Contact { get; private set; }

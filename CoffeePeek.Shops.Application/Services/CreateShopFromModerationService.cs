@@ -23,7 +23,7 @@ public class CreateShopFromModerationService(
     ICacheService cacheService,
     ILogger<CreateShopFromModerationService> logger) : ICreateShopFromModerationService
 {
-    public async Task<Guid> CreateShopFromApprovedEventAsync(ShopDto shopDto, Guid creatorId, Guid moderationId, CancellationToken cancellationToken = default)
+    public async Task<Guid> CreateShopFromApprovedEventAsync(ShopDto shopDto, Guid? creatorId, Guid moderationId, CancellationToken cancellationToken = default)
     {
         var existingId = await shopRepository.GetIdByModerationId(moderationId, cancellationToken);
         if (existingId.HasValue)

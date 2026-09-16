@@ -7,7 +7,7 @@ using CoffeePeek.Shared.Domain.Interfaces.Infrastructure;
 using CoffeePeek.Shared.Kernel;
 using CoffeePeek.Shops.Application.Features.Admin.ShopTags;
 using CoffeePeek.Shops.Application.Features.Admin.Shops.SetShopTags;
-using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate.Repositories;
+using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
 using CoffeePeek.Shops.Domain.Aggregates.ShopTagAggregate;
 using FluentAssertions;
 using Moq;

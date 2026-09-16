@@ -12,15 +12,6 @@ public class QueryReviewRepository(ShopsDbContext dbContext) : IQueryReviewRepos
     {
         return await _repository.AsNoTracking().Include(x => x.Photos).FirstOrDefaultAsync(x => x.Id == reviewId, ct);
     }
-    
-    public async Task<Guid?> ExistsForCurrentUser(Guid shopId, Guid userId, CancellationToken ct)
-    {
-        var review = await _repository
-            .AsNoTracking()
-            .FirstOrDefaultAsync(x => x.CoffeeShopId == shopId && x.UserId == userId, ct);
-
-        return review?.Id;
-    }
 
     public async Task<HashSet<Guid>> GetHelpfulReviewIds(
         Guid userId,
@@ -74,34 +65,5 @@ public class QueryReviewRepository(ShopsDbContext dbContext) : IQueryReviewRepos
             .FirstOrDefaultAsync(ct);
 
         return stats != null ? (stats.AverageRating, stats.Count) : (0m, 0);
-    }
-
-    public async Task<Dictionary<Guid, (decimal averageRating, int count)>> GetReviewStatsByShopIds(
-        List<Guid> shopIds, 
-        CancellationToken ct)
-    {
-        if (shopIds.Count == 0) 
-            return new Dictionary<Guid, (decimal, int)>();
-
-        var statsList = await _repository
-            .AsNoTracking()
-            .Where(r => shopIds.Contains(r.CoffeeShopId) && !r.IsSoftDelete)
-            .Select(r => new
-            {
-                r.CoffeeShopId,
-                RatingSum = (r.Rating.Place + r.Rating.Coffee + r.Rating.Service) / 3m
-            })
-            .GroupBy(r => r.CoffeeShopId)
-            .Select(g => new
-            {
-                ShopId = g.Key,
-                Avg = g.Average(x => x.RatingSum),
-                Count = g.Count()
-            })
-            .ToListAsync(ct);
-
-        return statsList.ToDictionary(
-            x => x.ShopId, 
-            x => (averageRating: x.Avg, count: x.Count));
     }
 }

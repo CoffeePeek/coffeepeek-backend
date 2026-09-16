@@ -9,7 +9,7 @@ namespace CoffeePeek.Moderation.Application.Features.Shop.CreateShop;
 
 public record SendCoffeeShopToModerationCommand
 {
-    [JsonIgnore] public Guid UserId { get; init; }
+    [JsonIgnore] public Guid? UserId { get; init; }
     
     [Required, MaxLength(55)]  public string Name { get; init; }
     [Required] public string Address { get; init; }

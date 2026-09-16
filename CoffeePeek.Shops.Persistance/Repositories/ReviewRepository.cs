@@ -23,11 +23,6 @@ public class ReviewRepository(ShopsDbContext dbContext) : IReviewRepository
         return _repository.FirstOrDefaultAsync(x => x.Id == reviewId, ct);
     }
 
-    public Task<Review[]> GetByUserId(Guid userId, CancellationToken ct)
-    {
-        return _repository.Where(x => x.UserId == userId).OrderBy(x => x.CreatedAtUtc).ToArrayAsync(ct);
-    }
-
     public async Task<ReviewHelpfulMutationResult> SetHelpfulAsync(
         Guid reviewId,
         Guid userId,

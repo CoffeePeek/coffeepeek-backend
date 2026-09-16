@@ -10,7 +10,6 @@ using CoffeePeek.Shops.Application.Features.Review;
 using CoffeePeek.Shops.Domain.Aggregates.AppDistributionAggregate;
 using CoffeePeek.Shops.Domain.Aggregates.CheckInAggregate;
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
-using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate.Repositories;
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeZoneAggregate;
 using CoffeePeek.Shops.Domain.Aggregates.ReviewAggregate;
 using CoffeePeek.Shops.Domain.Aggregates.ShopTagAggregate;
