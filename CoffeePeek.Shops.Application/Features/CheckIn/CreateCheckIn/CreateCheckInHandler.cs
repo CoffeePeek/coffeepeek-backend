@@ -52,6 +52,9 @@ public static class CreateCheckInHandler
 
         if (command.IsPublic)
         {
+            // Transient review used only to shape the ReviewDto for the CheckinCreatedEvent.
+            // It is never persisted and is not yet linked to any moderation review, so pass
+            // Guid.Empty and null out the DTO link below (the real link is set on approval).
             var review = Review.Create(
                 command.CoffeeShopId,
                 command.UserId,
@@ -60,7 +63,8 @@ public static class CreateCheckInHandler
                 comment: command.Note!.Trim(),
                 ratingPlace: command.Rating.Place,
                 ratingService: command.Rating.Service,
-                ratingCoffee: command.Rating.Coffee);
+                ratingCoffee: command.Rating.Coffee,
+                moderationReviewId: Guid.Empty);
 
             await bus.PublishAsync(new CheckinCreatedEvent
             {
@@ -70,6 +74,7 @@ public static class CreateCheckInHandler
                 ReviewDto = mapper.Map<ReviewDto>(review) with
                 {
                     Username = command.UserName,
+                    ModerationReviewId = null,
                     Photos = command.Photos?.ToArray() ?? []
                 }
             });

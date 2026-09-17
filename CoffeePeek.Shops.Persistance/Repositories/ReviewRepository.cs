@@ -23,6 +23,19 @@ public class ReviewRepository(ShopsDbContext dbContext) : IReviewRepository
         return _repository.FirstOrDefaultAsync(x => x.Id == reviewId, ct);
     }
 
+    // Deliberately does NOT filter IsSoftDelete: hidden (edited) rows must be found so a
+    // re-approval can Restore() and update the SAME row.
+    public Task<Review?> GetByModerationReviewId(Guid moderationReviewId, CancellationToken ct)
+    {
+        return _repository.FirstOrDefaultAsync(x => x.ModerationReviewId == moderationReviewId, ct);
+    }
+
+    public Task<Review?> GetUnlinkedByShopAndUser(Guid shopId, Guid userId, CancellationToken ct)
+    {
+        return _repository.FirstOrDefaultAsync(
+            x => x.CoffeeShopId == shopId && x.UserId == userId && x.ModerationReviewId == null, ct);
+    }
+
     public async Task<ReviewHelpfulMutationResult> SetHelpfulAsync(
         Guid reviewId,
         Guid userId,

@@ -74,7 +74,9 @@ public class ShopsDbContext(DbContextOptions<ShopsDbContext> options) : DbContex
             entity.HasKey(r => r.Id);
             entity.HasIndex(r => r.CoffeeShopId);
             entity.HasIndex(r => r.UserId);
+            entity.HasIndex(r => r.ModerationReviewId);
             entity.Property(r => r.CoffeeShopId).IsRequired();
+            entity.Property(r => r.ModerationReviewId);
 
             entity.Property(r => r.Header)
                 .IsRequired(false)

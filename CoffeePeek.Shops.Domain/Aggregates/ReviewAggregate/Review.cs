@@ -15,6 +15,9 @@ public sealed partial class Review : Entity<Guid>
     public bool IsSoftDelete { get; private set; }
     public int HelpfulCount { get; private set; }
 
+    /// <summary>Id of the source ModerationReview this published review was created from; null for legacy rows until backfilled.</summary>
+    public Guid? ModerationReviewId { get; private set; }
+
     public Rating Rating { get; private set; }
     
     private readonly List<ShopPhoto> _shopPhotos = [];
@@ -35,9 +38,10 @@ public sealed partial class Review : Entity<Guid>
         Comment = comment;
     }
 
-    private Review(Guid coffeeShopId, Guid userId, string userName, string? header, string comment, Rating rating)
+    private Review(Guid coffeeShopId, Guid userId, string userName, string? header, string comment, Rating rating, Guid? moderationReviewId)
         : this(coffeeShopId, userId, userName, header, comment)
     {
         Rating = rating;
+        ModerationReviewId = moderationReviewId;
     }
 }

@@ -31,7 +31,8 @@ public static class ModerationReviewApprovedHandler
             reviewDto.UserName,
             reviewDto.Header,
             reviewDto.Comment,
-            reviewDto.Rating.Place, reviewDto.Rating.Service, reviewDto.Rating.Coffee);
+            reviewDto.Rating.Place, reviewDto.Rating.Service, reviewDto.Rating.Coffee,
+            reviewDto.Id);
 
         reviewRepository.Add(review);
 

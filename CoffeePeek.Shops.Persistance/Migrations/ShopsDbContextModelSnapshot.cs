@@ -783,6 +783,9 @@ namespace CoffeePeek.Shops.Persistance.Migrations
                     b.Property<bool>("IsSoftDelete")
                         .HasColumnType("boolean");
 
+                    b.Property<Guid?>("ModerationReviewId")
+                        .HasColumnType("uuid");
+
                     b.Property<DateTime?>("UpdatedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
@@ -797,6 +800,8 @@ namespace CoffeePeek.Shops.Persistance.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CoffeeShopId");
+
+                    b.HasIndex("ModerationReviewId");
 
                     b.HasIndex("UserId");
 
