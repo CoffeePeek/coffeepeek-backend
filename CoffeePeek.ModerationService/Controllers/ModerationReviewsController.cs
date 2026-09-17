@@ -1,5 +1,6 @@
 ﻿using CoffeePeek.Contract.Dtos.CoffeeShop;
 using CoffeePeek.Contract.Enums;
+using CoffeePeek.Moderation.Application.Features.Review.BackfillReviewLinks;
 using CoffeePeek.Moderation.Application.Features.Review.ChangeStatusModerationReview;
 using CoffeePeek.Moderation.Application.Features.Review.GetAllModerationReviews;
 using CoffeePeek.Moderation.Application.Features.Review.GetModerationReviewById;
@@ -90,6 +91,18 @@ public class ModerationReviewsController(IMessageBus bus, IUserContext userConte
         return response.IsSuccess
             ? Ok(response)
             : StatusCode(response.StatusCode ?? StatusCodes.Status400BadRequest, response);
+    }
+
+    [HttpPost("backfill-links")]
+    [Authorize(Policy = RoleConsts.Moderator)]
+    [ProducesResponseType(typeof(Response<int>), StatusCodes.Status200OK)]
+    [ProducesResponseType<ErrorResponse>(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType<ErrorResponse>(StatusCodes.Status500InternalServerError)]
+    [ProducesResponseType<ErrorResponse>(StatusCodes.Status503ServiceUnavailable)]
+    public async Task<IActionResult> BackfillReviewLinks(CancellationToken ct)
+    {
+        var response = await bus.InvokeAsync<Response<int>>(new BackfillReviewLinksCommand(), ct);
+        return Ok(response);
     }
 
     [HttpPut]
