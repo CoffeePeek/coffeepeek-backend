@@ -53,15 +53,15 @@ namespace Internal.Generated.WolverineHandlers
                 // The actual message execution
                 (var outgoing1, var outgoing2) = await CoffeePeek.Moderation.Application.Features.Review.UpdateCoffeeShopReview.UpdateCoffeeShopReviewHandler.Handle(updateCoffeeShopReviewCommand, reviewUpdateValidationStrategy, moderationReviewRepository, _mapper, unitOfWorkOfModerationDbContext, cancellation).ConfigureAwait(false);
 
-
+                
                 // Outgoing, cascaded message
                 await context.EnqueueCascadingAsync(outgoing1).ConfigureAwait(false);
 
-
+                
                 // Outgoing, cascaded message
                 await context.EnqueueCascadingAsync(outgoing2).ConfigureAwait(false);
 
-
+                
                 // Added by EF Core Transaction Middleware
                 var result_of_SaveChangesAsync = await moderationDbContext.SaveChangesAsync(cancellation).ConfigureAwait(false);
 
