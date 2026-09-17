@@ -12,7 +12,6 @@ public record ReviewDto
 
     public RatingDto Rating { get; init; }
 
-    /// <summary>Id of the source ModerationReview this published review was created from; null for legacy rows until backfilled.</summary>
     public Guid? ModerationReviewId { get; init; }
 
     public ICollection<UploadedPhotoDto> Photos { get; init; } = new List<UploadedPhotoDto>();

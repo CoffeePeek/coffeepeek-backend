@@ -12,7 +12,6 @@ public static class ModerationReviewLinkedHandler
         IUnitOfWork unitOfWork,
         CancellationToken ct)
     {
-        // Backfill: link an existing unlinked published review to its source moderation review.
         var review = await reviewRepository.GetUnlinkedByShopAndUser(@event.ShopId, @event.UserId, ct);
 
         if (review == null)

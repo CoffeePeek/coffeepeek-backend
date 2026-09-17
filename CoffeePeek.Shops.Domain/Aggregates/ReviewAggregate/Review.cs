@@ -15,7 +15,6 @@ public sealed partial class Review : Entity<Guid>
     public bool IsSoftDelete { get; private set; }
     public int HelpfulCount { get; private set; }
 
-    /// <summary>Id of the source ModerationReview this published review was created from; null for legacy rows until backfilled.</summary>
     public Guid? ModerationReviewId { get; private set; }
 
     public Rating Rating { get; private set; }
