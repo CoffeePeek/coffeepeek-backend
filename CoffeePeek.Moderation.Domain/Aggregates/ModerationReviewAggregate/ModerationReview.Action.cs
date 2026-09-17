@@ -65,6 +65,17 @@ public partial class ModerationReview
         ModerationStatus = ModerationStatus.Rejected;
     }
     
+    public void Resubmit(Guid authorId)
+    {
+        if (authorId == Guid.Empty)
+            throw new DomainException($"{nameof(authorId)} cannot be empty.");
+
+        // Author-initiated re-moderation: do NOT stamp ModeratedBy/ModeratedAt (the actor
+        // is the review author, not a moderator). Only clear the rejection and reset status.
+        RejectedReason = null;
+        ModerationStatus = ModerationStatus.Pending;
+    }
+
     public void MoveToPending(Guid moderatorId)
     {
         if (moderatorId == Guid.Empty)
