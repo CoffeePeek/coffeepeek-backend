@@ -15,6 +15,7 @@
 | 260909 | roaster-contribution | complete | 2026-09-09 |
 | 260914 | coffee-shop-data-completeness | complete | 2026-09-14 |
 | 260914-zones | coffee-zones-and-map-clustering | complete | 2026-09-14 |
+| 260917-f9m | link-published-shops-reviews-to-source-m | complete | 2026-09-17 |
 
 ## Milestone Progress
 
