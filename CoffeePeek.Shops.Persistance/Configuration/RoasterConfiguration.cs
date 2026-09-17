@@ -16,6 +16,14 @@ public class RoasterConfiguration : IEntityTypeConfiguration<Roaster>
         var navigationPhotos = builder.Metadata.FindNavigation(nameof(Roaster.Photos));
         navigationPhotos?.SetPropertyAccessMode(PropertyAccessMode.Field);
 
+        // Required + cascade so ReplacePhotos deletes the old rows instead of orphaning
+        // them with RoasterId = NULL.
+        builder.HasMany(r => r.Photos)
+            .WithOne()
+            .HasForeignKey("RoasterId")
+            .IsRequired()
+            .OnDelete(DeleteBehavior.Cascade);
+
         builder.OwnsOne(r => r.Contact, contact =>
         {
             contact

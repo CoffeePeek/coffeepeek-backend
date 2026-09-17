@@ -874,7 +874,6 @@ namespace CoffeePeek.Shops.Persistance.Migrations
             modelBuilder.Entity("CoffeePeek.Shops.Domain.Entities.RoasterPhoto", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<string>("ContentType")
@@ -893,7 +892,7 @@ namespace CoffeePeek.Shops.Persistance.Migrations
                     b.Property<Guid>("OwnerId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid?>("RoasterId")
+                    b.Property<Guid>("RoasterId")
                         .HasColumnType("uuid");
 
                     b.Property<long>("SizeBytes")
@@ -1433,7 +1432,9 @@ namespace CoffeePeek.Shops.Persistance.Migrations
                 {
                     b.HasOne("CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate.Roaster", null)
                         .WithMany("Photos")
-                        .HasForeignKey("RoasterId");
+                        .HasForeignKey("RoasterId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("CoffeePeek.Shops.Domain.Entities.ShopPhoto", b =>
