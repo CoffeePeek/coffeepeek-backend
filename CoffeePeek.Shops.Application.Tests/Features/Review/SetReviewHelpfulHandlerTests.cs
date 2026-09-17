@@ -20,7 +20,7 @@ public class SetReviewHelpfulHandlerTests
     private static Domain.Aggregates.ReviewAggregate.Review CreateReview(Guid ownerId)
     {
         return Domain.Aggregates.ReviewAggregate.Review.Create(
-            Guid.NewGuid(), ownerId, "tester", "header text", "comment text body", 5, 5, 5);
+            Guid.NewGuid(), ownerId, "tester", "header text", "comment text body", 5, 5, 5, Guid.NewGuid());
     }
 
     [Fact]

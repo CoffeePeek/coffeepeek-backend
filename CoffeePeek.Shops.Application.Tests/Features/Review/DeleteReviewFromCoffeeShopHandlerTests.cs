@@ -26,7 +26,8 @@ public class DeleteReviewFromCoffeeShopHandlerTests
             "tester",
             "header text",
             "comment text body",
-            5, 5, 5);
+            5, 5, 5,
+            Guid.NewGuid());
     }
 
     [Fact]
