@@ -171,6 +171,9 @@ services:
       OAuthGoogleOptions__ClientId: ${GOOGLE_CLIENT_ID:-770099870632-5eeebr3eqdrma4reson9mv02j4lro583.apps.googleusercontent.com}
       OAuthGoogleOptions__ClientSecret: ${GOOGLE_CLIENT_SECRET:-}
       ResendClientOptions__ApiToken: ${RESEND_API_TOKEN}
+      AccountDeletionOptions__TokenPepper: ${ACCOUNT_DELETION_TOKEN_PEPPER}
+      AccountDeletionOptions__TokenLifetimeHours: ${ACCOUNT_DELETION_TOKEN_LIFETIME_HOURS:-24}
+      AccountDeletionOptions__ResendCooldownMinutes: ${ACCOUNT_DELETION_RESEND_COOLDOWN_MINUTES:-5}
       WebClientUrl: ${WEB_CLIENT_URL}
       AdminStatsOptions__ShopsServiceUrl: http://shops:8080
       AdminStatsOptions__ModerationServiceUrl: http://moderation:8080

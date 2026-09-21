@@ -45,7 +45,8 @@ public class WolverinePreGeneratedHandlersTests
             ["MediaPublicUrlOptions:PublicEndpoint"] = "http://localhost:9000",
             ["MediaPublicUrlOptions:ShopBucketName"] = "coffeepeek.shops",
             ["MediaPublicUrlOptions:AvatarBucketName"] = "coffeepeek.avatars",
-            ["ResendClientOptions:ApiToken"] = "re_test_placeholder"
+            ["ResendClientOptions:ApiToken"] = "re_test_placeholder",
+            ["AccountDeletionOptions:TokenPepper"] = "test-account-deletion-pepper-at-least-32-characters"
         });
         builder.AddApplication();
 

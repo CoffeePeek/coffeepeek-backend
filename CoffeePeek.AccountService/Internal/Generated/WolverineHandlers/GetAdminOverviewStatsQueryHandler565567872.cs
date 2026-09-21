@@ -36,11 +36,11 @@ namespace Internal.Generated.WolverineHandlers
 
         public override async System.Threading.Tasks.Task HandleAsync(Wolverine.Runtime.MessageContext context, System.Threading.CancellationToken cancellation)
         {
-            var adminStatsClient = new CoffeePeek.Account.Infrastructure.Admin.AdminStatsClient(_httpClientFactory, _httpContextAccessor, _optionsOfAdminStatsOptions, _optionsOfGatewayAuthOptions, _loggerOfAdminStatsClient);
             await using var serviceScope = _serviceScopeFactory.CreateAsyncScope();
             Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<Wolverine.Runtime.ScopedMessageContextHolder>(serviceScope.ServiceProvider).Context = context;
             // This service has been marked as requiring service location independent of Wolverine's ability to use constructor injection of everything else
             var accountDbContext = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<CoffeePeek.Account.Persistence.Configuration.AccountDbContext>(serviceScope.ServiceProvider);
+            var adminStatsClient = new CoffeePeek.Account.Infrastructure.Admin.AdminStatsClient(_httpClientFactory, _httpContextAccessor, _optionsOfAdminStatsOptions, _optionsOfGatewayAuthOptions, _loggerOfAdminStatsClient);
             var adminUserQueryRepository = new CoffeePeek.Account.Persistence.Repositories.AdminUserQueryRepository(accountDbContext);
             // The actual message body
             var getAdminOverviewStatsQuery = (CoffeePeek.Account.Application.Features.Admin.Stats.GetAdminOverviewStatsQuery)context.Envelope.Message;

@@ -37,6 +37,10 @@ var accountService = builder
     .WithReference(accountDb)
     .WithReference(shopsService)
     .WithReference(moderationService)
+    .WithEnvironment(
+        "AccountDeletionOptions__TokenPepper",
+        builder.Configuration["AccountDeletionOptions:TokenPepper"]
+        ?? "development-only-account-deletion-pepper-change-me")
     .WithEnvironment("DOTNET_ASPIRE", "true");
 
 var mediaService = builder
