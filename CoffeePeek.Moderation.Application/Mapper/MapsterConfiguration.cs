@@ -19,10 +19,6 @@ public partial class MapsterConfiguration
     {
         var config = new TypeAdapterConfig();
 
-        ConfigureModerationReview(config);
-        ConfigureModerationShop(config, mediaOptions);
-        ConfigureModerationRoaster(config, mediaOptions);
-
         config.NewConfig<PhotoMetadata, ShortPhotoMetadataDto>()
             .Map(d => d.FullUrl, s =>
                 MediaStorageUrlBuilder.BuildPublicUrl(
@@ -36,6 +32,10 @@ public partial class MapsterConfiguration
                     mediaOptions.PublicEndpoint,
                     mediaOptions.ShopBucketName,
                     s.StorageKey));
+
+        ConfigureModerationReview(config);
+        ConfigureModerationShop(config, mediaOptions);
+        ConfigureModerationRoaster(config, mediaOptions);
 
         return config;
     }
