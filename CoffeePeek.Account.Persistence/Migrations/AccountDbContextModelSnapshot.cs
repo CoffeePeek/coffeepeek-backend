@@ -22,6 +22,91 @@ namespace CoffeePeek.Account.Persistence.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("CoffeePeek.Account.Domain.Entities.AccountDeletionRequestAggregate.AccountDeletionRequest", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("AccountPartitionStatus")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("CancelledAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("CompletedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ConfirmationTokenHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<DateTime?>("ConfirmedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("ExpiresAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("FailureCode")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTime?>("LastResentAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("MediaPartitionStatus")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("ModerationPartitionStatus")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("OtherReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<int>("Reason")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("RequestedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("ResendAvailableAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("ShopsPartitionStatus")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ConfirmationTokenHash")
+                        .IsUnique();
+
+                    b.HasIndex("UserId")
+                        .IsUnique()
+                        .HasDatabaseName("UX_AccountDeletionRequests_ActiveUser")
+                        .HasFilter("\"Status\" IN (0, 1)");
+
+                    b.ToTable("AccountDeletionRequests");
+                });
+
             modelBuilder.Entity("CoffeePeek.Account.Domain.Entities.PhotoMetadata", b =>
                 {
                     b.Property<Guid>("Id")
@@ -183,6 +268,15 @@ namespace CoffeePeek.Account.Persistence.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("UserRoles");
+                });
+
+            modelBuilder.Entity("CoffeePeek.Account.Domain.Entities.AccountDeletionRequestAggregate.AccountDeletionRequest", b =>
+                {
+                    b.HasOne("CoffeePeek.Account.Domain.Entities.UserAggregate.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("CoffeePeek.Account.Domain.Entities.RefreshToken", b =>
