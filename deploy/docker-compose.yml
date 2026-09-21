@@ -171,7 +171,7 @@ services:
       OAuthGoogleOptions__ClientId: ${GOOGLE_CLIENT_ID:-770099870632-5eeebr3eqdrma4reson9mv02j4lro583.apps.googleusercontent.com}
       OAuthGoogleOptions__ClientSecret: ${GOOGLE_CLIENT_SECRET:-}
       ResendClientOptions__ApiToken: ${RESEND_API_TOKEN}
-      AccountDeletionOptions__TokenPepper: ${ACCOUNT_DELETION_TOKEN_PEPPER}
+      AccountDeletionOptions__TokenPepper: ${ACCOUNT_DELETION_TOKEN_PEPPER:-${JWT_SECRET_KEY}}
       AccountDeletionOptions__TokenLifetimeHours: ${ACCOUNT_DELETION_TOKEN_LIFETIME_HOURS:-24}
       AccountDeletionOptions__ResendCooldownMinutes: ${ACCOUNT_DELETION_RESEND_COOLDOWN_MINUTES:-5}
       AccountDeletionOptions__MaxEmailsPerHour: ${ACCOUNT_DELETION_MAX_EMAILS_PER_HOUR:-3}

@@ -11,6 +11,8 @@ if [[ ! -f .env ]]; then
   echo "Created .env from .env.example — edit secrets before production use."
 fi
 
+bash "${SCRIPT_DIR}/ensure-secrets.sh"
+
 set -a
 # shellcheck disable=SC1091
 source .env
