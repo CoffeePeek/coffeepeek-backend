@@ -6,6 +6,16 @@ namespace CoffeePeek.Gateway.Tests;
 public class DeployReverseProxyConfigurationTests
 {
     [Fact]
+    public void ProductionCompose_FallsBackToJwtSecretForAccountDeletionPepper()
+    {
+        var compose = File.ReadAllText(GetDeployPath("docker-compose.yml"));
+        var envExample = File.ReadAllText(GetDeployPath(".env.example"));
+
+        compose.Should().Contain("AccountDeletionOptions__TokenPepper: ${ACCOUNT_DELETION_TOKEN_PEPPER:-${JWT_SECRET_KEY}}");
+        envExample.Should().Contain("ACCOUNT_DELETION_TOKEN_PEPPER=");
+    }
+
+    [Fact]
     public void ProductionCompose_UsesAspNetContainerPortForGatewayDestinations()
     {
         var compose = File.ReadAllText(GetDeployPath("docker-compose.yml"));
@@ -44,6 +54,7 @@ public class DeployReverseProxyConfigurationTests
 
         updateScript.Should().Contain("http://${service}:8080${path}");
         updateScript.Should().NotContain("http://${service}${path}");
+        updateScript.Should().Contain("ensure-secrets.sh");
     }
 
     [Theory]
