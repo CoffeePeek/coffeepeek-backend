@@ -1,3 +1,4 @@
+using CoffeePeek.Shared.Auth;
 using CoffeePeek.Shared.Domain.Interfaces.Infrastructure;
 using CoffeePeek.Shared.Persistence.Cache;
 using CoffeePeek.Shared.Persistence.Cache.Redis;
@@ -9,10 +10,18 @@ public static class CacheModule
 {
     public static IServiceCollection AddCacheModule(this IServiceCollection services)
     {
-        services.RedisConfigurationOptions();
+        services.AddUserRevocationStore();
         services.AddSingleton<ICacheService, RedisService>();
         services.AddSingleton<ICacheInvalidationStrategy, CacheInvalidationStrategy>();
         
+        return services;
+    }
+
+    public static IServiceCollection AddUserRevocationStore(this IServiceCollection services)
+    {
+        services.RedisConfigurationOptions();
+        services.AddSingleton<IRevokedUserStore, RedisRevokedUserStore>();
+
         return services;
     }
 }

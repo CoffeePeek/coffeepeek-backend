@@ -8,6 +8,7 @@ public static class RateLimitingExtensions
     // Policy names — used in route metadata and middleware
     public const string GlobalPolicy = "global";
     public const string AuthEndpointsPolicy = "auth-endpoints";
+    public const string AccountDeletionPolicy = "account-deletion";
     public const string MediaUploadPolicy = "media-upload";
     public const string ModerationSubmissionPolicy = "moderation-submission";
 
@@ -33,6 +34,17 @@ public static class RateLimitingExtensions
                 limiterOptions.Window = TimeSpan.FromMinutes(1);
                 limiterOptions.SegmentsPerWindow = 6;
                 limiterOptions.PermitLimit = 20;
+                limiterOptions.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+                limiterOptions.QueueLimit = 0;
+            });
+
+            // Capability-token and authenticated account deletion operations:
+            // 10 requests per hour per IP to limit confirmation-token probing and email abuse.
+            options.AddSlidingWindowLimiter(AccountDeletionPolicy, limiterOptions =>
+            {
+                limiterOptions.Window = TimeSpan.FromHours(1);
+                limiterOptions.SegmentsPerWindow = 12;
+                limiterOptions.PermitLimit = 10;
                 limiterOptions.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
                 limiterOptions.QueueLimit = 0;
             });

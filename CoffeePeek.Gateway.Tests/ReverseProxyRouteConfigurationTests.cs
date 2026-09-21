@@ -91,6 +91,52 @@ public class ReverseProxyRouteConfigurationTests
         route.GetProperty("Match").GetProperty("Path").GetString().Should().Be("/api/roasters/{**remainder}");
     }
 
+    [Theory]
+    [InlineData("account-deletion-confirm-route", "/api/Users/me/deletion-confirmation", "POST", false)]
+    [InlineData("account-deletion-status-route", "/api/Users/me/deletion-request", "GET", true)]
+    [InlineData("account-deletion-cancel-route", "/api/Users/me/deletion-request", "DELETE", false)]
+    [InlineData("account-deletion-request-route", "/api/Users/me", "DELETE", true)]
+    public void AccountDeletionRoutes_AreMethodSpecificRateLimitedAndPreserveAuth(
+        string routeId,
+        string path,
+        string method,
+        bool requiresAuthentication)
+    {
+        using var document = LoadGatewayAppsettings();
+        var routes = document.RootElement.GetProperty("ReverseProxy").GetProperty("Routes");
+        var route = routes.GetProperty(routeId);
+
+        route.GetProperty("ClusterId").GetString().Should().Be("account-cluster");
+        route.GetProperty("RateLimiterPolicy").GetString().Should().Be("account-deletion");
+        route.GetProperty("Match").GetProperty("Path").GetString().Should().Be(path);
+        route.GetProperty("Match").GetProperty("Methods").EnumerateArray()
+            .Select(value => value.GetString())
+            .Should().Equal(method);
+
+        route.TryGetProperty("AuthorizationPolicy", out var authorizationPolicy)
+            .Should().Be(requiresAuthentication);
+        if (requiresAuthentication)
+            authorizationPolicy.GetString().Should().Be("Authenticated");
+    }
+
+    [Fact]
+    public void AccountDeletionRoutes_PrecedeUsersCatchAll()
+    {
+        using var document = LoadGatewayAppsettings();
+        var routeIds = document.RootElement
+            .GetProperty("ReverseProxy")
+            .GetProperty("Routes")
+            .EnumerateObject()
+            .Select(route => route.Name)
+            .ToList();
+        var usersCatchAllIndex = routeIds.IndexOf("account-Users-route");
+
+        routeIds.IndexOf("account-deletion-confirm-route").Should().BeLessThan(usersCatchAllIndex);
+        routeIds.IndexOf("account-deletion-status-route").Should().BeLessThan(usersCatchAllIndex);
+        routeIds.IndexOf("account-deletion-cancel-route").Should().BeLessThan(usersCatchAllIndex);
+        routeIds.IndexOf("account-deletion-request-route").Should().BeLessThan(usersCatchAllIndex);
+    }
+
     private static JsonDocument LoadGatewayAppsettings()
     {
         var path = Path.GetFullPath(Path.Combine(

@@ -27,11 +27,11 @@ namespace Internal.Generated.WolverineHandlers
 
         public override async System.Threading.Tasks.Task HandleAsync(Wolverine.Runtime.MessageContext context, System.Threading.CancellationToken cancellation)
         {
-            var mediaUrlProvider = new CoffeePeek.Account.Infrastructure.Media.MediaUrlProvider(_optionsOfMinIOOptions, _optionsOfMediaPublicUrlOptions);
             await using var serviceScope = _serviceScopeFactory.CreateAsyncScope();
             Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<Wolverine.Runtime.ScopedMessageContextHolder>(serviceScope.ServiceProvider).Context = context;
             // This service has been marked as requiring service location independent of Wolverine's ability to use constructor injection of everything else
             var accountDbContext = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<CoffeePeek.Account.Persistence.Configuration.AccountDbContext>(serviceScope.ServiceProvider);
+            var mediaUrlProvider = new CoffeePeek.Account.Infrastructure.Media.MediaUrlProvider(_optionsOfMinIOOptions, _optionsOfMediaPublicUrlOptions);
             var adminUserQueryRepository = new CoffeePeek.Account.Persistence.Repositories.AdminUserQueryRepository(accountDbContext);
             // The actual message body
             var getAdminUsersQuery = (CoffeePeek.Account.Application.Features.Admin.Users.GetAdminUsersQuery)context.Envelope.Message;

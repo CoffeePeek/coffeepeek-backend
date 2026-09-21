@@ -1,5 +1,6 @@
 ﻿using CoffeePeek.Account.Application.Common;
 using CoffeePeek.Account.Application.Common.Interfaces;
+using CoffeePeek.Account.Application.Common.Options;
 using CoffeePeek.Account.Application.Features.Auth.Login;
 using CoffeePeek.Account.Application.Features.Auth.OAuthLogin;
 using CoffeePeek.Account.Application.Mapper;
@@ -16,6 +17,11 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddApplication(this IServiceCollection services)
     {
+        services.AddOptions<AccountDeletionOptions>()
+            .BindConfiguration(nameof(AccountDeletionOptions))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
         services.AddOptions<MediaPublicUrlOptions>()
             .BindConfiguration(nameof(MediaPublicUrlOptions))
             .ValidateDataAnnotations()
@@ -35,6 +41,7 @@ public static class DependencyInjection
         });
 
         services.AddSingleton<IEmailTemplateService, EmailTemplateService>();
+        services.AddSingleton<TimeProvider>(TimeProvider.System);
         
         services.AddScoped<IExternalAuthService, ExternalAuthService>();
         

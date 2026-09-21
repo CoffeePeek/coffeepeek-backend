@@ -2,11 +2,14 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using CoffeePeek.Account.Application.Common.Interfaces;
+using CoffeePeek.Account.Application.Common.Options;
 using CoffeePeek.Account.Application.Features.User.DeleteUser;
+using CoffeePeek.Account.Domain.Entities.AccountDeletionRequestAggregate;
 using CoffeePeek.Account.Domain.Entities.RoleAggregate;
 using CoffeePeek.Account.Domain.Entities.UserAggregate;
 using CoffeePeek.Shared.Kernel;
 using FluentAssertions;
+using Microsoft.Extensions.Options;
 using Moq;
 using Xunit;
 
@@ -14,10 +17,26 @@ namespace CoffeePeek.Account.Application.Tests.Features.User.DeleteUser;
 
 public class DeleteUserHandlerTests
 {
+    private static readonly DateTime Now = new(2026, 9, 21, 10, 0, 0, DateTimeKind.Utc);
     private readonly Mock<IUserRepository> _userRepoMock = new();
+    private readonly Mock<IAccountDeletionRequestRepository> _deletionRepoMock = new();
+    private readonly Mock<IAccountDeletionTokenService> _tokenServiceMock = new();
+    private readonly Mock<TimeProvider> _timeProviderMock = new();
     private readonly Mock<IUnitOfWork> _unitOfWorkMock = new();
-    private readonly Mock<ISessionTerminationNotifier> _sessionNotifierMock = new();
     private readonly CancellationToken _ct = CancellationToken.None;
+    private readonly IOptions<AccountDeletionOptions> _options = Options.Create(new AccountDeletionOptions
+    {
+        TokenPepper = "test-pepper-at-least-thirty-two-characters",
+        TokenLifetimeHours = 24,
+        ResendCooldownMinutes = 5,
+        MaxEmailsPerHour = 3
+    });
+
+    public DeleteUserHandlerTests()
+    {
+        _timeProviderMock.Setup(x => x.GetUtcNow()).Returns(new DateTimeOffset(Now));
+        _tokenServiceMock.Setup(x => x.Generate()).Returns(("plain-token", new string('a', 64)));
+    }
 
     private static DomainUser CreateUser()
     {
@@ -26,97 +45,128 @@ public class DeleteUserHandlerTests
     }
 
     [Fact]
-    public async Task Handle_WhenUserExists_ReturnsSuccess()
+    public async Task Handle_WhenNoActiveRequest_CreatesPendingRequestAndEmailEvent()
     {
         var user = CreateUser();
         _userRepoMock.Setup(r => r.GetById(user.Id, _ct)).ReturnsAsync(user);
-        var result = await DeleteUserHandler.Handle(
+        _deletionRepoMock.Setup(r => r.GetActiveByUserId(user.Id, _ct))
+            .ReturnsAsync((AccountDeletionRequest?)null);
+
+        var (response, @event) = await DeleteUserHandler.Handle(
             new DeleteUserCommand(user.Id),
             _userRepoMock.Object,
+            _deletionRepoMock.Object,
+            _tokenServiceMock.Object,
+            _options,
+            _timeProviderMock.Object,
             _unitOfWorkMock.Object,
-            _sessionNotifierMock.Object,
-            _ct);
-        result.IsSuccess.Should().BeTrue();
-        result.Data.Should().BeTrue();
-    }
-
-    [Fact]
-    public async Task Handle_WhenUserExists_SetsSoftDelete()
-    {
-        var user = CreateUser();
-        _userRepoMock.Setup(r => r.GetById(user.Id, _ct)).ReturnsAsync(user);
-        await DeleteUserHandler.Handle(
-            new DeleteUserCommand(user.Id),
-            _userRepoMock.Object,
-            _unitOfWorkMock.Object,
-            _sessionNotifierMock.Object,
-            _ct);
-        user.IsSoftDelete.Should().BeTrue();
-    }
-
-    [Fact]
-    public async Task Handle_WhenUserHasActiveSession_RevokesAllSessions()
-    {
-        var user = CreateUser();
-        user.AddSession("token", TimeSpan.FromDays(7), "dev", "127.0.0.1");
-        _userRepoMock.Setup(r => r.GetById(user.Id, _ct)).ReturnsAsync(user);
-
-        await DeleteUserHandler.Handle(
-            new DeleteUserCommand(user.Id),
-            _userRepoMock.Object,
-            _unitOfWorkMock.Object,
-            _sessionNotifierMock.Object,
             _ct);
 
-        user.RefreshTokens.Should().OnlyContain(t => !t.IsActive);
-        user.IsSoftDelete.Should().BeTrue();
-    }
-
-    [Fact]
-    public async Task Handle_WhenUserExists_CallsUpdateAndSaveChanges()
-    {
-        var user = CreateUser();
-        _userRepoMock.Setup(r => r.GetById(user.Id, _ct)).ReturnsAsync(user);
-        await DeleteUserHandler.Handle(
-            new DeleteUserCommand(user.Id),
-            _userRepoMock.Object,
-            _unitOfWorkMock.Object,
-            _sessionNotifierMock.Object,
-            _ct);
-        _userRepoMock.Verify(r => r.Update(user, _ct), Times.Once);
+        response.IsSuccess.Should().BeTrue();
+        response.Data.Status.Should().Be(AccountDeletionRequestStatus.PendingConfirmation);
+        response.Data.ExpiresAtUtc.Should().Be(Now.AddHours(24));
+        @event.Should().NotBeNull();
+        @event!.ConfirmationToken.Should().Be("plain-token");
+        _deletionRepoMock.Verify(r => r.Add(It.IsAny<AccountDeletionRequest>(), _ct), Times.Once);
         _unitOfWorkMock.Verify(u => u.SaveChangesAsync(_ct), Times.Once);
-        _sessionNotifierMock.Verify(
-            x => x.NotifyForceLogoutAsync(user.Id, SessionTerminationReasons.UserDeleted, _ct),
-            Times.Once);
     }
 
     [Fact]
-    public async Task Handle_WhenUserNotFound_ReturnsErrorResponse()
+    public async Task Handle_ShouldKeepUserActiveAndSessionsUntouched()
     {
-        _userRepoMock.Setup(r => r.GetById(It.IsAny<Guid>(), _ct)).ReturnsAsync((DomainUser?)null);
-        var result = await DeleteUserHandler.Handle(
-            new DeleteUserCommand(Guid.NewGuid()),
-            _userRepoMock.Object,
-            _unitOfWorkMock.Object,
-            _sessionNotifierMock.Object,
-            _ct);
-        result.IsSuccess.Should().BeFalse();
-    }
+        var user = CreateUser();
+        user.AddSession("refresh-token", TimeSpan.FromDays(7), "device", "127.0.0.1");
+        _userRepoMock.Setup(r => r.GetById(user.Id, _ct)).ReturnsAsync(user);
 
-    [Fact]
-    public async Task Handle_WhenUserNotFound_DoesNotCallUpdateOrSave()
-    {
-        _userRepoMock.Setup(r => r.GetById(It.IsAny<Guid>(), _ct)).ReturnsAsync((DomainUser?)null);
         await DeleteUserHandler.Handle(
+            new DeleteUserCommand(user.Id),
+            _userRepoMock.Object,
+            _deletionRepoMock.Object,
+            _tokenServiceMock.Object,
+            _options,
+            _timeProviderMock.Object,
+            _unitOfWorkMock.Object,
+            _ct);
+
+        user.IsSoftDelete.Should().BeFalse();
+        user.RefreshTokens.Should().OnlyContain(t => t.IsActive);
+        _userRepoMock.Verify(r => r.Update(It.IsAny<DomainUser>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Handle_WhenPendingRequestIsInCooldown_ReturnsExistingRequestWithoutEmail()
+    {
+        var user = CreateUser();
+        var request = CreateRequest(user.Id);
+        _userRepoMock.Setup(r => r.GetById(user.Id, _ct)).ReturnsAsync(user);
+        _deletionRepoMock.Setup(r => r.GetActiveByUserId(user.Id, _ct)).ReturnsAsync(request);
+
+        var (response, @event) = await DeleteUserHandler.Handle(
+            new DeleteUserCommand(user.Id),
+            _userRepoMock.Object,
+            _deletionRepoMock.Object,
+            _tokenServiceMock.Object,
+            _options,
+            _timeProviderMock.Object,
+            _unitOfWorkMock.Object,
+            _ct);
+
+        response.Data.RequestId.Should().Be(request.Id);
+        @event.Should().BeNull();
+        _tokenServiceMock.Verify(x => x.Generate(), Times.Never);
+        _unitOfWorkMock.Verify(u => u.SaveChangesAsync(_ct), Times.Never);
+    }
+
+    [Fact]
+    public async Task Handle_WhenCooldownElapsed_RotatesTokenAndSendsEmail()
+    {
+        var user = CreateUser();
+        var request = CreateRequest(user.Id);
+        _timeProviderMock.Setup(x => x.GetUtcNow()).Returns(new DateTimeOffset(Now.AddMinutes(5)));
+        _userRepoMock.Setup(r => r.GetById(user.Id, _ct)).ReturnsAsync(user);
+        _deletionRepoMock.Setup(r => r.GetActiveByUserId(user.Id, _ct)).ReturnsAsync(request);
+
+        var (_, @event) = await DeleteUserHandler.Handle(
+            new DeleteUserCommand(user.Id),
+            _userRepoMock.Object,
+            _deletionRepoMock.Object,
+            _tokenServiceMock.Object,
+            _options,
+            _timeProviderMock.Object,
+            _unitOfWorkMock.Object,
+            _ct);
+
+        request.LastResentAtUtc.Should().Be(Now.AddMinutes(5));
+        @event.Should().NotBeNull();
+        _deletionRepoMock.Verify(r => r.Update(request, _ct), Times.Once);
+    }
+
+    [Fact]
+    public async Task Handle_WhenUserNotFound_ReturnsNotFoundWithoutPersisting()
+    {
+        _userRepoMock.Setup(r => r.GetById(It.IsAny<Guid>(), _ct)).ReturnsAsync((DomainUser?)null);
+
+        var (response, @event) = await DeleteUserHandler.Handle(
             new DeleteUserCommand(Guid.NewGuid()),
             _userRepoMock.Object,
+            _deletionRepoMock.Object,
+            _tokenServiceMock.Object,
+            _options,
+            _timeProviderMock.Object,
             _unitOfWorkMock.Object,
-            _sessionNotifierMock.Object,
             _ct);
-        _userRepoMock.Verify(r => r.Update(It.IsAny<DomainUser>(), It.IsAny<CancellationToken>()), Times.Never);
+
+        response.IsSuccess.Should().BeFalse();
+        response.StatusCode.Should().Be(404);
+        @event.Should().BeNull();
         _unitOfWorkMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
-        _sessionNotifierMock.Verify(
-            x => x.NotifyForceLogoutAsync(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
-            Times.Never);
     }
+
+    private static AccountDeletionRequest CreateRequest(Guid userId) =>
+        AccountDeletionRequest.Create(
+            userId,
+            new string('b', 64),
+            Now,
+            TimeSpan.FromHours(24),
+            TimeSpan.FromMinutes(5));
 }

@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 
 namespace CoffeePeek.Gateway.Extensions;
@@ -41,6 +42,7 @@ public static class AuthExtensions
             .ValidateOnStart();
 
         var authOptions = services.AddValidateOptions<JWTOptions>();
+        services.AddScoped<UserRevocationTokenValidator>();
 
         services.AddOptions<AppReleaseAutomationOptions>()
             .Bind(configuration.GetSection(AppReleaseAutomationOptions.SectionName));
@@ -67,6 +69,22 @@ public static class AuthExtensions
                     }
 
                     return Task.CompletedTask;
+                },
+                OnTokenValidated = async context =>
+                {
+                    try
+                    {
+                        var validator = context.HttpContext.RequestServices
+                            .GetRequiredService<UserRevocationTokenValidator>();
+                        if (!await validator.IsAcceptedAsync(
+                                context.Principal!,
+                                context.HttpContext.RequestAborted))
+                            context.Fail("The access token is no longer valid.");
+                    }
+                    catch
+                    {
+                        context.Fail("Access-token revocation could not be verified.");
+                    }
                 }
             };
             x.TokenValidationParameters = new TokenValidationParameters
