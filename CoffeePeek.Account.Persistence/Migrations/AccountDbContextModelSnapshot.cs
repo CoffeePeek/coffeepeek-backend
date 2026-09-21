@@ -47,6 +47,9 @@ namespace CoffeePeek.Account.Persistence.Migrations
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<int>("EmailsSentInWindow")
+                        .HasColumnType("integer");
+
                     b.Property<DateTime>("ExpiresAtUtc")
                         .HasColumnType("timestamp with time zone");
 
@@ -74,6 +77,9 @@ namespace CoffeePeek.Account.Persistence.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<DateTime>("ResendAvailableAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("ResendWindowStartedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<int>("ShopsPartitionStatus")

@@ -28,8 +28,8 @@ public static class CancelAccountDeletionRequestHandler
             return Response.Error((int)HttpStatusCode.BadRequest, "A deletion confirmation token is required.");
         }
 
-        var request = await repository.GetPendingByTokenHash(tokenHash, ct);
-        if (request is null)
+        var request = await repository.GetByTokenHash(tokenHash, ct);
+        if (request is null || request.Status != AccountDeletionRequestStatus.PendingConfirmation)
             return Response.Error((int)HttpStatusCode.NotFound, "Pending account deletion request not found.");
 
         try

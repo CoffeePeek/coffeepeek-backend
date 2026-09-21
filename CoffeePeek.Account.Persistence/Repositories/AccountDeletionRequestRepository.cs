@@ -15,10 +15,9 @@ public class AccountDeletionRequestRepository(AccountDbContext dbContext) : IAcc
                   x.Status == AccountDeletionRequestStatus.Processing),
             ct);
 
-    public Task<AccountDeletionRequest?> GetPendingByTokenHash(string tokenHash, CancellationToken ct = default) =>
+    public Task<AccountDeletionRequest?> GetByTokenHash(string tokenHash, CancellationToken ct = default) =>
         _repository.FirstOrDefaultAsync(
-            x => x.ConfirmationTokenHash == tokenHash &&
-                 x.Status == AccountDeletionRequestStatus.PendingConfirmation,
+            x => x.ConfirmationTokenHash == tokenHash,
             ct);
 
     public async Task Add(AccountDeletionRequest request, CancellationToken ct = default) =>

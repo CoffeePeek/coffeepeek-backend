@@ -28,7 +28,8 @@ public class DeleteUserHandlerTests
     {
         TokenPepper = "test-pepper-at-least-thirty-two-characters",
         TokenLifetimeHours = 24,
-        ResendCooldownMinutes = 5
+        ResendCooldownMinutes = 5,
+        MaxEmailsPerHour = 3
     });
 
     public DeleteUserHandlerTests()
@@ -164,8 +165,6 @@ public class DeleteUserHandlerTests
     private static AccountDeletionRequest CreateRequest(Guid userId) =>
         AccountDeletionRequest.Create(
             userId,
-            AccountDeletionReason.NoLongerUsing,
-            null,
             new string('b', 64),
             Now,
             TimeSpan.FromHours(24),

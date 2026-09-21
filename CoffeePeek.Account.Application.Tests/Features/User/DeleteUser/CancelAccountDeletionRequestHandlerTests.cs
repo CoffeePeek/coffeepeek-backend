@@ -24,7 +24,7 @@ public class CancelAccountDeletionRequestHandlerTests
         var unitOfWork = new Mock<IUnitOfWork>();
         var request = CreateRequest();
         tokenService.Setup(x => x.Hash("token")).Returns("hash");
-        repository.Setup(x => x.GetPendingByTokenHash("hash", It.IsAny<CancellationToken>()))
+        repository.Setup(x => x.GetByTokenHash("hash", It.IsAny<CancellationToken>()))
             .ReturnsAsync(request);
         timeProvider.Setup(x => x.GetUtcNow()).Returns(new DateTimeOffset(Now.AddMinutes(1)));
 
@@ -63,8 +63,6 @@ public class CancelAccountDeletionRequestHandlerTests
     private static AccountDeletionRequest CreateRequest() =>
         AccountDeletionRequest.Create(
             Guid.NewGuid(),
-            AccountDeletionReason.PrivacyConcerns,
-            null,
             "hash",
             Now,
             TimeSpan.FromHours(24),

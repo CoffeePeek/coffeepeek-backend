@@ -13,4 +13,7 @@ public class AccountDeletionOptions
 
     [Range(1, 1440)]
     public int ResendCooldownMinutes { get; init; } = 5;
+
+    [Range(1, 20)]
+    public int MaxEmailsPerHour { get; init; } = 3;
 }

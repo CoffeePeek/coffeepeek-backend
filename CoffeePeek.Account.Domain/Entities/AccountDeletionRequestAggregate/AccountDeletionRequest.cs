@@ -14,6 +14,8 @@ public class AccountDeletionRequest : AggregateRoot<Guid>
     public DateTime ResendAvailableAtUtc { get; private set; }
     public DateTime RequestedAtUtc { get; private set; }
     public DateTime? LastResentAtUtc { get; private set; }
+    public DateTime ResendWindowStartedAtUtc { get; private set; }
+    public int EmailsSentInWindow { get; private set; }
     public DateTime? ConfirmedAtUtc { get; private set; }
     public DateTime? CompletedAtUtc { get; private set; }
     public DateTime? CancelledAtUtc { get; private set; }
@@ -29,14 +31,11 @@ public class AccountDeletionRequest : AggregateRoot<Guid>
 
     public static AccountDeletionRequest Create(
         Guid userId,
-        AccountDeletionReason reason,
-        string? otherReason,
         string confirmationTokenHash,
         DateTime nowUtc,
         TimeSpan tokenLifetime,
         TimeSpan resendCooldown)
     {
-        ValidateReason(reason, otherReason);
         ValidateTokenHash(confirmationTokenHash);
 
         return new AccountDeletionRequest
@@ -44,12 +43,12 @@ public class AccountDeletionRequest : AggregateRoot<Guid>
             Id = Guid.NewGuid(),
             UserId = userId,
             Status = AccountDeletionRequestStatus.PendingConfirmation,
-            Reason = reason,
-            OtherReason = NormalizeOtherReason(reason, otherReason),
             ConfirmationTokenHash = confirmationTokenHash,
             RequestedAtUtc = nowUtc,
             ExpiresAtUtc = nowUtc.Add(tokenLifetime),
             ResendAvailableAtUtc = nowUtc.Add(resendCooldown),
+            ResendWindowStartedAtUtc = nowUtc,
+            EmailsSentInWindow = 1,
             AccountPartitionStatus = DeletionPartitionStatus.NotStarted,
             ShopsPartitionStatus = DeletionPartitionStatus.NotStarted,
             ModerationPartitionStatus = DeletionPartitionStatus.NotStarted,
@@ -57,26 +56,43 @@ public class AccountDeletionRequest : AggregateRoot<Guid>
         };
     }
 
-    public bool CanResend(DateTime nowUtc) =>
-        Status == AccountDeletionRequestStatus.PendingConfirmation &&
-        nowUtc >= ResendAvailableAtUtc;
+    public bool CanResend(DateTime nowUtc, int maxEmailsPerHour)
+    {
+        if (Status != AccountDeletionRequestStatus.PendingConfirmation ||
+            nowUtc < ResendAvailableAtUtc)
+            return false;
+
+        return nowUtc >= ResendWindowStartedAtUtc.AddHours(1) ||
+               EmailsSentInWindow < maxEmailsPerHour;
+    }
 
     public void Resend(
         string confirmationTokenHash,
         DateTime nowUtc,
         TimeSpan tokenLifetime,
-        TimeSpan resendCooldown)
+        TimeSpan resendCooldown,
+        int maxEmailsPerHour)
     {
         if (Status != AccountDeletionRequestStatus.PendingConfirmation)
             throw new DomainException("Only pending deletion requests can be resent.");
         if (nowUtc < ResendAvailableAtUtc)
             throw new DomainException("Deletion confirmation resend is not available yet.");
+        if (nowUtc < ResendWindowStartedAtUtc.AddHours(1) &&
+            EmailsSentInWindow >= maxEmailsPerHour)
+            throw new DomainException("Hourly deletion confirmation email limit reached.");
 
         ValidateTokenHash(confirmationTokenHash);
+        if (nowUtc >= ResendWindowStartedAtUtc.AddHours(1))
+        {
+            ResendWindowStartedAtUtc = nowUtc;
+            EmailsSentInWindow = 0;
+        }
+
         ConfirmationTokenHash = confirmationTokenHash;
         LastResentAtUtc = nowUtc;
         ExpiresAtUtc = nowUtc.Add(tokenLifetime);
         ResendAvailableAtUtc = nowUtc.Add(resendCooldown);
+        EmailsSentInWindow++;
     }
 
     public void Cancel(DateTime nowUtc)
@@ -90,12 +106,28 @@ public class AccountDeletionRequest : AggregateRoot<Guid>
         CancelledAtUtc = nowUtc;
     }
 
-    private static void ValidateReason(AccountDeletionReason reason, string? otherReason)
+    public void Confirm(AccountDeletionReason reason, string? otherReason, DateTime nowUtc)
+    {
+        if (Status != AccountDeletionRequestStatus.PendingConfirmation)
+            throw new DomainException("Only pending deletion requests can be confirmed.");
+        if (nowUtc > ExpiresAtUtc)
+            throw new DomainException("Deletion confirmation token has expired.");
+
+        ValidateReason(reason, otherReason);
+        Reason = reason;
+        OtherReason = NormalizeOtherReason(reason, otherReason);
+        Status = AccountDeletionRequestStatus.Processing;
+        ConfirmedAtUtc = nowUtc;
+    }
+
+    public static void ValidateReason(AccountDeletionReason reason, string? otherReason)
     {
         if (!Enum.IsDefined(reason))
             throw new DomainException("Invalid account deletion reason.");
         if (reason == AccountDeletionReason.Other && string.IsNullOrWhiteSpace(otherReason))
             throw new DomainException("A reason is required when 'Other' is selected.");
+        if (reason != AccountDeletionReason.Other && !string.IsNullOrWhiteSpace(otherReason))
+            throw new DomainException("Other reason is only allowed when 'Other' is selected.");
         if (otherReason?.Trim().Length > 500)
             throw new DomainException("Account deletion reason cannot exceed 500 characters.");
     }

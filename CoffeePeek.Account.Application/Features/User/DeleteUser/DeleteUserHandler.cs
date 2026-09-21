@@ -37,7 +37,7 @@ public static class DeleteUserHandler
         if (request is { Status: AccountDeletionRequestStatus.Processing })
             return (Response<AccountDeletionRequestResponse>.Success(ToResponse(request)), null);
 
-        if (request is not null && !request.CanResend(nowUtc))
+        if (request is not null && !request.CanResend(nowUtc, settings.MaxEmailsPerHour))
             return (Response<AccountDeletionRequestResponse>.Success(ToResponse(request)), null);
 
         var (token, tokenHash) = tokenService.Generate();
@@ -46,8 +46,6 @@ public static class DeleteUserHandler
         {
             request = AccountDeletionRequest.Create(
                 command.UserId,
-                command.Reason,
-                command.OtherReason,
                 tokenHash,
                 nowUtc,
                 tokenLifetime,
@@ -56,7 +54,7 @@ public static class DeleteUserHandler
         }
         else
         {
-            request.Resend(tokenHash, nowUtc, tokenLifetime, resendCooldown);
+            request.Resend(tokenHash, nowUtc, tokenLifetime, resendCooldown, settings.MaxEmailsPerHour);
             await deletionRequestRepository.Update(request, ct);
         }
 

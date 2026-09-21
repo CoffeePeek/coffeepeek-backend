@@ -20,7 +20,6 @@ using CoffeePeek.Shared.Kernel.Response;
 using CoffeePeek.AccountService.Controllers.Contracts;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Wolverine;
 
 namespace CoffeePeek.AccountService.Controllers;
@@ -187,18 +186,37 @@ public class UsersController(IMessageBus bus, IUserContext userContext) : Contro
     [ProducesResponseType<Response<AccountDeletionRequestResponse>>(StatusCodes.Status202Accepted)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> DeleteUser(
-        [FromBody(EmptyBodyBehavior = EmptyBodyBehavior.Allow)] RequestAccountDeletionRequest? request,
-        CancellationToken cancellationToken)
+    public async Task<IActionResult> DeleteUser(CancellationToken cancellationToken)
     {
-        var command = new DeleteUserCommand(
-            userContext.GetUserIdOrThrow(),
-            request?.Reason ?? AccountDeletionReason.NoLongerUsing,
-            request?.OtherReason);
+        var command = new DeleteUserCommand(userContext.GetUserIdOrThrow());
         var response = await bus.InvokeAsync<Response<AccountDeletionRequestResponse>>(command, cancellationToken);
 
         return response.IsSuccess
             ? Accepted(response)
+            : StatusCode(response.StatusCode ?? StatusCodes.Status500InternalServerError, response);
+    }
+
+    /// <summary>
+    /// Confirm account deletion from the browser confirmation form
+    /// </summary>
+    [HttpPost("me/deletion-confirmation")]
+    [AllowAnonymous]
+    [Consumes("application/x-www-form-urlencoded")]
+    [ProducesResponseType<Response<AccountDeletionRequestResponse>>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    [ProducesResponseType(StatusCodes.Status410Gone)]
+    public async Task<IActionResult> ConfirmDeletion(
+        [FromForm] ConfirmAccountDeletionRequest request,
+        CancellationToken cancellationToken)
+    {
+        var response = await bus.InvokeAsync<Response<AccountDeletionRequestResponse>>(
+            new ConfirmAccountDeletionCommand(request.Token, request.Reason, request.OtherReason),
+            cancellationToken);
+
+        return response.IsSuccess
+            ? Ok(response)
             : StatusCode(response.StatusCode ?? StatusCodes.Status500InternalServerError, response);
     }
 
