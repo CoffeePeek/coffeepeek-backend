@@ -22,7 +22,7 @@ public sealed class CacheInvalidationStrategy(ICacheService cacheService, ILogge
             [
                 "city:list:*",
                 "equipment:list:*",
-                "bean:list:*",
+                "coffeebean:list:*",
                 "roaster:list:*",
                 "brewmethod:list:*"
             ]

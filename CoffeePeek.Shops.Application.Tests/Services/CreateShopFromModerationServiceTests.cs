@@ -79,6 +79,9 @@ public class CreateShopFromModerationServiceTests
         _cacheServiceMock.Verify(c => c.RemoveByPattern("shop:search:*", _ct), Times.Once);
         _cacheServiceMock.Verify(c => c.RemoveByPattern("shop:list:city:*", _ct), Times.Once);
         _cacheServiceMock.Verify(c => c.RemoveByPattern("shop:detail:*", _ct), Times.Once);
+        _cacheServiceMock.Verify(
+            c => c.RemoveAsync(CacheKey.Shop.PublicPlatformStats()),
+            Times.Once);
     }
 
     [Fact]

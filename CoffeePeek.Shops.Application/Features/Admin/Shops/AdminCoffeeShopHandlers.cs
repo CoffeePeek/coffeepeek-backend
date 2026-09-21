@@ -260,6 +260,7 @@ public static class SetAdminCoffeeShopVisibilityHandler
 
         await unitOfWork.SaveChangesAsync(ct);
         await cacheService.RemoveAsync(CacheKey.Shop.Detail(shop.Id));
+        await cacheService.RemoveByPattern(CacheKey.Shop.SearchPattern(), ct);
         await PublicStatsCacheInvalidator.InvalidateAsync(cacheService, ct);
 
         return Response<AdminPublishedShopDto>.Success(AdminPublishedShopMapper.Map(shop, mediaOptions.Value));

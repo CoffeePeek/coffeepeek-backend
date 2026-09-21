@@ -9,7 +9,7 @@ namespace CoffeePeek.ShopsService.Controllers;
 [ApiController]
 [Route("api/menu")]
 [AllowAnonymous]
-[ResponseCache(Duration = 3600, Location = ResponseCacheLocation.Any)]
+[ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
 [Tags("Catalogs")]
 [Produces("application/json")]
 [ProducesErrorResponseType(typeof(ErrorResponse))]

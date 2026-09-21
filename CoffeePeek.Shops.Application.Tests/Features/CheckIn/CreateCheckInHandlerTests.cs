@@ -64,6 +64,12 @@ public class CreateCheckInHandlerTests
         _busMock.Verify(b => b.PublishAsync(It.IsAny<object>()), Times.Never);
         _checkInRepoMock.Verify(r => r.Add(It.IsAny<DomainCheckIn>()), Times.Once);
         _unitOfWorkMock.Verify(u => u.SaveChangesAsync(_ct), Times.Once);
+        _cacheMock.Verify(
+            c => c.RemoveAsync(CacheKey.Shop.PublicPlatformStats()),
+            Times.Once);
+        _cacheMock.Verify(
+            c => c.RemoveByPattern(CacheKey.Shop.SearchPattern(), _ct),
+            Times.Once);
     }
 
     [Fact]

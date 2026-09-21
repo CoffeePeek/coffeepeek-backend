@@ -16,12 +16,10 @@ namespace CoffeePeek.ShopsService.Controllers;
 public class AppDownloadsController(IMessageBus bus) : ControllerBase
 {
     [HttpGet]
-    [ResponseCache(Duration = 300, Location = ResponseCacheLocation.Any)]
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
     [ProducesResponseType<Response<AppDownloadsDto>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> Get(CancellationToken ct)
     {
-        Response.Headers.CacheControl = "public, max-age=300";
-
         var response = await bus.InvokeAsync<Response<AppDownloadsDto>>(new GetPublicAppDownloadsQuery(), ct);
         return Ok(response);
     }

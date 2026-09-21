@@ -29,6 +29,7 @@ public static class ReorderAdminCoffeeShopPhotosHandler
 
         await unitOfWork.SaveChangesAsync(ct);
         await cacheService.RemoveAsync(CacheKey.Shop.Detail(shop.Id));
+        await cacheService.RemoveByPattern(CacheKey.Shop.SearchPattern(), ct);
 
         return Response<AdminPublishedShopDto>.Success(AdminPublishedShopMapper.Map(shop, mediaOptions.Value));
     }

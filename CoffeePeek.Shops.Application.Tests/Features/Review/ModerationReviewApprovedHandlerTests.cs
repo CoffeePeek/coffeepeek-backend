@@ -67,6 +67,9 @@ public class ModerationReviewApprovedHandlerTests
 
         _reviewRepoMock.Verify(r => r.Add(It.IsAny<DomainReview>()), Times.Never);
         _unitOfWorkMock.Verify(u => u.SaveChangesAsync(_ct), Times.Once);
+        _cacheMock.Verify(
+            c => c.RemoveAsync(CacheKey.Shop.Detail(dto.ShopId)),
+            Times.Once);
     }
 
     [Fact]

@@ -27,6 +27,7 @@ public static class ModerationReviewEditedHandler
         review.Hide();
 
         await unitOfWork.SaveChangesAsync(ct);
+        await cacheService.RemoveAsync(CacheKey.Shop.Detail(review.CoffeeShopId));
         await PublicStatsCacheInvalidator.InvalidateAsync(cacheService, ct);
         await cacheService.RemoveByPattern(CacheKey.Shop.SearchPattern(), ct);
     }

@@ -56,6 +56,9 @@ public class ModerationReviewEditedHandlerTests
 
         published.IsSoftDelete.Should().BeTrue();
         _unitOfWorkMock.Verify(u => u.SaveChangesAsync(_ct), Times.Once);
+        _cacheMock.Verify(
+            c => c.RemoveAsync(CacheKey.Shop.Detail(published.CoffeeShopId)),
+            Times.Once);
     }
 
     [Fact]

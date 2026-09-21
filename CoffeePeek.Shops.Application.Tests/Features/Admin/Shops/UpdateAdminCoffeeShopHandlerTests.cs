@@ -128,6 +128,26 @@ public class UpdateAdminCoffeeShopHandlerTests
         result.StatusCode.Should().Be((int)HttpStatusCode.BadRequest);
         result.Message.Should().Contain("equipment");
     }
+
+    [Fact]
+    public async Task SetVisibility_InvalidatesSearchCache()
+    {
+        var shop = new DomainCoffeeShop(Guid.NewGuid(), "Shop", null, DomainPriceRange.Cheap, Guid.NewGuid());
+        _shops.Setup(r => r.GetByIdAsync(shop.Id, _ct)).ReturnsAsync(shop);
+
+        var result = await SetAdminCoffeeShopVisibilityHandler.Handle(
+            new SetAdminCoffeeShopVisibilityCommand(shop.Id, Hidden: true),
+            _shops.Object,
+            _uow.Object,
+            _cache.Object,
+            _media,
+            _ct);
+
+        result.IsSuccess.Should().BeTrue();
+        _cache.Verify(
+            c => c.RemoveByPattern(CacheKey.Shop.SearchPattern(), _ct),
+            Times.Once);
+    }
 }
 
 public class PublishedShopPhotosHandlerTests

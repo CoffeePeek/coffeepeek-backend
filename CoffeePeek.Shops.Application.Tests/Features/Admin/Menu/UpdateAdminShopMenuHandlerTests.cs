@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using CoffeePeek.Contract.Dtos;
 using CoffeePeek.Contract.Dtos.Menu;
 using CoffeePeek.Shared.Domain.Interfaces.Infrastructure;
 using CoffeePeek.Shared.Kernel;
@@ -21,6 +22,78 @@ namespace CoffeePeek.Shops.Application.Tests.Features.Admin.Menu;
 
 public class UpdateAdminShopMenuHandlerTests
 {
+    [Fact]
+    public async Task AttachPhotos_InvalidatesShopDetailCache()
+    {
+        var userId = Guid.NewGuid();
+        var shop = new DomainCoffeeShop(userId, "Coffee", null, PriceRange.Moderate, Guid.NewGuid());
+        var menu = ShopMenu.Create(shop.Id);
+        var shops = new Mock<ICoffeeShopRepository>();
+        shops.Setup(r => r.GetByIdAsync(shop.Id, It.IsAny<CancellationToken>())).ReturnsAsync(shop);
+        var applyMenu = new Mock<IApplyShopMenuService>();
+        applyMenu.Setup(s => s.GetOrCreateAsync(shop.Id, It.IsAny<CancellationToken>())).ReturnsAsync(menu);
+        var queryMenu = new Mock<IQueryShopMenuRepository>();
+        queryMenu.Setup(r => r.GetByShopIdAsync(shop.Id, It.IsAny<CancellationToken>())).ReturnsAsync(menu);
+        var drinks = new Mock<IQueryCoffeeDrinkRepository>();
+        drinks.Setup(r => r.GetActiveAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<CoffeeDrinkDefinition>());
+        var unitOfWork = new Mock<IUnitOfWork>();
+        var cache = new Mock<ICacheService>();
+        var media = Options.Create(new MediaPublicUrlOptions { PublicEndpoint = "https://media.example.com" });
+
+        var result = await AttachAdminShopMenuPhotosHandler.Handle(
+            new AttachAdminShopMenuPhotosCommand(
+                shop.Id,
+                [new UploadedPhotoDto("menu.jpg", "image/jpeg", "menu/key", 100)],
+                userId),
+            shops.Object,
+            applyMenu.Object,
+            queryMenu.Object,
+            drinks.Object,
+            unitOfWork.Object,
+            cache.Object,
+            media,
+            CancellationToken.None);
+
+        result.Item1.IsSuccess.Should().BeTrue();
+        cache.Verify(c => c.RemoveAsync(CacheKey.Shop.Detail(shop.Id)), Times.Once);
+    }
+
+    [Fact]
+    public async Task ParseMenu_InvalidatesShopDetailCache()
+    {
+        var userId = Guid.NewGuid();
+        var shop = new DomainCoffeeShop(userId, "Coffee", null, PriceRange.Moderate, Guid.NewGuid());
+        var menu = ShopMenu.Create(shop.Id);
+        menu.AddPhotos([ShopMenuPhoto.Create("menu.jpg", "image/jpeg", "menu/key", 100)]);
+        var shops = new Mock<ICoffeeShopRepository>();
+        shops.Setup(r => r.GetByIdAsync(shop.Id, It.IsAny<CancellationToken>())).ReturnsAsync(shop);
+        var menuRepository = new Mock<IShopMenuRepository>();
+        menuRepository.Setup(r => r.GetTrackedByShopIdAsync(shop.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(menu);
+        var queryMenu = new Mock<IQueryShopMenuRepository>();
+        queryMenu.Setup(r => r.GetByShopIdAsync(shop.Id, It.IsAny<CancellationToken>())).ReturnsAsync(menu);
+        var drinks = new Mock<IQueryCoffeeDrinkRepository>();
+        drinks.Setup(r => r.GetActiveAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<CoffeeDrinkDefinition>());
+        var cache = new Mock<ICacheService>();
+        var media = Options.Create(new MediaPublicUrlOptions { PublicEndpoint = "https://media.example.com" });
+
+        var result = await ParseAdminShopMenuHandler.Handle(
+            new ParseAdminShopMenuCommand(shop.Id, userId),
+            shops.Object,
+            menuRepository.Object,
+            queryMenu.Object,
+            drinks.Object,
+            new Mock<IUnitOfWork>().Object,
+            cache.Object,
+            media,
+            CancellationToken.None);
+
+        result.Item1.IsSuccess.Should().BeTrue();
+        cache.Verify(c => c.RemoveAsync(CacheKey.Shop.Detail(shop.Id)), Times.Once);
+    }
+
     [Fact]
     public async Task Handle_ReplacedItemWithSameNaturalKey_UpdatesCurrentRowWithoutChangingItsId()
     {

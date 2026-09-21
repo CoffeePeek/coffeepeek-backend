@@ -12,7 +12,7 @@ namespace CoffeePeek.ShopsService.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[ResponseCache(Duration = 3600, Location = ResponseCacheLocation.Any)]
+[ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
 [ProducesErrorResponseType(typeof(ErrorResponse))]
 public class CatalogsController(IMessageBus bus) : ControllerBase
 {

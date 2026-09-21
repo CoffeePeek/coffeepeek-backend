@@ -27,6 +27,7 @@ public class DeleteReviewFromCoffeeShopHandler
         review.SoftDelete();
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
+        await cacheService.RemoveAsync(CacheKey.Shop.Detail(review.CoffeeShopId));
         await PublicStatsCacheInvalidator.InvalidateAsync(cacheService, cancellationToken);
         await cacheService.RemoveByPattern(CacheKey.Shop.SearchPattern(), cancellationToken);
         return Response.Success();
