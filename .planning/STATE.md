@@ -1,4 +1,18 @@
-﻿# State
+---
+gsd_state_version: 1.0
+milestone: v1.0
+milestone_name: milestone
+status: unknown
+last_updated: "2026-09-21T10:27:03.015Z"
+progress:
+  total_phases: 1
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
+---
+
+# State
 
 ## Quick Tasks Completed
 
@@ -16,6 +30,7 @@
 | 260914 | coffee-shop-data-completeness | complete | 2026-09-14 |
 | 260914-zones | coffee-zones-and-map-clustering | complete | 2026-09-14 |
 | 260917-f9m | link-published-shops-reviews-to-source-m | complete | 2026-09-17 |
+| 260921 | account-deletion-workflow-slice | complete | 2026-09-21 |
 
 ## Milestone Progress
 
@@ -35,6 +50,10 @@
 Specialty coffee shop bootstrap for Minsk: OSM + lists → admin review queue → catalog. See note `2026-08-15-specialty-coffee-shops-minsk-import`, seed `SEED-001`.
 
 Spike 001 VALIDATED: Overpass Minsk = 1576 candidates (priority ~380, vending 96). OSM is not a specialty catalog. Draft aggregate: `ShopImportCandidate`, not `ModerationShop`. Import labels **ShopKind** (Specialty / GoodCoffee / Cafe / ToGo); reject stays out of the feed. Review card must show Instagram + Yandex photos/images + website preview — coordinates alone are not enough. OSM objects not edited in 5+ years are dropped from the queue.
+
+### Account deletion (2026-09-21)
+
+First slice complete: pending request persistence, create/resend/current/cancel APIs, HMAC-protected confirmation tokens, and immediate confirmation email. Users and sessions remain active; confirmation and cross-service cleanup are deferred.
 
 ### Pending Todos
 
