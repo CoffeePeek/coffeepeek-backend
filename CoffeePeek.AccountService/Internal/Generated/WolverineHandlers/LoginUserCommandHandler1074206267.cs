@@ -30,11 +30,11 @@ namespace Internal.Generated.WolverineHandlers
 
         public override async System.Threading.Tasks.Task HandleAsync(Wolverine.Runtime.MessageContext context, System.Threading.CancellationToken cancellation)
         {
-            var passwordHasherService = new CoffeePeek.Account.Infrastructure.Identity.PasswordHasherService();
             await using var serviceScope = _serviceScopeFactory.CreateAsyncScope();
             Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<Wolverine.Runtime.ScopedMessageContextHolder>(serviceScope.ServiceProvider).Context = context;
             // This service has been marked as requiring service location independent of Wolverine's ability to use constructor injection of everything else
             var accountDbContext = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<CoffeePeek.Account.Persistence.Configuration.AccountDbContext>(serviceScope.ServiceProvider);
+            var passwordHasherService = new CoffeePeek.Account.Infrastructure.Identity.PasswordHasherService();
             var userRepository = new CoffeePeek.Account.Persistence.Repositories.UserRepository(accountDbContext);
             var jwtTokenService = new CoffeePeek.Account.Infrastructure.Identity.JWTTokenService(_optionsOfJwtOptions1);
             var authService = new CoffeePeek.Account.Application.Features.Auth.Login.AuthService(jwtTokenService, userRepository, passwordHasherService, _optionsOfJwtOptions2);

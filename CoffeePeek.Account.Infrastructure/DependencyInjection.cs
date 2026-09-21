@@ -34,6 +34,7 @@ public static class DependencyInjection
         services.AddScoped<UserPhotoUploadedHandler>();
         services.AddScoped<UserRegisteredEventHandler>();
         services.AddScoped<PasswordResetRequestedEventHandler>();
+        services.AddScoped<AccountDeletionRequestedEventHandler>();
 
         // 3 Email Service
         services.AddHttpClient<ResendClient>();

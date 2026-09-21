@@ -1,6 +1,7 @@
 using CoffeePeek.Account.Domain.Entities.AccountDeletionRequestAggregate;
 using CoffeePeek.Shared.Kernel.Exceptions;
 using FluentAssertions;
+using Xunit;
 
 namespace CoffeePeek.Account.Domain.Tests;
 

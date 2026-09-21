@@ -252,6 +252,45 @@ public class EmailTemplateService : IEmailTemplateService
                 """;
     }
 
+    public string GetAccountDeletionConfirmationHtml(string username, string confirmationUrl)
+    {
+        var safeUsername = WebUtility.HtmlEncode(username);
+        var safeUrl = WebUtility.HtmlEncode(confirmationUrl);
+
+        return $"""
+                <!doctype html>
+                <html lang="ru">
+                <head>
+                    <meta charset="utf-8" />
+                    <meta name="viewport" content="width=device-width, initial-scale=1" />
+                    <title>Подтвердите удаление аккаунта — CoffeePeek</title>
+                </head>
+                <body style="margin:0;padding:32px 16px;background:{BrandBg};color:{TextPrimary};font-family:'Segoe UI',Arial,sans-serif;">
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                        <tr>
+                            <td align="center">
+                                <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;background:{BrandSurface};border:1px solid {BrandBorder};border-radius:20px;">
+                                    <tr>
+                                        <td style="padding:36px;">
+                                            <h1 style="margin:0 0 18px;font-size:26px;color:{TextPrimary};">Удаление аккаунта</h1>
+                                            <p style="color:{TextMuted};line-height:1.6;">Привет, {safeUsername}. Мы получили запрос на удаление вашего аккаунта CoffeePeek.</p>
+                                            <p style="color:{TextMuted};line-height:1.6;">Аккаунт пока остаётся активным. Чтобы продолжить, подтвердите запрос в течение 24 часов.</p>
+                                            <p style="margin:28px 0;">
+                                                <a href="{safeUrl}" style="display:inline-block;padding:14px 22px;border-radius:12px;background:{BrandGold};color:{BrandBg};font-weight:700;text-decoration:none;">Подтвердить удаление</a>
+                                            </p>
+                                            <p style="color:{TextDim};font-size:12px;line-height:1.5;">Если вы не создавали этот запрос, не подтверждайте его. Запрос можно отменить по ссылке на странице подтверждения.</p>
+                                            <p style="color:{TextDim};font-size:11px;word-break:break-all;"><a href="{safeUrl}" style="color:{BrandGold};">{safeUrl}</a></p>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </td>
+                        </tr>
+                    </table>
+                </body>
+                </html>
+                """;
+    }
+
     public string GetWelcomeBackHtml(string username)
     {
         var safeUsername = WebUtility.HtmlEncode(username);
