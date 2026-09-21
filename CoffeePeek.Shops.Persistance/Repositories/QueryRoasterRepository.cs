@@ -10,7 +10,10 @@ public class QueryRoasterRepository(ShopsDbContext dbContext) : IQueryRoasterRep
     
     public Task<Roaster[]> GetAll()
     {
-        return _repository.AsNoTracking().ToArrayAsync();
+        return _repository
+            .AsNoTracking()
+            .Include(r => r.Photos)
+            .ToArrayAsync();
     }
 
     public async Task<IEnumerable<Roaster>> GetByIds(List<Guid> ids, CancellationToken ct)
