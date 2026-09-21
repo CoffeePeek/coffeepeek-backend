@@ -144,6 +144,46 @@ public static class ParseAdminShopMenuHandler
     }
 }
 
+public record RemoveAdminShopMenuPhotosCommand(
+    Guid ShopId,
+    IReadOnlyList<Guid> PhotoIds);
+
+public static class RemoveAdminShopMenuPhotosHandler
+{
+    public static async Task<Response<AdminShopMenuDto>> Handle(
+        RemoveAdminShopMenuPhotosCommand command,
+        ICoffeeShopRepository shops,
+        IShopMenuRepository menuRepository,
+        IQueryShopMenuRepository queryMenu,
+        IQueryCoffeeDrinkRepository drinks,
+        IUnitOfWork unitOfWork,
+        ICacheService cacheService,
+        IOptions<MediaPublicUrlOptions> mediaOptions,
+        CancellationToken ct)
+    {
+        var shop = await shops.GetByIdAsync(command.ShopId, ct);
+        if (shop is null)
+            return Response<AdminShopMenuDto>.Error(HttpStatusCode.NotFound, "Shop not found.");
+
+        var menu = await menuRepository.GetTrackedByShopIdAsync(command.ShopId, ct);
+        if (menu is null)
+            return Response<AdminShopMenuDto>.Error(HttpStatusCode.NotFound, "Menu not found.");
+
+        var removed = menu.RemovePhotos(command.PhotoIds ?? []);
+        if (removed.IsFailed)
+            return Response<AdminShopMenuDto>.Error(HttpStatusCode.BadRequest, removed.Errors[0].Message);
+
+        await unitOfWork.SaveChangesAsync(ct);
+        await cacheService.RemoveAsync(CacheKey.Shop.Detail(shop.Id));
+        await cacheService.RemoveByPattern(CacheKey.Shop.SearchPattern(), ct);
+
+        var catalog = await drinks.GetActiveAsync(ct);
+        var dto = ShopMenuDtoFactory.FromShopMenu(
+            await queryMenu.GetByShopIdAsync(command.ShopId, ct), catalog, mediaOptions.Value)!;
+        return Response<AdminShopMenuDto>.Success(new AdminShopMenuDto(dto, []));
+    }
+}
+
 public record UpdateAdminShopMenuCommand(
     Guid ShopId,
     IReadOnlyList<UpdateShopMenuItemRequest> Items,

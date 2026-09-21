@@ -1,5 +1,6 @@
 using CoffeePeek.Shared.Domain.Entities;
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
+using FluentResults;
 
 namespace CoffeePeek.Shops.Domain.Aggregates.MenuAggregate;
 
@@ -86,6 +87,27 @@ public sealed class ShopMenu : Entity<Guid>
                 continue;
             _photos.Add(photo);
         }
+    }
+
+    public Result RemovePhotos(IReadOnlyList<Guid> photoIds)
+    {
+        if (photoIds is null || photoIds.Count == 0)
+            return Result.Ok();
+
+        if (photoIds.Distinct().Count() != photoIds.Count)
+            return Result.Fail("Photo list contains duplicate photo IDs.");
+
+        var byId = _photos.ToDictionary(photo => photo.Id);
+        foreach (var photoId in photoIds)
+        {
+            if (!byId.ContainsKey(photoId))
+                return Result.Fail($"Photo '{photoId}' does not belong to this menu.");
+        }
+
+        foreach (var photoId in photoIds)
+            _photos.Remove(byId[photoId]);
+
+        return Result.Ok();
     }
 
     public void ApplyManualItem(
