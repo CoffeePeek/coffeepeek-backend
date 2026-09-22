@@ -71,6 +71,7 @@ public static class DependencyInjection
         services.AddScoped<ModerationShopApproveHandler>();
         services.AddScoped<ICreateRoasterFromModerationService, CreateRoasterFromModerationService>();
         services.AddScoped<ModerationRoasterApproveHandler>();
+        services.AddScoped<ShopChangeRequestApprovedHandler>();
 
         return services;
     }

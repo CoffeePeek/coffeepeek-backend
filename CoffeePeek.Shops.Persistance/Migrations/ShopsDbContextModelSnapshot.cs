@@ -258,6 +258,34 @@ namespace CoffeePeek.Shops.Persistance.Migrations
                     b.ToTable("CheckIns");
                 });
 
+            modelBuilder.Entity("CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate.AppliedShopChangeRequest", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("AppliedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("ApprovedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("ShopId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ShopId");
+
+                    b.ToTable("AppliedShopChangeRequests");
+                });
+
             modelBuilder.Entity("CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate.City", b =>
                 {
                     b.Property<Guid>("Id")

@@ -335,6 +335,57 @@ namespace CoffeeShop.Moderation.Persistence.Migrations
                     b.ToTable("ModerationRoasterShops");
                 });
 
+            modelBuilder.Entity("CoffeePeek.Moderation.Domain.Aggregates.ShopChangeRequestAggregate.ShopChangeRequest", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("PayloadJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<string>("RejectionReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTime?>("ReviewedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("ReviewedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Section")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("ShopId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("SubmittedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Section");
+
+                    b.HasIndex("ShopId");
+
+                    b.HasIndex("SubmittedByUserId");
+
+                    b.HasIndex("Status", "CreatedAtUtc");
+
+                    b.ToTable("ShopChangeRequests");
+                });
+
             modelBuilder.Entity("CoffeePeek.Moderation.Domain.Aggregates.ShopImportCandidateAggregate.ShopImportCandidate", b =>
                 {
                     b.Property<Guid>("Id")

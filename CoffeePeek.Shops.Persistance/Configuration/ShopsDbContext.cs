@@ -29,6 +29,7 @@ public class ShopsDbContext(DbContextOptions<ShopsDbContext> options) : DbContex
     public virtual DbSet<CoffeeShop> Shops { get; set; }
     
     public virtual DbSet<ShopPhoto> ShopPhotos { get; set; }
+    public virtual DbSet<AppliedShopChangeRequest> AppliedShopChangeRequests { get; set; }
 
     public virtual DbSet<RoasterPhoto> RoasterPhotos { get; set; }
     
@@ -56,6 +57,7 @@ public class ShopsDbContext(DbContextOptions<ShopsDbContext> options) : DbContex
         modelBuilder.ApplyConfiguration(new CoffeeZoneConfiguration());
         modelBuilder.ApplyConfiguration(new CoffeeZoneMembershipOverrideConfiguration());
         modelBuilder.ApplyConfiguration(new ShopPhotoConfiguration());
+        modelBuilder.ApplyConfiguration(new AppliedShopChangeRequestConfiguration());
         modelBuilder.ApplyConfiguration(new RoasterConfiguration());
         modelBuilder.ApplyConfiguration(new RoasterPhotoConfiguration());
         modelBuilder.ApplyConfiguration(new ShopTagConfiguration());

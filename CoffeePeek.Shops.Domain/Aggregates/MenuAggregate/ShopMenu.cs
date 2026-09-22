@@ -44,6 +44,11 @@ public sealed class ShopMenu : Entity<Guid>
         CapturedAtUtc ??= capturedAtUtc;
     }
 
+    public void MarkManuallyCaptured(DateTime capturedAtUtc)
+    {
+        CapturedAtUtc = capturedAtUtc;
+    }
+
     public void MarkParseRunning()
     {
         ParseStatus = MenuParseStatus.Running;

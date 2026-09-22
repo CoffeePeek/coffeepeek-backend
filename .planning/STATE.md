@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-last_updated: "2026-09-21T10:27:03.015Z"
+last_updated: "2026-09-22T07:23:02Z"
 progress:
   total_phases: 1
   completed_phases: 0
@@ -31,6 +31,7 @@ progress:
 | 260914-zones | coffee-zones-and-map-clustering | complete | 2026-09-14 |
 | 260917-f9m | link-published-shops-reviews-to-source-m | complete | 2026-09-17 |
 | 260921 | account-deletion-workflow-slice | complete | 2026-09-21 |
+| 260922 | shop-change-requests | complete | 2026-09-22 |
 
 ## Milestone Progress
 
