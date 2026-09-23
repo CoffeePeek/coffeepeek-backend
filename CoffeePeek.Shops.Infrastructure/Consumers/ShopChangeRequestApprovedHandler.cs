@@ -1,4 +1,5 @@
 using CoffeePeek.Contract.Events.Moderation;
+using CoffeePeek.Contract.Events.Shops;
 using CoffeePeek.Shared.Domain.Interfaces.Infrastructure;
 using CoffeePeek.Shared.Kernel;
 using CoffeePeek.Shared.Kernel.Exceptions;
@@ -18,55 +19,67 @@ public class ShopChangeRequestApprovedHandler(
     ICacheService cacheService,
     ILogger<ShopChangeRequestApprovedHandler> logger)
 {
-    public async Task Handle(ShopChangeRequestApprovedV1 message, CancellationToken ct)
+    public async Task<ShopChangeRequestApplyFailedV1?> Handle(ShopChangeRequestApprovedV1 message, CancellationToken ct)
     {
         if (await dbContext.AppliedShopChangeRequests.AnyAsync(x => x.Id == message.RequestId, ct))
         {
             logger.LogInformation("Shop change request {RequestId} was already applied", message.RequestId);
-            return;
+            return null;
         }
 
-        var shop = await dbContext.Shops
-            .AsSplitQuery()
-            .Include(x => x.ShopPhotos)
-            .Include(x => x.ShopTags)
-            .Include(x => x.Equipments)
-            .Include(x => x.Roasters)
-            .Include(x => x.BrewMethods)
-            .FirstOrDefaultAsync(x => x.Id == message.ShopId, ct)
-            ?? throw new NotFoundException($"Published shop '{message.ShopId}' was not found.");
-
-        switch (message.Section)
+        // State may have drifted since submission (shop deleted, tag deactivated, photo removed). Those failures are
+        // permanent: dead-lettering left the request Approved in Moderation forever, so report them back instead.
+        try
         {
-            case CoffeePeek.Contract.Enums.ShopChangeSection.Description:
-                shop.UpdateDetails(shop.Name, message.Payload.Description, shop.PriceRange);
-                break;
-            case CoffeePeek.Contract.Enums.ShopChangeSection.Contacts:
-                ApplyContacts(shop, message.Payload.Contacts);
-                break;
-            case CoffeePeek.Contract.Enums.ShopChangeSection.Tags:
-                await ApplyTags(shop, message.Payload.TagIds, message.ApprovedByUserId, ct);
-                break;
-            case CoffeePeek.Contract.Enums.ShopChangeSection.Roasters:
-                shop.SetRoasters(await LoadCatalog(
-                    dbContext.Roasters, message.Payload.RoasterIds, "roasters", ct));
-                break;
-            case CoffeePeek.Contract.Enums.ShopChangeSection.Equipment:
-                shop.SetEquipment(await LoadCatalog(
-                    dbContext.Equipments, message.Payload.EquipmentIds, "equipment", ct));
-                break;
-            case CoffeePeek.Contract.Enums.ShopChangeSection.BrewMethods:
-                shop.SetBrewMethods(await LoadCatalog(
-                    dbContext.BrewMethods, message.Payload.BrewMethodIds, "brew methods", ct));
-                break;
-            case CoffeePeek.Contract.Enums.ShopChangeSection.Photos:
-                ApplyGallery(shop, message.Payload.Photos, message.SubmittedByUserId);
-                break;
-            case CoffeePeek.Contract.Enums.ShopChangeSection.Menu:
-                await ApplyMenu(message, ct);
-                break;
-            default:
-                throw new ArgumentOutOfRangeException(nameof(message.Section));
+            var shop = await dbContext.Shops
+                .AsSplitQuery()
+                .Include(x => x.ShopPhotos)
+                .Include(x => x.ShopTags)
+                .Include(x => x.Equipments)
+                .Include(x => x.Roasters)
+                .Include(x => x.BrewMethods)
+                .FirstOrDefaultAsync(x => x.Id == message.ShopId, ct)
+                ?? throw new NotFoundException($"Published shop '{message.ShopId}' was not found.");
+
+            switch (message.Section)
+            {
+                case CoffeePeek.Contract.Enums.ShopChangeSection.Description:
+                    shop.UpdateDetails(shop.Name, message.Payload.Description, shop.PriceRange);
+                    break;
+                case CoffeePeek.Contract.Enums.ShopChangeSection.Contacts:
+                    ApplyContacts(shop, message.Payload.Contacts);
+                    break;
+                case CoffeePeek.Contract.Enums.ShopChangeSection.Tags:
+                    await ApplyTags(shop, message.Payload.TagIds, message.ApprovedByUserId, ct);
+                    break;
+                case CoffeePeek.Contract.Enums.ShopChangeSection.Roasters:
+                    shop.SetRoasters(await LoadCatalog(
+                        dbContext.Roasters, message.Payload.RoasterIds, "roasters", ct));
+                    break;
+                case CoffeePeek.Contract.Enums.ShopChangeSection.Equipment:
+                    shop.SetEquipment(await LoadCatalog(
+                        dbContext.Equipments, message.Payload.EquipmentIds, "equipment", ct));
+                    break;
+                case CoffeePeek.Contract.Enums.ShopChangeSection.BrewMethods:
+                    shop.SetBrewMethods(await LoadCatalog(
+                        dbContext.BrewMethods, message.Payload.BrewMethodIds, "brew methods", ct));
+                    break;
+                case CoffeePeek.Contract.Enums.ShopChangeSection.Photos:
+                    ApplyGallery(shop, message.Payload.Photos, message.SubmittedByUserId);
+                    break;
+                case CoffeePeek.Contract.Enums.ShopChangeSection.Menu:
+                    await ApplyMenu(message, ct);
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(message.Section));
+            }
+        }
+        catch (Exception ex) when (ex is DomainException or NotFoundException or ArgumentException)
+        {
+            dbContext.ChangeTracker.Clear();
+            logger.LogWarning(ex,
+                "Shop change request {RequestId} for shop {ShopId} could not be applied", message.RequestId, message.ShopId);
+            return new ShopChangeRequestApplyFailedV1(message.RequestId, message.ShopId, ex.Message, DateTime.UtcNow);
         }
 
         dbContext.AppliedShopChangeRequests.Add(AppliedShopChangeRequest.Create(
@@ -75,10 +88,10 @@ public class ShopChangeRequestApprovedHandler(
 
         await cacheService.RemoveAsync(CacheKey.Shop.Detail(message.ShopId));
         await cacheService.RemoveByPattern(CacheKey.Shop.SearchPattern(), ct);
-        await cacheService.RemoveByPattern(CacheKey.Shop.ListPattern(), ct);
         logger.LogInformation(
             "Applied {Section} from shop change request {RequestId} to shop {ShopId}",
             message.Section, message.RequestId, message.ShopId);
+        return null;
     }
 
     private static void ApplyContacts(

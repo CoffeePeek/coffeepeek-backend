@@ -11,7 +11,7 @@ public class PublicStatsQueryRepository(ShopsDbContext dbContext) : IPublicStats
     {
         var totalCoffeeShops = await dbContext.Shops
             .AsNoTracking()
-            .CountAsync(s => s.Status == CoffeeShopStatus.Active, cancellationToken);
+            .CountAsync(s => s.Status == CoffeeShopStatus.Active && !s.IsHidden, cancellationToken);
 
         var publishedReviews = dbContext.Set<Review>()
             .AsNoTracking()

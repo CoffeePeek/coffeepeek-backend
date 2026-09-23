@@ -92,7 +92,7 @@ public static class AdminPublishedShopMapper
         shop.OwnerUserId,
         shop.ModerationId,
         shop.CreatedAtUtc,
-        shop.Status != DomainCoffeeShopStatus.Active,
+        shop.IsHidden,
         shop.ImportedFromFileAt,
         MapPhotos(shop.ShopPhotos, mediaOptions),
         shop.Description,
@@ -234,7 +234,6 @@ public static class UpdateAdminCoffeeShopHandler
         await unitOfWork.SaveChangesAsync(ct);
         await cacheService.RemoveAsync(CacheKey.Shop.Detail(shop.Id));
         await cacheService.RemoveByPattern(CacheKey.Shop.SearchPattern(), ct);
-        await cacheService.RemoveByPattern(CacheKey.Shop.ListPattern(), ct);
 
         return Response<AdminPublishedShopDto>.Success(AdminPublishedShopMapper.Map(shop, mediaOptions.Value));
     }

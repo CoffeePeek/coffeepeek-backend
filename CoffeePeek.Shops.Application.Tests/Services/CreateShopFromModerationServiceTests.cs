@@ -77,8 +77,10 @@ public class CreateShopFromModerationServiceTests
         _shopRepoMock.Verify(r => r.Add(It.IsAny<CoffeeShop>()), Times.Once);
         _unitOfWorkMock.Verify(u => u.SaveChangesAsync(_ct), Times.Once);
         _cacheServiceMock.Verify(c => c.RemoveByPattern("shop:search:*", _ct), Times.Once);
-        _cacheServiceMock.Verify(c => c.RemoveByPattern("shop:list:city:*", _ct), Times.Once);
-        _cacheServiceMock.Verify(c => c.RemoveByPattern("shop:detail:*", _ct), Times.Once);
+        // A new shop has no cached detail of its own; wiping every shop's detail cache (and the never-written
+        // shop:list:city:* keys) only cost full-keyspace SCANs.
+        _cacheServiceMock.Verify(c => c.RemoveByPattern("shop:list:city:*", _ct), Times.Never);
+        _cacheServiceMock.Verify(c => c.RemoveByPattern("shop:detail:*", _ct), Times.Never);
         _cacheServiceMock.Verify(
             c => c.RemoveAsync(CacheKey.Shop.PublicPlatformStats()),
             Times.Once);
@@ -133,5 +135,20 @@ public class CreateShopFromModerationServiceTests
         added!.Type.Should().Be(CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate.CoffeeFocusType.Specialty);
         added.ShopTags.Should().ContainSingle(t =>
             t.TagId == CoffeePeek.Shops.Domain.Aggregates.ShopTagAggregate.ShopTagIds.Specialty);
+    }
+
+    [Fact]
+    public async Task CreateShopFromApprovedEventAsync_LocationWithoutCoordinates_CreatesDraftLocation()
+    {
+        CoffeeShop? added = null;
+        _shopRepoMock.Setup(r => r.GetIdByModerationId(It.IsAny<Guid>(), _ct)).ReturnsAsync((Guid?)null);
+        _shopRepoMock.Setup(r => r.Add(It.IsAny<CoffeeShop>())).Callback<CoffeeShop>(shop => added = shop);
+        var dto = CreateMinimalShopDto();
+        dto.Location = new CoffeePeek.Contract.Dtos.Shop.LocationDto { Address = "Nemiga 5" };
+
+        await CreateSut().CreateShopFromApprovedEventAsync(dto, Guid.NewGuid(), Guid.NewGuid(), _ct);
+
+        added!.Location!.Latitude.Should().BeNull();
+        added.Location.Address.Should().Be("Nemiga 5");
     }
 }

@@ -353,6 +353,9 @@ namespace CoffeePeek.Shops.Persistance.Migrations
                     b.Property<DateTime?>("ImportedFromFileAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<bool>("IsHidden")
+                        .HasColumnType("boolean");
+
                     b.Property<Guid?>("ModerationId")
                         .HasColumnType("uuid");
 
@@ -513,6 +516,10 @@ namespace CoffeePeek.Shops.Persistance.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ModerationId")
+                        .IsUnique()
+                        .HasFilter("\"ModerationId\" IS NOT NULL");
 
                     b.ToTable("Roasters");
                 });
@@ -834,7 +841,9 @@ namespace CoffeePeek.Shops.Persistance.Migrations
 
                     b.HasIndex("CoffeeShopId");
 
-                    b.HasIndex("ModerationReviewId");
+                    b.HasIndex("ModerationReviewId")
+                        .IsUnique()
+                        .HasFilter("\"ModerationReviewId\" IS NOT NULL");
 
                     b.HasIndex("UserId");
 
@@ -1151,6 +1160,8 @@ namespace CoffeePeek.Shops.Persistance.Migrations
 
                             NpgsqlIndexBuilderExtensions.HasMethod(b1.HasIndex("Address"), "gin");
                             NpgsqlIndexBuilderExtensions.HasOperators(b1.HasIndex("Address"), new[] { "gin_trgm_ops" });
+
+                            b1.HasIndex("CityId");
 
                             b1.HasIndex("Latitude", "Longitude");
 

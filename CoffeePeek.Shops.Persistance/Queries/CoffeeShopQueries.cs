@@ -1,4 +1,4 @@
-﻿using CoffeePeek.Contract.Dtos.CoffeeShop;
+using CoffeePeek.Contract.Dtos.CoffeeShop;
 using CoffeePeek.Shared.Kernel.Options;
 using CoffeePeek.Shops.Application.Features.CoffeeShop.GetCoffeeShop;
 using CoffeePeek.Shops.Application.Features.CoffeeShop.GetShopsInBounds;
@@ -28,7 +28,7 @@ public class CoffeeShopQueries(
     public async Task<(ShortShopDto[] Items, int TotalCount)> Search(SearchCoffeeShopsQuery request, CancellationToken ct)
     {
         var query = context.Shops.AsNoTracking()
-            .Where(s => s.Status == CoffeeShopStatus.Active);
+            .Where(s => s.Status == CoffeeShopStatus.Active && !s.IsHidden);
         
         if (!string.IsNullOrWhiteSpace(request.Query))
         {
@@ -169,6 +169,7 @@ public class CoffeeShopQueries(
             .ToArrayAsync(ct);
 
         await PatchOpenAndNewFlagsAsync(items, ct);
+        await PatchRatingsAsync(items, ct);
 
         return (items, totalCount);
     }
@@ -178,7 +179,7 @@ public class CoffeeShopQueries(
         var dto = await context.Shops
             .AsNoTracking()
             .AsSplitQuery()
-            .Where(x => x.Id == id)
+            .Where(x => x.Id == id && !x.IsHidden)
             .ProjectToType<CoffeeShopDetailsDto>(mapper.Config)
             .FirstOrDefaultAsync(ct);
 
@@ -236,8 +237,13 @@ public class CoffeeShopQueries(
             return new GetShopsInBoundsResponse(legacyPoints.Select(ToMapShop));
         }
 
-        var points = await baseQuery.ToArrayAsync(ct);
         var zoom = query.Zoom.Value;
+        // Anonymous endpoint: never materialize the whole table. Marker zooms only need one page (+1 to detect
+        // truncation); cluster zooms get a hard ceiling.
+        // ponytail: in-memory clustering capped at MaxClusterSourcePoints; move to SQL grid GROUP BY if the catalog outgrows it.
+        var points = await baseQuery
+            .Take(zoom > options.ZoneMaxZoom ? options.MaxResponseItems + 1 : MaxClusterSourcePoints)
+            .ToArrayAsync(ct);
         if (zoom <= options.ClusterMaxZoom)
         {
             var clusters = MapClusterBuilder.Build(
@@ -264,7 +270,7 @@ public class CoffeeShopQueries(
         var cityPoints = cityIds.Length == 0
             ? []
             : await context.Shops.AsNoTracking()
-                .Where(s => s.Status == CoffeeShopStatus.Active
+                .Where(s => s.Status == CoffeeShopStatus.Active && !s.IsHidden
                             && cityIds.Contains(s.Location.CityId)
                             && s.Location.Latitude.HasValue
                             && s.Location.Longitude.HasValue)
@@ -341,11 +347,13 @@ public class CoffeeShopQueries(
         };
     }
 
+    private const int MaxClusterSourcePoints = 20_000;
+
     internal static IQueryable<MapPoint> BuildMapPointsQuery(
         ShopsDbContext context,
         GetShopsInBoundsQuery query) =>
         context.Shops.AsNoTracking()
-            .Where(s => s.Status == CoffeeShopStatus.Active &&
+            .Where(s => s.Status == CoffeeShopStatus.Active && !s.IsHidden &&
                         s.Location.Latitude.HasValue &&
                         s.Location.Longitude.HasValue &&
                         s.Location.Latitude >= query.MinLat &&
@@ -399,6 +407,34 @@ public class CoffeeShopQueries(
         decimal Longitude,
         string Title,
         CoffeeShopType? Type);
+
+    /// <summary>Rating and ReviewCount are ignored by the projection; without this every search result showed 0.</summary>
+    private async Task PatchRatingsAsync(ShortShopDto[] items, CancellationToken ct)
+    {
+        if (items.Length == 0)
+            return;
+
+        var ids = items.Select(i => i.Id).ToArray();
+        var stats = await context.Reviews
+            .AsNoTracking()
+            .Where(r => ids.Contains(r.CoffeeShopId) && !r.IsSoftDelete)
+            .GroupBy(r => r.CoffeeShopId)
+            .Select(g => new
+            {
+                ShopId = g.Key,
+                Average = g.Average(r => (r.Rating.Place + r.Rating.Coffee + r.Rating.Service) / 3m),
+                Count = g.Count()
+            })
+            .ToDictionaryAsync(x => x.ShopId, ct);
+
+        foreach (var item in items)
+        {
+            if (!stats.TryGetValue(item.Id, out var s))
+                continue;
+            item.Rating = Math.Round(s.Average, 2);
+            item.ReviewCount = s.Count;
+        }
+    }
 
     private async Task PatchOpenAndNewFlagsAsync(ShortShopDto[] items, CancellationToken ct)
     {

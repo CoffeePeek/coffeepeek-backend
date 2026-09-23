@@ -11,7 +11,7 @@ public class OpenAiOptions
     [Url]
     public string BaseUrl { get; set; } = "https://api.openai.com/v1";
 
-    [Range(5, 180)]
+    [Range(30, 180)] // matches the clamp in ApplyOpenAiResilience; lower values were silently raised to 30
     public int TimeoutSeconds { get; set; } = 90;
 
     /// <summary>

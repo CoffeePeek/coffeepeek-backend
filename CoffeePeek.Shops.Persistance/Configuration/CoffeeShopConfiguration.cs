@@ -73,6 +73,8 @@ public class CoffeeShopConfiguration : IEntityTypeConfiguration<CoffeeShop>
         builder.OwnsOne(e => e.Location, location =>
         {
             location.HasIndex(l => new { l.Latitude, l.Longitude });
+            // City filters in search, zones and admin lists seq-scanned Shops.
+            location.HasIndex(l => l.CityId);
 
             location.HasIndex(l => l.Address)
                 .HasMethod("gin")

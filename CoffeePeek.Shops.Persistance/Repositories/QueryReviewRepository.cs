@@ -1,4 +1,4 @@
-﻿using CoffeePeek.Shops.Domain.Aggregates.ReviewAggregate;
+using CoffeePeek.Shops.Domain.Aggregates.ReviewAggregate;
 using CoffeePeek.Shops.Persistance.Configuration;
 using Microsoft.EntityFrameworkCore;
 
@@ -10,7 +10,8 @@ public class QueryReviewRepository(ShopsDbContext dbContext) : IQueryReviewRepos
     
     public async Task<Review?> GetById(Guid reviewId, CancellationToken ct)
     {
-        return await _repository.AsNoTracking().Include(x => x.Photos).FirstOrDefaultAsync(x => x.Id == reviewId, ct);
+        return await _repository.AsNoTracking().Include(x => x.Photos)
+            .FirstOrDefaultAsync(x => x.Id == reviewId && !x.IsSoftDelete, ct);
     }
 
     public async Task<HashSet<Guid>> GetHelpfulReviewIds(
@@ -54,16 +55,19 @@ public class QueryReviewRepository(ShopsDbContext dbContext) : IQueryReviewRepos
 
     public async Task<(decimal averageRating, int count)> GetReviewStatsByCoffeeShopId(Guid coffeeShopId, CancellationToken ct)
     {
+        // Aggregate over all visible reviews. Previously this took FirstOrDefault of a per-row projection with
+        // integer division, so the shop page showed one arbitrary, truncated review score and "1 review".
         var stats = await _repository
             .AsNoTracking()
             .Where(r => r.CoffeeShopId == coffeeShopId && !r.IsSoftDelete)
+            .GroupBy(_ => 1)
             .Select(g => new
             {
-                AverageRating = (g.Rating.Place + g.Rating.Coffee + g.Rating.Service) / 3,
-                Count = 1
+                AverageRating = g.Average(r => (r.Rating.Place + r.Rating.Coffee + r.Rating.Service) / 3m),
+                Count = g.Count()
             })
             .FirstOrDefaultAsync(ct);
 
-        return stats != null ? (stats.AverageRating, stats.Count) : (0m, 0);
+        return stats != null ? (Math.Round(stats.AverageRating, 2), stats.Count) : (0m, 0);
     }
 }

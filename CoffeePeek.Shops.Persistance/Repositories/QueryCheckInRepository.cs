@@ -1,4 +1,4 @@
-﻿using CoffeePeek.Shops.Domain.Aggregates.CheckInAggregate;
+using CoffeePeek.Shops.Domain.Aggregates.CheckInAggregate;
 using CoffeePeek.Shops.Persistance.Configuration;
 using Microsoft.EntityFrameworkCore;
 
@@ -12,6 +12,11 @@ public class QueryCheckInRepository(ShopsDbContext dbContext) : IQueryCheckInRep
     {
         return _repository.AnyAsync(x => x.UserId == userId && x.ShopId == coffeeShopId, ct);
     }
+
+    public Task LockUserForCheckInAsync(Guid userId, CancellationToken ct = default) =>
+        // Transaction-scoped: released on commit/rollback of the Wolverine handler transaction.
+        dbContext.Database.ExecuteSqlInterpolatedAsync(
+            $"SELECT pg_advisory_xact_lock(hashtextextended({"checkin:" + userId}, 0))", ct);
 
     public Task<bool> ExistsSinceAsync(Guid userId, DateTime sinceUtc, CancellationToken ct = default)
     {

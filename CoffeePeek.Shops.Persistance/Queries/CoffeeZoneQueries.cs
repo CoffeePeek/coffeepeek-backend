@@ -99,7 +99,7 @@ public sealed class CoffeeZoneQueries(ShopsDbContext context) : ICoffeeZoneQueri
 
     private async Task<ZoneShopPoint[]> LoadActiveShopsAsync(Guid[] cityIds, CancellationToken ct) =>
         await context.Shops.AsNoTracking()
-            .Where(s => s.Status == CoffeeShopStatus.Active
+            .Where(s => s.Status == CoffeeShopStatus.Active && !s.IsHidden
                         && cityIds.Contains(s.Location.CityId)
                         && s.Location.Latitude.HasValue
                         && s.Location.Longitude.HasValue)

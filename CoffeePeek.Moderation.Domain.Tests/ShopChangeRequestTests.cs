@@ -54,4 +54,19 @@ public class ShopChangeRequestTests
 
     private static ShopChangeRequest CreatePending() => ShopChangeRequest.Create(
         Guid.NewGuid(), Guid.NewGuid(), ShopChangeSection.Description, "{\"description\":null}");
+
+    [Fact]
+    public void MarkApplyFailed_OnlyMovesApprovedRequestToRejected()
+    {
+        // Regression: a change request that Shops could not apply stayed Approved forever.
+        var request = ShopChangeRequest.Create(Guid.NewGuid(), Guid.NewGuid(), ShopChangeSection.Description, "{}");
+        request.MarkApplyFailed("shop deleted", DateTime.UnixEpoch).Should().BeFalse("still pending");
+
+        request.Approve(Guid.NewGuid(), DateTime.UnixEpoch);
+        request.MarkApplyFailed("shop deleted", DateTime.UnixEpoch).Should().BeTrue();
+
+        request.Status.Should().Be(ModerationStatus.Rejected);
+        request.RejectionReason.Should().Contain("shop deleted");
+        request.MarkApplyFailed("again", DateTime.UnixEpoch).Should().BeFalse();
+    }
 }

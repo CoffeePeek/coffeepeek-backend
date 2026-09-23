@@ -368,4 +368,18 @@ public class CoffeeShopTests
 
         shop.ImportedFromFileAt.Should().Be(first);
     }
+
+    [Fact]
+    public void SetHidden_DoesNotTouchBusinessStatus()
+    {
+        // Regression: hide/unhide overloaded TemporarilyClosed, so un-hiding reopened genuinely closed shops.
+        var shop = new CoffeeShop(Guid.NewGuid(), "Test Shop", null, PriceRange.Cheap, Guid.NewGuid());
+        shop.SetStatus(CoffeeShopStatus.PermanentlyClosed);
+
+        shop.SetHidden(true);
+        shop.SetHidden(false);
+
+        shop.IsHidden.Should().BeFalse();
+        shop.Status.Should().Be(CoffeeShopStatus.PermanentlyClosed);
+    }
 }

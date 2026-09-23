@@ -1,4 +1,4 @@
-﻿namespace CoffeePeek.Shops.Domain.Aggregates.ReviewAggregate;
+namespace CoffeePeek.Shops.Domain.Aggregates.ReviewAggregate;
 
 public interface IQueryReviewRepository
 {
