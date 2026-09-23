@@ -1,4 +1,4 @@
-﻿using CoffeePeek.Contract.Dtos.CoffeeShop;
+using CoffeePeek.Contract.Dtos.CoffeeShop;
 using CoffeePeek.Shared.Kernel.Options;
 using CoffeePeek.Shops.Application.Features.CoffeeShop.GetCoffeeShop;
 using CoffeePeek.Shops.Application.Features.CoffeeShop.GetShopsInBounds;
@@ -169,6 +169,7 @@ public class CoffeeShopQueries(
             .ToArrayAsync(ct);
 
         await PatchOpenAndNewFlagsAsync(items, ct);
+        await PatchRatingsAsync(items, ct);
 
         return (items, totalCount);
     }
@@ -399,6 +400,34 @@ public class CoffeeShopQueries(
         decimal Longitude,
         string Title,
         CoffeeShopType? Type);
+
+    /// <summary>Rating and ReviewCount are ignored by the projection; without this every search result showed 0.</summary>
+    private async Task PatchRatingsAsync(ShortShopDto[] items, CancellationToken ct)
+    {
+        if (items.Length == 0)
+            return;
+
+        var ids = items.Select(i => i.Id).ToArray();
+        var stats = await context.Reviews
+            .AsNoTracking()
+            .Where(r => ids.Contains(r.CoffeeShopId) && !r.IsSoftDelete)
+            .GroupBy(r => r.CoffeeShopId)
+            .Select(g => new
+            {
+                ShopId = g.Key,
+                Average = g.Average(r => (r.Rating.Place + r.Rating.Coffee + r.Rating.Service) / 3m),
+                Count = g.Count()
+            })
+            .ToDictionaryAsync(x => x.ShopId, ct);
+
+        foreach (var item in items)
+        {
+            if (!stats.TryGetValue(item.Id, out var s))
+                continue;
+            item.Rating = Math.Round(s.Average, 2);
+            item.ReviewCount = s.Count;
+        }
+    }
 
     private async Task PatchOpenAndNewFlagsAsync(ShortShopDto[] items, CancellationToken ct)
     {

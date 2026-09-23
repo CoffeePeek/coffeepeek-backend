@@ -1,4 +1,4 @@
-﻿using CoffeePeek.Contract.Dtos.Contact;
+using CoffeePeek.Contract.Dtos.Contact;
 using CoffeePeek.Contract.Dtos.Schedule;
 using CoffeePeek.Contract.Dtos.Shop;
 using CoffeePeek.Contract.Enums;
@@ -12,8 +12,8 @@ public class ShortShopDto
     public required string Name { get; init; }
     public ShortPhotoMetadataDto[] Photos { get; init; }
     
-    public decimal Rating { get; init; }
-    public int ReviewCount { get; init; }
+    public decimal Rating { get; set; }
+    public int ReviewCount { get; set; }
 
     public bool IsVisited { get; set; }
     public bool IsNew { get; set; }
