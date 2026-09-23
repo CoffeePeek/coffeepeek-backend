@@ -13,7 +13,8 @@ public sealed record AdminCoffeeZoneDto(
     CoffeeZoneStatus Status,
     int ShopCount,
     DateTime CreatedAtUtc,
-    DateTime? UpdatedAtUtc);
+    DateTime? UpdatedAtUtc,
+    CoffeeZonePoint[] Polygon);
 
 public sealed record CoffeeZoneMemberDto(
     Guid ShopId,
@@ -32,6 +33,6 @@ public sealed record CoffeeZoneMembershipPreviewDto(
 public sealed record CoffeeZoneCandidateDto(
     decimal CenterLatitude,
     decimal CenterLongitude,
-    int SuggestedRadiusMeters,
     int ShopCount,
-    Guid[] ShopIds);
+    Guid[] ShopIds,
+    CoffeeZonePoint[] Polygon);

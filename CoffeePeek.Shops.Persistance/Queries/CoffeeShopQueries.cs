@@ -293,7 +293,8 @@ public class CoffeeShopQueries(
             zone.CenterLatitude,
             zone.CenterLongitude,
             zone.RadiusMeters,
-            cityPoints.Count(point => IsMember(point, zone, overrideByPair))))
+            cityPoints.Count(point => IsMember(point, zone, overrideByPair)),
+            zone.Polygon.Select(p => new MapCoffeeZonePointDto(p.Latitude, p.Longitude)).ToArray()))
             .ToArray();
 
         if (zoom <= options.ZoneMaxZoom)

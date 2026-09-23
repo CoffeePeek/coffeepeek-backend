@@ -12,14 +12,11 @@ public record GetAdminCoffeeZoneQuery(Guid Id);
 public record PreviewCoffeeZoneMembershipQuery(Guid Id);
 public record GenerateCoffeeZoneCandidatesQuery(Guid CityId, int RadiusMeters = 400, int MinShops = 4);
 
-public record CreateCoffeeZoneCommand(
-    Guid CityId, string Name, string? Description,
-    decimal CenterLatitude, decimal CenterLongitude, int RadiusMeters);
+public record CreateCoffeeZoneCommand(Guid CityId, string Name, string? Description, CoffeeZonePoint[] Polygon);
 
 public record UpdateCoffeeZoneCommand(
     [property: JsonIgnore] Guid Id,
-    Guid CityId, string Name, string? Description,
-    decimal CenterLatitude, decimal CenterLongitude, int RadiusMeters);
+    Guid CityId, string Name, string? Description, CoffeeZonePoint[] Polygon);
 
 public record SetCoffeeZoneStatusCommand([property: JsonIgnore] Guid Id, CoffeeZoneStatus Status);
 
@@ -85,9 +82,7 @@ public static class CreateCoffeeZoneHandler
         if (!await cityRepository.Exists(command.CityId, ct))
             return Response<AdminCoffeeZoneDto>.Error(HttpStatusCode.BadRequest, "City not found.");
 
-        var zone = new CoffeeZone(
-            command.CityId, command.Name, command.Description,
-            command.CenterLatitude, command.CenterLongitude, command.RadiusMeters);
+        var zone = new CoffeeZone(command.CityId, command.Name, command.Description, command.Polygon);
         repository.Add(zone);
         await unitOfWork.SaveChangesAsync(ct);
         return Response<AdminCoffeeZoneDto>.Success((await queries.GetByIdAsync(zone.Id, ct))!);
@@ -110,9 +105,7 @@ public static class UpdateCoffeeZoneHandler
         if (!await cityRepository.Exists(command.CityId, ct))
             return Response<AdminCoffeeZoneDto>.Error(HttpStatusCode.BadRequest, "City not found.");
 
-        zone.Update(
-            command.CityId, command.Name, command.Description,
-            command.CenterLatitude, command.CenterLongitude, command.RadiusMeters);
+        zone.Update(command.CityId, command.Name, command.Description, command.Polygon);
         await unitOfWork.SaveChangesAsync(ct);
         return Response<AdminCoffeeZoneDto>.Success((await queries.GetByIdAsync(zone.Id, ct))!);
     }

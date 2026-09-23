@@ -1,4 +1,4 @@
-namespace CoffeePeek.Shops.Application.Features.CoffeeZones;
+namespace CoffeePeek.Shops.Domain;
 
 public static class GeoDistance
 {
