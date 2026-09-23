@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Net.Http.Json;
 using CoffeePeek.Contract.Dtos.Yandex;
 using CoffeePeek.Moderation.Application.Abstractions;
@@ -51,8 +52,9 @@ public class YandexGeocodingService(
 
             var coordinates = geoObject.Point.Pos.Split(' ');
             if (coordinates.Length == 2 &&
-                decimal.TryParse(coordinates[1], out var latitude) &&
-                decimal.TryParse(coordinates[0], out var longitude))
+                // Yandex always uses '.' — current-culture parsing fails on ru-RU/be-BY hosts.
+                decimal.TryParse(coordinates[1], NumberStyles.Float, CultureInfo.InvariantCulture, out var latitude) &&
+                decimal.TryParse(coordinates[0], NumberStyles.Float, CultureInfo.InvariantCulture, out var longitude))
             {
                 return new GeocodingResult(latitude, longitude);
             }
@@ -65,12 +67,12 @@ public class YandexGeocodingService(
             logger.LogError(ex, "HTTP error while geocoding address: {Address}", address);
             return null;
         }
-        catch (TaskCanceledException ex)
+        catch (TaskCanceledException ex) when (!cancellationToken.IsCancellationRequested)
         {
             logger.LogError(ex, "Timeout while geocoding address: {Address}", address);
             return null;
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
         {
             logger.LogError(ex, "Unexpected error while geocoding address: {Address}", address);
             return null;

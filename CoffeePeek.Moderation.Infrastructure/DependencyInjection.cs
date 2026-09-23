@@ -1,4 +1,4 @@
-﻿using CoffeePeek.Moderation.Application.Abstractions;
+using CoffeePeek.Moderation.Application.Abstractions;
 using CoffeePeek.Moderation.Infrastructure.Services;
 using CoffeePeek.Moderation.Infrastructure.Shops;
 using CoffeePeek.Shared.Kernel;
@@ -35,6 +35,9 @@ public static class DependencyInjection
         {
             client.DefaultRequestHeaders.UserAgent.ParseAdd("CoffeePeek/1.0 (https://coffeepeek.by; osm-import)");
             client.DefaultRequestHeaders.Accept.ParseAdd("application/json");
+            // HttpClient's default 100 s timeout wraps the whole pipeline and would kill the 120 s attempt
+            // before Polly's timeouts or retry ever run; let the resilience handler own timeouts.
+            client.Timeout = Timeout.InfiniteTimeSpan;
         })
         .RemoveAllResilienceHandlers()
         .AddStandardResilienceHandler(options =>
