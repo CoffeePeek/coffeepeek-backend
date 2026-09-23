@@ -23,3 +23,5 @@
 **/values.dev.yaml
 LICENSE
 README.md
+# Local dev config holds real credentials; never bake it into images
+**/appsettings.Development.json
