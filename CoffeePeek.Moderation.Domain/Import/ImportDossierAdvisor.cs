@@ -49,10 +49,10 @@ public static class ImportDossierAdvisor
             switch (signal)
             {
                 case "name:specialty-signal":
-                    Add("specialty", "из имени");
+                    Add("specialty", "from name");
                     break;
                 case "name:to-go-chain":
-                    Add("to_go", "сеть с собой");
+                    Add("to_go", "to-go chain");
                     break;
             }
         }
@@ -64,7 +64,7 @@ public static class ImportDossierAdvisor
             || cuisineNorm.Contains("cake")
             || cuisineNorm.Contains("кондитер")
             || cuisineNorm.Contains("пирож"))
-            Add("bakery", "из кухни");
+            Add("bakery", "from cuisine");
 
         return tags;
     }

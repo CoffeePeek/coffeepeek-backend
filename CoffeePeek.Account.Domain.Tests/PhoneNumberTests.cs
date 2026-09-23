@@ -72,10 +72,10 @@ public class PhoneNumberTests
     }
 
     [Theory]
-    [InlineData("80291234567", "+375291234567")]   // Префикс 80
-    [InlineData("375447654321", "+375447654321")]  // Без плюса
-    [InlineData("259876543", "+375259876543")]     // Только номер (9 цифр)
-    [InlineData("+375 (33) 111-22-33", "+375331112233")] // С форматированием
+    [InlineData("80291234567", "+375291234567")]   // 80 prefix
+    [InlineData("375447654321", "+375447654321")]  // No plus sign
+    [InlineData("259876543", "+375259876543")]     // Subscriber number only (9 digits)
+    [InlineData("+375 (33) 111-22-33", "+375331112233")] // With formatting
     public void Create_WithValidFormats_ShouldNormalizeToInternational(string input, string expected)
     {
         // Act
