@@ -32,7 +32,7 @@ public class UserReviewsController(IMessageBus bus) : ControllerBase
         if (userId == Guid.Empty)
             return BadRequest(Response<GetReviewsByUserIdResponse>.Error("Invalid user ID"));
 
-        pageNumber = Math.Max(1, pageNumber);
+        pageNumber = Math.Clamp(pageNumber, 1, 10_000); // larger values overflow Skip((page-1)*size)
         pageSize = Math.Clamp(pageSize, 1, 100);
 
         var query = new GetReviewsByUserIdQuery(userId, pageNumber, pageSize);

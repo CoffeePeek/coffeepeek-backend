@@ -1161,6 +1161,8 @@ namespace CoffeePeek.Shops.Persistance.Migrations
                             NpgsqlIndexBuilderExtensions.HasMethod(b1.HasIndex("Address"), "gin");
                             NpgsqlIndexBuilderExtensions.HasOperators(b1.HasIndex("Address"), new[] { "gin_trgm_ops" });
 
+                            b1.HasIndex("CityId");
+
                             b1.HasIndex("Latitude", "Longitude");
 
                             b1.ToTable("Shops");
