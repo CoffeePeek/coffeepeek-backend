@@ -93,16 +93,11 @@ public static class WolverineModule
 
                 opts.Policies.AutoApplyTransactions();
 
-                // DbUpdateException covers both concurrency conflicts and unique violations; on retry the handler's
-                // idempotency check (e.g. GetIdByModerationId) sees the row committed by the competing message.
+                // Unique violations and concurrency conflicts only (wrapped by UnitOfWork or raw from the EF
+                // middleware's SaveChanges): a retry re-runs the handler on a fresh DbContext and its idempotency
+                // check sees the competing commit. Everything else fails fast.
                 opts.Policies
-                    .OnException<ConflictException>(ex => ex.InnerException is DbUpdateException)
-                    .RetryWithCooldown(TimeSpan.FromMilliseconds(50), TimeSpan.FromMilliseconds(150), TimeSpan.FromMilliseconds(400));
-
-                // The EF transaction middleware calls DbContext.SaveChangesAsync directly, so optimistic-concurrency
-                // failures surface unwrapped. Retrying re-runs the handler on a fresh DbContext against current state.
-                opts.Policies
-                    .OnException<DbUpdateConcurrencyException>()
+                    .OnException(TransientDbConflict.Matches)
                     .RetryWithCooldown(TimeSpan.FromMilliseconds(50), TimeSpan.FromMilliseconds(150), TimeSpan.FromMilliseconds(400));
             });
         }

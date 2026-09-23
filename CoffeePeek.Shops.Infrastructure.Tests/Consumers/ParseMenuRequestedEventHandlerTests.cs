@@ -132,7 +132,7 @@ public class ParseMenuRequestedEventHandlerTests
     }
 
     [Fact]
-    public async Task Handle_ConcurrencyConflictExceedsMaxAttempts_PropagatesConflictException()
+    public async Task Handle_ConcurrencyConflictExceedsMaxAttempts_FailsWithoutRetriableConflict()
     {
         var shopId = Guid.NewGuid();
         var message = CreateMessage(shopId);
@@ -147,7 +147,9 @@ public class ParseMenuRequestedEventHandlerTests
 
         var act = async () => await handler.Handle(message, _ct);
 
-        await act.Should().ThrowAsync<ConflictException>();
+        // Must not surface as a transient DB conflict, or Wolverine re-runs the handler and bills another parse.
+        var thrown = (await act.Should().ThrowAsync<InvalidOperationException>()).Which;
+        CoffeePeek.Shared.Persistence.Extensions.TransientDbConflict.Matches(thrown).Should().BeFalse();
 
         _parser.Verify(p => p.ParseAsync(It.IsAny<IReadOnlyList<MenuVisionPhoto>>(), _ct), Times.Once);
         _unitOfWork.Verify(u => u.SaveChangesAsync(_ct), Times.Exactly(3));

@@ -83,6 +83,9 @@ public static class DependencyInjection
         // StandardResilienceHandler rejects MaxRetryAttempts = 0 (shops failed to boot).
         // Keep a single retry for fast 5xx; the long AttemptTimeout still covers vision.
         options.Retry.MaxRetryAttempts = 1;
+        // Vision calls are POSTs and billed per attempt; a retry after a timeout is billed and then cut off by the
+        // 5 s left in TotalRequestTimeout anyway. Never retry them in the HTTP pipeline.
+        options.Retry.DisableForUnsafeHttpMethods();
         options.CircuitBreaker.SamplingDuration = TimeSpan.FromTicks(attempt.Ticks * 2) + TimeSpan.FromSeconds(1);
         options.CircuitBreaker.MinimumThroughput = 20;
     }

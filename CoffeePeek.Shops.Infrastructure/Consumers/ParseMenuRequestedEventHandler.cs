@@ -100,6 +100,14 @@ public class ParseMenuRequestedEventHandler(
                             MaxApplyAndSaveAttempts);
                         unitOfWork.ClearTracking();
                     }
+                    catch (ConflictException ex) when (ex.InnerException is DbUpdateConcurrencyException)
+                    {
+                        // Out of local retries. Rethrowing the conflict would let the Wolverine retry policy re-run the
+                        // whole handler, i.e. download the photos and bill another vision call per attempt.
+                        logger.LogError(ex, "Giving up applying menu parse result for shop {ShopId}", shopId);
+                        throw new InvalidOperationException(
+                            $"Menu parse result for shop {shopId} could not be saved after {MaxApplyAndSaveAttempts} attempts.");
+                    }
                 }
             }
 
