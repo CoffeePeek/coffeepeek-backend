@@ -19,8 +19,8 @@ public static class DependencyInjection
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
-        services.AddOptions<GeminiOptions>()
-            .BindConfiguration(nameof(GeminiOptions));
+        services.AddOptions<OpenAiOptions>()
+            .BindConfiguration(nameof(OpenAiOptions));
 
         services.AddOptions<MenuPriceRangeOptions>()
             .BindConfiguration(nameof(MenuPriceRangeOptions));

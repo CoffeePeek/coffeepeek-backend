@@ -43,7 +43,7 @@ x-jwt-env: &jwt-env
   JWTOptions__Issuer: CoffeePeek.WEB
 
 x-gateway-auth-env: &gateway-auth-env
-      GatewayAuth__SecretKey: ${GATEWAY_AUTH_SECRET}
+      GatewayAuth__SecretKey: ${GATEWAY_AUTH_SECRET:?GATEWAY_AUTH_SECRET is required}
 
 x-media-public-env: &media-public-env
   MediaPublicUrlOptions__PublicEndpoint: ${MEDIA_PUBLIC_URL:-}
@@ -162,7 +162,7 @@ services:
       minio-init:
         condition: service_completed_successfully
     environment:
-      <<: [*dotnet-common, *rabbitmq-env, *redis-env, *jwt-env, *media-public-env]
+      <<: [*dotnet-common, *rabbitmq-env, *redis-env, *jwt-env, *media-public-env, *gateway-auth-env]
       PostgresCpOptions__ConnectionString: Host=postgres;Port=5432;Database=cpaccountdb;Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD};SslMode=Disable;GSS Encryption Mode=Disable
       MinIOOptions__Endpoint: http://minio:9000
       MinIOOptions__AccessKey: ${MINIO_ROOT_USER}
@@ -198,13 +198,13 @@ services:
       rabbitmq:
         condition: service_healthy
     environment:
-      <<: [*dotnet-common, *rabbitmq-env, *redis-env, *media-public-env]
+      <<: [*dotnet-common, *rabbitmq-env, *redis-env, *media-public-env, *gateway-auth-env]
       PostgresCpOptions__ConnectionString: Host=postgres;Port=5432;Database=cpshopsdb;Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD};SslMode=Disable;GSS Encryption Mode=Disable
-      GeminiOptions__ApiKey: ${GEMINI_API_KEY:-}
-      GeminiOptions__Model: ${GEMINI_MODEL:-gemini-3.6-flash}
-      GeminiOptions__BaseUrl: ${GEMINI_BASE_URL:-}
-      GeminiOptions__ProxyUrl: ${GEMINI_PROXY_URL:-}
-      GeminiOptions__TimeoutSeconds: ${GEMINI_TIMEOUT_SECONDS:-90}
+      OpenAiOptions__ApiKey: ${OPENAI_API_KEY:-}
+      OpenAiOptions__Model: ${OPENAI_MODEL:-gpt-4.1-mini}
+      OpenAiOptions__BaseUrl: ${OPENAI_BASE_URL:-https://api.openai.com/v1}
+      OpenAiOptions__ProxyUrl: ${OPENAI_PROXY_URL:-}
+      OpenAiOptions__TimeoutSeconds: ${OPENAI_TIMEOUT_SECONDS:-90}
       Sentry__Dsn: ${SENTRY_DSN_SHOPS:-}
     mem_limit: 1024m
     memswap_limit: 1024m
@@ -225,7 +225,7 @@ services:
       minio-init:
         condition: service_completed_successfully
     environment:
-      <<: [*dotnet-common, *rabbitmq-env, *media-public-env]
+      <<: [*dotnet-common, *rabbitmq-env, *media-public-env, *gateway-auth-env]
       PostgresCpOptions__ConnectionString: Host=postgres;Port=5432;Database=cpmoderationdb;Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD};SslMode=Disable;GSS Encryption Mode=Disable
       MinIOOptions__Endpoint: http://minio:9000
       MinIOOptions__AccessKey: ${MINIO_ROOT_USER}
@@ -253,7 +253,7 @@ services:
       minio-init:
         condition: service_completed_successfully
     environment:
-      <<: [*dotnet-common, *rabbitmq-env, *media-public-env]
+      <<: [*dotnet-common, *rabbitmq-env, *media-public-env, *gateway-auth-env]
       PostgresCpOptions__ConnectionString: Host=postgres;Port=5432;Database=cpmediadb;Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD};SslMode=Disable;GSS Encryption Mode=Disable
       MinIOOptions__Endpoint: http://minio:9000
       MinIOOptions__AccessKey: ${MINIO_ROOT_USER}
@@ -286,7 +286,7 @@ services:
     ports:
       - "127.0.0.1:${GATEWAY_PORT:-8080}:8080"
     environment:
-      <<: [*dotnet-common, *jwt-env, *redis-env]
+      <<: [*dotnet-common, *jwt-env, *redis-env, *gateway-auth-env]
       ReverseProxy__Clusters__account-cluster__Destinations__destination1__Address: http://account:8080
       ReverseProxy__Clusters__shops-cluster__Destinations__destination1__Address: http://shops:8080
       ReverseProxy__Clusters__moderation-cluster__Destinations__destination1__Address: http://moderation:8080

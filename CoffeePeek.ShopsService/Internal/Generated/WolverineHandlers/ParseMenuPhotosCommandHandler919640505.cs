@@ -14,21 +14,21 @@ namespace Internal.Generated.WolverineHandlers
     {
         private readonly Microsoft.Extensions.DependencyInjection.IServiceScopeFactory _serviceScopeFactory;
         private readonly Microsoft.Extensions.Logging.ILogger<CoffeePeek.Shops.Application.Features.Menu.ParseMenuPhotos.ParseMenuPhotosCommand> _loggerForMessage;
-        private readonly Microsoft.Extensions.Logging.ILogger<CoffeePeek.Shops.Infrastructure.Menu.GeminiMenuVisionParser> _loggerOfGeminiMenuVisionParser;
+        private readonly Microsoft.Extensions.Logging.ILogger<CoffeePeek.Shops.Infrastructure.Menu.OpenAiMenuVisionParser> _loggerOfOpenAiMenuVisionParser;
         private readonly Microsoft.Extensions.Logging.ILogger<CoffeePeek.Shops.Infrastructure.Menu.HttpMenuPhotoDownloader> _loggerOfHttpMenuPhotoDownloader;
-        private readonly Microsoft.Extensions.Options.IOptions<CoffeePeek.Shared.Kernel.Options.GeminiOptions> _optionsOfGeminiOptions;
+        private readonly Microsoft.Extensions.Options.IOptions<CoffeePeek.Shared.Kernel.Options.OpenAiOptions> _optionsOfOpenAiOptions;
         private readonly Microsoft.Extensions.Options.IOptions<CoffeePeek.Shared.Kernel.Options.MenuPriceRangeOptions> _optionsOfMenuPriceRangeOptions;
         private readonly System.Collections.Generic.IEnumerable<Wolverine.EntityFrameworkCore.IDomainEventScraper> _domainEventScraperIEnumerable;
         private readonly System.Net.Http.IHttpClientFactory _httpClientFactory1;
         private readonly System.Net.Http.IHttpClientFactory _httpClientFactory2;
 
-        public ParseMenuPhotosCommandHandler919640505(Microsoft.Extensions.DependencyInjection.IServiceScopeFactory serviceScopeFactory, Microsoft.Extensions.Logging.ILogger<CoffeePeek.Shops.Application.Features.Menu.ParseMenuPhotos.ParseMenuPhotosCommand> loggerForMessage, Microsoft.Extensions.Logging.ILogger<CoffeePeek.Shops.Infrastructure.Menu.GeminiMenuVisionParser> loggerOfGeminiMenuVisionParser, Microsoft.Extensions.Logging.ILogger<CoffeePeek.Shops.Infrastructure.Menu.HttpMenuPhotoDownloader> loggerOfHttpMenuPhotoDownloader, Microsoft.Extensions.Options.IOptions<CoffeePeek.Shared.Kernel.Options.GeminiOptions> optionsOfGeminiOptions, Microsoft.Extensions.Options.IOptions<CoffeePeek.Shared.Kernel.Options.MenuPriceRangeOptions> optionsOfMenuPriceRangeOptions, System.Collections.Generic.IEnumerable<Wolverine.EntityFrameworkCore.IDomainEventScraper> domainEventScraperIEnumerable, System.Net.Http.IHttpClientFactory __httpClientFactory1, System.Net.Http.IHttpClientFactory __httpClientFactory2)
+        public ParseMenuPhotosCommandHandler919640505(Microsoft.Extensions.DependencyInjection.IServiceScopeFactory serviceScopeFactory, Microsoft.Extensions.Logging.ILogger<CoffeePeek.Shops.Application.Features.Menu.ParseMenuPhotos.ParseMenuPhotosCommand> loggerForMessage, Microsoft.Extensions.Logging.ILogger<CoffeePeek.Shops.Infrastructure.Menu.OpenAiMenuVisionParser> loggerOfOpenAiMenuVisionParser, Microsoft.Extensions.Logging.ILogger<CoffeePeek.Shops.Infrastructure.Menu.HttpMenuPhotoDownloader> loggerOfHttpMenuPhotoDownloader, Microsoft.Extensions.Options.IOptions<CoffeePeek.Shared.Kernel.Options.OpenAiOptions> optionsOfOpenAiOptions, Microsoft.Extensions.Options.IOptions<CoffeePeek.Shared.Kernel.Options.MenuPriceRangeOptions> optionsOfMenuPriceRangeOptions, System.Collections.Generic.IEnumerable<Wolverine.EntityFrameworkCore.IDomainEventScraper> domainEventScraperIEnumerable, System.Net.Http.IHttpClientFactory __httpClientFactory1, System.Net.Http.IHttpClientFactory __httpClientFactory2)
         {
             _serviceScopeFactory = serviceScopeFactory;
             _loggerForMessage = loggerForMessage;
-            _loggerOfGeminiMenuVisionParser = loggerOfGeminiMenuVisionParser;
+            _loggerOfOpenAiMenuVisionParser = loggerOfOpenAiMenuVisionParser;
             _loggerOfHttpMenuPhotoDownloader = loggerOfHttpMenuPhotoDownloader;
-            _optionsOfGeminiOptions = optionsOfGeminiOptions;
+            _optionsOfOpenAiOptions = optionsOfOpenAiOptions;
             _optionsOfMenuPriceRangeOptions = optionsOfMenuPriceRangeOptions;
             _domainEventScraperIEnumerable = domainEventScraperIEnumerable;
             _httpClientFactory1 = __httpClientFactory1;
@@ -45,7 +45,7 @@ namespace Internal.Generated.WolverineHandlers
             var shopsDbContext = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<CoffeePeek.Shops.Persistance.Configuration.ShopsDbContext>(serviceScope.ServiceProvider);
             var httpMenuPhotoDownloader = new CoffeePeek.Shops.Infrastructure.Menu.HttpMenuPhotoDownloader(_httpClientFactory2, _loggerOfHttpMenuPhotoDownloader);
             var queryCoffeeDrinkRepository = new CoffeePeek.Shops.Persistance.Repositories.QueryCoffeeDrinkRepository(shopsDbContext);
-            var geminiMenuVisionParser = new CoffeePeek.Shops.Infrastructure.Menu.GeminiMenuVisionParser(_httpClientFactory1, _optionsOfGeminiOptions, _loggerOfGeminiMenuVisionParser);
+            var openAiMenuVisionParser = new CoffeePeek.Shops.Infrastructure.Menu.OpenAiMenuVisionParser(_httpClientFactory1, _optionsOfOpenAiOptions, _loggerOfOpenAiMenuVisionParser);
             // The actual message body
             var parseMenuPhotosCommand = (CoffeePeek.Shops.Application.Features.Menu.ParseMenuPhotos.ParseMenuPhotosCommand)context.Envelope.Message;
 
@@ -65,7 +65,7 @@ namespace Internal.Generated.WolverineHandlers
                 System.Diagnostics.Activity.Current?.SetTag("handler.type", "CoffeePeek.Shops.Application.Features.Menu.ParseMenuPhotos.ParseMenuPhotosHandler");
                 
                 // The actual message execution
-                var outgoing1 = await CoffeePeek.Shops.Application.Features.Menu.ParseMenuPhotos.ParseMenuPhotosHandler.Handle(parseMenuPhotosCommand, geminiMenuVisionParser, queryCoffeeDrinkRepository, httpMenuPhotoDownloader, _optionsOfMenuPriceRangeOptions, ((Microsoft.Extensions.Logging.ILogger)_loggerForMessage), cancellation).ConfigureAwait(false);
+                var outgoing1 = await CoffeePeek.Shops.Application.Features.Menu.ParseMenuPhotos.ParseMenuPhotosHandler.Handle(parseMenuPhotosCommand, openAiMenuVisionParser, queryCoffeeDrinkRepository, httpMenuPhotoDownloader, _optionsOfMenuPriceRangeOptions, ((Microsoft.Extensions.Logging.ILogger)_loggerForMessage), cancellation).ConfigureAwait(false);
 
                 
                 // Outgoing, cascaded message

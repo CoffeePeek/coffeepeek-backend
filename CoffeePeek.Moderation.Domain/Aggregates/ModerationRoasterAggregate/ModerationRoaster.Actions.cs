@@ -59,6 +59,10 @@ public sealed partial class ModerationRoaster
 
     public void Reject(string reason)
     {
+        // An approved roaster is already published to the catalog; rejecting it here would leave it live.
+        if (ModerationStatus == ModerationStatus.Approved)
+            throw new DomainException("Approved roaster is already published and cannot be rejected.");
+
         if (string.IsNullOrWhiteSpace(reason))
             throw new DomainException("Reject reason is required.");
 

@@ -12,6 +12,9 @@ public class ShopImportCandidateConfiguration : IEntityTypeConfiguration<ShopImp
         entity.ToTable("ShopImportCandidates");
         entity.HasKey(e => e.Id);
 
+        // Optimistic concurrency on PostgreSQL xmin: two moderators deciding the same item at once must not both win.
+        entity.Property<uint>("Version").IsRowVersion();
+
         entity.Property(e => e.ExternalId).HasMaxLength(64).IsRequired();
         entity.Property(e => e.Name).HasMaxLength(ShopImportCandidate.MaxNameLength);
         entity.Property(e => e.Address).HasMaxLength(ShopImportCandidate.MaxAddressLength);

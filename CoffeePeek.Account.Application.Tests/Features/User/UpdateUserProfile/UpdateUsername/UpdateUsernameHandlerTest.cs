@@ -231,7 +231,7 @@ public class UpdateUsernameHandlerTest
     {
         // Arrange
         var userId = Guid.NewGuid();
-        var newUsername = "NewUsername"; // Тестируем смену регистра
+        var newUsername = "NewUsername"; // Case change only
         var command = new UpdateProfileUsernameCommand(userId, newUsername);
 
         var existingUser = CreateUserMock(userId, "oldusername");
@@ -296,12 +296,12 @@ public class UpdateUsernameHandlerTest
     }
 
     [Theory]
-    [InlineData("123user")]   // Начинается с цифры
-    [InlineData(".username")]  // Начинается с точки
-    [InlineData("_username")]  // Начинается с подчеркивания
-    [InlineData("user@name")]  // Запрещенный символ @
-    [InlineData("user name")]  // Пробел
-    [InlineData("user-name")]  // Тире (если запрещено)
+    [InlineData("123user")]   // Starts with a digit
+    [InlineData(".username")]  // Starts with a dot
+    [InlineData("_username")]  // Starts with an underscore
+    [InlineData("user@name")]  // Forbidden character @
+    [InlineData("user name")]  // Space
+    [InlineData("user-name")]  // Hyphen (if forbidden)
     public async Task Handle_WithInvalidUsernameFormats_ShouldThrowDomainException(string invalidUsername)
     {
         // Arrange

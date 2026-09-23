@@ -2,7 +2,7 @@ using System.Net;
 
 namespace CoffeePeek.Shops.Infrastructure.Menu;
 
-internal static class GeminiProxy
+internal static class OpenAiProxy
 {
     public static IWebProxy? Create(string? proxyUrl)
     {
@@ -13,7 +13,7 @@ internal static class GeminiProxy
             || uri.Scheme is not ("http" or "https" or "socks4" or "socks4a" or "socks5"))
         {
             throw new InvalidOperationException(
-                "GeminiOptions.ProxyUrl must be an absolute http, https, or socks5 URI, e.g. socks5://host:1080.");
+                "OpenAiOptions.ProxyUrl must be an absolute http, https, or socks5 URI, e.g. socks5://host:1080.");
         }
 
         var proxy = new WebProxy(uri);

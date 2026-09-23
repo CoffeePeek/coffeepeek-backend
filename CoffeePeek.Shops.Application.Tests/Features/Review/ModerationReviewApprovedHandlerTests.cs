@@ -63,7 +63,7 @@ public class ModerationReviewApprovedHandlerTests
         existing.Rating.Service.Should().Be(4);
         existing.Rating.Coffee.Should().Be(3);
         existing.IsSoftDelete.Should().BeFalse(); // restored / un-hidden
-        result.ReviewId.Should().Be(existing.Id);
+        result.Should().BeNull(); // re-approval must not bump the author's review count again
 
         _reviewRepoMock.Verify(r => r.Add(It.IsAny<DomainReview>()), Times.Never);
         _unitOfWorkMock.Verify(u => u.SaveChangesAsync(_ct), Times.Once);
@@ -91,7 +91,7 @@ public class ModerationReviewApprovedHandlerTests
         _reviewRepoMock.Verify(r => r.Add(It.IsAny<DomainReview>()), Times.Once);
         added.Should().NotBeNull();
         added!.ModerationReviewId.Should().Be(dto.Id);
-        result.ReviewId.Should().Be(added.Id);
+        result!.ReviewId.Should().Be(added.Id);
         _unitOfWorkMock.Verify(u => u.SaveChangesAsync(_ct), Times.Once);
     }
 }

@@ -39,6 +39,9 @@ public static class AuthExtensions
         services.AddOptions<GatewayAuthOptions>()
             .Bind(configuration.GetSection(GatewayAuthOptions.SectionName))
             .ValidateDataAnnotations()
+            .Validate(
+                options => GatewayAuthOptions.IsAllowedIn(options, environment.IsDevelopment()),
+                "GatewayAuth:SecretKey must be overridden outside Development.")
             .ValidateOnStart();
 
         var authOptions = services.AddValidateOptions<JWTOptions>();

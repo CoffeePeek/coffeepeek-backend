@@ -570,4 +570,29 @@ public class ShopImportCandidateTests
         candidate.Menu!.Items.Should().ContainSingle(i =>
             i.Slug == "cappuccino" && i.Availability == (int)MenuDraftAvailability.Absent);
     }
+
+    [Fact]
+    public void Decide_RejectWhilePublishInFlight_Throws()
+    {
+        var candidate = ShopImportCandidate.FromOsm(Snapshot("node/1", "Varka"), Now);
+        candidate.Decide(ImportQueueStatus.Published, ImportCoffeeFocus.Cafe, [], Reviewer, false, Now);
+
+        var act = () => candidate.Decide(
+            ImportQueueStatus.Rejected, null, [], Reviewer, false, Now, ImportRejectReason.Invalid);
+
+        act.Should().Throw<DomainException>();
+        candidate.QueueStatus.Should().Be(ImportQueueStatus.Published);
+    }
+
+    [Fact]
+    public void Decide_AnyStatusAfterShopAttached_Throws()
+    {
+        var candidate = ShopImportCandidate.FromOsm(Snapshot("node/1", "Varka"), Now);
+        candidate.Decide(ImportQueueStatus.Published, ImportCoffeeFocus.Cafe, [], Reviewer, false, Now);
+        candidate.AttachPublishedShop(Guid.NewGuid());
+
+        var act = () => candidate.Decide(ImportQueueStatus.Skipped, null, [], Reviewer, false, Now);
+
+        act.Should().Throw<DomainException>().WithMessage("Candidate is already published to the catalog.");
+    }
 }

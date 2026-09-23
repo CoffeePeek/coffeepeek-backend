@@ -47,9 +47,8 @@ public static class DecideImportDuplicateHandler
                         suggestion.Id, suggestion.Status.ToString(), null, null)), null);
             }
 
-            if (left.ResultingShopId is not null
-                && right.ResultingShopId is not null
-                && left.ResultingShopId != right.ResultingShopId)
+            if (left.QueueStatus == ImportQueueStatus.Published
+                && right.QueueStatus == ImportQueueStatus.Published)
             {
                 return (Response<DecideImportDuplicateResultDto>.Error(
                     System.Net.HttpStatusCode.BadRequest,

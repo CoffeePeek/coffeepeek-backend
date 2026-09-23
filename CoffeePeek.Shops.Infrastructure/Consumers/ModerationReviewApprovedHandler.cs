@@ -10,7 +10,7 @@ namespace CoffeePeek.Shops.Infrastructure.Consumers;
 
 public static class ModerationReviewApprovedHandler
 {
-    public static async Task<ReviewAddedEvent> Handle(
+    public static async Task<ReviewAddedEvent?> Handle(
         ModerationReviewApprovedEvent @event,
         IReviewRepository reviewRepository,
         IUnitOfWork unitOfWork,
@@ -23,7 +23,7 @@ public static class ModerationReviewApprovedHandler
         // skip-if-exists silently dropped EVERY re-approval — that was the core bug.
         var existing = await reviewRepository.GetByModerationReviewId(reviewDto.Id, ct);
 
-        Guid reviewId;
+        Guid? addedReviewId = null;
         if (existing != null)
         {
             existing.UpdateContent(
@@ -31,7 +31,6 @@ public static class ModerationReviewApprovedHandler
                 reviewDto.Comment,
                 Rating.Create(reviewDto.Rating.Place, reviewDto.Rating.Service, reviewDto.Rating.Coffee));
             existing.Restore(); // un-hide a review that was hidden by an edit
-            reviewId = existing.Id;
         }
         else
         {
@@ -45,7 +44,7 @@ public static class ModerationReviewApprovedHandler
                 moderationReviewId: reviewDto.Id);
 
             reviewRepository.Add(review);
-            reviewId = review.Id;
+            addedReviewId = review.Id;
         }
 
         await unitOfWork.SaveChangesAsync(ct);
@@ -53,6 +52,7 @@ public static class ModerationReviewApprovedHandler
         await PublicStatsCacheInvalidator.InvalidateAsync(cacheService, ct);
         await cacheService.RemoveByPattern(CacheKey.Shop.SearchPattern(), ct);
 
-        return new ReviewAddedEvent(reviewDto.UserId, reviewDto.ShopId, reviewId);
+        // Only a first-time publish counts towards the author's statistics; re-approval after an edit must not.
+        return addedReviewId is { } id ? new ReviewAddedEvent(reviewDto.UserId, reviewDto.ShopId, id) : null;
     }
 }

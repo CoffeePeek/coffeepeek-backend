@@ -1,6 +1,8 @@
 using CoffeePeek.Contract.Dtos.CoffeeShop;
 using CoffeePeek.Contract.Events;
 using CoffeePeek.Moderation.Application.Abstractions;
+using CoffeePeek.Moderation.Application.Common.Models;
+using CoffeePeek.Moderation.Domain.Common.Enums;
 using CoffeePeek.Moderation.Domain.Aggregates;
 using CoffeePeek.Shared.Kernel;
 using CoffeePeek.Shared.Kernel.Response;
@@ -23,11 +25,20 @@ public static class UpdateModerationCoffeeShopHandler
         CancellationToken ct)
     {
         var moderationShopDto = command.ModerationShopDto;
-        var shop = await repository.GetByIdWithOutDetails(command.ModerationShopDto.Id, ct);
+        // Full load is required: UpdateRelations and photo removal diff against the current collections,
+        // and with them unloaded every edit duplicated join rows and never removed anything.
+        var shop = await repository.GetByIdAsync(command.ModerationShopDto.Id, ct);
 
         if (shop == null || (!command.IsPrivilegedModerator && shop.UserId != command.UserId))
         {
             return UpdateEntityResponse<ModerationShopDto>.Error("Shop not found or access denied");
+        }
+
+        // Shops ignores re-approval of an already published shop, so edits here would be silently lost.
+        if (shop.ModerationStatus == ModerationStatus.Approved)
+        {
+            return UpdateEntityResponse<ModerationShopDto>.Error(
+                "Approved shop is already published; submit a shop change request instead");
         }
 
         var domainPriceRange = moderationShopDto.PriceRange != null
@@ -45,7 +56,16 @@ public static class UpdateModerationCoffeeShopHandler
 
         if (moderationShopDto.Address != null && moderationShopDto.Address != shop.Location?.Address)
         {
-            var geo = await geocodingService.GeocodeAsync(moderationShopDto.Address, ct);
+            GeocodingResult? geo;
+            try
+            {
+                geo = await geocodingService.GeocodeAsync(moderationShopDto.Address, ct);
+            }
+            catch (Exception) when (!ct.IsCancellationRequested)
+            {
+                // Geocoder outage must not fail a moderator edit; the address is saved as unvalidated.
+                geo = null;
+            }
             if (geo != null)
             {
                 if (shop.Location is null)
@@ -82,17 +102,13 @@ public static class UpdateModerationCoffeeShopHandler
             moderationShopDto.RoasterIds,
             moderationShopDto.BrewMethodIds);
 
-        // Publish PhotoReplacedEvent for removed photos
+        // Remove dropped photos from the shop first, then release their storage objects.
         if (moderationShopDto.ShopPhotos is not null)
         {
-            var oldPhotos = shop.ShopPhotos.ToList();
-
-            var newPhotoStorageKeys = moderationShopDto.ShopPhotos
+            var keptStorageKeys = moderationShopDto.ShopPhotos
                 .Select(p => p.StorageKey)
                 .ToHashSet();
-            var removedPhotos = oldPhotos
-                .Where(p => !newPhotoStorageKeys.Contains(p.StorageKey))
-                .ToList();
+            var removedPhotos = shop.RemovePhotosExcept(keptStorageKeys);
 
             foreach (var removedPhoto in removedPhotos)
             {

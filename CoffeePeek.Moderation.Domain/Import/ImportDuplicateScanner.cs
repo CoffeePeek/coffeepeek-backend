@@ -5,12 +5,18 @@ namespace CoffeePeek.Moderation.Domain.Import;
 
 public static class ImportDuplicateScanner
 {
+    private const decimal LatitudeWindow = 0.004m;
+    private const decimal LongitudeWindow = 0.007m;
+
     public static IReadOnlyList<ShopImportDuplicateSuggestion> Scan(
         IReadOnlyList<ShopImportCandidate> candidates,
         IReadOnlySet<(Guid Left, Guid Right)> existingPairs)
     {
+        // Sorted sweep: once the latitude gap exceeds the window no later candidate can match, so each candidate is
+        // only compared with its latitude neighbours instead of every other candidate (was O(n²) over the table).
         var eligible = candidates
             .Where(c => c.QueueStatus is not ImportQueueStatus.Rejected)
+            .OrderBy(c => c.Latitude)
             .ToList();
 
         var suggestions = new List<ShopImportDuplicateSuggestion>();
@@ -20,8 +26,9 @@ public static class ImportDuplicateScanner
             for (var j = i + 1; j < eligible.Count; j++)
             {
                 var right = eligible[j];
-                if (Math.Abs(left.Latitude - right.Latitude) > 0.004m
-                    || Math.Abs(left.Longitude - right.Longitude) > 0.007m)
+                if (right.Latitude - left.Latitude > LatitudeWindow)
+                    break;
+                if (Math.Abs(left.Longitude - right.Longitude) > LongitudeWindow)
                     continue;
 
                 var pair = ShopImportDuplicateSuggestion.Order(left.Id, right.Id);
@@ -67,6 +74,9 @@ public static class ImportDuplicateScanner
     private static int KeeperScore(ShopImportCandidate candidate)
     {
         var score = 0;
+        // A candidate linked to a catalog shop must survive the merge, otherwise that shop is orphaned.
+        if (candidate.ResultingShopId is not null)
+            score += 2000;
         if (candidate.QueueStatus == ImportQueueStatus.Published)
             score += 1000;
         if (candidate.Source == ImportSource.Osm)

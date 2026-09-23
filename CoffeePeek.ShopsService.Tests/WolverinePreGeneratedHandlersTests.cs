@@ -40,7 +40,7 @@ public class WolverinePreGeneratedHandlersTests
             ["MediaPublicUrlOptions:PublicEndpoint"] = "http://localhost:9000",
             ["MediaPublicUrlOptions:ShopBucketName"] = "coffeepeek.shops",
             ["MediaPublicUrlOptions:AvatarBucketName"] = "coffeepeek.avatars",
-            ["GeminiOptions:TimeoutSeconds"] = "90"
+            ["OpenAiOptions:TimeoutSeconds"] = "90"
         });
         builder.AddApplication();
 

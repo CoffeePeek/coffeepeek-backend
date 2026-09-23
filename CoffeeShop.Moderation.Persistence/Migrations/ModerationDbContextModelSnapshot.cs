@@ -100,17 +100,23 @@ namespace CoffeeShop.Moderation.Persistence.Migrations
                         .HasMaxLength(30)
                         .HasColumnType("character varying(30)");
 
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
                     b.HasKey("Id");
 
                     b.HasIndex("ModeratedBy");
 
                     b.HasIndex("ModerationShopId");
 
-                    b.HasIndex("ModerationStatus");
-
                     b.HasIndex("ShopId");
 
                     b.HasIndex("UserId");
+
+                    b.HasIndex("ModerationStatus", "CreatedAtUtc");
 
                     b.ToTable("ModerationReviews");
                 });
@@ -140,8 +146,8 @@ namespace CoffeeShop.Moderation.Persistence.Migrations
                         .HasColumnType("character varying(100)");
 
                     b.Property<string>("RejectedReason")
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
 
                     b.Property<DateTime?>("UpdatedAtUtc")
                         .HasColumnType("timestamp with time zone");
@@ -149,11 +155,17 @@ namespace CoffeeShop.Moderation.Persistence.Migrations
                     b.Property<Guid?>("UserId")
                         .HasColumnType("uuid");
 
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
                     b.HasKey("Id");
 
-                    b.HasIndex("ModerationStatus");
-
                     b.HasIndex("UserId");
+
+                    b.HasIndex("ModerationStatus", "CreatedAtUtc");
 
                     b.ToTable("ModerationRoasters");
                 });
@@ -222,15 +234,15 @@ namespace CoffeeShop.Moderation.Persistence.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
                     b.Property<int?>("PriceRange")
                         .HasColumnType("integer");
 
                     b.Property<string>("RejectedReason")
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
 
                     b.Property<Guid>("ShopId")
                         .HasColumnType("uuid");
@@ -241,15 +253,23 @@ namespace CoffeeShop.Moderation.Persistence.Migrations
                     b.Property<Guid?>("UserId")
                         .HasColumnType("uuid");
 
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
                     b.HasKey("Id");
 
                     b.HasIndex("CityId");
 
                     b.HasIndex("CoffeeFocus");
 
-                    b.HasIndex("ModerationStatus");
+                    b.HasIndex("ShopId");
 
                     b.HasIndex("UserId");
+
+                    b.HasIndex("ModerationStatus", "CreatedAtUtc");
 
                     b.ToTable("ModerationShops");
                 });
@@ -373,6 +393,12 @@ namespace CoffeeShop.Moderation.Persistence.Migrations
                     b.Property<DateTime?>("UpdatedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
                     b.HasKey("Id");
 
                     b.HasIndex("Section");
@@ -491,6 +517,12 @@ namespace CoffeeShop.Moderation.Persistence.Migrations
                     b.Property<DateTime?>("UpdatedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
                     b.Property<string>("Website")
                         .HasMaxLength(2048)
                         .HasColumnType("character varying(2048)");
@@ -594,13 +626,19 @@ namespace CoffeeShop.Moderation.Persistence.Migrations
                     b.Property<DateTime?>("UpdatedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
                     b.HasKey("Id");
 
                     b.HasIndex("ReportedByUserId");
 
                     b.HasIndex("ShopId");
 
-                    b.HasIndex("Status");
+                    b.HasIndex("Status", "CreatedAtUtc");
 
                     b.ToTable("ShopIssueReports");
                 });

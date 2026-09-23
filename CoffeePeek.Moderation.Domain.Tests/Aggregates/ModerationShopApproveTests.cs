@@ -258,4 +258,41 @@ public class ModerationShopApproveTests
 
         shop.ShopId.Should().Be(shopId);
     }
+
+    [Fact]
+    public void Reject_WhenAlreadyApproved_Throws()
+    {
+        // Regression: rejecting an approved shop left it live in the catalog and re-approve re-published it.
+        var shop = CreatePendingShop();
+        shop.SetLocation(new ModerationLocation("Validated street", 53.9m, 27.5m));
+        shop.Approve();
+
+        var act = () => shop.Reject("Changed my mind");
+
+        act.Should().Throw<DomainException>();
+        shop.ModerationStatus.Should().Be(ModerationStatus.Approved);
+    }
+
+    [Fact]
+    public void RemovePhotosExcept_RemovesOnlyDroppedPhotosAndReturnsThem()
+    {
+        var shop = CreatePendingShop();
+        shop.AddPhoto("a.jpg", "image/jpeg", "shops/a", 10);
+        shop.AddPhoto("b.jpg", "image/jpeg", "shops/b", 10);
+
+        var removed = shop.RemovePhotosExcept(new HashSet<string> { "shops/a" });
+
+        removed.Select(p => p.StorageKey).Should().Equal("shops/b");
+        shop.ShopPhotos.Select(p => p.StorageKey).Should().Equal("shops/a");
+    }
+
+    [Fact]
+    public void Create_NameLongerThanColumn_Throws()
+    {
+        // Regression: the API allowed 55 chars into a varchar(50) column, failing with a 500 on save.
+        var act = () => ModerationShop.Create(
+            new string('a', BusinessConstants.MaxShopNameLength + 1), Guid.NewGuid(), Guid.NewGuid(), null);
+
+        act.Should().Throw<DomainException>();
+    }
 }

@@ -37,6 +37,10 @@ public partial class ShopIssueReport
         if (moderatorId == Guid.Empty)
             throw new DomainException($"{nameof(moderatorId)} cannot be empty.");
 
+        // Fixed and Invalid are terminal; a stale admin tab must not reopen a closed report.
+        if (Status is ShopIssueReportStatus.Fixed or ShopIssueReportStatus.Invalid)
+            throw new DomainException($"Report is already closed as {Status}.");
+
         Status = status;
         ReviewedBy = moderatorId;
         ReviewedAt = DateTime.UtcNow;

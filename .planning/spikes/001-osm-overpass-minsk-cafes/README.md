@@ -52,7 +52,7 @@ Browser event log (load / yes / no / skip / export) is shown in the sidebar and 
 1. First Overpass pull: **1576** objects, all with coordinates. 1466 `amenity=cafe`, 96 vending, 14 `shop=coffee`.
 2. Naive name regex for specialty hit **2** places (`Kitchen Coffee Roasters`, `Marks Coffee Roasters`). OSM does not tag specialty.
 3. `cuisine=coffee_shop` ≈ 324 — useful priority signal, still mixed with chains.
-4. Name scan: 87 «столов*», Varka ≈ 96 points. `amenity=cafe` includes canteens, pizza, sushi, Lido.
+4. Name scan: 87 «столов*» (canteens), Varka ≈ 96 points. `amenity=cafe` includes canteens, pizza, sushi, Lido.
 5. Bug: regex `presso` auto-rejected `Espresso Coffe` / `7/25EspressoBar`. Fixed.
 6. Refined buckets: specialty 2 · priority 380 · review 818 · noise 280 · vending 96.
 7. Address present on 528/1576 — formatted address is optional; coords are enough to start.
