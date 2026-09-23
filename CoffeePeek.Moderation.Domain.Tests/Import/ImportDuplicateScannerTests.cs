@@ -29,6 +29,21 @@ public class ImportDuplicateScannerTests
     }
 
     [Fact]
+    public void Scan_FindsPairRegardlessOfInputOrder_WithDistantCandidateBetween()
+    {
+        // Guards the latitude sweep: input is unsorted and a far-away candidate sits between the pair.
+        var a = ShopImportCandidate.FromOsm(Place("node/1", "Surf Coffee", "Nemiga 5", 53.9046m, 27.5616m), Now);
+        var far = ShopImportCandidate.FromOsm(Place("node/2", "Other", "Far away 1", 52.0m, 23.0m), Now);
+        var b = ShopImportCandidate.FromPlace(
+            ImportSource.File, Place("file:abc", "Surf Coffee", "Nemiga 5", 53.9045m, 27.5615m), Now);
+
+        var suggestions = ImportDuplicateScanner.Scan([a, far, b], new HashSet<(Guid, Guid)>());
+
+        suggestions.Should().ContainSingle()
+            .Which.LeftCandidateId.Should().Be(ShopImportDuplicateSuggestion.Order(a.Id, b.Id).Left);
+    }
+
+    [Fact]
     public void Scan_SkipsAlreadyTrackedPair()
     {
         var a = ShopImportCandidate.FromOsm(Place("node/1", "Surf Coffee", "Немига 5", 53.9045m, 27.5615m), Now);
