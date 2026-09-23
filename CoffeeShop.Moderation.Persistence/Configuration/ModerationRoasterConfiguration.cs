@@ -12,6 +12,9 @@ public class ModerationRoasterConfiguration : IEntityTypeConfiguration<Moderatio
         entity.UsePropertyAccessMode(PropertyAccessMode.Field);
 
         entity.HasKey(e => e.Id);
+
+        // Optimistic concurrency on PostgreSQL xmin: two moderators deciding the same item at once must not both win.
+        entity.Property<uint>("Version").IsRowVersion();
         entity.Property(e => e.Name).HasMaxLength(BusinessConstants.MaxRoasterNameLength);
         entity.Property(e => e.About).HasMaxLength(BusinessConstants.MaxRoasterAboutLength);
         entity.Property(e => e.RejectedReason).HasMaxLength(200);

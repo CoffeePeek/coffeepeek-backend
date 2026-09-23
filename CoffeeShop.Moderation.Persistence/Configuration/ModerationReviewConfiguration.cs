@@ -1,4 +1,4 @@
-﻿using CoffeePeek.Moderation.Domain;
+using CoffeePeek.Moderation.Domain;
 using CoffeePeek.Moderation.Domain.Aggregates.ModerationReviewAggregate;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -12,6 +12,9 @@ public class ModerationReviewConfiguration : IEntityTypeConfiguration<Moderation
     {
         entity.UsePropertyAccessMode(PropertyAccessMode.Field);
         entity.HasKey(mr => mr.Id);
+
+        // Optimistic concurrency on PostgreSQL xmin: two moderators deciding the same item at once must not both win.
+        entity.Property<uint>("Version").IsRowVersion();
         entity.HasOne(mr => mr.ModerationShop)
             .WithMany()
             .HasForeignKey(mr => mr.ModerationShopId)

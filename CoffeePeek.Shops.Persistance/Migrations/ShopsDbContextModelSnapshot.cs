@@ -380,6 +380,11 @@ namespace CoffeePeek.Shops.Persistance.Migrations
 
                     b.HasIndex("ImportedFromFileAt");
 
+                    b.HasIndex("ModerationId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_Shops_ModerationId")
+                        .HasFilter("\"ModerationId\" IS NOT NULL");
+
                     b.HasIndex("Name")
                         .HasDatabaseName("IX_Shops_Name_GIN");
 

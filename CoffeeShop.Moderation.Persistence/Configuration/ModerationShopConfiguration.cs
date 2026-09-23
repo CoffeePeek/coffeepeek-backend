@@ -1,4 +1,4 @@
-﻿using CoffeePeek.Moderation.Domain;
+using CoffeePeek.Moderation.Domain;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using ModerationShop = CoffeePeek.Moderation.Domain.Aggregates.ModerationShop;
@@ -12,6 +12,9 @@ public class ModerationShopConfiguration : IEntityTypeConfiguration<ModerationSh
         entity.UsePropertyAccessMode(PropertyAccessMode.Field);
 
         entity.HasKey(e => e.Id);
+
+        // Optimistic concurrency on PostgreSQL xmin: two moderators deciding the same item at once must not both win.
+        entity.Property<uint>("Version").IsRowVersion();
         entity.Property(e => e.Name).HasMaxLength(50);
         entity.Property(e => e.Description).HasMaxLength(1000);
         entity.Property(e => e.RejectedReason).HasMaxLength(200);

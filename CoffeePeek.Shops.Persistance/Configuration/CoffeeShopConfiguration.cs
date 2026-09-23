@@ -1,4 +1,4 @@
-﻿using CoffeePeek.Shops.Domain;
+using CoffeePeek.Shops.Domain;
 using CoffeePeek.Shops.Domain.Aggregates.BrewMethods;
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
 using Microsoft.EntityFrameworkCore;
@@ -21,6 +21,12 @@ public class CoffeeShopConfiguration : IEntityTypeConfiguration<CoffeeShop>
             "\"DataCompletenessScore\" BETWEEN 0 AND 100"));
         builder.HasIndex(s => s.OwnerUserId);
         builder.HasIndex(s => s.ImportedFromFileAt);
+        // Backstop for the read-then-insert idempotency check in CreateShopFrom{Moderation,Import}Service:
+        // a redelivered or concurrently processed publish event must not create a second catalog shop.
+        builder.HasIndex(s => s.ModerationId)
+            .IsUnique()
+            .HasFilter("\"ModerationId\" IS NOT NULL")
+            .HasDatabaseName("IX_Shops_ModerationId");
         builder.HasIndex(s => new { s.Status, s.DataCompletenessScore, s.Name })
             .IsDescending(false, true, false)
             .HasDatabaseName("IX_Shops_Status_DataCompletenessScore_Name");
