@@ -43,7 +43,8 @@ public class MapController(IMessageBus bus) : ControllerBase
         [FromQuery] [Range(-180, 180)] decimal minLon,
         [FromQuery] [Range(-90, 90)] decimal maxLat,
         [FromQuery] [Range(-180, 180)] decimal maxLon,
-        [FromQuery] [Range(0, 22)] int? zoom = null)
+        [FromQuery] [Range(0, 22)] int? zoom = null,
+        CancellationToken ct = default)
     {
         if (minLat > maxLat || minLon > maxLon)
         {
@@ -52,7 +53,7 @@ public class MapController(IMessageBus bus) : ControllerBase
 
         var query = new GetShopsInBoundsQuery(minLat, minLon, maxLat, maxLon, zoom);
         
-        var response = await bus.InvokeAsync<Response<GetShopsInBoundsResponse>>(query);
+        var response = await bus.InvokeAsync<Response<GetShopsInBoundsResponse>>(query, ct);
         return Ok(response);
     }
 }
