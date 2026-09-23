@@ -77,8 +77,10 @@ public class CreateShopFromModerationServiceTests
         _shopRepoMock.Verify(r => r.Add(It.IsAny<CoffeeShop>()), Times.Once);
         _unitOfWorkMock.Verify(u => u.SaveChangesAsync(_ct), Times.Once);
         _cacheServiceMock.Verify(c => c.RemoveByPattern("shop:search:*", _ct), Times.Once);
-        _cacheServiceMock.Verify(c => c.RemoveByPattern("shop:list:city:*", _ct), Times.Once);
-        _cacheServiceMock.Verify(c => c.RemoveByPattern("shop:detail:*", _ct), Times.Once);
+        // A new shop has no cached detail of its own; wiping every shop's detail cache (and the never-written
+        // shop:list:city:* keys) only cost full-keyspace SCANs.
+        _cacheServiceMock.Verify(c => c.RemoveByPattern("shop:list:city:*", _ct), Times.Never);
+        _cacheServiceMock.Verify(c => c.RemoveByPattern("shop:detail:*", _ct), Times.Never);
         _cacheServiceMock.Verify(
             c => c.RemoveAsync(CacheKey.Shop.PublicPlatformStats()),
             Times.Once);

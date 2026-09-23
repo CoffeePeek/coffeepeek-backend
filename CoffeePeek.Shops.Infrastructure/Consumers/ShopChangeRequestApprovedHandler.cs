@@ -75,7 +75,6 @@ public class ShopChangeRequestApprovedHandler(
 
         await cacheService.RemoveAsync(CacheKey.Shop.Detail(message.ShopId));
         await cacheService.RemoveByPattern(CacheKey.Shop.SearchPattern(), ct);
-        await cacheService.RemoveByPattern(CacheKey.Shop.ListPattern(), ct);
         logger.LogInformation(
             "Applied {Section} from shop change request {RequestId} to shop {ShopId}",
             message.Section, message.RequestId, message.ShopId);

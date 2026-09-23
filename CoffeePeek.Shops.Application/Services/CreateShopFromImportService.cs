@@ -79,8 +79,6 @@ public class CreateShopFromImportService(
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
         await cacheService.RemoveByPattern(CacheKey.Shop.SearchPattern(), cancellationToken);
-        await cacheService.RemoveByPattern(CacheKey.Shop.ListPattern(), cancellationToken);
-        await cacheService.RemoveByPattern(CacheKey.Shop.DetailPattern(), cancellationToken);
         await cacheService.RemoveAsync(CacheKey.Shop.Detail(shop.Id));
         await PublicStatsCacheInvalidator.InvalidateAsync(cacheService, cancellationToken);
 

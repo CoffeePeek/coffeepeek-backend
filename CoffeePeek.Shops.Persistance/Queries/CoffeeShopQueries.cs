@@ -237,8 +237,13 @@ public class CoffeeShopQueries(
             return new GetShopsInBoundsResponse(legacyPoints.Select(ToMapShop));
         }
 
-        var points = await baseQuery.ToArrayAsync(ct);
         var zoom = query.Zoom.Value;
+        // Anonymous endpoint: never materialize the whole table. Marker zooms only need one page (+1 to detect
+        // truncation); cluster zooms get a hard ceiling.
+        // ponytail: in-memory clustering capped at MaxClusterSourcePoints; move to SQL grid GROUP BY if the catalog outgrows it.
+        var points = await baseQuery
+            .Take(zoom > options.ZoneMaxZoom ? options.MaxResponseItems + 1 : MaxClusterSourcePoints)
+            .ToArrayAsync(ct);
         if (zoom <= options.ClusterMaxZoom)
         {
             var clusters = MapClusterBuilder.Build(
@@ -341,6 +346,8 @@ public class CoffeeShopQueries(
             IsTruncated = points.Length > options.MaxResponseItems
         };
     }
+
+    private const int MaxClusterSourcePoints = 20_000;
 
     internal static IQueryable<MapPoint> BuildMapPointsQuery(
         ShopsDbContext context,

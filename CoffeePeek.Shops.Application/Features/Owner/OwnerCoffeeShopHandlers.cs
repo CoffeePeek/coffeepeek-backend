@@ -96,7 +96,6 @@ public static class UpdateOwnerCoffeeShopHandler
         await unitOfWork.SaveChangesAsync(ct);
         await cacheService.RemoveAsync(CacheKey.Shop.Detail(shop.Id));
         await cacheService.RemoveByPattern(CacheKey.Shop.SearchPattern(), ct);
-        await cacheService.RemoveByPattern(CacheKey.Shop.ListPattern(), ct);
 
         return Response<AdminPublishedShopDto>.Success(AdminPublishedShopMapper.Map(shop, mediaOptions.Value));
     }
