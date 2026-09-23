@@ -16,25 +16,25 @@ namespace Internal.Generated.WolverineHandlers
         private readonly CoffeePeek.Shared.Domain.Interfaces.Infrastructure.ICacheService _cacheService;
         private readonly Microsoft.Extensions.DependencyInjection.IServiceScopeFactory _serviceScopeFactory;
         private readonly Microsoft.Extensions.Logging.ILogger<CoffeePeek.Shops.Infrastructure.Consumers.ParseMenuRequestedEventHandler> _loggerOfParseMenuRequestedEventHandler;
-        private readonly Microsoft.Extensions.Logging.ILogger<CoffeePeek.Shops.Infrastructure.Menu.OpenAiMenuVisionParser> _loggerOfOpenAiMenuVisionParser;
         private readonly Microsoft.Extensions.Logging.ILogger<CoffeePeek.Shops.Infrastructure.Menu.HttpMenuPhotoDownloader> _loggerOfHttpMenuPhotoDownloader;
-        private readonly Microsoft.Extensions.Options.IOptions<CoffeePeek.Shared.Kernel.Options.OpenAiOptions> _optionsOfOpenAiOptions;
+        private readonly Microsoft.Extensions.Logging.ILogger<CoffeePeek.Shops.Infrastructure.Menu.OpenAiMenuVisionParser> _loggerOfOpenAiMenuVisionParser;
         private readonly Microsoft.Extensions.Options.IOptions<CoffeePeek.Shared.Kernel.Options.MediaPublicUrlOptions> _optionsOfMediaPublicUrlOptions;
         private readonly Microsoft.Extensions.Options.IOptions<CoffeePeek.Shared.Kernel.Options.MenuPriceRangeOptions> _optionsOfMenuPriceRangeOptions;
+        private readonly Microsoft.Extensions.Options.IOptions<CoffeePeek.Shared.Kernel.Options.OpenAiOptions> _optionsOfOpenAiOptions;
         private readonly System.Collections.Generic.IEnumerable<Wolverine.EntityFrameworkCore.IDomainEventScraper> _domainEventScraperIEnumerable;
         private readonly System.Net.Http.IHttpClientFactory _httpClientFactory1;
         private readonly System.Net.Http.IHttpClientFactory _httpClientFactory2;
 
-        public ParseMenuRequestedEventHandler1007143525(CoffeePeek.Shared.Domain.Interfaces.Infrastructure.ICacheService cacheService, Microsoft.Extensions.DependencyInjection.IServiceScopeFactory serviceScopeFactory, Microsoft.Extensions.Logging.ILogger<CoffeePeek.Shops.Infrastructure.Consumers.ParseMenuRequestedEventHandler> loggerOfParseMenuRequestedEventHandler, Microsoft.Extensions.Logging.ILogger<CoffeePeek.Shops.Infrastructure.Menu.OpenAiMenuVisionParser> loggerOfOpenAiMenuVisionParser, Microsoft.Extensions.Logging.ILogger<CoffeePeek.Shops.Infrastructure.Menu.HttpMenuPhotoDownloader> loggerOfHttpMenuPhotoDownloader, Microsoft.Extensions.Options.IOptions<CoffeePeek.Shared.Kernel.Options.OpenAiOptions> optionsOfOpenAiOptions, Microsoft.Extensions.Options.IOptions<CoffeePeek.Shared.Kernel.Options.MediaPublicUrlOptions> optionsOfMediaPublicUrlOptions, Microsoft.Extensions.Options.IOptions<CoffeePeek.Shared.Kernel.Options.MenuPriceRangeOptions> optionsOfMenuPriceRangeOptions, System.Collections.Generic.IEnumerable<Wolverine.EntityFrameworkCore.IDomainEventScraper> domainEventScraperIEnumerable, System.Net.Http.IHttpClientFactory __httpClientFactory1, System.Net.Http.IHttpClientFactory __httpClientFactory2)
+        public ParseMenuRequestedEventHandler1007143525(CoffeePeek.Shared.Domain.Interfaces.Infrastructure.ICacheService cacheService, Microsoft.Extensions.DependencyInjection.IServiceScopeFactory serviceScopeFactory, Microsoft.Extensions.Logging.ILogger<CoffeePeek.Shops.Infrastructure.Consumers.ParseMenuRequestedEventHandler> loggerOfParseMenuRequestedEventHandler, Microsoft.Extensions.Logging.ILogger<CoffeePeek.Shops.Infrastructure.Menu.HttpMenuPhotoDownloader> loggerOfHttpMenuPhotoDownloader, Microsoft.Extensions.Logging.ILogger<CoffeePeek.Shops.Infrastructure.Menu.OpenAiMenuVisionParser> loggerOfOpenAiMenuVisionParser, Microsoft.Extensions.Options.IOptions<CoffeePeek.Shared.Kernel.Options.MediaPublicUrlOptions> optionsOfMediaPublicUrlOptions, Microsoft.Extensions.Options.IOptions<CoffeePeek.Shared.Kernel.Options.MenuPriceRangeOptions> optionsOfMenuPriceRangeOptions, Microsoft.Extensions.Options.IOptions<CoffeePeek.Shared.Kernel.Options.OpenAiOptions> optionsOfOpenAiOptions, System.Collections.Generic.IEnumerable<Wolverine.EntityFrameworkCore.IDomainEventScraper> domainEventScraperIEnumerable, System.Net.Http.IHttpClientFactory __httpClientFactory1, System.Net.Http.IHttpClientFactory __httpClientFactory2)
         {
             _cacheService = cacheService;
             _serviceScopeFactory = serviceScopeFactory;
             _loggerOfParseMenuRequestedEventHandler = loggerOfParseMenuRequestedEventHandler;
-            _loggerOfOpenAiMenuVisionParser = loggerOfOpenAiMenuVisionParser;
             _loggerOfHttpMenuPhotoDownloader = loggerOfHttpMenuPhotoDownloader;
-            _optionsOfOpenAiOptions = optionsOfOpenAiOptions;
+            _loggerOfOpenAiMenuVisionParser = loggerOfOpenAiMenuVisionParser;
             _optionsOfMediaPublicUrlOptions = optionsOfMediaPublicUrlOptions;
             _optionsOfMenuPriceRangeOptions = optionsOfMenuPriceRangeOptions;
+            _optionsOfOpenAiOptions = optionsOfOpenAiOptions;
             _domainEventScraperIEnumerable = domainEventScraperIEnumerable;
             _httpClientFactory1 = __httpClientFactory1;
             _httpClientFactory2 = __httpClientFactory2;

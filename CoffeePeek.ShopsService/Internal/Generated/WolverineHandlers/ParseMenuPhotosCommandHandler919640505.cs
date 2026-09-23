@@ -14,22 +14,22 @@ namespace Internal.Generated.WolverineHandlers
     {
         private readonly Microsoft.Extensions.DependencyInjection.IServiceScopeFactory _serviceScopeFactory;
         private readonly Microsoft.Extensions.Logging.ILogger<CoffeePeek.Shops.Application.Features.Menu.ParseMenuPhotos.ParseMenuPhotosCommand> _loggerForMessage;
-        private readonly Microsoft.Extensions.Logging.ILogger<CoffeePeek.Shops.Infrastructure.Menu.OpenAiMenuVisionParser> _loggerOfOpenAiMenuVisionParser;
         private readonly Microsoft.Extensions.Logging.ILogger<CoffeePeek.Shops.Infrastructure.Menu.HttpMenuPhotoDownloader> _loggerOfHttpMenuPhotoDownloader;
-        private readonly Microsoft.Extensions.Options.IOptions<CoffeePeek.Shared.Kernel.Options.OpenAiOptions> _optionsOfOpenAiOptions;
+        private readonly Microsoft.Extensions.Logging.ILogger<CoffeePeek.Shops.Infrastructure.Menu.OpenAiMenuVisionParser> _loggerOfOpenAiMenuVisionParser;
         private readonly Microsoft.Extensions.Options.IOptions<CoffeePeek.Shared.Kernel.Options.MenuPriceRangeOptions> _optionsOfMenuPriceRangeOptions;
+        private readonly Microsoft.Extensions.Options.IOptions<CoffeePeek.Shared.Kernel.Options.OpenAiOptions> _optionsOfOpenAiOptions;
         private readonly System.Collections.Generic.IEnumerable<Wolverine.EntityFrameworkCore.IDomainEventScraper> _domainEventScraperIEnumerable;
         private readonly System.Net.Http.IHttpClientFactory _httpClientFactory1;
         private readonly System.Net.Http.IHttpClientFactory _httpClientFactory2;
 
-        public ParseMenuPhotosCommandHandler919640505(Microsoft.Extensions.DependencyInjection.IServiceScopeFactory serviceScopeFactory, Microsoft.Extensions.Logging.ILogger<CoffeePeek.Shops.Application.Features.Menu.ParseMenuPhotos.ParseMenuPhotosCommand> loggerForMessage, Microsoft.Extensions.Logging.ILogger<CoffeePeek.Shops.Infrastructure.Menu.OpenAiMenuVisionParser> loggerOfOpenAiMenuVisionParser, Microsoft.Extensions.Logging.ILogger<CoffeePeek.Shops.Infrastructure.Menu.HttpMenuPhotoDownloader> loggerOfHttpMenuPhotoDownloader, Microsoft.Extensions.Options.IOptions<CoffeePeek.Shared.Kernel.Options.OpenAiOptions> optionsOfOpenAiOptions, Microsoft.Extensions.Options.IOptions<CoffeePeek.Shared.Kernel.Options.MenuPriceRangeOptions> optionsOfMenuPriceRangeOptions, System.Collections.Generic.IEnumerable<Wolverine.EntityFrameworkCore.IDomainEventScraper> domainEventScraperIEnumerable, System.Net.Http.IHttpClientFactory __httpClientFactory1, System.Net.Http.IHttpClientFactory __httpClientFactory2)
+        public ParseMenuPhotosCommandHandler919640505(Microsoft.Extensions.DependencyInjection.IServiceScopeFactory serviceScopeFactory, Microsoft.Extensions.Logging.ILogger<CoffeePeek.Shops.Application.Features.Menu.ParseMenuPhotos.ParseMenuPhotosCommand> loggerForMessage, Microsoft.Extensions.Logging.ILogger<CoffeePeek.Shops.Infrastructure.Menu.HttpMenuPhotoDownloader> loggerOfHttpMenuPhotoDownloader, Microsoft.Extensions.Logging.ILogger<CoffeePeek.Shops.Infrastructure.Menu.OpenAiMenuVisionParser> loggerOfOpenAiMenuVisionParser, Microsoft.Extensions.Options.IOptions<CoffeePeek.Shared.Kernel.Options.MenuPriceRangeOptions> optionsOfMenuPriceRangeOptions, Microsoft.Extensions.Options.IOptions<CoffeePeek.Shared.Kernel.Options.OpenAiOptions> optionsOfOpenAiOptions, System.Collections.Generic.IEnumerable<Wolverine.EntityFrameworkCore.IDomainEventScraper> domainEventScraperIEnumerable, System.Net.Http.IHttpClientFactory __httpClientFactory1, System.Net.Http.IHttpClientFactory __httpClientFactory2)
         {
             _serviceScopeFactory = serviceScopeFactory;
             _loggerForMessage = loggerForMessage;
-            _loggerOfOpenAiMenuVisionParser = loggerOfOpenAiMenuVisionParser;
             _loggerOfHttpMenuPhotoDownloader = loggerOfHttpMenuPhotoDownloader;
-            _optionsOfOpenAiOptions = optionsOfOpenAiOptions;
+            _loggerOfOpenAiMenuVisionParser = loggerOfOpenAiMenuVisionParser;
             _optionsOfMenuPriceRangeOptions = optionsOfMenuPriceRangeOptions;
+            _optionsOfOpenAiOptions = optionsOfOpenAiOptions;
             _domainEventScraperIEnumerable = domainEventScraperIEnumerable;
             _httpClientFactory1 = __httpClientFactory1;
             _httpClientFactory2 = __httpClientFactory2;
