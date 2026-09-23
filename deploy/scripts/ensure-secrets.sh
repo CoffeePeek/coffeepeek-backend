@@ -44,3 +44,17 @@ if [[ -z "${pepper}" ]]; then
 fi
 
 upsert_if_empty ACCOUNT_DELETION_TOKEN_PEPPER "${pepper}"
+
+# Shared secret between the gateway and downstream services (X-Gateway-Auth). Services refuse the
+# committed development key outside Development, so every deployment needs its own value.
+gateway_secret="${GATEWAY_AUTH_SECRET:-}"
+if [[ -z "${gateway_secret}" ]]; then
+  if ! command -v openssl >/dev/null 2>&1; then
+    echo "openssl is required to generate GATEWAY_AUTH_SECRET (or set it in ${ENV_FILE})" >&2
+    exit 1
+  fi
+  gateway_secret="$(openssl rand -hex 32)"
+  echo "==> Writing GATEWAY_AUTH_SECRET to .env"
+fi
+
+upsert_if_empty GATEWAY_AUTH_SECRET "${gateway_secret}"
