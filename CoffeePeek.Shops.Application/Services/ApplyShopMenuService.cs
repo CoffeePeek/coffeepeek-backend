@@ -94,6 +94,10 @@ public class ApplyShopMenuService(
 
             menu.ApplyParsedItems(items, snapshot.UnmatchedJson, suggested, userId);
         }
+        else if (snapshot.CapturedAtUtc.HasValue)
+        {
+            menu.CompleteParse(snapshot.UnmatchedJson, suggested, userId);
+        }
 
         if (snapshot.Photos.Count > 0)
         {
@@ -140,9 +144,10 @@ public class ApplyShopMenuService(
             ? (DomainPriceRange?)null
             : (DomainPriceRange)(int)suggestedPriceRange.Value;
 
-        menu.ApplyParsedItems(mapped, JsonSerializer.Serialize(unmatched, JsonOpts), suggested, userId);
+        menu.MergeParsedItems(mapped, JsonSerializer.Serialize(unmatched, JsonOpts), suggested, userId);
+        // Photos accumulate: a parse request carries only the newly attached photos.
         if (photos.Count > 0)
-            menu.ReplacePhotos(photos.Select(p => ShopMenuPhoto.Create(
+            menu.AddPhotos(photos.Select(p => ShopMenuPhoto.Create(
                 p.FileName, p.ContentType, p.StorageKey, p.SizeBytes, p.MediaPhotoId)));
 
         await cacheService.RemoveAsync(CacheKey.Shop.Detail(shopId));

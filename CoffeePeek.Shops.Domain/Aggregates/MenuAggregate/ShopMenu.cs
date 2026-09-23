@@ -70,9 +70,43 @@ public sealed class ShopMenu : Entity<Guid>
         Guid? updatedByUserId)
     {
         _items.Clear();
-        _items.AddRange(items);
+        // One row per drink (unique index); a snapshot listing a drink twice used to fail the save with a 500.
+        _items.AddRange(items.GroupBy(i => i.DrinkDefinitionId).Select(g => g.Last()));
         UnmatchedJson = unmatchedJson;
         SuggestedPriceRange = suggestedPriceRange;
+        UpdatedByUserId = updatedByUserId;
+        ParseStatus = MenuParseStatus.Ready;
+        ParseError = null;
+    }
+
+    /// <summary>
+    /// Applies a vision parse on top of the existing menu. A parse only covers the photos it was given, and
+    /// manual edits outrank the parser, so items are upserted per drink instead of replacing the whole menu
+    /// (which wiped earlier photos' items and every manual price on each re-parse).
+    /// </summary>
+    public void MergeParsedItems(
+        IEnumerable<ShopMenuItem> parsed,
+        string? unmatchedJson,
+        PriceRange? suggestedPriceRange,
+        Guid? updatedByUserId)
+    {
+        foreach (var item in parsed.GroupBy(i => i.DrinkDefinitionId).Select(g => g.Last()))
+        {
+            var existing = _items.FirstOrDefault(i => i.DrinkDefinitionId == item.DrinkDefinitionId);
+            if (existing is null)
+                _items.Add(item);
+            else if (existing.Source != MenuItemSource.Manual)
+                existing.ApplyParsed(item.Price, item.VolumeMl);
+        }
+
+        CompleteParse(unmatchedJson, suggestedPriceRange, updatedByUserId);
+    }
+
+    /// <summary>Finishes a parse that produced no catalog matches, so the menu does not stay Pending forever.</summary>
+    public void CompleteParse(string? unmatchedJson, PriceRange? suggestedPriceRange, Guid? updatedByUserId)
+    {
+        UnmatchedJson = unmatchedJson;
+        SuggestedPriceRange = suggestedPriceRange ?? SuggestedPriceRange;
         UpdatedByUserId = updatedByUserId;
         ParseStatus = MenuParseStatus.Ready;
         ParseError = null;

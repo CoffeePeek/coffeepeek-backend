@@ -39,6 +39,13 @@ public sealed class ShopMenuItem : Entity<Guid>
         };
     }
 
+    public void ApplyParsed(decimal? price, int? volumeMl)
+    {
+        Availability = MenuItemAvailability.Present;
+        Price = price;
+        VolumeMl = volumeMl;
+    }
+
     public void ApplyManual(MenuItemAvailability availability, decimal? price, int? volumeMl)
     {
         Availability = availability;
