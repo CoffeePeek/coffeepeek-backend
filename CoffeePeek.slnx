@@ -36,6 +36,7 @@
     <Project Path="CoffeeShop.Moderation.Persistence/CoffeeShop.Moderation.Persistence.csproj" />
   </Folder>
   <Folder Name="/CoffeePeek/CoffeePeek.Moderation/Tests/">
+    <Project Path="CoffeePeek.Moderation.Application.Tests/CoffeePeek.Moderation.Application.Tests.csproj" />
     <Project Path="CoffeePeek.Moderation.Domain.Tests/CoffeePeek.Moderation.Domain.Tests.csproj" />
     <Project Path="CoffeePeek.ModerationService.Tests/CoffeePeek.ModerationService.Tests.csproj" />
   </Folder>
