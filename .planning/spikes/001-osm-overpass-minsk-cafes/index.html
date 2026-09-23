@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>CoffeePeek — очередь импорта (spike)</title>
+  <title>CoffeePeek — import queue (spike)</title>
   <style>
     :root {
       --bg: #16120e;
@@ -101,17 +101,17 @@
 </head>
 <body>
   <header>
-    <h1>Очередь импорта кофеен</h1>
-    <p class="sub" id="intro">Смотри Instagram и фото на Яндексе. Объекты без правок OSM больше 5 лет из очереди убраны.</p>
+    <h1>Coffee shop import queue</h1>
+    <p class="sub" id="intro">Check Instagram and Yandex photos. Places with no OSM edits in over 5 years are removed from the queue.</p>
   </header>
   <div class="stats" id="stats"></div>
   <main>
     <section class="card" id="card"></section>
     <aside class="side">
       <img class="preview" id="photo" alt="" hidden />
-      <p class="preview-miss" id="photoMiss">Превью сайта подгрузится, если есть своя страница.</p>
-      <div class="yandex-box" id="googleBox">Google: жду статус…</div>
-      <div class="yandex-box" id="yandexBox">Яндекс: жду статус…</div>
+      <p class="preview-miss" id="photoMiss">Site preview loads if the place has its own page.</p>
+      <div class="yandex-box" id="googleBox">Google: waiting for status…</div>
+      <div class="yandex-box" id="yandexBox">Yandex: waiting for status…</div>
       <iframe id="map" title="Yandex map"></iframe>
       <p class="log" id="log"></p>
     </aside>
@@ -119,20 +119,20 @@
   <script>
     const BUCKET_ORDER = ["likely_specialty", "priority", "review", "likely_noise", "auto_reject"];
     const LABELS = {
-      likely_specialty: "похоже на specialty",
-      priority: "кофе-сигнал",
-      review: "просто cafe",
-      likely_noise: "шум / сети / столовые",
-      auto_reject: "автоматы",
+      likely_specialty: "looks like specialty",
+      priority: "coffee signal",
+      review: "plain cafe",
+      likely_noise: "noise / chains / canteens",
+      auto_reject: "vending machines",
     };
     const KEY = "cp-spike-001-decisions";
     const IN_FEED = ["specialty", "good_coffee", "cafe", "to_go"];
     const CATEGORIES = [
       { id: "specialty", label: "Specialty" },
-      { id: "good_coffee", label: "Хороший кофе" },
-      { id: "cafe", label: "Кафе с достойным кофе" },
-      { id: "to_go", label: "С собой / сеть" },
-      { id: "reject", label: "Не в ленту" },
+      { id: "good_coffee", label: "Good coffee" },
+      { id: "cafe", label: "Cafe with decent coffee" },
+      { id: "to_go", label: "To-go / chain" },
+      { id: "reject", label: "Not for feed" },
     ];
     const events = [];
 
@@ -173,13 +173,13 @@
     }
 
     function osmAgeLabel(c) {
-      if (!c.osmUpdatedAt) return "нет даты правки";
+      if (!c.osmUpdatedAt) return "no edit date";
       const days = c.osmAgeDays;
       const date = c.osmUpdatedAt.slice(0, 10);
       if (days == null) return date;
-      if (days < 60) return `${date} · ${days} дн. назад`;
+      if (days < 60) return `${date} · ${days} days ago`;
       const years = (days / 365).toFixed(1);
-      return `${date} · ${years} лет назад`;
+      return `${date} · ${years} years ago`;
     }
 
     function renderStats() {
@@ -192,9 +192,9 @@
           `<button class="chip ${filter===b?"active":""}" data-b="${b}">${LABELS[b]} · ${counts[b]||0}</button>`
         ).join("") + CATEGORIES.map(c =>
           `<span class="chip">${c.label} · ${catCounts[c.id]||0}</span>`
-        ).join("") + `<span class="chip">в ленте ${inFeed}</span>`
-        + (data.droppedStale ? `<span class="chip">выброшено stale &gt;${data.staleYears || 5}л · ${data.droppedStale}</span>` : "")
-        + `<button class="chip" id="export">экспорт JSON</button>`;
+        ).join("") + `<span class="chip">in feed ${inFeed}</span>`
+        + (data.droppedStale ? `<span class="chip">dropped stale &gt;${data.staleYears || 5}y · ${data.droppedStale}</span>` : "")
+        + `<button class="chip" id="export">export JSON</button>`;
       document.querySelectorAll("[data-b]").forEach(btn => {
         btn.onclick = () => { filter = btn.dataset.b; index = 0; render(); };
       });
@@ -219,17 +219,17 @@
     function researchButtons(c) {
       const L = c.links || {};
       const parts = [];
-      parts.push(`<a class="gmaps" id="googleOpen" href="${googleSearchUrl(c)}" target="_blank" rel="noreferrer">Открыть в Google</a>`);
+      parts.push(`<a class="gmaps" id="googleOpen" href="${googleSearchUrl(c)}" target="_blank" rel="noreferrer">Open in Google</a>`);
       if (L.instagram) parts.push(`<a class="ig" href="${L.instagram}" target="_blank" rel="noreferrer">Instagram</a>`);
-      else if (L.instagramSearch) parts.push(`<a class="ig" href="${L.instagramSearch}" target="_blank" rel="noreferrer">Найти Instagram</a>`);
-      if (L.yandexMaps) parts.push(`<a class="maps" href="${L.yandexMaps}" target="_blank" rel="noreferrer">Яндекс · фото карточки</a>`);
-      if (L.yandexImages) parts.push(`<a class="img" href="${L.yandexImages}" target="_blank" rel="noreferrer">Яндекс · картинки</a>`);
+      else if (L.instagramSearch) parts.push(`<a class="ig" href="${L.instagramSearch}" target="_blank" rel="noreferrer">Find Instagram</a>`);
+      if (L.yandexMaps) parts.push(`<a class="maps" href="${L.yandexMaps}" target="_blank" rel="noreferrer">Yandex · listing photos</a>`);
+      if (L.yandexImages) parts.push(`<a class="img" href="${L.yandexImages}" target="_blank" rel="noreferrer">Yandex · images</a>`);
       if (L.website && !(L.instagram && L.website.includes("instagram"))) {
-        parts.push(`<a href="${L.website}" target="_blank" rel="noreferrer">Сайт</a>`);
+        parts.push(`<a href="${L.website}" target="_blank" rel="noreferrer">Website</a>`);
       }
       if (c.facebook) parts.push(`<a href="${c.facebook}" target="_blank" rel="noreferrer">Facebook</a>`);
       if (c.vk) parts.push(`<a href="${c.vk}" target="_blank" rel="noreferrer">VK</a>`);
-      if (L.osmHistory) parts.push(`<a href="${L.osmHistory}" target="_blank" rel="noreferrer">История OSM</a>`);
+      if (L.osmHistory) parts.push(`<a href="${L.osmHistory}" target="_blank" rel="noreferrer">OSM history</a>`);
       else if (L.osm) parts.push(`<a href="${L.osm}" target="_blank" rel="noreferrer">OSM</a>`);
       return parts.join("");
     }
@@ -237,7 +237,7 @@
     function loadGoogle(c) {
       const box = document.getElementById("googleBox");
       box.className = "yandex-box";
-      box.textContent = "Google: проверяю, жива ли точка…";
+      box.textContent = "Google: checking whether the place is still open…";
       const q = new URLSearchParams({ name: c.name, lat: c.lat, lon: c.lon });
       fetch("/google-status?" + q.toString())
         .then(r => r.json())
@@ -252,70 +252,70 @@
           const gBtn = document.getElementById("googleOpen");
           if (gBtn && b?.mapsUrl) {
             gBtn.href = b.mapsUrl;
-            gBtn.textContent = "Открыть в Google · карточка";
+            gBtn.textContent = "Open in Google · listing";
           }
           if (p.verdict === "closed") {
             box.classList.add("closed");
-            box.textContent = `Google: закрыто навсегда — ${b?.name || c.name}. В выборку не берём.`;
+            box.textContent = `Google: permanently closed — ${b?.name || c.name}. Excluded.`;
           } else if (p.verdict === "temp_closed") {
             box.classList.add("blocked");
-            box.textContent = `Google: временно закрыто — ${b?.name || c.name}`;
+            box.textContent = `Google: temporarily closed — ${b?.name || c.name}`;
           } else if (p.verdict === "open") {
             box.classList.add("open");
             const maps = b?.mapsUrl ? ` · ${b.mapsUrl}` : "";
-            box.innerHTML = `Google: работает — <strong>${b.name}</strong> · ${b.address || ""}`;
+            box.innerHTML = `Google: open — <strong>${b.name}</strong> · ${b.address || ""}`;
           } else if (p.verdict === "not_found") {
             box.classList.add("blocked");
-            box.textContent = "Google: рядом не нашёл. Смотри карточку вручную.";
+            box.textContent = "Google: nothing found nearby. Check the listing manually.";
           } else if (p.verdict === "far") {
             box.classList.add("blocked");
-            box.textContent = "Google: есть тёзки, но далеко от OSM-точки.";
+            box.textContent = "Google: same-name matches exist, but far from the OSM point.";
           } else {
-            box.textContent = "Google: статус неясен.";
+            box.textContent = "Google: status unclear.";
           }
           log("google", p.verdict);
         })
         .catch(() => {
           box.classList.add("blocked");
-          box.textContent = "Google: запрос не дошёл.";
+          box.textContent = "Google: request failed.";
         });
     }
 
     function loadYandex(c) {
       const box = document.getElementById("yandexBox");
       box.className = "yandex-box";
-      box.textContent = "Яндекс: проверяю, жива ли точка…";
+      box.textContent = "Yandex: checking whether the place is still open…";
       const q = new URLSearchParams({ name: c.name, lat: c.lat, lon: c.lon });
       fetch("/yandex-status?" + q.toString())
         .then(r => r.json())
         .then(p => {
           if (!p.ok) {
             box.classList.add("blocked");
-            box.textContent = p.hint || p.error || "Яндекс Places недоступен";
+            box.textContent = p.hint || p.error || "Yandex Places unavailable";
             log("yandex", p.error || "fail");
             return;
           }
           const b = p.best;
           if (p.verdict === "closed") {
             box.classList.add("closed");
-            box.textContent = `Яндекс: закрыто — ${b?.name || c.name}. В выборку не берём.`;
+            box.textContent = `Yandex: closed — ${b?.name || c.name}. Excluded.`;
           } else if (p.verdict === "not_found") {
             box.classList.add("blocked");
-            box.textContent = "Яндекс: организацию рядом не нашёл. Смотри карточку вручную.";
+            box.textContent = "Yandex: no organization found nearby. Check the listing manually.";
           } else if (p.verdict === "far") {
             box.classList.add("blocked");
-            box.textContent = "Яндекс: есть тёзки, но далеко от OSM-точки.";
+            box.textContent = "Yandex: same-name matches exist, but far from the OSM point.";
           } else if (b) {
             box.classList.add("open");
-            box.textContent = `Яндекс: ${b.name} · ${b.hours || "часы не указаны"} · ${b.address || ""}`;
+            box.textContent = `Yandex: ${b.name} · ${b.hours || "hours not listed"} · ${b.address || ""}`;
           } else {
-            box.textContent = "Яндекс: ответ пустой.";
+            box.textContent = "Yandex: empty response.";
           }
           log("yandex", p.verdict);
         })
         .catch(() => {
           box.classList.add("blocked");
-          box.textContent = "Яндекс: запрос не дошёл.";
+          box.textContent = "Yandex: request failed.";
         });
     }
 
@@ -328,11 +328,11 @@
       const url = c.website && !String(c.website).includes("instagram") ? c.website : null;
       if (!url) {
         miss.textContent = c.instagram
-          ? "Фото в OSM нет. Открой Instagram — там видно, насколько место про кофе."
-          : "Фото в OSM почти никогда нет. Открой Яндекс · фото карточки или картинки.";
+          ? "No photo in OSM. Open Instagram to see how coffee-focused the place is."
+          : "OSM almost never has photos. Open Yandex · listing photos or images.";
         return;
       }
-      miss.textContent = "Гружу превью сайта…";
+      miss.textContent = "Loading site preview…";
       fetch("/preview?url=" + encodeURIComponent(url))
         .then(r => r.json())
         .then(p => {
@@ -343,12 +343,12 @@
             miss.textContent = [p.title, p.description].filter(Boolean).join(" — ");
             log("preview", p.title || "image");
           } else {
-            miss.textContent = "Сайт не отдал картинку. Смотри Instagram / Яндекс.";
+            miss.textContent = "Site returned no image. Check Instagram / Yandex.";
           }
         })
         .catch(() => {
           if (token !== previewToken) return;
-          miss.textContent = "Превью не загрузилось. Смотри Instagram / Яндекс.";
+          miss.textContent = "Preview failed to load. Check Instagram / Yandex.";
         });
     }
 
@@ -356,7 +356,7 @@
       const q = queue();
       const card = document.getElementById("card");
       if (!q.length) {
-        card.innerHTML = `<p class="empty">В бакете «${LABELS[filter]}» всё разобрано. Возьми следующий — все 1500 смотреть не нужно.</p>`;
+        card.innerHTML = `<p class="empty">Bucket "${LABELS[filter]}" is done. Take the next one; no need to review all 1500.</p>`;
         document.getElementById("map").src = "";
         document.getElementById("photo").hidden = true;
         return;
@@ -368,22 +368,22 @@
         <h2 class="name">${c.name}</h2>
         ${c.description ? `<p class="desc">${c.description}</p>` : ""}
         <div class="facts">
-          ${fact("адрес", c.address || "нет в OSM")}
-          ${fact("кухня", [c.cuisine, c.shop, c.brand].filter(Boolean).join(" · "))}
-          ${fact("часы", c.openingHours)}
-          ${fact("телефон", c.phone)}
-          ${fact("терраса", c.outdoorSeating)}
-          ${fact("с собой", c.takeaway)}
+          ${fact("address", c.address || "not in OSM")}
+          ${fact("cuisine", [c.cuisine, c.shop, c.brand].filter(Boolean).join(" · "))}
+          ${fact("hours", c.openingHours)}
+          ${fact("phone", c.phone)}
+          ${fact("terrace", c.outdoorSeating)}
+          ${fact("takeaway", c.takeaway)}
           ${fact("wifi", c.internetAccess)}
-          ${fact("OSM обновлён", osmAgeLabel(c))}
+          ${fact("OSM updated", osmAgeLabel(c))}
           ${fact("check_date", c.checkDate)}
-          ${fact("версия OSM", c.osmVersion)}
+          ${fact("OSM version", c.osmVersion)}
         </div>
         <div class="research">${researchButtons(c)}</div>
         <div class="signals">${(c.signals||[]).map(s => `<span class="chip">${s}</span>`).join("")}</div>
         <div class="actions">
           ${CATEGORIES.map(cat => `<button class="cat-${cat.id}" data-cat="${cat.id}">${cat.label}</button>`).join("")}
-          <button class="skip" id="skip">Позже</button>
+          <button class="skip" id="skip">Later</button>
         </div>
       `;
       const lon = c.lon, lat = c.lat;
@@ -412,18 +412,18 @@
       .then(r => r.json())
       .then(payload => {
         data = payload;
-        log("load", `${payload.total} в очереди, stale ${payload.droppedStale || 0}`);
+        log("load", `${payload.total} queued, stale ${payload.droppedStale || 0}`);
         const intro = document.getElementById("intro");
         if (intro && payload.droppedStale) {
           intro.textContent =
-            `В очереди ${payload.total}. Выброшено ${payload.droppedStale} без правок OSM больше ${payload.staleYears || 5} лет.`;
+            `${payload.total} queued. Dropped ${payload.droppedStale} with no OSM edits in over ${payload.staleYears || 5} years.`;
         }
         filter = (payload.counts.priority || 0) > 0 ? "priority" : "likely_specialty";
         render();
       })
       .catch(err => {
         document.getElementById("card").innerHTML =
-          `<p class="empty">Не удалось загрузить candidates-ui.json. Запусти <code>python3 serve.py</code>.</p>`;
+          `<p class="empty">Failed to load candidates-ui.json. Run <code>python3 serve.py</code>.</p>`;
         log("error", String(err));
       });
   </script>

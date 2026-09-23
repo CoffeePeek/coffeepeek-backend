@@ -158,7 +158,7 @@ def summarize_place(feature: dict, lat: float | None, lon: float | None) -> dict
 def yandex_status(name: str, lat: float | None, lon: float | None) -> dict:
     key = places_key()
     if not key:
-        return {"ok": False, "error": "no-key", "hint": "Положи ключ в secrets.local.json"}
+        return {"ok": False, "error": "no-key", "hint": "Put the key in secrets.local.json"}
     cache_key = f"{name}|{lat}|{lon}"
     cache = load_yandex_cache()
     if cache_key in cache:
@@ -184,7 +184,7 @@ def yandex_status(name: str, lat: float | None, lon: float | None) -> dict:
         return {
             "ok": False,
             "error": f"http-{exc.code}",
-            "hint": "Places ключ принят, но тариф заблокирован / лимит 0. В кабинете плитка «Поиск по организациям» должна быть не с замком." if exc.code == 403 else body[:200],
+            "hint": "Places key accepted, but the plan is blocked / quota is 0. In the dashboard, the \"Organization search\" tile must not be locked." if exc.code == 403 else body[:200],
         }
     except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as exc:
         return {"ok": False, "error": str(exc)}
@@ -214,7 +214,7 @@ def yandex_status(name: str, lat: float | None, lon: float | None) -> dict:
 def google_status(name: str, lat: float | None, lon: float | None) -> dict:
     key = google_key()
     if not key:
-        return {"ok": False, "error": "no-key", "hint": "Нет googlePlacesApiKey в secrets.local.json"}
+        return {"ok": False, "error": "no-key", "hint": "No googlePlacesApiKey in secrets.local.json"}
     cache_key = f"{name}|{lat}|{lon}"
     cache = {}
     if GOOGLE_CACHE_PATH.exists():
