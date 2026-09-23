@@ -17,7 +17,7 @@ public class ModerationRoasterConfiguration : IEntityTypeConfiguration<Moderatio
         entity.Property<uint>("Version").IsRowVersion();
         entity.Property(e => e.Name).HasMaxLength(BusinessConstants.MaxRoasterNameLength);
         entity.Property(e => e.About).HasMaxLength(BusinessConstants.MaxRoasterAboutLength);
-        entity.Property(e => e.RejectedReason).HasMaxLength(200);
+        entity.Property(e => e.RejectedReason).HasMaxLength(BusinessConstants.MaxRejectReasonCommentLength);
         entity.HasIndex(e => e.UserId);
         entity.HasIndex(e => e.ModerationStatus);
 

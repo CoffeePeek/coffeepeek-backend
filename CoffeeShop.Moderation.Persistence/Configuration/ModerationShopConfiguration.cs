@@ -15,9 +15,9 @@ public class ModerationShopConfiguration : IEntityTypeConfiguration<ModerationSh
 
         // Optimistic concurrency on PostgreSQL xmin: two moderators deciding the same item at once must not both win.
         entity.Property<uint>("Version").IsRowVersion();
-        entity.Property(e => e.Name).HasMaxLength(50);
+        entity.Property(e => e.Name).HasMaxLength(BusinessConstants.MaxShopNameLength);
         entity.Property(e => e.Description).HasMaxLength(1000);
-        entity.Property(e => e.RejectedReason).HasMaxLength(200);
+        entity.Property(e => e.RejectedReason).HasMaxLength(BusinessConstants.MaxRejectReasonCommentLength);
         entity.HasIndex(e => e.UserId);
         entity.HasIndex(e => e.ModerationStatus);
         entity.HasIndex(e => e.CityId);

@@ -1,4 +1,4 @@
-﻿namespace CoffeePeek.Moderation.Domain;
+namespace CoffeePeek.Moderation.Domain;
 
 public static class BusinessConstants
 {
@@ -14,6 +14,9 @@ public static class BusinessConstants
 
     public const int MinShopIssueReportDescriptionLength = 2;
     public const int MaxShopIssueReportDescriptionLength = 1000;
+
+    /// <summary>Matches the catalog Shops.Name column so an approved shop always fits.</summary>
+    public const int MaxShopNameLength = 100;
 
     #region ShopContact
 

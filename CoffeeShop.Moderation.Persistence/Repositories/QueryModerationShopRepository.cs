@@ -1,4 +1,4 @@
-﻿using CoffeePeek.Moderation.Domain.Aggregates;
+using CoffeePeek.Moderation.Domain.Aggregates;
 using CoffeePeek.Moderation.Domain.Aggregates.Enums;
 using CoffeePeek.Moderation.Domain.Common.Enums;
 using CoffeePeek.Moderation.Domain.Import;
@@ -70,5 +70,7 @@ public class QueryModerationShopRepository(ModerationDbContext dbContext) : IQue
             .Include(s => s.ModerationShopEquipments)
             .Include(s => s.ModerationCoffeeBeanShops)
             .Include(s => s.ModerationRoasterShops)
-            .Include(s => s.ModerationShopBrewMethods);
+            .Include(s => s.ModerationShopBrewMethods)
+            // Six collection includes in one query multiply rows (cartesian explosion); split per collection.
+            .AsSplitQuery();
 }

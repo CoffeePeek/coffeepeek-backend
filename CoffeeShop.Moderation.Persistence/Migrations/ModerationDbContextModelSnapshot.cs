@@ -146,8 +146,8 @@ namespace CoffeeShop.Moderation.Persistence.Migrations
                         .HasColumnType("character varying(100)");
 
                     b.Property<string>("RejectedReason")
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
 
                     b.Property<DateTime?>("UpdatedAtUtc")
                         .HasColumnType("timestamp with time zone");
@@ -234,15 +234,15 @@ namespace CoffeeShop.Moderation.Persistence.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
                     b.Property<int?>("PriceRange")
                         .HasColumnType("integer");
 
                     b.Property<string>("RejectedReason")
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
 
                     b.Property<Guid>("ShopId")
                         .HasColumnType("uuid");

@@ -31,6 +31,7 @@ public class ModerationShopRepository(ModerationDbContext context) : IModeration
             .Include(s => s.ModerationCoffeeBeanShops)
             .Include(s => s.ModerationRoasterShops)
             .Include(s => s.ModerationShopBrewMethods)
+            .AsSplitQuery()
             .FirstOrDefaultAsync(s => s.Id == id, cancellationToken: ct);
     }
 

@@ -14,18 +14,26 @@ public sealed partial class ModerationShop
         string? description,
         CoffeeFocus? coffeeFocus = null)
     {
-        if (string.IsNullOrWhiteSpace(name)) throw new DomainException("Name is required");
-
         return new ModerationShop
         {
             Id = Guid.NewGuid(),
-            Name = name,
+            Name = ValidateName(name),
             UserId = userId,
             CityId = cityId,
             Description = description,
             CoffeeFocus = coffeeFocus,
             ModerationStatus = ModerationStatus.Pending,
         };
+    }
+
+    private static string ValidateName(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name)) throw new DomainException("Name is required");
+
+        var trimmed = name.Trim();
+        if (trimmed.Length > BusinessConstants.MaxShopNameLength)
+            throw new DomainException($"Name cannot exceed {BusinessConstants.MaxShopNameLength} characters.");
+        return trimmed;
     }
 
     public void SetLocation(ModerationLocation moderationLocation)
@@ -37,6 +45,15 @@ public sealed partial class ModerationShop
     {
         var photo = PhotoMetadata.Create(fileName, contentType, storageKey, length, UserId, Id);
         _shopPhotos.Add(photo);
+    }
+
+    /// <summary>Removes gallery photos whose storage key is not in <paramref name="keptStorageKeys"/>.</summary>
+    /// <returns>The removed photos, so the caller can release their storage objects.</returns>
+    public IReadOnlyList<PhotoMetadata> RemovePhotosExcept(IReadOnlySet<string> keptStorageKeys)
+    {
+        var removed = _shopPhotos.Where(p => !keptStorageKeys.Contains(p.StorageKey)).ToList();
+        _shopPhotos.RemoveAll(p => !keptStorageKeys.Contains(p.StorageKey));
+        return removed;
     }
 
     public void AttachMenuPhotos(
@@ -82,8 +99,8 @@ public sealed partial class ModerationShop
         Guid? cityId,
         CoffeeFocus? coffeeFocus)
     {
-        if (name != null) 
-            Name = name;
+        if (name != null)
+            Name = ValidateName(name);
         
         if (description != null) 
             Description = description;
