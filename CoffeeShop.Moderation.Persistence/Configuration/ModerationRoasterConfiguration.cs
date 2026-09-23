@@ -19,7 +19,8 @@ public class ModerationRoasterConfiguration : IEntityTypeConfiguration<Moderatio
         entity.Property(e => e.About).HasMaxLength(BusinessConstants.MaxRoasterAboutLength);
         entity.Property(e => e.RejectedReason).HasMaxLength(BusinessConstants.MaxRejectReasonCommentLength);
         entity.HasIndex(e => e.UserId);
-        entity.HasIndex(e => e.ModerationStatus);
+        // Queue pages filter by status and order by newest; the composite also serves status-only filters.
+        entity.HasIndex(e => new { e.ModerationStatus, e.CreatedAtUtc });
 
         entity.OwnsOne(e => e.Contact, contact =>
         {

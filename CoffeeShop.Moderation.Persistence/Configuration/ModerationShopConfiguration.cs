@@ -19,7 +19,10 @@ public class ModerationShopConfiguration : IEntityTypeConfiguration<ModerationSh
         entity.Property(e => e.Description).HasMaxLength(1000);
         entity.Property(e => e.RejectedReason).HasMaxLength(BusinessConstants.MaxRejectReasonCommentLength);
         entity.HasIndex(e => e.UserId);
-        entity.HasIndex(e => e.ModerationStatus);
+        // Queue pages filter by status and order by newest; the composite also serves status-only filters.
+        entity.HasIndex(e => new { e.ModerationStatus, e.CreatedAtUtc });
+        // Looked up on every review submission (GetByPublishedShopId).
+        entity.HasIndex(e => e.ShopId);
         entity.HasIndex(e => e.CityId);
         entity.HasIndex(e => e.CoffeeFocus);
 

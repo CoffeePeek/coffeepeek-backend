@@ -112,11 +112,11 @@ namespace CoffeeShop.Moderation.Persistence.Migrations
 
                     b.HasIndex("ModerationShopId");
 
-                    b.HasIndex("ModerationStatus");
-
                     b.HasIndex("ShopId");
 
                     b.HasIndex("UserId");
+
+                    b.HasIndex("ModerationStatus", "CreatedAtUtc");
 
                     b.ToTable("ModerationReviews");
                 });
@@ -163,9 +163,9 @@ namespace CoffeeShop.Moderation.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ModerationStatus");
-
                     b.HasIndex("UserId");
+
+                    b.HasIndex("ModerationStatus", "CreatedAtUtc");
 
                     b.ToTable("ModerationRoasters");
                 });
@@ -265,9 +265,11 @@ namespace CoffeeShop.Moderation.Persistence.Migrations
 
                     b.HasIndex("CoffeeFocus");
 
-                    b.HasIndex("ModerationStatus");
+                    b.HasIndex("ShopId");
 
                     b.HasIndex("UserId");
+
+                    b.HasIndex("ModerationStatus", "CreatedAtUtc");
 
                     b.ToTable("ModerationShops");
                 });
@@ -636,7 +638,7 @@ namespace CoffeeShop.Moderation.Persistence.Migrations
 
                     b.HasIndex("ShopId");
 
-                    b.HasIndex("Status");
+                    b.HasIndex("Status", "CreatedAtUtc");
 
                     b.ToTable("ShopIssueReports");
                 });

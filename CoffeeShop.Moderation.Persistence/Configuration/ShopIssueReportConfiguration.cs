@@ -17,7 +17,8 @@ public class ShopIssueReportConfiguration : IEntityTypeConfiguration<ShopIssueRe
 
         entity.HasIndex(x => x.ShopId);
         entity.HasIndex(x => x.ReportedByUserId);
-        entity.HasIndex(x => x.Status);
+        // Queue pages filter by status and order by newest; the composite also serves status-only filters.
+        entity.HasIndex(x => new { x.Status, x.CreatedAtUtc });
 
         entity.Property(x => x.Description).HasMaxLength(BusinessConstants.MaxShopIssueReportDescriptionLength);
     }

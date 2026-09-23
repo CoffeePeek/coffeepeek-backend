@@ -24,7 +24,8 @@ public class ModerationReviewConfiguration : IEntityTypeConfiguration<Moderation
         entity.HasIndex(mr => mr.ShopId);
         entity.HasIndex(mr => mr.UserId);
         entity.HasIndex(mr => mr.ModeratedBy);
-        entity.HasIndex(mr => mr.ModerationStatus);
+        // Queue pages filter by status and order by newest; the composite also serves status-only filters.
+        entity.HasIndex(mr => new { mr.ModerationStatus, mr.CreatedAtUtc });
 
         entity.Property(mr => mr.UserName).HasMaxLength(30);
         entity.Property(mr => mr.Header)
