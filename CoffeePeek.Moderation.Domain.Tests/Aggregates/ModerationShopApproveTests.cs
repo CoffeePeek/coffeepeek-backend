@@ -258,4 +258,18 @@ public class ModerationShopApproveTests
 
         shop.ShopId.Should().Be(shopId);
     }
+
+    [Fact]
+    public void Reject_WhenAlreadyApproved_Throws()
+    {
+        // Regression: rejecting an approved shop left it live in the catalog and re-approve re-published it.
+        var shop = CreatePendingShop();
+        shop.SetLocation(new ModerationLocation("Validated street", 53.9m, 27.5m));
+        shop.Approve();
+
+        var act = () => shop.Reject("Changed my mind");
+
+        act.Should().Throw<DomainException>();
+        shop.ModerationStatus.Should().Be(ModerationStatus.Approved);
+    }
 }

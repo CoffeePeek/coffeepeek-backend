@@ -126,4 +126,16 @@ public class ShopIssueReportTests
     {
         return ShopIssueReport.Create(ValidUserId, ValidShopId, category, description);
     }
+
+    [Fact]
+    public void Transition_FromClosedStatus_Throws()
+    {
+        var report = ShopIssueReport.Create(ValidUserId, ValidShopId, ShopIssueCategory.ShopClosed, null);
+        report.MarkFixed(Guid.NewGuid());
+
+        var act = () => report.MarkReviewed(Guid.NewGuid());
+
+        act.Should().Throw<DomainException>();
+        report.Status.Should().Be(ShopIssueReportStatus.Fixed);
+    }
 }

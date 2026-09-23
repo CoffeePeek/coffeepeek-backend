@@ -107,4 +107,15 @@ public class ModerationRoasterTests
         roaster.ModerationStatus.Should().Be(ModerationStatus.Rejected);
         roaster.RejectedReason.Should().Be("Duplicate of an existing roaster.");
     }
+
+    [Fact]
+    public void Reject_AlreadyApproved_Throws()
+    {
+        var roaster = ModerationRoaster.Create("Coffee Circus", Guid.NewGuid(), null);
+        roaster.Approve();
+
+        var act = () => roaster.Reject("Duplicate of an existing roaster.");
+
+        act.Should().Throw<DomainException>();
+    }
 }

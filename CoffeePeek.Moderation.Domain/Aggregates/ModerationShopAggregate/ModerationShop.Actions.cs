@@ -162,6 +162,10 @@ public sealed partial class ModerationShop
 
     public void Reject(string reason)
     {
+        // An approved shop is already published to the catalog; rejecting it here would leave it live.
+        if (ModerationStatus == ModerationStatus.Approved)
+            throw new DomainException("Approved shop is already published and cannot be rejected.");
+
         if (string.IsNullOrWhiteSpace(reason))
             throw new DomainException("Reject reason is required.");
 

@@ -67,6 +67,9 @@ public static class ImportDuplicateScanner
     private static int KeeperScore(ShopImportCandidate candidate)
     {
         var score = 0;
+        // A candidate linked to a catalog shop must survive the merge, otherwise that shop is orphaned.
+        if (candidate.ResultingShopId is not null)
+            score += 2000;
         if (candidate.QueueStatus == ImportQueueStatus.Published)
             score += 1000;
         if (candidate.Source == ImportSource.Osm)
