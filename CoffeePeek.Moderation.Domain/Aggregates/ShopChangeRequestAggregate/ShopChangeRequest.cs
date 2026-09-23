@@ -80,6 +80,22 @@ public sealed class ShopChangeRequest : Entity<Guid>
         RejectionReason = trimmed;
     }
 
+    /// <summary>
+    /// Shops could not apply the approved change (the shop or its catalog references changed meanwhile).
+    /// The request is shown as rejected with the reason instead of staying Approved while never applied.
+    /// </summary>
+    /// <returns>False when the request is not Approved (duplicate or out-of-order notification).</returns>
+    public bool MarkApplyFailed(string reason, DateTime utcNow)
+    {
+        if (Status != ModerationStatus.Approved) return false;
+
+        var text = $"Could not be applied: {reason}".Trim();
+        Status = ModerationStatus.Rejected;
+        RejectionReason = text.Length > 500 ? text[..500] : text;
+        ReviewedAtUtc = utcNow;
+        return true;
+    }
+
     private void EnsurePending()
     {
         if (Status != ModerationStatus.Pending)

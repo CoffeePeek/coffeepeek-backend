@@ -182,6 +182,37 @@ public class ShopChangeRequestApprovedHandlerTests
         menu.CapturedAtUtc.Should().NotBeNull();
     }
 
+    [Fact]
+    public async Task Handle_ShopMissing_ReportsFailureInsteadOfThrowing()
+    {
+        // Regression: the NotFoundException dead-lettered the message and Moderation kept showing Approved.
+        await using var db = CreateDbContext();
+        var message = Message(Guid.NewGuid(), ShopChangeSection.Description,
+            new ShopChangePayloadDto(Description: "New description"));
+
+        var failed = await CreateHandler(db).Handle(message, TestContext.Current.CancellationToken);
+
+        failed.Should().NotBeNull();
+        failed!.RequestId.Should().Be(message.RequestId);
+        (await db.AppliedShopChangeRequests.CountAsync(TestContext.Current.CancellationToken)).Should().Be(0);
+    }
+
+    [Fact]
+    public async Task Handle_InvalidPayload_ReportsFailureAndDoesNotApply()
+    {
+        await using var db = CreateDbContext();
+        var shop = CreateShop();
+        db.Shops.Add(shop);
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        var failed = await CreateHandler(db).Handle(
+            Message(shop.Id, ShopChangeSection.Contacts, new ShopChangePayloadDto()),
+            TestContext.Current.CancellationToken);
+
+        failed.Should().NotBeNull();
+        db.ChangeTracker.Entries().Should().BeEmpty("partial changes must not be committed");
+    }
+
     private static ShopsDbContext CreateDbContext()
     {
         var options = new DbContextOptionsBuilder<ShopsDbContext>()

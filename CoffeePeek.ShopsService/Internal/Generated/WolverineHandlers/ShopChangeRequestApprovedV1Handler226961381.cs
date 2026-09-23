@@ -52,7 +52,11 @@ namespace Internal.Generated.WolverineHandlers
                 var shopChangeRequestApprovedHandler = new CoffeePeek.Shops.Infrastructure.Consumers.ShopChangeRequestApprovedHandler(shopsDbContext, _cacheService, _loggerOfShopChangeRequestApprovedHandler);
                 
                 // The actual message execution
-                await shopChangeRequestApprovedHandler.Handle(shopChangeRequestApprovedV1, cancellation).ConfigureAwait(false);
+                var outgoing1 = await shopChangeRequestApprovedHandler.Handle(shopChangeRequestApprovedV1, cancellation).ConfigureAwait(false);
+
+                
+                // Outgoing, cascaded message
+                await context.EnqueueCascadingAsync(outgoing1).ConfigureAwait(false);
 
                 
                 // Added by EF Core Transaction Middleware
