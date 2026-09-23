@@ -81,7 +81,7 @@ public class AdminImportController(IMessageBus bus, IUserContext userContext) : 
     }
 
     [HttpPost("file")]
-    [RequestSizeLimit(32_000_000)]
+    [RequestSizeLimit(10 * 1024 * 1024)] // matches the gateway Kestrel body limit
     [ProducesResponseType<Response<IngestImportFileResultDto>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> IngestFile([FromBody] JsonElement body, CancellationToken ct)
     {
