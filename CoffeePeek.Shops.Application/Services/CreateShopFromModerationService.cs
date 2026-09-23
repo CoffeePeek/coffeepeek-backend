@@ -52,7 +52,12 @@ public class CreateShopFromModerationService(
 
         if (shopDto.Location != null)
         {
-            shop.SetLocation(shopDto.CityId, shopDto.Location.Address, shopDto.Location.Latitude!.Value, shopDto.Location.Longitude!.Value);
+            // A location without coordinates used to throw on Latitude!.Value, dead-lettering the approval while
+            // Moderation waited forever for the completion reply.
+            if (shopDto.Location is { Latitude: { } lat, Longitude: { } lon })
+                shop.SetLocation(shopDto.CityId, shopDto.Location.Address, lat, lon);
+            else
+                shop.SetDraftLocation(shopDto.CityId, shopDto.Location.Address);
         }
 
         if (shopDto.ShopContact != null)

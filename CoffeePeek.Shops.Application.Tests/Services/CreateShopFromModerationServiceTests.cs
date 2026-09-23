@@ -136,4 +136,19 @@ public class CreateShopFromModerationServiceTests
         added.ShopTags.Should().ContainSingle(t =>
             t.TagId == CoffeePeek.Shops.Domain.Aggregates.ShopTagAggregate.ShopTagIds.Specialty);
     }
+
+    [Fact]
+    public async Task CreateShopFromApprovedEventAsync_LocationWithoutCoordinates_CreatesDraftLocation()
+    {
+        CoffeeShop? added = null;
+        _shopRepoMock.Setup(r => r.GetIdByModerationId(It.IsAny<Guid>(), _ct)).ReturnsAsync((Guid?)null);
+        _shopRepoMock.Setup(r => r.Add(It.IsAny<CoffeeShop>())).Callback<CoffeeShop>(shop => added = shop);
+        var dto = CreateMinimalShopDto();
+        dto.Location = new CoffeePeek.Contract.Dtos.Shop.LocationDto { Address = "Nemiga 5" };
+
+        await CreateSut().CreateShopFromApprovedEventAsync(dto, Guid.NewGuid(), Guid.NewGuid(), _ct);
+
+        added!.Location!.Latitude.Should().BeNull();
+        added.Location.Address.Should().Be("Nemiga 5");
+    }
 }

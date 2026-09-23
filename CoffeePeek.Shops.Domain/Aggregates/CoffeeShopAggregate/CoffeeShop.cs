@@ -129,6 +129,12 @@ public sealed class CoffeeShop : Entity<Guid>
         Location = Location.CreateValidated(cityId, address, latitude, longitude);
     }
 
+    /// <summary>Address without coordinates (not geocoded); the shop stays off the map until coordinates are set.</summary>
+    public void SetDraftLocation(Guid cityId, string address)
+    {
+        Location = Location.CreateDraft(cityId, address);
+    }
+
     public void SetContact(string? instagramLink, string? email, string? siteLink, string? phoneNumber)
     {
         Contact = ShopContact.Create(instagramLink, email, siteLink, phoneNumber);
