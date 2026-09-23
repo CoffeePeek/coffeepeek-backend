@@ -1,4 +1,4 @@
-﻿using CoffeePeek.Shared.Domain.Entities;
+using CoffeePeek.Shared.Domain.Entities;
 using CoffeePeek.Shared.Kernel.Exceptions;
 using CoffeePeek.Shops.Domain.Aggregates.BrewMethods;
 using CoffeePeek.Shops.Domain.Entities;
@@ -13,6 +13,12 @@ public sealed class CoffeeShop : Entity<Guid>
     public PriceRange PriceRange { get; private set; }
     public CoffeeFocusType? Type { get; private set; }
     public CoffeeShopStatus Status { get; private set; } = CoffeeShopStatus.Active;
+
+    /// <summary>
+    /// Admin moderation flag, independent of the business status. Hiding used to overload TemporarilyClosed,
+    /// which also means a real closure and an imported draft, so un-hiding could reopen a closed shop.
+    /// </summary>
+    public bool IsHidden { get; private set; }
     public short DataCompletenessScore { get; private set; }
 
     public Guid? CreatorId { get; private set; }
@@ -110,7 +116,7 @@ public sealed class CoffeeShop : Entity<Guid>
 
     public void SetHidden(bool hidden)
     {
-        Status = hidden ? CoffeeShopStatus.TemporarilyClosed : CoffeeShopStatus.Active;
+        IsHidden = hidden;
     }
 
     public void AssignOwner(Guid? ownerUserId)

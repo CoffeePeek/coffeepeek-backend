@@ -28,7 +28,7 @@ public class CoffeeShopQueries(
     public async Task<(ShortShopDto[] Items, int TotalCount)> Search(SearchCoffeeShopsQuery request, CancellationToken ct)
     {
         var query = context.Shops.AsNoTracking()
-            .Where(s => s.Status == CoffeeShopStatus.Active);
+            .Where(s => s.Status == CoffeeShopStatus.Active && !s.IsHidden);
         
         if (!string.IsNullOrWhiteSpace(request.Query))
         {
@@ -179,7 +179,7 @@ public class CoffeeShopQueries(
         var dto = await context.Shops
             .AsNoTracking()
             .AsSplitQuery()
-            .Where(x => x.Id == id)
+            .Where(x => x.Id == id && !x.IsHidden)
             .ProjectToType<CoffeeShopDetailsDto>(mapper.Config)
             .FirstOrDefaultAsync(ct);
 
@@ -265,7 +265,7 @@ public class CoffeeShopQueries(
         var cityPoints = cityIds.Length == 0
             ? []
             : await context.Shops.AsNoTracking()
-                .Where(s => s.Status == CoffeeShopStatus.Active
+                .Where(s => s.Status == CoffeeShopStatus.Active && !s.IsHidden
                             && cityIds.Contains(s.Location.CityId)
                             && s.Location.Latitude.HasValue
                             && s.Location.Longitude.HasValue)
@@ -346,7 +346,7 @@ public class CoffeeShopQueries(
         ShopsDbContext context,
         GetShopsInBoundsQuery query) =>
         context.Shops.AsNoTracking()
-            .Where(s => s.Status == CoffeeShopStatus.Active &&
+            .Where(s => s.Status == CoffeeShopStatus.Active && !s.IsHidden &&
                         s.Location.Latitude.HasValue &&
                         s.Location.Longitude.HasValue &&
                         s.Location.Latitude >= query.MinLat &&

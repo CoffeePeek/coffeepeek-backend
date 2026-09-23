@@ -353,6 +353,9 @@ namespace CoffeePeek.Shops.Persistance.Migrations
                     b.Property<DateTime?>("ImportedFromFileAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<bool>("IsHidden")
+                        .HasColumnType("boolean");
+
                     b.Property<Guid?>("ModerationId")
                         .HasColumnType("uuid");
 

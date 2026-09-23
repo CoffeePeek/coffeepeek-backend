@@ -92,7 +92,7 @@ public static class AdminPublishedShopMapper
         shop.OwnerUserId,
         shop.ModerationId,
         shop.CreatedAtUtc,
-        shop.Status != DomainCoffeeShopStatus.Active,
+        shop.IsHidden,
         shop.ImportedFromFileAt,
         MapPhotos(shop.ShopPhotos, mediaOptions),
         shop.Description,
