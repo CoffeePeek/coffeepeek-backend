@@ -65,7 +65,7 @@ public static class ParseMenuPhotosHandler
         var matched = new Dictionary<string, ParsedMenuItemDto>(StringComparer.OrdinalIgnoreCase);
         var unmatched = new List<UnmatchedMenuItemDto>();
 
-        foreach (var line in vision.Drinks)
+        foreach (var line in Sanitize(vision.Drinks))
         {
             var drink = MenuDrinkMatcher.Match(catalog, line.RawName);
             if (drink is null)
@@ -111,6 +111,25 @@ public static class ParseMenuPhotosHandler
             items,
             unmatched));
     }
+
+    // The JSON schema fixes the shape, not the values: text in a menu photo can steer the model into absurd
+    // numbers, which skewed the price range, overflowed numeric(10,2) and bloated UnmatchedJson.
+    private const int MaxDrinkLines = 200;
+    private const int MaxRawNameLength = 100;
+    private const decimal MaxPrice = 10_000m;
+    private const int MaxVolumeMl = 2_000;
+
+    public static IEnumerable<VisionDrinkLine> Sanitize(IEnumerable<VisionDrinkLine> lines) =>
+        lines
+            .Where(l => !string.IsNullOrWhiteSpace(l.RawName))
+            .Take(MaxDrinkLines)
+            .Select(l => l with
+            {
+                RawName = l.RawName.Length > MaxRawNameLength ? l.RawName[..MaxRawNameLength] : l.RawName,
+                Price = l.Price is > 0 and <= MaxPrice ? l.Price : null,
+                VolumeMl = l.VolumeMl is > 0 and <= MaxVolumeMl ? l.VolumeMl : null,
+                Confidence = l.Confidence is { } c ? Math.Clamp(c, 0, 1) : null
+            });
 
     private static ParseMenuPhotosResponse Failed(string error) =>
         new(false, error, null, [], []);

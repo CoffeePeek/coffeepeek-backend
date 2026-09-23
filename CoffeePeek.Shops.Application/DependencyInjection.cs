@@ -20,7 +20,9 @@ public static class DependencyInjection
             .ValidateOnStart();
 
         services.AddOptions<OpenAiOptions>()
-            .BindConfiguration(nameof(OpenAiOptions));
+            .BindConfiguration(nameof(OpenAiOptions))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
 
         services.AddOptions<MenuPriceRangeOptions>()
             .BindConfiguration(nameof(MenuPriceRangeOptions));

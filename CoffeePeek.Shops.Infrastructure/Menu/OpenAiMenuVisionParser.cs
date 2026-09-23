@@ -149,7 +149,7 @@ public sealed class OpenAiMenuVisionParser(
         catch (Exception ex)
         {
             logger.LogError(ex, "OpenAI menu parse threw for model {Model}", settings.Model);
-            return new MenuVisionParseResult(false, $"OpenAI request failed: {ex.Message}", []);
+            return new MenuVisionParseResult(false, $"OpenAI request failed ({ex.GetType().Name}).", []);
         }
     }
 
@@ -170,7 +170,9 @@ public sealed class OpenAiMenuVisionParser(
             return "OpenAI is blocked for this server IP. Set OpenAiOptions:ProxyUrl to an HTTP or SOCKS proxy whose egress is in a supported region.";
         }
 
-        return $"OpenAI HTTP {statusCode}: {Trim(body)}";
+        // The raw body is logged only: ParseError is shown in the admin UI and copied into Moderation, and
+        // OpenAI error bodies include a partially masked API key and proxy/host details.
+        return $"OpenAI HTTP {statusCode}.";
     }
 
     private static string Trim(string value) =>
