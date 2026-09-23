@@ -16,23 +16,23 @@ namespace Internal.Generated.WolverineHandlers
         private readonly CoffeePeek.Shared.Domain.Interfaces.Infrastructure.ICacheService _cacheService;
         private readonly Microsoft.Extensions.DependencyInjection.IServiceScopeFactory _serviceScopeFactory;
         private readonly Microsoft.Extensions.Logging.ILogger<CoffeePeek.Shops.Infrastructure.Consumers.ParseMenuRequestedEventHandler> _loggerOfParseMenuRequestedEventHandler;
-        private readonly Microsoft.Extensions.Logging.ILogger<CoffeePeek.Shops.Infrastructure.Menu.GeminiMenuVisionParser> _loggerOfGeminiMenuVisionParser;
+        private readonly Microsoft.Extensions.Logging.ILogger<CoffeePeek.Shops.Infrastructure.Menu.OpenAiMenuVisionParser> _loggerOfOpenAiMenuVisionParser;
         private readonly Microsoft.Extensions.Logging.ILogger<CoffeePeek.Shops.Infrastructure.Menu.HttpMenuPhotoDownloader> _loggerOfHttpMenuPhotoDownloader;
-        private readonly Microsoft.Extensions.Options.IOptions<CoffeePeek.Shared.Kernel.Options.GeminiOptions> _optionsOfGeminiOptions;
+        private readonly Microsoft.Extensions.Options.IOptions<CoffeePeek.Shared.Kernel.Options.OpenAiOptions> _optionsOfOpenAiOptions;
         private readonly Microsoft.Extensions.Options.IOptions<CoffeePeek.Shared.Kernel.Options.MediaPublicUrlOptions> _optionsOfMediaPublicUrlOptions;
         private readonly Microsoft.Extensions.Options.IOptions<CoffeePeek.Shared.Kernel.Options.MenuPriceRangeOptions> _optionsOfMenuPriceRangeOptions;
         private readonly System.Collections.Generic.IEnumerable<Wolverine.EntityFrameworkCore.IDomainEventScraper> _domainEventScraperIEnumerable;
         private readonly System.Net.Http.IHttpClientFactory _httpClientFactory1;
         private readonly System.Net.Http.IHttpClientFactory _httpClientFactory2;
 
-        public ParseMenuRequestedEventHandler1007143525(CoffeePeek.Shared.Domain.Interfaces.Infrastructure.ICacheService cacheService, Microsoft.Extensions.DependencyInjection.IServiceScopeFactory serviceScopeFactory, Microsoft.Extensions.Logging.ILogger<CoffeePeek.Shops.Infrastructure.Consumers.ParseMenuRequestedEventHandler> loggerOfParseMenuRequestedEventHandler, Microsoft.Extensions.Logging.ILogger<CoffeePeek.Shops.Infrastructure.Menu.GeminiMenuVisionParser> loggerOfGeminiMenuVisionParser, Microsoft.Extensions.Logging.ILogger<CoffeePeek.Shops.Infrastructure.Menu.HttpMenuPhotoDownloader> loggerOfHttpMenuPhotoDownloader, Microsoft.Extensions.Options.IOptions<CoffeePeek.Shared.Kernel.Options.GeminiOptions> optionsOfGeminiOptions, Microsoft.Extensions.Options.IOptions<CoffeePeek.Shared.Kernel.Options.MediaPublicUrlOptions> optionsOfMediaPublicUrlOptions, Microsoft.Extensions.Options.IOptions<CoffeePeek.Shared.Kernel.Options.MenuPriceRangeOptions> optionsOfMenuPriceRangeOptions, System.Collections.Generic.IEnumerable<Wolverine.EntityFrameworkCore.IDomainEventScraper> domainEventScraperIEnumerable, System.Net.Http.IHttpClientFactory __httpClientFactory1, System.Net.Http.IHttpClientFactory __httpClientFactory2)
+        public ParseMenuRequestedEventHandler1007143525(CoffeePeek.Shared.Domain.Interfaces.Infrastructure.ICacheService cacheService, Microsoft.Extensions.DependencyInjection.IServiceScopeFactory serviceScopeFactory, Microsoft.Extensions.Logging.ILogger<CoffeePeek.Shops.Infrastructure.Consumers.ParseMenuRequestedEventHandler> loggerOfParseMenuRequestedEventHandler, Microsoft.Extensions.Logging.ILogger<CoffeePeek.Shops.Infrastructure.Menu.OpenAiMenuVisionParser> loggerOfOpenAiMenuVisionParser, Microsoft.Extensions.Logging.ILogger<CoffeePeek.Shops.Infrastructure.Menu.HttpMenuPhotoDownloader> loggerOfHttpMenuPhotoDownloader, Microsoft.Extensions.Options.IOptions<CoffeePeek.Shared.Kernel.Options.OpenAiOptions> optionsOfOpenAiOptions, Microsoft.Extensions.Options.IOptions<CoffeePeek.Shared.Kernel.Options.MediaPublicUrlOptions> optionsOfMediaPublicUrlOptions, Microsoft.Extensions.Options.IOptions<CoffeePeek.Shared.Kernel.Options.MenuPriceRangeOptions> optionsOfMenuPriceRangeOptions, System.Collections.Generic.IEnumerable<Wolverine.EntityFrameworkCore.IDomainEventScraper> domainEventScraperIEnumerable, System.Net.Http.IHttpClientFactory __httpClientFactory1, System.Net.Http.IHttpClientFactory __httpClientFactory2)
         {
             _cacheService = cacheService;
             _serviceScopeFactory = serviceScopeFactory;
             _loggerOfParseMenuRequestedEventHandler = loggerOfParseMenuRequestedEventHandler;
-            _loggerOfGeminiMenuVisionParser = loggerOfGeminiMenuVisionParser;
+            _loggerOfOpenAiMenuVisionParser = loggerOfOpenAiMenuVisionParser;
             _loggerOfHttpMenuPhotoDownloader = loggerOfHttpMenuPhotoDownloader;
-            _optionsOfGeminiOptions = optionsOfGeminiOptions;
+            _optionsOfOpenAiOptions = optionsOfOpenAiOptions;
             _optionsOfMediaPublicUrlOptions = optionsOfMediaPublicUrlOptions;
             _optionsOfMenuPriceRangeOptions = optionsOfMenuPriceRangeOptions;
             _domainEventScraperIEnumerable = domainEventScraperIEnumerable;
@@ -52,7 +52,7 @@ namespace Internal.Generated.WolverineHandlers
             var shopMenuRepository = new CoffeePeek.Shops.Persistance.Repositories.ShopMenuRepository(shopsDbContext);
             var httpMenuPhotoDownloader = new CoffeePeek.Shops.Infrastructure.Menu.HttpMenuPhotoDownloader(_httpClientFactory2, _loggerOfHttpMenuPhotoDownloader);
             var queryCoffeeDrinkRepository = new CoffeePeek.Shops.Persistance.Repositories.QueryCoffeeDrinkRepository(shopsDbContext);
-            var geminiMenuVisionParser = new CoffeePeek.Shops.Infrastructure.Menu.GeminiMenuVisionParser(_httpClientFactory1, _optionsOfGeminiOptions, _loggerOfGeminiMenuVisionParser);
+            var openAiMenuVisionParser = new CoffeePeek.Shops.Infrastructure.Menu.OpenAiMenuVisionParser(_httpClientFactory1, _optionsOfOpenAiOptions, _loggerOfOpenAiMenuVisionParser);
             var unitOfWorkOfShopsDbContext = new CoffeePeek.Shared.Persistence.Data.UnitOfWork<CoffeePeek.Shops.Persistance.Configuration.ShopsDbContext>(shopsDbContext);
             var queryCoffeeShopRepository = new CoffeePeek.Shops.Persistance.Repositories.QueryCoffeeShopRepository(shopsDbContext);
             var applyShopMenuService = new CoffeePeek.Shops.Application.Services.ApplyShopMenuService(shopMenuRepository, queryCoffeeDrinkRepository, coffeeShopRepository, _cacheService);
@@ -73,7 +73,7 @@ namespace Internal.Generated.WolverineHandlers
             {
                 System.Diagnostics.Activity.Current?.SetTag("message.handler", "CoffeePeek.Shops.Infrastructure.Consumers.ParseMenuRequestedEventHandler");
                 System.Diagnostics.Activity.Current?.SetTag("handler.type", "CoffeePeek.Shops.Infrastructure.Consumers.ParseMenuRequestedEventHandler");
-                var parseMenuRequestedEventHandler = new CoffeePeek.Shops.Infrastructure.Consumers.ParseMenuRequestedEventHandler(applyShopMenuService, queryCoffeeShopRepository, unitOfWorkOfShopsDbContext, _optionsOfMediaPublicUrlOptions, geminiMenuVisionParser, queryCoffeeDrinkRepository, httpMenuPhotoDownloader, _optionsOfMenuPriceRangeOptions, _loggerOfParseMenuRequestedEventHandler);
+                var parseMenuRequestedEventHandler = new CoffeePeek.Shops.Infrastructure.Consumers.ParseMenuRequestedEventHandler(applyShopMenuService, queryCoffeeShopRepository, unitOfWorkOfShopsDbContext, _optionsOfMediaPublicUrlOptions, openAiMenuVisionParser, queryCoffeeDrinkRepository, httpMenuPhotoDownloader, _optionsOfMenuPriceRangeOptions, _loggerOfParseMenuRequestedEventHandler);
                 
                 // The actual message execution
                 var outgoing1 = await parseMenuRequestedEventHandler.Handle(parseMenuRequestedEvent, cancellation).ConfigureAwait(false);

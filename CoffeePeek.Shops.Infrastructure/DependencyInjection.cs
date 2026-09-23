@@ -25,40 +25,39 @@ public static class DependencyInjection
             client.Timeout = TimeSpan.FromSeconds(5);
         });
 
-        var timeoutRaw = configuration.GetSection(nameof(GeminiOptions))["TimeoutSeconds"];
-        var geminiTimeoutSeconds = int.TryParse(timeoutRaw, out var parsedTimeout)
+        var timeoutRaw = configuration.GetSection(nameof(OpenAiOptions))["TimeoutSeconds"];
+        var openAiTimeoutSeconds = int.TryParse(timeoutRaw, out var parsedTimeout)
             ? parsedTimeout
             : 90;
 
-        services.AddHttpClient("gemini", (sp, client) =>
+        services.AddHttpClient("openai", (sp, client) =>
         {
-            var timeout = sp.GetRequiredService<IOptions<GeminiOptions>>().Value.TimeoutSeconds;
+            var timeout = sp.GetRequiredService<IOptions<OpenAiOptions>>().Value.TimeoutSeconds;
             // Resilience pipeline owns the deadline; keep HttpClient.Timeout at or above it.
             client.Timeout = TimeSpan.FromSeconds(Math.Clamp(timeout, 30, 180) + 10);
-            // Cloudflare Worker (GEMINI_BASE_URL) returns 1010 if User-Agent is missing.
             client.DefaultRequestHeaders.UserAgent.ParseAdd("CoffeePeek.ShopsService/1.0");
         }).ConfigurePrimaryHttpMessageHandler(sp =>
         {
-            var settings = sp.GetRequiredService<IOptions<GeminiOptions>>().Value;
+            var settings = sp.GetRequiredService<IOptions<OpenAiOptions>>().Value;
             var handler = new SocketsHttpHandler();
-            var proxy = GeminiProxy.Create(settings.ProxyUrl);
+            var proxy = OpenAiProxy.Create(settings.ProxyUrl);
             if (proxy is not null)
             {
                 handler.UseProxy = true;
                 handler.Proxy = proxy;
                 sp.GetRequiredService<ILoggerFactory>()
-                    .CreateLogger("CoffeePeek.Shops.Infrastructure.Menu.GeminiProxy")
+                    .CreateLogger("CoffeePeek.Shops.Infrastructure.Menu.OpenAiProxy")
                     .LogInformation(
-                        "Gemini HTTP client using proxy {Proxy}",
-                        GeminiProxy.DisplayHost(settings.ProxyUrl));
+                        "OpenAI HTTP client using proxy {Proxy}",
+                        OpenAiProxy.DisplayHost(settings.ProxyUrl));
             }
 
             return handler;
         })
         // Aspire AddStandardResilienceHandler() defaults to 10s/attempt and 30s total,
-        // which aborts Gemini vision (menu photos) long before GeminiOptions.TimeoutSeconds.
+        // which aborts OpenAI vision (menu photos) long before OpenAiOptions.TimeoutSeconds.
         .RemoveAllResilienceHandlers()
-        .AddStandardResilienceHandler(options => ApplyGeminiResilience(options, geminiTimeoutSeconds));
+        .AddStandardResilienceHandler(options => ApplyOpenAiResilience(options, openAiTimeoutSeconds));
 
         services.AddHttpClient("menu-photos", client =>
         {
@@ -66,7 +65,7 @@ public static class DependencyInjection
         });
 
         services.AddScoped<IUserExistenceLookup, AccountUserExistenceLookup>();
-        services.AddScoped<IMenuVisionParser, GeminiMenuVisionParser>();
+        services.AddScoped<IMenuVisionParser, OpenAiMenuVisionParser>();
         services.AddScoped<IMenuPhotoDownloader, HttpMenuPhotoDownloader>();
         services.AddScoped<ModerationShopApproveHandler>();
         services.AddScoped<ICreateRoasterFromModerationService, CreateRoasterFromModerationService>();
@@ -76,7 +75,7 @@ public static class DependencyInjection
         return services;
     }
 
-    internal static void ApplyGeminiResilience(HttpStandardResilienceOptions options, int timeoutSeconds)
+    internal static void ApplyOpenAiResilience(HttpStandardResilienceOptions options, int timeoutSeconds)
     {
         var attempt = TimeSpan.FromSeconds(Math.Clamp(timeoutSeconds, 30, 180));
         options.AttemptTimeout.Timeout = attempt;

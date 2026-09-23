@@ -200,11 +200,11 @@ services:
     environment:
       <<: [*dotnet-common, *rabbitmq-env, *redis-env, *media-public-env]
       PostgresCpOptions__ConnectionString: Host=postgres;Port=5432;Database=cpshopsdb;Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD};SslMode=Disable;GSS Encryption Mode=Disable
-      GeminiOptions__ApiKey: ${GEMINI_API_KEY:-}
-      GeminiOptions__Model: ${GEMINI_MODEL:-gemini-3.6-flash}
-      GeminiOptions__BaseUrl: ${GEMINI_BASE_URL:-}
-      GeminiOptions__ProxyUrl: ${GEMINI_PROXY_URL:-}
-      GeminiOptions__TimeoutSeconds: ${GEMINI_TIMEOUT_SECONDS:-90}
+      OpenAiOptions__ApiKey: ${OPENAI_API_KEY:-}
+      OpenAiOptions__Model: ${OPENAI_MODEL:-gpt-4.1-mini}
+      OpenAiOptions__BaseUrl: ${OPENAI_BASE_URL:-https://api.openai.com/v1}
+      OpenAiOptions__ProxyUrl: ${OPENAI_PROXY_URL:-}
+      OpenAiOptions__TimeoutSeconds: ${OPENAI_TIMEOUT_SECONDS:-90}
       Sentry__Dsn: ${SENTRY_DSN_SHOPS:-}
     mem_limit: 1024m
     memswap_limit: 1024m
