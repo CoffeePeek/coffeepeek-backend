@@ -10,6 +10,10 @@ public class RoasterConfiguration : IEntityTypeConfiguration<Roaster>
     public void Configure(EntityTypeBuilder<Roaster> builder)
     {
         builder.HasKey(r => r.Id);
+        // Backstop for the read-then-insert idempotency check in CreateRoasterFromModerationService.
+        builder.HasIndex(r => r.ModerationId)
+            .IsUnique()
+            .HasFilter("\"ModerationId\" IS NOT NULL");
         builder.Property(r => r.Name).HasMaxLength(BusinessConstants.MaxRoasterNameLength);
         builder.Property(r => r.About).HasMaxLength(BusinessConstants.MaxRoasterAboutLength);
 

@@ -517,6 +517,10 @@ namespace CoffeePeek.Shops.Persistance.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("ModerationId")
+                        .IsUnique()
+                        .HasFilter("\"ModerationId\" IS NOT NULL");
+
                     b.ToTable("Roasters");
                 });
 
@@ -837,7 +841,9 @@ namespace CoffeePeek.Shops.Persistance.Migrations
 
                     b.HasIndex("CoffeeShopId");
 
-                    b.HasIndex("ModerationReviewId");
+                    b.HasIndex("ModerationReviewId")
+                        .IsUnique()
+                        .HasFilter("\"ModerationReviewId\" IS NOT NULL");
 
                     b.HasIndex("UserId");
 

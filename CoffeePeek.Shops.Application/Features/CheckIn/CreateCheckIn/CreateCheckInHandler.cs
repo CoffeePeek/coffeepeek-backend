@@ -27,6 +27,9 @@ public static class CreateCheckInHandler
         ICacheService cacheService,
         CancellationToken ct)
     {
+        // Cooldown and daily cap are read-then-insert checks; without the lock parallel requests all pass.
+        await queryCheckInRepository.LockUserForCheckInAsync(command.UserId, ct);
+
         var validationResult = await validationStrategy.ValidateAsync(command, ct);
         if (!validationResult.IsValid)
             throw new ValidationException(validationResult.ErrorMessage!);

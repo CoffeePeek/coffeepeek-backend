@@ -1,4 +1,4 @@
-﻿namespace CoffeePeek.Shops.Domain.Aggregates.CheckInAggregate;
+namespace CoffeePeek.Shops.Domain.Aggregates.CheckInAggregate;
 
 public interface IQueryCheckInRepository
 {
@@ -20,4 +20,10 @@ public interface IQueryCheckInRepository
         CancellationToken ct = default);
     Task<bool> ExistsByIdAsync(Guid checkInId, CancellationToken ct = default);
     Task<Guid?> GetUserIdByIdAsync(Guid checkInId, CancellationToken ct = default);
+
+    /// <summary>
+    /// Serializes check-in creation per user until the current transaction ends, so the cooldown and daily-cap
+    /// checks cannot be raced by parallel requests.
+    /// </summary>
+    Task LockUserForCheckInAsync(Guid userId, CancellationToken ct = default);
 }

@@ -73,6 +73,23 @@ public class CreateCheckInHandlerTests
     }
 
     [Fact]
+    public async Task Handle_TakesPerUserLockBeforeValidating()
+    {
+        // Regression: cooldown/daily-cap checks raced; the lock must be held before they run.
+        var command = BuildCommand(isPublic: false);
+        var order = new List<string>();
+        _checkInRepoMock.Setup(r => r.LockUserForCheckInAsync(command.UserId, _ct))
+            .Callback(() => order.Add("lock")).Returns(Task.CompletedTask);
+        _validationMock.Setup(v => v.ValidateAsync(command, _ct))
+            .Callback(() => order.Add("validate")).ReturnsAsync(ValidationResult.Valid);
+
+        await CreateCheckInHandler.Handle(command, _checkInRepoMock.Object, _unitOfWorkMock.Object, _busMock.Object,
+            _validationMock.Object, _mapperMock.Object, _cacheMock.Object, _ct);
+
+        order.Should().Equal("lock", "validate");
+    }
+
+    [Fact]
     public async Task Handle_WithPhotos_AttachesPhotosRegardlessOfVisibility()
     {
         var photos = new List<UploadedPhotoDto>
