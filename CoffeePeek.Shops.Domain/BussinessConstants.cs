@@ -58,6 +58,8 @@ public static class BusinessConstants
     public const int MaxCoffeeZoneDescriptionLength = 500;
     public const int MinCoffeeZoneRadiusMeters = 100;
     public const int MaxCoffeeZoneRadiusMeters = 2000;
+    public const int MinCoffeeZonePolygonPoints = 3;
+    public const int MaxCoffeeZonePolygonPoints = 100;
 
     #endregion
 

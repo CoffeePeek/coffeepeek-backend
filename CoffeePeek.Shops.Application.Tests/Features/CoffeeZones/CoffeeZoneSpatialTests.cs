@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using CoffeePeek.Shops.Application.Features.CoffeeShop.GetShopsInBounds;
 using CoffeePeek.Shops.Application.Features.CoffeeZones;
+using CoffeePeek.Shops.Domain;
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeZoneAggregate;
 using FluentAssertions;
 
@@ -13,7 +14,7 @@ public sealed class CoffeeZoneSpatialTests
     public void Membership_UsesDistanceAndOverridePrecedence()
     {
         var cityId = Guid.NewGuid();
-        var zone = new CoffeeZone(cityId, "Center", null, 53.9000m, 27.5600m, 400);
+        var zone = new CoffeeZone(cityId, "Center", null, CoffeeZonePoint.Circle(53.9000m, 27.5600m, 400));
 
         CoffeeZoneMembershipEvaluator.IsMember(cityId, 53.9005m, 27.5600m, zone, null).Should().BeTrue();
         CoffeeZoneMembershipEvaluator.IsMember(cityId, 53.9005m, 27.5600m, zone, CoffeeZoneMembershipOverrideKind.Exclude).Should().BeFalse();
@@ -24,7 +25,7 @@ public sealed class CoffeeZoneSpatialTests
     [Fact]
     public void Membership_RejectsAutomaticMembershipFromAnotherCity()
     {
-        var zone = new CoffeeZone(Guid.NewGuid(), "Center", null, 53.9000m, 27.5600m, 400);
+        var zone = new CoffeeZone(Guid.NewGuid(), "Center", null, CoffeeZonePoint.Circle(53.9000m, 27.5600m, 400));
 
         CoffeeZoneMembershipEvaluator.IsMember(
             Guid.NewGuid(), 53.9000m, 27.5600m, zone, null).Should().BeFalse();
@@ -91,15 +92,12 @@ public sealed class CoffeeZoneSpatialTests
 
         var candidate = CoffeeZoneCandidateGenerator.Generate(points, 400, 3).Single();
 
-        candidate.SuggestedRadiusMeters.Should().BeLessThanOrEqualTo(2000);
-        var allMembersFit = candidate.ShopIds.All(id =>
-        {
-            var point = points.Single(p => p.Id == id);
-            return GeoDistance.HaversineMeters(
-                candidate.CenterLatitude, candidate.CenterLongitude,
-                point.Latitude, point.Longitude) <= candidate.SuggestedRadiusMeters;
-        });
-        allMembersFit.Should().BeTrue();
+        // Creating a zone from the suggested outline must succeed and contain every suggested shop.
+        var zone = new CoffeeZone(Guid.NewGuid(), "Candidate", null, candidate.Polygon);
+        zone.RadiusMeters.Should().BeLessThanOrEqualTo(2000);
+        candidate.ShopIds.Should().OnlyContain(id =>
+            zone.Contains(points.Single(p => p.Id == id).Latitude, points.Single(p => p.Id == id).Longitude));
+        candidate.ShopCount.Should().Be(candidate.ShopIds.Length);
     }
 
     private static CoffeeZoneCandidatePoint Point(int suffix, decimal latitude, decimal longitude) =>

@@ -45,9 +45,7 @@ public sealed class AdminCoffeeZonesController(IMessageBus bus) : ControllerBase
     [HttpPut("{id:guid}")]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateCoffeeZoneRequest request, CancellationToken ct)
     {
-        var command = new UpdateCoffeeZoneCommand(
-            id, request.CityId, request.Name, request.Description,
-            request.CenterLatitude, request.CenterLongitude, request.RadiusMeters);
+        var command = new UpdateCoffeeZoneCommand(id, request.CityId, request.Name, request.Description, request.Polygon);
         return ToActionResult(await bus.InvokeAsync<Response<AdminCoffeeZoneDto>>(command, ct));
     }
 
@@ -110,9 +108,7 @@ public sealed record UpdateCoffeeZoneRequest(
     Guid CityId,
     string Name,
     string? Description,
-    [Range(-90, 90)] decimal CenterLatitude,
-    [Range(-180, 180)] decimal CenterLongitude,
-    [Range(BusinessConstants.MinCoffeeZoneRadiusMeters, BusinessConstants.MaxCoffeeZoneRadiusMeters)] int RadiusMeters);
+    CoffeeZonePoint[] Polygon);
 
 public sealed record SetCoffeeZoneStatusRequest(CoffeeZoneStatus Status);
 public sealed record SetCoffeeZoneMembershipOverrideRequest(CoffeeZoneMembershipOverrideKind Kind);

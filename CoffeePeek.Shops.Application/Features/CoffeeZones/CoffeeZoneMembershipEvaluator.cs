@@ -1,3 +1,4 @@
+using CoffeePeek.Shops.Domain;
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeZoneAggregate;
 
 namespace CoffeePeek.Shops.Application.Features.CoffeeZones;
@@ -15,7 +16,7 @@ public static class CoffeeZoneMembershipEvaluator
         {
             CoffeeZoneMembershipOverrideKind.Exclude => false,
             CoffeeZoneMembershipOverrideKind.Include or CoffeeZoneMembershipOverrideKind.Primary => true,
-            _ => shopCityId == zone.CityId && DistanceMeters(shopLatitude, shopLongitude, zone) <= zone.RadiusMeters
+            _ => shopCityId == zone.CityId && zone.Contains(shopLatitude, shopLongitude)
         };
     }
 

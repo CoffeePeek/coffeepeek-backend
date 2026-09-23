@@ -66,7 +66,7 @@ public sealed class CoffeeZoneQueries(ShopsDbContext context) : ICoffeeZoneQueri
         {
             overridesByPair.TryGetValue((zone.Id, shop.Id), out var membershipOverride);
             var distance = CoffeeZoneMembershipEvaluator.DistanceMeters(shop.Latitude, shop.Longitude, zone);
-            var automatic = distance <= zone.RadiusMeters;
+            var automatic = zone.Contains(shop.Latitude, shop.Longitude);
             var isMember = CoffeeZoneMembershipEvaluator.IsMember(
                 shop.CityId, shop.Latitude, shop.Longitude, zone, membershipOverride?.Kind);
             if (!isMember)
@@ -147,7 +147,7 @@ public sealed class CoffeeZoneQueries(ShopsDbContext context) : ICoffeeZoneQueri
     private static AdminCoffeeZoneDto ToDto(CoffeeZone zone, int shopCount) => new(
         zone.Id, zone.CityId, zone.Name, zone.Description,
         zone.CenterLatitude, zone.CenterLongitude, zone.RadiusMeters,
-        zone.Status, shopCount, zone.CreatedAtUtc, zone.UpdatedAtUtc);
+        zone.Status, shopCount, zone.CreatedAtUtc, zone.UpdatedAtUtc, zone.Polygon.ToArray());
 
     private sealed record ZoneShopPoint(Guid Id, string Name, Guid CityId, decimal Latitude, decimal Longitude);
 }

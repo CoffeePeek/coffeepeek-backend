@@ -25,6 +25,7 @@ public sealed class CoffeeZoneConfiguration : IEntityTypeConfiguration<CoffeeZon
         builder.Property(z => z.Description).HasMaxLength(BusinessConstants.MaxCoffeeZoneDescriptionLength);
         builder.Property(z => z.CenterLatitude).HasPrecision(BusinessConstants.MaxLocationPrecision, BusinessConstants.MaxLocationScale);
         builder.Property(z => z.CenterLongitude).HasPrecision(BusinessConstants.MaxLocationPrecision, BusinessConstants.MaxLocationScale);
+        builder.ComplexCollection(z => z.Polygon, polygon => polygon.ToJson());
         builder.HasIndex(z => new { z.CityId, z.Status });
         builder.HasOne<City>().WithMany().HasForeignKey(z => z.CityId).OnDelete(DeleteBehavior.Restrict);
     }

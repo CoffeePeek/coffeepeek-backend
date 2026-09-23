@@ -1,4 +1,5 @@
 using CoffeePeek.Shops.Domain;
+using CoffeePeek.Shops.Domain.Aggregates.CoffeeZoneAggregate;
 
 namespace CoffeePeek.Shops.Application.Features.CoffeeZones;
 
@@ -35,8 +36,8 @@ public static class CoffeeZoneCandidateGenerator
     {
         var bounded = cluster.ToArray();
 
-        // DBSCAN clusters may form long chains. A zone is a circle with a hard 2 km
-        // domain limit, so never return shop ids that the proposed circle cannot contain.
+        // DBSCAN clusters may form long chains. A zone has a hard 2 km bounding-radius
+        // limit, so never return shop ids that the proposed polygon cannot contain.
         while (true)
         {
             var candidateLatitude = bounded.Average(p => p.Latitude);
@@ -64,9 +65,18 @@ public static class CoffeeZoneCandidateGenerator
             BusinessConstants.MinCoffeeZoneRadiusMeters,
             BusinessConstants.MaxCoffeeZoneRadiusMeters);
 
-        return new CoffeeZoneCandidateDto(
-            latitude, longitude, suggestedRadius, bounded.Length,
-            bounded.Select(p => p.Id).Order().ToArray());
+        // Suggest a circle-shaped outline the admin can reshape. Its vertices sit just inside
+        // the circle, so re-check which shops it actually contains.
+        var polygon = CoffeeZonePoint.Circle(latitude, longitude, suggestedRadius);
+        var contained = bounded
+            .Where(p => CoffeeZonePoint.PolygonContains(polygon, p.Latitude, p.Longitude))
+            .Select(p => p.Id)
+            .Order()
+            .ToArray();
+        if (contained.Length < minShops)
+            return null;
+
+        return new CoffeeZoneCandidateDto(latitude, longitude, contained.Length, contained, polygon);
     }
 
     private static List<List<CoffeeZoneCandidatePoint>> Dbscan(

@@ -16,7 +16,7 @@ public sealed class CoffeeZoneHandlerTests
     {
         var cityId = Guid.NewGuid();
         var shopId = Guid.NewGuid();
-        var zone = new CoffeeZone(cityId, "Center", null, 53.9m, 27.56m, 400);
+        var zone = new CoffeeZone(cityId, "Center", null, CoffeeZonePoint.Circle(53.9m, 27.56m, 400));
         var previous = new CoffeeZoneMembershipOverride(Guid.NewGuid(), shopId, CoffeeZoneMembershipOverrideKind.Primary);
         var repository = new Mock<ICoffeeZoneRepository>();
         var shops = new Mock<IQueryCoffeeShopRepository>();
@@ -24,7 +24,7 @@ public sealed class CoffeeZoneHandlerTests
         var unitOfWork = new Mock<IUnitOfWork>();
         var preview = new CoffeeZoneMembershipPreviewDto(
             new AdminCoffeeZoneDto(zone.Id, cityId, zone.Name, null, 53.9m, 27.56m, 400,
-                CoffeeZoneStatus.Draft, 1, default, null),
+                CoffeeZoneStatus.Draft, 1, default, null, []),
             []);
 
         repository.Setup(r => r.GetByIdAsync(zone.Id, It.IsAny<CancellationToken>())).ReturnsAsync(zone);
@@ -48,7 +48,7 @@ public sealed class CoffeeZoneHandlerTests
     [Fact]
     public async Task SetOverride_ForShopInAnotherCity_ReturnsBadRequest()
     {
-        var zone = new CoffeeZone(Guid.NewGuid(), "Center", null, 53.9m, 27.56m, 400);
+        var zone = new CoffeeZone(Guid.NewGuid(), "Center", null, CoffeeZonePoint.Circle(53.9m, 27.56m, 400));
         var repository = new Mock<ICoffeeZoneRepository>();
         var shops = new Mock<IQueryCoffeeShopRepository>();
         var queries = new Mock<ICoffeeZoneQueries>();
