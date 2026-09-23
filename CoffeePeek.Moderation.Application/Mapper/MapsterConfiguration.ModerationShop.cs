@@ -26,8 +26,13 @@ public partial class MapsterConfiguration
             .Map(d => d.RoasterIds, s => s.ModerationRoasterShops.Select(x => x.RoasterId))
             .Map(d => d.BrewMethodIds, s => s.ModerationShopBrewMethods.Select(x => x.BrewMethodId))
             .Ignore(dest => dest.Menu)
-            .AfterMapping((src, dest) => dest.Menu = MenuDraftMapper.ToDto(src.Menu, mediaOptions));
-        
+            .Ignore(dest => dest.DataCompletenessScore)
+            .AfterMapping((src, dest) =>
+            {
+                dest.Menu = MenuDraftMapper.ToDto(src.Menu, mediaOptions);
+                dest.DataCompletenessScore = ModerationShopCompleteness.Calculate(dest);
+            });
+
         config.NewConfig<ModerationShop, ShopDto>()
             .Map(d => d.Photos, s => s.ShopPhotos)
             .Map(d => d.Rating, s => 0)
