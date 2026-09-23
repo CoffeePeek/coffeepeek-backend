@@ -187,12 +187,12 @@ Content-Type: application/json
 
 {
   "name": "Coffee Joy",
-  "description": "Specialty on Немига",
+  "description": "Specialty on Nemiga",
   "priceRange": 2,
   "status": 0,
   "location": {
     "cityId": "11111111-1111-1111-1111-111111111111",
-    "address": "Немига 5, Минск",
+    "address": "Nemiga 5, Minsk",
     "latitude": 53.9045,
     "longitude": 27.5615
   },
@@ -229,12 +229,12 @@ Content-Type: application/json
 
 {
   "name": "Coffee Joy",
-  "description": "Specialty on Немига",
+  "description": "Specialty on Nemiga",
   "phoneNumber": "+375291112233",
   "email": "hello@shop.by",
   "siteLink": "https://shop.by",
   "instagramLink": "https://instagram.com/shop",
-  "location": { "cityId": "...", "address": "Немига 5, Минск", "latitude": 53.9045, "longitude": 27.5615 },
+  "location": { "cityId": "...", "address": "Nemiga 5, Minsk", "latitude": 53.9045, "longitude": 27.5615 },
   "schedules": [ /* same ScheduleDto as admin */ ],
   "catalogs": { "equipmentIds": [], "beanIds": [], "roasterIds": [], "brewMethodIds": [] }
 }

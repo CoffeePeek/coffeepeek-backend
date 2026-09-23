@@ -47,6 +47,24 @@ public class CheckInTests
     }
 
     [Fact]
+    public void Create_WithValidData_HasDefaultZeroRating()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+        var shopId = Guid.NewGuid();
+        var visitedAt = DateTime.UtcNow.AddHours(-1);
+
+        // Act
+        var checkIn = CheckIn.Create(userId, shopId, visitedAt);
+
+        // Assert
+        checkIn.Rating.Should().NotBeNull();
+        checkIn.Rating.Place.Should().Be(0);
+        checkIn.Rating.Service.Should().Be(0);
+        checkIn.Rating.Coffee.Should().Be(0);
+    }
+
+    [Fact]
     public void AssignRating_WithValidScores_SetsOwnedRating()
     {
         var checkIn = CheckIn.Create(Guid.NewGuid(), Guid.NewGuid(), DateTime.UtcNow.AddHours(-1));

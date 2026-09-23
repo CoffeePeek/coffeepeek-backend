@@ -25,6 +25,7 @@ public static class DependencyInjection
         // 1. Domain Services (реализации интерфейсов из Domain)
         services.AddScoped<IPasswordHasherService, PasswordHasherService>();
         services.AddScoped<IJWTTokenService, JWTTokenService>();
+        services.AddSingleton<IAccountDeletionTokenService, AccountDeletionTokenService>();
 
         // 2. Event Handlers
         services.AddScoped<CheckinCreatedHandler>();
@@ -33,6 +34,7 @@ public static class DependencyInjection
         services.AddScoped<UserPhotoUploadedHandler>();
         services.AddScoped<UserRegisteredEventHandler>();
         services.AddScoped<PasswordResetRequestedEventHandler>();
+        services.AddScoped<AccountDeletionRequestedEventHandler>();
 
         // 3 Email Service
         services.AddHttpClient<ResendClient>();

@@ -29,7 +29,7 @@ public class EnrichShopFromImportServiceTests
         var shop = new CoffeeShop(Guid.NewGuid(), "Coffe Joy", null, PriceRange.Moderate, Guid.NewGuid());
         shop.SetLocation(Guid.NewGuid(), "Минск", 53.9152m, 27.5847m);
         shop.SetContact(null, null, null, null);
-        _shopRepo.Setup(r => r.ListAllForEnrichmentAsync(_ct)).ReturnsAsync([shop]);
+        _shopRepo.Setup(r => r.ListForEnrichmentAsync(It.IsAny<System.Collections.Generic.IReadOnlyCollection<Guid>>(), It.IsAny<decimal>(), It.IsAny<decimal>(), It.IsAny<decimal>(), It.IsAny<decimal>(), _ct)).ReturnsAsync([shop]);
 
         var count = await CreateSut().EnrichShopsFromImportAsync(
         [
@@ -56,7 +56,7 @@ public class EnrichShopFromImportServiceTests
     {
         var shop = new CoffeeShop(Guid.NewGuid(), "Other Cafe", null, PriceRange.Moderate, Guid.NewGuid());
         shop.SetLocation(Guid.NewGuid(), "Минск", 53.90m, 27.50m);
-        _shopRepo.Setup(r => r.ListAllForEnrichmentAsync(_ct)).ReturnsAsync([shop]);
+        _shopRepo.Setup(r => r.ListForEnrichmentAsync(It.IsAny<System.Collections.Generic.IReadOnlyCollection<Guid>>(), It.IsAny<decimal>(), It.IsAny<decimal>(), It.IsAny<decimal>(), It.IsAny<decimal>(), _ct)).ReturnsAsync([shop]);
 
         var count = await CreateSut().EnrichShopsFromImportAsync(
         [
@@ -73,7 +73,7 @@ public class EnrichShopFromImportServiceTests
         var shop = new CoffeeShop(Guid.NewGuid(), "Coffe Joy", null, PriceRange.Moderate, Guid.NewGuid());
         shop.SetLocation(Guid.NewGuid(), "Минск", 53.9152m, 27.5847m);
         shop.SetContact(null, null, null, null);
-        _shopRepo.Setup(r => r.ListAllForEnrichmentAsync(_ct)).ReturnsAsync([shop]);
+        _shopRepo.Setup(r => r.ListForEnrichmentAsync(It.IsAny<System.Collections.Generic.IReadOnlyCollection<Guid>>(), It.IsAny<decimal>(), It.IsAny<decimal>(), It.IsAny<decimal>(), It.IsAny<decimal>(), _ct)).ReturnsAsync([shop]);
 
         var count = await CreateSut().EnrichShopsFromImportAsync(
         [

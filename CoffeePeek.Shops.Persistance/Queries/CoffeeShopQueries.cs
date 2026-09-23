@@ -1,4 +1,4 @@
-﻿using CoffeePeek.Contract.Dtos.CoffeeShop;
+using CoffeePeek.Contract.Dtos.CoffeeShop;
 using CoffeePeek.Shared.Kernel.Options;
 using CoffeePeek.Shops.Application.Features.CoffeeShop.GetCoffeeShop;
 using CoffeePeek.Shops.Application.Features.CoffeeShop.GetShopsInBounds;
@@ -7,6 +7,8 @@ using CoffeePeek.Shops.Application.Features.Menu;
 using CoffeePeek.Shops.Domain;
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
 using CoffeePeek.Shops.Domain.Aggregates.MenuAggregate;
+using CoffeePeek.Shops.Domain.Aggregates.CoffeeZoneAggregate;
+using CoffeePeek.Shops.Application.Features.CoffeeZones;
 using CoffeePeek.Shops.Persistance.Configuration;
 using Mapster;
 using MapsterMapper;
@@ -26,7 +28,7 @@ public class CoffeeShopQueries(
     public async Task<(ShortShopDto[] Items, int TotalCount)> Search(SearchCoffeeShopsQuery request, CancellationToken ct)
     {
         var query = context.Shops.AsNoTracking()
-            .Where(s => s.Status == CoffeeShopStatus.Active);
+            .Where(s => s.Status == CoffeeShopStatus.Active && !s.IsHidden);
         
         if (!string.IsNullOrWhiteSpace(request.Query))
         {
@@ -70,8 +72,8 @@ public class CoffeeShopQueries(
 
         if (request.Type.HasValue)
         {
-            var typeValue = (CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate.CoffeeFocus)(int)request.Type.Value;
-            query = query.Where(s => s.CoffeeFocus == typeValue);
+            var typeValue = (CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate.CoffeeFocusType)(int)request.Type.Value;
+            query = query.Where(s => s.Type == typeValue);
         }
         
         if (request.MinRating.HasValue)
@@ -118,8 +120,11 @@ public class CoffeeShopQueries(
         {
             var now = DateTime.UtcNow;
             var dow = now.DayOfWeek;
+            var previousDow = dow == DayOfWeek.Sunday ? DayOfWeek.Saturday : dow - 1;
             var timeOfDay = now.TimeOfDay;
 
+            // A UTC interval with CloseTime < OpenTime crosses midnight. Its first part belongs
+            // to the declared UTC day and its tail belongs to the following UTC day.
             if (request.IsOpen.Value)
             {
                 query = query.Where(s =>
@@ -127,7 +132,13 @@ public class CoffeeShopQueries(
                     s.Schedules.Any(sch =>
                         sch.DayOfWeek == dow &&
                         !sch.IsClosed &&
-                        sch.Intervals.Any(i => timeOfDay >= i.OpenTime && timeOfDay <= i.CloseTime)));
+                        sch.Intervals.Any(i =>
+                            (i.CloseTime >= i.OpenTime && timeOfDay >= i.OpenTime && timeOfDay <= i.CloseTime) ||
+                            (i.CloseTime < i.OpenTime && timeOfDay >= i.OpenTime))) ||
+                    s.Schedules.Any(sch =>
+                        sch.DayOfWeek == previousDow &&
+                        !sch.IsClosed &&
+                        sch.Intervals.Any(i => i.CloseTime < i.OpenTime && timeOfDay <= i.CloseTime)));
             }
             else
             {
@@ -136,7 +147,13 @@ public class CoffeeShopQueries(
                     !s.Schedules.Any(sch =>
                         sch.DayOfWeek == dow &&
                         !sch.IsClosed &&
-                        sch.Intervals.Any(i => timeOfDay >= i.OpenTime && timeOfDay <= i.CloseTime)));
+                        sch.Intervals.Any(i =>
+                            (i.CloseTime >= i.OpenTime && timeOfDay >= i.OpenTime && timeOfDay <= i.CloseTime) ||
+                            (i.CloseTime < i.OpenTime && timeOfDay >= i.OpenTime))) &&
+                    !s.Schedules.Any(sch =>
+                        sch.DayOfWeek == previousDow &&
+                        !sch.IsClosed &&
+                        sch.Intervals.Any(i => i.CloseTime < i.OpenTime && timeOfDay <= i.CloseTime)));
             }
         }
         
@@ -144,13 +161,15 @@ public class CoffeeShopQueries(
         
         var items = await query
             .AsSplitQuery()
-            .OrderBy(x => x.Name)
+            .OrderByDescending(x => x.DataCompletenessScore)
+            .ThenBy(x => x.Name)
             .Skip((request.PageNumber - 1) * request.PageSize)
             .Take(request.PageSize)
             .ProjectToType<ShortShopDto>(mapper.Config)
             .ToArrayAsync(ct);
 
         await PatchOpenAndNewFlagsAsync(items, ct);
+        await PatchRatingsAsync(items, ct);
 
         return (items, totalCount);
     }
@@ -160,7 +179,7 @@ public class CoffeeShopQueries(
         var dto = await context.Shops
             .AsNoTracking()
             .AsSplitQuery()
-            .Where(x => x.Id == id)
+            .Where(x => x.Id == id && !x.IsHidden)
             .ProjectToType<CoffeeShopDetailsDto>(mapper.Config)
             .FirstOrDefaultAsync(ct);
 
@@ -182,13 +201,14 @@ public class CoffeeShopQueries(
 
         var state = await context.Shops
             .AsNoTracking()
+            .AsSplitQuery()
             .Where(s => s.Id == id)
-            .Select(s => new { s.CreatedAtUtc, s.Schedules, s.CoffeeFocus })
+            .Select(s => new { s.CreatedAtUtc, s.Status, s.Schedules, CoffeeFocus = s.Type })
             .FirstOrDefaultAsync(ct);
 
         var now = DateTime.UtcNow;
         var isNew = state is not null && state.CreatedAtUtc >= now.AddDays(-BusinessConstants.ItNewEntityInDays);
-        var isOpen = state is null || ComputeIsOpen(state.Schedules, now);
+        var isOpen = state is null || ComputeIsOpen(state.Status, state.Schedules, now);
 
         var catalog = await drinkRepository.GetActiveAsync(ct);
         var menu = await menuRepository.GetByShopIdAsync(id, ct);
@@ -204,26 +224,216 @@ public class CoffeeShopQueries(
         };
     }
 
-    public Task<MapShopDto[]> GetShopsInBounds(GetShopsInBoundsQuery query, CancellationToken ct = default)
+    public async Task<GetShopsInBoundsResponse> GetMap(
+        GetShopsInBoundsQuery query,
+        MapClusteringOptions options,
+        CancellationToken ct = default)
     {
-        return context.Shops.AsNoTracking()
-            .Where(s => s.Status == CoffeeShopStatus.Active &&
+        var baseQuery = BuildMapPointsQuery(context, query);
+
+        if (!query.Zoom.HasValue)
+        {
+            var legacyPoints = await baseQuery.Take(options.MaxResponseItems).ToArrayAsync(ct);
+            return new GetShopsInBoundsResponse(legacyPoints.Select(ToMapShop));
+        }
+
+        var zoom = query.Zoom.Value;
+        // Anonymous endpoint: never materialize the whole table. Marker zooms only need one page (+1 to detect
+        // truncation); cluster zooms get a hard ceiling.
+        // ponytail: in-memory clustering capped at MaxClusterSourcePoints; move to SQL grid GROUP BY if the catalog outgrows it.
+        var points = await baseQuery
+            .Take(zoom > options.ZoneMaxZoom ? options.MaxResponseItems + 1 : MaxClusterSourcePoints)
+            .ToArrayAsync(ct);
+        if (zoom <= options.ClusterMaxZoom)
+        {
+            var clusters = MapClusterBuilder.Build(
+                points.Select(p => new MapClusterPoint(p.Id, p.Latitude, p.Longitude)),
+                zoom,
+                options.ClusterCellPixels);
+            return new GetShopsInBoundsResponse([])
+            {
+                Clusters = clusters.Take(options.MaxResponseItems).ToArray(),
+                Zones = [],
+                IsTruncated = clusters.Length > options.MaxResponseItems
+            };
+        }
+
+        var publishedZones = await context.CoffeeZones.AsNoTracking()
+            .Where(z => z.Status == CoffeeZoneStatus.Published)
+            .OrderBy(z => z.Id)
+            .ToArrayAsync(ct);
+        var visibleZones = publishedZones
+            .Where(z => CircleIntersectsBounds(z, query))
+            .ToArray();
+
+        var cityIds = visibleZones.Select(z => z.CityId).Distinct().ToArray();
+        var cityPoints = cityIds.Length == 0
+            ? []
+            : await context.Shops.AsNoTracking()
+                .Where(s => s.Status == CoffeeShopStatus.Active && !s.IsHidden
+                            && cityIds.Contains(s.Location.CityId)
+                            && s.Location.Latitude.HasValue
+                            && s.Location.Longitude.HasValue)
+                .OrderBy(s => s.Id)
+                .Select(s => new MapPoint(
+                    s.Id, s.Location.CityId, s.Location.Latitude!.Value, s.Location.Longitude!.Value,
+                    s.Name, (CoffeeShopType?)(int?)s.Type))
+                .ToArrayAsync(ct);
+        var zoneIds = visibleZones.Select(z => z.Id).ToArray();
+        var overrides = zoneIds.Length == 0
+            ? []
+            : await context.CoffeeZoneMembershipOverrides.AsNoTracking()
+                .Where(x => zoneIds.Contains(x.ZoneId))
+                .ToArrayAsync(ct);
+        var overrideByPair = overrides.ToDictionary(x => (x.ZoneId, x.ShopId));
+        var zoneDtos = visibleZones.Select(zone => new MapCoffeeZoneDto(
+            zone.Id,
+            zone.Name,
+            zone.Description,
+            zone.CenterLatitude,
+            zone.CenterLongitude,
+            zone.RadiusMeters,
+            cityPoints.Count(point => IsMember(point, zone, overrideByPair))))
+            .ToArray();
+
+        if (zoom <= options.ZoneMaxZoom)
+        {
+            var unrepresented = points
+                .Where(point => !visibleZones.Any(zone => IsMember(point, zone, overrideByPair)))
+                .ToArray();
+            var clusters = MapClusterBuilder.Build(
+                unrepresented.Select(p => new MapClusterPoint(p.Id, p.Latitude, p.Longitude)),
+                zoom,
+                options.ClusterCellPixels);
+            var availableClusterSlots = Math.Max(0, options.MaxResponseItems - zoneDtos.Length);
+            return new GetShopsInBoundsResponse([])
+            {
+                Zones = zoneDtos.Take(options.MaxResponseItems).ToArray(),
+                Clusters = clusters.Take(availableClusterSlots).ToArray(),
+                IsTruncated = zoneDtos.Length + clusters.Length > options.MaxResponseItems
+            };
+        }
+
+        var allZoneIds = publishedZones.Select(z => z.Id).ToArray();
+        var pointIds = points.Select(p => p.Id).ToArray();
+        var primaryOverrides = pointIds.Length == 0
+            ? []
+            : await context.CoffeeZoneMembershipOverrides.AsNoTracking()
+                .Where(x => pointIds.Contains(x.ShopId) && allZoneIds.Contains(x.ZoneId))
+                .ToArrayAsync(ct);
+        var allOverridesByPair = primaryOverrides.ToDictionary(x => (x.ZoneId, x.ShopId));
+        var explicitPrimary = primaryOverrides
+            .Where(x => x.Kind == CoffeeZoneMembershipOverrideKind.Primary)
+            .ToDictionary(x => x.ShopId, x => x.ZoneId);
+        var mapShops = points.Take(options.MaxResponseItems).Select(point =>
+        {
+            var dto = ToMapShop(point);
+            dto.PrimaryZoneId = explicitPrimary.TryGetValue(point.Id, out var zoneId)
+                ? zoneId
+                : publishedZones
+                    .Where(zone => IsMember(point, zone, allOverridesByPair))
+                    .OrderBy(zone => GeoDistance.HaversineMeters(
+                        zone.CenterLatitude, zone.CenterLongitude, point.Latitude, point.Longitude) / zone.RadiusMeters)
+                    .ThenBy(zone => zone.Id)
+                    .Select(zone => (Guid?)zone.Id)
+                    .FirstOrDefault();
+            return dto;
+        });
+        return new GetShopsInBoundsResponse(mapShops)
+        {
+            Clusters = [],
+            Zones = [],
+            IsTruncated = points.Length > options.MaxResponseItems
+        };
+    }
+
+    private const int MaxClusterSourcePoints = 20_000;
+
+    internal static IQueryable<MapPoint> BuildMapPointsQuery(
+        ShopsDbContext context,
+        GetShopsInBoundsQuery query) =>
+        context.Shops.AsNoTracking()
+            .Where(s => s.Status == CoffeeShopStatus.Active && !s.IsHidden &&
                         s.Location.Latitude.HasValue &&
                         s.Location.Longitude.HasValue &&
                         s.Location.Latitude >= query.MinLat &&
                         s.Location.Latitude <= query.MaxLat &&
                         s.Location.Longitude >= query.MinLon &&
                         s.Location.Longitude <= query.MaxLon)
-            .Select(s => new MapShopDto
+            // Sort entities before projecting into MapPoint. Npgsql cannot translate
+            // OrderBy(new MapPoint(...).Id) when ordering is applied after Select.
+            .OrderBy(s => s.Id)
+            .Select(s => new MapPoint(
+                s.Id,
+                s.Location.CityId,
+                s.Location.Latitude!.Value,
+                s.Location.Longitude!.Value,
+                s.Name,
+                (CoffeeShopType?)(int?)s.Type));
+
+    private static MapShopDto ToMapShop(MapPoint point) => new()
+    {
+        Id = point.Id,
+        Latitude = point.Latitude,
+        Longitude = point.Longitude,
+        Title = point.Title,
+        Type = point.Type
+    };
+
+    private static bool IsMember(
+        MapPoint point,
+        CoffeeZone zone,
+        IReadOnlyDictionary<(Guid ZoneId, Guid ShopId), CoffeeZoneMembershipOverride> overrides)
+    {
+        if (overrides.TryGetValue((zone.Id, point.Id), out var membershipOverride))
+            return CoffeeZoneMembershipEvaluator.IsMember(
+                point.CityId, point.Latitude, point.Longitude, zone, membershipOverride.Kind);
+        return CoffeeZoneMembershipEvaluator.IsMember(
+            point.CityId, point.Latitude, point.Longitude, zone, null);
+    }
+
+    private static bool CircleIntersectsBounds(CoffeeZone zone, GetShopsInBoundsQuery query)
+    {
+        var nearestLatitude = Math.Clamp(zone.CenterLatitude, query.MinLat, query.MaxLat);
+        var nearestLongitude = Math.Clamp(zone.CenterLongitude, query.MinLon, query.MaxLon);
+        return GeoDistance.HaversineMeters(
+            zone.CenterLatitude, zone.CenterLongitude, nearestLatitude, nearestLongitude) <= zone.RadiusMeters;
+    }
+
+    internal sealed record MapPoint(
+        Guid Id,
+        Guid CityId,
+        decimal Latitude,
+        decimal Longitude,
+        string Title,
+        CoffeeShopType? Type);
+
+    /// <summary>Rating and ReviewCount are ignored by the projection; without this every search result showed 0.</summary>
+    private async Task PatchRatingsAsync(ShortShopDto[] items, CancellationToken ct)
+    {
+        if (items.Length == 0)
+            return;
+
+        var ids = items.Select(i => i.Id).ToArray();
+        var stats = await context.Reviews
+            .AsNoTracking()
+            .Where(r => ids.Contains(r.CoffeeShopId) && !r.IsSoftDelete)
+            .GroupBy(r => r.CoffeeShopId)
+            .Select(g => new
             {
-                Id = s.Id,
-                Latitude = s.Location!.Latitude!.Value,
-                Longitude = s.Location!.Longitude!.Value,
-                Title = s.Name,
-                Type = (CoffeeShopType?)(int?)s.CoffeeFocus
+                ShopId = g.Key,
+                Average = g.Average(r => (r.Rating.Place + r.Rating.Coffee + r.Rating.Service) / 3m),
+                Count = g.Count()
             })
-            .Take(500)
-            .ToArrayAsync(ct);
+            .ToDictionaryAsync(x => x.ShopId, ct);
+
+        foreach (var item in items)
+        {
+            if (!stats.TryGetValue(item.Id, out var s))
+                continue;
+            item.Rating = Math.Round(s.Average, 2);
+            item.ReviewCount = s.Count;
+        }
     }
 
     private async Task PatchOpenAndNewFlagsAsync(ShortShopDto[] items, CancellationToken ct)
@@ -235,10 +445,13 @@ public class CoffeeShopQueries(
         var now = DateTime.UtcNow;
         var newCutoff = now.AddDays(-BusinessConstants.ItNewEntityInDays);
 
+        // Schedules and their owned Intervals are two nested collections — split to avoid the
+        // cartesian-product warning/cost of loading them via a single joined query.
         var states = await context.Shops
             .AsNoTracking()
+            .AsSplitQuery()
             .Where(s => ids.Contains(s.Id))
-            .Select(s => new { s.Id, s.CreatedAtUtc, s.Schedules, s.CoffeeFocus })
+            .Select(s => new { s.Id, s.CreatedAtUtc, s.Status, s.Schedules, CoffeeFocus = s.Type })
             .ToListAsync(ct);
 
         var byId = states.ToDictionary(s => s.Id);
@@ -248,23 +461,19 @@ public class CoffeeShopQueries(
                 continue;
 
             item.IsNew = state.CreatedAtUtc >= newCutoff;
-            item.IsOpen = ComputeIsOpen(state.Schedules, now);
+            item.IsOpen = ComputeIsOpen(state.Status, state.Schedules, now);
             item.Type = (CoffeeShopType?)(int?)state.CoffeeFocus;
         }
     }
 
-    private static bool ComputeIsOpen(IEnumerable<ShopSchedule> schedules, DateTime utcNow)
+    private static bool ComputeIsOpen(
+        CoffeeShopStatus status,
+        IEnumerable<ShopSchedule> schedules,
+        DateTime utcNow)
     {
-        var list = schedules as IList<ShopSchedule> ?? schedules.ToList();
-        if (list.Count == 0)
-            return true;
-
-        var daySchedule = list.FirstOrDefault(s => s.DayOfWeek == utcNow.DayOfWeek);
-        if (daySchedule is null || daySchedule.IsClosed)
+        if (status != CoffeeShopStatus.Active)
             return false;
 
-        var currentTime = utcNow.TimeOfDay;
-        return daySchedule.Intervals.Any(interval =>
-            currentTime >= interval.OpenTime && currentTime <= interval.CloseTime);
+        return ShopScheduleEvaluator.IsOpenAtUtc(schedules, utcNow);
     }
 }

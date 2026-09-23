@@ -46,6 +46,7 @@ public static class IngestImportFileHandler
         }
 
         var existing = await repository.ListAllAsync(ct);
+        var index = new CandidateIndex(existing);
         var now = DateTimeOffset.UtcNow;
         var inserted = 0;
         var enriched = 0;
@@ -61,7 +62,7 @@ public static class IngestImportFileHandler
                 continue;
             }
 
-            var match = FindMatch(existing, place);
+            var match = index.FindMatch(place);
             if (match is not null)
             {
                 if (match.EnrichFrom(place.Snapshot, now, place.GoogleMapsUri))
@@ -79,6 +80,7 @@ public static class IngestImportFileHandler
 
             repository.Add(candidate);
             existing.Add(candidate);
+            index.Add(candidate);
             inserted++;
             AddEnrichment(enrichItems, candidate, place);
         }
@@ -94,23 +96,60 @@ public static class IngestImportFileHandler
             new IngestImportFileResultDto(parsed.Count, inserted, enriched, unchanged, invalid, suggested)), outbound);
     }
 
-    private static ShopImportCandidate? FindMatch(
-        IReadOnlyList<ShopImportCandidate> existing,
-        ParsedImportPlace place)
+    /// <summary>
+    /// Exact ExternalId lookup plus a coarse lat/lon grid for fuzzy matching. ShopPlaceMatcher never matches
+    /// beyond 500 m, so only the 3x3 neighbouring cells need checking instead of every stored candidate
+    /// (the previous linear scans made ingest O(places × candidates)).
+    /// </summary>
+    private sealed class CandidateIndex
     {
-        foreach (var candidate in existing)
+        // 0.01° latitude ≈ 1.1 km; 0.05° longitude ≥ 500 m everywhere below ~84° latitude.
+        private const decimal LatCell = 0.01m;
+        private const decimal LonCell = 0.05m;
+
+        private readonly Dictionary<string, ShopImportCandidate> _byExternalId = new(StringComparer.Ordinal);
+        private readonly Dictionary<(long, long), List<ShopImportCandidate>> _cells = new();
+
+        public CandidateIndex(IEnumerable<ShopImportCandidate> candidates)
         {
-            if (string.Equals(candidate.ExternalId, place.Snapshot.ExternalId, StringComparison.Ordinal))
-                return candidate;
+            foreach (var candidate in candidates)
+                Add(candidate);
         }
 
-        foreach (var candidate in existing)
+        public void Add(ShopImportCandidate candidate)
         {
-            if (candidate.IsSamePlaceAs(place.Snapshot))
-                return candidate;
+            _byExternalId.TryAdd(candidate.ExternalId, candidate);
+
+            var cell = Cell(candidate.Latitude, candidate.Longitude);
+            if (!_cells.TryGetValue(cell, out var list))
+                _cells[cell] = list = [];
+            list.Add(candidate);
         }
 
-        return null;
+        public ShopImportCandidate? FindMatch(ParsedImportPlace place)
+        {
+            if (_byExternalId.TryGetValue(place.Snapshot.ExternalId, out var exact))
+                return exact;
+
+            var (lat, lon) = Cell(place.Snapshot.Latitude, place.Snapshot.Longitude);
+            for (var dLat = -1; dLat <= 1; dLat++)
+            for (var dLon = -1; dLon <= 1; dLon++)
+            {
+                if (!_cells.TryGetValue((lat + dLat, lon + dLon), out var list))
+                    continue;
+
+                foreach (var candidate in list)
+                {
+                    if (candidate.IsSamePlaceAs(place.Snapshot))
+                        return candidate;
+                }
+            }
+
+            return null;
+        }
+
+        private static (long, long) Cell(decimal latitude, decimal longitude) =>
+            ((long)Math.Floor(latitude / LatCell), (long)Math.Floor(longitude / LonCell));
     }
 
     private static void AddEnrichment(

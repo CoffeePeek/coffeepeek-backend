@@ -14,8 +14,10 @@ using CoffeePeek.Account.Application.Features.User.UpdateUserProfile.UpdateEmail
 using CoffeePeek.Account.Application.Features.User.UpdateUserProfile.UpdatePhoneNumber;
 using CoffeePeek.Account.Application.Features.User.UpdateUserProfile.UpdateUsername;
 using CoffeePeek.Account.Domain.Entities;
+using CoffeePeek.Account.Domain.Entities.AccountDeletionRequestAggregate;
 using CoffeePeek.Shared.Auth;
 using CoffeePeek.Shared.Kernel.Response;
+using CoffeePeek.AccountService.Controllers.Contracts;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Wolverine;
@@ -177,19 +179,85 @@ public class UsersController(IMessageBus bus, IUserContext userContext) : Contro
     }
 
     /// <summary>
-    /// Delete user by id
+    /// Request account deletion or resend its confirmation email
     /// </summary>
     [HttpDelete("me")]
     [Authorize]
-    [ProducesResponseType<Response<bool>>(StatusCodes.Status200OK)]
+    [ProducesResponseType<Response<AccountDeletionRequestResponse>>(StatusCodes.Status202Accepted)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> DeleteUser(CancellationToken cancellationToken)
     {
-        var request = new DeleteUserCommand(userContext.GetUserIdOrThrow());
-        var response = await bus.InvokeAsync<Response<bool>>(request, cancellationToken);
+        var command = new DeleteUserCommand(userContext.GetUserIdOrThrow());
+        var response = await bus.InvokeAsync<Response<AccountDeletionRequestResponse>>(command, cancellationToken);
 
-        return response.IsSuccess ? Ok(response) : NotFound(response);
+        return response.IsSuccess
+            ? Accepted(response)
+            : StatusCode(response.StatusCode ?? StatusCodes.Status500InternalServerError, response);
+    }
+
+    /// <summary>
+    /// Confirm account deletion from the browser confirmation form
+    /// </summary>
+    [HttpPost("me/deletion-confirmation")]
+    [AllowAnonymous]
+    [Consumes("application/x-www-form-urlencoded")]
+    [ProducesResponseType<Response<AccountDeletionRequestResponse>>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    [ProducesResponseType(StatusCodes.Status410Gone)]
+    public async Task<IActionResult> ConfirmDeletion(
+        [FromForm] ConfirmAccountDeletionRequest request,
+        CancellationToken cancellationToken)
+    {
+        var response = await bus.InvokeAsync<Response<AccountDeletionRequestResponse>>(
+            new ConfirmAccountDeletionCommand(request.Token, request.Reason, request.OtherReason),
+            cancellationToken);
+
+        return response.IsSuccess
+            ? Ok(response)
+            : StatusCode(response.StatusCode ?? StatusCodes.Status500InternalServerError, response);
+    }
+
+    /// <summary>
+    /// Get the current account deletion request
+    /// </summary>
+    [HttpGet("me/deletion-request")]
+    [Authorize]
+    [ProducesResponseType<Response<AccountDeletionRequestResponse>>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetDeletionRequest(CancellationToken cancellationToken)
+    {
+        var response = await bus.InvokeAsync<Response<AccountDeletionRequestResponse>>(
+            new GetCurrentAccountDeletionRequestQuery(userContext.GetUserIdOrThrow()),
+            cancellationToken);
+
+        return response.IsSuccess
+            ? Ok(response)
+            : StatusCode(response.StatusCode ?? StatusCodes.Status500InternalServerError, response);
+    }
+
+    /// <summary>
+    /// Cancel a pending account deletion request using its confirmation token
+    /// </summary>
+    [HttpDelete("me/deletion-request")]
+    [AllowAnonymous]
+    [ProducesResponseType<Response>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> CancelDeletionRequest(
+        [FromQuery] string token,
+        CancellationToken cancellationToken)
+    {
+        var response = await bus.InvokeAsync<Response>(
+            new CancelAccountDeletionRequestCommand(token),
+            cancellationToken);
+
+        return response.IsSuccess
+            ? Ok(response)
+            : StatusCode(response.StatusCode ?? StatusCodes.Status500InternalServerError, response);
     }
 
     /// <summary>

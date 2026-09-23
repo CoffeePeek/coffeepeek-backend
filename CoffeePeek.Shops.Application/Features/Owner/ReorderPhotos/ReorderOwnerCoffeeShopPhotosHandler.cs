@@ -3,7 +3,7 @@ using CoffeePeek.Shared.Kernel;
 using CoffeePeek.Shared.Kernel.Options;
 using CoffeePeek.Shared.Kernel.Response;
 using CoffeePeek.Shops.Application.Features.Admin.Shops;
-using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate.Repositories;
+using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
 using Microsoft.Extensions.Options;
 
 namespace CoffeePeek.Shops.Application.Features.Owner.ReorderPhotos;
@@ -30,6 +30,7 @@ public static class ReorderOwnerCoffeeShopPhotosHandler
 
         await unitOfWork.SaveChangesAsync(ct);
         await cacheService.RemoveAsync(CacheKey.Shop.Detail(shop.Id));
+        await cacheService.RemoveByPattern(CacheKey.Shop.SearchPattern(), ct);
 
         return Response<AdminPublishedShopDto>.Success(AdminPublishedShopMapper.Map(shop, mediaOptions.Value));
     }

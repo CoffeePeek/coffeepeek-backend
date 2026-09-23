@@ -16,7 +16,6 @@ using CoffeePeek.Shops.Domain.Aggregates.ShopTagAggregate;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
-using DomainCoffeeFocus = CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate.CoffeeFocus;
 
 namespace CoffeePeek.Shops.Application.Tests.Services;
 
@@ -79,7 +78,7 @@ public class CreateShopFromImportServiceTests
 
         shopId.Should().NotBe(Guid.Empty);
         added.Should().NotBeNull();
-        added!.CoffeeFocus.Should().Be(DomainCoffeeFocus.Specialty);
+        added!.Type.Should().Be(CoffeeFocusType.Specialty);
         added.ShopTags.Select(t => t.TagId).Should().Contain(ShopTagIds.Specialty);
         added.ModerationId.Should().Be(candidateId);
         added.OwnerUserId.Should().BeNull();

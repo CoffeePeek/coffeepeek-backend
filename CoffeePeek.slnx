@@ -12,6 +12,10 @@
     <Project Path="CoffeePeek.Gateway/CoffeePeek.Gateway.csproj" />
     <Project Path="CoffeePeek.MediaService/CoffeePeek.MediaService.csproj" />
   </Folder>
+  <Folder Name="/CoffeePeek/Tests/">
+    <Project Path="CoffeePeek.Gateway.Tests/CoffeePeek.Gateway.Tests.csproj" />
+    <Project Path="CoffeePeek.MediaService.Tests/CoffeePeek.MediaService.Tests.csproj" />
+  </Folder>
   <Folder Name="/CoffeePeek/CoffeePeek.Account/">
     <Project Path="CoffeePeek.Account.Application/CoffeePeek.Account.Application.csproj" />
     <Project Path="CoffeePeek.Account.Domain/CoffeePeek.Account.Domain.csproj" />
@@ -32,7 +36,9 @@
     <Project Path="CoffeeShop.Moderation.Persistence/CoffeeShop.Moderation.Persistence.csproj" />
   </Folder>
   <Folder Name="/CoffeePeek/CoffeePeek.Moderation/Tests/">
+    <Project Path="CoffeePeek.Moderation.Application.Tests/CoffeePeek.Moderation.Application.Tests.csproj" />
     <Project Path="CoffeePeek.Moderation.Domain.Tests/CoffeePeek.Moderation.Domain.Tests.csproj" />
+    <Project Path="CoffeePeek.ModerationService.Tests/CoffeePeek.ModerationService.Tests.csproj" />
   </Folder>
   <Folder Name="/CoffeePeek/CoffeePeek.Shops/">
     <Project Path="CoffeePeek.Shops.Application/CoffeePeek.Shops.Application.csproj" />
@@ -44,6 +50,8 @@
   <Folder Name="/CoffeePeek/CoffeePeek.Shops/Tests/">
     <Project Path="CoffeePeek.Shops.Application.Tests/CoffeePeek.Shops.Application.Tests.csproj" />
     <Project Path="CoffeePeek.Shops.Domain.Tests/CoffeePeek.Shops.Domain.Tests.csproj" />
+    <Project Path="CoffeePeek.Shops.Infrastructure.Tests/CoffeePeek.Shops.Infrastructure.Tests.csproj" />
+    <Project Path="CoffeePeek.ShopsService.Tests/CoffeePeek.ShopsService.Tests.csproj" />
   </Folder>
   <Folder Name="/CoffeePeek/Shared/">
     <Project Path="CoffeePeek.Contract/CoffeePeek.Contract.csproj" />

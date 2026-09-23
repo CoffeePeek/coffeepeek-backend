@@ -1,271 +1,239 @@
-# CoffeePeek Project Documentation
+# CoffeePeek Backend
 
-## Table of Contents
-1. [About the Project](#about-the-project)
-2. [Architecture Overview](#architecture-overview)
-3. [Tech Stack](#tech-stack)
-4. [Project Structure](#project-structure)
-5. [Getting Started](#getting-started)
-6. [Running the Application](#running-the-application)
-7. [Development Workflow](#development-workflow)
-8. [Database Migrations](#database-migrations)
-9. [Testing](#testing)
+CoffeePeek is a platform for discovering specialty coffee shops: search and map, reviews and check-ins, owner
+tools, and a moderation pipeline for user suggestions and bulk imports (OSM, CoffeeMap, files).
+This repository is the **backend only** — a set of .NET 10 microservices behind a YARP gateway.
 
-## About the Project
+## Contents
+1. [Architecture](#architecture)
+2. [Tech Stack](#tech-stack)
+3. [Repository Layout](#repository-layout)
+4. [Getting Started](#getting-started)
+5. [Configuration and Secrets](#configuration-and-secrets)
+6. [Messaging and Wolverine Code Generation](#messaging-and-wolverine-code-generation)
+7. [Database Migrations](#database-migrations)
+8. [Testing](#testing)
+9. [API](#api)
+10. [Deployment](#deployment)
 
-CoffeePeek is a comprehensive platform that connects coffee enthusiasts with coffee shops. It allows users to discover coffee shops and share their experiences via reviews and check-ins. The back-end is built using a microservices architecture to ensure scalability, resilience, and maintainability. Each service is responsible for a specific business domain, communicating with others through a well-defined API gateway.
+## Architecture
 
-## Architecture Overview
+| Service | Responsibility |
+|---|---|
+| **Gateway** (YARP) | Single entry point: JWT validation, CORS, per-client rate limiting, routing, Scalar API docs |
+| **Account** | Users, email + Google sign-in, JWT issuing, profiles, account deletion, user statistics |
+| **Shops** | Published catalog: shops, search, map/clusters, coffee zones, reviews, check-ins, menus (OpenAI vision parsing), owner and admin tools, app downloads |
+| **Moderation** | Review queue for shop/roaster/review suggestions, shop change requests and issue reports; import pipeline (OSM Overpass, CoffeeMap, files, Google Places status, Yandex geocoding); audit log |
+| **Media** | Uploads and photo storage (MinIO / S3) |
 
-The CoffeePeek application follows a microservices architecture pattern with the following core services:
+Each bounded context is layered DDD: **Domain → Application** (CQRS handlers on Wolverine) **→ Infrastructure →
+Persistence** (EF Core, one PostgreSQL database per service).
 
-- **API Gateway** (YARP-based): Handles routing, authentication, and cross-cutting concerns
-- **Account Service**: Manages user accounts, authentication, and authorization
-- **Shops Service**: Handles coffee shop discovery, search, and management
-- **Moderation Service**: Provides content moderation capabilities (integrates with external services)
-- **Media Service**: Manages media assets and file uploads
+**Authentication.** The gateway validates the JWT and forwards the identity to services as `X-User-*` headers
+signed with a shared secret (`X-Gateway-Auth`). Services trust identity only when that secret matches; client-sent
+`X-User-*` headers are stripped at the gateway and never read directly.
 
-The architecture also includes shared libraries for common functionality and a distributed app host for local development.
+**Cross-service flow.** Services communicate through RabbitMQ events with a durable PostgreSQL outbox/inbox.
+Example: approving a shop in Moderation publishes `ModerationShopApprovedEvent`; Shops creates the catalog shop and
+replies with `ModerationShopApproveCompleteResponse`; Account updates the submitter's statistics.
 
 ## Tech Stack
 
-- **.NET 10**: The primary framework for building the services
-- **ASP.NET Core**: Used for building web APIs
-- **YARP (Yet Another Reverse Proxy)**: Powers the API Gateway
-- **Entity Framework Core**: Used as the Object-Relational Mapper (ORM) for data access
-- **PostgreSQL**: The relational database for the services
-- **RabbitMQ**: Used for asynchronous communication between services
-- **Redis**: For caching and session management
-- **Docker & Docker Compose**: For containerization and orchestration
-- **MediatR/Wolverine**: For CQRS pattern implementation
-- **xUnit/NUnit**: For unit and integration testing
+| Concern | Technology |
+|---|---|
+| Runtime | .NET 10, C# 14 |
+| CQRS / messaging | Wolverine 5 + RabbitMQ, PostgreSQL outbox/inbox |
+| Data | EF Core 10 + Npgsql, PostgreSQL 17 |
+| Caching | Redis (StackExchange.Redis) |
+| Gateway | YARP, ASP.NET Core rate limiting, Scalar |
+| Local orchestration | .NET Aspire 13 |
+| Observability | Serilog, OpenTelemetry, Sentry |
+| Storage | MinIO |
+| External APIs | Google Sign-In, Resend (email), OpenAI (menu vision), Yandex Geocoder, Google Places, OSM Overpass |
+| Tests | xUnit v3, FluentAssertions, Moq |
 
-## Project Structure
+Package versions are managed centrally in `Directory.Packages.props`.
+
+## Repository Layout
+
+Projects are siblings in the repository root, grouped by bounded context:
 
 ```
-CoffeePeek-BackEnd/
-├── CoffePeek.AppHost/          # Aspire distributed application host
-├── CoffePeek.ServiceDefaults/  # Shared service defaults and configurations
-├── CoffeePeek.Gateway/         # API Gateway service
-├── CoffeePeek.AccountService/  # User account management service
-│   ├── CoffeePeek.Account.Application/    # Application layer
-│   ├── CoffeePeek.Account.Domain/         # Domain entities and business logic
-│   ├── CoffeePeek.Account.Infrastructure/ # Infrastructure implementations
-│   └── CoffeePeek.Account.Persistence/    # Database persistence layer
-├── CoffeePeek.ShopsService/    # Coffee shops management service
-│   ├── CoffeePeek.Shops.Application/
-│   ├── CoffeePeek.Shops.Domain/
-│   ├── CoffeePeek.Shops.Infrastructure/
-│   └── CoffeePeek.Shops.Persistance/
-├── CoffeePeek.ModerationService/ # Content moderation service
-├── CoffeePeek.MediaService/    # Media handling service
-├── CoffeePeek.Contract/        # Shared contracts and DTOs
-├── CoffeePeek.Shared.*         # Various shared libraries
-└── ...
+CoffePeek.AppHost/                Aspire app host (local orchestration)
+CoffePeek.ServiceDefaults/        Health checks, OpenTelemetry, service discovery
+CoffeePeek.Gateway/               YARP gateway
+CoffeePeek.AccountService/        Account host      + CoffeePeek.Account.{Domain,Application,Infrastructure,Persistence}
+CoffeePeek.ShopsService/          Shops host        + CoffeePeek.Shops.{Domain,Application,Infrastructure,Persistance}
+CoffeePeek.ModerationService/     Moderation host   + CoffeePeek.Moderation.{Domain,Application,Infrastructure}
+                                                    + CoffeeShop.Moderation.Persistence
+CoffeePeek.MediaService/          Media (single project)
+CoffeePeek.Contract/              Shared DTOs and event contracts
+CoffeePeek.Shared.*               Kernel, Domain, Persistence, Auth, Web, Validation
+*.Tests/                          Test projects
+deploy/                           Production Docker Compose, Caddy, deploy scripts
+dev/                              Local infra compose and helper scripts
 ```
+
+The folder-name typos `CoffePeek.*`, `Shops.Persistance` and `CoffeeShop.Moderation.Persistence` are intentional
+(renaming would break references) — keep them.
 
 ## Getting Started
 
 ### Prerequisites
+- [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
+- Docker Desktop
+- Rider, Visual Studio or VS Code with C# Dev Kit
 
-- [.NET 10 SDK](https://dotnet.microsoft.com/en-us/download/dotnet/10.0)
-- Docker Desktop (for containerization)
-- PostgreSQL (or Docker for automatic setup)
-- Visual Studio 2022 / Rider / VS Code with C# extension
+```bash
+git clone <repository-url>
+cd CoffeePeek-NET
+dotnet workload restore CoffeePeek.slnx   # Aspire workload, first time only
+dotnet restore CoffeePeek.slnx
+dotnet build CoffeePeek.slnx
+```
 
-### Installation Steps
-
-1. Clone the repository:
-   ```bash
-   git clone <repository-url>
-   cd CoffeePeek-BackEnd
-   ```
-
-2. Restore NuGet packages:
-   ```bash
-   dotnet restore
-   ```
-
-3. Set up the development environment:
-    - Ensure Docker is running
-    - The Aspire AppHost will automatically provision PostgreSQL databases
-
-## Running the Application
-
-### Option 1: Using Aspire (Recommended for Development)
-
-The easiest way to run the entire application locally is using the Aspire AppHost:
+### Option 1 — Aspire (recommended)
 
 ```bash
 cd CoffePeek.AppHost
 dotnet run
 ```
 
-This will:
-- Start PostgreSQL database containers
-- Provision databases for all services
-- Launch all microservices
-- Expose the API Gateway at `http://localhost:5000`
-- Provide dashboard and documentation at `http://localhost:5000/scalar`
+Starts PostgreSQL, RabbitMQ and Redis containers plus all services. The gateway listens on `http://localhost:5169`
+and API docs are at `http://localhost:5169/scalar`. The Aspire dashboard URL is printed on startup.
 
-### Option 2: Running Individual Services
-
-You can run individual services if needed:
+### Option 2 — Dev infrastructure + services on the host
 
 ```bash
-# Run the API Gateway
-cd CoffeePeek.Gateway
-dotnet run
-
-# Run the Account Service
-cd CoffeePeek.AccountService
-dotnet run
-
-# Run the Shops Service
-cd CoffeePeek.ShopsService
-dotnet run
-
-# Run the Moderation Service
-cd CoffeePeek.ModerationService
-dotnet run
-
-# Run the Media Service
-cd CoffeePeek.MediaService
-dotnet run
+docker compose -f dev/docker-compose.dev.yml up -d   # Postgres, RabbitMQ, Redis, MinIO
+dev/migrate-and-seed.sh                              # apply migrations, seed roles
+dev/run-services.sh                                  # build and start all services (logs in dev/logs/)
+dev/stop-services.sh
 ```
 
-### Option 3: Using Docker
+`dev/dev.env` holds the local-only connection settings used by these scripts.
 
-Build and run with Docker:
+### Option 3 — A single service
 
 ```bash
-# Build all services
-docker-compose build
-
-# Run all services
-docker-compose up -d
+cd CoffeePeek.ShopsService && dotnet run
 ```
 
-## Development Workflow
+The service needs its database, RabbitMQ and (for Shops/Account) Redis reachable — use Option 2's infrastructure.
 
-### Adding New Features
+## Configuration and Secrets
 
-1. Identify which service the feature belongs to
-2. Follow the layered architecture pattern (Application, Domain, Infrastructure, Persistence)
-3. Use CQRS pattern with MediatR/Wolverine
-4. Add appropriate validation and error handling
-5. Write unit tests for new functionality
-6. Update API documentation if adding new endpoints
+- Configuration comes from `appsettings.json`, environment variables and .NET user secrets. Options are validated at
+  startup, so a missing required value stops the service with a clear error.
+- **`appsettings.Development.json` is git-ignored.** Keep real credentials there or in user secrets
+  (`dotnet user-secrets`), never in tracked files. Docker builds exclude it via `.dockerignore`.
+- **Gateway secret.** `GatewayAuth:SecretKey` must be identical in the gateway and every service. The key committed
+  in `appsettings.json` is a public development value and is **rejected outside the Development environment**.
+- Optional integrations: `OpenAiOptions` (menu parsing), `YandexApiOptions` (geocoding), `GooglePlaces`
+  (import status checks), `Sentry:Dsn`. See `deploy/.env.example` for the full production variable list.
 
-### Database Schema Changes
+## Messaging and Wolverine Code Generation
 
-1. Make changes to entity models in the Domain layer
-2. Add new migrations using the Makefile:
-   ```bash
-   # For account service
-   make mig-acc n=MigrationName
-   
-   # For shops service
-   make mig-shops n=MigrationName
-   
-   # For moderation service
-   make mig-mod n=MigrationName
-   
-   # For media service
-   make mig-media n=MigrationName
-   ```
+Handlers are plain static `Handle` methods discovered by Wolverine:
 
-3. Update the database:
-   ```bash
-   # For account service
-   make up-acc
-   
-   # For shops service
-   make up-shops
-   
-   # For moderation service
-   make up-mod
-   
-   # For media service
-   make up-media
-   ```
+```csharp
+public static class UpdateModerationCoffeeShopStatusHandler
+{
+    public static async Task<(Response, object?)> Handle(
+        UpdateModerationCoffeeShopStatusCommand command,
+        IModerationShopRepository repository,
+        CancellationToken ct) { ... }   // the second tuple item is published as an event
+}
+```
+
+- Every handler runs inside an EF Core transaction; outgoing events go through the durable outbox and are sent only
+  after commit.
+- Only transient database conflicts (unique violations, serialization failures, optimistic-concurrency conflicts) are
+  retried automatically; other failures go to the error queue.
+- **Production loads pre-generated handler code** (`Internal/Generated/WolverineHandlers/` in each service host) and
+  refuses to start if it is missing. After adding a handler or changing a handler's parameters or return type,
+  regenerate and commit it:
+
+  ```bash
+  cd CoffeePeek.ShopsService      # or the affected service host
+  dotnet run -- codegen write
+  ```
+
+  The command builds the host, so it needs the service's required configuration (development settings or
+  environment variables).
 
 ## Database Migrations
 
-The project uses Entity Framework Core for database migrations. Each service has its own database context and migration history.
-
-### Migration Commands (using Makefile)
+Each service owns its database and migration history. Pending migrations are **applied automatically at service
+startup**, so migrations must be safe to run against production data.
 
 ```bash
-# Add a new migration to Account service
-make mig-acc n=AddUserPreferences
+make mig-acc n=MigrationName     # add migration — Account
+make mig-shops n=MigrationName   # add migration — Shops
+make mig-mod n=MigrationName     # add migration — Moderation
+make mig-media n=MigrationName   # add migration — Media
 
-# Update Account database to latest migration
-make up-acc
-
-# Add a new migration to Shops service
-make mig-shops n=AddCoffeeEquipment
-
-# Update Shops database to latest migration
-make up-shops
-
-# Add a new migration to Moderation service
-make mig-mod n=UpdateContentRules
-
-# Update Moderation database to latest migration
-make up-mod
-
-# Add a new migration to Media service
-make mig-media n=AddImageOptimization
-
-# Update Media database to latest migration
-make up-media
+make up-acc | up-shops | up-mod | up-media   # apply manually
 ```
 
-### Manual Migration Commands
-
-If you prefer to use dotnet ef directly:
+Manual equivalent:
 
 ```bash
-# From the project root
 dotnet ef migrations add MigrationName \
   --project CoffeePeek.Account.Persistence \
   --startup-project CoffeePeek.AccountService \
   --context CoffeePeek.Account.Persistence.Configuration.AccountDbContext
-
-# Update database
-dotnet ef database update \
-  --project CoffeePeek.Account.Persistence \
-  --startup-project CoffeePeek.AccountService \
-  --context CoffeePeek.Account.Persistence.Configuration.AccountDbContext
 ```
+
+Row-version concurrency uses PostgreSQL's `xmin` system column: when EF scaffolds an `AddColumn("xmin")`,
+empty the migration body — the column already exists.
 
 ## Testing
 
-The project includes unit tests for domain logic and infrastructure components:
-
-- `CoffeePeek.Account.Domain.Tests` - Tests for account domain models
-- `CoffeePeek.Account.Infrastructure.Tests` - Tests for account infrastructure
-- `CoffeePeek.Shops.Domain.Tests` - Tests for shops domain models
-
-Run all tests:
 ```bash
-dotnet test
+dotnet test CoffeePeek.slnx                                   # everything
+dotnet test CoffeePeek.Moderation.Domain.Tests                # one project
+dotnet test CoffeePeek.slnx --filter Name=TestMethodName      # one test
+dotnet test CoffeePeek.slnx --collect:"XPlat Code Coverage"   # coverage
 ```
 
-Run tests for a specific project:
+| Project | Covers |
+|---|---|
+| `*.Domain.Tests` | Aggregates, value objects, import parsers/classifiers, matchers |
+| `*.Application.Tests` | Command/query handlers and application services (mocked dependencies) |
+| `*.Infrastructure.Tests` | Message consumers, external clients, EF queries (InMemory provider) |
+| `CoffeePeek.Gateway.Tests` | Route configuration, auth policies, rate limiting |
+| `*Service.Tests` | Host wiring: OpenAPI generation, Wolverine pre-generated handlers, contracts |
+
+CI runs the unit test projects listed in `CoffeePeek.Backend.ci.slnf` — add new test projects there.
+
+## API
+
+Interactive documentation for all services: `http://localhost:5169/scalar`.
+
+Main route groups through the gateway:
+
+| Routes | Service |
+|---|---|
+| `/api/Users/*`, `/api/Tokens/*` | Account |
+| `/api/CoffeeShops/*`, `/api/Map/*`, `/api/Catalogs/*`, `/api/CheckIns/*`, `/api/CoffeeShopReviews/*`, `/api/menu/*`, `/api/roasters/*`, `/api/owner/*`, `/api/public/stats` | Shops |
+| `/api/ModerationShops/*`, `/api/ModerationReviews/*`, `/api/ModerationRoasters/*`, `/api/ShopChangeRequests/*`, `/api/ShopIssueReports/*` | Moderation |
+| `/api/Photos/*` | Media |
+| `/api/admin/*` | Admin tools (Moderator/Admin roles) |
+| `/download/*`, `/api/v1/app-downloads` | App download links |
+
+Every service exposes `/health` and `/alive`.
+
+## Deployment
+
+Production runs on a VPS with Docker Compose (`deploy/docker-compose.yml`) behind Caddy (HTTPS). CI
+(`.github/workflows/ci-cd.yml`) builds, tests and pushes images on pushes to `dev`/`main`.
+
 ```bash
-dotnet test CoffeePeek.Account.Domain.Tests
+cp deploy/.env.example deploy/.env    # fill in values
+deploy/scripts/deploy.sh              # first deployment
+deploy/scripts/update.sh              # subsequent updates
 ```
 
-## API Documentation
-
-The API Gateway includes Swagger/OpenAPI documentation accessible at:
-- `http://localhost:5000/scalar` (Scalar UI - modern alternative to Swagger UI)
-- `http://localhost:5000/swagger` (Traditional Swagger UI)
-
-API endpoints are organized by service:
-- `/api/account/*` - Account management endpoints
-- `/api/shops/*` - Coffee shop discovery endpoints
-- `/api/moderation/*` - Content moderation endpoints
-- `/api/media/*` - Media handling endpoints
+`deploy/scripts/ensure-secrets.sh` (run by both scripts) generates missing secrets such as `GATEWAY_AUTH_SECRET` and
+`ACCOUNT_DELETION_TOKEN_PEPPER` without overwriting existing values. Containers run as a non-root user.

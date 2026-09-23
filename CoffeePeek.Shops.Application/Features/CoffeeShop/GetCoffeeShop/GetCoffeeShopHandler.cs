@@ -19,6 +19,7 @@ public static class GetCoffeeShopHandler
         CancellationToken ct)
     {
         var cacheKey = CacheKey.Shop.Detail(query.Id);
+        var cacheTtl = ShopScheduleCachePolicy.UntilNextUtcMinute(DateTime.UtcNow);
 
         var shopDto = await redisService.GetAsync(cacheKey, async token =>
         {
@@ -33,7 +34,7 @@ public static class GetCoffeeShopHandler
                 ReviewCount = count, 
                 Reviews = mapper.Map<ReviewDto[]>(reviews)
             };
-        }, cacheKey.DefaultTtl, ct);
+        }, cacheTtl, ct);
 
         if (shopDto == null)
             return Response<GetCoffeeShopResponse>.Error("Shop not found");
@@ -43,10 +44,30 @@ public static class GetCoffeeShopHandler
             var userId = query.UserId.Value;
             shopDto = shopDto with
             {
-                IsVisited = await checkInRepository.Exists(userId, query.Id, ct)
+                IsVisited = await checkInRepository.Exists(userId, query.Id, ct),
+                UserCheckIns = mapper.Map<CheckInDto[]>(
+                    await checkInRepository.GetByUserAndShopAsync(userId, query.Id, 1, 10, ct)),
+                Reviews = await PersonalizeHelpful(shopDto.Reviews, userId, reviewRepository, ct)
             };
         }
 
         return Response<GetCoffeeShopResponse>.Success(new GetCoffeeShopResponse(shopDto));
+    }
+
+    private static async Task<ReviewDto[]> PersonalizeHelpful(
+        ReviewDto[] reviews,
+        Guid userId,
+        IQueryReviewRepository reviewRepository,
+        CancellationToken ct)
+    {
+        if (reviews.Length == 0)
+            return reviews;
+
+        var reviewIds = reviews.Select(r => r.Id).ToArray();
+        var helpfulIds = await reviewRepository.GetHelpfulReviewIds(userId, reviewIds, ct);
+
+        return reviews
+            .Select(r => r with { IsHelpfulByCurrentUser = helpfulIds.Contains(r.Id) })
+            .ToArray();
     }
 }

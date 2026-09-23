@@ -1,4 +1,4 @@
-﻿using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
+using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
 using CoffeePeek.Shops.Persistance.Configuration;
 using Microsoft.EntityFrameworkCore;
 
@@ -33,6 +33,12 @@ public class QueryCoffeeShopRepository(ShopsDbContext dbContext) : IQueryCoffeeS
     {
         return _repository.AnyAsync(x => x.Id == id, ct);
     }
+
+    public Task<Guid?> GetCityIdAsync(Guid id, CancellationToken ct = default) =>
+        _repository.AsNoTracking()
+            .Where(x => x.Id == id)
+            .Select(x => (Guid?)x.Location.CityId)
+            .FirstOrDefaultAsync(ct);
 
     public Task<bool> ExistsByModerationId(Guid id, CancellationToken ct = default)
     {
@@ -86,6 +92,13 @@ public class QueryCoffeeShopRepository(ShopsDbContext dbContext) : IQueryCoffeeS
         return shopIds.ToHashSet();
     }
 
-    public Task<List<CoffeeShop>> ListAllForEnrichmentAsync(CancellationToken ct = default) =>
-        _repository.ToListAsync(ct);
+    public Task<List<CoffeeShop>> ListForEnrichmentAsync(
+        IReadOnlyCollection<Guid> shopIds,
+        decimal minLat, decimal maxLat, decimal minLon, decimal maxLon,
+        CancellationToken ct = default) =>
+        _repository
+            .Where(s => shopIds.Contains(s.Id)
+                        || (s.Location.Latitude >= minLat && s.Location.Latitude <= maxLat
+                            && s.Location.Longitude >= minLon && s.Location.Longitude <= maxLon))
+            .ToListAsync(ct);
 }

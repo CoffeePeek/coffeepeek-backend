@@ -10,6 +10,9 @@ public class ShopImportCandidateRepository(ModerationDbContext dbContext) : ISho
     public Task<ShopImportCandidate?> GetByIdAsync(Guid id, CancellationToken ct = default) =>
         dbContext.ShopImportCandidates.FirstOrDefaultAsync(c => c.Id == id, ct);
 
+    public Task<ShopImportCandidate?> GetById(Guid id, CancellationToken ct = default) =>
+        dbContext.ShopImportCandidates.AsNoTracking().FirstOrDefaultAsync(c => c.Id == id, ct);
+
     public async Task<IReadOnlyDictionary<Guid, ShopImportCandidate>> GetByIdsAsync(
         IReadOnlyCollection<Guid> ids,
         CancellationToken ct = default)

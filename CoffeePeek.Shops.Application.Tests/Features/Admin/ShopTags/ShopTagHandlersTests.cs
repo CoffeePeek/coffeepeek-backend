@@ -7,7 +7,7 @@ using CoffeePeek.Shared.Domain.Interfaces.Infrastructure;
 using CoffeePeek.Shared.Kernel;
 using CoffeePeek.Shops.Application.Features.Admin.ShopTags;
 using CoffeePeek.Shops.Application.Features.Admin.Shops.SetShopTags;
-using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate.Repositories;
+using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
 using CoffeePeek.Shops.Domain.Aggregates.ShopTagAggregate;
 using FluentAssertions;
 using Moq;
@@ -85,6 +85,7 @@ public class SetShopTagsHandlerTests
         shop.ShopTags.Should().ContainSingle(t => t.TagId == tagId);
         _uow.Verify(u => u.SaveChangesAsync(_ct), Times.Once);
         _cache.Verify(c => c.RemoveAsync(CacheKey.Shop.Detail(shop.Id)), Times.Once);
+        _cache.Verify(c => c.RemoveByPattern(CacheKey.Shop.SearchPattern(), _ct), Times.Once);
     }
 
     [Fact]

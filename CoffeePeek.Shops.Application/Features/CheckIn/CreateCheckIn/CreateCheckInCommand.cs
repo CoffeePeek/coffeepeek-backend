@@ -10,9 +10,10 @@ public record CreateCheckInCommand(
     [Required] bool IsPublic,
     [Required] DateTime VisitedAt,
     [MaxLength(BusinessConstants.MaxCheckInNoteLength)]
-    string? Note,
-    ICollection<UploadedPhotoDto>? Photos,
-    RatingDto? Rating)
+    string? Note = null,
+    ICollection<UploadedPhotoDto>? Photos = null,
+    [Required] RatingDto? Rating = null,
+    [MaxLength(BusinessConstants.MaxReviewHeaderLength)] string? Header = null)
 {
     [JsonIgnore] public Guid UserId { get; init; }
     [JsonIgnore] public string UserName { get; init; } = string.Empty;

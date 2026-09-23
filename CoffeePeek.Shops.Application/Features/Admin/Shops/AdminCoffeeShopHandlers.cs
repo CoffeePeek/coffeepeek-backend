@@ -1,3 +1,4 @@
+using System.Net;
 using CoffeePeek.Contract.Dtos.Schedule;
 using CoffeePeek.Contract.Enums;
 using CoffeePeek.Shared.Kernel;
@@ -7,7 +8,6 @@ using CoffeePeek.Shared.Domain.Interfaces.Infrastructure;
 using CoffeePeek.Shops.Application.Features.CoffeeShop.ShopProfile;
 using CoffeePeek.Shops.Application.Features.Public.Stats;
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
-using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate.Repositories;
 using CoffeePeek.Shops.Domain.Aggregates.ShopTagAggregate;
 using CoffeePeek.Shops.Domain.Entities;
 using Microsoft.Extensions.Options;
@@ -49,7 +49,7 @@ public record AdminPublishedShopDto(
     Guid CityId,
     DomainCoffeeShopStatus Status,
     CoffeeShopType? Type,
-    Guid CreatorId,
+    Guid? CreatorId,
     Guid? OwnerUserId,
     Guid? ModerationId,
     DateTime CreatedAtUtc,
@@ -87,12 +87,12 @@ public static class AdminPublishedShopMapper
         shop.Name,
         shop.Location?.CityId ?? Guid.Empty,
         shop.Status,
-        shop.CoffeeFocus is null ? null : (CoffeeShopType)(int)shop.CoffeeFocus.Value,
+        shop.Type is null ? null : (CoffeeShopType)(int)shop.Type.Value,
         shop.CreatorId,
         shop.OwnerUserId,
         shop.ModerationId,
         shop.CreatedAtUtc,
-        shop.Status != DomainCoffeeShopStatus.Active,
+        shop.IsHidden,
         shop.ImportedFromFileAt,
         MapPhotos(shop.ShopPhotos, mediaOptions),
         shop.Description,
@@ -234,7 +234,6 @@ public static class UpdateAdminCoffeeShopHandler
         await unitOfWork.SaveChangesAsync(ct);
         await cacheService.RemoveAsync(CacheKey.Shop.Detail(shop.Id));
         await cacheService.RemoveByPattern(CacheKey.Shop.SearchPattern(), ct);
-        await cacheService.RemoveByPattern(CacheKey.Shop.ListPattern(), ct);
 
         return Response<AdminPublishedShopDto>.Success(AdminPublishedShopMapper.Map(shop, mediaOptions.Value));
     }
@@ -260,6 +259,7 @@ public static class SetAdminCoffeeShopVisibilityHandler
 
         await unitOfWork.SaveChangesAsync(ct);
         await cacheService.RemoveAsync(CacheKey.Shop.Detail(shop.Id));
+        await cacheService.RemoveByPattern(CacheKey.Shop.SearchPattern(), ct);
         await PublicStatsCacheInvalidator.InvalidateAsync(cacheService, ct);
 
         return Response<AdminPublishedShopDto>.Success(AdminPublishedShopMapper.Map(shop, mediaOptions.Value));
@@ -303,9 +303,9 @@ public static class SetAdminCoffeeShopFocusHandler
     {
         var shop = await repository.GetByIdAsync(command.ShopId, ct);
         if (shop is null)
-            return Response<AdminPublishedShopDto>.Error(System.Net.HttpStatusCode.NotFound, "Shop not found.");
+            return Response<AdminPublishedShopDto>.Error(HttpStatusCode.NotFound, "Shop not found.");
 
-        shop.SetCoffeeFocus((Domain.Aggregates.CoffeeShopAggregate.CoffeeFocus)(int)command.Type);
+        shop.SetCoffeeFocus((CoffeeFocusType)(int)command.Type);
 
         var tagIds = shop.ShopTags.Select(t => t.TagId).ToList();
         if (command.Type == CoffeeShopType.Specialty)

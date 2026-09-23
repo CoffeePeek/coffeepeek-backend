@@ -14,6 +14,7 @@
     <ItemGroup>
         <PackageReference Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL" />
         <PackageReference Include="Bogus" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Abstractions" />
         <PackageReference Include="Microsoft.EntityFrameworkCore.Relational"  />
     </ItemGroup>
     

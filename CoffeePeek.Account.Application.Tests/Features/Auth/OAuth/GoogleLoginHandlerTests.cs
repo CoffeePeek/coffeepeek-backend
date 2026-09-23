@@ -1,3 +1,4 @@
+using System;
 using System.Net;
 using System.Text.Json;
 using System.Threading;
@@ -114,6 +115,7 @@ public class GoogleLoginHandlerTests
         var payload = new GoogleLoginResponse(
             "access",
             "secret-refresh",
+            DateTime.UtcNow.AddMinutes(15),
             new GoogleLoginUser
             {
                 Email = "user@gmail.com",

@@ -81,7 +81,7 @@ public class AdminImportController(IMessageBus bus, IUserContext userContext) : 
     }
 
     [HttpPost("file")]
-    [RequestSizeLimit(32_000_000)]
+    [RequestSizeLimit(10 * 1024 * 1024)] // matches the gateway Kestrel body limit
     [ProducesResponseType<Response<IngestImportFileResultDto>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> IngestFile([FromBody] JsonElement body, CancellationToken ct)
     {
@@ -93,7 +93,7 @@ public class AdminImportController(IMessageBus bus, IUserContext userContext) : 
     [HttpGet("candidates")]
     [ProducesResponseType<Response<GetImportCandidatesResponse>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetCandidates(
-        [FromQuery] ImportQueueStatus? status = ImportQueueStatus.Pending,
+        [FromQuery] ImportQueueStatus? status = null,
         [FromQuery] ImportCollectorBucket? bucket = null,
         [FromQuery] CoffeeShopType? type = null,
         [FromQuery] ImportRejectReason? rejectReason = null,
@@ -106,7 +106,7 @@ public class AdminImportController(IMessageBus bus, IUserContext userContext) : 
     {
         var term = string.IsNullOrWhiteSpace(search) ? name : search;
         var response = await bus.InvokeAsync<Response<GetImportCandidatesResponse>>(
-            new GetImportCandidatesQuery(status, bucket, type, rejectReason, term, page, pageSize, source), ct);
+            new GetImportCandidatesQuery(status ?? ImportQueueStatus.Pending, bucket, type, rejectReason, term, page, pageSize, source), ct);
 
         if (response.IsSuccess && response.Data is not null)
         {
@@ -282,13 +282,13 @@ public class AdminImportController(IMessageBus bus, IUserContext userContext) : 
     [HttpGet("duplicates")]
     [ProducesResponseType<Response<GetImportDuplicatesResponse>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetDuplicates(
-        [FromQuery] ImportDuplicateStatus? status = ImportDuplicateStatus.Pending,
+        [FromQuery] ImportDuplicateStatus? status = null,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20,
         CancellationToken ct = default)
     {
         var response = await bus.InvokeAsync<Response<GetImportDuplicatesResponse>>(
-            new GetImportDuplicatesQuery(status, page, pageSize), ct);
+            new GetImportDuplicatesQuery(status ?? ImportDuplicateStatus.Pending, page, pageSize), ct);
 
         if (response.IsSuccess && response.Data is not null)
         {

@@ -23,6 +23,176 @@ namespace CoffeePeek.Shops.Persistance.Migrations
             NpgsqlModelBuilderExtensions.HasPostgresExtension(modelBuilder, "pg_trgm");
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("CoffeePeek.Shops.Domain.Aggregates.AppDistributionAggregate.AndroidRelease", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<long>("FileSize")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("FileUrl")
+                        .IsRequired()
+                        .HasMaxLength(2048)
+                        .HasColumnType("character varying(2048)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime>("ReleasedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Sha256")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Version")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<int>("VersionCode")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IsActive")
+                        .IsUnique()
+                        .HasFilter("\"IsActive\" = TRUE");
+
+                    b.HasIndex("VersionCode");
+
+                    b.ToTable("AndroidReleases");
+                });
+
+            modelBuilder.Entity("CoffeePeek.Shops.Domain.Aggregates.AppDistributionAggregate.AppDistributionAuditLog", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("EntityId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("NewValue")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)");
+
+                    b.Property<string>("OldValue")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)");
+
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedAtUtc");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("AppDistributionAuditLogs");
+                });
+
+            modelBuilder.Entity("CoffeePeek.Shops.Domain.Aggregates.AppDistributionAggregate.AppDistributionSettings", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("AndroidApkEnabled")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("AndroidGooglePlayEnabled")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("AndroidGooglePlayUrl")
+                        .HasMaxLength(2048)
+                        .HasColumnType("character varying(2048)");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IosAppStoreEnabled")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("IosAppStoreUrl")
+                        .HasMaxLength(2048)
+                        .HasColumnType("character varying(2048)");
+
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("AppDistributionSettings");
+                });
+
+            modelBuilder.Entity("CoffeePeek.Shops.Domain.Aggregates.AppDistributionAggregate.AppDownloadRedirectEvent", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Channel")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<string>("Country")
+                        .HasMaxLength(2)
+                        .HasColumnType("character varying(2)");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Referer")
+                        .HasMaxLength(2048)
+                        .HasColumnType("character varying(2048)");
+
+                    b.Property<DateTime>("Timestamp")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UserAgent")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Channel");
+
+                    b.HasIndex("Timestamp");
+
+                    b.ToTable("AppDownloadRedirectEvents");
+                });
+
             modelBuilder.Entity("CoffeePeek.Shops.Domain.Aggregates.BrewMethods.BrewMethod", b =>
                 {
                     b.Property<Guid>("Id")
@@ -88,6 +258,34 @@ namespace CoffeePeek.Shops.Persistance.Migrations
                     b.ToTable("CheckIns");
                 });
 
+            modelBuilder.Entity("CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate.AppliedShopChangeRequest", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("AppliedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("ApprovedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("ShopId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ShopId");
+
+                    b.ToTable("AppliedShopChangeRequests");
+                });
+
             modelBuilder.Entity("CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate.City", b =>
                 {
                     b.Property<Guid>("Id")
@@ -137,14 +335,16 @@ namespace CoffeePeek.Shops.Persistance.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<int?>("CoffeeFocus")
-                        .HasColumnType("integer");
-
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("CreatorId")
+                    b.Property<Guid?>("CreatorId")
                         .HasColumnType("uuid");
+
+                    b.Property<short>("DataCompletenessScore")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("smallint")
+                        .HasDefaultValue((short)0);
 
                     b.Property<string>("Description")
                         .HasMaxLength(500)
@@ -152,6 +352,9 @@ namespace CoffeePeek.Shops.Persistance.Migrations
 
                     b.Property<DateTime?>("ImportedFromFileAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsHidden")
+                        .HasColumnType("boolean");
 
                     b.Property<Guid?>("ModerationId")
                         .HasColumnType("uuid");
@@ -170,12 +373,20 @@ namespace CoffeePeek.Shops.Persistance.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("integer");
 
+                    b.Property<int?>("Type")
+                        .HasColumnType("integer");
+
                     b.Property<DateTime?>("UpdatedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
 
                     b.HasIndex("ImportedFromFileAt");
+
+                    b.HasIndex("ModerationId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_Shops_ModerationId")
+                        .HasFilter("\"ModerationId\" IS NOT NULL");
 
                     b.HasIndex("Name")
                         .HasDatabaseName("IX_Shops_Name_GIN");
@@ -185,7 +396,14 @@ namespace CoffeePeek.Shops.Persistance.Migrations
 
                     b.HasIndex("OwnerUserId");
 
-                    b.ToTable("Shops");
+                    b.HasIndex("Status", "DataCompletenessScore", "Name")
+                        .IsDescending(false, true, false)
+                        .HasDatabaseName("IX_Shops_Status_DataCompletenessScore_Name");
+
+                    b.ToTable("Shops", t =>
+                        {
+                            t.HasCheckConstraint("CK_Shops_DataCompletenessScore_Range", "\"DataCompletenessScore\" BETWEEN 0 AND 100");
+                        });
                 });
 
             modelBuilder.Entity("CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate.CoffeeShopTag", b =>
@@ -199,7 +417,7 @@ namespace CoffeePeek.Shops.Persistance.Migrations
                     b.Property<DateTime>("AssignedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("AssignedByUserId")
+                    b.Property<Guid?>("AssignedByUserId")
                         .HasColumnType("uuid");
 
                     b.HasKey("ShopId", "TagId");
@@ -279,19 +497,109 @@ namespace CoffeePeek.Shops.Persistance.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<string>("About")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<Guid?>("ModerationId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
                     b.Property<DateTime?>("UpdatedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
 
+                    b.HasIndex("ModerationId")
+                        .IsUnique()
+                        .HasFilter("\"ModerationId\" IS NOT NULL");
+
                     b.ToTable("Roasters");
+                });
+
+            modelBuilder.Entity("CoffeePeek.Shops.Domain.Aggregates.CoffeeZoneAggregate.CoffeeZone", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("CenterLatitude")
+                        .HasPrecision(18, 10)
+                        .HasColumnType("numeric(18,10)");
+
+                    b.Property<decimal>("CenterLongitude")
+                        .HasPrecision(18, 10)
+                        .HasColumnType("numeric(18,10)");
+
+                    b.Property<Guid>("CityId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<int>("RadiusMeters")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CityId", "Status");
+
+                    b.ToTable("CoffeeZones", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_CoffeeZones_Latitude", "\"CenterLatitude\" BETWEEN -90 AND 90");
+
+                            t.HasCheckConstraint("CK_CoffeeZones_Longitude", "\"CenterLongitude\" BETWEEN -180 AND 180");
+
+                            t.HasCheckConstraint("CK_CoffeeZones_RadiusMeters", "\"RadiusMeters\" BETWEEN 100 AND 2000");
+
+                            t.HasCheckConstraint("CK_CoffeeZones_Status", "\"Status\" BETWEEN 0 AND 2");
+                        });
+                });
+
+            modelBuilder.Entity("CoffeePeek.Shops.Domain.Aggregates.CoffeeZoneAggregate.CoffeeZoneMembershipOverride", b =>
+                {
+                    b.Property<Guid>("ZoneId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ShopId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Kind")
+                        .HasColumnType("integer");
+
+                    b.HasKey("ZoneId", "ShopId");
+
+                    b.HasIndex("ShopId")
+                        .IsUnique()
+                        .HasDatabaseName("UX_CoffeeZoneMembershipOverrides_PrimaryShop")
+                        .HasFilter("\"Kind\" = 2");
+
+                    b.ToTable("CoffeeZoneMembershipOverrides", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_CoffeeZoneMembershipOverrides_Kind", "\"Kind\" BETWEEN 0 AND 2");
+                        });
                 });
 
             modelBuilder.Entity("CoffeePeek.Shops.Domain.Aggregates.MenuAggregate.CoffeeDrinkDefinition", b =>
@@ -504,12 +812,19 @@ namespace CoffeePeek.Shops.Persistance.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Header")
-                        .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
+                    b.Property<int>("HelpfulCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
                     b.Property<bool>("IsSoftDelete")
                         .HasColumnType("boolean");
+
+                    b.Property<Guid?>("ModerationReviewId")
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime?>("UpdatedAtUtc")
                         .HasColumnType("timestamp with time zone");
@@ -526,9 +841,34 @@ namespace CoffeePeek.Shops.Persistance.Migrations
 
                     b.HasIndex("CoffeeShopId");
 
+                    b.HasIndex("ModerationReviewId")
+                        .IsUnique()
+                        .HasFilter("\"ModerationReviewId\" IS NOT NULL");
+
                     b.HasIndex("UserId");
 
-                    b.ToTable("Reviews");
+                    b.ToTable("Reviews", t =>
+                        {
+                            t.HasCheckConstraint("CK_Reviews_HelpfulCount_NonNegative", "\"HelpfulCount\" >= 0");
+                        });
+                });
+
+            modelBuilder.Entity("CoffeePeek.Shops.Domain.Aggregates.ReviewAggregate.ReviewHelpfulVote", b =>
+                {
+                    b.Property<Guid>("ReviewId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("ReviewId", "UserId");
+
+                    b.HasIndex("UserId", "ReviewId");
+
+                    b.ToTable("ReviewHelpfulVotes");
                 });
 
             modelBuilder.Entity("CoffeePeek.Shops.Domain.Aggregates.ShopTagAggregate.ShopTag", b =>
@@ -571,6 +911,54 @@ namespace CoffeePeek.Shops.Persistance.Migrations
                     b.HasIndex("SortOrder");
 
                     b.ToTable("ShopTags", (string)null);
+                });
+
+            modelBuilder.Entity("CoffeePeek.Shops.Domain.Entities.RoasterPhoto", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<Guid>("OwnerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("RoasterId")
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("SizeBytes")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("SortIndex")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
+                    b.Property<string>("StorageKey")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RoasterId", "SortIndex")
+                        .HasDatabaseName("IX_RoasterPhotos_RoasterId_SortIndex");
+
+                    b.ToTable("RoasterPhotos");
                 });
 
             modelBuilder.Entity("CoffeePeek.Shops.Domain.Entities.ShopPhoto", b =>
@@ -773,6 +1161,8 @@ namespace CoffeePeek.Shops.Persistance.Migrations
                             NpgsqlIndexBuilderExtensions.HasMethod(b1.HasIndex("Address"), "gin");
                             NpgsqlIndexBuilderExtensions.HasOperators(b1.HasIndex("Address"), new[] { "gin_trgm_ops" });
 
+                            b1.HasIndex("CityId");
+
                             b1.HasIndex("Latitude", "Longitude");
 
                             b1.ToTable("Shops");
@@ -910,6 +1300,97 @@ namespace CoffeePeek.Shops.Persistance.Migrations
                     b.Navigation("Category");
                 });
 
+            modelBuilder.Entity("CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate.Roaster", b =>
+                {
+                    b.OwnsOne("CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate.Location", "Location", b1 =>
+                        {
+                            b1.Property<Guid>("RoasterId")
+                                .HasColumnType("uuid");
+
+                            b1.Property<string>("Address")
+                                .IsRequired()
+                                .HasMaxLength(500)
+                                .HasColumnType("character varying(500)")
+                                .HasColumnName("Address");
+
+                            b1.Property<Guid>("CityId")
+                                .HasColumnType("uuid")
+                                .HasColumnName("CityId");
+
+                            b1.Property<bool>("IsAddressValidated")
+                                .HasColumnType("boolean")
+                                .HasColumnName("IsAddressValidated");
+
+                            b1.Property<decimal?>("Latitude")
+                                .HasPrecision(18, 10)
+                                .HasColumnType("numeric(18,10)")
+                                .HasColumnName("Latitude");
+
+                            b1.Property<decimal?>("Longitude")
+                                .HasPrecision(18, 10)
+                                .HasColumnType("numeric(18,10)")
+                                .HasColumnName("Longitude");
+
+                            b1.HasKey("RoasterId");
+
+                            b1.ToTable("Roasters");
+
+                            b1.WithOwner()
+                                .HasForeignKey("RoasterId");
+                        });
+
+                    b.OwnsOne("CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate.RoasterContact", "Contact", b1 =>
+                        {
+                            b1.Property<Guid>("RoasterId")
+                                .HasColumnType("uuid");
+
+                            b1.Property<string>("InstagramLink")
+                                .HasMaxLength(255)
+                                .HasColumnType("character varying(255)")
+                                .HasColumnName("InstagramLink");
+
+                            b1.Property<string>("SiteLink")
+                                .HasMaxLength(2048)
+                                .HasColumnType("character varying(2048)")
+                                .HasColumnName("SiteLink");
+
+                            b1.HasKey("RoasterId");
+
+                            b1.ToTable("Roasters");
+
+                            b1.WithOwner()
+                                .HasForeignKey("RoasterId");
+                        });
+
+                    b.Navigation("Contact");
+
+                    b.Navigation("Location");
+                });
+
+            modelBuilder.Entity("CoffeePeek.Shops.Domain.Aggregates.CoffeeZoneAggregate.CoffeeZone", b =>
+                {
+                    b.HasOne("CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate.City", null)
+                        .WithMany()
+                        .HasForeignKey("CityId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("CoffeePeek.Shops.Domain.Aggregates.CoffeeZoneAggregate.CoffeeZoneMembershipOverride", b =>
+                {
+                    b.HasOne("CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate.CoffeeShop", null)
+                        .WithMany()
+                        .HasForeignKey("ShopId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("CoffeePeek.Shops.Domain.Aggregates.CoffeeZoneAggregate.CoffeeZone", null)
+                        .WithMany()
+                        .HasForeignKey("ZoneId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("CoffeePeek.Shops.Domain.Aggregates.MenuAggregate.ShopMenu", b =>
                 {
                     b.HasOne("CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate.CoffeeShop", null)
@@ -979,6 +1460,24 @@ namespace CoffeePeek.Shops.Persistance.Migrations
                         });
 
                     b.Navigation("Rating")
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("CoffeePeek.Shops.Domain.Aggregates.ReviewAggregate.ReviewHelpfulVote", b =>
+                {
+                    b.HasOne("CoffeePeek.Shops.Domain.Aggregates.ReviewAggregate.Review", null)
+                        .WithMany()
+                        .HasForeignKey("ReviewId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("CoffeePeek.Shops.Domain.Entities.RoasterPhoto", b =>
+                {
+                    b.HasOne("CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate.Roaster", null)
+                        .WithMany("Photos")
+                        .HasForeignKey("RoasterId")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
@@ -1067,6 +1566,11 @@ namespace CoffeePeek.Shops.Persistance.Migrations
                     b.Navigation("ShopPhotos");
 
                     b.Navigation("ShopTags");
+                });
+
+            modelBuilder.Entity("CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate.Roaster", b =>
+                {
+                    b.Navigation("Photos");
                 });
 
             modelBuilder.Entity("CoffeePeek.Shops.Domain.Aggregates.MenuAggregate.ShopMenu", b =>

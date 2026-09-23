@@ -14,7 +14,13 @@ public class ModerationShopApprovedAccountHandler(
     {
         logger.LogInformation("Received ModerationShopApprovedEvent for UserId: {UserId}", message.UserId);
 
-        var user = await userRepository.GetById(message.UserId, ct)
+        if (message.UserId is null)
+        {
+            logger.LogInformation("ModerationShopApprovedEvent has no submitting user (anonymous); skipping statistics update");
+            return;
+        }
+
+        var user = await userRepository.GetById(message.UserId.Value, ct)
                    ?? throw new InvalidOperationException("User not found");
 
         user.Statistics.IncrementAddedShops();

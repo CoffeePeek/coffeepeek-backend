@@ -1,4 +1,5 @@
 using CoffeePeek.Moderation.Domain.Aggregates.ModerationReviewAggregate;
+using CoffeePeek.Moderation.Domain.Common.Enums;
 using CoffeePeek.Moderation.Domain.Entities;
 using CoffeePeek.Shared.Kernel.Exceptions;
 using FluentAssertions;
@@ -43,11 +44,11 @@ public class ModerationReviewTests
     }
 
     [Fact]
-    public void Create_WithBlankHeader_ThrowsDomainException()
+    public void Create_WithBlankHeader_StoresNullHeader()
     {
-        var act = () => CreateReview(ValidShopId, ValidModerationShopId, header: " ");
+        var review = CreateReview(ValidShopId, ValidModerationShopId, header: " ");
 
-        act.Should().Throw<DomainException>().WithMessage("*header*");
+        review.Header.Should().BeNull();
     }
 
     [Fact]
@@ -72,6 +73,116 @@ public class ModerationReviewTests
         var act = () => CreateReview(ValidShopId, ValidModerationShopId, comment: "Short");
 
         act.Should().Throw<DomainException>().WithMessage("*comment*");
+    }
+
+    [Fact]
+    public void Approve_WhenPending_ReturnsTrueAndSetsApproved()
+    {
+        var review = CreateReview(ValidShopId, ValidModerationShopId);
+        var moderatorId = Guid.NewGuid();
+
+        var changed = review.Approve(moderatorId);
+
+        changed.Should().BeTrue();
+        review.ModerationStatus.Should().Be(ModerationStatus.Approved);
+        review.ModeratedBy.Should().Be(moderatorId);
+    }
+
+    [Fact]
+    public void Approve_WhenAlreadyApproved_ReturnsFalseWithoutThrowing()
+    {
+        var review = CreateReview(ValidShopId, ValidModerationShopId);
+        var moderatorId = Guid.NewGuid();
+        review.Approve(moderatorId);
+        var moderatedAtAfterFirstApprove = review.ModeratedAt;
+
+        var changed = false;
+        var act = () => changed = review.Approve(moderatorId);
+
+        act.Should().NotThrow();
+        changed.Should().BeFalse();
+        review.ModerationStatus.Should().Be(ModerationStatus.Approved);
+        review.ModeratedAt.Should().Be(moderatedAtAfterFirstApprove);
+    }
+
+    [Fact]
+    public void Reject_WithValidReasonAndModerator_SetsRejectedStatusReasonAndModerator()
+    {
+        var review = CreateReview(ValidShopId, ValidModerationShopId);
+        var moderatorId = Guid.NewGuid();
+
+        review.Reject("Inappropriate content", moderatorId);
+
+        review.ModerationStatus.Should().Be(ModerationStatus.Rejected);
+        review.RejectedReason.Should().Be("Inappropriate content");
+        review.ModeratedBy.Should().Be(moderatorId);
+        review.ModeratedAt.Should().NotBeNull();
+    }
+
+    [Fact]
+    public void Reject_WithEmptyModeratorId_ThrowsDomainException()
+    {
+        var review = CreateReview(ValidShopId, ValidModerationShopId);
+
+        var act = () => review.Reject("Inappropriate content", Guid.Empty);
+
+        act.Should().Throw<DomainException>().WithMessage("*moderatorId*");
+        review.ModerationStatus.Should().Be(ModerationStatus.Pending);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void Reject_WithNullOrWhitespaceReason_ThrowsDomainException(string? reason)
+    {
+        var review = CreateReview(ValidShopId, ValidModerationShopId);
+        var moderatorId = Guid.NewGuid();
+
+        var act = () => review.Reject(reason!, moderatorId);
+
+        act.Should().Throw<DomainException>().WithMessage("Reject reason is required.");
+        review.ModerationStatus.Should().Be(ModerationStatus.Pending);
+    }
+
+    [Fact]
+    public void Reject_WithReasonExceedingMaxLength_ThrowsDomainException()
+    {
+        var review = CreateReview(ValidShopId, ValidModerationShopId);
+        var moderatorId = Guid.NewGuid();
+        var tooLongReason = new string('a', BusinessConstants.MaxRejectReasonCommentLength + 1);
+
+        var act = () => review.Reject(tooLongReason, moderatorId);
+
+        act.Should().Throw<DomainException>()
+            .WithMessage($"reason must be between {BusinessConstants.MinRejectReasonCommentLength} and {BusinessConstants.MaxRejectReasonCommentLength} characters.");
+        review.ModerationStatus.Should().Be(ModerationStatus.Pending);
+    }
+
+    [Fact]
+    public void MoveToPending_WithValidModerator_ResetsStatusAndClearsRejectedReason()
+    {
+        var review = CreateReview(ValidShopId, ValidModerationShopId);
+        var rejectingModeratorId = Guid.NewGuid();
+        review.Reject("Inappropriate content", rejectingModeratorId);
+
+        var movingModeratorId = Guid.NewGuid();
+        review.MoveToPending(movingModeratorId);
+
+        review.ModerationStatus.Should().Be(ModerationStatus.Pending);
+        review.RejectedReason.Should().BeNull();
+        review.ModeratedBy.Should().Be(movingModeratorId);
+        review.ModeratedAt.Should().NotBeNull();
+    }
+
+    [Fact]
+    public void MoveToPending_WithEmptyModeratorId_ThrowsDomainException()
+    {
+        var review = CreateReview(ValidShopId, ValidModerationShopId);
+
+        var act = () => review.MoveToPending(Guid.Empty);
+
+        act.Should().Throw<DomainException>().WithMessage("*moderatorId*");
     }
 
     private static ModerationReview CreateReview(

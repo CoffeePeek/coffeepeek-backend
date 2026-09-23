@@ -39,4 +39,6 @@ public class UnitOfWork<TDbContext>(TDbContext context) : IUnitOfWork
             }
         });
     }
+
+    public void ClearTracking() => context.ChangeTracker.Clear();
 }

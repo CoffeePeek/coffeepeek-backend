@@ -1,4 +1,4 @@
-﻿using CoffeePeek.Shared.Domain.Entities;
+using CoffeePeek.Shared.Domain.Entities;
 using CoffeePeek.Shared.Kernel.Exceptions;
 using CoffeePeek.Shops.Domain.Aggregates.BrewMethods;
 using CoffeePeek.Shops.Domain.Entities;
@@ -11,10 +11,17 @@ public sealed class CoffeeShop : Entity<Guid>
     public string Name { get; private set; } = null!;
     public string? Description { get; private set; }
     public PriceRange PriceRange { get; private set; }
-    public CoffeeFocus? CoffeeFocus { get; private set; }
+    public CoffeeFocusType? Type { get; private set; }
     public CoffeeShopStatus Status { get; private set; } = CoffeeShopStatus.Active;
 
-    public Guid CreatorId { get; private set; }
+    /// <summary>
+    /// Admin moderation flag, independent of the business status. Hiding used to overload TemporarilyClosed,
+    /// which also means a real closure and an imported draft, so un-hiding could reopen a closed shop.
+    /// </summary>
+    public bool IsHidden { get; private set; }
+    public short DataCompletenessScore { get; private set; }
+
+    public Guid? CreatorId { get; private set; }
     public Guid? OwnerUserId { get; private set; }
     public Guid? ModerationId {get; private set; }
     public DateTime? ImportedFromFileAt { get; private set; }
@@ -48,7 +55,7 @@ public sealed class CoffeeShop : Entity<Guid>
     {
     }
 
-    public CoffeeShop(Guid creatorId, string name, string? description, PriceRange priceRange, Guid moderationId)
+    public CoffeeShop(Guid? creatorId, string name, string? description, PriceRange priceRange, Guid moderationId)
     {
         Id = Guid.NewGuid();
         CreatorId = creatorId;
@@ -61,10 +68,16 @@ public sealed class CoffeeShop : Entity<Guid>
     #region Domain Logic
 
     public bool IsNew => CreatedAtUtc > DateTime.UtcNow.AddDays(-BusinessConstants.ItNewEntityInDays);
-    public bool IsOpen => IsOpenAt(DateTime.UtcNow);
-    
-    private bool IsOpenAt(DateTime dateTime)
+    public bool IsOpen => IsOpenAtUtc(DateTime.UtcNow);
+
+    /// <summary>
+    /// Evaluates the shop against a weekly schedule expressed entirely in UTC.
+    /// </summary>
+    public bool IsOpenAtUtc(DateTime utcNow)
     {
+        if (utcNow.Kind != DateTimeKind.Utc)
+            throw new ArgumentException("Schedule must be evaluated with a UTC DateTime.", nameof(utcNow));
+
         switch (Status)
         {
             case CoffeeShopStatus.PermanentlyClosed:
@@ -74,22 +87,7 @@ public sealed class CoffeeShop : Entity<Guid>
                 break;
         }
 
-        if (Schedules.Count == 0)
-            return true;
-            
-        var daySchedule = Schedules.FirstOrDefault(s => s.DayOfWeek == dateTime.DayOfWeek);
-        
-        if (daySchedule == null)
-            return false;
-            
-        if (daySchedule.IsClosed)
-            return false;
-            
-        var currentTime = dateTime.TimeOfDay;
-        
-        return daySchedule.Intervals.Any(interval => 
-            currentTime >= interval.OpenTime && 
-            currentTime <= interval.CloseTime);
+        return ShopScheduleEvaluator.IsOpenAtUtc(Schedules, utcNow);
     }
     
     public void UpdateDetails(string name, string? description, PriceRange priceRange)
@@ -106,9 +104,9 @@ public sealed class CoffeeShop : Entity<Guid>
         Status = status;
     }
 
-    public void SetCoffeeFocus(CoffeeFocus? focus)
+    public void SetCoffeeFocus(CoffeeFocusType? focus)
     {
-        CoffeeFocus = focus;
+        Type = focus;
     }
 
     public void MarkImportedFromFile(DateTime utcNow)
@@ -118,7 +116,7 @@ public sealed class CoffeeShop : Entity<Guid>
 
     public void SetHidden(bool hidden)
     {
-        Status = hidden ? CoffeeShopStatus.TemporarilyClosed : CoffeeShopStatus.Active;
+        IsHidden = hidden;
     }
 
     public void AssignOwner(Guid? ownerUserId)
@@ -129,6 +127,12 @@ public sealed class CoffeeShop : Entity<Guid>
     public void SetLocation(Guid cityId, string address, decimal latitude, decimal longitude)
     {
         Location = Location.CreateValidated(cityId, address, latitude, longitude);
+    }
+
+    /// <summary>Address without coordinates (not geocoded); the shop stays off the map until coordinates are set.</summary>
+    public void SetDraftLocation(Guid cityId, string address)
+    {
+        Location = Location.CreateDraft(cityId, address);
     }
 
     public void SetContact(string? instagramLink, string? email, string? siteLink, string? phoneNumber)
@@ -365,10 +369,11 @@ public sealed class CoffeeShop : Entity<Guid>
     /// Replaces the shop's tag set. Tag IDs are deduplicated; max
     /// <see cref="BusinessConstants.MaxShopTagsPerShop"/> enforced.
     /// </summary>
-    public void SetTags(IReadOnlyList<Guid> tagIds, Guid assignedByUserId)
+    public void SetTags(IReadOnlyList<Guid> tagIds, Guid? assignedByUserId)
     {
         ArgumentNullException.ThrowIfNull(tagIds);
 
+        // null = system/anonymous-originated tagging (e.g. approved anonymous submission); Guid.Empty is still invalid.
         if (assignedByUserId == Guid.Empty)
             throw new DomainException("AssignedByUserId is required.");
 

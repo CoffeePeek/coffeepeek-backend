@@ -11,7 +11,7 @@ public class CoffeeShopTagConfiguration : IEntityTypeConfiguration<CoffeeShopTag
         builder.ToTable("CoffeeShopTags");
         builder.HasKey(t => new { t.ShopId, t.TagId });
 
-        builder.Property(t => t.AssignedByUserId).IsRequired();
+        builder.Property(t => t.AssignedByUserId);
         builder.Property(t => t.AssignedAtUtc).IsRequired();
 
         builder.HasOne(t => t.Tag)

@@ -21,6 +21,7 @@ public record ShopDto
     public bool IsVisited { get; init; }
     public bool IsNew { get; init; }
     public bool IsOpen { get; init; }
+    public int DataCompletenessScore { get; set; }
     
     public PriceRange PriceRange { get; set; }
     public CoffeeShopType? Type { get; set; }

@@ -6,7 +6,8 @@ namespace CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
 public record ShopContact
 {
     public string? InstagramLink { get; private set; }
-    [EmailAddress] public string? Email { get; private set; }
+    [EmailAddress] 
+    public string? Email { get; private set; }
     public string? SiteLink { get; private set; }
     public string? PhoneNumber { get; private set; }
 

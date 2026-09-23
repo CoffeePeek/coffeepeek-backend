@@ -1,7 +1,7 @@
 namespace CoffeePeek.Moderation.Domain.Import;
 
 /// <summary>
-/// Visible-field match for the import queue "Название" box: name and address only.
+/// Visible-field match for the import queue "Name" box: name and address only.
 /// Brand, email, website, and OSM id are not searched — they produce false hits
 /// (for example Coffee Embassy matching "lavazza" via an unrelated contact tag).
 /// </summary>

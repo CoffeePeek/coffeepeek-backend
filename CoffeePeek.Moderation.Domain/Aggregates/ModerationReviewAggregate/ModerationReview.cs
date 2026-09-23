@@ -6,7 +6,7 @@ namespace CoffeePeek.Moderation.Domain.Aggregates.ModerationReviewAggregate;
 
 public partial class ModerationReview : Entity<Guid>
 {
-    public string Header { get; private set; }
+    public string? Header { get; private set; }
     public string Comment { get; private set; }
     public Guid UserId { get; private set; }
     public string UserName { get; private set; }
@@ -33,7 +33,7 @@ public partial class ModerationReview : Entity<Guid>
     {
     }
 
-    internal ModerationReview(Guid userId, Guid shopId, Guid? moderationShopId, string userName, string header, string comment,
+    internal ModerationReview(Guid userId, Guid shopId, Guid? moderationShopId, string userName, string? header, string comment,
         Rating rating, List<PhotoMetadata> photos)
     {
         Id = Guid.NewGuid();

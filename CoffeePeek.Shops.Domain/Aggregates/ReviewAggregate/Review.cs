@@ -5,7 +5,7 @@ namespace CoffeePeek.Shops.Domain.Aggregates.ReviewAggregate;
 
 public sealed partial class Review : Entity<Guid>
 {
-    public string Header { get; private set; }
+    public string? Header { get; private set; }
     public string Comment { get; private set; }
     public Guid CoffeeShopId { get; private set; }
     
@@ -13,6 +13,9 @@ public sealed partial class Review : Entity<Guid>
     public string UserName { get; private set; }
 
     public bool IsSoftDelete { get; private set; }
+    public int HelpfulCount { get; private set; }
+
+    public Guid? ModerationReviewId { get; private set; }
 
     public Rating Rating { get; private set; }
     
@@ -24,7 +27,7 @@ public sealed partial class Review : Entity<Guid>
     {
     }
 
-    private Review(Guid coffeeShopId, Guid userId, string userName, string header, string comment)
+    private Review(Guid coffeeShopId, Guid userId, string userName, string? header, string comment)
     {
         Id = Guid.NewGuid();
         CoffeeShopId = coffeeShopId;
@@ -34,9 +37,10 @@ public sealed partial class Review : Entity<Guid>
         Comment = comment;
     }
 
-    private Review(Guid coffeeShopId, Guid userId, string userName, string header, string comment, Rating rating)
+    private Review(Guid coffeeShopId, Guid userId, string userName, string? header, string comment, Rating rating, Guid? moderationReviewId)
         : this(coffeeShopId, userId, userName, header, comment)
     {
         Rating = rating;
+        ModerationReviewId = moderationReviewId;
     }
 }

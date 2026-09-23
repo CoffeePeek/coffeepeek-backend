@@ -1,5 +1,7 @@
-﻿using CoffeePeek.Moderation.Application.Abstractions;
+using CoffeePeek.Moderation.Application.Abstractions;
 using CoffeePeek.Moderation.Infrastructure.Services;
+using CoffeePeek.Moderation.Infrastructure.Shops;
+using CoffeePeek.Shared.Kernel;
 using CoffeePeek.Shared.Kernel.Extentions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Http.Resilience;
@@ -17,12 +19,11 @@ public static class DependencyInjection
             client.Timeout = TimeSpan.FromSeconds(yandexOptions.TimeoutSeconds);
         });
 
-        services.AddOptions<GooglePlaces>().BindConfiguration(nameof(GooglePlaces));
-        services.AddHttpClient<IGooglePlacesLookup, GooglePlacesLookup>((sp, client) =>
+        var googlePlacesOptions = services.AddValidateOptions<GooglePlaces>();
+        services.AddHttpClient<IGooglePlacesLookup, GooglePlacesLookup>(client =>
         {
-            var options = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<GooglePlaces>>().Value;
-            client.BaseAddress = new Uri(options.BaseUrl);
-            client.Timeout = TimeSpan.FromSeconds(Math.Clamp(options.TimeoutSeconds, 5, 60));
+            client.BaseAddress = new Uri(googlePlacesOptions.BaseUrl);
+            client.Timeout = TimeSpan.FromSeconds(Math.Clamp(googlePlacesOptions.TimeoutSeconds, 5, 60));
         });
 
         // Aspire AddStandardResilienceHandler() defaults to 30s total timeout and overrides HttpClient.Timeout.
@@ -34,6 +35,9 @@ public static class DependencyInjection
         {
             client.DefaultRequestHeaders.UserAgent.ParseAdd("CoffeePeek/1.0 (https://coffeepeek.by; osm-import)");
             client.DefaultRequestHeaders.Accept.ParseAdd("application/json");
+            // HttpClient's default 100 s timeout wraps the whole pipeline and would kill the 120 s attempt
+            // before Polly's timeouts or retry ever run; let the resilience handler own timeouts.
+            client.Timeout = Timeout.InfiniteTimeSpan;
         })
         .RemoveAllResilienceHandlers()
         .AddStandardResilienceHandler(options =>
@@ -44,7 +48,14 @@ public static class DependencyInjection
             options.CircuitBreaker.SamplingDuration = TimeSpan.FromSeconds(300);
             options.CircuitBreaker.MinimumThroughput = 100;
         });
-        
+
+        services.AddHttpClient("shops-roaster-lookup", client =>
+        {
+            client.BaseAddress = new Uri($"http://{AppResources.ShopsService}");
+            client.Timeout = TimeSpan.FromSeconds(5);
+        });
+        services.AddScoped<IRoasterExistenceLookup, ShopsRoasterExistenceLookup>();
+
         return services;
     }
 }

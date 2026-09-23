@@ -229,6 +229,21 @@ public class AdminCoffeeShopsController(IMessageBus bus, IUserContext userContex
         return MenuActionResult(response);
     }
 
+    /// <summary>Remove photos from a menu by id. The menu itself and its items remain available.</summary>
+    [HttpDelete("{id:guid}/menu/photos")]
+    [ProducesResponseType<Response<AdminShopMenuDto>>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> RemoveMenuPhotos(
+        Guid id,
+        [FromBody] RemoveMenuPhotosRequest request,
+        CancellationToken ct)
+    {
+        var response = await bus.InvokeAsync<Response<AdminShopMenuDto>>(
+            new RemoveAdminShopMenuPhotosCommand(id, request.PhotoIds), ct);
+        return MenuActionResult(response);
+    }
+
     [HttpPost("{id:guid}/menu/parse")]
     [ProducesResponseType<Response<AdminShopMenuDto>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> ParseMenu(Guid id, CancellationToken ct)

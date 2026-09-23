@@ -1,4 +1,4 @@
-﻿using CoffeePeek.Shops.Domain;
+using CoffeePeek.Shops.Domain;
 using CoffeePeek.Shops.Domain.Aggregates.BrewMethods;
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
 using Microsoft.EntityFrameworkCore;
@@ -13,9 +13,23 @@ public class CoffeeShopConfiguration : IEntityTypeConfiguration<CoffeeShop>
         builder.HasKey(s => s.Id);
         builder.Property(x => x.Name).HasMaxLength(BusinessConstants.MaxCoffeeShopNameLength);
         builder.Property(x => x.Description).HasMaxLength(BusinessConstants.MaxCoffeeShopDescriptionLength);
-        builder.Property(x => x.CoffeeFocus);
+        builder.Property(x => x.Type);
+        builder.Property(x => x.DataCompletenessScore)
+            .HasDefaultValue((short)0);
+        builder.ToTable(table => table.HasCheckConstraint(
+            "CK_Shops_DataCompletenessScore_Range",
+            "\"DataCompletenessScore\" BETWEEN 0 AND 100"));
         builder.HasIndex(s => s.OwnerUserId);
         builder.HasIndex(s => s.ImportedFromFileAt);
+        // Backstop for the read-then-insert idempotency check in CreateShopFrom{Moderation,Import}Service:
+        // a redelivered or concurrently processed publish event must not create a second catalog shop.
+        builder.HasIndex(s => s.ModerationId)
+            .IsUnique()
+            .HasFilter("\"ModerationId\" IS NOT NULL")
+            .HasDatabaseName("IX_Shops_ModerationId");
+        builder.HasIndex(s => new { s.Status, s.DataCompletenessScore, s.Name })
+            .IsDescending(false, true, false)
+            .HasDatabaseName("IX_Shops_Status_DataCompletenessScore_Name");
 
         builder.HasIndex(s => s.Name)
             .HasMethod("gin")
@@ -59,6 +73,8 @@ public class CoffeeShopConfiguration : IEntityTypeConfiguration<CoffeeShop>
         builder.OwnsOne(e => e.Location, location =>
         {
             location.HasIndex(l => new { l.Latitude, l.Longitude });
+            // City filters in search, zones and admin lists seq-scanned Shops.
+            location.HasIndex(l => l.CityId);
 
             location.HasIndex(l => l.Address)
                 .HasMethod("gin")

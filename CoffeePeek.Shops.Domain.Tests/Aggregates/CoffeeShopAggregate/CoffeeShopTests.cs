@@ -32,6 +32,55 @@ public class CoffeeShopTests
         shop.IsOpen.Should().BeTrue();
     }
 
+    [Theory]
+    [InlineData(4, 59, false)]
+    [InlineData(5, 0, true)]
+    [InlineData(12, 0, true)]
+    [InlineData(12, 1, false)]
+    public void IsOpenAtUtc_UsesUtcSchedule(int hour, int minute, bool expected)
+    {
+        var shop = new CoffeeShop(Guid.NewGuid(), "Test Shop", null, PriceRange.Cheap, Guid.NewGuid());
+        shop.AddSchedule([
+            ShopSchedule.Create(DayOfWeek.Monday, false,
+                [ShopScheduleInterval.Create(TimeSpan.FromHours(5), TimeSpan.FromHours(12))])
+        ]);
+
+        var utcNow = new DateTime(2026, 9, 7, hour, minute, 0, DateTimeKind.Utc);
+
+        shop.IsOpenAtUtc(utcNow).Should().Be(expected);
+    }
+
+    [Theory]
+    [InlineData(2026, 9, 7, 23, 0, true)]
+    [InlineData(2026, 9, 8, 1, 30, true)]
+    [InlineData(2026, 9, 8, 2, 1, false)]
+    public void IsOpenAtUtc_WhenIntervalCrossesUtcMidnight_UsesPreviousDay(
+        int year, int month, int day, int hour, int minute, bool expected)
+    {
+        var shop = new CoffeeShop(Guid.NewGuid(), "Night Shop", null, PriceRange.Cheap, Guid.NewGuid());
+        shop.AddSchedule([
+            ShopSchedule.Create(DayOfWeek.Monday, false,
+                [ShopScheduleInterval.Create(TimeSpan.FromHours(22), TimeSpan.FromHours(2))]),
+            ShopSchedule.Create(DayOfWeek.Tuesday, true, [])
+        ]);
+
+        var utcNow = new DateTime(year, month, day, hour, minute, 0, DateTimeKind.Utc);
+
+        shop.IsOpenAtUtc(utcNow).Should().Be(expected);
+    }
+
+    [Fact]
+    public void IsOpenAtUtc_WithNonUtcClock_Throws()
+    {
+        var shop = new CoffeeShop(Guid.NewGuid(), "Test Shop", null, PriceRange.Cheap, Guid.NewGuid());
+        var localNow = new DateTime(2026, 9, 7, 8, 0, 0, DateTimeKind.Local);
+
+        var act = () => shop.IsOpenAtUtc(localNow);
+
+        act.Should().Throw<ArgumentException>()
+            .WithMessage("*UTC DateTime*");
+    }
+
     [Fact]
     public void AddPhotos_AssignsContiguousSortIndex()
     {
@@ -268,9 +317,9 @@ public class CoffeeShopTests
     {
         var shop = new CoffeeShop(Guid.NewGuid(), "Test Shop", null, PriceRange.Moderate, Guid.NewGuid());
 
-        shop.SetCoffeeFocus(CoffeeFocus.Specialty);
+        shop.SetCoffeeFocus(CoffeeFocusType.Specialty);
 
-        shop.CoffeeFocus.Should().Be(CoffeeFocus.Specialty);
+        shop.Type.Should().Be(CoffeeFocusType.Specialty);
     }
 
     [Fact]
@@ -318,5 +367,19 @@ public class CoffeeShopTests
         shop.MarkImportedFromFile(second);
 
         shop.ImportedFromFileAt.Should().Be(first);
+    }
+
+    [Fact]
+    public void SetHidden_DoesNotTouchBusinessStatus()
+    {
+        // Regression: hide/unhide overloaded TemporarilyClosed, so un-hiding reopened genuinely closed shops.
+        var shop = new CoffeeShop(Guid.NewGuid(), "Test Shop", null, PriceRange.Cheap, Guid.NewGuid());
+        shop.SetStatus(CoffeeShopStatus.PermanentlyClosed);
+
+        shop.SetHidden(true);
+        shop.SetHidden(false);
+
+        shop.IsHidden.Should().BeFalse();
+        shop.Status.Should().Be(CoffeeShopStatus.PermanentlyClosed);
     }
 }

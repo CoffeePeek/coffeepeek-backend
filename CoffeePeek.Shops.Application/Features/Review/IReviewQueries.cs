@@ -4,5 +4,5 @@ namespace CoffeePeek.Shops.Application.Features.Review;
 
 public interface IReviewQueries
 {
-    Task<ReviewDto[]> GetReviewsByUserId(Guid userId, int pageNumber, int pageSize, CancellationToken cancellationToken);
+    Task<(ReviewDto[] Items, int TotalCount)> GetReviewsByUserId(Guid userId, int pageNumber, int pageSize, CancellationToken cancellationToken);
 }

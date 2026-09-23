@@ -16,6 +16,9 @@ public class UsernameTests
     [InlineData("testuser")]
     [InlineData("User_Name")]
     [InlineData("user.name")]
+    [InlineData("Иван")]
+    [InlineData("кофеман_123")]
+    [InlineData("Анна.Мария")]
     public void Create_WithValidUsername_ShouldSucceed(string validUsername)
     {
         // Act
@@ -197,6 +200,7 @@ public class UsernameTests
     [InlineData("user.123")]
     [InlineData("User123")]
     [InlineData("UserName")]
+    [InlineData("Пользователь_123")]
     public void Create_WithAllowedSpecialCharacters_ShouldSucceed(string username)
     {
         // Act

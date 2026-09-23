@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using CoffeePeek.Contract.Dtos.CoffeeShop;
 using CoffeePeek.Shared.Domain.Interfaces.Infrastructure;
 using CoffeePeek.Shops.Application.Common.Responses;
+using CoffeePeek.Shops.Application.Features.CoffeeShop;
 using CoffeePeek.Shops.Application.Features.CoffeeShop.GetCoffeeShop;
 using CoffeePeek.Shops.Application.Features.CoffeeShop.SearchCoffeeShops;
 using CoffeePeek.Shops.Domain.Aggregates.CheckInAggregate;
@@ -58,6 +59,11 @@ public class SearchCoffeeShopsHandlerTests
         _visitRepoMock.Verify(
             r => r.GetVisitedShopIdsAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
             Times.Never);
+        _cacheMock.Verify(c => c.GetAsync(
+            It.IsAny<CacheKey>(),
+            It.IsAny<Func<CancellationToken, Task<GetCoffeeShopsResponse>>>(),
+            It.Is<TimeSpan?>(ttl => ttl > TimeSpan.Zero && ttl <= TimeSpan.FromMinutes(1)),
+            It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -225,5 +231,15 @@ public class SearchCoffeeShopsHandlerTests
         hash.Should().Contain("open:True");
         hash.Should().NotContain("uid:");
         hash.Should().NotContain("visited:");
+    }
+
+    [Fact]
+    public void ScheduleCacheTtl_ExpiresAtNextUtcMinute()
+    {
+        var utcNow = new DateTime(2026, 9, 7, 5, 42, 15, 250, DateTimeKind.Utc);
+
+        var ttl = ShopScheduleCachePolicy.UntilNextUtcMinute(utcNow);
+
+        ttl.Should().Be(TimeSpan.FromSeconds(44.75));
     }
 }

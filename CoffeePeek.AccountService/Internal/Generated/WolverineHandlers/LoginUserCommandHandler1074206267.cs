@@ -2,6 +2,8 @@
 #pragma warning disable
 using CoffeePeek.Account.Application.Common;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
+using System.Collections.Generic;
 
 namespace Internal.Generated.WolverineHandlers
 {
@@ -9,13 +11,19 @@ namespace Internal.Generated.WolverineHandlers
     [global::System.CodeDom.Compiler.GeneratedCode("JasperFx", "1.0.0")]
     public sealed class LoginUserCommandHandler1074206267 : Wolverine.Runtime.Handlers.MessageHandler
     {
-        private readonly Microsoft.Extensions.DependencyInjection.IServiceScopeFactory _serviceScopeFactory;
         private readonly CoffeePeek.Account.Application.Common.EmailExistenceFilter _emailExistenceFilter;
+        private readonly Microsoft.Extensions.DependencyInjection.IServiceScopeFactory _serviceScopeFactory;
+        private readonly Microsoft.Extensions.Options.IOptions<CoffeePeek.Shared.Auth.Options.JWTOptions> _optionsOfJwtOptions1;
+        private readonly Microsoft.Extensions.Options.IOptions<CoffeePeek.Shared.Auth.Options.JWTOptions> _optionsOfJwtOptions2;
+        private readonly System.Collections.Generic.IEnumerable<Wolverine.EntityFrameworkCore.IDomainEventScraper> _domainEventScraperIEnumerable;
 
-        public LoginUserCommandHandler1074206267(Microsoft.Extensions.DependencyInjection.IServiceScopeFactory serviceScopeFactory, CoffeePeek.Account.Application.Common.EmailExistenceFilter emailExistenceFilter)
+        public LoginUserCommandHandler1074206267(CoffeePeek.Account.Application.Common.EmailExistenceFilter emailExistenceFilter, Microsoft.Extensions.DependencyInjection.IServiceScopeFactory serviceScopeFactory, Microsoft.Extensions.Options.IOptions<CoffeePeek.Shared.Auth.Options.JWTOptions> __optionsOfJwtOptions1, Microsoft.Extensions.Options.IOptions<CoffeePeek.Shared.Auth.Options.JWTOptions> __optionsOfJwtOptions2, System.Collections.Generic.IEnumerable<Wolverine.EntityFrameworkCore.IDomainEventScraper> domainEventScraperIEnumerable)
         {
-            _serviceScopeFactory = serviceScopeFactory;
             _emailExistenceFilter = emailExistenceFilter;
+            _serviceScopeFactory = serviceScopeFactory;
+            _optionsOfJwtOptions1 = __optionsOfJwtOptions1;
+            _optionsOfJwtOptions2 = __optionsOfJwtOptions2;
+            _domainEventScraperIEnumerable = domainEventScraperIEnumerable;
         }
 
 
@@ -23,24 +31,19 @@ namespace Internal.Generated.WolverineHandlers
         public override async System.Threading.Tasks.Task HandleAsync(Wolverine.Runtime.MessageContext context, System.Threading.CancellationToken cancellation)
         {
             await using var serviceScope = _serviceScopeFactory.CreateAsyncScope();
-            
-            /*
-            * Dependency: Descriptor: ServiceType: CoffeePeek.Account.Persistence.Configuration.AccountDbContext Lifetime: Scoped ImplementationFactory: Microsoft.Extensions.DependencyInjection.EntityFrameworkServiceCollectionExtensions+<>c__5"2.<AddDbContextPool>b__5_0
-            * The service registration for CoffeePeek.Account.Persistence.Configuration.AccountDbContext is an 'opaque' lambda factory with the Scoped lifetime and requires service location
-            */
-            var authService = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<CoffeePeek.Account.Application.Common.Interfaces.IAuthService>(serviceScope.ServiceProvider);
-            
-            /*
-            * The service registration for CoffeePeek.Account.Persistence.Configuration.AccountDbContext is an 'opaque' lambda factory with the Scoped lifetime and requires service location
-            */
+            Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<Wolverine.Runtime.ScopedMessageContextHolder>(serviceScope.ServiceProvider).Context = context;
+            // This service has been marked as requiring service location independent of Wolverine's ability to use constructor injection of everything else
             var accountDbContext = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<CoffeePeek.Account.Persistence.Configuration.AccountDbContext>(serviceScope.ServiceProvider);
-            var domainEventScraperIEnumerable = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<System.Collections.Generic.IEnumerable<Wolverine.EntityFrameworkCore.IDomainEventScraper>>(serviceScope.ServiceProvider);
+            var passwordHasherService = new CoffeePeek.Account.Infrastructure.Identity.PasswordHasherService();
+            var userRepository = new CoffeePeek.Account.Persistence.Repositories.UserRepository(accountDbContext);
+            var jwtTokenService = new CoffeePeek.Account.Infrastructure.Identity.JWTTokenService(_optionsOfJwtOptions1);
+            var authService = new CoffeePeek.Account.Application.Features.Auth.Login.AuthService(jwtTokenService, userRepository, passwordHasherService, _optionsOfJwtOptions2);
             // The actual message body
             var loginUserCommand = (CoffeePeek.Account.Application.Features.Auth.Login.LoginUserCommand)context.Envelope.Message;
 
             
             // Enroll the DbContext & IMessagingContext in the outgoing Wolverine outbox transaction
-            var efCoreEnvelopeTransaction = new Wolverine.EntityFrameworkCore.Internals.EfCoreEnvelopeTransaction(accountDbContext, context, domainEventScraperIEnumerable);
+            var efCoreEnvelopeTransaction = new Wolverine.EntityFrameworkCore.Internals.EfCoreEnvelopeTransaction(accountDbContext, context, _domainEventScraperIEnumerable);
             await context.EnlistInOutboxAsync(efCoreEnvelopeTransaction).ConfigureAwait(false);
             // Start the actual database transaction if one does not already exist
             if (accountDbContext.Database.CurrentTransaction == null)
@@ -64,6 +67,7 @@ namespace Internal.Generated.WolverineHandlers
                 // Added by EF Core Transaction Middleware
                 var result_of_SaveChangesAsync = await accountDbContext.SaveChangesAsync(cancellation).ConfigureAwait(false);
 
+                // Commit the EF Core transaction and flush outgoing messages before writing the response (GH-2917)
                 await efCoreEnvelopeTransaction.CommitAsync(cancellation).ConfigureAwait(false);
             }
 

@@ -26,7 +26,8 @@ public class DeleteReviewFromCoffeeShopHandlerTests
             "tester",
             "header text",
             "comment text body",
-            5, 5, 5);
+            5, 5, 5,
+            Guid.NewGuid());
     }
 
     [Fact]
@@ -47,6 +48,9 @@ public class DeleteReviewFromCoffeeShopHandlerTests
         result.IsSuccess.Should().BeTrue();
         review.IsSoftDelete.Should().BeTrue();
         _unitOfWorkMock.Verify(u => u.SaveChangesAsync(_ct), Times.Once);
+        _cacheMock.Verify(
+            c => c.RemoveAsync(CacheKey.Shop.Detail(review.CoffeeShopId)),
+            Times.Once);
     }
 
     [Fact]

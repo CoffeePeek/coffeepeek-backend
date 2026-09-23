@@ -9,12 +9,13 @@ using CoffeePeek.Shared.Kernel;
 using CoffeePeek.Shared.Kernel.Exceptions;
 using CoffeePeek.Shared.Kernel.Response;
 using MapsterMapper;
+using DomainModerationStatus = CoffeePeek.Moderation.Domain.Common.Enums.ModerationStatus;
 
 namespace CoffeePeek.Moderation.Application.Features.Review.ChangeStatusModerationReview;
 
 public static class ChangeStatusModerationReviewHandler
 {
-    public static async Task<(UpdateEntityResponse<ModerationStatus>, ModerationReviewApprovedEvent?)> Handle(
+    public static async Task<(UpdateEntityResponse<ModerationStatus>, object?)> Handle(
         ChangeStatusModerationReviewCommand command,
         IModerationReviewRepository repository,
         IModerationAuditLogRepository auditLogRepository,
@@ -27,7 +28,7 @@ public static class ChangeStatusModerationReviewHandler
         if (review == null)
             throw new NotFoundException("Moderation review not found");
 
-        ModerationReviewApprovedEvent? approvedEvent = null;
+        object? outboundEvent = null;
 
         var oldStatus = review.ModerationStatus;
         string? auditComment = null;
@@ -35,18 +36,21 @@ public static class ChangeStatusModerationReviewHandler
         switch (command.ModerationStatus)
         {
             case ModerationStatus.Approved:
-                review.Approve(command.UserId);
-                var dto = mapper.Map<ModerationReviewDto>(review);
-                approvedEvent = new ModerationReviewApprovedEvent(dto);
-                await ModerationAuditWriter.WriteAsync(
-                    auditLogRepository,
-                    ModerationAuditEntityType.Review,
-                    review.Id,
-                    review.Header,
-                    ModerationAuditAction.Approved,
-                    command.UserId,
-                    null,
-                    ct);
+                // Re-approve is a no-op: skip event + audit so consumers stay idempotent.
+                if (review.Approve(command.UserId))
+                {
+                    var dto = mapper.Map<ModerationReviewDto>(review);
+                    outboundEvent = new ModerationReviewApprovedEvent(dto);
+                    await ModerationAuditWriter.WriteAsync(
+                        auditLogRepository,
+                        ModerationAuditEntityType.Review,
+                        review.Id,
+                        review.Header ?? review.Id.ToString(),
+                        ModerationAuditAction.Approved,
+                        command.UserId,
+                        null,
+                        ct);
+                }
                 break;
 
             case ModerationStatus.Rejected:
@@ -60,7 +64,7 @@ public static class ChangeStatusModerationReviewHandler
                     auditLogRepository,
                     ModerationAuditEntityType.Review,
                     review.Id,
-                    review.Header,
+                    review.Header ?? review.Id.ToString(),
                     ModerationAuditAction.Rejected,
                     command.UserId,
                     auditComment,
@@ -74,7 +78,7 @@ public static class ChangeStatusModerationReviewHandler
                     auditLogRepository,
                     ModerationAuditEntityType.Review,
                     review.Id,
-                    review.Header,
+                    review.Header ?? review.Id.ToString(),
                     ModerationAuditAction.Pending,
                     command.UserId,
                     null,
@@ -82,10 +86,14 @@ public static class ChangeStatusModerationReviewHandler
                 break;
         }
 
+        // Un-approving must hide the published copy in Shops, otherwise a rejected review stays public.
+        if (oldStatus == DomainModerationStatus.Approved && review.ModerationStatus != DomainModerationStatus.Approved)
+            outboundEvent = new ModerationReviewEditedEvent(mapper.Map<ModerationReviewDto>(review));
+
         await unitOfWork.SaveChangesAsync(ct);
         
         var response = UpdateEntityResponse<ModerationStatus>.Success((ModerationStatus)review.ModerationStatus, oldEntity: (ModerationStatus)oldStatus);
         
-        return (response, approvedEvent);
+        return (response, outboundEvent);
     }
 }

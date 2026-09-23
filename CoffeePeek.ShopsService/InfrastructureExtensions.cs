@@ -22,12 +22,15 @@ public static class InfrastructureExtensions
 
         var applicationAssembly = typeof(GetCoffeeShopHandler).Assembly;
         var infrastructureAssembly = typeof(ModerationShopApproveHandler).Assembly;
-        builder.AddWolverine([applicationAssembly, infrastructureAssembly]);
+        builder.AddWolverine(
+            typeof(InfrastructureExtensions).Assembly,
+            [applicationAssembly, infrastructureAssembly],
+            [typeof(ShopsDbContext)]);
         
         builder.Services
             .AddApplication()
             .AddPersistence(builder)
-            .AddInfrastructure()
+            .AddInfrastructure(builder.Configuration)
             .AddPresentation(builder.Configuration);
 
         return builder;
@@ -47,4 +50,3 @@ public static class InfrastructureExtensions
         app.MapControllers();
     }
 }
-

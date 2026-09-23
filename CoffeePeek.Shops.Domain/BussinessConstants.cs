@@ -18,6 +18,8 @@ public static class BusinessConstants
     
     public const int MaxCheckInNoteLength = 500;
     public const int MinPublicCheckinNoteLength = MinReviewHeaderLength;
+    public const int MinHoursBetweenUserCheckIns = 3;
+    public const int MaxUserCheckInsPerDay = 3;
     /// <summary>Allowed client/server clock drift when validating VisitedAt.</summary>
     public const int MaxVisitedAtClockSkewMinutes = 5;
     
@@ -47,6 +49,35 @@ public static class BusinessConstants
     public const int MaxShopTagNameLength = 100;
     public const int MaxShopTagDescriptionLength = 500;
     public const int MaxShopTagsPerShop = 20;
+
+    #endregion
+
+    #region CoffeeZone
+
+    public const int MaxCoffeeZoneNameLength = 100;
+    public const int MaxCoffeeZoneDescriptionLength = 500;
+    public const int MinCoffeeZoneRadiusMeters = 100;
+    public const int MaxCoffeeZoneRadiusMeters = 2000;
+
+    #endregion
+
+    #region Catalogs
+
+    public const int MaxCityNameLength = 50;
+    public const int MaxCoffeeBeanNameLength = 100;
+    public const int MaxRoasterNameLength = 100;
+    public const int MaxBrewMethodNameLength = 100;
+
+    #endregion
+
+    #region Roaster
+
+    public const int MaxRoasterAboutLength = 2000;
+    public const int MaxRoasterContactInstagramLinkLength = MaxShopContactInstagramLinkLength;
+    public const int MaxRoasterContactSiteLinkLength = MaxShopContactSiteLinkLength;
+    public const int MaxRoasterPhotoFileNameLength = 255;
+    public const int MaxRoasterPhotoContentTypeLength = 100;
+    public const int MaxRoasterPhotoStorageKeyLength = 255;
 
     #endregion
 
@@ -82,6 +113,21 @@ public static class BusinessConstants
     public const string DefaultMenuCurrency = "BYN";
     public const decimal MenuCheapBelow = 7.00m;
     public const decimal MenuExpensiveAbove = 9.00m;
+
+    #endregion
+
+    #region AppDistribution
+
+    public const int MaxDownloadUrlLength = 2048;
+    public const int MaxAndroidReleaseVersionLength = 32;
+    public const int MaxAndroidReleaseFileNameLength = 255;
+    public const int Sha256HashLength = 64;
+    public const int MaxAuditActionLength = 100;
+    public const int MaxAuditValueLength = 4000;
+    public const int MaxRedirectChannelLength = 32;
+    public const int MaxRedirectUserAgentLength = 500;
+    public const int MaxRedirectRefererLength = 2048;
+    public const int MaxRedirectCountryLength = 2;
 
     #endregion
 }

@@ -3,7 +3,6 @@ using CoffeePeek.Contract.Dtos.Menu;
 using CoffeePeek.Shared.Domain.Interfaces.Infrastructure;
 using CoffeePeek.Shared.Kernel;
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
-using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate.Repositories;
 using CoffeePeek.Shops.Domain.Aggregates.MenuAggregate;
 using DomainPriceRange = CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate.PriceRange;
 using DomainAvailability = CoffeePeek.Shops.Domain.Aggregates.MenuAggregate.MenuItemAvailability;
@@ -13,6 +12,12 @@ namespace CoffeePeek.Shops.Application.Services;
 
 public interface IApplyShopMenuService
 {
+    Task<ShopMenu> ApplyManualItemsAsync(
+        Guid shopId,
+        IReadOnlyList<ManualShopMenuItemUpdate> items,
+        Guid? userId,
+        CancellationToken ct);
+
     Task ApplySnapshotAsync(
         Guid shopId,
         ShopMenuSnapshot snapshot,
@@ -42,6 +47,17 @@ public class ApplyShopMenuService(
     ICacheService cacheService) : IApplyShopMenuService
 {
     private static readonly JsonSerializerOptions JsonOpts = new(JsonSerializerDefaults.Web);
+
+    public async Task<ShopMenu> ApplyManualItemsAsync(
+        Guid shopId,
+        IReadOnlyList<ManualShopMenuItemUpdate> items,
+        Guid? userId,
+        CancellationToken ct)
+    {
+        var menu = await menuRepository.ApplyManualItemsAsync(shopId, items, userId, ct);
+        await cacheService.RemoveByPattern(CacheKey.Shop.SearchPattern(), ct);
+        return menu;
+    }
 
     public async Task ApplySnapshotAsync(
         Guid shopId,
@@ -78,6 +94,10 @@ public class ApplyShopMenuService(
 
             menu.ApplyParsedItems(items, snapshot.UnmatchedJson, suggested, userId);
         }
+        else if (snapshot.CapturedAtUtc.HasValue)
+        {
+            menu.CompleteParse(snapshot.UnmatchedJson, suggested, userId);
+        }
 
         if (snapshot.Photos.Count > 0)
         {
@@ -89,6 +109,7 @@ public class ApplyShopMenuService(
             await ApplyPriceRangeAsync(shopId, suggested.Value, ct);
 
         await cacheService.RemoveAsync(CacheKey.Shop.Detail(shopId));
+        await cacheService.RemoveByPattern(CacheKey.Shop.SearchPattern(), ct);
     }
 
     public async Task ApplyParseResultAsync(
@@ -123,12 +144,14 @@ public class ApplyShopMenuService(
             ? (DomainPriceRange?)null
             : (DomainPriceRange)(int)suggestedPriceRange.Value;
 
-        menu.ApplyParsedItems(mapped, JsonSerializer.Serialize(unmatched, JsonOpts), suggested, userId);
+        menu.MergeParsedItems(mapped, JsonSerializer.Serialize(unmatched, JsonOpts), suggested, userId);
+        // Photos accumulate: a parse request carries only the newly attached photos.
         if (photos.Count > 0)
-            menu.ReplacePhotos(photos.Select(p => ShopMenuPhoto.Create(
+            menu.AddPhotos(photos.Select(p => ShopMenuPhoto.Create(
                 p.FileName, p.ContentType, p.StorageKey, p.SizeBytes, p.MediaPhotoId)));
 
         await cacheService.RemoveAsync(CacheKey.Shop.Detail(shopId));
+        await cacheService.RemoveByPattern(CacheKey.Shop.SearchPattern(), ct);
     }
 
     public async Task MarkParseFailedAsync(Guid shopId, string error, CancellationToken ct)

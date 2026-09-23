@@ -16,7 +16,7 @@ public static class GetImportCandidateByIdHandler
         IOptions<MediaPublicUrlOptions> mediaOptions,
         CancellationToken ct)
     {
-        var candidate = await repository.GetByIdAsync(query.Id, ct);
+        var candidate = await repository.GetById(query.Id, ct);
         return candidate is null
             ? Response<ShopImportCandidateDto>.Error(System.Net.HttpStatusCode.NotFound, "Import candidate not found.")
             : Response<ShopImportCandidateDto>.Success(ShopImportCandidateMapper.ToDto(candidate, mediaOptions.Value));

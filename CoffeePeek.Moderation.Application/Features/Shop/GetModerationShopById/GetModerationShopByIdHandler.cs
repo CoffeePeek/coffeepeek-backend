@@ -11,11 +11,11 @@ public static class GetModerationShopByIdHandler
 {
     public static async Task<Response<ModerationShopDto>> Handle(
         GetModerationShopByIdQuery query,
-        IModerationShopRepository repository,
+        IQueryModerationShopRepository repository,
         IMapper mapper,
         CancellationToken ct)
     {
-        var shop = await repository.GetByIdAsync(query.Id, ct);
+        var shop = await repository.GetById(query.Id, ct);
         if (shop is null)
             return Response<ModerationShopDto>.Error("Coffee shop not found");
 

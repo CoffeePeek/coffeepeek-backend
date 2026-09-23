@@ -46,6 +46,20 @@ public class RegisterUserHandlerTests
     }
 
     [Fact]
+    public async Task Handle_WithCyrillicUsername_ReturnsSuccess()
+    {
+        var command = CreateCommand(username: "Кофеман");
+
+        var (response, @event) = await RegisterUserHandler.Handle(command, _queryRepoMock.Object,
+            _roleRepoMock.Object, _hasherMock.Object, _filter, _unitOfWorkMock.Object, _ct);
+
+        response.IsSuccess.Should().BeTrue();
+        @event.Username.Should().Be(command.UserName);
+        _queryRepoMock.Verify(r => r.Add(It.Is<DomainUser>(u => u.Username.Value == command.UserName), _ct),
+            Times.Once);
+    }
+
+    [Fact]
     public async Task Handle_WithValidData_AddsUserToRepository()
     {
         await RegisterUserHandler.Handle(CreateCommand(), _queryRepoMock.Object, _roleRepoMock.Object, _hasherMock.Object, _filter, _unitOfWorkMock.Object, _ct);

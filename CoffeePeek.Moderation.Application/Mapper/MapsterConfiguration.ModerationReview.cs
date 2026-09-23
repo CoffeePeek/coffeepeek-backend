@@ -10,6 +10,7 @@ public partial class MapsterConfiguration
     {
         config.NewConfig<ModerationReview, ModerationReviewDto>()
             // DTO uses CreatedAt; entity audit field is CreatedAtUtc
-            .Map(dest => dest.CreatedAt, src => src.CreatedAtUtc);
+            .Map(dest => dest.CreatedAt, src => src.CreatedAtUtc)
+            .Map(dest => dest.Photos, src => src.ReviewPhotos);
     }
 }

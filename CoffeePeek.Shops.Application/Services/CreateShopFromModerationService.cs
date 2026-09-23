@@ -23,7 +23,7 @@ public class CreateShopFromModerationService(
     ICacheService cacheService,
     ILogger<CreateShopFromModerationService> logger) : ICreateShopFromModerationService
 {
-    public async Task<Guid> CreateShopFromApprovedEventAsync(ShopDto shopDto, Guid creatorId, Guid moderationId, CancellationToken cancellationToken = default)
+    public async Task<Guid> CreateShopFromApprovedEventAsync(ShopDto shopDto, Guid? creatorId, Guid moderationId, CancellationToken cancellationToken = default)
     {
         var existingId = await shopRepository.GetIdByModerationId(moderationId, cancellationToken);
         if (existingId.HasValue)
@@ -45,14 +45,19 @@ public class CreateShopFromModerationService(
 
         if (shopDto.Type.HasValue)
         {
-            shop.SetCoffeeFocus((CoffeeFocus)(int)shopDto.Type.Value);
+            shop.SetCoffeeFocus((CoffeeFocusType)(int)shopDto.Type.Value);
             if (shopDto.Type.Value == CoffeePeek.Contract.Enums.CoffeeShopType.Specialty)
                 shop.SetTags([ShopTagIds.Specialty], creatorId);
         }
 
         if (shopDto.Location != null)
         {
-            shop.SetLocation(shopDto.CityId, shopDto.Location.Address, shopDto.Location.Latitude!.Value, shopDto.Location.Longitude!.Value);
+            // A location without coordinates used to throw on Latitude!.Value, dead-lettering the approval while
+            // Moderation waited forever for the completion reply.
+            if (shopDto.Location is { Latitude: { } lat, Longitude: { } lon })
+                shop.SetLocation(shopDto.CityId, shopDto.Location.Address, lat, lon);
+            else
+                shop.SetDraftLocation(shopDto.CityId, shopDto.Location.Address);
         }
 
         if (shopDto.ShopContact != null)
@@ -127,8 +132,6 @@ public class CreateShopFromModerationService(
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
         await cacheService.RemoveByPattern(CacheKey.Shop.SearchPattern(), cancellationToken);
-        await cacheService.RemoveByPattern(CacheKey.Shop.ListPattern(), cancellationToken);
-        await cacheService.RemoveByPattern(CacheKey.Shop.DetailPattern(), cancellationToken);
         await cacheService.RemoveAsync(CacheKey.Shop.Detail(shop.Id));
         await PublicStatsCacheInvalidator.InvalidateAsync(cacheService, cancellationToken);
 

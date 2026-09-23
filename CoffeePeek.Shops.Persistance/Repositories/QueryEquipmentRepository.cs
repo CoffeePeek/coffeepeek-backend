@@ -20,3 +20,19 @@ public class QueryEquipmentRepository(ShopsDbContext dbContext) : IQueryEquipmen
             .ToListAsync(ct);
     }
 }
+
+public class EquipmentRepository(ShopsDbContext dbContext) : IEquipmentRepository
+{
+    public Task<Equipment?> GetByIdAsync(Guid id, CancellationToken ct = default) =>
+        dbContext.Equipments.FirstOrDefaultAsync(e => e.Id == id, ct);
+
+    public Task<Equipment?> GetByBrandAndModelAsync(string brand, string modelName, CancellationToken ct = default) =>
+        dbContext.Equipments.FirstOrDefaultAsync(e => e.Brand == brand && e.ModelName == modelName, ct);
+
+    public Task<EquipmentCategory?> GetCategoryByIdAsync(int categoryId, CancellationToken ct = default) =>
+        dbContext.EquipmentCategories.FirstOrDefaultAsync(c => c.Id == categoryId, ct);
+
+    public void Add(Equipment equipment) => dbContext.Equipments.Add(equipment);
+
+    public void Remove(Equipment equipment) => dbContext.Equipments.Remove(equipment);
+}

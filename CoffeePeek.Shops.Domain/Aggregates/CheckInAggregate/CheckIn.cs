@@ -27,5 +27,9 @@ public sealed partial class CheckIn : AggregateRoot<Guid>
         ShopId = shopId;
         VisitedAt = visitedAt;
         CreatedAtUtc = DateTime.UtcNow;
+
+        // Rating is an EF-required owned navigation (NOT NULL columns), so every CheckIn
+        // needs a non-null placeholder until AssignRating sets the real value for public check-ins.
+        Rating = new Rating(0, 0, 0);
     }
 }

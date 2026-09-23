@@ -52,6 +52,7 @@ public class RefreshTokenHandlerTests
         response.IsSuccess.Should().BeTrue();
         response.Data!.AccessToken.Should().Be("new_access");
         response.Data.RefreshToken.Should().Be("new_refresh");
+        response.Data.AccessTokenExpiresAt.Should().BeCloseTo(DateTime.UtcNow.AddMinutes(15), TimeSpan.FromSeconds(2));
     }
 
     [Fact]

@@ -6,6 +6,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DEPLOY_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 cd "${DEPLOY_DIR}"
 
+bash "${SCRIPT_DIR}/ensure-secrets.sh"
+
 set -a
 # shellcheck disable=SC1091
 source .env
@@ -28,8 +30,8 @@ wait_for_backend() {
 
   echo "==> Waiting for ${service} (${path})..."
   for ((i = 1; i <= attempts; i++)); do
-    if docker run --rm --network coffeepeek_default curlimages/curl:8.10.1 \
-      -sf "http://${service}${path}" >/dev/null 2>&1; then
+    if "${COMPOSE[@]}" exec -T "$service" curl --connect-timeout 2 --max-time 3 \
+      -sf "http://${service}:8080${path}" >/dev/null 2>&1; then
       echo "${service} is ready"
       return 0
     fi
@@ -37,6 +39,14 @@ wait_for_backend() {
   done
 
   echo "${service} did not become ready in time"
+  echo "==> Recent ${service} logs..."
+  "${COMPOSE[@]}" logs --no-color --tail 100 "$service" || true
+  "${COMPOSE[@]}" ps -a "$service"
+  local container_id
+  container_id="$("${COMPOSE[@]}" ps -a -q "$service")"
+  if [[ -n "$container_id" ]]; then
+    docker inspect --format 'Status={{.State.Status}} ExitCode={{.State.ExitCode}} OOMKilled={{.State.OOMKilled}} RestartCount={{.RestartCount}} Error={{.State.Error}}' "$container_id"
+  fi
   return 1
 }
 
@@ -45,30 +55,32 @@ if [[ -n "${DOCKER_HUB_USERNAME:-}" && -n "${DOCKER_HUB_PASSWORD:-}" ]]; then
   use_registry_images=true
 fi
 
+# Prepare every image before replacing any running backend.
 if [[ "${use_registry_images}" == "true" ]]; then
-  echo "==> Pulling backend images from Docker Hub..."
-  "${COMPOSE[@]}" pull account shops moderation media
-  echo "==> Starting backend services..."
-  "${COMPOSE[@]}" up -d account shops moderation media
+  echo "==> Pulling application images from Docker Hub..."
+  "${COMPOSE[@]}" pull account shops moderation media gateway
 else
-  echo "==> Building backend services (no registry credentials)..."
-  "${COMPOSE[@]}" up -d --build account shops moderation media
+  echo "==> Building application images (no registry credentials)..."
+  "${COMPOSE[@]}" build account shops moderation media gateway
 fi
 
+# Start one backend at a time to avoid simultaneous initialization spikes.
+for service in account shops moderation media; do
+  "${COMPOSE[@]}" up -d --no-build "$service"
+  wait_for_backend "$service" /health
+done
 wait_for_backend shops /api/Catalogs/cities
-wait_for_backend account /health
 
-echo "==> Starting gateway and caddy..."
-if [[ "${use_registry_images}" == "true" ]]; then
-  "${COMPOSE[@]}" pull gateway
-  "${COMPOSE[@]}" up -d gateway caddy
-else
-  "${COMPOSE[@]}" up -d --build gateway caddy
+echo "==> Starting gateway..."
+# Backends were already updated and checked; do not recreate dependencies here.
+"${COMPOSE[@]}" up -d --no-deps --no-build gateway
+wait_for_backend gateway /health
+if [[ "${USE_HTTPS:-1}" == "1" ]]; then
+  "${COMPOSE[@]}" up -d --no-deps caddy
 fi
 
 echo "==> Health check..."
-sleep 3
-curl -sf "http://localhost:${GATEWAY_PORT:-8080}/api/Catalogs/cities" >/dev/null
+curl --connect-timeout 2 --max-time 10 -sf "http://localhost:${GATEWAY_PORT:-8080}/api/Catalogs/cities" >/dev/null
 echo "OK — gateway can reach shops"
 
-"${COMPOSE[@]}" ps account shops moderation media gateway caddy
+"${COMPOSE[@]}" ps

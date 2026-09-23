@@ -1,5 +1,7 @@
 using CoffeePeek.Moderation.Domain.Aggregates;
 using CoffeePeek.Moderation.Domain.Aggregates.ShopImportCandidateAggregate;
+using CoffeePeek.Moderation.Domain.Aggregates.ShopIssueReportAggregate;
+using CoffeePeek.Moderation.Domain.Aggregates.ShopChangeRequestAggregate;
 using CoffeePeek.Moderation.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using ModerationReview = CoffeePeek.Moderation.Domain.Aggregates.ModerationReviewAggregate.ModerationReview;
@@ -19,6 +21,10 @@ public class ModerationDbContext(DbContextOptions<ModerationDbContext> options) 
     public DbSet<ModerationAuditLog> ModerationAuditLogs { get; set; }
     public DbSet<ShopImportCandidate> ShopImportCandidates { get; set; }
     public DbSet<ShopImportDuplicateSuggestion> ShopImportDuplicateSuggestions { get; set; }
+    public DbSet<ShopIssueReport> ShopIssueReports { get; set; }
+    public DbSet<ModerationRoaster> ModerationRoasters { get; set; }
+    public DbSet<ModerationRoasterPhoto> ModerationRoasterPhotos { get; set; }
+    public DbSet<ShopChangeRequest> ShopChangeRequests { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -65,6 +71,17 @@ public class ModerationDbContext(DbContextOptions<ModerationDbContext> options) 
             entity.HasKey(e => e.Id);
             entity.HasIndex(e => e.ShopId);
             entity.HasIndex(e => e.BrewMethodId);
+        });
+
+        modelBuilder.Entity<ModerationRoasterPhoto>(entity =>
+        {
+            entity.UsePropertyAccessMode(PropertyAccessMode.Field);
+            entity.HasKey(e => e.Id);
+            entity.HasOne<ModerationRoaster>()
+                .WithMany(r => r.Photos)
+                .HasForeignKey(e => e.ModerationRoasterId)
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.Cascade);
         });
     }
 }

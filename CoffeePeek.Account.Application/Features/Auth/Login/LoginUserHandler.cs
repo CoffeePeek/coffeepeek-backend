@@ -22,6 +22,9 @@ public class LoginUserHandler
         emailExistenceFilter.Add(request.Email);
 
         // Session persistence (RevokeAllSessions + AddSession) is managed by Wolverine's transaction
-        return Response<LoginResponse>.Success(new LoginResponse(result.AccessToken, result.RefreshToken));
+        return Response<LoginResponse>.Success(new LoginResponse(
+            result.AccessToken,
+            result.RefreshToken,
+            result.ExpiredAt));
     }
 }

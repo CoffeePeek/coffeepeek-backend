@@ -95,4 +95,37 @@ public class EquipmentTest
         // Assert
         equipment.IsCustom.Should().Be(newValue);
     }
+
+    [Fact]
+    public void Update_ShouldMutateBrandModelCategoryAndName()
+    {
+        // Arrange
+        var equipment = new Equipment("Sony", "Alpha A7 IV", _testCategory);
+        var newCategory = new EquipmentCategory();
+
+        // Act
+        equipment.Update("Hario", "V60-02", newCategory);
+
+        // Assert
+        equipment.Brand.Should().Be("Hario");
+        equipment.ModelName.Should().Be("V60-02");
+        equipment.Category.Should().Be(newCategory);
+        equipment.Name.Should().Be("Hario V60-02");
+    }
+
+    [Theory]
+    [InlineData("", "V60-02")]
+    [InlineData(" ", "V60-02")]
+    [InlineData(null, "V60-02")]
+    public void Update_ShouldThrowArgumentException_WhenBrandIsInvalid(string invalidBrand, string model)
+    {
+        // Arrange
+        var equipment = new Equipment("Sony", "Alpha A7 IV", _testCategory);
+
+        // Act
+        var act = () => equipment.Update(invalidBrand, model, _testCategory);
+
+        // Assert
+        act.Should().Throw<ArgumentException>().WithMessage("Brand is required");
+    }
 }

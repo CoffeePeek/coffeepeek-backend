@@ -20,3 +20,16 @@ public class QueryCoffeeBeanRepository(ShopsDbContext dbContext) : IQueryCoffeeB
             .ToListAsync(ct);
     }
 }
+
+public class CoffeeBeanRepository(ShopsDbContext dbContext) : ICoffeeBeanRepository
+{
+    public Task<CoffeeBean?> GetByIdAsync(Guid id, CancellationToken ct = default) =>
+        dbContext.CoffeeBeans.FirstOrDefaultAsync(b => b.Id == id, ct);
+
+    public Task<CoffeeBean?> GetByNameAsync(string name, CancellationToken ct = default) =>
+        dbContext.CoffeeBeans.FirstOrDefaultAsync(b => EF.Functions.ILike(b.Name, name), ct);
+
+    public void Add(CoffeeBean bean) => dbContext.CoffeeBeans.Add(bean);
+
+    public void Remove(CoffeeBean bean) => dbContext.CoffeeBeans.Remove(bean);
+}

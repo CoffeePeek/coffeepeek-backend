@@ -44,7 +44,7 @@ public class CoffeeShopsController(IMessageBus bus, IUserContext userContext) : 
         [FromQuery] Contract.Enums.PriceRange? priceRange = null,
         [FromQuery] Contract.Enums.CoffeeShopType? type = null,
         [FromQuery][Range(0, 5)] decimal? minRating = null,
-        [FromQuery][Range(1, int.MaxValue)] int page = 1,
+        [FromQuery][Range(1, 10_000)] int page = 1, // (page-1)*size overflowed int and made Skip throw (500)
         [FromQuery][Range(1, 100)] int pageSize = 10)
     {
         page = Math.Max(1, page);

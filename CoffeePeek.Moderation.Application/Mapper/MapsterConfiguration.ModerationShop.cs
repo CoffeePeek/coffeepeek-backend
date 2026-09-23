@@ -14,8 +14,8 @@ public partial class MapsterConfiguration
     private static void ConfigureModerationShop(TypeAdapterConfig config, MediaPublicUrlOptions mediaOptions)
     {
         config.NewConfig<ModerationShop, ModerationShopDto>()
-            .Map(dest => dest.Address, src => src.Location.Address)
-            .Map(dest => dest.AddressIsValidated, src => src.Location.IsAddressValidated)
+            .Map(dest => dest.Address, src => src.Location == null ? null : src.Location.Address)
+            .Map(dest => dest.AddressIsValidated, src => src.Location != null && src.Location.IsAddressValidated)
             .Map(dest => dest.Type, src => src.CoffeeFocus == null
                 ? (ContractCoffeeShopType?)null
                 : (ContractCoffeeShopType)(int)src.CoffeeFocus.Value)

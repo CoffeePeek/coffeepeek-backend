@@ -4,6 +4,7 @@ using CoffeePeek.Shared.Web.Extensions;
 using CoffeePeek.Shared.Web.Handlers;
 using CoffeePeek.Shared.Web.Logging;
 using CoffeePeek.Shared.Web.Sentry;
+using CoffeePeek.Shared.Persistence.Extensions;
 using CoffePeek.ServiceDefaults;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -23,7 +24,7 @@ builder.AddServiceDefaults();
 builder.Services.AddServiceDiscovery();
 builder.AddSerilogLogging();
 builder.ConfigureEnvironment();
-builder.WebHost.UseCoffeePeekSentry();
+builder.WebHost.UseCoffeePeekSentry(options => options.SetBeforeSend(SentryExtensions.FilterExpectedProxyDisconnects));
 
 // ── API Documentation ─────────────────────────────────────────────────────────
 builder.Services.AddGatewayOpenApi();
@@ -35,6 +36,7 @@ builder.Services.AddGatewayProxy(builder.Configuration);
 
 // ── Security ──────────────────────────────────────────────────────────────────
 builder.Services.AddGatewayAuth(builder.Environment, builder.Configuration);
+builder.Services.AddUserRevocationStore();
 builder.Services.AddCorsModule(builder.Environment);
 builder.Services.AddGatewayRateLimiting();
 

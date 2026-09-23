@@ -54,7 +54,7 @@ public class ModerationShopsController(IMessageBus bus, IUserContext userContext
     }
 
     [HttpPost]
-    [Authorize]
+    [AllowAnonymous]
     [Description("Adds a new coffee shop to moderation")]
     [ProducesResponseType<Response<SendCoffeeShopToModerationResponse>>(StatusCodes.Status201Created)]
     [ProducesResponseType<ErrorResponse>(StatusCodes.Status400BadRequest)]
@@ -63,7 +63,8 @@ public class ModerationShopsController(IMessageBus bus, IUserContext userContext
     public async Task<IActionResult> SendCoffeeShopToModeration(
         [FromBody] SendCoffeeShopToModerationCommand command, CancellationToken ct)
     {
-        var commandWithUser = command with { UserId = userContext.GetUserIdOrThrow() };
+        // Anonymous submissions carry a null UserId; approval consumer skips user crediting for these.
+        var commandWithUser = command with { UserId = userContext.GetUserId() };
 
         var response = await bus.InvokeAsync<Response<SendCoffeeShopToModerationResponse>>(commandWithUser, ct);
 
@@ -76,7 +77,7 @@ public class ModerationShopsController(IMessageBus bus, IUserContext userContext
     [HttpPut]
     [Authorize(Policy = RoleConsts.Moderator)]
     public async Task<IActionResult> UpdateModerationCoffeeShop(
-        [FromForm] ModerationShopDto dto, CancellationToken ct)
+        [FromBody] ModerationShopDto dto, CancellationToken ct)
     {
         var userId = userContext.GetUserIdOrThrow();
         var isPrivilegedModerator = userContext.HasAnyRole(RoleConsts.Moderator, RoleConsts.Admin);

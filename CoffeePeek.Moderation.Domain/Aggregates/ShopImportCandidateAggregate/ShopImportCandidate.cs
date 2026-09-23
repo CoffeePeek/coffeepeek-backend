@@ -316,8 +316,13 @@ public sealed class ShopImportCandidate : Entity<Guid>
         if (reviewerId == Guid.Empty)
             throw new DomainException("Reviewer is required.");
 
-        if (ResultingShopId is not null && status == ImportQueueStatus.Published)
+        if (ResultingShopId is not null)
             throw new DomainException("Candidate is already published to the catalog.");
+
+        // Publish is in flight (Shops has not replied yet). Re-publishing is a safe retry because Shops dedupes by
+        // candidate id, but moving away from Published would orphan the shop that is about to be created.
+        if (QueueStatus == ImportQueueStatus.Published && status != ImportQueueStatus.Published)
+            throw new DomainException("Candidate publish is in progress; it cannot be moved to another status.");
 
         if (status == ImportQueueStatus.Rejected)
         {

@@ -1,4 +1,4 @@
-﻿using CoffeePeek.Moderation.Domain.Aggregates;
+using CoffeePeek.Moderation.Domain.Aggregates;
 using CoffeePeek.Moderation.Domain.Aggregates.ModerationReviewAggregate;
 using CoffeePeek.Moderation.Domain.Entities;
 using CoffeePeek.Shared.Kernel;
@@ -35,8 +35,10 @@ public static class SendReviewToModerationHandler
                     x.ContentType, 
                     x.StorageKey, 
                     x.Size, 
-                    command.UserId, 
-                    moderationShopId))
+                    command.UserId,
+                    // Review photos belong to the review only. Linking them to the shop put them in the shop
+                    // gallery, shipped them to the catalog as shop photos and cascade-deleted them with the shop.
+                    moderationShopId: null))
                 .ToList();
         }
 
@@ -47,7 +49,7 @@ public static class SendReviewToModerationHandler
             command.UserName,
             command.Header,
             command.Comment,
-            command.Rating.Place, command.Rating.Service, command.Rating.Coffee,
+            command.EffectiveRating.Place, command.EffectiveRating.Service, command.EffectiveRating.Coffee,
             photos);
 
         repository.Add(review);

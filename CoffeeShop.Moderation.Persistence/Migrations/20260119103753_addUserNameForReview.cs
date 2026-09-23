@@ -2,7 +2,7 @@
 
 #nullable disable
 
-namespace CoffeePeek.Moderation.Infrastructure.Migrations
+namespace CoffeeShop.Moderation.Persistence.Migrations
 {
     /// <inheritdoc />
     public partial class addUserNameForReview : Migration

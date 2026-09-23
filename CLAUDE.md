@@ -194,16 +194,16 @@ Always use Context7 when I need library/API documentation, code generation, setu
 
 **CoffeePeek — Tech Debt Resolution**
 
-CoffeePeek — это .NET 10 микросервисная платформа для поиска и открытия кофеен. Данный проект покрывает полное устранение технического долга, задокументированного в `.planning/codebase/CONCERNS.md`: от критических уязвимостей безопасности и функциональных багов — до рефакторинга кода, оптимизации производительности и восстановления тестового покрытия.
+CoffeePeek is a .NET 10 microservices platform for finding and discovering coffee shops. This project covers full resolution of the technical debt documented in `.planning/codebase/CONCERNS.md`: from critical security vulnerabilities and functional bugs to code refactoring, performance optimization, and restoring test coverage.
 
-**Core Value:** Каждый баг, уязвимость и проблема производительности, найденные в CONCERNS.md, должны быть исправлены и закрыты тестом — так, чтобы они больше не могли вернуться.
+**Core Value:** Every bug, vulnerability, and performance issue found in CONCERNS.md must be fixed and covered by a test so that it can never come back.
 
 ### Constraints
 
-- **Tech Stack**: .NET 10, C# 14 — не менять
-- **Breaking changes**: Нельзя менять публичные API контракты (CoffeePeek.Contract) без версионирования
-- **Naming typos**: Не переименовывать CoffePeek.*, Shops.Persistance, CoffeeShop.Moderation.* — принято решение CLAUDE.md
-- **Migration safety**: Изменения схемы БД (если потребуются) через EF Core migrations с Makefile
+- **Tech Stack**: .NET 10, C# 14 — do not change
+- **Breaking changes**: Public API contracts (CoffeePeek.Contract) must not change without versioning
+- **Naming typos**: Do not rename CoffePeek.*, Shops.Persistance, CoffeeShop.Moderation.* — accepted decision in CLAUDE.md
+- **Migration safety**: Database schema changes (if needed) go through EF Core migrations via the Makefile
 <!-- GSD:project-end -->
 
 <!-- GSD:stack-start source:codebase/STACK.md -->

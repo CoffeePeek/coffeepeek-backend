@@ -1,33 +1,20 @@
 using System.Security.Claims;
-using CoffeePeek.Shared.Auth.Constants;
 using Microsoft.AspNetCore.Http;
 
 namespace CoffeePeek.Shared.Auth;
 
+/// <summary>
+/// Reads the caller identity from the authenticated principal only. Raw X-User-* headers are never
+/// trusted here: <see cref="HeaderAuthenticationHandler"/> turns them into claims after verifying the gateway secret.
+/// </summary>
 public class HeaderUserContext(IHttpContextAccessor httpContextAccessor) : IUserContext
 {
+    private ClaimsPrincipal? User => httpContextAccessor.HttpContext?.User;
+
     public bool IsAuthenticated => GetUserId() is { } id && id != Guid.Empty;
 
-    public Guid? GetUserId()
-    {
-        var httpContext = httpContextAccessor.HttpContext;
-        if (httpContext == null)
-            return null;
-
-        // Fallback to claims (if JWT is still present)
-        var userIdClaim = httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (!string.IsNullOrEmpty(userIdClaim) && Guid.TryParse(userIdClaim, out var claimUserId))
-            return claimUserId;
-
-        // First try to get from headers (from Gateway)
-        if (httpContext.Request.Headers.TryGetValue(GatewayHeaderConsts.XUserId, out var userIdHeader))
-        {
-            if (Guid.TryParse(userIdHeader.FirstOrDefault(), out var userId))
-                return userId;
-        }
-
-        return null;
-    }
+    public Guid? GetUserId() =>
+        Guid.TryParse(User?.FindFirstValue(ClaimTypes.NameIdentifier), out var userId) ? userId : null;
 
     public Guid GetUserIdOrThrow()
     {
@@ -35,23 +22,7 @@ public class HeaderUserContext(IHttpContextAccessor httpContextAccessor) : IUser
         return userId ?? throw new UnauthorizedAccessException("User ID is missing.");
     }
 
-    public string? GetUsername()
-    {
-        var httpContext = httpContextAccessor.HttpContext;
-        if (httpContext == null)
-            return null;
-
-        // First try to get from headers (from Gateway)
-        if (httpContext.Request.Headers.TryGetValue(GatewayHeaderConsts.XUserName, out var userNameHeader))
-        {
-            var username = userNameHeader.FirstOrDefault();
-            if (!string.IsNullOrEmpty(username))
-                return username;
-        }
-
-        // Fallback to claims
-        return httpContext.User.FindFirstValue(ClaimTypes.Name);
-    }
+    public string? GetUsername() => User?.FindFirstValue(ClaimTypes.Name);
 
     public string GetUsernameOrThrow()
     {
@@ -63,19 +34,7 @@ public class HeaderUserContext(IHttpContextAccessor httpContextAccessor) : IUser
 
     public string? GetUserRole()
     {
-        var httpContext = httpContextAccessor.HttpContext;
-        if (httpContext == null)
-            return null;
-
-        // First try to get from headers (from Gateway)
-        if (httpContext.Request.Headers.TryGetValue(GatewayHeaderConsts.XUserRole, out var roleHeader))
-        {
-            var role = roleHeader.FirstOrDefault();
-            if (!string.IsNullOrEmpty(role))
-                return role;
-        }
-
-        // Fallback to claims
-        return httpContext.User.FindFirst(ClaimTypes.Role)?.Value;
+        var roles = User?.FindAll(ClaimTypes.Role).Select(c => c.Value).ToArray();
+        return roles is { Length: > 0 } ? string.Join(',', roles) : null;
     }
 }

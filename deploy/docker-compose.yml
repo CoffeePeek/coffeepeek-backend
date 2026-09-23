@@ -9,9 +9,18 @@ x-logging: &default-logging
     max-size: "10m"
     max-file: "3"
 
+# A running process is not necessarily listening yet (Wolverine initializes first).
+x-app-healthcheck: &app-healthcheck
+  test: ["CMD", "curl", "--fail", "--silent", "--show-error", "--max-time", "3", "http://127.0.0.1:8080/health"]
+  interval: 5s
+  timeout: 4s
+  retries: 6
+  start_period: 120s
+
 x-dotnet-common: &dotnet-common
   ASPNETCORE_ENVIRONMENT: Production
-  ASPNETCORE_URLS: http://+:80
+  ASPNETCORE_URLS: http://+:8080
+  ASPNETCORE_HTTP_PORTS: "8080"
   DOTNET_RUNNING_IN_CONTAINER: "true"
 
 x-rabbitmq-env: &rabbitmq-env
@@ -34,7 +43,7 @@ x-jwt-env: &jwt-env
   JWTOptions__Issuer: CoffeePeek.WEB
 
 x-gateway-auth-env: &gateway-auth-env
-  GatewayAuth__SecretKey: ${GATEWAY_AUTH_SECRET}
+      GatewayAuth__SecretKey: ${GATEWAY_AUTH_SECRET:?GATEWAY_AUTH_SECRET is required}
 
 x-media-public-env: &media-public-env
   MediaPublicUrlOptions__PublicEndpoint: ${MEDIA_PUBLIC_URL:-}
@@ -136,6 +145,7 @@ services:
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
 
   account:
+    healthcheck: *app-healthcheck
     image: ${DOCKER_IMAGE_PREFIX}/coffeepeek.accountservice:${IMAGE_TAG}
     build:
       context: ..
@@ -152,7 +162,7 @@ services:
       minio-init:
         condition: service_completed_successfully
     environment:
-      <<: [*dotnet-common, *rabbitmq-env, *redis-env, *jwt-env, *media-public-env]
+      <<: [*dotnet-common, *rabbitmq-env, *redis-env, *jwt-env, *media-public-env, *gateway-auth-env]
       PostgresCpOptions__ConnectionString: Host=postgres;Port=5432;Database=cpaccountdb;Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD};SslMode=Disable;GSS Encryption Mode=Disable
       MinIOOptions__Endpoint: http://minio:9000
       MinIOOptions__AccessKey: ${MINIO_ROOT_USER}
@@ -161,14 +171,19 @@ services:
       OAuthGoogleOptions__ClientId: ${GOOGLE_CLIENT_ID:-770099870632-5eeebr3eqdrma4reson9mv02j4lro583.apps.googleusercontent.com}
       OAuthGoogleOptions__ClientSecret: ${GOOGLE_CLIENT_SECRET:-}
       ResendClientOptions__ApiToken: ${RESEND_API_TOKEN}
+      AccountDeletionOptions__TokenPepper: ${ACCOUNT_DELETION_TOKEN_PEPPER:-${JWT_SECRET_KEY}}
+      AccountDeletionOptions__TokenLifetimeHours: ${ACCOUNT_DELETION_TOKEN_LIFETIME_HOURS:-24}
+      AccountDeletionOptions__ResendCooldownMinutes: ${ACCOUNT_DELETION_RESEND_COOLDOWN_MINUTES:-5}
+      AccountDeletionOptions__MaxEmailsPerHour: ${ACCOUNT_DELETION_MAX_EMAILS_PER_HOUR:-3}
       WebClientUrl: ${WEB_CLIENT_URL}
-      AdminStatsOptions__ShopsServiceUrl: http://shops
-      AdminStatsOptions__ModerationServiceUrl: http://moderation
+      AdminStatsOptions__ShopsServiceUrl: http://shops:8080
+      AdminStatsOptions__ModerationServiceUrl: http://moderation:8080
       Sentry__Dsn: ${SENTRY_DSN_ACCOUNT:-}
     mem_limit: 1024m
     memswap_limit: 1024m
 
   shops:
+    healthcheck: *app-healthcheck
     image: ${DOCKER_IMAGE_PREFIX}/coffeepeek.shopsservice:${IMAGE_TAG}
     build:
       context: ..
@@ -183,16 +198,19 @@ services:
       rabbitmq:
         condition: service_healthy
     environment:
-      <<: [*dotnet-common, *rabbitmq-env, *redis-env, *media-public-env]
+      <<: [*dotnet-common, *rabbitmq-env, *redis-env, *media-public-env, *gateway-auth-env]
       PostgresCpOptions__ConnectionString: Host=postgres;Port=5432;Database=cpshopsdb;Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD};SslMode=Disable;GSS Encryption Mode=Disable
-      GeminiOptions__ApiKey: ${GEMINI_API_KEY:-}
-      GeminiOptions__Model: ${GEMINI_MODEL:-gemini-3.6-flash}
-      GeminiOptions__ProxyUrl: ${GEMINI_PROXY_URL:-}
+      OpenAiOptions__ApiKey: ${OPENAI_API_KEY:-}
+      OpenAiOptions__Model: ${OPENAI_MODEL:-gpt-4.1-mini}
+      OpenAiOptions__BaseUrl: ${OPENAI_BASE_URL:-https://api.openai.com/v1}
+      OpenAiOptions__ProxyUrl: ${OPENAI_PROXY_URL:-}
+      OpenAiOptions__TimeoutSeconds: ${OPENAI_TIMEOUT_SECONDS:-90}
       Sentry__Dsn: ${SENTRY_DSN_SHOPS:-}
     mem_limit: 1024m
     memswap_limit: 1024m
 
   moderation:
+    healthcheck: *app-healthcheck
     image: ${DOCKER_IMAGE_PREFIX}/coffeepeek.moderationservice:${IMAGE_TAG}
     build:
       context: ..
@@ -207,7 +225,7 @@ services:
       minio-init:
         condition: service_completed_successfully
     environment:
-      <<: [*dotnet-common, *rabbitmq-env, *media-public-env]
+      <<: [*dotnet-common, *rabbitmq-env, *media-public-env, *gateway-auth-env]
       PostgresCpOptions__ConnectionString: Host=postgres;Port=5432;Database=cpmoderationdb;Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD};SslMode=Disable;GSS Encryption Mode=Disable
       MinIOOptions__Endpoint: http://minio:9000
       MinIOOptions__AccessKey: ${MINIO_ROOT_USER}
@@ -220,6 +238,7 @@ services:
     memswap_limit: 1536m
 
   media:
+    healthcheck: *app-healthcheck
     image: ${DOCKER_IMAGE_PREFIX}/coffeepeek.mediaservice:${IMAGE_TAG}
     build:
       context: ..
@@ -234,7 +253,7 @@ services:
       minio-init:
         condition: service_completed_successfully
     environment:
-      <<: [*dotnet-common, *rabbitmq-env, *media-public-env]
+      <<: [*dotnet-common, *rabbitmq-env, *media-public-env, *gateway-auth-env]
       PostgresCpOptions__ConnectionString: Host=postgres;Port=5432;Database=cpmediadb;Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD};SslMode=Disable;GSS Encryption Mode=Disable
       MinIOOptions__Endpoint: http://minio:9000
       MinIOOptions__AccessKey: ${MINIO_ROOT_USER}
@@ -246,6 +265,7 @@ services:
     memswap_limit: 512m
 
   gateway:
+    healthcheck: *app-healthcheck
     image: ${DOCKER_IMAGE_PREFIX}/gateway:${IMAGE_TAG}
     build:
       context: ..
@@ -253,18 +273,26 @@ services:
     restart: unless-stopped
     logging: *default-logging
     depends_on:
-      - account
-      - shops
-      - moderation
-      - media
+      account:
+        condition: service_healthy
+      shops:
+        condition: service_healthy
+      moderation:
+        condition: service_healthy
+      media:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     ports:
-      - "127.0.0.1:${GATEWAY_PORT:-8080}:80"
+      - "127.0.0.1:${GATEWAY_PORT:-8080}:8080"
     environment:
-      <<: [*dotnet-common, *jwt-env]
-      ReverseProxy__Clusters__account-cluster__Destinations__destination1__Address: http://account
-      ReverseProxy__Clusters__shops-cluster__Destinations__destination1__Address: http://shops
-      ReverseProxy__Clusters__moderation-cluster__Destinations__destination1__Address: http://moderation
-      ReverseProxy__Clusters__media-cluster__Destinations__destination1__Address: http://media
+      <<: [*dotnet-common, *jwt-env, *redis-env, *gateway-auth-env]
+      ReverseProxy__Clusters__account-cluster__Destinations__destination1__Address: http://account:8080
+      ReverseProxy__Clusters__shops-cluster__Destinations__destination1__Address: http://shops:8080
+      ReverseProxy__Clusters__moderation-cluster__Destinations__destination1__Address: http://moderation:8080
+      ReverseProxy__Clusters__media-cluster__Destinations__destination1__Address: http://media:8080
+      AppReleaseAutomation__Token: ${APP_RELEASE_AUTOMATION_TOKEN:-}
+      AppReleaseAutomation__ActorUserId: 52a6ea58-11c7-4a9f-b7d9-77bf842169d5
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS}
       Sentry__Dsn: ${SENTRY_DSN_GATEWAY:-}
     mem_limit: 1024m
@@ -276,12 +304,14 @@ services:
     restart: unless-stopped
     logging: *default-logging
     depends_on:
-      - gateway
+      gateway:
+        condition: service_healthy
     ports:
       - "80:80"
       - "443:443"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - /var/www/coffeepeek-downloads:/srv/downloads:ro
       - caddy_data:/data
       - caddy_config:/config
     environment:

@@ -17,6 +17,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\CoffeePeek.Shops.Application\CoffeePeek.Shops.Application.csproj" />
+    <ProjectReference Include="..\CoffeePeek.Shops.Infrastructure\CoffeePeek.Shops.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

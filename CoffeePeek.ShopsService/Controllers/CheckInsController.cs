@@ -64,7 +64,7 @@ public class CheckInsController(IMessageBus bus, IUserContext userContext) : Con
         [FromHeader(Name = "X-Page-Number")] int pageNumber = 1,
         [FromHeader(Name = "X-Page-Size")] int pageSize = 10)
     {
-        pageNumber = Math.Max(1, pageNumber);
+        pageNumber = Math.Clamp(pageNumber, 1, 10_000); // larger values overflow Skip((page-1)*size)
         pageSize = pageSize <= 0 ? 10 : Math.Min(pageSize, 100);
 
         var userId = userContext.GetUserIdOrThrow();

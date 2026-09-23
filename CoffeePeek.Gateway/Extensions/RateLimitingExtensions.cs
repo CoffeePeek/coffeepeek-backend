@@ -8,7 +8,9 @@ public static class RateLimitingExtensions
     // Policy names — used in route metadata and middleware
     public const string GlobalPolicy = "global";
     public const string AuthEndpointsPolicy = "auth-endpoints";
+    public const string AccountDeletionPolicy = "account-deletion";
     public const string MediaUploadPolicy = "media-upload";
+    public const string ModerationSubmissionPolicy = "moderation-submission";
 
     public static IServiceCollection AddGatewayRateLimiting(this IServiceCollection services)
     {
@@ -16,56 +18,55 @@ public static class RateLimitingExtensions
         {
             options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
 
-            // Global sliding-window policy: 200 requests per minute per IP
-            options.AddSlidingWindowLimiter(GlobalPolicy, limiterOptions =>
-            {
-                limiterOptions.Window = TimeSpan.FromMinutes(1);
-                limiterOptions.SegmentsPerWindow = 6;
-                limiterOptions.PermitLimit = 200;
-                limiterOptions.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
-                limiterOptions.QueueLimit = 0;
-            });
+            // Every named policy is partitioned per client: an unpartitioned limiter is one bucket shared by all users.
+            options.AddPolicy(GlobalPolicy, ctx => PerClient(ctx, TimeSpan.FromMinutes(1), 6, 200));
 
-            // Strict policy for auth endpoints: 20 requests per minute per IP (brute-force protection)
-            options.AddSlidingWindowLimiter(AuthEndpointsPolicy, limiterOptions =>
-            {
-                limiterOptions.Window = TimeSpan.FromMinutes(1);
-                limiterOptions.SegmentsPerWindow = 6;
-                limiterOptions.PermitLimit = 20;
-                limiterOptions.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
-                limiterOptions.QueueLimit = 0;
-            });
+            // Auth endpoints: brute-force protection
+            options.AddPolicy(AuthEndpointsPolicy, ctx => PerClient(ctx, TimeSpan.FromMinutes(1), 6, 20));
 
-            // Relaxed policy for media uploads: 10 uploads per minute per IP
-            options.AddSlidingWindowLimiter(MediaUploadPolicy, limiterOptions =>
-            {
-                limiterOptions.Window = TimeSpan.FromMinutes(1);
-                limiterOptions.SegmentsPerWindow = 6;
-                limiterOptions.PermitLimit = 10;
-                limiterOptions.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
-                limiterOptions.QueueLimit = 0;
-            });
+            // Capability-token and authenticated account deletion: limits confirmation-token probing and email abuse
+            options.AddPolicy(AccountDeletionPolicy, ctx => PerClient(ctx, TimeSpan.FromHours(1), 12, 10));
 
-            // Partition by real client IP — Railway proxy injects X-Forwarded-For with real client IP as first entry.
-            // Fallback: X-Real-IP → RemoteIpAddress → "unknown". Split on comma handles multi-proxy chains.
-            options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
-            {
-                var clientIp =
-                    context.Request.Headers["X-Forwarded-For"].FirstOrDefault()?.Split(',')[0].Trim()
-                    ?? context.Request.Headers["X-Real-IP"].FirstOrDefault()
-                    ?? context.Connection.RemoteIpAddress?.ToString()
-                    ?? "unknown";
-                return RateLimitPartition.GetSlidingWindowLimiter(clientIp, _ => new SlidingWindowRateLimiterOptions
-                {
-                    Window = TimeSpan.FromMinutes(1),
-                    SegmentsPerWindow = 6,
-                    PermitLimit = 300,
-                    QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
-                    QueueLimit = 0
-                });
-            });
+            options.AddPolicy(MediaUploadPolicy, ctx => PerClient(ctx, TimeSpan.FromMinutes(1), 6, 10));
+
+            // Only submissions are throttled; moderator reads on the same routes must not be starved.
+            options.AddPolicy(ModerationSubmissionPolicy, ctx =>
+                HttpMethods.IsGet(ctx.Request.Method)
+                    ? RateLimitPartition.GetNoLimiter("unthrottled-read")
+                    : PerClient(ctx, TimeSpan.FromMinutes(1), 6, 15));
+
+            options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(ctx =>
+                PerClient(ctx, TimeSpan.FromMinutes(1), 6, 300));
         });
 
         return services;
     }
+
+    /// <summary>
+    /// Client IP for rate-limit partitioning. Uses the right-most X-Forwarded-For entry — the one appended by the
+    /// proxy directly in front of the gateway (Caddy). Left-most entries are client-controlled and trivially spoofed.
+    /// </summary>
+    public static string GetClientKey(HttpContext context)
+    {
+        var forwardedFor = context.Request.Headers["X-Forwarded-For"].ToString();
+        if (!string.IsNullOrWhiteSpace(forwardedFor))
+        {
+            var last = forwardedFor.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .LastOrDefault();
+            if (!string.IsNullOrEmpty(last))
+                return last;
+        }
+
+        return context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+    }
+
+    private static RateLimitPartition<string> PerClient(HttpContext context, TimeSpan window, int segments, int permits) =>
+        RateLimitPartition.GetSlidingWindowLimiter(GetClientKey(context), _ => new SlidingWindowRateLimiterOptions
+        {
+            Window = window,
+            SegmentsPerWindow = segments,
+            PermitLimit = permits,
+            QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+            QueueLimit = 0
+        });
 }

@@ -1,10 +1,9 @@
-﻿using CoffeePeek.Moderation.Domain;
-using CoffeePeek.Moderation.Domain.Entities;
+using CoffeePeek.Moderation.Domain;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using ModerationShop = CoffeePeek.Moderation.Domain.Aggregates.ModerationShop;
 
-namespace CoffeePeek.Moderation.Infrastructure.Configuration;
+namespace CoffeeShop.Moderation.Persistence.Configuration;
 
 public class ModerationShopConfiguration : IEntityTypeConfiguration<ModerationShop>
 {
@@ -13,11 +12,17 @@ public class ModerationShopConfiguration : IEntityTypeConfiguration<ModerationSh
         entity.UsePropertyAccessMode(PropertyAccessMode.Field);
 
         entity.HasKey(e => e.Id);
-        entity.Property(e => e.Name).HasMaxLength(50);
+
+        // Optimistic concurrency on PostgreSQL xmin: two moderators deciding the same item at once must not both win.
+        entity.Property<uint>("Version").IsRowVersion();
+        entity.Property(e => e.Name).HasMaxLength(BusinessConstants.MaxShopNameLength);
         entity.Property(e => e.Description).HasMaxLength(1000);
-        entity.Property(e => e.RejectedReason).HasMaxLength(200);
+        entity.Property(e => e.RejectedReason).HasMaxLength(BusinessConstants.MaxRejectReasonCommentLength);
         entity.HasIndex(e => e.UserId);
-        entity.HasIndex(e => e.ModerationStatus);
+        // Queue pages filter by status and order by newest; the composite also serves status-only filters.
+        entity.HasIndex(e => new { e.ModerationStatus, e.CreatedAtUtc });
+        // Looked up on every review submission (GetByPublishedShopId).
+        entity.HasIndex(e => e.ShopId);
         entity.HasIndex(e => e.CityId);
         entity.HasIndex(e => e.CoffeeFocus);
 

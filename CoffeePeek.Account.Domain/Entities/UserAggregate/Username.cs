@@ -38,6 +38,6 @@ public partial record Username
 
     public override string ToString() => Value;
 
-    [GeneratedRegex(@"^[a-zA-Z][a-zA-Z0-9._]*$", RegexOptions.Compiled)]
+    [GeneratedRegex(@"^\p{L}[\p{L}\p{Nd}._]*$", RegexOptions.Compiled)]
     private static partial Regex MyRegex();
 }

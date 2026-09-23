@@ -62,6 +62,7 @@ public static class GoogleLoginHandler
         return Response<GoogleLoginResponse>.Success(new GoogleLoginResponse(
             accessToken,
             refreshToken,
+            DateTime.UtcNow.AddMinutes(options.Value.AccessTokenLifetimeMinutes),
             new GoogleLoginUser
             {
                 Email = user.Credentials.Email,

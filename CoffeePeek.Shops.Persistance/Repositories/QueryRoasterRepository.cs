@@ -10,7 +10,10 @@ public class QueryRoasterRepository(ShopsDbContext dbContext) : IQueryRoasterRep
     
     public Task<Roaster[]> GetAll()
     {
-        return _repository.AsNoTracking().ToArrayAsync();
+        return _repository
+            .AsNoTracking()
+            .Include(r => r.Photos)
+            .ToArrayAsync();
     }
 
     public async Task<IEnumerable<Roaster>> GetByIds(List<Guid> ids, CancellationToken ct)
@@ -19,4 +22,35 @@ public class QueryRoasterRepository(ShopsDbContext dbContext) : IQueryRoasterRep
             .Where(x => ids.Contains(x.Id))
             .ToListAsync(ct);
     }
+
+    public Task<Roaster?> GetByIdWithShopsAndPhotosAsync(Guid id, CancellationToken ct = default) =>
+        _repository
+            .AsNoTracking()
+            .Include(r => r.CoffeeShops)
+                .ThenInclude(s => s.ShopPhotos)
+            .Include(r => r.Photos)
+            .AsSplitQuery()
+            .FirstOrDefaultAsync(r => r.Id == id, ct);
+
+    public Task<Guid?> GetIdByModerationId(Guid id, CancellationToken ct = default) =>
+        _repository
+            .AsNoTracking()
+            .Where(r => r.ModerationId == id)
+            .Select(r => (Guid?)r.Id)
+            .FirstOrDefaultAsync(ct);
+}
+
+public class RoasterRepository(ShopsDbContext dbContext) : IRoasterRepository
+{
+    public Task<Roaster?> GetByIdAsync(Guid id, CancellationToken ct = default) =>
+        dbContext.Roasters
+            .Include(r => r.Photos)
+            .FirstOrDefaultAsync(r => r.Id == id, ct);
+
+    public Task<Roaster?> GetByNameAsync(string name, CancellationToken ct = default) =>
+        dbContext.Roasters.FirstOrDefaultAsync(r => EF.Functions.ILike(r.Name, name), ct);
+
+    public void Add(Roaster roaster) => dbContext.Roasters.Add(roaster);
+
+    public void Remove(Roaster roaster) => dbContext.Roasters.Remove(roaster);
 }

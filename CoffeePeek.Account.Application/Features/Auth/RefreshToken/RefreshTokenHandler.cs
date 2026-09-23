@@ -35,6 +35,9 @@ public class RefreshTokenHandler
 
         await unitOfWork.SaveChangesAsync(ct);
         
-        return Response<RefreshTokenResponse>.Success(new RefreshTokenResponse(newAccessToken, newRefreshTokenValue));
+        return Response<RefreshTokenResponse>.Success(new RefreshTokenResponse(
+            newAccessToken,
+            newRefreshTokenValue,
+            DateTime.UtcNow.AddMinutes(jwtOptions.Value.AccessTokenLifetimeMinutes)));
     }
 }

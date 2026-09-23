@@ -1,11 +1,14 @@
 using System.Text;
+using CoffeePeek.Gateway.Authentication;
 using CoffeePeek.Shared.Auth.Options;
 using CoffeePeek.Shared.Auth.Constants;
 using CoffeePeek.Shared.Kernel.Extentions;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 
 namespace CoffeePeek.Gateway.Extensions;
@@ -16,6 +19,9 @@ namespace CoffeePeek.Gateway.Extensions;
 /// </summary>
 public static class AuthExtensions
 {
+    public const string AppReleaseAutomationScheme = nameof(AppReleaseAutomationScheme);
+    public const string AppReleaseAutomationPolicy = nameof(AppReleaseAutomationPolicy);
+
     /// <summary>
     /// Registers JWT Bearer authentication and all role-based authorization policies.
     /// </summary>
@@ -33,9 +39,16 @@ public static class AuthExtensions
         services.AddOptions<GatewayAuthOptions>()
             .Bind(configuration.GetSection(GatewayAuthOptions.SectionName))
             .ValidateDataAnnotations()
+            .Validate(
+                options => GatewayAuthOptions.IsAllowedIn(options, environment.IsDevelopment()),
+                "GatewayAuth:SecretKey must be overridden outside Development.")
             .ValidateOnStart();
 
         var authOptions = services.AddValidateOptions<JWTOptions>();
+        services.AddScoped<UserRevocationTokenValidator>();
+
+        services.AddOptions<AppReleaseAutomationOptions>()
+            .Bind(configuration.GetSection(AppReleaseAutomationOptions.SectionName));
 
         services.AddAuthentication(options =>
         {
@@ -59,6 +72,22 @@ public static class AuthExtensions
                     }
 
                     return Task.CompletedTask;
+                },
+                OnTokenValidated = async context =>
+                {
+                    try
+                    {
+                        var validator = context.HttpContext.RequestServices
+                            .GetRequiredService<UserRevocationTokenValidator>();
+                        if (!await validator.IsAcceptedAsync(
+                                context.Principal!,
+                                context.HttpContext.RequestAborted))
+                            context.Fail("The access token is no longer valid.");
+                    }
+                    catch
+                    {
+                        context.Fail("Access-token revocation could not be verified.");
+                    }
                 }
             };
             x.TokenValidationParameters = new TokenValidationParameters
@@ -73,7 +102,10 @@ public static class AuthExtensions
                 ClockSkew = TimeSpan.Zero,
                 RoleClaimType = "http://schemas.microsoft.com/ws/2008/06/identity/claims/role",
             };
-        });
+        })
+        .AddScheme<AuthenticationSchemeOptions, AppReleaseAutomationAuthenticationHandler>(
+            AppReleaseAutomationScheme,
+            null);
 
         services.AddAuthorizationBuilder()
             .AddPolicy("Authenticated",       policy => policy.RequireAuthenticatedUser())
@@ -82,7 +114,14 @@ public static class AuthExtensions
             .AddPolicy(RoleConsts.User,       policy => policy.RequireRole(RoleConsts.User))
             .AddPolicy(RoleConsts.Moderator,  policy => policy.RequireRole(RoleConsts.Moderator, RoleConsts.Admin))
             .AddPolicy(RoleConsts.Employee,   policy => policy.RequireRole(RoleConsts.Employee))
-            .AddPolicy(RoleConsts.Roaster,    policy => policy.RequireRole(RoleConsts.Roaster));
+            .AddPolicy(RoleConsts.Roaster,    policy => policy.RequireRole(RoleConsts.Roaster))
+            .AddPolicy(AppReleaseAutomationPolicy, policy =>
+            {
+                policy.AddAuthenticationSchemes(
+                    JwtBearerDefaults.AuthenticationScheme,
+                    AppReleaseAutomationScheme);
+                policy.RequireRole(RoleConsts.Admin);
+            });
 
         return services;
     }

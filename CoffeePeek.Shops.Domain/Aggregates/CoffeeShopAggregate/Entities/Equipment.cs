@@ -39,6 +39,19 @@ public class Equipment : Entity<Guid>
         Name = $"{Brand} {ModelName}";
     }
 
+    public void Update(string brand, string modelName, EquipmentCategory category)
+    {
+        if (string.IsNullOrWhiteSpace(brand)) throw new ArgumentException("Brand is required");
+        if (string.IsNullOrWhiteSpace(modelName)) throw new ArgumentException("Model name is required");
+
+        Brand = brand;
+        ModelName = modelName;
+        Category = category;
+        CategoryId = category.Id;
+
+        Name = $"{Brand} {ModelName}";
+    }
+
     public void MarkAsPrimary() => IsPrimary = true;
     public void UnmarkAsPrimary() => IsPrimary = false;
     

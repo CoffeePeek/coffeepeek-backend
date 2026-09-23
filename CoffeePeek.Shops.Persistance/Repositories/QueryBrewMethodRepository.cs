@@ -21,3 +21,16 @@ public class QueryBrewMethodRepository(ShopsDbContext dbContext) : IQueryBrewMet
             .ToListAsync(ct);
     }
 }
+
+public class BrewMethodRepository(ShopsDbContext dbContext) : IBrewMethodRepository
+{
+    public Task<BrewMethod?> GetByIdAsync(Guid id, CancellationToken ct = default) =>
+        dbContext.BrewMethods.FirstOrDefaultAsync(b => b.Id == id, ct);
+
+    public Task<BrewMethod?> GetByNameAsync(string name, CancellationToken ct = default) =>
+        dbContext.BrewMethods.FirstOrDefaultAsync(b => EF.Functions.ILike(b.Name, name), ct);
+
+    public void Add(BrewMethod brewMethod) => dbContext.BrewMethods.Add(brewMethod);
+
+    public void Remove(BrewMethod brewMethod) => dbContext.BrewMethods.Remove(brewMethod);
+}

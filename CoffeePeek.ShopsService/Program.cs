@@ -1,4 +1,5 @@
 using CoffeePeek.ShopsService;
+using JasperFx;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -8,4 +9,4 @@ var app = builder.Build();
 
 app.UseApplication();
 
-app.Run();
+return await app.RunJasperFxCommands(args);

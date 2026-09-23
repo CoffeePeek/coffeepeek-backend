@@ -95,6 +95,14 @@ public class UserTests
     }
 
     [Fact]
+    public void CreateExternal_WithCyrillicEmailLocalPart_ShouldPreserveCyrillicUsername()
+    {
+        var user = User.CreateExternal("иван@example.com", "google", "provider-id");
+
+        user.Username.Value.Should().Be("иван");
+    }
+
+    [Fact]
     public void ChangePassword_ShouldRevokeAllRefreshSessions()
     {
         var user = User.Register("test@example.com", "testuser", "old_hash", Role.Create("User"));

@@ -31,6 +31,7 @@ public class MapController(IMessageBus bus) : ControllerBase
     /// <param name="minLon">Minimum longitude (Western boundary)</param>
     /// <param name="maxLat">Maximum latitude (Northern boundary)</param>
     /// <param name="maxLon">Maximum longitude (Eastern boundary)</param>
+    /// <param name="zoom">Optional map zoom. Omit it to preserve the legacy flat-marker response.</param>
     /// <response code="200">Returns a list of shops found within the specified area</response>
     /// <response code="400">Invalid coordinates or bounding box geometry</response>
     [HttpGet]
@@ -41,16 +42,18 @@ public class MapController(IMessageBus bus) : ControllerBase
         [FromQuery] [Range(-90, 90)] decimal minLat,
         [FromQuery] [Range(-180, 180)] decimal minLon,
         [FromQuery] [Range(-90, 90)] decimal maxLat,
-        [FromQuery] [Range(-180, 180)] decimal maxLon)
+        [FromQuery] [Range(-180, 180)] decimal maxLon,
+        [FromQuery] [Range(0, 22)] int? zoom = null,
+        CancellationToken ct = default)
     {
         if (minLat > maxLat || minLon > maxLon)
         {
             return BadRequest(Response<GetShopsInBoundsResponse>.Error("Invalid bounds: min values must be less than or equal to max values"));
         }
 
-        var query = new GetShopsInBoundsQuery(minLat, minLon, maxLat, maxLon);
+        var query = new GetShopsInBoundsQuery(minLat, minLon, maxLat, maxLon, zoom);
         
-        var response = await bus.InvokeAsync<Response<GetShopsInBoundsResponse>>(query);
+        var response = await bus.InvokeAsync<Response<GetShopsInBoundsResponse>>(query, ct);
         return Ok(response);
     }
 }

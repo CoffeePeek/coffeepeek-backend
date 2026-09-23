@@ -9,23 +9,31 @@ public sealed partial class ModerationShop
 {
     public static ModerationShop Create(
         string name,
-        Guid userId,
+        Guid? userId,
         Guid cityId,
         string? description,
         CoffeeFocus? coffeeFocus = null)
     {
-        if (string.IsNullOrWhiteSpace(name)) throw new DomainException("Name is required");
-
         return new ModerationShop
         {
             Id = Guid.NewGuid(),
-            Name = name,
+            Name = ValidateName(name),
             UserId = userId,
             CityId = cityId,
             Description = description,
             CoffeeFocus = coffeeFocus,
             ModerationStatus = ModerationStatus.Pending,
         };
+    }
+
+    private static string ValidateName(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name)) throw new DomainException("Name is required");
+
+        var trimmed = name.Trim();
+        if (trimmed.Length > BusinessConstants.MaxShopNameLength)
+            throw new DomainException($"Name cannot exceed {BusinessConstants.MaxShopNameLength} characters.");
+        return trimmed;
     }
 
     public void SetLocation(ModerationLocation moderationLocation)
@@ -37,6 +45,15 @@ public sealed partial class ModerationShop
     {
         var photo = PhotoMetadata.Create(fileName, contentType, storageKey, length, UserId, Id);
         _shopPhotos.Add(photo);
+    }
+
+    /// <summary>Removes gallery photos whose storage key is not in <paramref name="keptStorageKeys"/>.</summary>
+    /// <returns>The removed photos, so the caller can release their storage objects.</returns>
+    public IReadOnlyList<PhotoMetadata> RemovePhotosExcept(IReadOnlySet<string> keptStorageKeys)
+    {
+        var removed = _shopPhotos.Where(p => !keptStorageKeys.Contains(p.StorageKey)).ToList();
+        _shopPhotos.RemoveAll(p => !keptStorageKeys.Contains(p.StorageKey));
+        return removed;
     }
 
     public void AttachMenuPhotos(
@@ -82,8 +99,8 @@ public sealed partial class ModerationShop
         Guid? cityId,
         CoffeeFocus? coffeeFocus)
     {
-        if (name != null) 
-            Name = name;
+        if (name != null)
+            Name = ValidateName(name);
         
         if (description != null) 
             Description = description;
@@ -162,21 +179,21 @@ public sealed partial class ModerationShop
 
     public void Reject(string reason)
     {
+        // An approved shop is already published to the catalog; rejecting it here would leave it live.
+        if (ModerationStatus == ModerationStatus.Approved)
+            throw new DomainException("Approved shop is already published and cannot be rejected.");
+
+        if (string.IsNullOrWhiteSpace(reason))
+            throw new DomainException("Reject reason is required.");
+
+        if (reason.Length is < BusinessConstants.MinRejectReasonCommentLength or > BusinessConstants.MaxRejectReasonCommentLength)
+            throw new DomainException(
+                $"{nameof(reason)} must be between {BusinessConstants.MinRejectReasonCommentLength} and {BusinessConstants.MaxRejectReasonCommentLength} characters.");
+
         ModerationStatus = ModerationStatus.Rejected;
         RejectedReason = reason;
     }
 
-    public void SetShopId(Guid shopId)
-    {
-        if (shopId == Guid.Empty)
-            throw new DomainException($"{nameof(shopId)} cannot be empty.");
-
-        if (ShopId == shopId)
-            return;
-
-        ShopId = shopId;
-    }
-    
     private static void UpdateCollection<TJoinEntity>(
         List<TJoinEntity> currentCollection,
         IEnumerable<Guid>? newIds,

@@ -8,10 +8,10 @@ using Wolverine;
 
 namespace CoffeePeek.ShopsService.Controllers;
 
-/// <summary>Admin CRUD for the global shop filter-tag catalog.</summary>
+/// <summary>Admin/Moderator CRUD for the global shop filter-tag catalog.</summary>
 [ApiController]
 [Route("api/admin/shop-tags")]
-[Authorize(Policy = RoleConsts.Admin)]
+[Authorize(Policy = RoleConsts.Moderator)]
 [Tags("Admin")]
 [ProducesErrorResponseType(typeof(ErrorResponse))]
 public class AdminShopTagsController(IMessageBus bus) : ControllerBase

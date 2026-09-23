@@ -124,44 +124,44 @@ public static class ShopImportCandidateMapper
         {
             candidate.Source switch
             {
-                DomainSource.Osm => "Источник: OpenStreetMap",
-                DomainSource.File => "Источник: файл",
-                DomainSource.CoffeeMap => "Источник: CoffeeMap",
-                _ => $"Источник: {candidate.Source}"
+                DomainSource.Osm => "Source: OpenStreetMap",
+                DomainSource.File => "Source: file",
+                DomainSource.CoffeeMap => "Source: CoffeeMap",
+                _ => $"Source: {candidate.Source}"
             }
         };
 
         if (candidate.GoogleBusinessStatus == DomainGoogle.ClosedPermanently)
-            facts.Add("Google: закрыто навсегда");
+            facts.Add("Google: permanently closed");
         else if (candidate.GoogleBusinessStatus == DomainGoogle.ClosedTemporarily)
-            facts.Add("Google: временно закрыто");
+            facts.Add("Google: temporarily closed");
         else if (candidate.GoogleBusinessStatus == DomainGoogle.Operational)
-            facts.Add("Google: работает");
+            facts.Add("Google: operational");
         else if (candidate.GoogleBusinessStatus == DomainGoogle.NotFound)
-            facts.Add("Google: заведение не найдено");
+            facts.Add("Google: place not found");
         else if (candidate.GoogleBusinessStatus == DomainGoogle.Far)
-            facts.Add("Google: ближайшее совпадение далеко от точки");
+            facts.Add("Google: nearest match is far from the point");
 
         foreach (var signal in candidate.Signals)
         {
             if (signal.StartsWith("coffeemap:google-rating=", StringComparison.Ordinal))
             {
-                facts.Add("Рейтинг Google " + signal["coffeemap:google-rating=".Length..]);
+                facts.Add("Google rating " + signal["coffeemap:google-rating=".Length..]);
                 continue;
             }
 
             if (signal is "name:to-go-chain" or "name:chain")
-                facts.Add("Похоже на сеть «с собой»");
+                facts.Add("Looks like a to-go chain");
             else if (signal is "osm:vending_machine" or "name:vending-like")
-                facts.Add("Похоже на автомат");
+                facts.Add("Looks like a vending machine");
             else if (signal is "name:canteen")
-                facts.Add("Похоже на столовую / буфет");
+                facts.Add("Looks like a canteen / buffet");
         }
 
         if (!string.IsNullOrWhiteSpace(candidate.Instagram))
-            facts.Add("Есть Instagram");
+            facts.Add("Has Instagram");
         else if (!string.IsNullOrWhiteSpace(candidate.Website))
-            facts.Add("Есть сайт");
+            facts.Add("Has a website");
 
         return facts;
     }

@@ -11,7 +11,7 @@ using CoffeePeek.Shared.Kernel.Options;
 using CoffeePeek.Shops.Application.Features.Admin.Shops;
 using CoffeePeek.Shops.Application.Features.CoffeeShop.ShopProfile;
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
-using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate.Repositories;
+using CoffeePeek.Shops.Domain.Entities;
 using FluentAssertions;
 using Microsoft.Extensions.Options;
 using Moq;
@@ -128,6 +128,26 @@ public class UpdateAdminCoffeeShopHandlerTests
         result.StatusCode.Should().Be((int)HttpStatusCode.BadRequest);
         result.Message.Should().Contain("equipment");
     }
+
+    [Fact]
+    public async Task SetVisibility_InvalidatesSearchCache()
+    {
+        var shop = new DomainCoffeeShop(Guid.NewGuid(), "Shop", null, DomainPriceRange.Cheap, Guid.NewGuid());
+        _shops.Setup(r => r.GetByIdAsync(shop.Id, _ct)).ReturnsAsync(shop);
+
+        var result = await SetAdminCoffeeShopVisibilityHandler.Handle(
+            new SetAdminCoffeeShopVisibilityCommand(shop.Id, Hidden: true),
+            _shops.Object,
+            _uow.Object,
+            _cache.Object,
+            _media,
+            _ct);
+
+        result.IsSuccess.Should().BeTrue();
+        _cache.Verify(
+            c => c.RemoveByPattern(CacheKey.Shop.SearchPattern(), _ct),
+            Times.Once);
+    }
 }
 
 public class PublishedShopPhotosHandlerTests
@@ -146,6 +166,7 @@ public class PublishedShopPhotosHandlerTests
     {
         _cache.Setup(c => c.RemoveAsync(It.IsAny<CacheKey>())).Returns(Task.CompletedTask);
         _cache.Setup(c => c.RemoveByPattern(It.IsAny<string>(), _ct)).ReturnsAsync(1);
+        _uow.Setup(u => u.SaveChangesAsync(_ct)).ReturnsAsync(1);
     }
 
     [Fact]
@@ -153,6 +174,11 @@ public class PublishedShopPhotosHandlerTests
     {
         var shop = new DomainCoffeeShop(Guid.NewGuid(), "Shop", null, DomainPriceRange.Cheap, Guid.NewGuid());
         var actorId = Guid.NewGuid();
+        _shops.Setup(r => r.TryAttachGalleryPhotosAsync(
+                shop.Id, null, It.IsAny<IReadOnlyList<ShopPhoto>>(), _ct))
+            .ReturnsAsync(true)
+            .Callback<Guid, Guid?, IReadOnlyList<ShopPhoto>, CancellationToken>(
+                (_, _, photos, _) => shop.AddPhotos(photos));
         _shops.Setup(r => r.GetByIdAsync(shop.Id, _ct)).ReturnsAsync(shop);
 
         var result = await AddPublishedShopPhotosHandler.Handle(
@@ -164,6 +190,7 @@ public class PublishedShopPhotosHandlerTests
         result.IsSuccess.Should().BeTrue();
         shop.ShopPhotos.Should().ContainSingle(p => p.StorageKey == "key-a" && p.OwnerId == actorId);
         result.Data!.Photos.Should().ContainSingle(p => p.StorageKey == "key-a" && p.SortIndex == 0);
+        _uow.Verify(u => u.SaveChangesAsync(_ct), Times.Once);
     }
 
     [Fact]
@@ -175,7 +202,29 @@ public class PublishedShopPhotosHandlerTests
 
         result.IsSuccess.Should().BeFalse();
         result.StatusCode.Should().Be((int)HttpStatusCode.BadRequest);
-        _shops.Verify(r => r.GetByIdAsync(It.IsAny<Guid>(), _ct), Times.Never);
+        _shops.Verify(
+            r => r.TryAttachGalleryPhotosAsync(
+                It.IsAny<Guid>(), It.IsAny<Guid?>(), It.IsAny<IReadOnlyList<ShopPhoto>>(), _ct),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task AddPhotos_UnknownShop_ReturnsNotFound()
+    {
+        var shopId = Guid.NewGuid();
+        _shops.Setup(r => r.TryAttachGalleryPhotosAsync(
+                shopId, null, It.IsAny<IReadOnlyList<ShopPhoto>>(), _ct))
+            .ReturnsAsync(false);
+
+        var result = await AddPublishedShopPhotosHandler.Handle(
+            new AddPublishedShopPhotosCommand(shopId, Guid.NewGuid(), null, [
+                new UploadedPhotoDto("a.jpg", "image/jpeg", "key-a", 12)
+            ]),
+            _shops.Object, _uow.Object, _cache.Object, _media, _ct);
+
+        result.IsSuccess.Should().BeFalse();
+        result.StatusCode.Should().Be((int)HttpStatusCode.NotFound);
+        _uow.Verify(u => u.SaveChangesAsync(_ct), Times.Never);
     }
 
     [Fact]

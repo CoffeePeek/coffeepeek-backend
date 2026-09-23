@@ -11,28 +11,28 @@ scope: medium — Moderation admin queue + OSM collector + approve→Shops path
 
 ## Why This Matters
 
-Без кофеен в БД CoffeePeek пустой. Нужен контролируемый bootstrap: широкий сбор кандидатов (OSM + списки) → админ-очередь с категорией Kind → в ленту все одобренные (не только specialty). Ручной этап на малой выборке, затем автофильтр.
+Without coffee shops in the DB, CoffeePeek is empty. We need a controlled bootstrap: broad candidate collection (OSM + lists) → admin queue with a Kind category → all approved shops go to the feed (not only specialty). A manual pass on a small sample first, then an auto-filter.
 
 ## When to Surface
 
 **Trigger:** when starting catalog content bootstrap or a "shops data / import" milestone
 
-Поверхность при `/gsd:new-milestone`, если в scope есть наполнение шопов, импорт, OSM, админ-модерация кандидатов.
+Surface during `/gsd:new-milestone` if the scope includes shop population, import, OSM, or admin moderation of candidates.
 
 ## Scope Estimate
 
-**Medium** — новая (или расширенная) сущность кандидатов в Moderation, админ API/UI-контракты, OSM Overpass collector, approve → создание `CoffeeShop`, позже scoring/автофильтр. Без хранения Yandex Places org payloads.
+**Medium** — a new (or extended) candidate entity in Moderation, admin API/UI contracts, an OSM Overpass collector, approve → create `CoffeeShop`, later scoring/auto-filter. No storage of Yandex Places org payloads.
 
 ## Breadcrumbs
 
 - `.planning/notes/2026-08-15-specialty-coffee-shops-minsk-import.md`
-- `CoffeePeek.Moderation.*` — очередь модерации шопов
-- `CoffeePeek.Moderation.Infrastructure/External/Yandex/` — только geocode
-- `CoffeePeek.Shops.Domain` — `CoffeeShop` (прод после approve)
-- Research: Yandex Places требует storage license; MVP = OSM + lists
+- `CoffeePeek.Moderation.*` — shop moderation queue
+- `CoffeePeek.Moderation.Infrastructure/External/Yandex/` — geocode only
+- `CoffeePeek.Shops.Domain` — `CoffeeShop` (production after approve)
+- Research: Yandex Places requires a storage license; MVP = OSM + lists
 
 ## Not in this seed
 
-- Импорт зёрен / tasting notes
-- HTML-scrape Яндекс.Карт
+- Coffee bean import / tasting notes
+- HTML scraping of Yandex Maps
 - Persist Yandex Organization Search results without proper license

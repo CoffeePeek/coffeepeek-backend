@@ -18,14 +18,15 @@ public abstract class BaseReviewValidationStrategy
         return ValidationResult.Valid;
     }
 
-    protected static ValidationResult ValidateHeader(string header)
+    protected static ValidationResult ValidateHeader(string? header)
     {
         if (string.IsNullOrWhiteSpace(header))
         {
-            return ValidationResult.Invalid("Header is required");
+            return ValidationResult.Valid;
         }
 
-        if (header.Length is < MinHeaderLength or > MaxHeaderLength)
+        var trimmedHeader = header.Trim();
+        if (trimmedHeader.Length is < MinHeaderLength or > MaxHeaderLength)
         {
             return ValidationResult.Invalid($"Header must be between {MinHeaderLength} and {MaxHeaderLength} characters");
         }

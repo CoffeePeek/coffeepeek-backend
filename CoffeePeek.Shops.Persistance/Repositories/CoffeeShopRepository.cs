@@ -1,5 +1,5 @@
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
-using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate.Repositories;
+using CoffeePeek.Shops.Domain.Entities;
 using CoffeePeek.Shops.Persistance.Configuration;
 using Microsoft.EntityFrameworkCore;
 
@@ -7,6 +7,8 @@ namespace CoffeePeek.Shops.Persistance.Repositories;
 
 public class CoffeeShopRepository(ShopsDbContext dbContext) : ICoffeeShopRepository
 {
+    private const string CoffeeShopIdShadow = "CoffeeShopId";
+
     public Task<CoffeeShop?> GetByIdAsync(Guid id, CancellationToken ct = default)
     {
         return QueryForMutation(dbContext.Shops)
@@ -40,6 +42,35 @@ public class CoffeeShopRepository(ShopsDbContext dbContext) : ICoffeeShopReposit
 
         await LoadCatalogsAsync(shop, ct);
         return shop;
+    }
+
+    public async Task<bool> TryAttachGalleryPhotosAsync(
+        Guid shopId,
+        Guid? ownerUserId,
+        IReadOnlyList<ShopPhoto> photos,
+        CancellationToken ct = default)
+    {
+        var existsQuery = dbContext.Shops.AsNoTracking().Where(s => s.Id == shopId);
+        if (ownerUserId is Guid owner)
+            existsQuery = existsQuery.Where(s => s.OwnerUserId == owner);
+
+        if (!await existsQuery.AnyAsync(ct))
+            return false;
+
+        var maxSort = await dbContext.ShopPhotos
+            .Where(p => EF.Property<Guid?>(p, CoffeeShopIdShadow) == shopId)
+            .Select(p => (int?)p.SortIndex)
+            .MaxAsync(ct) ?? -1;
+
+        var nextIndex = maxSort + 1;
+        foreach (var photo in photos)
+        {
+            photo.SetSortIndex(nextIndex++);
+            dbContext.ShopPhotos.Add(photo);
+            dbContext.Entry(photo).Property(CoffeeShopIdShadow).CurrentValue = shopId;
+        }
+
+        return true;
     }
 
     /// <summary>

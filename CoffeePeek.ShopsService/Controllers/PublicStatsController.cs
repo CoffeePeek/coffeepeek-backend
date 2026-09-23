@@ -20,7 +20,7 @@ public class PublicStatsController(IMessageBus bus) : ControllerBase
     /// and the average review rating.
     /// </summary>
     [HttpGet]
-    [ResponseCache(Duration = 300, Location = ResponseCacheLocation.Any)]
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
     [ProducesResponseType<Response<PublicPlatformStatsDto>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetStats(CancellationToken cancellationToken)
     {

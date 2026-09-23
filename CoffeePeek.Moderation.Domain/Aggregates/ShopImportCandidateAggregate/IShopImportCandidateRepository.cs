@@ -4,6 +4,8 @@ public interface IShopImportCandidateRepository
 {
     Task<ShopImportCandidate?> GetByIdAsync(Guid id, CancellationToken ct = default);
 
+    Task<ShopImportCandidate?> GetById(Guid id, CancellationToken ct = default);
+
     Task<IReadOnlyDictionary<Guid, ShopImportCandidate>> GetByIdsAsync(
         IReadOnlyCollection<Guid> ids,
         CancellationToken ct = default);

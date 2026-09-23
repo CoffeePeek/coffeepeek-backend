@@ -1,5 +1,6 @@
 ﻿using CoffeePeek.Moderation.Domain.Aggregates.ModerationReviewAggregate;
 using CoffeePeek.Moderation.Domain.Common.Enums;
+using CoffeePeek.Moderation.Domain.Import;
 using CoffeeShop.Moderation.Persistence.Configuration;
 using Microsoft.EntityFrameworkCore;
 
@@ -35,11 +36,11 @@ public class QueryModerationReviewRepository(ModerationDbContext dbContext) : IQ
 
         if (!string.IsNullOrWhiteSpace(search))
         {
-            var term = search.Trim().ToLowerInvariant();
+            var term = ImportCandidateTextSearch.ToILikeContainsPattern(search);
             query = query.Where(r =>
-                r.Header.ToLower().Contains(term) ||
-                r.Comment.ToLower().Contains(term) ||
-                r.UserName.ToLower().Contains(term));
+                EF.Functions.ILike(r.Header ?? string.Empty, term, "\\") ||
+                EF.Functions.ILike(r.Comment, term, "\\") ||
+                EF.Functions.ILike(r.UserName, term, "\\"));
         }
 
         var totalCount = await query.CountAsync(ct);

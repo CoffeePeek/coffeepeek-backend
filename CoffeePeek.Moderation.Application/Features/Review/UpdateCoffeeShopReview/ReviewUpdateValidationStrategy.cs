@@ -14,10 +14,7 @@ public class ReviewUpdateValidationStrategy : BaseReviewValidationStrategy, IVal
         }
 
         var headerValidation = ValidateHeader(entity.Header);
-        if (!headerValidation.IsValid)
-        {
-            return headerValidation;
-        }
+        if (!headerValidation.IsValid) return headerValidation;
 
         var commentValidation = ValidateComment(entity.Comment);
         if (!commentValidation.IsValid)

@@ -27,9 +27,9 @@ The spike mixed four different ideas on one row of buttons:
 | Spike button | What it actually was | Keep? |
 |--------------|----------------------|--------|
 | Specialty / good coffee / decent cafe | **Coffee focus** (who is this place for?) | Yes — 3 values, required to publish |
-| С собой / сеть | **Format** (how you use it) | Yes — optional **tag**, not a rival of specialty |
-| Не в ленту | **Visibility** (publish vs reject) | Yes — queue action, not a type of shop |
-| Позже | **Workflow** (skip) | Yes — queue action, not a type of shop |
+| С собой / сеть (takeaway / chain) | **Format** (how you use it) | Yes — optional **tag**, not a rival of specialty |
+| Не в ленту (not in feed) | **Visibility** (publish vs reject) | Yes — queue action, not a type of shop |
+| Позже (later) | **Workflow** (skip) | Yes — queue action, not a type of shop |
 
 A specialty bar can be takeaway. A cafe can be laptop-friendly. Reject is not a kind of coffee.
 
@@ -43,7 +43,7 @@ A specialty bar can be takeaway. A cafe can be laptop-friendly. Reject is not a 
 
 - **Published** → shop is in the user feed.
 - **Rejected** → not in the feed; keep the row so OSM re-fetch does not resurrect it.
-- **Skipped** → back of the queue (“позже”).
+- **Skipped** → back of the queue (“позже” / later).
 - **Pending** → not decided.
 
 ### 2. Coffee focus — exactly one, required to publish, **public filter**
@@ -53,8 +53,8 @@ This is the only “category” the end user cares about for coffee quality.
 | Slug | UI (ru) | UI (en) | Meaning |
 |------|---------|---------|---------|
 | `specialty` | Specialty | Specialty | Third wave / roastery / origin-focused. Also assign existing ShopTag `specialty`. |
-| `coffee_bar` | Кофейня | Coffee bar | Coffee is the product. Not claiming specialty. Spike “хороший кофе”. |
-| `cafe` | Кафе | Cafe | Food/atmosphere first; coffee still worth listing. Spike “кафе с достойным кофе”. |
+| `coffee_bar` | Кофейня | Coffee bar | Coffee is the product. Not claiming specialty. Spike “хороший кофе” (good coffee). |
+| `cafe` | Кафе | Cafe | Food/atmosphere first; coffee still worth listing. Spike “кафе с достойным кофе” (cafe with decent coffee). |
 
 Store as `CoffeeFocus` enum on the **published** `CoffeeShop` (and on the candidate after decide).  
 Do **not** make these three mutually exclusive ShopTags only — tags are many, focus is one.  
@@ -185,23 +185,23 @@ Admin
 **One shop per screen.** Layout:
 
 1. **Research first** (auto-open or one-click, large):
-   - **Открыть в Google** — `googleMapsUri` if we have a match, else maps search `name + coords`
+   - **Открыть в Google** (Open in Google) — `googleMapsUri` if we have a match, else maps search `name + coords`
    - **Instagram** — OSM handle or search fallback
-   - **Яндекс · карточка** — photos / closed flag with their eyes
-   - **Яндекс · картинки**
+   - **Яндекс · карточка** (Yandex place card) — photos / closed flag with their eyes
+   - **Яндекс · картинки** (Yandex images)
    - OSM history
-2. **Dossier** (from our API, not from Google dump): name, address, cuisine, hours, phone, website, OSM last edit + age, collector bucket, Google status badge (работает / закрыто / не найдено).
+2. **Dossier** (from our API, not from Google dump): name, address, cuisine, hours, phone, website, OSM last edit + age, collector bucket, Google status badge (работает / закрыто / не найдено = open / closed / not found).
 3. **Optional preview** of own website `og:image` if website exists (nice-to-have).
 4. **Then tags / focus** — only after they looked:
-   - Required: Coffee focus (3 radios): Specialty · Кофейня · Кафе
+   - Required: Coffee focus (3 radios): Specialty · Кофейня (coffee bar) · Кафе (cafe)
    - Optional chips: to_go, roastery, bakery, laptop_friendly, pet_friendly, pour_over, quiet_work
 5. **Actions** (not categories):
-   - **В ленту** (publish) — disabled until focus chosen
-   - **Не в ленту** (reject)
-   - **Позже** (skip)
+   - **В ленту** (to feed; publish) — disabled until focus chosen
+   - **Не в ленту** (not in feed; reject)
+   - **Позже** (later; skip)
 6. Keyboard: `1/2/3` focus, `Enter` publish, `R` reject, `S` skip.
 
-Do **not** show “хороший кофе / кафе с достойным / с собой / не в ленте / позже” as one equal row. Split **focus** vs **actions** vs **tags**.
+Do **not** show “хороший кофе / кафе с достойным / с собой / не в ленте / позже” (good coffee / decent cafe / takeaway / not in feed / later) as one equal row. Split **focus** vs **actions** vs **tags**.
 
 Default inbox filter: Pending + collector bucket `priority` (coffee signal). Do not force all 1419.
 
@@ -223,9 +223,9 @@ If decisions JSON is applied, those 12 already appear under **Published shops** 
 ### Visual / UX notes for the drawing agent
 
 - Dark coffee dossier is fine; keep research buttons **above** the fold.
-- Opening Google + Instagram + Yandex in new tabs on “Исследовать” is OK; do not iframe Instagram (blocked).
+- Opening Google + Instagram + Yandex in new tabs on “Исследовать” (Research) is OK; do not iframe Instagram (blocked).
 - Google/Yandex map widgets are optional; **links are mandatory**.
-- Empty OSM name `(unnamed)`: show brand or “без имени” + force Google/Yandex first; publishing without a real name is blocked.
+- Empty OSM name `(unnamed)`: show brand or “без имени” (unnamed) + force Google/Yandex first; publishing without a real name is blocked.
 - Russian UI copy.
 
 ### Frontend does not
@@ -248,7 +248,7 @@ If decisions JSON is applied, those 12 already appear under **Published shops** 
 ## Success
 
 - Moderator can finish a card without hunting URLs.
-- User can filter feed by Specialty / Кофейня / Кафе and amenity/format tags.
+- User can filter feed by coffee focus (Specialty / Coffee bar / Cafe) and amenity/format tags.
 - Rejected and stale OSM rows never hit the public feed.
 - Owner shop moderation stays a separate list.
 - Google/Yandex are validators and research tabs, not our database of record.

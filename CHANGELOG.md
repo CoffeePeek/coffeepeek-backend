@@ -18,25 +18,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **Предложение кофейни** — клиентский сценарий с progressive-form UX: обязательные поля (`название`, `адрес`, `город`) + опциональные секции, раскрываемые по желанию.
-- **Загрузка фотографий для предложения кофейни** — presigned upload flow (`api/Photos/shop`) с последующей отправкой на модерацию (`api/ModerationShops`).
-- **Создание и удаление отзывов** на странице деталей кофейни: форма оценки (`место/сервис/кофе`) + комментарий, удаление только собственных отзывов.
-- **Панель модератора** — отображается в шапке при наличии роли `Moderator` в JWT; очереди кофеен и отзывов с бэка, смена статусов, разбор `role` claim из токена и unit-тесты.
-- **Новый HTTP-клиент модерации** в клиентском приложении с unit-тестами для ViewModel и WebClient сценариев.
-- **CI/CD: деплой Avalonia Browser (WASM) на Vercel** — workflow публикует `dist/wwwroot` Release-сборки; preview на `dev`, продакшн на `main`.
+- **Coffee shop suggestion** — client flow with progressive-form UX: required fields (`name`, `address`, `city`) + optional sections expanded on demand.
+- **Photo upload for coffee shop suggestions** — presigned upload flow (`api/Photos/shop`) followed by submission to moderation (`api/ModerationShops`).
+- **Creating and deleting reviews** on the coffee shop details page: rating form (`place/service/coffee`) + comment; users can delete only their own reviews.
+- **Moderator panel** — shown in the header when the JWT contains the `Moderator` role; coffee shop and review queues from the backend, status changes, parsing of the `role` claim from the token, and unit tests.
+- **New moderation HTTP client** in the client app with unit tests for ViewModel and WebClient scenarios.
+- **CI/CD: Avalonia Browser (WASM) deployment to Vercel** — the workflow publishes `dist/wwwroot` of the Release build; preview on `dev`, production on `main`.
 
 ### Changed
 
-- **Редизайн домашней страницы** — bento-grid layout, обновлённая цветовая схема и design system (`Resources/Styles`, `Resources/Themes`).
-- **Обработка ошибок в auth-слое** — встроенные ошибки заменены на `DomainException` во всех обработчиках auth (login, logout, register, refresh, confirm email, Google OAuth).
-- **Логика переключения языка** — переработана поддержка мультиязычности в клиентском приложении.
-- **AppHost** — Avalonia Desktop/Android исключены из Aspire-оркестрации; проект переориентирован на Browser (WASM).
+- **Home page redesign** — bento-grid layout, updated color scheme and design system (`Resources/Styles`, `Resources/Themes`).
+- **Auth-layer error handling** — built-in errors replaced with `DomainException` in all auth handlers (login, logout, register, refresh, confirm email, Google OAuth).
+- **Language switching logic** — reworked multi-language support in the client app.
+- **AppHost** — Avalonia Desktop/Android excluded from Aspire orchestration; the project was refocused on Browser (WASM).
 
 ### Fixed
 
-- Миграции Account DB Context обновлены под актуальную схему.
-- Исправлена конфигурация Vercel CLI в CI/CD workflow.
-- Удалены `appsettings.Development.json` из auth-сервисных проектов (секреты не должны коммититься).
+- Account DB Context migrations updated to match the current schema.
+- Fixed Vercel CLI configuration in the CI/CD workflow.
+- Removed `appsettings.Development.json` from auth service projects (secrets must not be committed).
 
 ## [v0.2.1] - 2026-05-09
 
@@ -61,58 +61,58 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Централизованное управление версиями API через `ApiVersions.cs`.
-- Поддержка версионирования через заголовок `X-Api-Version`.
-- Новая версия API `V2.0` для `UsersController` (регистрация, поиск, профиль).
-- Расширения Swagger для автоматической генерации документации по версиям.
-- `ClaimsPrincipalExtensions` для безопасного извлечения `UserId`.
-- Реализован флоу Login с поддержкой JWT и Refresh токенов.
-- Добавлен клиентский HTTP pipeline и инфраструктура пользовательского контекста.
-- Добавлено клиентское приложение, включая Android-конфигурацию и подключение frontend к Aspire.
-- Добавлен клиент кофеен: поиск, каталог городов и отображение реальных данных на странице кофеен.
-- Добавлен экран деталей кофейни с расписанием, контактами, отзывами, тегами, рейтингом и навигацией из списка.
-- Добавлены локализации для страницы деталей кофейни.
-- Добавлены MediaService, outbox/messaging-интеграции и миграции для сервисов Account, Shops, Moderation и Media.
+- Centralized API version management via `ApiVersions.cs`.
+- Versioning support via the `X-Api-Version` header.
+- New API version `V2.0` for `UsersController` (registration, search, profile).
+- Swagger extensions for automatic per-version documentation generation.
+- `ClaimsPrincipalExtensions` for safe extraction of `UserId`.
+- Implemented the Login flow with JWT and Refresh token support.
+- Added client HTTP pipeline and user context infrastructure.
+- Added the client app, including Android configuration and connecting the frontend to Aspire.
+- Added the coffee shop client: search, city catalog, and real data on the coffee shops page.
+- Added the coffee shop details screen with schedule, contacts, reviews, tags, rating, and navigation from the list.
+- Added localizations for the coffee shop details page.
+- Added MediaService, outbox/messaging integrations, and migrations for the Account, Shops, Moderation, and Media services.
 
 ### Changed
 
-- Обновлен `AuthController`: переход на использование новых констант версионирования. Переход к REST-подходу, обновлены все эндпоинты.
-- Рефакторинг MediatR команд: `LoginRequest` и `RefreshTokenCommand` обновлены для поддержки новых контрактов.
-- Оптимизированы запросы поиска кофеен и получения деталей кофейни.
-- Запрос создания отзыва удален из отдельного флоу; логика перенесена в детали кофейни `api/coffeeshops/{shopId}`.
-- Обновлена модель Equipment для улучшения specialty-направления, добавлены доменные тесты.
-- Разделена логика DI в AccountService, добавлен persistence layer.
-- Логика проверки авторизации вынесена в Gateway.
-- Общая инфраструктура переведена с MediatR/MassTransit на Wolverine там, где это применимо.
-- Обновлены Dockerfile и CI/CD pipeline для сборки сервисов, публикации образов и применения миграций.
-- Индикаторы загрузки в клиенте заменены на shimmer skeleton placeholders.
+- Updated `AuthController`: switched to the new versioning constants. Moved to a REST approach; all endpoints updated.
+- Refactored MediatR commands: `LoginRequest` and `RefreshTokenCommand` updated to support the new contracts.
+- Optimized coffee shop search and coffee shop details queries.
+- The create-review request was removed from its separate flow; the logic moved to coffee shop details `api/coffeeshops/{shopId}`.
+- Updated the Equipment model to better support the specialty focus; added domain tests.
+- Split DI logic in AccountService; added a persistence layer.
+- Authorization check logic moved to the Gateway.
+- Shared infrastructure migrated from MediatR/MassTransit to Wolverine where applicable.
+- Updated Dockerfiles and the CI/CD pipeline for building services, publishing images, and applying migrations.
+- Client loading indicators replaced with shimmer skeleton placeholders.
 
 ### Fixed
 
-- Исправлена привязка маршрутов в Gateway (YARP) для поддержки версионированных эндпоинтов.
-- Исправлены настройки Gateway, auth defaults и auth policy.
-- Исправлены проблемы сборки Wolverine assemblies, Dockerfile и тестов.
+- Fixed route binding in the Gateway (YARP) to support versioned endpoints.
+- Fixed Gateway settings, auth defaults, and auth policy.
+- Fixed build issues with Wolverine assemblies, Dockerfiles, and tests.
 
 ## [v0.1.2] - 2026-02-02
 
 ### Changed
 
-- Модель Equipment, для улучшения specialty, добавлены тесты для доменной сущности 
-- Разделена логика DI в AccountService, добавлен Persistance layer
-- Вынесена логика проверки Auth в Gateway
-- MediaService для централизации всех фотографий
+- Equipment model updated to better support specialty; added tests for the domain entity
+- Split DI logic in AccountService; added a Persistance layer
+- Moved Auth check logic to the Gateway
+- MediaService to centralize all photos
 
 ## [v0.1.1] - 2026-01-23
 
 ### Fixed
 
-- Исправлена ошибка когда пользователь мог залогиниться с неправильным паролем
+- Fixed a bug where a user could log in with a wrong password
 
 ## [v0.1.0] - 2026-01-22
 
 ### Added
 
-- Начало ведения `Changelog.md`
-- Начальная реализация микросервисов: Account, Shops, Moderation (JobVacancies was explored historically; no longer in product scope).
-- API Gateway на базе YARP.
-- Интеграция с .NET Aspire для локальной разработки.
+- Started keeping `Changelog.md`
+- Initial implementation of microservices: Account, Shops, Moderation (JobVacancies was explored historically; no longer in product scope).
+- API Gateway based on YARP.
+- .NET Aspire integration for local development.

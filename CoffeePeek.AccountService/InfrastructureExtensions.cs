@@ -9,6 +9,7 @@ using CoffeePeek.Shared.Persistence.Extensions;
 using CoffeePeek.Shared.Web.Logging;
 using CoffePeek.ServiceDefaults;
 using Serilog;
+using Resend;
 
 namespace CoffeePeek.AccountService;
 
@@ -23,7 +24,10 @@ public static class InfrastructureExtensions
         
         var applicationAssembly = typeof(RegisterUserHandler).Assembly;
         var infrastructureAssembly = typeof(CheckinCreatedHandler).Assembly;
-        builder.AddWolverine([applicationAssembly, infrastructureAssembly]);
+        builder.AddWolverine(
+            typeof(InfrastructureExtensions).Assembly,
+            [applicationAssembly, infrastructureAssembly],
+            [typeof(AccountDbContext), typeof(IResend)]);
         
         builder.Services
             .AddApplication()

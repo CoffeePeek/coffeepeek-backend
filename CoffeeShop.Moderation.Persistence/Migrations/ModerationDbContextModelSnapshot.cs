@@ -8,7 +8,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace CoffeePeek.Moderation.Infrastructure.Migrations
+namespace CoffeeShop.Moderation.Persistence.Migrations
 {
     [DbContext(typeof(ModerationDbContext))]
     partial class ModerationDbContextModelSnapshot : ModelSnapshot
@@ -64,7 +64,6 @@ namespace CoffeePeek.Moderation.Infrastructure.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Header")
-                        .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
@@ -101,19 +100,114 @@ namespace CoffeePeek.Moderation.Infrastructure.Migrations
                         .HasMaxLength(30)
                         .HasColumnType("character varying(30)");
 
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
                     b.HasKey("Id");
 
                     b.HasIndex("ModeratedBy");
 
                     b.HasIndex("ModerationShopId");
 
-                    b.HasIndex("ModerationStatus");
-
                     b.HasIndex("ShopId");
 
                     b.HasIndex("UserId");
 
+                    b.HasIndex("ModerationStatus", "CreatedAtUtc");
+
                     b.ToTable("ModerationReviews");
+                });
+
+            modelBuilder.Entity("CoffeePeek.Moderation.Domain.Aggregates.ModerationRoaster", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("About")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<Guid?>("CityId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("ModerationStatus")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("RejectedReason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("ModerationStatus", "CreatedAtUtc");
+
+                    b.ToTable("ModerationRoasters");
+                });
+
+            modelBuilder.Entity("CoffeePeek.Moderation.Domain.Aggregates.ModerationRoasterPhoto", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid?>("ModerationRoasterId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("OwnerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("SizeBytes")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("StorageKey")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ModerationRoasterId");
+
+                    b.ToTable("ModerationRoasterPhotos");
                 });
 
             modelBuilder.Entity("CoffeePeek.Moderation.Domain.Aggregates.ModerationShop", b =>
@@ -140,15 +234,15 @@ namespace CoffeePeek.Moderation.Infrastructure.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
                     b.Property<int?>("PriceRange")
                         .HasColumnType("integer");
 
                     b.Property<string>("RejectedReason")
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
 
                     b.Property<Guid>("ShopId")
                         .HasColumnType("uuid");
@@ -156,8 +250,14 @@ namespace CoffeePeek.Moderation.Infrastructure.Migrations
                     b.Property<DateTime?>("UpdatedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("UserId")
+                    b.Property<Guid?>("UserId")
                         .HasColumnType("uuid");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
 
                     b.HasKey("Id");
 
@@ -165,9 +265,11 @@ namespace CoffeePeek.Moderation.Infrastructure.Migrations
 
                     b.HasIndex("CoffeeFocus");
 
-                    b.HasIndex("ModerationStatus");
+                    b.HasIndex("ShopId");
 
                     b.HasIndex("UserId");
+
+                    b.HasIndex("ModerationStatus", "CreatedAtUtc");
 
                     b.ToTable("ModerationShops");
                 });
@@ -251,6 +353,63 @@ namespace CoffeePeek.Moderation.Infrastructure.Migrations
                     b.HasIndex("ShopId");
 
                     b.ToTable("ModerationRoasterShops");
+                });
+
+            modelBuilder.Entity("CoffeePeek.Moderation.Domain.Aggregates.ShopChangeRequestAggregate.ShopChangeRequest", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("PayloadJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<string>("RejectionReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTime?>("ReviewedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("ReviewedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Section")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("ShopId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("SubmittedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Section");
+
+                    b.HasIndex("ShopId");
+
+                    b.HasIndex("SubmittedByUserId");
+
+                    b.HasIndex("Status", "CreatedAtUtc");
+
+                    b.ToTable("ShopChangeRequests");
                 });
 
             modelBuilder.Entity("CoffeePeek.Moderation.Domain.Aggregates.ShopImportCandidateAggregate.ShopImportCandidate", b =>
@@ -358,6 +517,12 @@ namespace CoffeePeek.Moderation.Infrastructure.Migrations
                     b.Property<DateTime?>("UpdatedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
                     b.Property<string>("Website")
                         .HasMaxLength(2048)
                         .HasColumnType("character varying(2048)");
@@ -427,6 +592,57 @@ namespace CoffeePeek.Moderation.Infrastructure.Migrations
                     b.ToTable("ShopImportDuplicateSuggestions", (string)null);
                 });
 
+            modelBuilder.Entity("CoffeePeek.Moderation.Domain.Aggregates.ShopIssueReportAggregate.ShopIssueReport", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Category")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<Guid>("ReportedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("ReviewedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("ReviewedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ShopId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ReportedByUserId");
+
+                    b.HasIndex("ShopId");
+
+                    b.HasIndex("Status", "CreatedAtUtc");
+
+                    b.ToTable("ShopIssueReports");
+                });
+
             modelBuilder.Entity("CoffeePeek.Moderation.Domain.Entities.ModerationAuditLog", b =>
                 {
                     b.Property<Guid>("Id")
@@ -489,7 +705,7 @@ namespace CoffeePeek.Moderation.Infrastructure.Migrations
                     b.Property<Guid?>("ModerationShopId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("OwnerId")
+                    b.Property<Guid?>("OwnerId")
                         .HasColumnType("uuid");
 
                     b.Property<long>("SizeBytes")
@@ -558,6 +774,70 @@ namespace CoffeePeek.Moderation.Infrastructure.Migrations
 
                     b.Navigation("Rating")
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("CoffeePeek.Moderation.Domain.Aggregates.ModerationRoaster", b =>
+                {
+                    b.OwnsOne("CoffeePeek.Moderation.Domain.Aggregates.ModerationLocation", "Location", b1 =>
+                        {
+                            b1.Property<Guid>("ModerationRoasterId")
+                                .HasColumnType("uuid");
+
+                            b1.Property<string>("Address")
+                                .IsRequired()
+                                .HasColumnType("text");
+
+                            b1.Property<bool>("IsAddressValidated")
+                                .HasColumnType("boolean");
+
+                            b1.Property<decimal?>("Latitude")
+                                .HasColumnType("numeric");
+
+                            b1.Property<decimal?>("Longitude")
+                                .HasColumnType("numeric");
+
+                            b1.HasKey("ModerationRoasterId");
+
+                            b1.HasIndex("Latitude", "Longitude");
+
+                            b1.ToTable("ModerationRoasters");
+
+                            b1.WithOwner()
+                                .HasForeignKey("ModerationRoasterId");
+                        });
+
+                    b.OwnsOne("CoffeePeek.Moderation.Domain.Aggregates.ModerationRoasterContact", "Contact", b1 =>
+                        {
+                            b1.Property<Guid>("ModerationRoasterId")
+                                .HasColumnType("uuid");
+
+                            b1.Property<string>("InstagramLink")
+                                .HasMaxLength(255)
+                                .HasColumnType("character varying(255)");
+
+                            b1.Property<string>("SiteLink")
+                                .HasMaxLength(2048)
+                                .HasColumnType("character varying(2048)");
+
+                            b1.HasKey("ModerationRoasterId");
+
+                            b1.ToTable("ModerationRoasters");
+
+                            b1.WithOwner()
+                                .HasForeignKey("ModerationRoasterId");
+                        });
+
+                    b.Navigation("Contact");
+
+                    b.Navigation("Location");
+                });
+
+            modelBuilder.Entity("CoffeePeek.Moderation.Domain.Aggregates.ModerationRoasterPhoto", b =>
+                {
+                    b.HasOne("CoffeePeek.Moderation.Domain.Aggregates.ModerationRoaster", null)
+                        .WithMany("Photos")
+                        .HasForeignKey("ModerationRoasterId")
+                        .OnDelete(DeleteBehavior.Cascade);
                 });
 
             modelBuilder.Entity("CoffeePeek.Moderation.Domain.Aggregates.ModerationShop", b =>
@@ -795,11 +1075,9 @@ namespace CoffeePeek.Moderation.Infrastructure.Migrations
                             b1.Navigation("Intervals");
                         });
 
-                    b.Navigation("Contact")
-                        .IsRequired();
+                    b.Navigation("Contact");
 
-                    b.Navigation("Location")
-                        .IsRequired();
+                    b.Navigation("Location");
 
                     b.Navigation("Menu");
 
@@ -980,6 +1258,11 @@ namespace CoffeePeek.Moderation.Infrastructure.Migrations
             modelBuilder.Entity("CoffeePeek.Moderation.Domain.Aggregates.ModerationReviewAggregate.ModerationReview", b =>
                 {
                     b.Navigation("ReviewPhotos");
+                });
+
+            modelBuilder.Entity("CoffeePeek.Moderation.Domain.Aggregates.ModerationRoaster", b =>
+                {
+                    b.Navigation("Photos");
                 });
 
             modelBuilder.Entity("CoffeePeek.Moderation.Domain.Aggregates.ModerationShop", b =>

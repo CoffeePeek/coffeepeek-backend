@@ -18,6 +18,7 @@ public class SearchCoffeeShopsHandler
     {
         var searchHash = CreateSearchHash(queryRequest);
         var cacheKey = CacheKey.Shop.Search(searchHash);
+        var cacheTtl = ShopScheduleCachePolicy.UntilNextUtcMinute(DateTime.UtcNow);
 
         var cachedResponse = await redisService.GetAsync(cacheKey, async token =>
         {
@@ -31,7 +32,7 @@ public class SearchCoffeeShopsHandler
                 PageSize = queryRequest.PageSize,
                 TotalPages = (int)Math.Ceiling(totalCount / (double)queryRequest.PageSize)
             };
-        }, cancellationToken: ct);
+        }, expiration: cacheTtl, cancellationToken: ct);
         
         if (cachedResponse == null) return Response<GetCoffeeShopsResponse>.Error("Failed to retrieve coffee shop search results");
 

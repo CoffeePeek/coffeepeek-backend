@@ -21,7 +21,6 @@ namespace CoffeePeek.Shops.Persistance.Migrations
                 nullable: false,
                 defaultValue: 0);
 
-            // Backfill stable 0-based order per parent gallery by CreatedAtUtc
             migrationBuilder.Sql("""
                 UPDATE "ShopPhotos" AS sp
                 SET "SortIndex" = ranked.rn

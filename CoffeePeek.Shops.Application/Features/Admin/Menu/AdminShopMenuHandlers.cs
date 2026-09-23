@@ -9,7 +9,7 @@ using CoffeePeek.Shared.Kernel.Options;
 using CoffeePeek.Shared.Kernel.Response;
 using CoffeePeek.Shops.Application.Features.Menu;
 using CoffeePeek.Shops.Application.Services;
-using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate.Repositories;
+using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
 using CoffeePeek.Shops.Domain.Aggregates.MenuAggregate;
 using Microsoft.Extensions.Options;
 using DomainAvailability = CoffeePeek.Shops.Domain.Aggregates.MenuAggregate.MenuItemAvailability;
@@ -67,6 +67,7 @@ public static class AttachAdminShopMenuPhotosHandler
         IQueryShopMenuRepository queryMenu,
         IQueryCoffeeDrinkRepository drinks,
         IUnitOfWork unitOfWork,
+        ICacheService cacheService,
         IOptions<MediaPublicUrlOptions> mediaOptions,
         CancellationToken ct)
     {
@@ -81,6 +82,8 @@ public static class AttachAdminShopMenuPhotosHandler
             ShopMenuPhoto.Create(p.FileName, p.ContentType, p.StorageKey, p.Size)));
 
         await unitOfWork.SaveChangesAsync(ct);
+        await cacheService.RemoveAsync(CacheKey.Shop.Detail(shop.Id));
+        await cacheService.RemoveByPattern(CacheKey.Shop.SearchPattern(), ct);
 
         var catalog = await drinks.GetActiveAsync(ct);
         var dto = ShopMenuDtoFactory.FromShopMenu(
@@ -109,6 +112,7 @@ public static class ParseAdminShopMenuHandler
         IQueryShopMenuRepository queryMenu,
         IQueryCoffeeDrinkRepository drinks,
         IUnitOfWork unitOfWork,
+        ICacheService cacheService,
         IOptions<MediaPublicUrlOptions> mediaOptions,
         CancellationToken ct)
     {
@@ -122,6 +126,7 @@ public static class ParseAdminShopMenuHandler
 
         menu.MarkParsePending(DateTime.UtcNow);
         await unitOfWork.SaveChangesAsync(ct);
+        await cacheService.RemoveAsync(CacheKey.Shop.Detail(shop.Id));
 
         var catalog = await drinks.GetActiveAsync(ct);
         var dto = ShopMenuDtoFactory.FromShopMenu(
@@ -136,6 +141,46 @@ public static class ParseAdminShopMenuHandler
                 menu.Photos.Select(p => new MenuPhotoRef(
                     p.FileName, p.ContentType, p.StorageKey, p.SizeBytes, p.MediaPhotoId)).ToArray(),
                 command.UserId));
+    }
+}
+
+public record RemoveAdminShopMenuPhotosCommand(
+    Guid ShopId,
+    IReadOnlyList<Guid> PhotoIds);
+
+public static class RemoveAdminShopMenuPhotosHandler
+{
+    public static async Task<Response<AdminShopMenuDto>> Handle(
+        RemoveAdminShopMenuPhotosCommand command,
+        ICoffeeShopRepository shops,
+        IShopMenuRepository menuRepository,
+        IQueryShopMenuRepository queryMenu,
+        IQueryCoffeeDrinkRepository drinks,
+        IUnitOfWork unitOfWork,
+        ICacheService cacheService,
+        IOptions<MediaPublicUrlOptions> mediaOptions,
+        CancellationToken ct)
+    {
+        var shop = await shops.GetByIdAsync(command.ShopId, ct);
+        if (shop is null)
+            return Response<AdminShopMenuDto>.Error(HttpStatusCode.NotFound, "Shop not found.");
+
+        var menu = await menuRepository.GetTrackedByShopIdAsync(command.ShopId, ct);
+        if (menu is null)
+            return Response<AdminShopMenuDto>.Error(HttpStatusCode.NotFound, "Menu not found.");
+
+        var removed = menu.RemovePhotos(command.PhotoIds ?? []);
+        if (removed.IsFailed)
+            return Response<AdminShopMenuDto>.Error(HttpStatusCode.BadRequest, removed.Errors[0].Message);
+
+        await unitOfWork.SaveChangesAsync(ct);
+        await cacheService.RemoveAsync(CacheKey.Shop.Detail(shop.Id));
+        await cacheService.RemoveByPattern(CacheKey.Shop.SearchPattern(), ct);
+
+        var catalog = await drinks.GetActiveAsync(ct);
+        var dto = ShopMenuDtoFactory.FromShopMenu(
+            await queryMenu.GetByShopIdAsync(command.ShopId, ct), catalog, mediaOptions.Value)!;
+        return Response<AdminShopMenuDto>.Success(new AdminShopMenuDto(dto, []));
     }
 }
 
@@ -164,25 +209,22 @@ public static class UpdateAdminShopMenuHandler
 
         var catalog = await drinks.GetActiveAsync(ct);
         var bySlug = catalog.ToDictionary(d => d.Slug, StringComparer.OrdinalIgnoreCase);
-        var menu = await applyMenu.GetOrCreateAsync(command.ShopId, ct);
-
-        foreach (var item in command.Items)
-        {
-            if (!bySlug.TryGetValue(item.Slug, out var drink))
-                continue;
-            menu.ApplyManualItem(
-                drink.Id,
+        var updates = command.Items
+            .Where(item => bySlug.ContainsKey(item.Slug))
+            .Select(item => new ManualShopMenuItemUpdate(
+                bySlug[item.Slug].Id,
                 (DomainAvailability)(int)item.Availability,
                 item.Price,
-                item.VolumeMl,
-                command.UserId);
-        }
+                item.VolumeMl))
+            .ToArray();
+        var menu = await applyMenu.ApplyManualItemsAsync(command.ShopId, updates, command.UserId, ct);
 
         if (command.ApplySuggestedPriceRange && menu.SuggestedPriceRange.HasValue)
             shop.SetPriceRange((DomainPriceRange)(int)menu.SuggestedPriceRange.Value);
 
         await unitOfWork.SaveChangesAsync(ct);
         await cacheService.RemoveAsync(CacheKey.Shop.Detail(shop.Id));
+        await cacheService.RemoveByPattern(CacheKey.Shop.SearchPattern(), ct);
 
         var dto = ShopMenuDtoFactory.FromShopMenu(
             await queryMenu.GetByShopIdAsync(command.ShopId, ct), catalog, mediaOptions.Value)!;

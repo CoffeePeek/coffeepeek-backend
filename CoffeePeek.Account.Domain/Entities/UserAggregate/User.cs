@@ -85,7 +85,7 @@ public class User : AggregateRoot<Guid>
     {
         var local = email.Split('@')[0];
         // Keep only chars valid for Username: letters, digits, dots, underscores
-        var sanitized = Regex.Replace(local, @"[^a-zA-Z0-9._]", "");
+        var sanitized = Regex.Replace(local, @"[^\p{L}\p{Nd}._]", "");
         // Must start with a letter
         if (sanitized.Length == 0 || !char.IsLetter(sanitized[0]))
             sanitized = "user" + sanitized;

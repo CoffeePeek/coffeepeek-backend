@@ -1,4 +1,4 @@
-﻿using CoffeePeek.Shared.Kernel.Response;
+using CoffeePeek.Shared.Kernel.Response;
 
 namespace CoffeePeek.Shops.Application.Features.Review.GetReviewsByUserId;
 
@@ -8,13 +8,13 @@ public class GetReviewsByUserIdRequestHandler
         IReviewQueries reviewQueries,
         CancellationToken cancellationToken)
     {
-        var reviewDtos = await reviewQueries.GetReviewsByUserId(request.UserId, request.PageNumber, request.PageSize,
-            cancellationToken);
+        var (reviewDtos, total) = await reviewQueries.GetReviewsByUserId(
+            request.UserId, request.PageNumber, request.PageSize, cancellationToken);
 
         var response = new GetReviewsByUserIdResponse(
             reviewDtos,
-            TotalItems: reviewDtos.Length,
-            TotalPages: (int)Math.Ceiling(reviewDtos.Length / (double)request.PageSize),
+            TotalItems: total,
+            TotalPages: (int)Math.Ceiling(total / (double)request.PageSize),
             request.PageNumber,
             request.PageSize);
 

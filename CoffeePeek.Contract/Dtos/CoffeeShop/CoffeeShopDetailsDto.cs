@@ -16,7 +16,8 @@ public record CoffeeShopDetailsDto
 
     public decimal Rating { get; init; }
     public int ReviewCount { get; init; }
-    public ReviewDto[] Reviews { get; init; }
+    public ReviewDto[] Reviews { get; init; } = [];
+    public CheckInDto[] UserCheckIns { get; init; } = [];
 
 
     public bool IsVisited { get; init; }
@@ -27,6 +28,7 @@ public record CoffeeShopDetailsDto
     public Guid? ExistingReviewId { get; init; }
     public bool IsOpen { get; init; }
     public bool IsNew { get; init; }
+    public int DataCompletenessScore { get; init; }
     public PriceRange PriceRange { get; init; }
     public CoffeeShopType? Type { get; init; }
 

@@ -25,7 +25,7 @@ public static class SerilogExtensions
             .Enrich.With<SensitiveDataRedactingEnricher>()
             .MinimumLevel.Information()
             .MinimumLevel.Override("Microsoft.AspNetCore", LogEventLevel.Warning)
-            .MinimumLevel.Override("Yarp.ReverseProxy.Health", LogEventLevel.Warning)
+            .MinimumLevel.Override("Yarp.ReverseProxy.Health", LogEventLevel.Error)
             .WriteTo.Console(outputTemplate: DefaultTemplate, theme: theme)
             .WriteTo.Sentry(SentrySerilogSink)
             .CreateLogger();
@@ -46,7 +46,9 @@ public static class SerilogExtensions
             .Enrich.With<SensitiveDataRedactingEnricher>()
             .MinimumLevel.Information()
             .MinimumLevel.Override("Microsoft.AspNetCore", LogEventLevel.Warning)
-            .MinimumLevel.Override("Yarp.ReverseProxy.Health", LogEventLevel.Warning)
+            // Active health check failures are expected and self-healing on every backend
+            // restart — logging them at Warning turned every deploy into a Sentry issue.
+            .MinimumLevel.Override("Yarp.ReverseProxy.Health", LogEventLevel.Error)
             .WriteTo.Console(outputTemplate: DefaultTemplate, theme: theme)
             .WriteTo.Sentry(SentrySerilogSink)
             .CreateLogger();

@@ -9,8 +9,8 @@ files:
 
 ## Problem
 
-Нужно наполнить каталог specialty-кофеен Минска. Источник v1 — OSM (+ списки), не Yandex Places. Пока неизвестно, сколько кандидатов даёт Overpass и насколько они шумные; без этого нельзя спроектировать админ-очередь и автофильтр.
+We need to populate the catalog of Minsk specialty coffee shops. The v1 source is OSM (+ lists), not Yandex Places. It is not yet known how many candidates Overpass yields and how noisy they are; without that, the admin queue and auto-filter cannot be designed.
 
 ## Solution
 
-Done in spike 001 (VALIDATED). Overpass bbox Минска → 1576 кандидатов. Очередь: http://127.0.0.1:8765/  Модель: `queue-model.md`.
+Done in spike 001 (VALIDATED). Overpass bbox of Minsk → 1576 candidates. Queue: http://127.0.0.1:8765/  Model: `queue-model.md`.

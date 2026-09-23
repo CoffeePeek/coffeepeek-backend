@@ -35,12 +35,4 @@ public record Rating
 
         return new Rating(place, service, coffee);
     }
-    
-    public void Update(int coffee, int place, int service)
-    {
-        Coffee = coffee;
-        Place = place;
-        Service = service;
-        AverageRating = (Place + Service + Coffee) / 3m;
-    }
 }

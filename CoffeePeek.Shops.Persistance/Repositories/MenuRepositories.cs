@@ -34,5 +34,64 @@ public class ShopMenuRepository(ShopsDbContext dbContext) : IShopMenuRepository
             .Include(m => m.Photos)
             .FirstOrDefaultAsync(m => m.CoffeeShopId == shopId, ct);
 
+    public async Task<ShopMenu> ApplyManualItemsAsync(
+        Guid shopId,
+        IReadOnlyList<ManualShopMenuItemUpdate> items,
+        Guid? userId,
+        CancellationToken ct = default)
+    {
+        var menu = await dbContext.ShopMenus
+            .FirstOrDefaultAsync(m => m.CoffeeShopId == shopId, ct);
+
+        if (menu is null)
+        {
+            menu = ShopMenu.Create(shopId);
+            foreach (var item in DistinctUpdates(items))
+            {
+                menu.ApplyManualItem(
+                    item.DrinkDefinitionId,
+                    item.Availability,
+                    item.Price,
+                    item.VolumeMl,
+                    userId);
+            }
+
+            dbContext.ShopMenus.Add(menu);
+            return menu;
+        }
+
+        menu.MarkManualUpdate(userId);
+        var now = DateTime.UtcNow;
+        foreach (var item in DistinctUpdates(items))
+        {
+            var itemId = Guid.NewGuid();
+            var availability = (int)item.Availability;
+            var price = item.Availability == MenuItemAvailability.Present ? item.Price : null;
+            var source = (int)MenuItemSource.Manual;
+            var kind = (int)CoffeeDrinkKind.Standard;
+
+            await dbContext.Database.ExecuteSqlInterpolatedAsync($"""
+                INSERT INTO "ShopMenuItems"
+                    ("Id", "ShopMenuId", "DrinkDefinitionId", "Availability", "Price", "VolumeMl",
+                     "Source", "Kind", "CustomName", "CreatedAtUtc", "UpdatedAtUtc")
+                VALUES
+                    ({itemId}, {menu.Id}, {item.DrinkDefinitionId}, {availability}, {price}, {item.VolumeMl},
+                     {source}, {kind}, NULL, {now}, {now})
+                ON CONFLICT ("ShopMenuId", "DrinkDefinitionId") DO UPDATE SET
+                    "Availability" = EXCLUDED."Availability",
+                    "Price" = EXCLUDED."Price",
+                    "VolumeMl" = EXCLUDED."VolumeMl",
+                    "Source" = EXCLUDED."Source",
+                    "UpdatedAtUtc" = EXCLUDED."UpdatedAtUtc"
+                """, ct);
+        }
+
+        return menu;
+    }
+
     public void Add(ShopMenu menu) => dbContext.ShopMenus.Add(menu);
+
+    private static IEnumerable<ManualShopMenuItemUpdate> DistinctUpdates(
+        IReadOnlyList<ManualShopMenuItemUpdate> items) =>
+        items.GroupBy(item => item.DrinkDefinitionId).Select(group => group.Last());
 }

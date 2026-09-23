@@ -10,7 +10,6 @@ using CoffeePeek.Shops.Domain.Aggregates.CheckInAggregate;
 using CoffeePeek.Shops.Domain.Entities;
 using MapsterMapper;
 using Wolverine;
-using Wolverine.Attributes;
 
 namespace CoffeePeek.Shops.Application.Features.CheckIn.CreateCheckIn;
 
@@ -28,17 +27,20 @@ public static class CreateCheckInHandler
         ICacheService cacheService,
         CancellationToken ct)
     {
+        // Cooldown and daily cap are read-then-insert checks; without the lock parallel requests all pass.
+        await queryCheckInRepository.LockUserForCheckInAsync(command.UserId, ct);
+
         var validationResult = await validationStrategy.ValidateAsync(command, ct);
         if (!validationResult.IsValid)
             throw new ValidationException(validationResult.ErrorMessage!);
 
         var checkIn = Domain.Aggregates.CheckInAggregate.CheckIn.Create(
-            command.UserId, 
-            command.CoffeeShopId, 
+            command.UserId,
+            command.CoffeeShopId,
             command.VisitedAt);
 
         if (!string.IsNullOrEmpty(command.Note))
-            checkIn.UpdateNote(command.Note);    
+            checkIn.UpdateNote(command.Note);
 
         if (command.Photos is { Count: > 0 })
         {
@@ -47,45 +49,43 @@ public static class CreateCheckInHandler
             checkIn.AddPhotos(photos);
         }
 
+        checkIn.AssignRating(command.Rating!.Place, command.Rating.Service, command.Rating.Coffee);
+
+        queryCheckInRepository.Add(checkIn);
+
         if (command.IsPublic)
         {
-            // Owned Rating columns on CheckIns are NOT NULL — persist the public rating
-            // before SaveChanges or Postgres rejects the insert as a generic CONFLICT.
-            checkIn.AssignRating(command.Rating!.Place, command.Rating.Service, command.Rating.Coffee);
-            queryCheckInRepository.Add(checkIn);
+            // Transient review used only to shape the ReviewDto for the CheckinCreatedEvent.
+            // It is never persisted and is not yet linked to any moderation review, so pass
+            // Guid.Empty and null out the DTO link below (the real link is set on approval).
+            var review = Review.Create(
+                command.CoffeeShopId,
+                command.UserId,
+                command.UserName,
+                header: string.IsNullOrWhiteSpace(command.Header) ? null : command.Header.Trim(),
+                comment: command.Note!.Trim(),
+                ratingPlace: command.Rating.Place,
+                ratingService: command.Rating.Service,
+                ratingCoffee: command.Rating.Coffee,
+                moderationReviewId: Guid.Empty);
 
-            try
+            await bus.PublishAsync(new CheckinCreatedEvent
             {
-                var commentPreview = string.Join(" ",
-                    command.Note?.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(3) ?? []);
-
-                var review = Review.Create(
-                    command.CoffeeShopId,
-                    command.UserId, 
-                    command.UserName,
-                    header: commentPreview,
-                    comment: command.Note!,
-                    ratingPlace: command.Rating.Place, 
-                    ratingService: command.Rating.Service, 
-                    ratingCoffee: command.Rating.Coffee);
-
-                await bus.PublishAsync(new CheckinCreatedEvent
+                UserId = command.UserId,
+                ShopId = command.CoffeeShopId,
+                CreatedAt = checkIn.CreatedAtUtc,
+                ReviewDto = mapper.Map<ReviewDto>(review) with
                 {
-                    UserId = command.UserId,
-                    ShopId = command.CoffeeShopId,
-                    CreatedAt = checkIn.CreatedAtUtc,
-                    ReviewDto = mapper.Map<ReviewDto>(review)
-                });
-            }
-            // TEST-04: rethrow explicitly so DomainException is not swallowed by the outer try/catch
-            catch (DomainException)
-            {
-                throw;
-            }
+                    Username = command.UserName,
+                    ModerationReviewId = null,
+                    Photos = command.Photos?.ToArray() ?? []
+                }
+            });
         }
 
         await unitOfWork.SaveChangesAsync(ct);
         await PublicStatsCacheInvalidator.InvalidateAsync(cacheService, ct);
+        await cacheService.RemoveByPattern(CacheKey.Shop.SearchPattern(), ct);
 
         return Response<CreateCheckInResponse>.Success(new CreateCheckInResponse(checkIn.Id));
     }

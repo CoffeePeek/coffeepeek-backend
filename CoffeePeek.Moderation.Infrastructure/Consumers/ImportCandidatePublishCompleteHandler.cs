@@ -12,10 +12,14 @@ public static class ImportCandidatePublishCompleteHandler
         IUnitOfWork unitOfWork,
         CancellationToken ct)
     {
+        // One query for the whole batch (was one round trip per result). An invalid result is skipped rather than
+        // thrown, so a single bad item cannot fail and endlessly retry the rest of the batch.
+        var candidates = await repository.GetByIdsAsync(
+            message.Results.Select(r => r.CandidateId).Distinct().ToList(), ct);
+
         foreach (var result in message.Results)
         {
-            var candidate = await repository.GetByIdAsync(result.CandidateId, ct);
-            if (candidate is null)
+            if (result.ShopId == Guid.Empty || !candidates.TryGetValue(result.CandidateId, out var candidate))
                 continue;
 
             candidate.AttachPublishedShop(result.ShopId);

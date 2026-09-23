@@ -10,7 +10,8 @@ public class DuplicateShopSpecification : ISpecification<ModerationShop>
     {
         Criteria = shop =>
 #pragma warning disable CA1862
-            shop.Name.ToLower() == name.ToLower() && shop.Location!.Address.ToLower() == address.ToLower()
+            shop.Name.ToLower() == name.ToLower()
+            && shop.Location != null && shop.Location.Address.ToLower() == address.ToLower()
             && shop.ModerationStatus != ModerationStatus.Rejected;
 #pragma warning restore CA1862
     }

@@ -12,7 +12,7 @@ public class ImportDossierAdvisorTests
     {
         var tags = ImportDossierAdvisor.SuggestTags(["name:specialty-signal", "name:coffee"], null);
 
-        tags.Should().ContainSingle(t => t.Slug == "specialty" && t.Why == "из имени");
+        tags.Should().ContainSingle(t => t.Slug == "specialty" && t.Why == "from name");
     }
 
     [Fact]
@@ -20,7 +20,7 @@ public class ImportDossierAdvisorTests
     {
         var tags = ImportDossierAdvisor.SuggestTags(["name:to-go-chain"], null);
 
-        tags.Should().ContainSingle(t => t.Slug == "to_go" && t.Why == "сеть с собой");
+        tags.Should().ContainSingle(t => t.Slug == "to_go" && t.Why == "to-go chain");
     }
 
     [Fact]

@@ -59,7 +59,7 @@ public record CacheKey(
     public static class Shop
     {
         public static CacheKey Detail(Guid shopId) => new(
-            Key: $"shop:detail:v2:{shopId}",
+            Key: $"shop:detail:v3:{shopId}",
             DefaultTtl: TimeSpan.FromMinutes(3),
             Description: "Coffee shop entity (details)",
             Service: "ShopsService");
@@ -89,7 +89,7 @@ public record CacheKey(
             Service: "ShopsService");
         
         public static CacheKey Search(string searchHash) => new(
-            Key: $"shop:search:v2:{searchHash}",
+            Key: $"shop:search:v3:{searchHash}",
             DefaultTtl: TimeSpan.FromMinutes(5),
             Description: "Shop search results",
             Service: "ShopsService");

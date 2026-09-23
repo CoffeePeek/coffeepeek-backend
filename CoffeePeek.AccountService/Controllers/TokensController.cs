@@ -2,6 +2,7 @@
 using CoffeePeek.Account.Application.Features.Auth.Logout;
 using CoffeePeek.Account.Application.Features.Auth.OAuthLogin;
 using CoffeePeek.Account.Application.Features.Auth.RefreshToken;
+using CoffeePeek.AccountService.Controllers.Contracts;
 using CoffeePeek.Shared.Auth;
 using CoffeePeek.Shared.Auth.Options;
 using CoffeePeek.Shared.Kernel.Exceptions;
@@ -71,6 +72,46 @@ public class TokensController(
     }
 
     /// <summary>
+    /// Login for native clients. Returns the refresh token in JSON instead of a browser cookie.
+    /// </summary>
+    [HttpPost("native")]
+    [ProducesResponseType<Response<NativeTokenResponse>>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> CreateNative([FromBody] LoginUserCommand request)
+    {
+        var command = request with
+        {
+            DeviceName = Request.Headers.UserAgent.ToString(),
+            IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown"
+        };
+        var response = await bus.InvokeAsync<Response<LoginResponse>>(command);
+
+        return Ok(ToNativeResponse(
+            response.Data.AccessToken,
+            response.Data.RefreshToken,
+            response.Data.AccessTokenExpiresAt));
+    }
+
+    /// <summary>
+    /// Rotate a refresh token for native clients.
+    /// </summary>
+    [HttpPut("native")]
+    [AllowAnonymous]
+    [ProducesResponseType<Response<NativeTokenResponse>>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> RefreshNative([FromBody] NativeRefreshTokenRequest request)
+    {
+        var command = new RefreshTokenCommand(
+            request.RefreshToken,
+            Request.Headers.UserAgent.ToString(),
+            HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown");
+        var response = await bus.InvokeAsync<Response<RefreshTokenResponse>>(command);
+
+        return Ok(ToNativeResponse(
+            response.Data.AccessToken,
+            response.Data.RefreshToken,
+            response.Data.AccessTokenExpiresAt));
+    }
+
+    /// <summary>
     /// Refresh token from cookies. Does not require a valid access token —
     /// the user is resolved from the refresh token value itself.
     /// </summary>
@@ -94,7 +135,7 @@ public class TokensController(
         {
             var response = await bus.InvokeAsync<Response<RefreshTokenResponse>>(command);
 
-            if (response.IsSuccess && response.Data is not null)
+            if (response is { IsSuccess: true, Data: not null })
                 Response.Cookies.Append("refreshToken", response.Data.RefreshToken, CreateRefreshTokenCookieOptions());
 
             return Ok(response);
@@ -129,6 +170,24 @@ public class TokensController(
 
         await bus.InvokeAsync(request);
 
+        DeleteRefreshTokenCookie();
+        return NoContent();
+    }
+
+    /// <summary>
+    /// Logout a native client using the refresh token that identifies its session.
+    /// </summary>
+    [HttpDelete("native")]
+    [AllowAnonymous]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> DeleteNative([FromBody] NativeLogoutRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.RefreshToken))
+            return BadRequest(new { message = "Refresh token is required" });
+
+        await bus.InvokeAsync(new LogoutByRefreshTokenCommand(request.RefreshToken));
+
         return NoContent();
     }
 
@@ -137,7 +196,7 @@ public class TokensController(
         HttpOnly = true,
         Secure = true,
         SameSite = SameSiteMode.Strict,
-        Path = "/",
+        Path = "/api/tokens",
         Expires = DateTimeOffset.UtcNow.AddDays(jwtOptions.Value.RefreshTokenLifetimeDays)
     };
 
@@ -147,6 +206,16 @@ public class TokensController(
             HttpOnly = true,
             Secure = true,
             SameSite = SameSiteMode.Strict,
-            Path = "/"
+            Path = "/api/tokens"
         });
+
+    private Response<NativeTokenResponse> ToNativeResponse(
+        string accessToken,
+        string refreshToken,
+        DateTime accessTokenExpiresAt) =>
+        Response<NativeTokenResponse>.Success(new NativeTokenResponse(
+            accessToken,
+            refreshToken,
+            accessTokenExpiresAt,
+            DateTime.UtcNow.AddDays(jwtOptions.Value.RefreshTokenLifetimeDays)));
 }

@@ -1,7 +1,7 @@
 ﻿namespace CoffeePeek.Contract.Enums;
 
 /// <summary>
-/// Shop price level: cheap / mid / expensive (дешёвый / средний / дорогой).
+/// Shop price level: cheap / mid / expensive.
 /// </summary>
 public enum PriceRange
 {

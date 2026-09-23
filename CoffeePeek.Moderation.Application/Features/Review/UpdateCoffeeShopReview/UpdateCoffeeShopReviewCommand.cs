@@ -6,6 +6,6 @@ namespace CoffeePeek.Moderation.Application.Features.Review.UpdateCoffeeShopRevi
 public record UpdateCoffeeShopReviewCommand(
     [property:JsonIgnore]Guid UserId,
     Guid ReviewId,
-    string Header,
+    string? Header,
     string Comment,
     RatingDto Rating);
