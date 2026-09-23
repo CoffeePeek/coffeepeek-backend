@@ -61,32 +61,32 @@ Do **not** add a public shop tag like `imported_from_file` — it would leak int
 
 ## Admin UI (this is the FE work)
 
-### 1. New tab «Похожие» next to Inbox / Queue / Stats
+### 1. New tab «Похожие» ("Similar") next to Inbox / Queue / Stats
 
 List pending suggestions. Each card is a pair:
 
-- Name + address + source badge (OSM / файл) + coords + distance + score + reason chips
+- Name + address + source badge (OSM / `файл` = file) + coords + distance + score + reason chips
 - Map links already on candidate research if you reuse inbox links; otherwise Google/Yandex from lat/lon
-- Buttons: **Это одно место** / **Разные места**
+- Buttons: **Это одно место** ("Same place") / **Разные места** ("Different places")
 - Toast on success; invalidate `['admin', 'import']`
-- Empty: «Похожих пар нет. После загрузки JSON нажмите “Найти похожие”.»
+- Empty state: «Похожих пар нет. После загрузки JSON нажмите “Найти похожие”.» ("No similar pairs. After uploading JSON, click 'Find similar'.")
 
 ### 2. Stats page
 
 - Keep existing OSM refresh + `import-decisions.json`.
-- Keep/add **Загрузить JSON мест** → `POST /file` (previous TZ).
-- New button **Найти похожие** → `POST /duplicates/refresh`, toast `предложено {suggested}`.
-- Stat chip **Похожие** = `pendingDuplicates`, click → tab Похожие.
+- Keep/add **Загрузить JSON мест** ("Upload places JSON") → `POST /file` (previous TZ).
+- New button **Найти похожие** ("Find similar") → `POST /duplicates/refresh`, toast `предложено {suggested}` ("{suggested} suggested").
+- Stat chip **Похожие** = `pendingDuplicates`, click → «Похожие» tab.
 
 ### 3. Inbox / queue
 
-- Filter «Из файла» = `source=File`.
+- Filter «Из файла» ("From file") = `source=File`.
 - Badge `файл` when `importedFromFile`.
-- After file ingest, if `suggestedDuplicates > 0`, toast + link to Похожие. **Do not auto-merge.**
+- After file ingest, if `suggestedDuplicates > 0`, toast + link to the «Похожие» tab. **Do not auto-merge.**
 
 ### 4. Published shops admin list
 
-- Filter checkbox «Импорт из файла» → `importedFromFile=true`.
+- Filter checkbox «Импорт из файла» ("Imported from file") → `importedFromFile=true`.
 - Show `importedFromFileAt` as relative date.
 
 ### 5. Client

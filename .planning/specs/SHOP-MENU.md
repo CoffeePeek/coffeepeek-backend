@@ -9,40 +9,40 @@
 
 ## Goal
 
-У каждой кофейни есть **меню кофейных напитков** из общего каталога: напиток либо есть (с ценой), либо нет, либо ещё неизвестен. Модератор (очередь каталога + заявка пользователя) и пользователь при создании кофейни загружают **фото меню**. Gemini распознаёт позиции, маппит на каталог, считает `priceRange` по среднему чеку в BYN. Клиент в профиле кофейни видит меню и дату, когда оно было загружено/обновлено. Данные можно править руками.
+Every coffee shop has a **coffee drink menu** drawn from a shared catalog: a drink is either present (with a price), absent, or not yet known. Moderators (catalog queue + user submission) and users creating a coffee shop upload **menu photos**. Gemini recognizes the items, maps them to the catalog, and computes `priceRange` from the average price in BYN. In the coffee shop profile, the client sees the menu and the date it was uploaded/updated. The data can be edited manually.
 
-## Background (код сегодня)
+## Background (code today)
 
-- Меню **нет**. `CoffeeShopDetailsDto` отдаёт зёрна, методы, оборудование, `priceRange` — не прайс напитков.
-- `Beverages` в Shops Domain объявлен и **нигде не используется** — не брать как основу.
-- `PriceRange` уже есть: `Cheap | Moderate | Expensive`. Сейчас задаётся руками, не из цен.
-- Две очереди модерации (не смешивать сущности):
-  - `ShopImportCandidate` — каталог (OSM / CoffeeMap / file). `/api/admin/import/...`
-  - `ModerationShop` — заявка пользователя. `POST /api/ModerationShops` уже принимает `ShopPhotos`.
-- Фото: Media `POST /api/Photos/shop` (presign) → confirm. Галерея кофейни ≠ фото меню.
-- Публикация импорта: `ImportCandidatePublishedEvent` → `CreateShopFromImportService` (меню в событии нет).
-- Approve заявки: `CoffeeShopApprovedEvent` → `CreateShopFromModerationService`.
+- There is **no** menu. `CoffeeShopDetailsDto` returns beans, brew methods, equipment, `priceRange` — not a drink price list.
+- `Beverages` in the Shops Domain is declared and **not used anywhere** — do not use it as a basis.
+- `PriceRange` already exists: `Cheap | Moderate | Expensive`. Currently set by hand, not derived from prices.
+- Two moderation queues (do not mix the entities):
+  - `ShopImportCandidate` — catalog (OSM / CoffeeMap / file). `/api/admin/import/...`
+  - `ModerationShop` — user submission. `POST /api/ModerationShops` already accepts `ShopPhotos`.
+- Photos: Media `POST /api/Photos/shop` (presign) → confirm. Coffee shop gallery ≠ menu photos.
+- Import publishing: `ImportCandidatePublishedEvent` → `CreateShopFromImportService` (the event carries no menu).
+- Submission approval: `CoffeeShopApprovedEvent` → `CreateShopFromModerationService`.
 
-**Продуктовый язык:** очередь каталога — это **модерация**, OSM только один из источников. HTTP `/api/admin/import` в этой фазе **не переименовываем** (ломает клиентов). UI копирайт: «Модерация». Ребрендинг роутов — отдельный follow-up.
+**Product language:** the catalog queue is **moderation**; OSM is only one of the sources. HTTP `/api/admin/import` is **not renamed** in this phase (it would break clients). UI copy: «Модерация» (Moderation). Route rebranding is a separate follow-up.
 
 ---
 
 ## Locked decisions
 
-1. **Меню = кофейные напитки**, не еда, не десерты, не мерч.
-2. **Каталог глобальный** (seed). У кофейни — наличие/цена по каждому slug, не свободный список в v1.
-3. **Custom/авторские** — схема заложена, в публичный ответ v1 **не отдаём**. Сырой unmatched с парсера храним.
-4. **Источник правды после публикации** — Shops (`ShopMenu` на `CoffeeShop`). До публикации — черновик на кандидате / `ModerationShop`.
-5. **Парсер** — Gemini multimodal `generateContent`, `response_mime_type=application/json` + schema. Байты картинки из MinIO (`inlineData`). Не Yandex Vision, не Tesseract.
-6. **Ценовой диапазон** из среднего арифметического **известных цен Present-позиций** в BYN:
+1. **Menu = coffee drinks**, not food, desserts, or merch.
+2. **The catalog is global** (seed). A coffee shop has availability/price per slug, not a free-form list in v1.
+3. **Custom/signature drinks** — the schema is in place, but they are **not returned** in the v1 public response. Raw unmatched parser output is stored.
+4. **Source of truth after publishing** — Shops (`ShopMenu` on `CoffeeShop`). Before publishing — a draft on the candidate / `ModerationShop`.
+5. **Parser** — Gemini multimodal `generateContent`, `response_mime_type=application/json` + schema. Image bytes come from MinIO (`inlineData`). Not Yandex Vision, not Tesseract.
+6. **Price range** from the arithmetic mean of **known prices of Present items** in BYN:
    - `< 7.00` → `Cheap`
-   - `7.00 … 9.00` включительно → `Moderate` («около 8»)
+   - `7.00 … 9.00` inclusive → `Moderate` ("around 8")
    - `> 9.00` → `Expensive`  
-   Пороги в `MenuPriceRangeOptions`, не хардкод в хендлерах. Если цен нет — `priceRange` не трогаем.
-7. **Дата для клиента** — `capturedAtUtc` (когда загрузили/привязали фото, с которых собрали меню), плюс `updatedAtUtc` (последняя правка человеком или повторный парсинг).
-8. **Редактирование v1:** moderator + admin. Автор заявки может только **приложить фото при создании**. После публикации — `PUT /api/admin/shops/{id}/menu`.
-9. **Поиск/карта** полное меню **не несут**. Только деталка кофейни.
-10. Парсинг **асинхронный** (Wolverine). HTTP не ждёт Gemini.
+   Thresholds live in `MenuPriceRangeOptions`, not hardcoded in handlers. If there are no prices, `priceRange` is left untouched.
+7. **Date for the client** — `capturedAtUtc` (when the photos the menu was built from were uploaded/attached), plus `updatedAtUtc` (last manual edit or re-parse).
+8. **Editing in v1:** moderator + admin. The submission author can only **attach photos at creation**. After publishing — `PUT /api/admin/shops/{id}/menu`.
+9. **Search/map** do **not** carry the full menu. Only the coffee shop details page.
+10. Parsing is **asynchronous** (Wolverine). HTTP does not wait for Gemini.
 
 ---
 
@@ -65,9 +65,9 @@
 | chemex | Кемекс | Chemex | filter | кемекс, chemex |
 | aeropress | Аэропресс | AeroPress | filter | аэропресс, aeropress, aero press |
 
-Новые стандартные напитки = **миграция seed**, не произвольный insert из UI в v1.
+New standard drinks = **a seed migration**, not an arbitrary insert from the UI in v1.
 
-`kind` на определении: `Standard` сейчас; `Custom` зарезервирован.
+`kind` on the definition: `Standard` for now; `Custom` is reserved.
 
 ---
 
@@ -75,48 +75,48 @@
 
 ### Shops (published)
 
-`CoffeeDrinkDefinition` — справочник (Id, Slug unique, names, category, aliases[], sortOrder, kind, isActive).
+`CoffeeDrinkDefinition` — reference table (Id, Slug unique, names, category, aliases[], sortOrder, kind, isActive).
 
-`ShopMenu` (1:1 с `CoffeeShop`):
+`ShopMenu` (1:1 with `CoffeeShop`):
 
-- `CapturedAtUtc` — дата загрузки исходных фото (клиентская «актуальность»)
+- `CapturedAtUtc` — upload date of the source photos (the client-facing "freshness")
 - `UpdatedAtUtc`, `UpdatedByUserId?`
 - `Currency` = `BYN`
 - `ParseStatus`: `None | Pending | Running | Ready | Failed`
 - `ParseError?`
-- `SuggestedPriceRange?` — посчитанный из позиций; при Apply пишется в `CoffeeShop.PriceRange`
+- `SuggestedPriceRange?` — computed from the items; on Apply it is written to `CoffeeShop.PriceRange`
 
 `ShopMenuItem`:
 
 - `DrinkDefinitionId`
 - `Availability`: `Unknown | Present | Absent`
 - `Price?` (decimal, Present)
-- `VolumeMl?` (nullable, v1 можно не заполнять)
+- `VolumeMl?` (nullable, may be left empty in v1)
 - `Source`: `Parsed | Manual`
 - unique `(ShopMenuId, DrinkDefinitionId)`
 
-`ShopMenuPhoto` — storageKey + media photo id; **не** в `ShopPhotos` галереи.
+`ShopMenuPhoto` — storageKey + media photo id; **not** in the gallery's `ShopPhotos`.
 
-Future (колонки сразу, публично не маппить):
+Future (columns added now, not mapped publicly):
 
 - `ShopMenuItem.Kind` (`Standard | Custom`)
-- `CustomName?` когда Kind=Custom
-- `ShopMenu.UnmatchedJson` — сырьё парсера `{ rawName, price, confidence }`
+- `CustomName?` when Kind=Custom
+- `ShopMenu.UnmatchedJson` — raw parser output `{ rawName, price, confidence }`
 
 ### Moderation (draft)
 
-На `ShopImportCandidate` и `ModerationShop` — owned/jsonb `MenuDraft` той же формы, что публичный DTO (items по всем slug каталога + photos + parseStatus + capturedAtUtc). Не плодить вторую реляционную модель до publish.
+On `ShopImportCandidate` and `ModerationShop` — an owned/jsonb `MenuDraft` with the same shape as the public DTO (items for every catalog slug + photos + parseStatus + capturedAtUtc). Do not create a second relational model before publish.
 
-При `decide Published` / approve заявки черновик копируется в `ShopMenu`. Если парсинг ещё `Pending/Running` — публиковать **можно**, меню доедет повторным событием `MenuDraftReady` **или** модератор ждёт Ready. **Locked:** публиковать можно с неполным меню; после Ready, если shop уже создан, Shops применяет черновик по `ResultingShopId` / `ModerationId`.
+On `decide Published` / submission approval, the draft is copied into `ShopMenu`. If parsing is still `Pending/Running`, publishing is **allowed**; the menu arrives later via a follow-up `MenuDraftReady` event, **or** the moderator waits for Ready. **Locked:** publishing is allowed with an incomplete menu; after Ready, if the shop already exists, Shops applies the draft by `ResultingShopId` / `ModerationId`.
 
 ---
 
 ## Parse pipeline
 
-1. Клиент получает presign `POST /api/Photos/menu`, грузит в MinIO, confirm.
-2. Модератор/пользователь привязывает `UploadedPhotoDto[]` к кандидату / заявке / опубликованной кофейне.
-3. Command кладёт `ParseStatus=Pending`, публикует Wolverine `ParseShopMenuCommand`.
-4. Handler: читает байты из MinIO, шлёт в Gemini (до N фото за запрос, v1 max **4**), JSON:
+1. The client gets a presign via `POST /api/Photos/menu`, uploads to MinIO, confirms.
+2. The moderator/user attaches `UploadedPhotoDto[]` to the candidate / submission / published coffee shop.
+3. The command sets `ParseStatus=Pending` and publishes the Wolverine `ParseShopMenuCommand`.
+4. Handler: reads bytes from MinIO, sends them to Gemini (up to N photos per request, v1 max **4**), JSON:
 
 ```json
 {
@@ -128,16 +128,16 @@ Future (колонки сразу, публично не маппить):
 }
 ```
 
-5. Маппинг: aliases каталога (case-insensitive, RU/EN). Несколько цен на один slug → берём **минимальную** (обычно меньший объём). Несматченное → `unmatched`, не создаём Custom в v1.
-6. Для каждого slug каталога: матч → `Present`+price; нет в фото → **не ставим Absent**, оставляем `Unknown` (отсутствие на фото ≠ «не готовят»). Absent только руками.
-7. Считаем suggested `priceRange`. Модератор видит и может перезаписать.
-8. `Failed`: статус + `parseError`, черновик не затираем.
+5. Mapping: catalog aliases (case-insensitive, RU/EN). Several prices for one slug → take the **minimum** (usually the smaller size). Unmatched → `unmatched`; no Custom items are created in v1.
+6. For each catalog slug: match → `Present`+price; not in the photos → **do not set Absent**, leave `Unknown` (missing from the photo ≠ "not served"). Absent is manual only.
+7. Compute the suggested `priceRange`. The moderator sees it and can override it.
+8. `Failed`: status + `parseError`; the draft is not overwritten.
 
-**Gemini:** `GeminiOptions: ApiKey, Model=gemini-3.6-flash, TimeoutSeconds=60`. HTTP `generativelanguage.googleapis.com` + `IHttpClientFactory`. Ключ — env/user-secrets, не в git.
+**Gemini:** `GeminiOptions: ApiKey, Model=gemini-3.6-flash, TimeoutSeconds=60`. HTTP `generativelanguage.googleapis.com` + `IHttpClientFactory`. The key lives in env/user-secrets, not in git.
 
 ---
 
-## Contract (JSON, enums как строки)
+## Contract (JSON, enums as strings)
 
 ### `CoffeeDrinkCategory`
 
@@ -179,7 +179,7 @@ Future (колонки сразу, публично не маппить):
 }
 ```
 
-Публичный профиль: **все** slug каталога (клиент сам прячет `Unknown`). Custom не включаем.
+Public profile: **all** catalog slugs (the client hides `Unknown` itself). Custom is not included.
 
 ### `ShopMenuDto`
 
@@ -196,69 +196,69 @@ Future (колонки сразу, публично не маппить):
 }
 ```
 
-`null` меню на кофейне = ещё не заводили (клиент: пустое состояние, не 404).
+A `null` menu on a coffee shop = not created yet (client: empty state, not 404).
 
-### Additive на существующих DTO
+### Additive on existing DTOs
 
 - `CoffeeShopDetailsDto.Menu` → `ShopMenuDto?`
 - `ModerationShopDto.Menu` → `ShopMenuDto?`
 - `ShopImportCandidateDto.Menu` → `ShopMenuDto?`
-- `SendCoffeeShopToModerationCommand.MenuPhotos` → `List<UploadedPhotoDto>?` (как `ShopPhotos`)
-- `ImportCandidatePublishedItem` + payload меню (items snapshot) — **additive**, не ломает старых консьюмеров, если поле optional.
+- `SendCoffeeShopToModerationCommand.MenuPhotos` → `List<UploadedPhotoDto>?` (like `ShopPhotos`)
+- `ImportCandidatePublishedItem` + menu payload (items snapshot) — **additive**; does not break older consumers if the field is optional.
 
 ---
 
 ## Endpoints
 
-Все новые поля additive. Gateway: существующие кластера + при необходимости путь `/api/menu/drinks` → shops-cluster.
+All new fields are additive. Gateway: existing clusters + if needed the path `/api/menu/drinks` → shops-cluster.
 
 ### Public
 
-| Method | Path | Auth | Назначение |
+| Method | Path | Auth | Purpose |
 |--------|------|------|------------|
-| GET | `/api/menu/drinks` | anonymous | Справочник стандартных напитков (кэш) |
-| GET | `/api/CoffeeShops/{id}` | anonymous | Уже есть; в `data` добавляется `menu` |
+| GET | `/api/menu/drinks` | anonymous | Standard drink catalog (cached) |
+| GET | `/api/CoffeeShops/{id}` | anonymous | Already exists; `menu` is added to `data` |
 
 ### Media
 
-| Method | Path | Auth | Назначение |
+| Method | Path | Auth | Purpose |
 |--------|------|------|------------|
-| POST | `/api/Photos/menu` | user | Presign, как shop, bucket Shop, prefix `menus/`. Не попадает в галерею |
+| POST | `/api/Photos/menu` | user | Presign, same as shop, bucket Shop, prefix `menus/`. Does not go into the gallery |
 
-### Пользователь — заявка на кофейню
+### User — coffee shop submission
 
-| Method | Path | Auth | Назначение |
+| Method | Path | Auth | Purpose |
 |--------|------|------|------------|
-| POST | `/api/ModerationShops` | user | Как сейчас + optional `menuPhotos[]`. Ставит parse Pending |
+| POST | `/api/ModerationShops` | user | As today + optional `menuPhotos[]`. Sets parse to Pending |
 
-Отдельный «мой черновик меню» пользователю в v1 не делаем — правки после сабмита только модератор.
+No separate "my menu draft" for users in v1 — after submission only the moderator edits.
 
-### Модерация каталога (import candidate)
+### Catalog moderation (import candidate)
 
-| Method | Path | Auth | Назначение |
+| Method | Path | Auth | Purpose |
 |--------|------|------|------------|
-| GET | `/api/admin/import/candidates/{id}` | moderator | Уже есть; `menu` в dossier |
-| POST | `/api/admin/import/candidates/{id}/menu/photos` | moderator | Body: `{ photos: UploadedPhotoDto[] }`. Привязка + enqueue parse. Ставит `capturedAtUtc` если пусто |
-| POST | `/api/admin/import/candidates/{id}/menu/parse` | moderator | Повторный прогон по уже привязанным фото |
-| PUT | `/api/admin/import/candidates/{id}/menu` | moderator | Ручная правка items (`availability`, `price`). `source=Manual` на изменённых. Можно проставить Absent. Optional `applySuggestedPriceRange: true` |
+| GET | `/api/admin/import/candidates/{id}` | moderator | Already exists; `menu` in the dossier |
+| POST | `/api/admin/import/candidates/{id}/menu/photos` | moderator | Body: `{ photos: UploadedPhotoDto[] }`. Attach + enqueue parse. Sets `capturedAtUtc` if empty |
+| POST | `/api/admin/import/candidates/{id}/menu/parse` | moderator | Re-run on already attached photos |
+| PUT | `/api/admin/import/candidates/{id}/menu` | moderator | Manual edit of items (`availability`, `price`). `source=Manual` on changed items. Absent can be set. Optional `applySuggestedPriceRange: true` |
 
-### Модерация заявок пользователя
+### User submission moderation
 
-| Method | Path | Auth | Назначение |
+| Method | Path | Auth | Purpose |
 |--------|------|------|------------|
 | GET | `/api/ModerationShops/{id}` | moderator | + `menu` |
-| POST | `/api/ModerationShops/{id}/menu/photos` | moderator | как у candidate |
-| POST | `/api/ModerationShops/{id}/menu/parse` | moderator | повтор |
-| PUT | `/api/ModerationShops/{id}/menu` | moderator | ручная правка |
+| POST | `/api/ModerationShops/{id}/menu/photos` | moderator | same as for candidate |
+| POST | `/api/ModerationShops/{id}/menu/parse` | moderator | re-run |
+| PUT | `/api/ModerationShops/{id}/menu` | moderator | manual edit |
 
-### Опубликованная кофейня (admin)
+### Published coffee shop (admin)
 
-| Method | Path | Auth | Назначение |
+| Method | Path | Auth | Purpose |
 |--------|------|------|------------|
-| GET | `/api/admin/shops/{id}/menu` | admin | полное меню + unmatched (для отладки) |
-| POST | `/api/admin/shops/{id}/menu/photos` | admin | фото + parse |
-| POST | `/api/admin/shops/{id}/menu/parse` | admin | повтор |
-| PUT | `/api/admin/shops/{id}/menu` | admin | правка + optional apply priceRange на `CoffeeShop` |
+| GET | `/api/admin/shops/{id}/menu` | admin | full menu + unmatched (for debugging) |
+| POST | `/api/admin/shops/{id}/menu/photos` | admin | photos + parse |
+| POST | `/api/admin/shops/{id}/menu/parse` | admin | re-run |
+| PUT | `/api/admin/shops/{id}/menu` | admin | edit + optional apply priceRange on `CoffeeShop` |
 
 ---
 
@@ -271,26 +271,26 @@ User/Moderator → Photos/menu presign → MinIO → confirm
      → Gemini → map catalog → draft/shop menu Ready
      → moderator PUT corrections
      → publish/approve copies menu to CoffeeShop
-     → client GET CoffeeShops/{id} видит menu + capturedAtUtc
+     → client GET CoffeeShops/{id} sees menu + capturedAtUtc
 ```
 
-`priceRange` на карточке: после Ready предлагаем; в публичный `CoffeeShop.PriceRange` пишем если модератор/admin подтвердил (`applySuggestedPriceRange`) **или** при publish, если у шопа ещё дефолт и suggested есть. **Locked:** при publish из импорта, если `CoffeeShop.PriceRange` не задан явно — берём suggested. Если модератор уже выставил диапазон руками — не перезаписывать.
+`priceRange` on the card: after Ready it is suggested; it is written to the public `CoffeeShop.PriceRange` if a moderator/admin confirmed it (`applySuggestedPriceRange`) **or** on publish, if the shop still has the default and a suggestion exists. **Locked:** on publish from import, if `CoffeeShop.PriceRange` is not set explicitly, use the suggested value. If a moderator has already set the range manually, do not overwrite it.
 
 ---
 
-## Tests (минимум)
+## Tests (minimum)
 
-- Seed: все v1 slug уникальны, aliases маппят «воронка» → `v60`, «доппио» → `doppio`.
-- Parse mapper: два названия одного slug → одна позиция, min price.
-- Unmatched не попадает в public `ShopMenuDto`.
-- Unknown не становится Absent без PUT.
-- PriceRange: среднее 6.5 → Cheap, 8 → Moderate, 10 → Expensive; пустой набор цен → null suggested.
-- GET details без меню → `menu: null`.
-- GET details с меню → все catalog slugs присутствуют.
-- Publish candidate копирует Present/Absent/цены и `capturedAtUtc`.
-- `SendCoffeeShopToModeration` с `menuPhotos` создаёт draft Pending (parser мокается).
-- Gemini fail → Failed + прежний draft жив.
-- Меню-фото не сериализуются в `CoffeeShopDetailsDto.Photos`.
+- Seed: all v1 slugs are unique; aliases map «воронка» → `v60`, «доппио» → `doppio`.
+- Parse mapper: two names for the same slug → one item, min price.
+- Unmatched does not end up in the public `ShopMenuDto`.
+- Unknown does not become Absent without a PUT.
+- PriceRange: mean 6.5 → Cheap, 8 → Moderate, 10 → Expensive; empty price set → null suggested.
+- GET details without a menu → `menu: null`.
+- GET details with a menu → all catalog slugs are present.
+- Publishing a candidate copies Present/Absent/prices and `capturedAtUtc`.
+- `SendCoffeeShopToModeration` with `menuPhotos` creates a Pending draft (parser is mocked).
+- Gemini failure → Failed + the previous draft survives.
+- Menu photos are not serialized into `CoffeeShopDetailsDto.Photos`.
 
 ---
 
@@ -298,63 +298,63 @@ User/Moderator → Photos/menu presign → MinIO → confirm
 
 **In scope**
 
-- Каталог + публичное меню в деталке
-- Фото + Gemini parse
-- Черновик в обеих очередях модерации
-- Ручной PUT
-- Авто-`priceRange` из среднего
+- Catalog + public menu on the details page
+- Photos + Gemini parse
+- Draft in both moderation queues
+- Manual PUT
+- Auto `priceRange` from the mean
 - `capturedAtUtc` / `updatedAtUtc`
-- Задел Custom (колонки + unmatched)
+- Groundwork for Custom (columns + unmatched)
 
 **Out of scope**
 
-- Еда, десерты, авторские в публичном API
-- Несколько размеров как отдельные SKU (только min price)
-- Скрейп Instagram/сайта
-- Переименование `/api/admin/import` → `/api/admin/moderation`
-- Меню в search/map DTO
-- Пользователь редактирует меню после сабмита / owner self-serve
-- История ревизий меню (есть только две даты)
-- Мультивалютность
+- Food, desserts, signature drinks in the public API
+- Multiple sizes as separate SKUs (min price only)
+- Scraping Instagram/websites
+- Renaming `/api/admin/import` → `/api/admin/moderation`
+- Menu in search/map DTOs
+- Users editing the menu after submission / owner self-serve
+- Menu revision history (only the two dates exist)
+- Multi-currency
 
 ---
 
 ## Implementation waves
 
-1. **Contract + catalog + ShopMenu schema** (Shops migration, seed, GET `/api/menu/drinks`, `menu: null` в details).
-2. **Gemini parser + Wolverine job** (adapter, mapper, options, тесты маппинга без живого API).
-3. **Import candidate** photos/parse/PUT + поле в dossier DTO.
-4. **User suggestion** `menuPhotos` + те же admin endpoints на `ModerationShops`.
+1. **Contract + catalog + ShopMenu schema** (Shops migration, seed, GET `/api/menu/drinks`, `menu: null` in details).
+2. **Gemini parser + Wolverine job** (adapter, mapper, options, mapping tests without the live API).
+3. **Import candidate** photos/parse/PUT + field in the dossier DTO.
+4. **User suggestion** `menuPhotos` + the same admin endpoints on `ModerationShops`.
 5. **Publish/approve copy** + apply suggested priceRange.
 6. **Admin published shop** GET/PUT/photos/parse.
 
-Каждая волна — собираемый срез с тестами, не «сначала вся инфраструктура».
+Each wave is a buildable slice with tests, not "all the infrastructure first".
 
 ---
 
 ## Acceptance
 
-- [ ] Справочник отдаёт все v1 slug
-- [ ] Модератор каталога может приложить фото меню, статус проходит Pending → Ready (или Failed)
-- [ ] Пользователь может приложить фото меню в `POST /api/ModerationShops`
-- [ ] После parse капучино с ценой 9 становится `Present` / `9.00` / BYN
-- [ ] Напиток не с фото остаётся `Unknown`, не `Absent`
-- [ ] Среднее ~8 BYN → `Moderate`; меньше 7 → `Cheap`; больше 9 → `Expensive`
-- [ ] `GET /api/CoffeeShops/{id}` содержит `menu` с `capturedAtUtc` после публикации
-- [ ] PUT меняет цену/availability; `updatedAtUtc` обновляется
-- [ ] Фото меню нет в галерее `photos[]`
-- [ ] Custom/unmatched не видны клиенту
+- [ ] The catalog returns all v1 slugs
+- [ ] A catalog moderator can attach menu photos; status goes Pending → Ready (or Failed)
+- [ ] A user can attach menu photos in `POST /api/ModerationShops`
+- [ ] After parsing, a cappuccino priced 9 becomes `Present` / `9.00` / BYN
+- [ ] A drink not in the photos stays `Unknown`, not `Absent`
+- [ ] Mean ~8 BYN → `Moderate`; below 7 → `Cheap`; above 9 → `Expensive`
+- [ ] `GET /api/CoffeeShops/{id}` contains `menu` with `capturedAtUtc` after publishing
+- [ ] PUT changes price/availability; `updatedAtUtc` is updated
+- [ ] Menu photos are not in the `photos[]` gallery
+- [ ] Custom/unmatched are not visible to the client
 
 ---
 
 ## Interview / locks
 
-| Тема | Решение |
+| Topic | Decision |
 |------|---------|
-| Что в меню v1 | Только стандартные кофейные напитки каталога |
-| Авторские | Схема + unmatched, не API |
-| Парсер | Gemini vision JSON |
-| Очередь OSM | Продукт = модерация; роуты import не трогаем |
-| 8 BYN | Moderate в коридоре 7–9 |
-| Кто правит | Moderator/admin; юзер только фото на create |
-| Клиенту | Деталка + дата загрузки |
+| What is in the v1 menu | Only standard catalog coffee drinks |
+| Signature drinks | Schema + unmatched, not API |
+| Parser | Gemini vision JSON |
+| OSM queue | Product = moderation; import routes stay untouched |
+| 8 BYN | Moderate in the 7–9 band |
+| Who edits | Moderator/admin; user only photos on create |
+| For the client | Details page + upload date |

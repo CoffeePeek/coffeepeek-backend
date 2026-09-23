@@ -2,7 +2,7 @@
 
 ## Specialty shop bootstrap (2026-08-15)
 
-- [ ] Качество тегов OSM в Минске для `amenity=cafe` / `cuisine=coffee_shop` / specialty-сигналов — сколько точек, какой шум, какие теги реально заполнены?
-- [ ] Какие публичные specialty-подборки Минска можно легально использовать как seed-списки (сайты, Telegram, статьи) и в каком формате?
-- [ ] Минимальный набор полей кандидата для админ-очереди (имя, адрес, coords, source, raw tags, notes) vs то, что уже есть у `ModerationShop`.
-- [ ] После ручной разметки малой выборки: какие эвристики автофильтра имеют смысл (ключевые слова, OSM tags, наличие specialty/roastery в name, внешние списки)?
+- [ ] Quality of OSM tags in Minsk for `amenity=cafe` / `cuisine=coffee_shop` / specialty signals — how many points, how much noise, which tags are actually filled in?
+- [ ] Which public specialty lists for Minsk can legally be used as seed lists (websites, Telegram, articles), and in what format?
+- [ ] Minimal candidate field set for the admin queue (name, address, coords, source, raw tags, notes) vs what `ModerationShop` already has.
+- [ ] After manually labeling a small sample: which auto-filter heuristics make sense (keywords, OSM tags, specialty/roastery in the name, external lists)?
