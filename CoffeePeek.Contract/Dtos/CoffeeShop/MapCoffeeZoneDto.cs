@@ -7,4 +7,8 @@ public sealed record MapCoffeeZoneDto(
     decimal Latitude,
     decimal Longitude,
     int RadiusMeters,
-    int ShopCount);
+    int ShopCount,
+    MapCoffeeZonePointDto[] Polygon);
+
+/// <summary>Zone outline vertex. Latitude/Longitude/RadiusMeters on the zone are the polygon's derived centroid and bounding circle.</summary>
+public sealed record MapCoffeeZonePointDto(decimal Latitude, decimal Longitude);
