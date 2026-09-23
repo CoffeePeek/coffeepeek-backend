@@ -7,10 +7,8 @@ public sealed class HttpMenuPhotoDownloader(
     IHttpClientFactory httpClientFactory,
     ILogger<HttpMenuPhotoDownloader> logger) : IMenuPhotoDownloader
 {
-    // Each photo is base64-inlined into one OpenAI request; unbounded reads meant memory spikes and huge bills.
     public const int MaxPhotoBytes = 8 * 1024 * 1024;
 
-    /// <summary>Reads the body, or returns null once it exceeds <see cref="MaxPhotoBytes"/>.</summary>
     public static async Task<byte[]?> ReadCappedAsync(HttpContent content, CancellationToken ct)
     {
         if (content.Headers.ContentLength > MaxPhotoBytes)
