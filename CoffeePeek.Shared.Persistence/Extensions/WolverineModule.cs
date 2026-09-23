@@ -69,6 +69,12 @@ public static class WolverineModule
 
                 opts.PersistMessagesWithPostgresql(postgresCpOptions.ConnectionString);
 
+                // Without durable endpoints the outbox only delays sending until commit and keeps messages in memory:
+                // a crash or broker outage after commit silently drops events (e.g. a shop approved but never
+                // published). Durable inbox also dedupes redelivered envelopes before handlers run.
+                opts.Policies.UseDurableOutboxOnAllSendingEndpoints();
+                opts.Policies.UseDurableInboxOnAllListeners();
+
                 // Every CoffeePeek service is deployed as a single instance (no replicas in
                 // deploy/docker-compose.yml or CoffePeek.AppHost). Wolverine's default
                 // DurabilityMode.Balanced runs leader election and cross-node agent
