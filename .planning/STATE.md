@@ -35,6 +35,7 @@ progress:
 | 260924-hek | account-security-group1-fixes | complete | 2026-09-24 |
 | 260924-jpd | harden-review-and-check-in-photo-attachm | complete | 2026-09-24 |
 | 260924-mii | copy-moderation-review-photos-to-publish | complete | 2026-09-24 |
+| 260924-oxa | load-moderation-review-photos-on-approve | complete | 2026-09-24 |
 
 ## Milestone Progress
 

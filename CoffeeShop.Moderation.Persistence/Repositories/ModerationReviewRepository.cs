@@ -16,7 +16,11 @@ public class ModerationReviewRepository(ModerationDbContext dbContext) : IModera
     
     public Task<ModerationReview?> GetById(Guid id, CancellationToken ct = default)
     {
-        return _reviewRepository.FirstOrDefaultAsync(x => x.Id == id, ct);
+        // Photos must be loaded: approve/edit handlers map this aggregate into the event that
+        // Shops publishes from — without the Include every published review arrived photo-less.
+        return _reviewRepository
+            .Include(x => x.ReviewPhotos)
+            .FirstOrDefaultAsync(x => x.Id == id, ct);
     }
 
     public Task<ModerationReview?> GetByShopId(Guid shopId, CancellationToken ct = default)
