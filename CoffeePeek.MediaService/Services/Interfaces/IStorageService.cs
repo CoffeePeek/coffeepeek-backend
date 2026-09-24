@@ -14,5 +14,8 @@ public interface IStorageService
     
     Task MarkAsPermanent(string storageKey, BucketType bucketType, CancellationToken ct = default);
     Task<bool> Exists(string uploadedPhotoStorageKey, BucketType bucketType, CancellationToken ct = default);
+
+    /// <summary>Size in bytes of the stored object, or null when the object does not exist.</summary>
+    Task<long?> GetObjectSize(string storageKey, BucketType bucketType, CancellationToken ct = default);
     Task Delete(string oldStorageKey, BucketType bucketType, CancellationToken ct = default);
 }
