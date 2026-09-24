@@ -1,4 +1,5 @@
 ﻿using CoffeePeek.Shops.Domain.Aggregates.ReviewAggregate;
+using CoffeePeek.Shops.Domain.Entities;
 using CoffeePeek.Shops.Persistance.Configuration;
 using Microsoft.EntityFrameworkCore;
 
@@ -12,7 +13,22 @@ public class ReviewRepository(ShopsDbContext dbContext) : IReviewRepository
     {
         _repository.Add(review);
     }
-    
+
+    // Both calls are deliberately explicit:
+    // a) ShopPhoto has three optional parent FKs (CoffeeShopId, CheckInId, ReviewId) on one shared
+    //    table, so a required/cascade relationship is impossible. Removing an item from
+    //    Review.Photos would only null ReviewId and leave an orphan row -> RemoveRange deletes it.
+    // b) ShopPhoto.Id is assigned client-side while EF treats it as ValueGeneratedOnAdd. On a
+    //    tracked parent, DetectChanges would classify a new photo with a non-default key as
+    //    Modified and the UPDATE would hit 0 rows (same bug as the RoasterPhoto 409). AddRange
+    //    marks them Added; DetectChanges still fixes up the ReviewId shadow FK from the navigation.
+    // Changing the ShopPhoto key config instead would alter the snapshot and require a migration.
+    public void TrackPhotoReplacement(IReadOnlyCollection<ShopPhoto> removed, IReadOnlyCollection<ShopPhoto> added)
+    {
+        dbContext.ShopPhotos.RemoveRange(removed);
+        dbContext.ShopPhotos.AddRange(added);
+    }
+
     public Task<bool> AnyAsync(Guid shopId, Guid reviewId, CancellationToken ct)
     {
         return _repository.AnyAsync(r => r.CoffeeShopId == shopId && r.Id == reviewId, ct);
@@ -27,7 +43,10 @@ public class ReviewRepository(ShopsDbContext dbContext) : IReviewRepository
     // re-approval can Restore() and update the SAME row.
     public Task<Review?> GetByModerationReviewId(Guid moderationReviewId, CancellationToken ct)
     {
-        return _repository.FirstOrDefaultAsync(x => x.ModerationReviewId == moderationReviewId, ct);
+        // Photos are included so ReplacePhotos sees (and can delete) the full old set.
+        return _repository
+            .Include(x => x.Photos)
+            .FirstOrDefaultAsync(x => x.ModerationReviewId == moderationReviewId, ct);
     }
 
     public Task<Review?> GetUnlinkedByShopAndUser(Guid shopId, Guid userId, CancellationToken ct)

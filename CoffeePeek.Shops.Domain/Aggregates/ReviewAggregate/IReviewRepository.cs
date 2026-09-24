@@ -1,8 +1,11 @@
-﻿namespace CoffeePeek.Shops.Domain.Aggregates.ReviewAggregate;
+﻿using CoffeePeek.Shops.Domain.Entities;
+
+namespace CoffeePeek.Shops.Domain.Aggregates.ReviewAggregate;
 
 public interface IReviewRepository
 {
     void Add(Review review);
+    void TrackPhotoReplacement(IReadOnlyCollection<ShopPhoto> removed, IReadOnlyCollection<ShopPhoto> added);
     Task<bool> AnyAsync(Guid shopId, Guid reviewId, CancellationToken ct);
     Task<Review?> GetById(Guid reviewId, CancellationToken ct);
     Task<Review?> GetByModerationReviewId(Guid moderationReviewId, CancellationToken ct);

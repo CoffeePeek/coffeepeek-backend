@@ -68,6 +68,22 @@ public sealed partial class Review
         IsSoftDelete = false;
     }
 
+    /// <summary>
+    /// Replaces the published photo set with <paramref name="photos"/> (order preserved) and
+    /// returns the photos that were removed. The caller must have loaded <see cref="Photos"/>
+    /// (Include), otherwise the removed set is incomplete and old rows are left behind.
+    /// </summary>
+    public IReadOnlyCollection<ShopPhoto> ReplacePhotos(IEnumerable<ShopPhoto> photos)
+    {
+        var incoming = photos.ToList();
+        var removed = _shopPhotos.ToList();
+
+        _shopPhotos.Clear();
+        _shopPhotos.AddRange(incoming);
+
+        return removed;
+    }
+
     public void LinkToModerationReview(Guid moderationReviewId)
     {
         if (ModerationReviewId.HasValue)
