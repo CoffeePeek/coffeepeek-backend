@@ -1,5 +1,6 @@
 using CoffeePeek.Shared.Kernel.Exceptions;
 using CoffeePeek.Shops.Domain.Aggregates.ReviewAggregate;
+using CoffeePeek.Shops.Domain.Entities;
 using FluentAssertions;
 using JetBrains.Annotations;
 
@@ -108,5 +109,29 @@ public class ReviewTests
         review.Comment.Should().NotBeNullOrEmpty();
         review.Rating.Should().NotBeNull();
         review.ModerationReviewId.Should().Be(ValidModerationReviewId);
+    }
+
+    [Fact]
+    public void ReplacePhotos_ReplacesInOrderAndReturnsPrevious()
+    {
+        // Arrange
+        var review = Review.Create(ValidShopId, ValidUserId, "user", ValidHeader, ValidComment, ValidRating, ValidRating, ValidRating, ValidModerationReviewId);
+        var old = new ShopPhoto("old.jpg", "image/jpeg", "reviews/old.jpg", 10, ValidUserId);
+        review.ReplacePhotos([old]);
+
+        var a = new ShopPhoto("a.jpg", "image/jpeg", "reviews/a.jpg", 11, ValidUserId, 0);
+        var b = new ShopPhoto("b.jpg", "image/jpeg", "reviews/b.jpg", 12, ValidUserId, 1);
+
+        // Act
+        var removed = review.ReplacePhotos([a, b]);
+
+        // Assert
+        review.Photos.Should().Equal(a, b);
+        removed.Should().ContainSingle().Which.Should().BeSameAs(old);
+
+        // Clearing returns the set that was just placed.
+        var cleared = review.ReplacePhotos([]);
+        review.Photos.Should().BeEmpty();
+        cleared.Should().Equal(a, b);
     }
 }

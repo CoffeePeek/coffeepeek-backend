@@ -100,6 +100,13 @@ public class ShopsDbContext(DbContextOptions<ShopsDbContext> options) : DbContex
                 .OnDelete(DeleteBehavior.Cascade);
 
             entity.OwnsOne<Rating>(r => r.Rating);
+
+            // The backing field name (_shopPhotos) doesn't match EF's convention for "Photos";
+            // without this, Include/materialization would try to write into a ReadOnlyCollection.
+            // Access mode/backing field are not part of the snapshot -> no migration.
+            entity.Navigation(r => r.Photos)
+                .HasField("_shopPhotos")
+                .UsePropertyAccessMode(PropertyAccessMode.Field);
         });
 
         modelBuilder.Entity<ReviewHelpfulVote>(entity =>

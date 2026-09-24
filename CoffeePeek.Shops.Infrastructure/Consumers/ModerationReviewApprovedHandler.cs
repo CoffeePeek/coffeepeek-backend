@@ -23,6 +23,12 @@ public static class ModerationReviewApprovedHandler
         // skip-if-exists silently dropped EVERY re-approval — that was the core bug.
         var existing = await reviewRepository.GetByModerationReviewId(reviewDto.Id, ct);
 
+        // Moderation sends SortIndex = 0 for every photo, so the array position is the order
+        // (same approach as CreateShopFromModerationService).
+        var photos = reviewDto.Photos
+            .Select((p, i) => new ShopPhoto(p.FileName, p.ContentType, p.StorageKey, p.SizeBytes, p.OwnerId, i))
+            .ToList();
+
         Guid? addedReviewId = null;
         if (existing != null)
         {
@@ -31,6 +37,9 @@ public static class ModerationReviewApprovedHandler
                 reviewDto.Comment,
                 Rating.Create(reviewDto.Rating.Place, reviewDto.Rating.Service, reviewDto.Rating.Coffee));
             existing.Restore(); // un-hide a review that was hidden by an edit
+
+            var removed = existing.ReplacePhotos(photos);
+            reviewRepository.TrackPhotoReplacement(removed, photos);
         }
         else
         {
@@ -43,6 +52,8 @@ public static class ModerationReviewApprovedHandler
                 reviewDto.Rating.Place, reviewDto.Rating.Service, reviewDto.Rating.Coffee,
                 moderationReviewId: reviewDto.Id);
 
+            // Add() cascades the whole graph as Added, so no TrackPhotoReplacement is needed here.
+            review.ReplacePhotos(photos);
             reviewRepository.Add(review);
             addedReviewId = review.Id;
         }
