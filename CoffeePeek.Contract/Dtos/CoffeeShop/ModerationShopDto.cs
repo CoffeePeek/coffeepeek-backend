@@ -27,4 +27,5 @@ public class ModerationShopDto
     public List<Guid> BrewMethodIds { get; set; }
     public List<ShortPhotoMetadataDto> ShopPhotos { get; set; }
     public ShopMenuDto? Menu { get; set; }
+    public int DataCompletenessScore { get; set; }
 }
