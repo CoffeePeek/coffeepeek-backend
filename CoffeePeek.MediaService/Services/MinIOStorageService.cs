@@ -84,6 +84,23 @@ public class MinIOStorageService : IStorageService, IDisposable
         }
     }
 
+    public async Task<long?> GetObjectSize(string storageKey, BucketType bucketType, CancellationToken ct = default)
+    {
+        try
+        {
+            var args = new StatObjectArgs()
+                .WithBucket(GetBucketName(bucketType))
+                .WithObject(storageKey);
+
+            var stat = await _internalClient.StatObjectAsync(args, ct);
+            return stat.Size;
+        }
+        catch (MinioException)
+        {
+            return null;
+        }
+    }
+
     public async Task Delete(string storageKey, BucketType bucketType, CancellationToken ct = default)
     {
         var args = new RemoveObjectArgs()

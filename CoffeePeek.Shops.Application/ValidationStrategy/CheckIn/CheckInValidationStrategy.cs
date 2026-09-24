@@ -77,6 +77,19 @@ public class CheckInValidationStrategy(
             || command.Rating.Service < BusinessConstants.MinReviewRate || command.Rating.Service > BusinessConstants.MaxReviewRate)
             return ValidationResult.Invalid($"Rating must be between {BusinessConstants.MinReviewRate} and {BusinessConstants.MaxReviewRate}");
 
+        if (command.Photos is { Count: > 0 } photos)
+        {
+            if (photos.Count > BusinessConstants.MaxCheckInPhotos)
+                return ValidationResult.Invalid($"A check-in can have at most {BusinessConstants.MaxCheckInPhotos} photos");
+
+            if (photos.Any(p => p is null || string.IsNullOrWhiteSpace(p.StorageKey)
+                                || p.StorageKey.Length > BusinessConstants.MaxCheckInPhotoStorageKeyLength))
+                return ValidationResult.Invalid("Photo storage key is required");
+
+            if (photos.Select(p => p.StorageKey).Distinct(StringComparer.Ordinal).Count() != photos.Count)
+                return ValidationResult.Invalid("Duplicate photos are not allowed");
+        }
+
         if (command.IsPublic)
         {
             if (!string.IsNullOrWhiteSpace(command.Header) &&

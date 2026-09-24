@@ -17,6 +17,9 @@ public static class BusinessConstants
     #region CheckIn
     
     public const int MaxCheckInNoteLength = 500;
+    public const int MaxCheckInPhotos = 5;
+    /// <summary>Matches MediaService PhotoMetadata.StorageKey MaxLength.</summary>
+    public const int MaxCheckInPhotoStorageKeyLength = 255;
     public const int MinPublicCheckinNoteLength = MinReviewHeaderLength;
     public const int MinHoursBetweenUserCheckIns = 3;
     public const int MaxUserCheckInsPerDay = 3;

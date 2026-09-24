@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel;
+using CoffeePeek.Contract.Dtos;
 using CoffeePeek.MediaService.Commands;
 using CoffeePeek.MediaService.Commands.Base;
 using CoffeePeek.MediaService.Responses;
@@ -80,6 +81,39 @@ public class PhotosController(IMessageBus bus, IUserContext userContext) : Contr
         var ownerId = userContext.GetUserIdOrThrow();
         var command = new GenerateShopPhotosCommand(requests, ownerId, "roasters");
         var response = await bus.InvokeAsync<Response<List<GenerateUploadUrlResponse>>>(command, ct);
+        return Ok(response);
+    }
+
+    /// <summary>
+    /// Generate presigned upload urls for check-in/review photos (shop bucket, prefix reviews/).
+    /// </summary>
+    [HttpPost("review")]
+    [Description("Get urls for presigned upload review photos")]
+    [ProducesResponseType<Response<List<GenerateUploadUrlResponse>>>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> GenerateReviewUploadUrls([FromBody] List<PhotoRequest> requests, CancellationToken ct)
+    {
+        var ownerId = userContext.GetUserIdOrThrow();
+        var command = new GenerateShopPhotosCommand(requests, ownerId, "reviews");
+        var response = await bus.InvokeAsync<Response<List<GenerateUploadUrlResponse>>>(command, ct);
+        return Ok(response);
+    }
+
+    /// <summary>
+    /// Resolve trusted metadata for photos the caller uploaded and has not attached yet.
+    /// Service-to-service endpoint (used by Shops); always scoped to the authenticated caller,
+    /// so keys owned by other users, already used, expired or never uploaded are omitted.
+    /// </summary>
+    [HttpPost("resolve")]
+    [Description("Resolve the caller's pending uploaded photos by storage key")]
+    [ProducesResponseType<Response<List<ResolvedUploadedPhotoDto>>>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> ResolveUploadedPhotos([FromBody] ResolveUploadedPhotosQuery query, CancellationToken ct)
+    {
+        query = query with { OwnerId = userContext.GetUserIdOrThrow() };
+        var response = await bus.InvokeAsync<Response<List<ResolvedUploadedPhotoDto>>>(query, ct);
         return Ok(response);
     }
 }

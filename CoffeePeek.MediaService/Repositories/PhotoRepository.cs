@@ -21,4 +21,14 @@ public class PhotoRepository(MediaDbContext dbContext) : IPhotoRepository
     {
         return _repository.FirstOrDefaultAsync(x => x.Id == photoId, ct);
     }
+
+    public Task<List<PhotoMetadata>> GetByStorageKeysAsync(
+        Guid ownerId,
+        IReadOnlyCollection<string> storageKeys,
+        CancellationToken ct = default)
+    {
+        return _repository
+            .Where(x => x.OwnerId == ownerId && storageKeys.Contains(x.StorageKey))
+            .ToListAsync(ct);
+    }
 }
