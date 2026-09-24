@@ -1,6 +1,7 @@
 using System;
 using CoffeePeek.Contract.Dtos.CoffeeShop;
 using CoffeePeek.Shared.Kernel.Options;
+using CoffeePeek.Shops.Application.Features.Admin.Shops;
 using CoffeePeek.Shops.Application.Mapper;
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
 using FluentAssertions;
@@ -29,5 +30,6 @@ public class MapsterConfigurationCoffeeShopTests
         shop.Adapt<ShortShopDto>(config).DataCompletenessScore.Should().Be(65);
         shop.Adapt<CoffeeShopDetailsDto>(config).DataCompletenessScore.Should().Be(65);
         shop.Adapt<ShopDto>(config).DataCompletenessScore.Should().Be(65);
+        AdminPublishedShopMapper.Map(shop, new MediaPublicUrlOptions()).DataCompletenessScore.Should().Be(65);
     }
 }
