@@ -1,10 +1,13 @@
+using CoffeePeek.Contract.Dtos;
 using CoffeePeek.Contract.Dtos.CoffeeShop;
+using CoffeePeek.Contract.Events;
 using CoffeePeek.Contract.Events.Shops;
 using CoffeePeek.Shared.Domain.Interfaces.Infrastructure;
 using CoffeePeek.Shared.Kernel;
 using CoffeePeek.Shared.Kernel.Exceptions;
 using CoffeePeek.Shared.Kernel.Response;
 using CoffeePeek.Shared.Validation;
+using CoffeePeek.Shops.Application.Abstractions;
 using CoffeePeek.Shops.Application.Features.Public.Stats;
 using CoffeePeek.Shops.Domain.Aggregates.CheckInAggregate;
 using CoffeePeek.Shops.Domain.Entities;
@@ -17,6 +20,10 @@ using Review = Domain.Aggregates.ReviewAggregate.Review;
 
 public static class CreateCheckInHandler
 {
+    public const string PhotosNotVerifiedMessage = "Photos could not be verified, please try again";
+    public const string PhotosNotFoundMessage =
+        "One or more photos were not found, do not belong to you, or were already used";
+
     public static async Task<Response<CreateCheckInResponse>> Handle(
         CreateCheckInCommand command,
         IQueryCheckInRepository queryCheckInRepository,
@@ -25,6 +32,7 @@ public static class CreateCheckInHandler
         IAsyncValidationStrategy<CreateCheckInCommand> validationStrategy,
         IMapper mapper,
         ICacheService cacheService,
+        IUploadedPhotoLookup photoLookup,
         CancellationToken ct)
     {
         // Cooldown and daily cap are read-then-insert checks; without the lock parallel requests all pass.
@@ -42,16 +50,39 @@ public static class CreateCheckInHandler
         if (!string.IsNullOrEmpty(command.Note))
             checkIn.UpdateNote(command.Note);
 
-        if (command.Photos is { Count: > 0 })
+        // Only the storage key from the client is trusted. Ownership, single use and the real
+        // FileName/ContentType/Size come from MediaService; fail closed if it cannot be asked.
+        var storageKeys = command.Photos?.Select(p => p.StorageKey).ToArray() ?? [];
+        UploadedPhotoDto[] trustedPhotos = [];
+        if (storageKeys.Length > 0)
         {
-            var photos = command.Photos.Select(x =>
-                new ShopPhoto(x.FileName, x.ContentType, x.StorageKey, x.Size, command.UserId));
-            checkIn.AddPhotos(photos);
+            var lookup = await photoLookup.ResolveAsync(command.UserId, storageKeys, ct);
+            if (!lookup.Succeeded)
+                throw new ValidationException(PhotosNotVerifiedMessage);
+
+            var resolved = lookup.Photos.ToDictionary(p => p.StorageKey, StringComparer.Ordinal);
+            if (storageKeys.Any(k => !resolved.ContainsKey(k)))
+                throw new ValidationException(PhotosNotFoundMessage);
+
+            trustedPhotos = storageKeys
+                .Select(k => resolved[k])
+                .Select(r => new UploadedPhotoDto(r.FileName, r.ContentType, r.StorageKey, r.SizeBytes))
+                .ToArray();
+
+            checkIn.AddPhotos(trustedPhotos.Select(p =>
+                new ShopPhoto(p.FileName, p.ContentType, p.StorageKey, p.Size, command.UserId)));
         }
 
         checkIn.AssignRating(command.Rating!.Place, command.Rating.Service, command.Rating.Coffee);
 
         queryCheckInRepository.Add(checkIn);
+
+        if (storageKeys.Length > 0)
+        {
+            // Durable outbox: only shipped once SaveChangesAsync commits the check-in.
+            await bus.PublishAsync(new CheckInPhotosAttachedEvent(
+                command.UserId, checkIn.Id, storageKeys, DateTime.UtcNow));
+        }
 
         if (command.IsPublic)
         {
@@ -78,7 +109,7 @@ public static class CreateCheckInHandler
                 {
                     Username = command.UserName,
                     ModerationReviewId = null,
-                    Photos = command.Photos?.ToArray() ?? []
+                    Photos = trustedPhotos
                 }
             });
         }

@@ -4,6 +4,7 @@ using CoffeePeek.Shops.Application.Abstractions;
 using CoffeePeek.Shops.Application.Services;
 using CoffeePeek.Shops.Infrastructure.Account;
 using CoffeePeek.Shops.Infrastructure.Consumers;
+using CoffeePeek.Shops.Infrastructure.Media;
 using CoffeePeek.Shops.Infrastructure.Menu;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -22,6 +23,12 @@ public static class DependencyInjection
         services.AddHttpClient("account-user-lookup", client =>
         {
             client.BaseAddress = new Uri($"http://{AppResources.AccountService}");
+            client.Timeout = TimeSpan.FromSeconds(5);
+        });
+
+        services.AddHttpClient(MediaUploadedPhotoLookup.HttpClientName, client =>
+        {
+            client.BaseAddress = new Uri($"http://{AppResources.MediaService}");
             client.Timeout = TimeSpan.FromSeconds(5);
         });
 
@@ -65,6 +72,7 @@ public static class DependencyInjection
         });
 
         services.AddScoped<IUserExistenceLookup, AccountUserExistenceLookup>();
+        services.AddScoped<IUploadedPhotoLookup, MediaUploadedPhotoLookup>();
         services.AddScoped<IMenuVisionParser, OpenAiMenuVisionParser>();
         services.AddScoped<IMenuPhotoDownloader, HttpMenuPhotoDownloader>();
         services.AddScoped<ModerationShopApproveHandler>();

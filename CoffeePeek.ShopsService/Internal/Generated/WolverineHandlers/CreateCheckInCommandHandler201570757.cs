@@ -3,7 +3,10 @@
 using CoffeePeek.Shared.Domain.Interfaces.Infrastructure;
 using MapsterMapper;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using System.Collections.Generic;
+using System.Net.Http;
 
 namespace Internal.Generated.WolverineHandlers
 {
@@ -14,14 +17,20 @@ namespace Internal.Generated.WolverineHandlers
         private readonly CoffeePeek.Shared.Domain.Interfaces.Infrastructure.ICacheService _cacheService;
         private readonly MapsterMapper.IMapper _mapper;
         private readonly Microsoft.Extensions.DependencyInjection.IServiceScopeFactory _serviceScopeFactory;
+        private readonly Microsoft.Extensions.Logging.ILogger<CoffeePeek.Shops.Infrastructure.Media.MediaUploadedPhotoLookup> _loggerOfMediaUploadedPhotoLookup;
+        private readonly Microsoft.Extensions.Options.IOptions<CoffeePeek.Shared.Auth.Options.GatewayAuthOptions> _optionsOfGatewayAuthOptions;
         private readonly System.Collections.Generic.IEnumerable<Wolverine.EntityFrameworkCore.IDomainEventScraper> _domainEventScraperIEnumerable;
+        private readonly System.Net.Http.IHttpClientFactory _httpClientFactory;
 
-        public CreateCheckInCommandHandler201570757(CoffeePeek.Shared.Domain.Interfaces.Infrastructure.ICacheService cacheService, MapsterMapper.IMapper mapper, Microsoft.Extensions.DependencyInjection.IServiceScopeFactory serviceScopeFactory, System.Collections.Generic.IEnumerable<Wolverine.EntityFrameworkCore.IDomainEventScraper> domainEventScraperIEnumerable)
+        public CreateCheckInCommandHandler201570757(CoffeePeek.Shared.Domain.Interfaces.Infrastructure.ICacheService cacheService, MapsterMapper.IMapper mapper, Microsoft.Extensions.DependencyInjection.IServiceScopeFactory serviceScopeFactory, Microsoft.Extensions.Logging.ILogger<CoffeePeek.Shops.Infrastructure.Media.MediaUploadedPhotoLookup> loggerOfMediaUploadedPhotoLookup, Microsoft.Extensions.Options.IOptions<CoffeePeek.Shared.Auth.Options.GatewayAuthOptions> optionsOfGatewayAuthOptions, System.Collections.Generic.IEnumerable<Wolverine.EntityFrameworkCore.IDomainEventScraper> domainEventScraperIEnumerable, System.Net.Http.IHttpClientFactory httpClientFactory)
         {
             _cacheService = cacheService;
             _mapper = mapper;
             _serviceScopeFactory = serviceScopeFactory;
+            _loggerOfMediaUploadedPhotoLookup = loggerOfMediaUploadedPhotoLookup;
+            _optionsOfGatewayAuthOptions = optionsOfGatewayAuthOptions;
             _domainEventScraperIEnumerable = domainEventScraperIEnumerable;
+            _httpClientFactory = httpClientFactory;
         }
 
 
@@ -33,6 +42,7 @@ namespace Internal.Generated.WolverineHandlers
             // This service has been marked as requiring service location independent of Wolverine's ability to use constructor injection of everything else
             var shopsDbContext = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<CoffeePeek.Shops.Persistance.Configuration.ShopsDbContext>(serviceScope.ServiceProvider);
             var queryCoffeeShopRepository = new CoffeePeek.Shops.Persistance.Repositories.QueryCoffeeShopRepository(shopsDbContext);
+            var mediaUploadedPhotoLookup = new CoffeePeek.Shops.Infrastructure.Media.MediaUploadedPhotoLookup(_httpClientFactory, _optionsOfGatewayAuthOptions, _loggerOfMediaUploadedPhotoLookup);
             var queryCheckInRepository = new CoffeePeek.Shops.Persistance.Repositories.QueryCheckInRepository(shopsDbContext);
             var checkInValidationStrategy = new CoffeePeek.Shops.Application.ValidationStrategy.CheckIn.CheckInValidationStrategy(queryCoffeeShopRepository, queryCheckInRepository);
             var unitOfWorkOfShopsDbContext = new CoffeePeek.Shared.Persistence.Data.UnitOfWork<CoffeePeek.Shops.Persistance.Configuration.ShopsDbContext>(shopsDbContext);
@@ -55,7 +65,7 @@ namespace Internal.Generated.WolverineHandlers
                 System.Diagnostics.Activity.Current?.SetTag("handler.type", "CoffeePeek.Shops.Application.Features.CheckIn.CreateCheckIn.CreateCheckInHandler");
                 
                 // The actual message execution
-                var outgoing1 = await CoffeePeek.Shops.Application.Features.CheckIn.CreateCheckIn.CreateCheckInHandler.Handle(createCheckInCommand, queryCheckInRepository, unitOfWorkOfShopsDbContext, context, checkInValidationStrategy, _mapper, _cacheService, cancellation).ConfigureAwait(false);
+                var outgoing1 = await CoffeePeek.Shops.Application.Features.CheckIn.CreateCheckIn.CreateCheckInHandler.Handle(createCheckInCommand, queryCheckInRepository, unitOfWorkOfShopsDbContext, context, checkInValidationStrategy, _mapper, _cacheService, mediaUploadedPhotoLookup, cancellation).ConfigureAwait(false);
 
                 
                 // Outgoing, cascaded message

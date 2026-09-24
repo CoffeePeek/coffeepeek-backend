@@ -9,6 +9,8 @@ using CoffeePeek.Shared.Domain.Interfaces.Infrastructure;
 using CoffeePeek.Shared.Kernel;
 using CoffeePeek.Shared.Kernel.Exceptions;
 using CoffeePeek.Shared.Validation;
+using CoffeePeek.Shops.Application.Abstractions;
+using CoffeePeek.Contract.Events;
 using CoffeePeek.Shops.Application.Features.CheckIn.CreateCheckIn;
 using CoffeePeek.Shops.Domain.Aggregates.CheckInAggregate;
 using FluentAssertions;
@@ -27,6 +29,7 @@ public class CreateCheckInHandlerTests
     private readonly Mock<IAsyncValidationStrategy<CreateCheckInCommand>> _validationMock = new();
     private readonly Mock<IMapper> _mapperMock = new();
     private readonly Mock<ICacheService> _cacheMock = new();
+    private readonly Mock<IUploadedPhotoLookup> _photoLookupMock = new();
     private readonly CancellationToken _ct = CancellationToken.None;
 
     private static CreateCheckInCommand BuildCommand(
@@ -43,6 +46,22 @@ public class CreateCheckInHandlerTests
             Header: "Explicit review title")
         { UserId = Guid.NewGuid(), UserName = "testuser" };
 
+    private void SetupLookup(Guid userId, params ResolvedUploadedPhotoDto[] resolved) =>
+        _photoLookupMock.Setup(l => l.ResolveAsync(userId, It.IsAny<IReadOnlyCollection<string>>(), _ct))
+            .ReturnsAsync(new UploadedPhotoLookupResult(true, resolved));
+
+    private Task<CoffeePeek.Shared.Kernel.Response.Response<CreateCheckInResponse>> Run(CreateCheckInCommand command) =>
+        CreateCheckInHandler.Handle(
+            command,
+            _checkInRepoMock.Object,
+            _unitOfWorkMock.Object,
+            _busMock.Object,
+            _validationMock.Object,
+            _mapperMock.Object,
+            _cacheMock.Object,
+            _photoLookupMock.Object,
+            _ct);
+
     [Fact]
     public async Task Handle_PrivateCheckIn_CreatesCheckInAndSaves()
     {
@@ -58,6 +77,7 @@ public class CreateCheckInHandlerTests
             _validationMock.Object,
             _mapperMock.Object,
             _cacheMock.Object,
+            _photoLookupMock.Object,
             _ct);
 
         result.IsSuccess.Should().BeTrue();
@@ -84,7 +104,7 @@ public class CreateCheckInHandlerTests
             .Callback(() => order.Add("validate")).ReturnsAsync(ValidationResult.Valid);
 
         await CreateCheckInHandler.Handle(command, _checkInRepoMock.Object, _unitOfWorkMock.Object, _busMock.Object,
-            _validationMock.Object, _mapperMock.Object, _cacheMock.Object, _ct);
+            _validationMock.Object, _mapperMock.Object, _cacheMock.Object, _photoLookupMock.Object, _ct);
 
         order.Should().Equal("lock", "validate");
     }
@@ -100,6 +120,9 @@ public class CreateCheckInHandlerTests
         var command = BuildCommand(isPublic: false) with { Photos = photos };
         _validationMock.Setup(v => v.ValidateAsync(command, _ct))
             .ReturnsAsync(ValidationResult.Valid);
+        SetupLookup(command.UserId,
+            new ResolvedUploadedPhotoDto("checkins/first.jpg", "first.jpg", "image/jpeg", 1024),
+            new ResolvedUploadedPhotoDto("checkins/second.jpg", "second.jpg", "image/jpeg", 2048));
 
         DomainCheckIn? saved = null;
         _checkInRepoMock.Setup(r => r.Add(It.IsAny<DomainCheckIn>()))
@@ -113,6 +136,7 @@ public class CreateCheckInHandlerTests
             _validationMock.Object,
             _mapperMock.Object,
             _cacheMock.Object,
+            _photoLookupMock.Object,
             _ct);
 
         result.IsSuccess.Should().BeTrue();
@@ -150,6 +174,7 @@ public class CreateCheckInHandlerTests
             _validationMock.Object,
             _mapperMock.Object,
             _cacheMock.Object,
+            _photoLookupMock.Object,
             _ct);
 
         result.IsSuccess.Should().BeTrue();
@@ -181,6 +206,7 @@ public class CreateCheckInHandlerTests
             _validationMock.Object,
             _mapperMock.Object,
             _cacheMock.Object,
+            _photoLookupMock.Object,
             _ct);
 
         // TEST-04 regression: DomainException must NOT be swallowed by catch block
@@ -203,9 +229,141 @@ public class CreateCheckInHandlerTests
             _validationMock.Object,
             _mapperMock.Object,
             _cacheMock.Object,
+            _photoLookupMock.Object,
             _ct);
 
         await act.Should().ThrowAsync<CoffeePeek.Shared.Kernel.Exceptions.ValidationException>();
         _unitOfWorkMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Handle_WithUnknownOrForeignPhoto_ThrowsAndPersistsNothing()
+    {
+        var command = BuildCommand(isPublic: false) with
+        {
+            Photos =
+            [
+                new UploadedPhotoDto("a.jpg", "image/jpeg", "reviews/mine", 1),
+                new UploadedPhotoDto("b.jpg", "image/jpeg", "reviews/not-mine", 1)
+            ]
+        };
+        _validationMock.Setup(v => v.ValidateAsync(command, _ct)).ReturnsAsync(ValidationResult.Valid);
+        // Media omits keys that are unknown, foreign, already used or never uploaded.
+        SetupLookup(command.UserId, new ResolvedUploadedPhotoDto("reviews/mine", "a.jpg", "image/jpeg", 10));
+
+        var act = () => Run(command);
+
+        (await act.Should().ThrowAsync<CoffeePeek.Shared.Kernel.Exceptions.ValidationException>())
+            .WithMessage(CreateCheckInHandler.PhotosNotFoundMessage);
+        _checkInRepoMock.Verify(r => r.Add(It.IsAny<DomainCheckIn>()), Times.Never);
+        _busMock.Verify(
+            b => b.PublishAsync(It.IsAny<CheckInPhotosAttachedEvent>(), It.IsAny<DeliveryOptions?>()),
+            Times.Never);
+        _busMock.Verify(
+            b => b.PublishAsync(It.IsAny<CheckinCreatedEvent>(), It.IsAny<DeliveryOptions?>()),
+            Times.Never);
+        _unitOfWorkMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Handle_WhenMediaUnreachable_FailsClosed()
+    {
+        var command = BuildCommand(isPublic: false) with
+        {
+            Photos = [new UploadedPhotoDto("a.jpg", "image/jpeg", "reviews/mine", 1)]
+        };
+        _validationMock.Setup(v => v.ValidateAsync(command, _ct)).ReturnsAsync(ValidationResult.Valid);
+        _photoLookupMock
+            .Setup(l => l.ResolveAsync(command.UserId, It.IsAny<IReadOnlyCollection<string>>(), _ct))
+            .ReturnsAsync(UploadedPhotoLookupResult.Failed);
+
+        var act = () => Run(command);
+
+        (await act.Should().ThrowAsync<CoffeePeek.Shared.Kernel.Exceptions.ValidationException>())
+            .WithMessage(CreateCheckInHandler.PhotosNotVerifiedMessage);
+        _checkInRepoMock.Verify(r => r.Add(It.IsAny<DomainCheckIn>()), Times.Never);
+        _unitOfWorkMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Handle_SpoofedClientMetadata_IsReplacedByResolvedMetadata()
+    {
+        var command = BuildCommand(isPublic: true, note: "This is a sufficiently long note for review comment") with
+        {
+            Photos = [new UploadedPhotoDto("evil.html", "text/html", "reviews/a.jpg", 1)]
+        };
+        _validationMock.Setup(v => v.ValidateAsync(command, _ct)).ReturnsAsync(ValidationResult.Valid);
+        _mapperMock.Setup(m => m.Map<CoffeePeek.Contract.Dtos.CoffeeShop.ReviewDto>(It.IsAny<object>()))
+            .Returns(new CoffeePeek.Contract.Dtos.CoffeeShop.ReviewDto());
+        SetupLookup(command.UserId, new ResolvedUploadedPhotoDto("reviews/a.jpg", "a.jpg", "image/jpeg", 123456));
+
+        DomainCheckIn? saved = null;
+        _checkInRepoMock.Setup(r => r.Add(It.IsAny<DomainCheckIn>())).Callback<DomainCheckIn>(c => saved = c);
+        CheckinCreatedEvent? created = null;
+        _busMock.Setup(b => b.PublishAsync(It.IsAny<CheckinCreatedEvent>(), It.IsAny<DeliveryOptions?>()))
+            .Callback<CheckinCreatedEvent, DeliveryOptions?>((e, _) => created = e)
+            .Returns(ValueTask.CompletedTask);
+
+        await Run(command);
+
+        var photo = saved!.ShopPhotos.Should().ContainSingle().Subject;
+        photo.FileName.Should().Be("a.jpg");
+        photo.ContentType.Should().Be("image/jpeg");
+        photo.SizeBytes.Should().Be(123456);
+
+        created.Should().NotBeNull();
+        created!.ReviewDto.Photos.Should().ContainSingle()
+            .Which.Should().Be(new UploadedPhotoDto("a.jpg", "image/jpeg", "reviews/a.jpg", 123456));
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task Handle_WithPhotos_PublishesAttachEventForAnyVisibility(bool isPublic)
+    {
+        var command = BuildCommand(isPublic, note: "This is a sufficiently long note for review comment") with
+        {
+            Photos =
+            [
+                new UploadedPhotoDto("a.jpg", "image/jpeg", "reviews/a.jpg", 1),
+                new UploadedPhotoDto("b.jpg", "image/jpeg", "reviews/b.jpg", 1)
+            ]
+        };
+        _validationMock.Setup(v => v.ValidateAsync(command, _ct)).ReturnsAsync(ValidationResult.Valid);
+        _mapperMock.Setup(m => m.Map<CoffeePeek.Contract.Dtos.CoffeeShop.ReviewDto>(It.IsAny<object>()))
+            .Returns(new CoffeePeek.Contract.Dtos.CoffeeShop.ReviewDto());
+        SetupLookup(command.UserId,
+            new ResolvedUploadedPhotoDto("reviews/b.jpg", "b.jpg", "image/jpeg", 2),
+            new ResolvedUploadedPhotoDto("reviews/a.jpg", "a.jpg", "image/jpeg", 1));
+
+        DomainCheckIn? saved = null;
+        _checkInRepoMock.Setup(r => r.Add(It.IsAny<DomainCheckIn>())).Callback<DomainCheckIn>(c => saved = c);
+        CheckInPhotosAttachedEvent? attached = null;
+        _busMock.Setup(b => b.PublishAsync(It.IsAny<CheckInPhotosAttachedEvent>(), It.IsAny<DeliveryOptions?>()))
+            .Callback<CheckInPhotosAttachedEvent, DeliveryOptions?>((e, _) => attached = e)
+            .Returns(ValueTask.CompletedTask);
+
+        await Run(command);
+
+        attached.Should().NotBeNull();
+        attached!.UserId.Should().Be(command.UserId);
+        attached.CheckInId.Should().Be(saved!.Id);
+        attached.StorageKeys.Should().Equal("reviews/a.jpg", "reviews/b.jpg");
+        // Client order is kept, not the lookup order.
+        saved.ShopPhotos.Select(p => p.StorageKey).Should().Equal("reviews/a.jpg", "reviews/b.jpg");
+    }
+
+    [Fact]
+    public async Task Handle_WithoutPhotos_NeverCallsLookupOrPublishesAttachEvent()
+    {
+        var command = BuildCommand(isPublic: false);
+        _validationMock.Setup(v => v.ValidateAsync(command, _ct)).ReturnsAsync(ValidationResult.Valid);
+
+        await Run(command);
+
+        _photoLookupMock.VerifyNoOtherCalls();
+        _busMock.Verify(
+            b => b.PublishAsync(It.IsAny<CheckInPhotosAttachedEvent>(), It.IsAny<DeliveryOptions?>()),
+            Times.Never);
     }
 }

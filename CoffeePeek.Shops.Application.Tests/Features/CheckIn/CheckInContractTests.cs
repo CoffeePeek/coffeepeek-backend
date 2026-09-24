@@ -6,6 +6,7 @@ using CoffeePeek.Contract.Events.Shops;
 using CoffeePeek.Shared.Domain.Interfaces.Infrastructure;
 using CoffeePeek.Shared.Kernel;
 using CoffeePeek.Shared.Kernel.Options;
+using CoffeePeek.Shops.Application.Abstractions;
 using CoffeePeek.Shops.Application.Features.CheckIn.CreateCheckIn;
 using CoffeePeek.Shops.Application.Mapper;
 using CoffeePeek.Shops.Application.ValidationStrategy.CheckIn;
@@ -52,17 +53,21 @@ public class CheckInContractTests
         var uow = new Mock<IUnitOfWork>();
         var bus = new Mock<IMessageBus>();
         var cache = new Mock<ICacheService>();
+        var lookup = new Mock<IUploadedPhotoLookup>();
+        lookup.Setup(l => l.ResolveAsync(command.UserId, It.IsAny<System.Collections.Generic.IReadOnlyCollection<string>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new UploadedPhotoLookupResult(true,
+                [new ResolvedUploadedPhotoDto("checkins/coffee.jpg", "coffee.jpg", "image/jpeg", 1234)]));
         var mapper = MapsterConfiguration.CreateMapper(new MediaPublicUrlOptions());
         CoffeePeek.Shops.Domain.Aggregates.CheckInAggregate.CheckIn saved = null;
         CheckinCreatedEvent published = null;
         repo.Setup(r => r.Add(It.IsAny<CoffeePeek.Shops.Domain.Aggregates.CheckInAggregate.CheckIn>()))
             .Callback<CoffeePeek.Shops.Domain.Aggregates.CheckInAggregate.CheckIn>(c => saved = c);
         bus.Setup(b => b.PublishAsync(It.IsAny<object>()))
-            .Callback<object, DeliveryOptions>((e, _) => published = (CheckinCreatedEvent)e)
+            .Callback<object, DeliveryOptions>((e, _) => published = e as CheckinCreatedEvent ?? published)
             .Returns(ValueTask.CompletedTask);
 
         var response = await CreateCheckInHandler.Handle(command, repo.Object, uow.Object,
-            bus.Object, Validator(), mapper, cache.Object, CancellationToken.None);
+            bus.Object, Validator(), mapper, cache.Object, lookup.Object, CancellationToken.None);
 
         response.IsSuccess.Should().BeTrue();
         saved.Rating.Coffee.Should().Be(5);
