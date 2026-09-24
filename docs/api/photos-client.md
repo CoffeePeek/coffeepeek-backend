@@ -208,7 +208,7 @@ Other check-in validation errors are also 400. The exact strings are: `Coffee sh
 
   This happens asynchronously, usually within seconds.
 - The photos appear on the check-in, e.g. `GET /api/checkins` → `data.checkIns[].photos[]` (`ShortPhotoMetadataDto` with `fullUrl`).
-- For **public** check-ins, a review is sent to moderation with the same photos, using the trusted metadata. See [photos-admin.md](photos-admin.md). When the review is approved, the published shop review is created **without** photos: copying review photos to the published review is not currently supported.
+- For **public** check-ins, a review is sent to moderation with the same photos, using the trusted metadata. See [photos-admin.md](photos-admin.md). When the review is approved, the published shop review gets the same photos, in upload order. They appear in shop details as `data.shopDto.reviews[].photos[]`: `{ fileName, contentType, storageKey, size, fullUrl }`. Render `fullUrl`; don't build URLs from `storageKey`. All review photos live in the shops bucket (`coffeepeek.shops`). There is no reviews bucket.
 
 ---
 
