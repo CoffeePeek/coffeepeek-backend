@@ -7,8 +7,11 @@ using CoffeePeek.Account.Application.Common.Interfaces;
 using CoffeePeek.Account.Application.Features.Admin.Users.Sessions;
 using CoffeePeek.Account.Domain.Entities.RoleAggregate;
 using CoffeePeek.Account.Domain.Entities.UserAggregate;
+using CoffeePeek.Shared.Auth;
+using CoffeePeek.Shared.Auth.Options;
 using CoffeePeek.Shared.Kernel;
 using FluentAssertions;
+using Microsoft.Extensions.Options;
 using Moq;
 using Xunit;
 
@@ -19,7 +22,16 @@ public class AdminUserSessionsHandlerTests
     private readonly Mock<IUserRepository> _userRepoMock = new();
     private readonly Mock<IUnitOfWork> _unitOfWorkMock = new();
     private readonly Mock<ISessionTerminationNotifier> _sessionNotifierMock = new();
+    private readonly Mock<IRevokedUserStore> _revokedUserStoreMock = new();
+    private readonly IOptions<JWTOptions> _jwtOptions = Options.Create(new JWTOptions { AccessTokenLifetimeMinutes = 60 });
     private readonly CancellationToken _ct = CancellationToken.None;
+
+    public AdminUserSessionsHandlerTests()
+    {
+        _revokedUserStoreMock
+            .Setup(x => x.RevokeAsync(It.IsAny<Guid>(), It.IsAny<TimeSpan>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+    }
 
     private static DomainUser CreateUserWithSessions()
     {
@@ -114,6 +126,8 @@ public class AdminUserSessionsHandlerTests
             _userRepoMock.Object,
             _unitOfWorkMock.Object,
             _sessionNotifierMock.Object,
+            _revokedUserStoreMock.Object,
+            _jwtOptions,
             _ct);
 
         response.IsSuccess.Should().BeTrue();
@@ -122,5 +136,6 @@ public class AdminUserSessionsHandlerTests
         _sessionNotifierMock.Verify(
             x => x.NotifyForceLogoutAsync(user.Id, SessionTerminationReasons.AllSessionsRevoked, _ct),
             Times.Once);
+        _revokedUserStoreMock.Verify(x => x.RevokeAsync(user.Id, TimeSpan.FromMinutes(60), _ct), Times.Once);
     }
 }
