@@ -107,17 +107,22 @@ public class User : AggregateRoot<Guid>
         _refreshTokens.Add(new RefreshToken(Id, token, ttl, device, ip));
     }
 
-    public void RotateRefreshToken(string oldRefreshToken, string newRefreshToken, TimeSpan ttl, string device, string ip)
+    /// <returns>
+    /// <c>false</c> when the token is revoked, expired or unknown: every session is revoked (reuse detection).
+    /// Deliberately does not throw — an exception rolls back the handler transaction and the revocation with it.
+    /// </returns>
+    public bool RotateRefreshToken(string oldRefreshToken, string newRefreshToken, TimeSpan ttl, string device, string ip)
     {
         var existing = _refreshTokens.FirstOrDefault(t => t.Token == oldRefreshToken);
         if (existing is not { IsActive: true })
         {
             RevokeAllSessions();
-            throw new DomainException("Security breach: Token reused.");
+            return false;
         }
 
         existing.Revoke();
         AddSession(newRefreshToken, ttl, device, ip);
+        return true;
     }
 
     public void RevokeAllSessions() => _refreshTokens.ForEach(t => t.Revoke());

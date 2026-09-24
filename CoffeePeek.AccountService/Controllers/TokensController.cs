@@ -104,6 +104,8 @@ public class TokensController(
             Request.Headers.UserAgent.ToString(),
             HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown");
         var response = await bus.InvokeAsync<Response<RefreshTokenResponse>>(command);
+        if (response is not { IsSuccess: true, Data: not null })
+            return StatusCode(response.StatusCode ?? StatusCodes.Status401Unauthorized, response);
 
         return Ok(ToNativeResponse(
             response.Data.AccessToken,
@@ -135,17 +137,17 @@ public class TokensController(
         {
             var response = await bus.InvokeAsync<Response<RefreshTokenResponse>>(command);
 
-            if (response is { IsSuccess: true, Data: not null })
-                Response.Cookies.Append("refreshToken", response.Data.RefreshToken, CreateRefreshTokenCookieOptions());
+            if (response is not { IsSuccess: true, Data: not null })
+            {
+                // Token reuse: the handler returns (not throws) so the session revocation is committed.
+                DeleteRefreshTokenCookie();
+                return StatusCode(response.StatusCode ?? StatusCodes.Status401Unauthorized, response);
+            }
 
+            Response.Cookies.Append("refreshToken", response.Data.RefreshToken, CreateRefreshTokenCookieOptions());
             return Ok(response);
         }
         catch (UnauthorizedException)
-        {
-            DeleteRefreshTokenCookie();
-            throw;
-        }
-        catch (DomainException ex) when (ex.Message.Contains("Security breach", StringComparison.Ordinal))
         {
             DeleteRefreshTokenCookie();
             throw;

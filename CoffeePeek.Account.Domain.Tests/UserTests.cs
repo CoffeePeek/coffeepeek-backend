@@ -182,19 +182,19 @@ public class UserTests
     }
 
     [Fact]
-    public void RotateRefreshToken_WithInvalidToken_ShouldRevokeAllAndThrow()
+    public void RotateRefreshToken_WithInvalidToken_ShouldRevokeAllAndReturnFalse()
     {
         // Arrange
         var user = User.Register("test@example.com", "testuser", "hash", Role.Create("User"));
         user.AddSession("valid_token", TimeSpan.FromDays(7), "device", "ip");
 
-        // Act
-        Action act = () => user.RotateRefreshToken("invalid_token", "new_token", TimeSpan.FromDays(7), "device", "ip");
+        // Act — must not throw: a throw rolls back the Wolverine transaction and the revocation with it
+        var rotated = user.RotateRefreshToken("invalid_token", "new_token", TimeSpan.FromDays(7), "device", "ip");
 
         // Assert
-        act.Should().Throw<DomainException>()
-            .WithMessage("*Security breach*");
+        rotated.Should().BeFalse();
         user.RefreshTokens.Should().OnlyContain(t => !t.IsActive);
+        user.RefreshTokens.Should().NotContain(t => t.Token == "new_token");
     }
 
     [Fact]
