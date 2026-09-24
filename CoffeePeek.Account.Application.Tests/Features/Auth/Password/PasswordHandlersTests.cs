@@ -8,9 +8,12 @@ using CoffeePeek.Account.Application.Features.Auth.Password.ResetPassword;
 using CoffeePeek.Account.Domain.Entities.RoleAggregate;
 using CoffeePeek.Account.Domain.Entities.UserAggregate;
 using CoffeePeek.Account.Domain.Services;
+using CoffeePeek.Shared.Auth;
+using CoffeePeek.Shared.Auth.Options;
 using CoffeePeek.Shared.Kernel;
 using CoffeePeek.Shared.Kernel.Exceptions;
 using FluentAssertions;
+using Microsoft.Extensions.Options;
 using Moq;
 using Xunit;
 
@@ -22,7 +25,16 @@ public class PasswordHandlersTests
     private readonly Mock<IPasswordHasherService> _hasherMock = new();
     private readonly Mock<IUnitOfWork> _unitOfWorkMock = new();
     private readonly Mock<ISessionTerminationNotifier> _sessionNotifierMock = new();
+    private readonly Mock<IRevokedUserStore> _revokedUserStoreMock = new();
+    private readonly IOptions<JWTOptions> _jwtOptions = Options.Create(new JWTOptions { AccessTokenLifetimeMinutes = 60 });
     private readonly CancellationToken _ct = CancellationToken.None;
+
+    public PasswordHandlersTests()
+    {
+        _revokedUserStoreMock
+            .Setup(x => x.RevokeAsync(It.IsAny<Guid>(), It.IsAny<TimeSpan>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+    }
 
     private static DomainUser CreatePasswordUser(string email = "user@example.com", string hash = "hash") =>
         DomainUser.Register(email, "testuser", hash, Role.Create("User"));
@@ -37,7 +49,7 @@ public class PasswordHandlersTests
 
         var result = await ChangePasswordHandler.Handle(
             new ChangePasswordCommand(user.Id, "oldpass123", "newpass123"),
-            _userRepoMock.Object, _hasherMock.Object, _unitOfWorkMock.Object, _sessionNotifierMock.Object, _ct);
+            _userRepoMock.Object, _hasherMock.Object, _unitOfWorkMock.Object, _sessionNotifierMock.Object, _revokedUserStoreMock.Object, _jwtOptions, _ct);
 
         result.IsSuccess.Should().BeTrue();
         user.Credentials.PasswordHash.Should().Be("new_hash");
@@ -45,6 +57,8 @@ public class PasswordHandlersTests
         _sessionNotifierMock.Verify(
             x => x.NotifyForceLogoutAsync(user.Id, SessionTerminationReasons.PasswordChanged, _ct),
             Times.Once);
+        // Regression: a stolen access token must stop working after the victim changes password.
+        _revokedUserStoreMock.Verify(x => x.RevokeAsync(user.Id, TimeSpan.FromMinutes(60), _ct), Times.Once);
     }
 
     [Fact]
@@ -56,7 +70,7 @@ public class PasswordHandlersTests
 
         Func<Task> act = () => ChangePasswordHandler.Handle(
             new ChangePasswordCommand(user.Id, "wrong", "newpass123"),
-            _userRepoMock.Object, _hasherMock.Object, _unitOfWorkMock.Object, _sessionNotifierMock.Object, _ct);
+            _userRepoMock.Object, _hasherMock.Object, _unitOfWorkMock.Object, _sessionNotifierMock.Object, _revokedUserStoreMock.Object, _jwtOptions, _ct);
 
         await act.Should().ThrowAsync<DomainException>().WithMessage("*Current password*");
     }
@@ -69,7 +83,7 @@ public class PasswordHandlersTests
 
         Func<Task> act = () => ChangePasswordHandler.Handle(
             new ChangePasswordCommand(user.Id, "oldpass123", "short"),
-            _userRepoMock.Object, _hasherMock.Object, _unitOfWorkMock.Object, _sessionNotifierMock.Object, _ct);
+            _userRepoMock.Object, _hasherMock.Object, _unitOfWorkMock.Object, _sessionNotifierMock.Object, _revokedUserStoreMock.Object, _jwtOptions, _ct);
 
         await act.Should().ThrowAsync<DomainException>().WithMessage("*at least 8*");
     }
@@ -130,7 +144,7 @@ public class PasswordHandlersTests
 
         var result = await ResetPasswordHandler.Handle(
             new ResetPasswordCommand(token, "newpass123"),
-            _userRepoMock.Object, _hasherMock.Object, _unitOfWorkMock.Object, _sessionNotifierMock.Object, _ct);
+            _userRepoMock.Object, _hasherMock.Object, _unitOfWorkMock.Object, _sessionNotifierMock.Object, _revokedUserStoreMock.Object, _jwtOptions, _ct);
 
         result.IsSuccess.Should().BeTrue();
         user.Credentials.PasswordHash.Should().Be("new_hash");
@@ -138,6 +152,7 @@ public class PasswordHandlersTests
         _sessionNotifierMock.Verify(
             x => x.NotifyForceLogoutAsync(user.Id, SessionTerminationReasons.PasswordReset, _ct),
             Times.Once);
+        _revokedUserStoreMock.Verify(x => x.RevokeAsync(user.Id, TimeSpan.FromMinutes(60), _ct), Times.Once);
     }
 
     [Fact]
@@ -147,7 +162,7 @@ public class PasswordHandlersTests
 
         Func<Task> act = () => ResetPasswordHandler.Handle(
             new ResetPasswordCommand("bad", "newpass123"),
-            _userRepoMock.Object, _hasherMock.Object, _unitOfWorkMock.Object, _sessionNotifierMock.Object, _ct);
+            _userRepoMock.Object, _hasherMock.Object, _unitOfWorkMock.Object, _sessionNotifierMock.Object, _revokedUserStoreMock.Object, _jwtOptions, _ct);
 
         await act.Should().ThrowAsync<NotFoundException>();
     }

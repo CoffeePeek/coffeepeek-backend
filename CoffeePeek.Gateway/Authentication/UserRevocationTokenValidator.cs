@@ -15,6 +15,10 @@ public sealed class UserRevocationTokenValidator(IRevokedUserStore revokedUserSt
         if (!Guid.TryParse(subject, out var userId))
             return false;
 
-        return !await revokedUserStore.IsRevokedAsync(userId, cancellationToken);
+        DateTimeOffset? issuedAt = long.TryParse(principal.FindFirstValue("iat"), out var iat)
+            ? DateTimeOffset.FromUnixTimeSeconds(iat)
+            : null;
+
+        return !await revokedUserStore.IsRevokedAsync(userId, issuedAt, cancellationToken);
     }
 }

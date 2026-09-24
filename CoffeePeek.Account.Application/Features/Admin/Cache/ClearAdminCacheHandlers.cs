@@ -1,5 +1,6 @@
 using CoffeePeek.Account.Application.Features.Admin.Cache;
 using System.ComponentModel.DataAnnotations;
+using CoffeePeek.Shared.Auth;
 using CoffeePeek.Shared.Domain.Interfaces.Infrastructure;
 using CoffeePeek.Shared.Kernel.Response;
 
@@ -17,7 +18,7 @@ public static class ClearAdminCacheByPatternHandler
         CancellationToken ct)
     {
         if (!AdminCachePatternValidator.IsAllowed(command.Pattern))
-            return Response<ClearAdminCacheResponse>.Error("Pattern is not allowed. FLUSHALL and wildcard-only patterns are forbidden.");
+            return Response<ClearAdminCacheResponse>.Error("Pattern is not allowed. It must start with a literal 'prefix:' and cannot target revocation keys.");
 
         var clearedCount = await cacheService.RemoveByPattern(command.Pattern, ct);
 
@@ -44,17 +45,34 @@ public static class ClearAdminCacheKeyHandler
 
 internal static class AdminCachePatternValidator
 {
+    private static readonly char[] GlobChars = ['*', '?', '[', ']', '\\'];
+
+    /// <summary>
+    /// The segment before the first ':' must be a literal namespace, so globs such as "*:*" or "*user:*"
+    /// cannot reach keys outside it. Revocation markers are never clearable: deleting them re-enables revoked tokens.
+    /// </summary>
     public static bool IsAllowed(string pattern)
     {
         if (string.IsNullOrWhiteSpace(pattern))
             return false;
 
-        if (pattern is "*" or "**")
+        var separator = pattern.IndexOf(':');
+        if (separator <= 0)
             return false;
 
-        return pattern.Contains(':');
+        var prefix = pattern[..separator];
+        return prefix.IndexOfAny(GlobChars) < 0 && !IsProtectedPrefix(prefix);
     }
 
-    public static bool IsAllowedKey(string key) =>
-        !string.IsNullOrWhiteSpace(key) && key.Contains(':') && key != "*";
+    public static bool IsAllowedKey(string key)
+    {
+        if (string.IsNullOrWhiteSpace(key))
+            return false;
+
+        var separator = key.IndexOf(':');
+        return separator > 0 && !IsProtectedPrefix(key[..separator]);
+    }
+
+    private static bool IsProtectedPrefix(string prefix) =>
+        prefix.Equals(RevokedUserKeys.Prefix, StringComparison.OrdinalIgnoreCase);
 }

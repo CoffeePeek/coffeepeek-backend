@@ -1,6 +1,7 @@
 using CoffeePeek.Account.Application.Features.Admin.Users;
 using CoffeePeek.Account.Application.Features.Admin.Users.Sessions;
 using CoffeePeek.AccountService.Controllers.Admin;
+using CoffeePeek.Shared.Auth;
 using CoffeePeek.Shared.Auth.Constants;
 using CoffeePeek.Shared.Kernel.Response;
 using Microsoft.AspNetCore.Authorization;
@@ -15,7 +16,7 @@ namespace CoffeePeek.AccountService.Controllers;
 [Authorize(Policy = RoleConsts.Admin)]
 [Tags("Admin")]
 [ProducesErrorResponseType(typeof(ErrorResponse))]
-public class AdminUsersController(IMessageBus bus) : ControllerBase
+public class AdminUsersController(IMessageBus bus, IUserContext userContext) : ControllerBase
 {
     /// <summary>Returns a paginated list of users with optional search and role filter.</summary>
     [HttpGet]
@@ -96,7 +97,7 @@ public class AdminUsersController(IMessageBus bus) : ControllerBase
         [FromBody] UpdateUserRoleRequest request,
         CancellationToken cancellationToken)
     {
-        var command = new UpdateUserRoleCommand(id, request.Role);
+        var command = new UpdateUserRoleCommand(id, request.Role, userContext.GetUserIdOrThrow());
         var response = await bus.InvokeAsync<Response<Guid>>(command, cancellationToken);
 
         if (response.IsSuccess)
@@ -120,7 +121,7 @@ public class AdminUsersController(IMessageBus bus) : ControllerBase
         CancellationToken cancellationToken)
     {
         var response = await bus.InvokeAsync<Response<bool>>(
-            new BlockUserCommand(id, request.Blocked), cancellationToken);
+            new BlockUserCommand(id, request.Blocked, userContext.GetUserIdOrThrow()), cancellationToken);
 
         if (response.IsSuccess)
             return Ok(response);
@@ -136,9 +137,15 @@ public class AdminUsersController(IMessageBus bus) : ControllerBase
     [HttpDelete("{id:guid}")]
     [ProducesResponseType<Response<bool>>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> DeleteUser(Guid id, CancellationToken cancellationToken)
     {
-        var response = await bus.InvokeAsync<Response<bool>>(new AdminDeleteUserCommand(id), cancellationToken);
-        return response.IsSuccess ? Ok(response) : NotFound(response);
+        var response = await bus.InvokeAsync<Response<bool>>(
+            new AdminDeleteUserCommand(id, userContext.GetUserIdOrThrow()), cancellationToken);
+
+        if (response.IsSuccess)
+            return Ok(response);
+
+        return response.StatusCode == StatusCodes.Status400BadRequest ? BadRequest(response) : NotFound(response);
     }
 }

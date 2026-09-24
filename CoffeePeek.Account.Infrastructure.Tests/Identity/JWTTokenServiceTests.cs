@@ -75,6 +75,17 @@ public class JWTTokenServiceTests
     }
 
     [Fact]
+    public void GenerateAccessToken_ContainsIssuedAtClaim()
+    {
+        // Gateway access-token revocation depends on iat; without it every revoked user stays locked out.
+        var sut = CreateSut();
+
+        var parsed = ParseToken(sut.GenerateAccessToken(CreateConfirmedUser()));
+
+        parsed.IssuedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(5));
+    }
+
+    [Fact]
     public void GenerateAccessToken_ContainsCorrectEmailClaim()
     {
         // Arrange

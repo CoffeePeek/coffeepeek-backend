@@ -51,11 +51,9 @@ public static class ConfirmAccountDeletionHandler
                 HttpStatusCode.Gone,
                 "Deletion confirmation token has expired."), null);
 
-        var accessTokenTtl = TimeSpan.FromMinutes(jwtOptions.Value.AccessTokenLifetimeMinutes);
-
         if (request.Status != AccountDeletionRequestStatus.PendingConfirmation)
         {
-            await EnsureRevokedAsync(revokedUserStore, request.UserId, accessTokenTtl, ct);
+            await revokedUserStore.RevokeAccessTokensAsync(request.UserId, jwtOptions.Value, ct);
             return (Response<AccountDeletionRequestResponse>.Success(ToResponse(request)), null);
         }
 
@@ -74,7 +72,7 @@ public static class ConfirmAccountDeletionHandler
         await userRepository.Update(user, ct);
         await unitOfWork.SaveChangesAsync(ct);
 
-        await EnsureRevokedAsync(revokedUserStore, user.Id, accessTokenTtl, ct);
+        await revokedUserStore.RevokeAccessTokensAsync(user.Id, jwtOptions.Value, ct);
         await sessionTerminationNotifier.NotifyForceLogoutAsync(
             user.Id,
             SessionTerminationReasons.UserDeleted,
@@ -86,16 +84,6 @@ public static class ConfirmAccountDeletionHandler
             request.RequestedAtUtc);
 
         return (Response<AccountDeletionRequestResponse>.Success(ToResponse(request)), @event);
-    }
-
-    private static async Task EnsureRevokedAsync(
-        IRevokedUserStore revokedUserStore,
-        Guid userId,
-        TimeSpan ttl,
-        CancellationToken ct)
-    {
-        if (!await revokedUserStore.RevokeAsync(userId, ttl, ct))
-            throw new InvalidOperationException("Could not persist access-token revocation.");
     }
 
     private static AccountDeletionRequestResponse ToResponse(AccountDeletionRequest request) =>
