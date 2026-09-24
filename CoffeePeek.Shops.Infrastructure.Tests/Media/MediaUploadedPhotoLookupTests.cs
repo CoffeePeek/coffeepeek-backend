@@ -47,7 +47,7 @@ public class MediaUploadedPhotoLookupTests
             };
         });
 
-        var result = await lookup.ResolveAsync(userId, ["reviews/a.jpg"]);
+        var result = await lookup.ResolveAsync(userId, ["reviews/a.jpg"], TestContext.Current.CancellationToken);
 
         result.Succeeded.Should().BeTrue();
         result.Photos.Should().ContainSingle()
@@ -72,7 +72,7 @@ public class MediaUploadedPhotoLookupTests
     {
         var lookup = CreateLookup(_ => Task.FromResult(new HttpResponseMessage(status)));
 
-        var result = await lookup.ResolveAsync(Guid.NewGuid(), ["reviews/a.jpg"]);
+        var result = await lookup.ResolveAsync(Guid.NewGuid(), ["reviews/a.jpg"], TestContext.Current.CancellationToken);
 
         result.Succeeded.Should().BeFalse();
         result.Photos.Should().BeEmpty();
@@ -86,7 +86,7 @@ public class MediaUploadedPhotoLookupTests
             Content = JsonContent.Create(Response<List<ResolvedUploadedPhotoDto>>.Error("too many keys"))
         }));
 
-        var result = await lookup.ResolveAsync(Guid.NewGuid(), ["reviews/a.jpg"]);
+        var result = await lookup.ResolveAsync(Guid.NewGuid(), ["reviews/a.jpg"], TestContext.Current.CancellationToken);
 
         result.Succeeded.Should().BeFalse();
     }
@@ -96,7 +96,7 @@ public class MediaUploadedPhotoLookupTests
     {
         var lookup = CreateLookup(_ => throw new HttpRequestException("connection refused"));
 
-        var result = await lookup.ResolveAsync(Guid.NewGuid(), ["reviews/a.jpg"]);
+        var result = await lookup.ResolveAsync(Guid.NewGuid(), ["reviews/a.jpg"], TestContext.Current.CancellationToken);
 
         result.Succeeded.Should().BeFalse();
     }
@@ -106,7 +106,7 @@ public class MediaUploadedPhotoLookupTests
     {
         var lookup = CreateLookup(_ => throw new TaskCanceledException("timeout"));
 
-        var result = await lookup.ResolveAsync(Guid.NewGuid(), ["reviews/a.jpg"]);
+        var result = await lookup.ResolveAsync(Guid.NewGuid(), ["reviews/a.jpg"], TestContext.Current.CancellationToken);
 
         result.Succeeded.Should().BeFalse();
     }
