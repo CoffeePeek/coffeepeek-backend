@@ -22,6 +22,8 @@ public class JWTTokenService(IOptions<JWTOptions> options) : IJWTTokenService
             new(JwtRegisteredClaimNames.Name, user.Username),
             new(JwtRegisteredClaimNames.Email, user.Credentials.Email),
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+            // Gateway revocation compares iat with the revoked-at timestamp (RevokedUserKeys.IsTokenRevoked).
+            new(JwtRegisteredClaimNames.Iat, EpochTime.GetIntDate(DateTime.UtcNow).ToString(), ClaimValueTypes.Integer64),
             new(JwtRegisteredClaimNames.PreferredUsername, user.Username),
             new(JwtRegisteredClaimNames.EmailVerified, user.Credentials.EmailConfirmed.ToString().ToLower()),
         };

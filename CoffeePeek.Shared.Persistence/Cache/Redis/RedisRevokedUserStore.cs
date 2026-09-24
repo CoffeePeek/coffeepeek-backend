@@ -15,16 +15,18 @@ public sealed class RedisRevokedUserStore(IConnectionMultiplexer redis) : IRevok
         cancellationToken.ThrowIfCancellationRequested();
         return _database.StringSetAsync(
             RevokedUserKeys.For(userId),
-            "1",
+            DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
             new Expiration(ttl),
             When.Always);
     }
 
-    public Task<bool> IsRevokedAsync(
+    public async Task<bool> IsRevokedAsync(
         Guid userId,
+        DateTimeOffset? issuedAt,
         CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        return _database.KeyExistsAsync(RevokedUserKeys.For(userId));
+        var marker = await _database.StringGetAsync(RevokedUserKeys.For(userId));
+        return RevokedUserKeys.IsTokenRevoked(marker.IsNull ? null : marker.ToString(), issuedAt);
     }
 }
