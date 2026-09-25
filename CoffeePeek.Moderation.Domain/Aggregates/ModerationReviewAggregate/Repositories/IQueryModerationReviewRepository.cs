@@ -11,5 +11,6 @@ public interface IQueryModerationReviewRepository
         int pageSize,
         ModerationStatus? status,
         string? search,
+        Guid? userId = null,
         CancellationToken cancellationToken = default);
 }

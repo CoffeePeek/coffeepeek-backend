@@ -27,12 +27,16 @@ public class QueryModerationReviewRepository(ModerationDbContext dbContext) : IQ
         int pageSize,
         ModerationStatus? status,
         string? search,
+        Guid? userId = null,
         CancellationToken ct = default)
     {
         var query = _reviewRepository.AsNoTracking().Include(r => r.ReviewPhotos).AsQueryable();
 
         if (status.HasValue)
             query = query.Where(r => r.ModerationStatus == status.Value);
+
+        if (userId.HasValue)
+            query = query.Where(r => r.UserId == userId.Value);
 
         if (!string.IsNullOrWhiteSpace(search))
         {

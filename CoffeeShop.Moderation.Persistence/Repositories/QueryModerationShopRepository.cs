@@ -32,12 +32,16 @@ public class QueryModerationShopRepository(ModerationDbContext dbContext) : IQue
         ModerationStatus? status,
         string? search,
         CoffeeFocus? coffeeFocus,
+        Guid? userId = null,
         CancellationToken ct = default)
     {
         var query = BuildReviewQuery();
 
         if (status.HasValue)
             query = query.Where(s => s.ModerationStatus == status.Value);
+
+        if (userId.HasValue)
+            query = query.Where(s => s.UserId == userId.Value);
 
         if (coffeeFocus.HasValue)
             query = query.Where(s => s.CoffeeFocus == coffeeFocus.Value);
