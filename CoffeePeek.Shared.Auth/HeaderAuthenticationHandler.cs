@@ -34,7 +34,7 @@ public class HeaderAuthenticationHandler(
 
         var userName = Context.Request.Headers[GatewayHeaderConsts.XUserName].ToString();
         if (!string.IsNullOrEmpty(userName))
-            claims.Add(new Claim(ClaimTypes.Name, userName));
+            claims.Add(new Claim(ClaimTypes.Name, Uri.UnescapeDataString(userName)));
 
         var identity = new ClaimsIdentity(claims, Scheme.Name);
         var principal = new ClaimsPrincipal(identity);

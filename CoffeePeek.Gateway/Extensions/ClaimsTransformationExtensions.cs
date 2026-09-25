@@ -28,7 +28,7 @@ public static class ClaimsTransformationExtensions
         var userName = user.FindFirst(ClaimTypes.Name)?.Value
                        ?? user.FindFirst("preferred_username")?.Value;
         if (!string.IsNullOrEmpty(userName))
-            headers[GatewayHeaderConsts.XUserName] = userName;
+            headers[GatewayHeaderConsts.XUserName] = Uri.EscapeDataString(userName);
 
         var email = user.FindFirst(ClaimTypes.Email)?.Value;
         if (!string.IsNullOrEmpty(email))
