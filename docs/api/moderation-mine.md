@@ -34,12 +34,14 @@ type ApiResponse<T> = {
   data?: T;
 };
 
-// CoffeePeek.Contract.Enums.ModerationStatus, serialized as a number
-enum ModerationStatus {
-  Pending = 0,
-  Approved = 1,
-  Rejected = 2,
-}
+// Enums are serialized as strings (JsonStringEnumConverter in Shared.Web ControllersModule).
+// CoffeePeek.Contract.Enums.ModerationStatus
+type ModerationStatus = "Pending" | "Approved" | "Rejected";
+
+// CoffeePeek.Contract.Enums.ShopChangeSection
+type ShopChangeSection =
+  | "Photos" | "Contacts" | "Description" | "Tags"
+  | "Roasters" | "Equipment" | "Menu" | "BrewMethods";
 ```
 
 ---
@@ -50,11 +52,11 @@ enum ModerationStatus {
 |-------|------|---------|-------|
 | `page` | int | `1` | 1 or more |
 | `pageSize` | int | `20` | 1 to 100 |
-| `status` | `ModerationStatus` (number) | none (all statuses) | `0`, `1` or `2` |
+| `status` | `ModerationStatus` | none (all statuses) | `Pending`, `Approved`, `Rejected` (numbers `0`/`1`/`2` are also accepted) |
 
 On the shop, roaster and review `/mine` endpoints, a `page` or `pageSize` out of range returns `400` with a validation error. `ShopChangeRequests/mine` clamps them into range instead (see its section).
 
-Example: `GET /api/ModerationShops/mine?status=2&page=1&pageSize=10` lists the caller's rejected shops.
+Example: `GET /api/ModerationShops/mine?status=Rejected&page=1&pageSize=10` lists the caller's rejected shops.
 
 ## Paging headers
 
@@ -81,7 +83,7 @@ Items are in `data.moderationShops[]` (`ModerationShopDto`). The fields that mat
 |-------|------|---------|
 | `moderationStatus` | `ModerationStatus` | Current state |
 | `rejectedReason` | string \| null | Moderator's reason; null unless rejected |
-| `publishedShopId` | Guid \| null | Id of the live shop in the catalog (use it with the Shops endpoints). Null until the shop is published. It can stay null for a short time after `moderationStatus` turns `1`, while the Shops service creates the shop. |
+| `publishedShopId` | Guid \| null | Id of the live shop in the catalog (use it with the Shops endpoints). Null until the shop is published. It can stay null for a short time after `moderationStatus` turns `Approved`, while the Shops service creates the shop. |
 
 The rest of the DTO (name, address, contacts, schedules, photos, menu, `dataCompletenessScore`, ...) is the same shape moderators see.
 
@@ -95,7 +97,7 @@ The rest of the DTO (name, address, contacts, schedules, photos, menu, `dataComp
         "id": "8b1f7a52-6a3e-4a4e-9a3f-0f0d7b6c1e21",
         "name": "Grain Coffee",
         "address": "Nezavisimosti Ave 1",
-        "moderationStatus": 1,
+        "moderationStatus": "Approved",
         "rejectedReason": null,
         "publishedShopId": "c2d9e3f4-1111-4c5b-9e1a-7a6b5c4d3e2f",
         "userId": "5e0b2c3d-...",
@@ -105,7 +107,7 @@ The rest of the DTO (name, address, contacts, schedules, photos, menu, `dataComp
       {
         "id": "0a9e7c11-2d3b-4f5a-8b6c-1d2e3f4a5b6c",
         "name": "Corner Cafe",
-        "moderationStatus": 2,
+        "moderationStatus": "Rejected",
         "rejectedReason": "Photos do not show the coffee bar",
         "publishedShopId": null
       }
@@ -143,7 +145,7 @@ There is no published-roaster id. The moderation service does not store the id o
         "id": "3f2e1d0c-...",
         "name": "North Roasters",
         "about": "Small-batch roastery",
-        "moderationStatus": 2,
+        "moderationStatus": "Rejected",
         "rejectedReason": "Please add a website or Instagram link",
         "cityId": null,
         "location": null,
@@ -193,7 +195,7 @@ Items are in `data.reviewDtos[]` (`ModerationReviewDto`):
         "moderatedBy": "9f8e7d6c-...",
         "createdAt": "2026-09-20T10:15:00Z",
         "moderatedAt": "2026-09-21T08:00:00Z",
-        "moderationStatus": 1,
+        "moderationStatus": "Approved",
         "photos": []
       }
     ],
@@ -216,7 +218,7 @@ Extra query parameters on top of `page`, `pageSize`, `status`:
 | Param | Type | Meaning |
 |-------|------|---------|
 | `shopId` | Guid | Only requests for this published shop |
-| `section` | `ShopChangeSection` (number) | Only requests for this section: `0` Photos, `1` Contacts, `2` Description, `3` Tags, `4` Roasters, `5` Equipment, `6` Menu, `7` BrewMethods |
+| `section` | `ShopChangeSection` | Only requests for this section (name, or its number `0`..`7`) |
 
 Unlike the other three endpoints, out-of-range `page` / `pageSize` values are clamped (page to 1 or more, pageSize to 1..100) instead of returning `400`. When there are no items, `totalPages` is `0`.
 
@@ -246,9 +248,9 @@ Items are in `data.items[]` (`ShopChangeRequestDto`):
         "id": "d4c3b2a1-...",
         "shopId": "c2d9e3f4-1111-4c5b-9e1a-7a6b5c4d3e2f",
         "submittedByUserId": "5e0b2c3d-...",
-        "section": 2,
+        "section": "Description",
         "payload": { "description": "Now open on Sundays" },
-        "status": 0,
+        "status": "Pending",
         "reviewedByUserId": null,
         "reviewedAtUtc": null,
         "rejectionReason": null,
