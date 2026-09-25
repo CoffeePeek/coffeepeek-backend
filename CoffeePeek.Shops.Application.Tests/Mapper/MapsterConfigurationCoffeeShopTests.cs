@@ -60,4 +60,63 @@ public class MapsterConfigurationCoffeeShopTests
             "https://media.coffeepeek.by/coffeepeek.shops/b.jpg");
         dto.Photos.First().Size.Should().Be(10);
     }
+
+    private static CoffeeShop ShopWithPhoto()
+    {
+        var shop = new CoffeeShop(
+            Guid.NewGuid(),
+            "Photo Shop",
+            null,
+            PriceRange.Moderate,
+            Guid.NewGuid());
+        shop.SetLocation(Guid.NewGuid(), "Test address", 53.9m, 27.56m);
+        shop.AddPhotos([new ShopPhoto("a.jpg", "image/jpeg", "shops/a.jpg", 10, Guid.NewGuid(), 0)]);
+        return shop;
+    }
+
+    [Fact]
+    public void Adapt_ShopPhotos_CarryImgproxyVariantUrls()
+    {
+        var config = MapsterConfiguration.CreateConfig(new MediaPublicUrlOptions
+        {
+            PublicEndpoint = "https://media.coffeepeek.by",
+            ImageProxyEndpoint = "https://media.coffeepeek.by/img",
+            ShopBucketName = "coffeepeek.shops"
+        });
+        var shop = ShopWithPhoto();
+
+        var shortPhoto = shop.Adapt<ShortShopDto>(config).Photos.Should().ContainSingle().Subject;
+        var detailsPhoto = shop.Adapt<CoffeeShopDetailsDto>(config).Photos.Should().ContainSingle().Subject;
+
+        foreach (var photo in new[] { shortPhoto, detailsPhoto })
+        {
+            photo.FullUrl.Should().Be("https://media.coffeepeek.by/coffeepeek.shops/shops/a.jpg");
+            photo.Urls.Should().NotBeNull();
+            photo.Urls.Thumbnail.Should().Be("https://media.coffeepeek.by/img/_/thumb/plain/coffeepeek.shops/shops/a.jpg");
+            photo.Urls.Card.Should().Be("https://media.coffeepeek.by/img/_/card/plain/coffeepeek.shops/shops/a.jpg");
+            photo.Urls.Detail.Should().Be("https://media.coffeepeek.by/img/_/detail/plain/coffeepeek.shops/shops/a.jpg");
+            photo.Urls.Fullscreen.Should().Be("https://media.coffeepeek.by/img/_/full/plain/coffeepeek.shops/shops/a.jpg");
+        }
+    }
+
+    [Fact]
+    public void Adapt_ShopPhotos_WithoutImageProxy_VariantsFallBackToFullUrl()
+    {
+        var config = MapsterConfiguration.CreateConfig(new MediaPublicUrlOptions
+        {
+            PublicEndpoint = "https://media.coffeepeek.by",
+            ImageProxyEndpoint = "",
+            ShopBucketName = "coffeepeek.shops"
+        });
+        var shop = ShopWithPhoto();
+
+        var photo = shop.Adapt<ShortShopDto>(config).Photos.Should().ContainSingle().Subject;
+
+        photo.FullUrl.Should().Be("https://media.coffeepeek.by/coffeepeek.shops/shops/a.jpg");
+        photo.Urls.Should().NotBeNull();
+        photo.Urls.Thumbnail.Should().Be(photo.FullUrl);
+        photo.Urls.Card.Should().Be(photo.FullUrl);
+        photo.Urls.Detail.Should().Be(photo.FullUrl);
+        photo.Urls.Fullscreen.Should().Be(photo.FullUrl);
+    }
 }
