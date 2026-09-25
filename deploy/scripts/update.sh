@@ -75,8 +75,16 @@ echo "==> Starting gateway..."
 # Backends were already updated and checked; do not recreate dependencies here.
 "${COMPOSE[@]}" up -d --no-deps --no-build gateway
 wait_for_backend gateway /health
+"${COMPOSE[@]}" up -d --no-deps imgproxy
 if [[ "${USE_HTTPS:-1}" == "1" ]]; then
-  "${COMPOSE[@]}" up -d --no-deps caddy
+  # Caddyfile is a single-file bind mount: rsync swaps in a new inode, so a running container keeps
+  # the old file (and `caddy reload` would re-read it). Recreate only when the contents differ.
+  if "${COMPOSE[@]}" exec -T caddy cat /etc/caddy/Caddyfile 2>/dev/null | cmp -s - Caddyfile; then
+    "${COMPOSE[@]}" up -d --no-deps caddy
+  else
+    echo "==> Caddyfile changed, recreating caddy..."
+    "${COMPOSE[@]}" up -d --no-deps --force-recreate caddy
+  fi
 fi
 
 echo "==> Health check..."
