@@ -83,10 +83,11 @@ public class ModerationReviewDtoContractTests
         dto.Photos.Should().ContainSingle();
         dto.Photos[0].FullUrl.Should().Be(
             "https://media.example.com/coffeepeek.shops/reviews/review.jpg");
-        dto.Photos[0].Urls.Should().NotBeNull();
-        dto.Photos[0].Urls!.Detail.Should().Be(
+        var urls = dto.Photos[0].Urls;
+        urls.Should().NotBeNull();
+        urls!.Detail.Should().Be(
             "https://media.example.com/img/_/detail/plain/coffeepeek.shops/reviews/review.jpg");
-        dto.Photos[0].Urls.Thumbnail.Should().Be(
+        urls.Thumbnail.Should().Be(
             "https://media.example.com/img/_/thumb/plain/coffeepeek.shops/reviews/review.jpg");
         json.Should().Contain("\"urls\":{");
         json.Should().Contain("\"fullscreen\":");
