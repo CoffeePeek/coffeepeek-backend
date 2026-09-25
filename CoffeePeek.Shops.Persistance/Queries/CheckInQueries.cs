@@ -16,9 +16,17 @@ public class CheckInQueries(ShopsDbContext dbContext, IMapper mapper) : ICheckIn
         Guid userId,
         int pageNumber,
         int pageSize,
+        DateTime? from = null,
+        DateTime? to = null,
         CancellationToken ct = default)
     {
         var query = _repository.AsNoTracking().Where(x => x.UserId == userId);
+
+        // Half-open [from, to) on VisitedAt so adjacent calendar ranges never double-count.
+        if (from.HasValue)
+            query = query.Where(x => x.VisitedAt >= from.Value);
+        if (to.HasValue)
+            query = query.Where(x => x.VisitedAt < to.Value);
 
         var totalCount = await query.CountAsync(ct);
 

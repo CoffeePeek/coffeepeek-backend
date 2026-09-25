@@ -34,7 +34,7 @@ public class GetUserCheckInsHandlerTests
         };
 
         _checkInQueriesMock
-            .Setup(q => q.GetByUserId(userId, 1, 2, _ct))
+            .Setup(q => q.GetByUserId(userId, 1, 2, null, null, _ct))
             .ReturnsAsync((pageItems, 5));
 
         _shopRepoMock
@@ -58,7 +58,7 @@ public class GetUserCheckInsHandlerTests
         var userId = Guid.NewGuid();
 
         _checkInQueriesMock
-            .Setup(q => q.GetByUserId(userId, 1, 10, _ct))
+            .Setup(q => q.GetByUserId(userId, 1, 10, null, null, _ct))
             .ReturnsAsync((Array.Empty<CheckInDto>(), 0));
 
         _shopRepoMock
@@ -72,5 +72,25 @@ public class GetUserCheckInsHandlerTests
         response.Data!.TotalItems.Should().Be(0);
         response.Data.TotalPages.Should().Be(0);
         response.Data.CheckIns.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task Handle_ForwardsDateRangeToQuery()
+    {
+        var userId = Guid.NewGuid();
+        var from = new DateTime(2026, 9, 1, 0, 0, 0, DateTimeKind.Utc);
+        var to = new DateTime(2026, 10, 1, 0, 0, 0, DateTimeKind.Utc);
+
+        _checkInQueriesMock
+            .Setup(q => q.GetByUserId(userId, 1, 100, from, to, _ct))
+            .ReturnsAsync((Array.Empty<CheckInDto>(), 0));
+
+        _shopRepoMock
+            .Setup(r => r.GetShopNamesByIdsAsync(It.IsAny<IEnumerable<Guid>>(), _ct))
+            .ReturnsAsync(new Dictionary<Guid, string>());
+
+        await CreateSut().Handle(new GetUserCheckInsCommand(userId, 1, 100, from, to), _ct);
+
+        _checkInQueriesMock.Verify(q => q.GetByUserId(userId, 1, 100, from, to, _ct), Times.Once);
     }
 }

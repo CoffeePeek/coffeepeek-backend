@@ -1,4 +1,4 @@
-﻿using CoffeePeek.Contract.Dtos.CoffeeShop;
+using CoffeePeek.Contract.Dtos.CoffeeShop;
 
 namespace CoffeePeek.Shops.Application.Features.CheckIn;
 
@@ -8,5 +8,7 @@ public interface ICheckInQueries
         Guid userId,
         int pageNumber,
         int pageSize,
+        DateTime? from = null,
+        DateTime? to = null,
         CancellationToken ct = default);
 }
