@@ -19,6 +19,13 @@ public class ModerationShopDto
     public Guid? CityId { get; set; }
     public Guid? UserId { get; set; }
     public ModerationStatus ModerationStatus { get; set; }
+
+    /// <summary>Moderator's rejection reason; null unless rejected.</summary>
+    public string? RejectedReason { get; set; }
+
+    /// <summary>Id of the published Shops-service coffee shop; null until approval completes.</summary>
+    public Guid? PublishedShopId { get; set; }
+
     public ShopContactDto? ShopContact { get; set; }
     public List<ScheduleDto> Schedules { get; set; }
     public List<Guid> EquipmentIds { get; set; }

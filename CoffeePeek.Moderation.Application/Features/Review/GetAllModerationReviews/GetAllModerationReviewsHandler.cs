@@ -23,7 +23,8 @@ public static class GetAllModerationReviewsHandler
             query.PageSize,
             domainStatus,
             query.Search,
-            cancellationToken: ct);
+            query.UserId,
+            ct);
 
         var moderationReviewDtos = mapper.Map<ModerationReviewDto[]>(items);
         var totalPages = (int)Math.Ceiling(totalCount / (double)query.PageSize);

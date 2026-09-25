@@ -19,7 +19,7 @@ public static class GetAllModerationRoastersHandler
             : null;
 
         var (items, totalCount) = await repository.GetPagedForReviewAsync(
-            query.Page, query.PageSize, domainStatus, ct: ct);
+            query.Page, query.PageSize, domainStatus, query.UserId, ct);
 
         var dtos = mapper.Map<ModerationRoasterDto[]>(items);
         var totalPages = (int)Math.Ceiling(totalCount / (double)query.PageSize);

@@ -6,4 +6,5 @@ namespace CoffeePeek.Moderation.Application.Features.Roaster.GetAllModerationRoa
 public record GetAllModerationRoastersQuery(
     [Range(1, int.MaxValue)] int Page = 1,
     [Range(1, 100)] int PageSize = 20,
-    ModerationStatus? Status = null);
+    ModerationStatus? Status = null,
+    Guid? UserId = null);

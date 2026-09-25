@@ -7,4 +7,5 @@ public record GetAllModerationReviewsQuery(
     [Range(1, int.MaxValue)] int Page = 1,
     [Range(1, 100)] int PageSize = 20,
     ModerationStatus? Status = null,
-    [StringLength(100)] string? Search = null);
+    [StringLength(100)] string? Search = null,
+    Guid? UserId = null);

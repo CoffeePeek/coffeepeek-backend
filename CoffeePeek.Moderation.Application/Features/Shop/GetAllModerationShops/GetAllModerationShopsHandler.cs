@@ -29,7 +29,8 @@ public static class GetAllModerationShopsHandler
             domainStatus,
             query.Search,
             domainFocus,
-            cancellationToken: ct);
+            query.UserId,
+            ct);
 
         var dtos = mapper.Map<ModerationShopDto[]>(items);
         var totalPages = (int)Math.Ceiling(totalCount / (double)query.PageSize);
