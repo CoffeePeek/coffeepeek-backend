@@ -68,6 +68,26 @@ public class ReverseProxyRouteConfigurationTests
         }
     }
 
+    [Theory]
+    [InlineData("shops-admin-stats-route", "shops-cluster", "/api/admin/stats/shops/{**remainder}")]
+    [InlineData("moderation-admin-stats-route", "moderation-cluster", "/api/admin/stats/moderation/{**remainder}")]
+    public void AdminStatsRoutes_TargetOwningServiceWithAdminPolicyBeforeAccountCatchAll(
+        string routeId,
+        string clusterId,
+        string path)
+    {
+        using var document = LoadGatewayAppsettings();
+        var routes = document.RootElement.GetProperty("ReverseProxy").GetProperty("Routes");
+
+        routes.TryGetProperty(routeId, out var route).Should().BeTrue();
+        route.GetProperty("ClusterId").GetString().Should().Be(clusterId);
+        route.GetProperty("AuthorizationPolicy").GetString().Should().Be("Admin");
+        route.GetProperty("Match").GetProperty("Path").GetString().Should().Be(path);
+
+        var routeIds = routes.EnumerateObject().Select(r => r.Name).ToList();
+        routeIds.IndexOf(routeId).Should().BeLessThan(routeIds.IndexOf("account-admin-route"));
+    }
+
     [Fact]
     public void ModerationRoastersRoute_TargetsModerationClusterWithSubmissionRateLimit()
     {
