@@ -30,12 +30,31 @@ public class ModerationRoastersController(IMessageBus bus, IUserContext userCont
         var response = await bus.InvokeAsync<Response<GetAllModerationRoastersResponse>>(request, ct);
 
         if (response.IsSuccess && response.Data is not null)
-        {
-            Response.Headers.TryAdd("X-Total-Count", response.Data.TotalItems.ToString());
-            Response.Headers.TryAdd("X-Total-Pages", response.Data.TotalPages.ToString());
-            Response.Headers.TryAdd("X-Current-Page", response.Data.CurrentPage.ToString());
-            Response.Headers.TryAdd("X-Page-Size", response.Data.PageSize.ToString());
-        }
+            AddPagingHeaders(response.Data.TotalItems, response.Data.TotalPages, response.Data.CurrentPage, response.Data.PageSize);
+
+        return Ok(response);
+    }
+
+    /// <summary>
+    /// Lists the caller's own roaster submissions, newest first. The submitter filter comes only from the
+    /// authenticated user; the query string cannot select another user's items.
+    /// </summary>
+    [HttpGet("mine")]
+    [Authorize]
+    [Description("Get the caller's own roaster submissions with moderation status")]
+    [ProducesResponseType<Response<GetAllModerationRoastersResponse>>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ErrorResponse>(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> GetMine(
+        [FromQuery, Range(1, int.MaxValue)] int page = 1,
+        [FromQuery, Range(1, 100)] int pageSize = 20,
+        [FromQuery] ModerationStatus? status = null,
+        CancellationToken ct = default)
+    {
+        var query = new GetAllModerationRoastersQuery(page, pageSize, status, UserId: userContext.GetUserIdOrThrow());
+        var response = await bus.InvokeAsync<Response<GetAllModerationRoastersResponse>>(query, ct);
+
+        if (response.IsSuccess && response.Data is not null)
+            AddPagingHeaders(response.Data.TotalItems, response.Data.TotalPages, response.Data.CurrentPage, response.Data.PageSize);
 
         return Ok(response);
     }
@@ -89,5 +108,13 @@ public class ModerationRoastersController(IMessageBus bus, IUserContext userCont
         return response.IsSuccess
             ? Ok(response)
             : StatusCode(response.StatusCode ?? StatusCodes.Status400BadRequest, response);
+    }
+
+    private void AddPagingHeaders(int totalItems, int totalPages, int currentPage, int pageSize)
+    {
+        Response.Headers.TryAdd("X-Total-Count", totalItems.ToString());
+        Response.Headers.TryAdd("X-Total-Pages", totalPages.ToString());
+        Response.Headers.TryAdd("X-Current-Page", currentPage.ToString());
+        Response.Headers.TryAdd("X-Page-Size", pageSize.ToString());
     }
 }

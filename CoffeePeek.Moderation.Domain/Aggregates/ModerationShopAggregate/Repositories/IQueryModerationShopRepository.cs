@@ -14,5 +14,6 @@ public interface IQueryModerationShopRepository
         ModerationStatus? status,
         string? search,
         CoffeeFocus? coffeeFocus,
+        Guid? userId = null,
         CancellationToken cancellationToken = default);
 }

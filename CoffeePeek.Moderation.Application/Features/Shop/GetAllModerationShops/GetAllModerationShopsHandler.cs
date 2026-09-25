@@ -29,6 +29,7 @@ public static class GetAllModerationShopsHandler
             domainStatus,
             query.Search,
             domainFocus,
+            query.UserId,
             ct);
 
         var dtos = mapper.Map<ModerationShopDto[]>(items);

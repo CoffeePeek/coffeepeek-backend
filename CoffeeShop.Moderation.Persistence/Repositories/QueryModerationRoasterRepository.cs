@@ -16,12 +16,16 @@ public class QueryModerationRoasterRepository(ModerationDbContext dbContext) : I
         int page,
         int pageSize,
         ModerationStatus? status,
+        Guid? userId = null,
         CancellationToken ct = default)
     {
         var query = BuildReviewQuery();
 
         if (status.HasValue)
             query = query.Where(r => r.ModerationStatus == status.Value);
+
+        if (userId.HasValue)
+            query = query.Where(r => r.UserId == userId.Value);
 
         var totalCount = await query.CountAsync(ct);
         var items = await query

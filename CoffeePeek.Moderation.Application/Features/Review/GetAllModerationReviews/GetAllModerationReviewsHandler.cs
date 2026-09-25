@@ -23,6 +23,7 @@ public static class GetAllModerationReviewsHandler
             query.PageSize,
             domainStatus,
             query.Search,
+            query.UserId,
             ct);
 
         var moderationReviewDtos = mapper.Map<ModerationReviewDto[]>(items);

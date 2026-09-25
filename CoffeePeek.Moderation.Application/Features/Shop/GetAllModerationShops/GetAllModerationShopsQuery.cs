@@ -8,4 +8,5 @@ public record GetAllModerationShopsQuery(
     [Range(1, 100)] int PageSize = 20,
     ModerationStatus? Status = null,
     CoffeeShopType? Type = null,
-    [StringLength(100)] string? Search = null);
+    [StringLength(100)] string? Search = null,
+    Guid? UserId = null);

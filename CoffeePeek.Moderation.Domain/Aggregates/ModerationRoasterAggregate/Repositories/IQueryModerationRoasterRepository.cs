@@ -10,5 +10,6 @@ public interface IQueryModerationRoasterRepository
         int page,
         int pageSize,
         ModerationStatus? status,
+        Guid? userId = null,
         CancellationToken ct = default);
 }

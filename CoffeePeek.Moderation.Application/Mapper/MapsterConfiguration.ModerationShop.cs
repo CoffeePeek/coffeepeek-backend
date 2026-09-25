@@ -25,6 +25,8 @@ public partial class MapsterConfiguration
             .Map(d => d.CoffeeBeanIds, s => s.ModerationCoffeeBeanShops.Select(x => x.CoffeeBeanId))
             .Map(d => d.RoasterIds, s => s.ModerationRoasterShops.Select(x => x.RoasterId))
             .Map(d => d.BrewMethodIds, s => s.ModerationShopBrewMethods.Select(x => x.BrewMethodId))
+            // ShopId is Guid.Empty until ModerationShopApproveCompleteHandler records the published id.
+            .Map(d => d.PublishedShopId, s => s.ShopId == Guid.Empty ? (Guid?)null : s.ShopId)
             .Ignore(dest => dest.Menu)
             .Ignore(dest => dest.DataCompletenessScore)
             .AfterMapping((src, dest) =>
