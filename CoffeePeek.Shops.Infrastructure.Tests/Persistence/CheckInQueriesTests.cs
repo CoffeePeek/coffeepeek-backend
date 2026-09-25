@@ -1,6 +1,7 @@
 using CoffeePeek.Shared.Kernel.Options;
 using CoffeePeek.Shops.Application.Mapper;
 using CoffeePeek.Shops.Domain.Aggregates.CheckInAggregate;
+using CoffeePeek.Shops.Domain.Entities;
 using CoffeePeek.Shops.Persistance.Configuration;
 using CoffeePeek.Shops.Persistance.Queries;
 using FluentAssertions;
@@ -36,5 +37,35 @@ public class CheckInQueriesTests
 
         total.Should().Be(2);
         items.Select(i => i.Id).Should().BeEquivalentTo([onFrom.Id, inside.Id]);
+    }
+
+    [Fact]
+    public async Task GetByUserId_ProjectsPhotoVariantUrls()
+    {
+        // Goes through ProjectToType, so it proves the Urls map is translatable by the EF pipeline.
+        await using var db = new ShopsDbContext(new DbContextOptionsBuilder<ShopsDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString()).Options);
+        var userId = Guid.NewGuid();
+
+        var checkIn = CheckIn.Create(userId, Guid.NewGuid(), Utc(9, 15));
+        checkIn.AddPhotos([new ShopPhoto("p.jpg", "image/jpeg", "checkins/p.jpg", 1024, userId)]);
+        db.CheckIns.Add(checkIn);
+        await db.SaveChangesAsync(_ct);
+
+        var sut = new CheckInQueries(db, MapsterConfiguration.CreateMapper(new MediaPublicUrlOptions
+        {
+            PublicEndpoint = "https://media.coffeepeek.by",
+            ImageProxyEndpoint = "https://media.coffeepeek.by/img"
+        }));
+
+        var (items, _) = await sut.GetByUserId(userId, 1, 100, null, null, _ct);
+
+        var photo = items.Should().ContainSingle().Subject.Photos.Should().ContainSingle().Subject;
+        photo.FullUrl.Should().Be("https://media.coffeepeek.by/coffeepeek.shops/checkins/p.jpg");
+        photo.Urls.Should().NotBeNull();
+        photo.Urls!.Thumbnail.Should().Be("https://media.coffeepeek.by/img/_/thumb/plain/coffeepeek.shops/checkins/p.jpg");
+        photo.Urls.Card.Should().Be("https://media.coffeepeek.by/img/_/card/plain/coffeepeek.shops/checkins/p.jpg");
+        photo.Urls.Detail.Should().Be("https://media.coffeepeek.by/img/_/detail/plain/coffeepeek.shops/checkins/p.jpg");
+        photo.Urls.Fullscreen.Should().Be("https://media.coffeepeek.by/img/_/full/plain/coffeepeek.shops/checkins/p.jpg");
     }
 }

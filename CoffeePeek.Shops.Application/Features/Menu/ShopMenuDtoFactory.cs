@@ -68,6 +68,7 @@ public static class ShopMenuDtoFactory
                     mediaOptions.PublicEndpoint,
                     mediaOptions.ShopBucketName,
                     p.StorageKey) ?? string.Empty,
+                Urls = PhotoUrlsDto.Create(mediaOptions, mediaOptions.ShopBucketName, p.StorageKey),
                 SortIndex = 0
             })
             .ToArray();

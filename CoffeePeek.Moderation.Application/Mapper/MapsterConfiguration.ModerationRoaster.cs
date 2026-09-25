@@ -16,6 +16,12 @@ public partial class MapsterConfiguration
                 MediaStorageUrlBuilder.BuildPublicUrl(
                     mediaOptions.PublicEndpoint,
                     mediaOptions.ShopBucketName,
+                    s.StorageKey))
+            .Map(d => d.Urls, s =>
+                PhotoUrlsDto.Create(
+                    mediaOptions.PublicEndpoint,
+                    mediaOptions.ImageProxyEndpoint,
+                    mediaOptions.ShopBucketName,
                     s.StorageKey));
 
         config.NewConfig<ModerationRoaster, ModerationRoasterDto>();

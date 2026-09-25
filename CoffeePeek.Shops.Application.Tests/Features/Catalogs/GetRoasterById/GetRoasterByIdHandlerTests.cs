@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using CoffeePeek.Shared.Kernel.Options;
 using CoffeePeek.Shops.Application.Features.Catalogs.GetRoasterById;
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
+using CoffeePeek.Shops.Domain.Entities;
 using FluentAssertions;
 using Microsoft.Extensions.Options;
 using Moq;
@@ -53,5 +54,26 @@ public class GetRoasterByIdHandlerTests
         result.Data.Location!.Address.Should().Be("1 Main St");
         result.Data.Contact!.InstagramLink.Should().Be("https://instagram.com/roaster");
         result.Data.Shops.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task Handle_RoasterWithPhoto_PopulatesVariantUrlsFallingBackToFullUrl()
+    {
+        var roaster = new Roaster("Photo Roaster");
+        roaster.ReplacePhotos([new RoasterPhoto("r.jpg", "image/jpeg", "roasters/r.jpg", 10, Guid.NewGuid(), 0)]);
+
+        _repo.Setup(r => r.GetByIdWithShopsAndPhotosAsync(roaster.Id, _ct)).ReturnsAsync(roaster);
+
+        var result = await GetRoasterByIdHandler.Handle(
+            new GetRoasterByIdQuery(roaster.Id), _repo.Object, _media, _ct);
+
+        result.IsSuccess.Should().BeTrue();
+        var photo = result.Data!.Photos.Should().ContainSingle().Subject;
+        photo.FullUrl.Should().Be("https://media.coffeepeek.by/coffeepeek.shops/roasters/r.jpg");
+        photo.Urls.Should().NotBeNull();
+        photo.Urls.Card.Should().Be(photo.FullUrl);
+        photo.Urls.Thumbnail.Should().Be(photo.FullUrl);
+        photo.Urls.Detail.Should().Be(photo.FullUrl);
+        photo.Urls.Fullscreen.Should().Be(photo.FullUrl);
     }
 }

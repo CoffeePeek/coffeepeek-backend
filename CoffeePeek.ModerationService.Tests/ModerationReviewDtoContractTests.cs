@@ -50,6 +50,50 @@ public class ModerationReviewDtoContractTests
     }
 
     [Fact]
+    public void ReviewWithPhoto_WithImageProxy_ExposesVariantUrls()
+    {
+        var photo = PhotoMetadata.Create(
+            "review.jpg",
+            "image/jpeg",
+            "reviews/review.jpg",
+            1_024,
+            Guid.NewGuid(),
+            null);
+        var review = ModerationReview.Create(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            null,
+            "Test User",
+            null,
+            "A detailed review comment.",
+            5,
+            4,
+            3,
+            [photo]);
+        var mapper = MapsterConfiguration.CreateMapper(new MediaPublicUrlOptions
+        {
+            PublicEndpoint = "https://media.example.com",
+            ImageProxyEndpoint = "https://media.example.com/img",
+            ShopBucketName = "coffeepeek.shops"
+        });
+
+        var dto = mapper.Map<ModerationReviewDto>(review);
+        var json = JsonSerializer.Serialize(dto, new JsonSerializerOptions(JsonSerializerDefaults.Web));
+
+        dto.Photos.Should().ContainSingle();
+        dto.Photos[0].FullUrl.Should().Be(
+            "https://media.example.com/coffeepeek.shops/reviews/review.jpg");
+        var urls = dto.Photos[0].Urls;
+        urls.Should().NotBeNull();
+        urls!.Detail.Should().Be(
+            "https://media.example.com/img/_/detail/plain/coffeepeek.shops/reviews/review.jpg");
+        urls.Thumbnail.Should().Be(
+            "https://media.example.com/img/_/thumb/plain/coffeepeek.shops/reviews/review.jpg");
+        json.Should().Contain("\"urls\":{");
+        json.Should().Contain("\"fullscreen\":");
+    }
+
+    [Fact]
     public void DefaultDto_WebSerialization_ExposesEmptyPhotosCollection()
     {
         var dto = new ModerationReviewDto();

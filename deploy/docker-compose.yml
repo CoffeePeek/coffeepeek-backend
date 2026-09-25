@@ -47,6 +47,7 @@ x-gateway-auth-env: &gateway-auth-env
 
 x-media-public-env: &media-public-env
   MediaPublicUrlOptions__PublicEndpoint: ${MEDIA_PUBLIC_URL:-}
+  MediaPublicUrlOptions__ImageProxyEndpoint: ${IMAGE_PROXY_URL:-}
   MediaPublicUrlOptions__ShopBucketName: coffeepeek.shops
   MediaPublicUrlOptions__AvatarBucketName: coffeepeek.avatars
 
@@ -143,6 +144,31 @@ services:
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+
+  # Resized image variants in front of MinIO. Reachable only on the compose network through Caddy
+  # ({MEDIA_DOMAIN}/img/*). No MinIO credentials: it reads the anonymous-download buckets over plain HTTP.
+  # No IMGPROXY_KEY/IMGPROXY_SALT, so URLs are unsigned and use the "_" signature placeholder.
+  imgproxy:
+    image: ghcr.io/imgproxy/imgproxy:latest
+    restart: unless-stopped
+    logging: *default-logging
+    depends_on:
+      - minio
+    environment:
+      IMGPROXY_BASE_URL: http://minio:9000/
+      IMGPROXY_ALLOWED_SOURCES: http://minio:9000/
+      IMGPROXY_ONLY_PRESETS: "true"
+      # Preset names must match CoffeePeek.Shared.Kernel/ImageVariantPresets.cs.
+      # Presets-only mode blocks arbitrary-size requests (CPU/memory abuse); rs:fit never enlarges
+      # small originals because enlarge defaults to false.
+      IMGPROXY_PRESETS: thumb=rs:fill:240:180,card=rs:fill:600:450,detail=rs:fit:1200:1200,full=rs:fit:1920:1920
+      IMGPROXY_AUTO_WEBP: "true"
+      IMGPROXY_AUTO_AVIF: "true"
+      IMGPROXY_TTL: "31536000"
+    deploy:
+      resources:
+        limits:
+          memory: 512M
 
   account:
     healthcheck: *app-healthcheck
@@ -306,6 +332,8 @@ services:
     depends_on:
       gateway:
         condition: service_healthy
+      imgproxy:
+        condition: service_started
     ports:
       - "80:80"
       - "443:443"

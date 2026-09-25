@@ -53,6 +53,7 @@ public static class GetRoasterByIdHandler
                 StorageKey = p.StorageKey,
                 FullUrl = MediaStorageUrlBuilder.BuildPublicUrl(
                     mediaOptions.PublicEndpoint, mediaOptions.ShopBucketName, p.StorageKey) ?? string.Empty,
+                Urls = PhotoUrlsDto.Create(mediaOptions, mediaOptions.ShopBucketName, p.StorageKey),
                 SortIndex = p.SortIndex,
                 IsPrimary = p.SortIndex == 0
             })
@@ -80,6 +81,7 @@ public static class GetRoasterByIdHandler
                                 mediaOptions.PublicEndpoint,
                                 mediaOptions.ShopBucketName,
                                 coverPhoto.StorageKey) ?? string.Empty,
+                            Urls = PhotoUrlsDto.Create(mediaOptions, mediaOptions.ShopBucketName, coverPhoto.StorageKey),
                             SortIndex = coverPhoto.SortIndex,
                             IsPrimary = coverPhoto.SortIndex == 0
                         }

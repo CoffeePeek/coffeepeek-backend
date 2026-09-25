@@ -19,17 +19,32 @@ public partial class MapsterConfiguration
     {
         var config = new TypeAdapterConfig();
 
+        // Identity map: PhotoUrlsDto.Create already returns the final object, so Mapster must not deep-copy it.
+        config.NewConfig<PhotoUrlsDto, PhotoUrlsDto>().MapWith(src => src);
+
         config.NewConfig<PhotoMetadata, ShortPhotoMetadataDto>()
             .Map(d => d.FullUrl, s =>
                 MediaStorageUrlBuilder.BuildPublicUrl(
                     mediaOptions.PublicEndpoint,
                     mediaOptions.ShopBucketName,
-                    s.StorageKey) ?? string.Empty);
+                    s.StorageKey) ?? string.Empty)
+            .Map(d => d.Urls, s =>
+                PhotoUrlsDto.Create(
+                    mediaOptions.PublicEndpoint,
+                    mediaOptions.ImageProxyEndpoint,
+                    mediaOptions.ShopBucketName,
+                    s.StorageKey));
 
         config.NewConfig<PhotoMetadata, PhotoMetadataDto>()
             .Map(d => d.FullUrl, s =>
                 MediaStorageUrlBuilder.BuildPublicUrl(
                     mediaOptions.PublicEndpoint,
+                    mediaOptions.ShopBucketName,
+                    s.StorageKey))
+            .Map(d => d.Urls, s =>
+                PhotoUrlsDto.Create(
+                    mediaOptions.PublicEndpoint,
+                    mediaOptions.ImageProxyEndpoint,
                     mediaOptions.ShopBucketName,
                     s.StorageKey));
 
