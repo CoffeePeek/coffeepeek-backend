@@ -13,7 +13,8 @@ public class GetUserCheckInsHandler(
         CancellationToken cancellationToken)
     {
         var (checkinDtos, totalCount) =
-            await checkInQueries.GetByUserId(request.UserId, request.PageNumber, request.PageSize, cancellationToken);
+            await checkInQueries.GetByUserId(request.UserId, request.PageNumber, request.PageSize, request.From, request.To,
+                cancellationToken);
 
         var shopIds = checkinDtos.Select(c => c.ShopId).Distinct().ToList();
         var shopNames = await queryCoffeeShopRepository.GetShopNamesByIdsAsync(shopIds, cancellationToken);
