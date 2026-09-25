@@ -38,6 +38,7 @@ progress:
 | 260924-oxa | load-moderation-review-photos-on-approve | complete | 2026-09-24 |
 | 260925-ei9 | admin-stats-expansion-dau-wau-mau-timese | complete | 2026-09-25 |
 | 260925-kjj | add-optional-date-range-filter-from-to-t | complete | 2026-09-25 |
+| 260925-l0p | imgproxy-image-variants-with-urls-on-pho | complete | 2026-09-25 |
 
 ## Milestone Progress
 
