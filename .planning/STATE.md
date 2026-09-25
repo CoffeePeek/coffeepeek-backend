@@ -37,7 +37,6 @@ progress:
 | 260924-mii | copy-moderation-review-photos-to-publish | complete | 2026-09-24 |
 | 260924-oxa | load-moderation-review-photos-on-approve | complete | 2026-09-24 |
 | 260925-ei9 | admin-stats-expansion-dau-wau-mau-timese | complete | 2026-09-25 |
-| 260925-gfl | user-mine-endpoints-for-moderation-submi | complete | 2026-09-25 |
 
 ## Milestone Progress
 
