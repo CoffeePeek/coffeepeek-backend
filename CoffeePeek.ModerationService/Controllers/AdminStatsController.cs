@@ -25,4 +25,17 @@ public class AdminStatsController(IMessageBus bus) : ControllerBase
             new GetAdminModerationStatsQuery(), cancellationToken);
         return Ok(response);
     }
+
+    /// <summary>
+    /// Returns review moderation SLA (30 days), per-queue pending counts with oldest pending age,
+    /// and top moderator workload (30 days).
+    /// </summary>
+    [HttpGet("moderation/insights")]
+    [ProducesResponseType<Response<AdminModerationInsightsDto>>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetInsights(CancellationToken cancellationToken)
+    {
+        var response = await bus.InvokeAsync<Response<AdminModerationInsightsDto>>(
+            new GetAdminModerationInsightsQuery(), cancellationToken);
+        return Ok(response);
+    }
 }

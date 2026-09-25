@@ -25,4 +25,18 @@ public class AdminStatsController(IMessageBus bus) : ControllerBase
             new GetAdminOverviewStatsQuery(), cancellationToken);
         return Ok(response);
     }
+
+    /// <summary>
+    /// Returns new-user registrations per UTC day, zero-filled, ending today.
+    /// </summary>
+    /// <param name="days">Window length in days; default 30, clamped to 1..90.</param>
+    /// <param name="cancellationToken">Request cancellation.</param>
+    [HttpGet("users/timeseries")]
+    [ProducesResponseType<Response<AdminUsersTimeseriesDto>>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetUsersTimeseries([FromQuery] int? days, CancellationToken cancellationToken)
+    {
+        var response = await bus.InvokeAsync<Response<AdminUsersTimeseriesDto>>(
+            new GetAdminUsersTimeseriesQuery(days), cancellationToken);
+        return Ok(response);
+    }
 }

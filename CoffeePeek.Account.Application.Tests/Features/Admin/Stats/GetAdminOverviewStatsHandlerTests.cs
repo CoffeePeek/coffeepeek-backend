@@ -60,7 +60,7 @@ public class GetAdminOverviewStatsHandlerTests
     public async Task Handle_WhenAllSourcesUp_MapsCatalogAndImportCounts()
     {
         _users.Setup(r => r.GetStatsAsync(_ct)).ReturnsAsync(new AdminUserStats(
-            4, 3, 1, 0, new Dictionary<string, int>()));
+            4, 3, 1, 0, new Dictionary<string, int>(), 0, 0, 0, 0, 0, 0));
 
         _client.Setup(c => c.GetPlatformStatsAsync(_ct)).ReturnsAsync(new AdminPlatformStatsSnapshot(
             TotalCoffeeShops: 40,
@@ -91,5 +91,40 @@ public class GetAdminOverviewStatsHandlerTests
         response.Data.Import.InFeed.Should().Be(5);
         response.Data.ShopsAvailable.Should().BeTrue();
         response.Data.ModerationAvailable.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task Handle_MapsEngagementAndAccountBreakdownFields()
+    {
+        _users.Setup(r => r.GetStatsAsync(_ct)).ReturnsAsync(new AdminUserStats(
+            TotalUsers: 100,
+            ActiveUsers: 90,
+            BlockedUsers: 4,
+            RegisteredToday: 2,
+            UsersByRole: new Dictionary<string, int>(),
+            DeletedUsers: 6,
+            DailyActiveUsers: 11,
+            WeeklyActiveUsers: 33,
+            MonthlyActiveUsers: 55,
+            EmailConfirmedUsers: 70,
+            GoogleUsers: 20));
+
+        _client.Setup(c => c.GetPlatformStatsAsync(_ct)).ReturnsAsync(new AdminPlatformStatsSnapshot(
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, true, true));
+
+        var response = await GetAdminOverviewStatsHandler.Handle(
+            new GetAdminOverviewStatsQuery(),
+            _users.Object,
+            _client.Object,
+            _ct);
+
+        response.Data.ActiveUsers.Should().Be(90);
+        response.Data.BlockedUsers.Should().Be(4);
+        response.Data.DeletedUsers.Should().Be(6);
+        response.Data.DailyActiveUsers.Should().Be(11);
+        response.Data.WeeklyActiveUsers.Should().Be(33);
+        response.Data.MonthlyActiveUsers.Should().Be(55);
+        response.Data.EmailConfirmedUsers.Should().Be(70);
+        response.Data.GoogleUsers.Should().Be(20);
     }
 }

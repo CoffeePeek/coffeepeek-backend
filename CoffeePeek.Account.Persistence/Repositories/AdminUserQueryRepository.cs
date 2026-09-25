@@ -45,11 +45,22 @@ public class AdminUserQueryRepository(AccountDbContext dbContext) : IAdminUserQu
 
     public async Task<AdminUserStats> GetStatsAsync(CancellationToken ct = default)
     {
-        var today = DateTime.UtcNow.Date;
+        var now = DateTime.UtcNow;
+        var today = now.Date;
 
+        // Sequential on purpose: a single scoped DbContext does not support concurrent queries.
         var totalUsers = await dbContext.Users.CountAsync(ct);
-        var blockedUsers = await dbContext.Users.CountAsync(u => u.IsBlocked || u.IsSoftDelete, ct);
+        var blockedUsers = await dbContext.Users.CountAsync(u => u.IsBlocked && !u.IsSoftDelete, ct);
+        var deletedUsers = await dbContext.Users.CountAsync(u => u.IsSoftDelete, ct);
+        var activeUsers = await dbContext.Users.CountAsync(u => !u.IsBlocked && !u.IsSoftDelete, ct);
         var registeredToday = await dbContext.Users.CountAsync(u => u.CreatedAtUtc >= today, ct);
+        var emailConfirmedUsers = await dbContext.Users.CountAsync(u => u.Credentials.EmailConfirmed, ct);
+        var googleUsers = await dbContext.Users.CountAsync(u => u.Credentials.OAuthProvider != null, ct);
+
+        // A refresh token is issued on every login and rotation, so its creation time is the activity signal.
+        var dailyActiveUsers = await CountActiveUsersSinceAsync(now.AddDays(-1), ct);
+        var weeklyActiveUsers = await CountActiveUsersSinceAsync(now.AddDays(-7), ct);
+        var monthlyActiveUsers = await CountActiveUsersSinceAsync(now.AddDays(-30), ct);
 
         var usersByRole = await dbContext.Users
             .AsNoTracking()
@@ -60,9 +71,37 @@ public class AdminUserQueryRepository(AccountDbContext dbContext) : IAdminUserQu
 
         return new AdminUserStats(
             TotalUsers: totalUsers,
-            ActiveUsers: totalUsers - blockedUsers,
+            ActiveUsers: activeUsers,
             BlockedUsers: blockedUsers,
             RegisteredToday: registeredToday,
-            UsersByRole: usersByRole);
+            UsersByRole: usersByRole,
+            DeletedUsers: deletedUsers,
+            DailyActiveUsers: dailyActiveUsers,
+            WeeklyActiveUsers: weeklyActiveUsers,
+            MonthlyActiveUsers: monthlyActiveUsers,
+            EmailConfirmedUsers: emailConfirmedUsers,
+            GoogleUsers: googleUsers);
     }
+
+    public async Task<IReadOnlyDictionary<DateOnly, int>> GetNewUsersPerDayAsync(
+        DateTime fromUtcDate,
+        CancellationToken ct = default)
+    {
+        var rows = await dbContext.Users
+            .AsNoTracking()
+            .Where(u => u.CreatedAtUtc >= fromUtcDate)
+            .GroupBy(u => u.CreatedAtUtc.Date)
+            .Select(g => new { Day = g.Key, Count = g.Count() })
+            .ToListAsync(ct);
+
+        return rows.ToDictionary(r => DateOnly.FromDateTime(r.Day), r => r.Count);
+    }
+
+    private Task<int> CountActiveUsersSinceAsync(DateTime sinceUtc, CancellationToken ct) =>
+        dbContext.RefreshTokens
+            .AsNoTracking()
+            .Where(t => t.CreatedAtUtc >= sinceUtc)
+            .Select(t => t.UserId)
+            .Distinct()
+            .CountAsync(ct);
 }

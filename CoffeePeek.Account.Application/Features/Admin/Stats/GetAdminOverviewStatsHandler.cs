@@ -33,6 +33,12 @@ public static class GetAdminOverviewStatsHandler
                 platform.ImportSkipped,
                 platform.ImportInFeed),
             ShopsAvailable: platform.ShopsAvailable,
-            ModerationAvailable: platform.ModerationAvailable));
+            ModerationAvailable: platform.ModerationAvailable,
+            DailyActiveUsers: userStats.DailyActiveUsers,
+            WeeklyActiveUsers: userStats.WeeklyActiveUsers,
+            MonthlyActiveUsers: userStats.MonthlyActiveUsers,
+            DeletedUsers: userStats.DeletedUsers,
+            EmailConfirmedUsers: userStats.EmailConfirmedUsers,
+            GoogleUsers: userStats.GoogleUsers));
     }
 }
