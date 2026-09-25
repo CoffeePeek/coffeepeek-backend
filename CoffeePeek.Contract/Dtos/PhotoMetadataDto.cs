@@ -7,6 +7,7 @@ public class PhotoMetadataDto
     public required string ContentType { get; init; }
     public required string StorageKey { get; init; }
     public string? FullUrl { get; init; }
+    public PhotoUrlsDto? Urls { get; init; }
     public long SizeBytes { get; init; }
     public Guid OwnerId { get; init; }
     public DateTime UploadedAt { get; init; }
