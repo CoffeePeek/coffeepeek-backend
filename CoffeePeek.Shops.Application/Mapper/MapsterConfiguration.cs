@@ -25,6 +25,10 @@ public static class MapsterConfiguration
     {
         var config = new TypeAdapterConfig();
 
+        // Identity map: PhotoUrlsDto.Create already returns the final object. Without this Mapster deep-copies it
+        // at runtime and, inside ProjectToType, re-invokes Create once per member.
+        config.NewConfig<PhotoUrlsDto, PhotoUrlsDto>().MapWith(src => src);
+
         config.NewConfig<CoffeeShop, ShortShopDto>()
             .Map(dest => dest.CityId, src => src.Location.CityId)
             .Map(dest => dest.DataCompletenessScore, src => (int)src.DataCompletenessScore)
@@ -40,12 +44,20 @@ public static class MapsterConfiguration
             .Ignore(dest => dest.ReviewCount)
             .Ignore(dest => dest.IsVisited);
 
+        // These photo maps also run inside EF Core ProjectToType (CoffeeShopQueries, CheckInQueries), so the Urls
+        // factory is called with string closure members only, the same shape as the BuildPublicUrl call.
         config.NewConfig<ShopPhoto, ShortPhotoMetadataDto>()
             .Map(dest => dest.FullUrl, src =>
                 MediaStorageUrlBuilder.BuildPublicUrl(
                     mediaOptions.PublicEndpoint,
                     mediaOptions.ShopBucketName,
                     src.StorageKey) ?? string.Empty)
+            .Map(dest => dest.Urls, src =>
+                PhotoUrlsDto.Create(
+                    mediaOptions.PublicEndpoint,
+                    mediaOptions.ImageProxyEndpoint,
+                    mediaOptions.ShopBucketName,
+                    src.StorageKey))
             .Map(dest => dest.IsPrimary, src => src.SortIndex == 0);
 
         config.NewConfig<RoasterPhoto, ShortPhotoMetadataDto>()
@@ -54,6 +66,12 @@ public static class MapsterConfiguration
                     mediaOptions.PublicEndpoint,
                     mediaOptions.ShopBucketName,
                     src.StorageKey) ?? string.Empty)
+            .Map(dest => dest.Urls, src =>
+                PhotoUrlsDto.Create(
+                    mediaOptions.PublicEndpoint,
+                    mediaOptions.ImageProxyEndpoint,
+                    mediaOptions.ShopBucketName,
+                    src.StorageKey))
             .Map(dest => dest.IsPrimary, src => src.SortIndex == 0);
 
         config.NewConfig<ShopPhoto, UploadedPhotoDto>()
