@@ -51,6 +51,15 @@ x-media-public-env: &media-public-env
   MediaPublicUrlOptions__ShopBucketName: coffeepeek.shops
   MediaPublicUrlOptions__AvatarBucketName: coffeepeek.avatars
 
+# Aspire resource names (coffeepeek-*) default to port 80. Compose services listen on 8080
+# under short names (media, shops, …). HttpClients use AddServiceDiscovery() and resolve
+# via this Services:* map — without it check-ins with photos call coffeepeek-mediaservice:80.
+x-aspire-service-discovery: &aspire-service-discovery
+  services__coffeepeek-accountservice__http__0: http://account:8080
+  services__coffeepeek-shopsservice__http__0: http://shops:8080
+  services__coffeepeek-moderationservice__http__0: http://moderation:8080
+  services__coffeepeek-mediaservice__http__0: http://media:8080
+
 services:
   postgres:
     image: public.ecr.aws/docker/library/postgres:17-alpine
@@ -188,7 +197,7 @@ services:
       minio-init:
         condition: service_completed_successfully
     environment:
-      <<: [*dotnet-common, *rabbitmq-env, *redis-env, *jwt-env, *media-public-env, *gateway-auth-env]
+      <<: [*dotnet-common, *rabbitmq-env, *redis-env, *jwt-env, *media-public-env, *gateway-auth-env, *aspire-service-discovery]
       PostgresCpOptions__ConnectionString: Host=postgres;Port=5432;Database=cpaccountdb;Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD};SslMode=Disable;GSS Encryption Mode=Disable
       MinIOOptions__Endpoint: http://minio:9000
       MinIOOptions__AccessKey: ${MINIO_ROOT_USER}
@@ -223,8 +232,10 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+      media:
+        condition: service_healthy
     environment:
-      <<: [*dotnet-common, *rabbitmq-env, *redis-env, *media-public-env, *gateway-auth-env]
+      <<: [*dotnet-common, *rabbitmq-env, *redis-env, *media-public-env, *gateway-auth-env, *aspire-service-discovery]
       PostgresCpOptions__ConnectionString: Host=postgres;Port=5432;Database=cpshopsdb;Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD};SslMode=Disable;GSS Encryption Mode=Disable
       OpenAiOptions__ApiKey: ${OPENAI_API_KEY:-}
       OpenAiOptions__Model: ${OPENAI_MODEL:-gpt-4.1-mini}
@@ -251,7 +262,7 @@ services:
       minio-init:
         condition: service_completed_successfully
     environment:
-      <<: [*dotnet-common, *rabbitmq-env, *media-public-env, *gateway-auth-env]
+      <<: [*dotnet-common, *rabbitmq-env, *media-public-env, *gateway-auth-env, *aspire-service-discovery]
       PostgresCpOptions__ConnectionString: Host=postgres;Port=5432;Database=cpmoderationdb;Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD};SslMode=Disable;GSS Encryption Mode=Disable
       MinIOOptions__Endpoint: http://minio:9000
       MinIOOptions__AccessKey: ${MINIO_ROOT_USER}

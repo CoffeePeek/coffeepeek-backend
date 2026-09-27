@@ -267,7 +267,27 @@ public class CreateCheckInHandlerTests
     }
 
     [Fact]
-    public async Task Handle_WhenMediaUnreachable_FailsClosed()
+    public async Task Handle_WhenMediaUnreachable_FailsClosedWith503()
+    {
+        var command = BuildCommand(isPublic: false) with
+        {
+            Photos = [new UploadedPhotoDto("a.jpg", "image/jpeg", "reviews/mine", 1)]
+        };
+        _validationMock.Setup(v => v.ValidateAsync(command, _ct)).ReturnsAsync(ValidationResult.Valid);
+        _photoLookupMock
+            .Setup(l => l.ResolveAsync(command.UserId, It.IsAny<IReadOnlyCollection<string>>(), _ct))
+            .ReturnsAsync(UploadedPhotoLookupResult.Unreachable);
+
+        var act = () => Run(command);
+
+        (await act.Should().ThrowAsync<ServiceUnavailableException>())
+            .WithMessage(CreateCheckInHandler.PhotosNotVerifiedMessage);
+        _checkInRepoMock.Verify(r => r.Add(It.IsAny<DomainCheckIn>()), Times.Never);
+        _unitOfWorkMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Handle_WhenMediaRejectsResolve_ThrowsValidationAndPersistsNothing()
     {
         var command = BuildCommand(isPublic: false) with
         {

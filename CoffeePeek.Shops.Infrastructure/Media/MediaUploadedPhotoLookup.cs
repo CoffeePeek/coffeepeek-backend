@@ -46,7 +46,9 @@ public class MediaUploadedPhotoLookup(
                     "Media photo resolve for {UserId} failed with {StatusCode}",
                     userId,
                     response.StatusCode);
-                return UploadedPhotoLookupResult.Failed;
+                return (int)response.StatusCode >= 500
+                    ? UploadedPhotoLookupResult.Unreachable
+                    : UploadedPhotoLookupResult.Failed;
             }
 
             var payload = await response.Content
@@ -65,7 +67,7 @@ public class MediaUploadedPhotoLookup(
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
         {
             logger.LogWarning(ex, "Media photo resolve for {UserId} failed", userId);
-            return UploadedPhotoLookupResult.Failed;
+            return UploadedPhotoLookupResult.Unreachable;
         }
     }
 }

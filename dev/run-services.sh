@@ -54,12 +54,15 @@ start account CoffeePeek.AccountService \
 
 start shops CoffeePeek.ShopsService \
   ASPNETCORE_URLS=http://localhost:5243 \
-  PostgresCpOptions__ConnectionString="$(pg cpshopsdb)"
+  PostgresCpOptions__ConnectionString="$(pg cpshopsdb)" \
+  services__coffeepeek-accountservice__http__0=http://localhost:5353 \
+  services__coffeepeek-mediaservice__http__0=http://localhost:5025
 
 start moderation CoffeePeek.ModerationService \
   ASPNETCORE_URLS=http://localhost:6453 \
   PostgresCpOptions__ConnectionString="$(pg cpmoderationdb)" \
-  MinIOOptions__BucketName=coffeepeek.shops
+  MinIOOptions__BucketName=coffeepeek.shops \
+  services__coffeepeek-shopsservice__http__0=http://localhost:5243
 
 start media CoffeePeek.MediaService \
   ASPNETCORE_URLS=http://localhost:5025 \

@@ -58,7 +58,11 @@ public static class CreateCheckInHandler
         {
             var lookup = await photoLookup.ResolveAsync(command.UserId, storageKeys, ct);
             if (!lookup.Succeeded)
+            {
+                if (lookup.IsTransientFailure)
+                    throw new ServiceUnavailableException(PhotosNotVerifiedMessage);
                 throw new ValidationException(PhotosNotVerifiedMessage);
+            }
 
             var resolved = lookup.Photos.ToDictionary(p => p.StorageKey, StringComparer.Ordinal);
             if (storageKeys.Any(k => !resolved.ContainsKey(k)))

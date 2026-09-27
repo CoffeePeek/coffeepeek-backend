@@ -23,13 +23,15 @@ public static class DependencyInjection
         services.AddHttpClient("account-user-lookup", client =>
         {
             client.BaseAddress = new Uri($"http://{AppResources.AccountService}");
-            client.Timeout = TimeSpan.FromSeconds(5);
+            // Aspire AddStandardResilienceHandler() retries for ~30s; HttpClient.Timeout wraps that pipeline.
+            client.Timeout = Timeout.InfiniteTimeSpan;
         });
 
         services.AddHttpClient(MediaUploadedPhotoLookup.HttpClientName, client =>
         {
+            // Hostname is the Aspire resource name; production compose maps it via services__* env vars.
             client.BaseAddress = new Uri($"http://{AppResources.MediaService}");
-            client.Timeout = TimeSpan.FromSeconds(5);
+            client.Timeout = Timeout.InfiniteTimeSpan;
         });
 
         var timeoutRaw = configuration.GetSection(nameof(OpenAiOptions))["TimeoutSeconds"];
