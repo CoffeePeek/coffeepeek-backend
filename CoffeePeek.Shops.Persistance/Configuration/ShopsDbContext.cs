@@ -6,6 +6,7 @@ using CoffeePeek.Shops.Domain.Aggregates.CoffeeZoneAggregate;
 using CoffeePeek.Shops.Domain.Aggregates.MenuAggregate;
 using CoffeePeek.Shops.Domain.Aggregates.ShopTagAggregate;
 using CoffeePeek.Shops.Domain.Entities;
+using CoffeePeek.Shops.Domain.Aggregates.PublicAddressAggregate;
 using Microsoft.EntityFrameworkCore;
 using CoffeePeek.Shops.Domain.Aggregates.ReviewAggregate;
 using Review = CoffeePeek.Shops.Domain.Aggregates.ReviewAggregate.Review;
@@ -15,6 +16,8 @@ namespace CoffeePeek.Shops.Persistance.Configuration;
 
 public class ShopsDbContext(DbContextOptions<ShopsDbContext> options) : DbContext(options)
 {
+    public virtual DbSet<CoffeeShopPublicAddress> CoffeeShopPublicAddresses { get; set; }
+    public virtual DbSet<RoasterPublicAddress> RoasterPublicAddresses { get; set; }
     //category
     public virtual DbSet<BrewMethod> BrewMethods { get; set; }
     
@@ -53,6 +56,8 @@ public class ShopsDbContext(DbContextOptions<ShopsDbContext> options) : DbContex
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.HasPostgresExtension("pg_trgm");
+        modelBuilder.ApplyConfiguration(new CoffeeShopPublicAddressConfiguration());
+        modelBuilder.ApplyConfiguration(new RoasterPublicAddressConfiguration());
         modelBuilder.ApplyConfiguration(new CoffeeShopConfiguration());
         modelBuilder.ApplyConfiguration(new CoffeeZoneConfiguration());
         modelBuilder.ApplyConfiguration(new CoffeeZoneMembershipOverrideConfiguration());
