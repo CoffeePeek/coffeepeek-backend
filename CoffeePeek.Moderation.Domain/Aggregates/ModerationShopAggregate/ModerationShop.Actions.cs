@@ -127,6 +127,13 @@ public sealed partial class ModerationShop
 
     public void UpdateSchedules(IEnumerable<(DayOfWeek DayOfWeek, List<(TimeSpan OpenTime, TimeSpan CloseTime)> Intervals)> schedules)
     {
+        UpdateSchedules(schedules.Select(schedule =>
+            (schedule.DayOfWeek, schedule.Intervals.Count == 0, schedule.Intervals)));
+    }
+
+    public void UpdateSchedules(
+        IEnumerable<(DayOfWeek DayOfWeek, bool IsClosed, List<(TimeSpan OpenTime, TimeSpan CloseTime)> Intervals)> schedules)
+    {
         _schedules.Clear();
     
         foreach (var schedule in schedules)
@@ -136,9 +143,7 @@ public sealed partial class ModerationShop
                 .ToList()
                 .AsReadOnly();
         
-            var isClosed = schedule.Intervals.Count == 0;
-        
-            _schedules.Add(new ModerationShopSchedule(schedule.DayOfWeek, isClosed, intervals));
+            _schedules.Add(new ModerationShopSchedule(schedule.DayOfWeek, schedule.IsClosed, intervals));
         }
     }
 
