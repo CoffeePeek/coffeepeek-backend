@@ -29,10 +29,12 @@ public class CheckInsController(IMessageBus bus, IUserContext userContext) : Con
     /// <response code="200">Check-in successfully created</response>
     /// <response code="400">Invalid shop ID or business logic violation</response>
     /// <response code="401">Unauthorized: Missing user context headers</response>
+    /// <response code="503">Media service could not verify attached photos</response>
     [HttpPost]
     [ProducesResponseType(typeof(Response<CreateCheckInResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status503ServiceUnavailable)]
     public async Task<IActionResult> CreateCheckIn([FromBody] CreateCheckInCommand command)
     {
         command = command with { UserId = userContext.GetUserIdOrThrow(), UserName = userContext.GetUsernameOrThrow() };
