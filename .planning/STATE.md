@@ -2,7 +2,7 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: unknown
+status: in_progress
 last_updated: "2026-09-22T07:23:02Z"
 progress:
   total_phases: 1
@@ -13,6 +13,14 @@ progress:
 ---
 
 # State
+
+## Active work: public slugs (2026-09-27)
+
+- Approved full staged rollout: `specs/PUBLIC-SLUGS.md`.
+- Phase 1 implemented: commits `7aba62c2`, `0e562a2a`; Shops domain 173/173 and infrastructure 49/49 pass.
+- Infrastructure verification debt: live PostgreSQL uniqueness/FK/concurrency tests pending; Docker startup requires sudo password. Model/SQL verification is not live DB verification.
+- Phase 2 in progress: coffee shop/roaster writer coordination, slug APIs, explicit rename and backfill.
+- Frontend is outside this repository; page redirects remain a later external integration step.
 
 ## Quick Tasks Completed
 

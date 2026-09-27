@@ -11,7 +11,8 @@ public static partial class PublicSlug
     private static readonly HashSet<string> Reserved = new(StringComparer.Ordinal)
     {
         "api", "admin", "new", "edit", "create", "delete", "search", "me", "by-slug",
-        "login", "logout", "register", "settings", "health", "swagger", "scalar", "null", "undefined"
+        "login", "logout", "register", "settings", "health", "swagger", "scalar", "null", "undefined",
+        "public-addresses", "history", "backfill", "initialize", "rename", "batch", "visibility", "owner", "photos", "menu"
     };
 
     /// <summary>Manual input must already be canonical; never silently changes a requested URL.</summary>
@@ -60,7 +61,14 @@ public static partial class PublicSlug
         ArgumentOutOfRangeException.ThrowIfNegative(attempt);
         var stem = Generate(name);
         if (attempt == 0) return stem;
-        var suffix = $"-{entityId:N}" + (attempt == 1 ? "" : $"-{attempt.ToString(CultureInfo.InvariantCulture)}");
+        var identity = entityId.ToString("N");
+        var suffix = attempt switch
+        {
+            1 => "-" + identity[..8],
+            2 => "-" + identity[..12],
+            3 => "-" + identity[..16],
+            _ => "-" + identity + $"-{attempt.ToString(CultureInfo.InvariantCulture)}"
+        };
         return stem[..Math.Min(stem.Length, MaxLength - suffix.Length)].TrimEnd('-') + suffix;
     }
 

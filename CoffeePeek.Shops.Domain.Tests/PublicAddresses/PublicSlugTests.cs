@@ -48,7 +48,9 @@ public sealed class PublicSlugTests
         var initial = PublicSlug.Candidate(name, owner, 0);
         initial.Should().HaveLength(99);
         var first = PublicSlug.Candidate(name, owner, 1);
-        first.Should().HaveLength(100).And.EndWith("-491e394ed443438381701ff039eaa821");
+        first.Should().HaveLength(100).And.EndWith("-491e394e");
+        PublicSlug.Candidate("coffee", owner, 2).Should().Be("coffee-491e394ed443");
+        PublicSlug.Candidate("coffee", owner, 3).Should().Be("coffee-491e394ed4434383");
         first.Should().Be(PublicSlug.Candidate(name, owner, 1));
         first.Should().NotBe(PublicSlug.Candidate(name, Guid.NewGuid(), 1));
         var retry = PublicSlug.Candidate(name, owner, int.MaxValue);
