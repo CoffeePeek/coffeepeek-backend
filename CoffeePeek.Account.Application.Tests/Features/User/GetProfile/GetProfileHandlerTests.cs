@@ -92,4 +92,35 @@ public class GetPublicUserProfileHandlerTests
 
         await act.Should().ThrowAsync<NotFoundException>().WithMessage("User not found");
     }
+
+    // D-04: deleted and blocked profiles are not public and must be indistinguishable from unknown ids. The mapper is
+    // set up to succeed, so without the visibility check the handler would return the profile.
+    [Fact]
+    public async Task Handle_WhenUserSoftDeleted_ThrowsNotFoundAndDoesNotMap()
+    {
+        var user = CreateUser();
+        user.SetSoftDelete();
+        await AssertHiddenAsync(user);
+    }
+
+    [Fact]
+    public async Task Handle_WhenUserBlocked_ThrowsNotFoundAndDoesNotMap()
+    {
+        var user = CreateUser();
+        user.SetBlocked(true);
+        await AssertHiddenAsync(user);
+    }
+
+    private async Task AssertHiddenAsync(DomainUser user)
+    {
+        _userRepoMock.Setup(r => r.GetById(user.Id, _ct)).ReturnsAsync(user);
+        _mapperMock.Setup(m => m.Map<PublicUserProfileResponse>(It.IsAny<object>()))
+            .Returns(new PublicUserProfileResponse("testuser", DateTime.UtcNow, null, null, 0, 0, 0));
+
+        Func<Task> act = () => _handler.Handle(
+            new GetPublicUserProfileCommand(user.Id), _userRepoMock.Object, _mapperMock.Object, _ct);
+
+        await act.Should().ThrowAsync<NotFoundException>().WithMessage("User not found");
+        _mapperMock.Verify(m => m.Map<PublicUserProfileResponse>(It.IsAny<object>()), Times.Never);
+    }
 }

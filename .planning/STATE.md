@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: in_progress
-last_updated: "2026-09-28T08:45:47.419Z"
+last_updated: "2026-09-28T13:59:00.000Z"
 progress:
-  total_phases: 3
+  total_phases: 4
   completed_phases: 3
-  total_plans: 4
-  completed_plans: 4
-  percent: 100
+  total_plans: 7
+  completed_plans: 5
+  percent: 71
 ---
 
 # State
@@ -33,7 +33,19 @@ progress:
 - Phase 3 plan 02 decisions:
   - Public city/zone controllers inject `IPublicAddressService` and read-only queries directly, not `IMessageBus`: no new handlers and no Wolverine codegen.
   - No slug search params; the frontend resolves readable values to the unchanged GUID filters.
-- Next: Phase 3 verification. The live PostgreSQL gate (phases 1–3) is still open, so `PublicAddresses__Enabled` stays false.
+- Phase 3 verification: passed (`03-VERIFICATION.md`). The live PostgreSQL gate (phases 1–3) is still open, so `PublicAddresses__Enabled` stays false.
+- Phase 4 plan 01 complete (2026-09-28, commits `5adff179`, `7c92a725`, `2f43ea54`, `824457f1`):
+  - Account-local `UserPublicAddresses` registry (Shops-identical schema, RESTRICT FK to Users, no navigation), generated migration `20260928134755_AddUserPublicAddresses` (one table, three indexes, four checks). This migration is a deployment prerequisite whatever the flag says, because deletion always retires.
+  - `AccountDbContext` SaveChanges hook through `ProfileAddressWriter`/`ProfileAddressTransaction` (advisory lock `7402100401`): soft or hard delete always retires every row; while enabled, creation allocates (email and Google) and a username change follows under Policy A (alias kept, A→B→A restores, same-slug change is a no-op).
+  - `PublicAddressOptions` bound from `PublicAddresses`; unset, so default false.
+  - Tests: Account infrastructure 72 (baseline 54), domain 255 (baseline 231), application 214. The Wolverine codegen guard is green, `has-pending-model-changes` is clean, and the CI slnf Release build has 0 errors. No live PostgreSQL verification.
+- Phase 4 plan 01 decisions:
+  - Change detection compares `OriginalValue` with the current value, never `IsModified`, because `UserRepository.Update` marks every property modified. The writer saves only via `SaveCoreAsync`, so the hook never re-enters.
+  - The candidate search is owner-aware: the owner's own canonical is a no-op and the owner's own alias is restored. Another user's alias or a tombstone forces that owner's `-<8hex>` suffix.
+  - Reserved, unsupported-script and bare `user` usernames always get `user-<8hex>`, never a bare `place` or `user`.
+  - Retirement runs before the enabled check. Block/unblock never touches addresses. A soft-deleted user's username rewrite allocates nothing.
+  - A user created while disabled gets an address on the first enabled username change.
+- Next: Phase 4 plan 02 (ProfileAddressService, public `api/Users` endpoints, admin backfill, GUID-route 404 fix).
 
 ## Quick Tasks Completed
 
