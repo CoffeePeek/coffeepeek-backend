@@ -22,7 +22,8 @@ Plans: 1
 |---|---|---|
 | 1 | 1/1 implemented | PostgreSQL verification pending |
 | 2 | 1/1 implemented | PostgreSQL verification pending; feature default-off |
-| 3–6 | Not started | Pending |
+| 3 | 2/2 implemented | PostgreSQL verification pending; feature default-off |
+| 4–6 | Not started | Pending |
 
 ## Phase 2: Coffee shops and roasters
 
@@ -30,3 +31,13 @@ Goal: implement the first complete backend address flow with writer/delete integ
 
 Plans: 1
 - [x] 02-01-PLAN.md — transactional coordinator, integrations, APIs, backfill, compatibility tests and client handoff.
+
+## Phase 3: Cities, zones and catalog filters
+
+Goal: extend readable stable public addresses to cities, published coffee zones and the public catalog filter values that appear in page/filter URLs, reusing the phase 1–2 slug rules, registries/coordinator, visibility-aware lookup, rename/history and bounded backfill. Existing GUID routes and DTOs stay unchanged; feature stays default-off behind the same live PostgreSQL gate. Account profiles (phase 4) and the external frontend (phase 6) are out of scope.
+
+Depends on: Phase 2
+
+Plans: 2
+- [x] 03-01-PLAN.md — city/zone registries, audit kind check migration, lifecycle hook and explicit four-kind service dispatch with tests.
+- [x] 03-02-PLAN.md — public api/Catalogs city/zone address endpoints, admin kinds, contract tests, CI filter (ShopsService.Tests), catalog filter docs and live gate.
