@@ -15,6 +15,7 @@
       "CoffeePeek.Moderation.Domain.Tests\\CoffeePeek.Moderation.Domain.Tests.csproj",
       "CoffeePeek.Moderation.Application.Tests\\CoffeePeek.Moderation.Application.Tests.csproj",
       "CoffeePeek.Shops.Infrastructure.Tests\\CoffeePeek.Shops.Infrastructure.Tests.csproj",
+      "CoffeePeek.ShopsService.Tests\\CoffeePeek.ShopsService.Tests.csproj",
       "CoffeePeek.Gateway.Tests\\CoffeePeek.Gateway.Tests.csproj"
     ]
   }
