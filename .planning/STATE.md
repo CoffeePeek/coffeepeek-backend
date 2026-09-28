@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: in_progress
-last_updated: "2026-09-28T07:45:00Z"
+last_updated: "2026-09-28T08:45:47.419Z"
 progress:
-  total_phases: 6
-  completed_phases: 0
-  total_plans: 2
-  completed_plans: 2
-  percent: 0
+  total_phases: 3
+  completed_phases: 3
+  total_plans: 4
+  completed_plans: 4
+  percent: 100
 ---
 
 # State
@@ -22,6 +22,18 @@ progress:
 - Phase 2 implementation complete: coffee shop/roaster writer coordination, slug APIs, explicit rename, bounded backfill, audit migration and compatibility tests.
 - Phase 2 verification: 461 affected tests and the CI solution build pass. Live PostgreSQL uniqueness/FK/advisory-lock/savepoint checks remain required, so `PublicAddresses__Enabled` stays false by default.
 - Frontend is outside this repository; page redirects remain a later external integration step.
+- Phase 3 plan 01 complete (2026-09-28, commits `33f94a94`, `f04e325f`, `8233c3f1`, `3566bf48`): City and CoffeeZone typed registries, generated migration `20260928082712_AddCityAndZonePublicAddresses` (two tables, RESTRICT FKs, `CK_PublicAddressAudit_Kind` widened to `IN (1, 2, 3, 4)`), SaveChanges hook (city create/delete, zone first-publication/delete) and explicit four-kind dispatch in `PublicAddressService`/`PublicAddressWriter.Create<T>`. Tests: Shops infrastructure 64, domain 189, application 224 and ShopsService 11 all pass; `has-pending-model-changes` is clean. No live PostgreSQL verification.
+- Phase 3 decisions: D-01 global per-type zone namespace (`/cities/{slug}`, `/coffee-zones/{slug}`); D-02 every city is public, zones only while Published; zones allocate on first publication, and Archive/MoveToDraft hide without retiring; city/zone delete always retires, even when disabled.
+- Phase 3 plan 02 complete (2026-09-28, commits `ca38eb22`, `ee185d94`, `e370ad3b`):
+  - Public `api/Catalogs/cities` and `api/Catalogs/coffee-zones` address endpoints (by-slug, batch, legacy GUID; NoStore). Zone by-slug re-checks `Status == Published` on the data read. City data is read AsNoTracking via the new `IQueryCityRepository.GetById`.
+  - Admin address routes accept `cities|coffee-zones` with an explicit `Kind()` switch (400 on unknown, Admin policy kept).
+  - `CoffeePeek.ShopsService.Tests` added to `CoffeePeek.Backend.ci.slnf` (D-05).
+  - `docs/api/public-addresses.md` covers the city/zone contract, catalog filter values (D-04) and the extended live gate.
+  - Tests: ShopsService 25 (Debug and Release), Shops domain 189, application 224 and infrastructure 64 all pass. The CI slnf Release build has 0 errors and `has-pending-model-changes` is clean. No live PostgreSQL verification.
+- Phase 3 plan 02 decisions:
+  - Public city/zone controllers inject `IPublicAddressService` and read-only queries directly, not `IMessageBus`: no new handlers and no Wolverine codegen.
+  - No slug search params; the frontend resolves readable values to the unchanged GUID filters.
+- Next: Phase 3 verification. The live PostgreSQL gate (phases 1–3) is still open, so `PublicAddresses__Enabled` stays false.
 
 ## Quick Tasks Completed
 
