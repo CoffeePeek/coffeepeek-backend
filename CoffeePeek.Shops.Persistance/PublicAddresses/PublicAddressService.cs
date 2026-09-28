@@ -16,18 +16,18 @@ public sealed class PublicAddressService(ShopsDbContext db) : IPublicAddressServ
         var normalized = slug.ToLowerInvariant();
         if (!PublicSlug.IsValid(normalized)) throw new PublicAddressException("Invalid public address.", 400);
         return kind == PublicAddressKind.CoffeeShop
-            ? ResolveAsync<CoffeeShopPublicAddress>(kind, slug, normalized, ct)
-            : ResolveAsync<RoasterPublicAddress>(kind, slug, normalized, ct);
+            ? ResolveAsync<CoffeeShopPublicAddress>(kind, normalized, ct)
+            : ResolveAsync<RoasterPublicAddress>(kind, normalized, ct);
     }
 
-    private async Task<PublicAddressMetadata?> ResolveAsync<T>(PublicAddressKind kind, string requested, string normalized, CancellationToken ct) where T : PublicAddress
+    private async Task<PublicAddressMetadata?> ResolveAsync<T>(PublicAddressKind kind, string normalized, CancellationToken ct) where T : PublicAddress
     {
         var address = await db.Set<T>().AsNoTracking().SingleOrDefaultAsync(a => a.Slug == normalized, ct);
         if (address?.OwnerId is not { } ownerId) return null;
         // Never trust a cached detail payload to determine current public visibility.
         if (!await IsVisibleAsync(kind, ownerId, ct)) return null;
         var current = await db.Set<T>().AsNoTracking().SingleOrDefaultAsync(a => a.OwnerId == ownerId && a.State == PublicAddressState.Canonical, ct);
-        return current is null ? null : Metadata(kind, current, requested != current.Slug);
+        return current is null ? null : Metadata(kind, current, normalized != current.Slug);
     }
 
     public Task<PublicAddressMetadata[]> GetByIdsAsync(PublicAddressKind kind, Guid[] ids, CancellationToken ct)
@@ -101,6 +101,7 @@ public sealed class PublicAddressService(ShopsDbContext db) : IPublicAddressServ
     {
         RequireEnabled(kind);
         if (afterRevision < 0 || limit is < 1 or > 100) throw new PublicAddressException("Invalid history cursor or limit (1–100).", 400);
+        if (await GetStemAsync(kind, id, ct) is null) throw new PublicAddressException("Entity not found.", 404);
         return await db.PublicAddressAudit.AsNoTracking().Where(a => a.Kind == kind && a.OwnerId == id && a.Revision > afterRevision)
             .OrderBy(a => a.Revision).Take(limit)
             .Select(a => new PublicAddressHistoryItem(a.Revision, a.PreviousSlug, a.Slug, a.Action, a.ActorId, a.Reason, a.AtUtc)).ToArrayAsync(ct);
