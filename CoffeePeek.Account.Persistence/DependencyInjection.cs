@@ -1,9 +1,11 @@
-﻿using CoffeePeek.Account.Application.Common.Options;
+﻿using CoffeePeek.Account.Application.Common.Interfaces;
+using CoffeePeek.Account.Application.Common.Options;
 using CoffeePeek.Account.Domain.Entities.AccountDeletionRequestAggregate;
 using CoffeePeek.Account.Domain.Entities.PhotoMetadataAggregate;
 using CoffeePeek.Account.Domain.Entities.RoleAggregate;
 using CoffeePeek.Account.Domain.Entities.UserAggregate;
 using CoffeePeek.Account.Persistence.Configuration;
+using CoffeePeek.Account.Persistence.PublicAddresses;
 using CoffeePeek.Account.Persistence.Repositories;
 using CoffeePeek.Shared.Kernel;
 using CoffeePeek.Shared.Kernel.Extentions;
@@ -51,6 +53,7 @@ public static class DependencyInjection
         services.AddScoped<IRoleRepository, RoleRepository>();
         services.AddScoped<IPhotoMetadataRepository, PhotoMetadataRepository>();
         services.AddScoped<IAccountDeletionRequestRepository, AccountDeletionRequestRepository>();
+        services.AddScoped<IProfileAddressService, ProfileAddressService>();
         services.AddCacheModule();
 
         return services;
