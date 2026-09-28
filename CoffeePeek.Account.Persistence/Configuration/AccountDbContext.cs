@@ -1,6 +1,7 @@
 ﻿using CoffeePeek.Account.Domain;
 using CoffeePeek.Account.Domain.Entities;
 using CoffeePeek.Account.Domain.Entities.AccountDeletionRequestAggregate;
+using CoffeePeek.Account.Domain.Entities.PublicAddressAggregate;
 using CoffeePeek.Account.Domain.Entities.RoleAggregate;
 using CoffeePeek.Account.Domain.Entities.UserAggregate;
 using Microsoft.EntityFrameworkCore;
@@ -14,6 +15,7 @@ public class AccountDbContext(DbContextOptions<AccountDbContext> options) : DbCo
     public DbSet<User> Users { get; set; }
     public DbSet<PhotoMetadata> Photos { get; set; }
     public DbSet<AccountDeletionRequest> AccountDeletionRequests { get; set; }
+    public DbSet<UserPublicAddress> UserPublicAddresses { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
