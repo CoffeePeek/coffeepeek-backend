@@ -23,6 +23,8 @@ public class ShopsDbContext(DbContextOptions<ShopsDbContext> options, IOptions<P
     public DbSet<PublicAddressAudit> PublicAddressAudit { get; set; }
     public virtual DbSet<CoffeeShopPublicAddress> CoffeeShopPublicAddresses { get; set; }
     public virtual DbSet<RoasterPublicAddress> RoasterPublicAddresses { get; set; }
+    public virtual DbSet<CityPublicAddress> CityPublicAddresses { get; set; }
+    public virtual DbSet<CoffeeZonePublicAddress> CoffeeZonePublicAddresses { get; set; }
 
     public override int SaveChanges(bool acceptAllChangesOnSuccess) =>
         SaveChangesAsync(acceptAllChangesOnSuccess).GetAwaiter().GetResult();
@@ -83,6 +85,8 @@ public class ShopsDbContext(DbContextOptions<ShopsDbContext> options, IOptions<P
         modelBuilder.ApplyConfiguration(new PublicAddressAuditConfiguration());
         modelBuilder.ApplyConfiguration(new CoffeeShopPublicAddressConfiguration());
         modelBuilder.ApplyConfiguration(new RoasterPublicAddressConfiguration());
+        modelBuilder.ApplyConfiguration(new CityPublicAddressConfiguration());
+        modelBuilder.ApplyConfiguration(new CoffeeZonePublicAddressConfiguration());
         modelBuilder.ApplyConfiguration(new CoffeeShopConfiguration());
         modelBuilder.ApplyConfiguration(new CoffeeZoneConfiguration());
         modelBuilder.ApplyConfiguration(new CoffeeZoneMembershipOverrideConfiguration());

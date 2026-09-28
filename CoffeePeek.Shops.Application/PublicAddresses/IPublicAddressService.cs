@@ -3,7 +3,8 @@ using CoffeePeek.Shared.Kernel.Exceptions;
 
 namespace CoffeePeek.Shops.Application.PublicAddresses;
 
-public enum PublicAddressKind { CoffeeShop = 1, Roaster = 2 }
+// Values are persisted in PublicAddressAudit.Kind (CK_PublicAddressAudit_Kind); never renumber.
+public enum PublicAddressKind { CoffeeShop = 1, Roaster = 2, City = 3, CoffeeZone = 4 }
 
 public sealed class PublicAddressOptions
 {

@@ -16,7 +16,7 @@ public sealed class PublicAddressAuditConfiguration : IEntityTypeConfiguration<P
         builder.HasIndex(a => new { a.Kind, a.OwnerId, a.Revision }).IsUnique();
         builder.ToTable("PublicAddressAudit", t =>
         {
-            t.HasCheckConstraint("CK_PublicAddressAudit_Kind", "\"Kind\" IN (1, 2)");
+            t.HasCheckConstraint("CK_PublicAddressAudit_Kind", "\"Kind\" IN (1, 2, 3, 4)");
             t.HasCheckConstraint("CK_PublicAddressAudit_Revision", "\"Revision\" > 0");
         });
     }

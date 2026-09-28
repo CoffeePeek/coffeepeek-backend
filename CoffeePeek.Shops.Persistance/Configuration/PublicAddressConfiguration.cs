@@ -1,6 +1,7 @@
 using CoffeePeek.Shared.Domain.PublicAddresses;
 using CoffeePeek.Shops.Domain;
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
+using CoffeePeek.Shops.Domain.Aggregates.CoffeeZoneAggregate;
 using CoffeePeek.Shops.Domain.Aggregates.PublicAddressAggregate;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -22,6 +23,24 @@ public sealed class RoasterPublicAddressConfiguration : IEntityTypeConfiguration
     {
         PublicAddressConfiguration.Configure(builder, "RoasterPublicAddresses");
         builder.HasOne<Roaster>().WithMany().HasForeignKey(a => a.OwnerId).OnDelete(DeleteBehavior.Restrict);
+    }
+}
+
+public sealed class CityPublicAddressConfiguration : IEntityTypeConfiguration<CityPublicAddress>
+{
+    public void Configure(EntityTypeBuilder<CityPublicAddress> builder)
+    {
+        PublicAddressConfiguration.Configure(builder, "CityPublicAddresses");
+        builder.HasOne<City>().WithMany().HasForeignKey(a => a.OwnerId).OnDelete(DeleteBehavior.Restrict);
+    }
+}
+
+public sealed class CoffeeZonePublicAddressConfiguration : IEntityTypeConfiguration<CoffeeZonePublicAddress>
+{
+    public void Configure(EntityTypeBuilder<CoffeeZonePublicAddress> builder)
+    {
+        PublicAddressConfiguration.Configure(builder, "CoffeeZonePublicAddresses");
+        builder.HasOne<CoffeeZone>().WithMany().HasForeignKey(a => a.OwnerId).OnDelete(DeleteBehavior.Restrict);
     }
 }
 
