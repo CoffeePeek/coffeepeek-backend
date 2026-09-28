@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace CoffeePeek.ShopsService.Controllers;
 
 [ApiController]
-[Route("api/admin/{entity:regex(^(shops|roasters)$)}/public-addresses")]
+[Route("api/admin/{entity:regex(^(shops|roasters|cities|coffee-zones)$)}/public-addresses")]
 [Authorize(Policy = RoleConsts.Admin)]
 [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
 public sealed class AdminPublicAddressesController(IPublicAddressService addresses, IUserContext userContext) : ControllerBase
@@ -36,6 +36,13 @@ public sealed class AdminPublicAddressesController(IPublicAddressService address
         [FromQuery] int limit = 50, [FromQuery] bool dryRun = true, CancellationToken ct = default) =>
         Ok(await addresses.BackfillAsync(Kind(entity), afterId, limit, dryRun, userContext.GetUserIdOrThrow(), ct));
 
-    private static PublicAddressKind Kind(string entity) => entity.Equals("shops", StringComparison.OrdinalIgnoreCase)
-        ? PublicAddressKind.CoffeeShop : PublicAddressKind.Roaster;
+    // Every route entity maps explicitly; anything else is rejected instead of defaulting to a kind.
+    private static PublicAddressKind Kind(string entity) => entity.ToLowerInvariant() switch
+    {
+        "shops" => PublicAddressKind.CoffeeShop,
+        "roasters" => PublicAddressKind.Roaster,
+        "cities" => PublicAddressKind.City,
+        "coffee-zones" => PublicAddressKind.CoffeeZone,
+        _ => throw new PublicAddressException("Unknown address kind.", 400)
+    };
 }
