@@ -14,6 +14,21 @@ public sealed class PublicSlugTests
     [InlineData("☕", "place")]
     [InlineData("Admin", "place")]
     [InlineData("", "place")]
+    // City/zone name regressions (RU and BY spellings); generation rules must not drift.
+    [InlineData("Минск", "minsk")]
+    [InlineData("Мінск", "minsk")]
+    [InlineData("Гродно", "grodno")]
+    [InlineData("Гродна", "grodna")]
+    [InlineData("Могилёв", "mogilyov")]
+    [InlineData("Магілёў", "magilyou")]
+    [InlineData("Витебск", "vitebsk")]
+    [InlineData("Віцебск", "vitsebsk")]
+    [InlineData("Брест", "brest")]
+    [InlineData("Брэст", "brest")]
+    [InlineData("Верхний город", "verkhniy-gorod")]
+    [InlineData("New", "place")]
+    [InlineData("Search", "place")]
+    [InlineData("Me", "place")]
     public void Generate_ProducesCanonicalSuggestion(string input, string expected) => PublicSlug.Generate(input).Should().Be(expected);
 
     [Theory]

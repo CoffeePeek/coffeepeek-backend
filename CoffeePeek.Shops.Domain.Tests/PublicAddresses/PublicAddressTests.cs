@@ -9,13 +9,21 @@ public sealed class PublicAddressTests
     private static readonly DateTime Now = new(2026, 9, 27, 12, 0, 0, DateTimeKind.Utc);
 
     [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void Lifecycle_AllowsRestoringOwnAliasAndPermanentlyReservesRetiredAddress(bool roaster)
+    [InlineData("shop")]
+    [InlineData("roaster")]
+    [InlineData("city")]
+    [InlineData("zone")]
+    public void Lifecycle_AllowsRestoringOwnAliasAndPermanentlyReservesRetiredAddress(string kind)
     {
         var owner = Guid.NewGuid();
-        PublicAddress address = roaster ? RoasterPublicAddress.Create(owner, "coffee", 1, Now)
-            : CoffeeShopPublicAddress.Create(owner, "coffee", 1, Now);
+        PublicAddress address = kind switch
+        {
+            "shop" => CoffeeShopPublicAddress.Create(owner, "coffee", 1, Now),
+            "roaster" => RoasterPublicAddress.Create(owner, "coffee", 1, Now),
+            "city" => CityPublicAddress.Create(owner, "coffee", 1, Now),
+            "zone" => CoffeeZonePublicAddress.Create(owner, "coffee", 1, Now),
+            _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, null)
+        };
         address.MakeAlias(2, Now.AddSeconds(1));
         address.State.Should().Be(PublicAddressState.Alias);
         address.Restore(3, Now.AddSeconds(2));
