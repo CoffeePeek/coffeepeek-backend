@@ -62,7 +62,7 @@ public class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger, IWeb
         UnauthorizedException or UnauthorizedAccessException => StatusCodes.Status401Unauthorized,
         ValidationException or DomainException => StatusCodes.Status400BadRequest,
         ConflictException => StatusCodes.Status409Conflict,
-        DatabaseException => StatusCodes.Status503ServiceUnavailable,
+        DatabaseException or ServiceUnavailableException => StatusCodes.Status503ServiceUnavailable,
         _ => StatusCodes.Status500InternalServerError
     };
 
@@ -74,7 +74,7 @@ public class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger, IWeb
             ValidationException => CommonErrorCodes.ValidationFailed,
             DomainException => CommonErrorCodes.ValidationFailed,
             ConflictException => CommonErrorCodes.Conflict,
-            DatabaseException => CommonErrorCodes.ServiceUnavailable,
+            DatabaseException or ServiceUnavailableException => CommonErrorCodes.ServiceUnavailable,
             _ => CommonErrorCodes.InternalError
         };
 

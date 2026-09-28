@@ -67,15 +67,26 @@ public class MediaUploadedPhotoLookupTests
     [Theory]
     [InlineData(HttpStatusCode.BadRequest)]
     [InlineData(HttpStatusCode.Unauthorized)]
-    [InlineData(HttpStatusCode.InternalServerError)]
-    public async Task ResolveAsync_NonSuccessStatus_Fails(HttpStatusCode status)
+    public async Task ResolveAsync_ClientErrorStatus_FailsClosed(HttpStatusCode status)
     {
         var lookup = CreateLookup(_ => Task.FromResult(new HttpResponseMessage(status)));
 
         var result = await lookup.ResolveAsync(Guid.NewGuid(), ["reviews/a.jpg"], TestContext.Current.CancellationToken);
 
         result.Succeeded.Should().BeFalse();
+        result.IsTransientFailure.Should().BeFalse();
         result.Photos.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task ResolveAsync_ServerErrorStatus_IsUnreachable()
+    {
+        var lookup = CreateLookup(_ => Task.FromResult(new HttpResponseMessage(HttpStatusCode.InternalServerError)));
+
+        var result = await lookup.ResolveAsync(Guid.NewGuid(), ["reviews/a.jpg"], TestContext.Current.CancellationToken);
+
+        result.Succeeded.Should().BeFalse();
+        result.IsTransientFailure.Should().BeTrue();
     }
 
     [Fact]
@@ -92,23 +103,26 @@ public class MediaUploadedPhotoLookupTests
     }
 
     [Fact]
-    public async Task ResolveAsync_HttpRequestException_Fails()
+    public async Task ResolveAsync_HttpRequestException_IsUnreachable()
     {
         var lookup = CreateLookup(_ => throw new HttpRequestException("connection refused"));
 
         var result = await lookup.ResolveAsync(Guid.NewGuid(), ["reviews/a.jpg"], TestContext.Current.CancellationToken);
 
         result.Succeeded.Should().BeFalse();
+        result.IsTransientFailure.Should().BeTrue();
+        result.Photos.Should().BeEmpty();
     }
 
     [Fact]
-    public async Task ResolveAsync_Timeout_Fails()
+    public async Task ResolveAsync_Timeout_IsUnreachable()
     {
         var lookup = CreateLookup(_ => throw new TaskCanceledException("timeout"));
 
         var result = await lookup.ResolveAsync(Guid.NewGuid(), ["reviews/a.jpg"], TestContext.Current.CancellationToken);
 
         result.Succeeded.Should().BeFalse();
+        result.IsTransientFailure.Should().BeTrue();
     }
 
     private sealed class StubHandler(Func<HttpRequestMessage, Task<HttpResponseMessage>> respond) : HttpMessageHandler

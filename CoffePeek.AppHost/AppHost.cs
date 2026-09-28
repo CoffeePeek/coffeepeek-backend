@@ -53,6 +53,10 @@ var mediaService = builder
     .WithReference(mediaDb)
     .WithEnvironment("DOTNET_ASPIRE", "true");
 
+// Check-in photo resolve and user existence lookups call these over HTTP (not the gateway).
+shopsService.WithReference(accountService).WithReference(mediaService);
+moderationService.WithReference(shopsService);
+
 builder.AddProject<Projects.CoffeePeek_Gateway>(AppResources.Gateway)
     .WithReference(redis)
     .WithReference(accountService)

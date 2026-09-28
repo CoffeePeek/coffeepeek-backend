@@ -33,10 +33,22 @@ public class ModerationShopCreationService(IModerationShopRepository shopReposit
             shop.AddPriceRange((DomainPriceRange)command.PriceRange.Value);
         }
 
+        if (command.ShopContact != null)
+        {
+            shop.UpdateContacts(
+                command.ShopContact.PhoneNumber,
+                command.ShopContact.InstagramLink,
+                command.ShopContact.Email,
+                command.ShopContact.SiteLink);
+        }
+
         if (command.Schedules != null)
         {
             var schedules = command.Schedules.Select(s =>
-                (s.DayOfWeek, s.Intervals.Select(i => (i.OpenTime, i.CloseTime)).ToList()));
+                (s.DayOfWeek, s.IsClosed,
+                    s.IsClosed
+                        ? new List<(TimeSpan OpenTime, TimeSpan CloseTime)>()
+                        : (s.Intervals ?? []).Select(i => (i.OpenTime, i.CloseTime)).ToList()));
             shop.UpdateSchedules(schedules);
         }
 

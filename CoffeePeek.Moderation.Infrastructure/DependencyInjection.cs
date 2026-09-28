@@ -52,7 +52,7 @@ public static class DependencyInjection
         services.AddHttpClient("shops-roaster-lookup", client =>
         {
             client.BaseAddress = new Uri($"http://{AppResources.ShopsService}");
-            client.Timeout = TimeSpan.FromSeconds(5);
+            client.Timeout = Timeout.InfiniteTimeSpan;
         });
         services.AddScoped<IRoasterExistenceLookup, ShopsRoasterExistenceLookup>();
 
