@@ -35,10 +35,13 @@ public sealed class CityZonePublicAddressServiceTests
         initial.CanonicalPath.Should().Be("/cities/minsk");
         initial.Revision.Should().Be(1);
 
-        city.Update("Minsk");
+        // "Минск Сити" would generate "minsk-siti", so a rename-on-edit regression is observable.
+        PublicSlug.Generate("Минск Сити").Should().Be("minsk-siti");
+        city.Update("Минск Сити");
         await db.SaveChangesAsync(ct);
         (await service.ResolveAsync(PublicAddressKind.City, "minsk", ct))!.IsAlias.Should().BeFalse(
             "a display-name edit never renames the public address");
+        (await service.ResolveAsync(PublicAddressKind.City, "minsk-siti", ct)).Should().BeNull();
         (await db.CityPublicAddresses.CountAsync(ct)).Should().Be(1);
 
         var actor = Guid.NewGuid();
@@ -98,6 +101,14 @@ public sealed class CityZonePublicAddressServiceTests
         published!.CanonicalPath.Should().Be("/coffee-zones/nemiga");
         published.Revision.Should().Be(1);
         (await service.GetByIdsAsync(PublicAddressKind.CoffeeZone, [zone.Id], ct)).Should().HaveCount(1);
+
+        PublicSlug.Generate("Old Town").Should().Be("old-town");
+        zone.Update(city.Id, "Old Town", null, zone.Polygon);
+        await db.SaveChangesAsync(ct);
+        (await service.ResolveAsync(PublicAddressKind.CoffeeZone, "nemiga", ct))!.IsAlias.Should().BeFalse(
+            "editing a published zone's name never renames the public address");
+        (await service.ResolveAsync(PublicAddressKind.CoffeeZone, "old-town", ct)).Should().BeNull();
+        (await db.CoffeeZonePublicAddresses.CountAsync(ct)).Should().Be(1);
 
         zone.Archive();
         await db.SaveChangesAsync(ct);

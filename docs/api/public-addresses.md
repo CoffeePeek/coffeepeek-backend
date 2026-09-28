@@ -2,9 +2,13 @@
 
 This backend slice adds readable addresses for coffee shops, roasters, cities and coffee zones without changing existing GUID routes or DTOs. It is disabled by default and has not been run against production data.
 
+## Deployment prerequisite (independent of the flag)
+
+Apply the Shops migrations `20260927112559_AddPublicAddressRegistries`, `20260928072406_AddPublicAddressAudit` and `20260928082712_AddCityAndZonePublicAddresses` **before** this build starts serving traffic, even with `PublicAddresses__Enabled=false`. Deleting a coffee shop, roaster or city always retires its registry rows, so without these tables those deletes fail with 500. `deploy/scripts/ci-deploy.sh` and `deploy/scripts/deploy.sh` apply migrations before restarting; do not deploy with `SKIP_MIGRATIONS=1`. `deploy/scripts/update.sh` restarts without migrating, so run `deploy/scripts/apply-migrations.sh` first when using it.
+
 ## Enablement gate
 
-1. Apply the Shops migrations `20260927112559_AddPublicAddressRegistries`, `20260928072406_AddPublicAddressAudit` and `20260928082712_AddCityAndZonePublicAddresses` in the target environment.
+1. Confirm the deployment prerequisite migrations above are applied in the target environment.
 2. Run the pending live PostgreSQL tests for uniqueness, restrictive foreign keys, concurrent allocation/rename and transaction/savepoint rollback. Cities and coffee zones add the checks below. They are still pending: Docker/PostgreSQL was unavailable, so none of them has been verified.
    - The unique `Slug` index and the filtered canonical owner index on `CityPublicAddresses` and `CoffeeZonePublicAddresses` hold under concurrent allocation. Two concurrent "Минск" creations serialize on the advisory lock.
    - `FK_CityPublicAddresses_Cities_OwnerId` and `FK_CoffeeZonePublicAddresses_CoffeeZones_OwnerId` are RESTRICT: deleting a city without retiring its addresses fails.
@@ -14,7 +18,7 @@ This backend slice adds readable addresses for coffee shops, roasters, cities an
 3. Set `PublicAddresses__Enabled=true` for ShopsService and restart it.
 4. Run dry-run backfill pages and review collisions before running write mode.
 
-Do not enable writers or execute write-mode backfill before steps 1–2 pass. When disabled, new endpoints return 503 and new entities are not assigned addresses; existing GUID APIs are unchanged.
+Do not enable writers or execute write-mode backfill before steps 1–2 pass. When disabled (and the prerequisite migrations are applied), new endpoints return 503 and new entities are not assigned addresses; existing GUID APIs are unchanged.
 
 ## Public API
 
