@@ -1136,6 +1136,58 @@ namespace CoffeePeek.Shops.Persistance.Migrations
                     b.ToTable("ShopPhotos");
                 });
 
+            modelBuilder.Entity("CoffeePeek.Shops.Persistance.PublicAddresses.PublicAddressAudit", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<Guid?>("ActorId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("AtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Kind")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("OwnerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("PreviousSlug")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<long>("Revision")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Slug")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Kind", "OwnerId", "Revision")
+                        .IsUnique();
+
+                    b.ToTable("PublicAddressAudit", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_PublicAddressAudit_Kind", "\"Kind\" IN (1, 2)");
+
+                            t.HasCheckConstraint("CK_PublicAddressAudit_Revision", "\"Revision\" > 0");
+                        });
+                });
+
             modelBuilder.Entity("CoffeeShopBrewMethods", b =>
                 {
                     b.Property<Guid>("BrewMethodId")

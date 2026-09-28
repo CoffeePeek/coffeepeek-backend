@@ -4,7 +4,7 @@ This backend slice adds readable addresses without changing existing GUID routes
 
 ## Enablement gate
 
-1. Apply the Shops migration `20260927112559_AddPublicAddressRegistries` in the target environment.
+1. Apply the Shops migrations `20260927112559_AddPublicAddressRegistries` and `20260928072406_AddPublicAddressAudit` in the target environment.
 2. Run the pending live PostgreSQL tests for uniqueness, restrictive foreign keys, concurrent allocation/rename and transaction/savepoint rollback.
 3. Set `PublicAddresses__Enabled=true` for ShopsService and restart it.
 4. Run dry-run backfill pages and review collisions before running write mode.
