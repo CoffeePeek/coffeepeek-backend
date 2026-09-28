@@ -1,9 +1,11 @@
 using CoffeePeek.Shared.Domain.PublicAddresses;
 using CoffeePeek.Shops.Application.PublicAddresses;
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
+using CoffeePeek.Shops.Domain.Aggregates.CoffeeZoneAggregate;
 using CoffeePeek.Shops.Domain.Aggregates.PublicAddressAggregate;
 using CoffeePeek.Shops.Persistance.Configuration;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace CoffeePeek.Shops.Persistance.PublicAddresses;
 
@@ -13,10 +15,17 @@ internal static class PublicAddressWriter
     {
         var shops = db.ChangeTracker.Entries<CoffeeShop>().ToArray();
         var roasters = db.ChangeTracker.Entries<Roaster>().ToArray();
+        var cities = db.ChangeTracker.Entries<City>().ToArray();
+        var zones = db.ChangeTracker.Entries<CoffeeZone>().ToArray();
         foreach (var entry in shops.Where(e => e.State == EntityState.Deleted))
             await RetireAsync<CoffeeShopPublicAddress>(db, PublicAddressKind.CoffeeShop, entry.Entity.Id, ct);
         foreach (var entry in roasters.Where(e => e.State == EntityState.Deleted))
             await RetireAsync<RoasterPublicAddress>(db, PublicAddressKind.Roaster, entry.Entity.Id, ct);
+        foreach (var entry in cities.Where(e => e.State == EntityState.Deleted))
+            await RetireAsync<CityPublicAddress>(db, PublicAddressKind.City, entry.Entity.Id, ct);
+        // No physical zone delete exists today (admin DELETE archives); retiring keeps the RESTRICT FK safe if one is added.
+        foreach (var entry in zones.Where(e => e.State == EntityState.Deleted))
+            await RetireAsync<CoffeeZonePublicAddress>(db, PublicAddressKind.CoffeeZone, entry.Entity.Id, ct);
         if (!db.PublicAddressesEnabled) return;
         foreach (var entry in shops.Where(e => e.State == EntityState.Added))
             await InitializeAsync<CoffeeShopPublicAddress>(db, PublicAddressKind.CoffeeShop, entry.Entity.Id,
@@ -24,7 +33,21 @@ internal static class PublicAddressWriter
         foreach (var entry in roasters.Where(e => e.State == EntityState.Added))
             await InitializeAsync<RoasterPublicAddress>(db, PublicAddressKind.Roaster, entry.Entity.Id,
                 entry.Entity.Name, null, "Automatically allocated on creation", ct);
+        // Only creation allocates: a City display-name edit never renames its public address.
+        foreach (var entry in cities.Where(e => e.State == EntityState.Added))
+            await InitializeAsync<CityPublicAddress>(db, PublicAddressKind.City, entry.Entity.Id,
+                entry.Entity.Name, null, "Automatically allocated on creation", ct);
+        // Drafts reserve nothing, and Archive/MoveToDraft only hide the address (archive is reversible, retirement is not).
+        // InitializeAsync is idempotent, so republishing or an admin pre-initialized draft keeps its existing slug.
+        foreach (var entry in zones.Where(e => IsNewlyPublished(e)))
+            await InitializeAsync<CoffeeZonePublicAddress>(db, PublicAddressKind.CoffeeZone, entry.Entity.Id,
+                entry.Entity.Name, null, "Automatically allocated on publication", ct);
     }
+
+    internal static bool IsNewlyPublished(EntityEntry entry) =>
+        entry.Entity is CoffeeZone { Status: CoffeeZoneStatus.Published } &&
+        (entry.State == EntityState.Added ||
+         (entry.State == EntityState.Modified && entry.Property(nameof(CoffeeZone.Status)).IsModified));
 
     public static string ShopStem(CoffeeShop shop) => string.IsNullOrWhiteSpace(shop.Location?.Address)
         ? shop.Name : $"{shop.Name} {shop.Location.Address}";
@@ -54,10 +77,19 @@ internal static class PublicAddressWriter
         throw new PublicAddressException("Could not allocate a unique public address. Choose a manual slug.", 409);
     }
 
-    public static T Create<T>(Guid ownerId, string slug, long revision, DateTime now) where T : PublicAddress =>
-        (T)(PublicAddress)(typeof(T) == typeof(CoffeeShopPublicAddress)
-            ? CoffeeShopPublicAddress.Create(ownerId, slug, revision, now)
-            : RoasterPublicAddress.Create(ownerId, slug, revision, now));
+    public static T Create<T>(Guid ownerId, string slug, long revision, DateTime now) where T : PublicAddress
+    {
+        // Explicit per-registry dispatch: an unmapped type must fail loudly, never default to another registry.
+        PublicAddress row = typeof(T) switch
+        {
+            var t when t == typeof(CoffeeShopPublicAddress) => CoffeeShopPublicAddress.Create(ownerId, slug, revision, now),
+            var t when t == typeof(RoasterPublicAddress) => RoasterPublicAddress.Create(ownerId, slug, revision, now),
+            var t when t == typeof(CityPublicAddress) => CityPublicAddress.Create(ownerId, slug, revision, now),
+            var t when t == typeof(CoffeeZonePublicAddress) => CoffeeZonePublicAddress.Create(ownerId, slug, revision, now),
+            _ => throw new InvalidOperationException($"No public address registry is mapped for {typeof(T).Name}.")
+        };
+        return (T)row;
+    }
 
     private static async Task RetireAsync<T>(ShopsDbContext db, PublicAddressKind kind, Guid ownerId, CancellationToken ct) where T : PublicAddress
     {

@@ -32,9 +32,12 @@ public class ShopsDbContext(DbContextOptions<ShopsDbContext> options, IOptions<P
     public override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
     {
         ChangeTracker.DetectChanges();
+        // Deletions always retire (even when disabled); allocation only when enabled: creation for shops,
+        // roasters and cities, first publication for coffee zones.
         var ownerChanges = ChangeTracker.Entries().Any(e =>
-            e.Entity is CoffeeShop or Roaster &&
-            (e.State == EntityState.Deleted || (PublicAddressesEnabled && e.State == EntityState.Added)));
+            (e.Entity is CoffeeShop or Roaster or City or CoffeeZone && e.State == EntityState.Deleted) ||
+            (PublicAddressesEnabled && e.Entity is CoffeeShop or Roaster or City && e.State == EntityState.Added) ||
+            (PublicAddressesEnabled && PublicAddressWriter.IsNewlyPublished(e)));
         if (!ownerChanges) return base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
 
         // Intercepts every supported repository/UoW/Wolverine save, including menu imports' early save.
