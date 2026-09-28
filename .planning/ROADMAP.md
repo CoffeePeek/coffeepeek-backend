@@ -14,14 +14,14 @@ Source: specs/PUBLIC-SLUGS.md. Existing quick-task history in STATE.md is preser
 Goal: reusable stable slug generation and a database-enforced address namespace for coffee shops and roasters, with alias ownership, tombstones and rename revision support. No production backfill or client routing change in this phase.
 
 Plans: 1
-- [ ] 01-01-PLAN.md — domain rules, typed registries, EF migration and meaningful tests.
+- [x] 01-01-PLAN.md — domain rules, typed registries, EF migration and meaningful tests.
 
 ## Progress
 
 | Phase | Plans | Status |
 |---|---|---|
 | 1 | 1/1 implemented | PostgreSQL verification pending |
-| 2 | 0/1 | In progress |
+| 2 | 1/1 implemented | PostgreSQL verification pending; feature default-off |
 | 3–6 | Not started | Pending |
 
 ## Phase 2: Coffee shops and roasters
@@ -29,4 +29,4 @@ Plans: 1
 Goal: implement the first complete backend address flow with writer/delete integration, visibility-aware canonical resolution, authorized rename/history, bounded backfill and unchanged legacy API contracts.
 
 Plans: 1
-- [ ] 02-01-PLAN.md — transactional coordinator, integrations, APIs, backfill, compatibility tests and client handoff.
+- [x] 02-01-PLAN.md — transactional coordinator, integrations, APIs, backfill, compatibility tests and client handoff.

@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: in_progress
-last_updated: "2026-09-22T07:23:02Z"
+last_updated: "2026-09-28T07:45:00Z"
 progress:
-  total_phases: 1
+  total_phases: 6
   completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
+  total_plans: 2
+  completed_plans: 2
   percent: 0
 ---
 
@@ -19,7 +19,8 @@ progress:
 - Approved full staged rollout: `specs/PUBLIC-SLUGS.md`.
 - Phase 1 implemented: commits `7aba62c2`, `0e562a2a`; Shops domain 173/173 and infrastructure 49/49 pass.
 - Infrastructure verification debt: live PostgreSQL uniqueness/FK/concurrency tests pending; Docker startup requires sudo password. Model/SQL verification is not live DB verification.
-- Phase 2 in progress: coffee shop/roaster writer coordination, slug APIs, explicit rename and backfill.
+- Phase 2 implementation complete: coffee shop/roaster writer coordination, slug APIs, explicit rename, bounded backfill, audit migration and compatibility tests.
+- Phase 2 verification: 461 affected tests and the CI solution build pass. Live PostgreSQL uniqueness/FK/advisory-lock/savepoint checks remain required, so `PublicAddresses__Enabled` stays false by default.
 - Frontend is outside this repository; page redirects remain a later external integration step.
 
 ## Quick Tasks Completed

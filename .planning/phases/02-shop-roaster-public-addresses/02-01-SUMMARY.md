@@ -18,6 +18,7 @@ key-files:
   created:
     - CoffeePeek.Shops.Infrastructure.Tests/Persistence/PublicAddressServiceTests.cs
     - CoffeePeek.ShopsService.Tests/PublicAddressApiContractTests.cs
+    - CoffeePeek.Shops.Persistance/Migrations/20260928072406_AddPublicAddressAudit.cs
     - docs/api/public-addresses.md
   modified:
     - CoffeePeek.Shops.Persistance/PublicAddresses/PublicAddressService.cs
@@ -43,6 +44,7 @@ Readable shop and roaster addresses now cover supported creation/deletion flows,
 - Admin-only initialize, optimistic rename, history and cursor backfill endpoints use explicit actor/reason audit rows. Backfill dry-run writes nothing, collision proposals are deterministic, and replay leaves existing addresses unchanged.
 - Fixed two audit findings: case-only canonical requests no longer report `isAlias: true`, and history for an unknown owner returns 404 rather than a misleading empty list.
 - Added the exact API/rollout contract, frontend 301 handoff, default-off enablement gate and history-preserving rollback instructions.
+- Added the missing generated audit-table migration and synchronized model snapshot; write mode would otherwise fail on its first audit insert.
 
 ## Task Commits
 
@@ -52,7 +54,9 @@ The broad implementation was already committed as `afd21ba8` before this executi
 2. Route, compatibility, cache and authorization contracts: `2c105252` — `test(02-01): lock public address API contracts`.
 3. Bounded backfill/rollout/frontend handoff runbook: `a343e0d2` — `docs(02-01): document public address rollout`.
 
-No packages were added, no migration was changed, no production data was mutated and no tracked file was deleted.
+Root verification then added the generated `AddPublicAddressAudit` migration and corrected the runbook's migration order.
+
+No packages were added, no production data was mutated and no tracked file was deleted.
 
 ## Verification
 
@@ -63,6 +67,7 @@ No packages were added, no migration was changed, no production data was mutated
 - Full Shops infrastructure suite: **53 passed**, 0 failed/skipped.
 - Full ShopsService suite: **11 passed**, 0 failed/skipped.
 - `dotnet build CoffeePeek.Backend.ci.slnf -c Debug --no-restore`: passed with 0 errors. Existing analyzer/nullability warnings and NU1902/NU1903 advisories remain out of scope.
+- `dotnet ef migrations has-pending-model-changes`: reports no pending model changes after generating the audit migration.
 - `git diff --check`: passed.
 
 ## Deviations from Plan
