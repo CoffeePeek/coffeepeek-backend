@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: in_progress
-last_updated: "2026-09-28T13:59:00.000Z"
+last_updated: "2026-09-29T07:17:08.000Z"
 progress:
   total_phases: 4
   completed_phases: 3
   total_plans: 7
-  completed_plans: 5
-  percent: 71
+  completed_plans: 7
+  percent: 100
 ---
 
 # State
@@ -45,7 +45,22 @@ progress:
   - Reserved, unsupported-script and bare `user` usernames always get `user-<8hex>`, never a bare `place` or `user`.
   - Retirement runs before the enabled check. Block/unblock never touches addresses. A soft-deleted user's username rewrite allocates nothing.
   - A user created while disabled gets an address on the first enabled username change.
-- Next: Phase 4 plan 02 (ProfileAddressService, public `api/Users` endpoints, admin backfill, GUID-route 404 fix).
+- Phase 4 plan 02 complete (2026-09-28/29, commits `94a7fdc4`, `359a7900`, `9705063a`, `bd2b746d`; handler RED facts landed in user docs commit `21419ba3`):
+  - `IProfileAddressService`/`ProfileAddressService`: live visibility `!IsSoftDelete && !IsBlocked` on resolve and batch (email confirmation not required), `/users/{slug}` canonical paths, bounded backfill (dry-run, id cursor, replay reports alreadyInitialized, deleted excluded, blocked included, unique violation -> 409), 503 while disabled.
+  - Anonymous NoStore `GET api/Users/by-slug/{slug}` (envelope via existing `GetPublicUserProfileCommand` for the resolved owner), `GET api/Users/public-addresses?ids=`, `GET api/Users/{id:guid}/public-address`; every hidden case gives the identical 404 with the generic ProblemDetails body (no user data).
+  - Admin-only `POST api/admin/users/public-addresses/backfill` is the only admin address action for users (D-06, D-10).
+  - D-04: `GET api/Users/{id:guid}` now returns 404 for soft-deleted and blocked users (body-only handler change; pre-generated Wolverine handler unchanged). Shops `AccountUserExistenceLookup` 404 now means "not exists or not visible"; no Shops change.
+  - Tests: Account application 216 (baseline 214), infrastructure 89 (72 + 7 service + 10 controller, Wolverine codegen guard green), domain 255. CI slnf Release build 0 errors. No live PostgreSQL/HTTP verification.
+- Phase 4 plan 02 decisions:
+  - Public address controllers read metadata from the read-only `IProfileAddressService` (no new Wolverine handler, no codegen drift) but read profile data through `IMessageBus` with the existing command (one mapping path, D-04 re-check); a `NotFoundException` from the read becomes `NotFound()`.
+- Phase 4 plan 03 complete (2026-09-29, commits `ec26f930`, `05de23df`, `85f5b428`):
+  - Gateway `account-Users-by-slug-route` (`/api/Users/by-slug/{slug}` -> account-cluster, `auth-endpoints`, no AuthorizationPolicy) before the Users catch-all. `RoutePrecedence.ComputeInbound` test: the `reviews` slug matches all three templates and by-slug wins; real Shops `/api/users/{guid}/reviews` paths do not match it (D-07).
+  - `docs/api/public-addresses.md`: user profile contract (`/users/{slug}`, alias example), username policy, visibility (identical 404 with generic ProblemDetails body, no user data), D-04 GUID fix and Shops `AccountUserExistenceLookup` now meaning "exists and visible", deletion/tombstones, `noindex` note, backfill-only admin API, `20260928134755_AddUserPublicAddresses` as a flag-independent deployment prerequisite, per-service flag, pending Account live PostgreSQL checks plus HTTP smoke run, D-02 squatting decision as an enablement step.
+  - Phase gate: CI slnf Release build 0 errors; Account domain 255, application 216, infrastructure 89, Gateway 56 (all pass); `has-pending-model-changes` clean; isolation diff vs `96acf741` clean; flag unset in JSON/env/AppHost. No live PostgreSQL/HTTP/YARP verification.
+- Phase 4 plan 03 decisions:
+  - The reviews-slug capture is fixed by the dedicated gateway route, not by reserving `reviews` in the shared `PublicSlug` list.
+  - The flag is enabled per service; AccountService needs its own live gate and the D-02 decision first.
+- Next: Phase 4 verification. The live PostgreSQL gate (phases 1–4) is still open, so `PublicAddresses__Enabled` stays false for ShopsService and AccountService.
 
 ## Quick Tasks Completed
 

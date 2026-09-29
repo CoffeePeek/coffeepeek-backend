@@ -23,7 +23,8 @@ Plans: 1
 | 1 | 1/1 implemented | PostgreSQL verification pending |
 | 2 | 1/1 implemented | PostgreSQL verification pending; feature default-off |
 | 3 | 2/2 implemented | PostgreSQL verification pending; feature default-off |
-| 4–6 | Not started | Pending |
+| 4 | 3/3 implemented | PostgreSQL verification pending; feature default-off |
+| 5–6 | Not started | Pending |
 
 ## Phase 2: Coffee shops and roasters
 
@@ -50,5 +51,5 @@ Depends on: Phase 1, Phase 2
 
 Plans: 3
 - [x] 04-01-PLAN.md — Account-local UserPublicAddresses registry, generated migration, SaveChanges hook (allocate on create, follow username with aliases, always retire on delete) with schema/lifecycle tests.
-- [ ] 04-02-PLAN.md — visibility-filtered ProfileAddressService, public api/Users by-slug/batch/legacy endpoints, Admin-only backfill, GUID-route 404 fix for deleted/blocked users, contract/behavior tests.
-- [ ] 04-03-PLAN.md — dedicated gateway by-slug route with precedence tests, user profile docs, deployment prerequisite, extended live gate and full phase verification.
+- [x] 04-02-PLAN.md — visibility-filtered ProfileAddressService, public api/Users by-slug/batch/legacy endpoints, Admin-only backfill, GUID-route 404 fix for deleted/blocked users, contract/behavior tests.
+- [x] 04-03-PLAN.md — dedicated gateway by-slug route with precedence tests, user profile docs, deployment prerequisite, extended live gate and full phase verification.
