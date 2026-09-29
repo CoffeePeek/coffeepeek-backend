@@ -1,5 +1,8 @@
 using System.Text.Json;
 using FluentAssertions;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Routing;
+using Microsoft.AspNetCore.Routing.Template;
 
 namespace CoffeePeek.Gateway.Tests;
 
@@ -156,6 +159,67 @@ public class ReverseProxyRouteConfigurationTests
         routeIds.IndexOf("account-deletion-cancel-route").Should().BeLessThan(usersCatchAllIndex);
         routeIds.IndexOf("account-deletion-request-route").Should().BeLessThan(usersCatchAllIndex);
     }
+
+    [Fact]
+    public void UserBySlugRoute_TargetsAccountOnAuthRateLimitWithoutAuthPolicy()
+    {
+        using var document = LoadGatewayAppsettings();
+        var routes = document.RootElement.GetProperty("ReverseProxy").GetProperty("Routes");
+
+        routes.TryGetProperty("account-Users-by-slug-route", out var route).Should().BeTrue();
+        route.GetProperty("ClusterId").GetString().Should().Be("account-cluster");
+        route.GetProperty("Match").GetProperty("Path").GetString().Should().Be("/api/Users/by-slug/{slug}");
+        route.GetProperty("RateLimiterPolicy").GetString().Should().Be("auth-endpoints");
+
+        // D-07: anonymous read, same as the existing GUID profile lookup on the Users catch-all.
+        route.TryGetProperty("AuthorizationPolicy", out _).Should().BeFalse();
+        route.GetProperty("Match").TryGetProperty("Methods", out _).Should().BeFalse();
+
+        var routeIds = routes.EnumerateObject().Select(r => r.Name).ToList();
+        var usersCatchAllIndex = routeIds.IndexOf("account-Users-route");
+        usersCatchAllIndex.Should().BeGreaterThan(-1);
+        routeIds.IndexOf("account-Users-by-slug-route").Should().BeLessThan(usersCatchAllIndex);
+    }
+
+    [Fact]
+    public void UserBySlugRoute_OutranksShopsUserReviewsForEverySlug()
+    {
+        using var document = LoadGatewayAppsettings();
+        var routes = document.RootElement.GetProperty("ReverseProxy").GetProperty("Routes");
+
+        routes.TryGetProperty("account-Users-by-slug-route", out _).Should().BeTrue();
+        var bySlug = ParseRouteTemplate(routes, "account-Users-by-slug-route");
+        var shopsReviews = ParseRouteTemplate(routes, "shops-users-reviews-route");
+        var usersCatchAll = ParseRouteTemplate(routes, "account-Users-route");
+
+        // Non-vacuous: the "reviews" slug really is matched by all three templates (Pitfall 4).
+        const string reviewsSlugPath = "/api/Users/by-slug/reviews";
+        Matches(bySlug, reviewsSlugPath).Should().BeTrue();
+        Matches(shopsReviews, reviewsSlugPath).Should().BeTrue();
+        Matches(usersCatchAll, reviewsSlugPath).Should().BeTrue();
+
+        // Lower inbound precedence is more specific, so the by-slug route wins for every slug.
+        RoutePrecedence.ComputeInbound(bySlug).Should().BeLessThan(RoutePrecedence.ComputeInbound(shopsReviews));
+        RoutePrecedence.ComputeInbound(bySlug).Should().BeLessThan(RoutePrecedence.ComputeInbound(usersCatchAll));
+
+        Matches(bySlug, "/api/Users/by-slug/ivan-petrov").Should().BeTrue();
+
+        // Real Shops user-review paths are not captured by the by-slug route.
+        const string shopsUserReviewsPath = "/api/users/3fa85f64-5717-4562-b3fc-2c963f66afa6/reviews";
+        Matches(bySlug, shopsUserReviewsPath).Should().BeFalse();
+        Matches(shopsReviews, shopsUserReviewsPath).Should().BeTrue();
+    }
+
+    private static RouteTemplate ParseRouteTemplate(JsonElement routes, string routeId)
+    {
+        var path = routes.GetProperty(routeId).GetProperty("Match").GetProperty("Path").GetString();
+        path.Should().NotBeNullOrWhiteSpace();
+        return TemplateParser.Parse(path!.TrimStart('/'));
+    }
+
+    private static bool Matches(RouteTemplate template, string path) =>
+        new TemplateMatcher(template, new RouteValueDictionary())
+            .TryMatch(new PathString(path), new RouteValueDictionary());
 
     private static JsonDocument LoadGatewayAppsettings()
     {
