@@ -48,7 +48,8 @@ public sealed class PublicUserAddressControllerTests
 
         // The existing GUID profile route keeps its prefix and template, and no existing template is shadowed.
         Route(typeof(UsersController)).Should().Be("api/[controller]");
-        Template<UsersController>(nameof(UsersController.GetById)).Should().Be("{id:guid}");
+        // UsersController overloads GetById (the anonymous GUID route and "me"); select the GUID route explicitly.
+        Template<UsersController>(nameof(UsersController.GetById), typeof(Guid?)).Should().Be("{id:guid}");
         Templates(typeof(UsersController)).Should().NotIntersectWith(NewPublicTemplates);
     }
 
@@ -107,7 +108,8 @@ public sealed class PublicUserAddressControllerTests
     public async Task GetBySlug_ProfileHiddenAfterResolve_ReturnsEmptyNotFound()
     {
         // The user is deleted or blocked between the resolve and the data read: the handler throws (D-04), and the
-        // controller answers with the same bodiless NotFound() as an unknown slug, never a descriptive ErrorResponse.
+        // controller answers with the same NotFoundResult as an unknown slug (at runtime [ApiController] renders the
+        // framework's generic ProblemDetails body, with no user data), never a descriptive ErrorResponse object result.
         _addresses.Setup(a => a.ResolveAsync("petr", _ct)).ReturnsAsync(Metadata(Guid.NewGuid()));
         SetupProfile().ThrowsAsync(new NotFoundException("User not found"));
 
@@ -211,8 +213,9 @@ public sealed class PublicUserAddressControllerTests
 
     private static string? Route(Type controller) => controller.GetCustomAttribute<RouteAttribute>()?.Template;
 
-    private static string? Template<T>(string method) =>
-        typeof(T).GetMethod(method)!.GetCustomAttributes<HttpMethodAttribute>().Single().Template;
+    private static string? Template<T>(string method, params Type[] parameters) =>
+        (parameters.Length == 0 ? typeof(T).GetMethod(method) : typeof(T).GetMethod(method, parameters))!
+            .GetCustomAttributes<HttpMethodAttribute>().Single().Template;
 
     private static IEnumerable<string> Templates(Type controller) =>
         controller.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly)
