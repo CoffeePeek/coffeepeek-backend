@@ -348,7 +348,11 @@ public class LivePostgresGuardTests
         ex.Should().BeOfType<InvalidOperationException>(
             "the owned-name guard must refuse before any network I/O (no NpgsqlException/SocketException)");
         ex.Should().NotBeAssignableTo<NpgsqlException>();
-        ex.InnerException.Should().NotBeOfType<SocketException>();
+        ex.Should().NotBeAssignableTo<SocketException>();
+        ex.InnerException.Should().BeNull();
+        // A wrapped connect failure is also an InvalidOperationException, so the message proves
+        // the refusal came from the owned-name guard and not from a connection attempt.
+        ex.Message.Should().StartWith("Refusing to touch a database that is not a cp_live_* throwaway database");
     }
 
     [Fact]
