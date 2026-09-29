@@ -13,14 +13,14 @@ AccountService has the same requirement. Apply the Account migration `2026092813
 The flag is per service. `PublicAddresses__Enabled=true` must be set on AccountService separately from ShopsService, and each service has its own gate below. It is currently unset (false) for both services.
 
 1. Confirm the deployment prerequisite migrations above (Shops and Account) are applied in the target environment.
-2. Run the pending live PostgreSQL tests for uniqueness, restrictive foreign keys, concurrent allocation/rename and transaction/savepoint rollback. Cities and coffee zones add the checks below. They are still pending: Docker/PostgreSQL was unavailable, so none of them has been verified.
+2. Run the live PostgreSQL suite described in [Live PostgreSQL gate](#live-postgresql-gate) against a non-production server. It covers uniqueness, restrictive foreign keys, concurrent allocation/rename and transaction/savepoint rollback. Cities and coffee zones add the checks below. They are automated by the live suite and remain pending until a green run is recorded under [Live gate evidence](#live-gate-evidence).
    - The unique `Slug` index and the filtered canonical owner index on `CityPublicAddresses` and `CoffeeZonePublicAddresses` hold under concurrent allocation. Two concurrent "Минск" creations serialize on the advisory lock.
    - `FK_CityPublicAddresses_Cities_OwnerId` and `FK_CoffeeZonePublicAddresses_CoffeeZones_OwnerId` are RESTRICT: deleting a city without retiring its addresses fails.
    - Deleting a city that still has coffee zones returns 409, and its address retirement rolls back.
    - `CK_PublicAddressAudit_Kind` accepts kinds 3 (city) and 4 (coffee zone).
    - `CK_CityPublicAddresses_Lifecycle` and `CK_CoffeeZonePublicAddresses_Lifecycle` reject a canonical row without an owner.
 
-   User profiles (AccountService, `cpaccountdb`) add the checks below. They are also pending: Docker/PostgreSQL was unavailable, so none of them has been verified.
+   User profiles (AccountService, `cpaccountdb`) add the checks below. They are also automated by the live suite and remain pending until a green run is recorded under [Live gate evidence](#live-gate-evidence).
    - The unique `Slug` index and the filtered canonical owner index `IX_UserPublicAddresses_OwnerId` on `UserPublicAddresses` hold under concurrent registrations. `Ivan`, `ivan` and `Иван` registering at once get distinct slugs, serialized by advisory lock `7402100401`.
    - The rename demotion flush never violates `IX_UserPublicAddresses_OwnerId`.
    - `FK_UserPublicAddresses_Users_OwnerId` is RESTRICT: a physical user delete without retirement fails.
@@ -31,14 +31,165 @@ The flag is per service. `PublicAddresses__Enabled=true` must be set on AccountS
      - the Google concurrent-creation retry still succeeds after `ChangeTracker.Clear()`.
    - The user backfill cursor query translates and pages correctly on PostgreSQL, and a concurrent unique violation during write-mode backfill returns 409.
    - The migration `20260928134755_AddUserPublicAddresses` applies cleanly to `cpaccountdb`.
-   - An HTTP smoke run through the gateway has not been done either. It should show that `/api/Users/by-slug/reviews` reaches AccountService, that `ids=` query arrays bind and that hidden profiles return the identical 404 body. Only the ASP.NET Core routing precedence API proves the route order today.
+   - An HTTP smoke run through the gateway has not been done either. It is manual and not part of the live suite; follow [HTTP smoke (manual)](#http-smoke-manual). It should show that `/api/Users/by-slug/reviews` reaches AccountService, that `ids=` query arrays bind and that hidden profiles return the identical 404 body. Only the ASP.NET Core routing precedence API proves the route order today.
 3. Set `PublicAddresses__Enabled=true` for ShopsService and restart it.
-4. Run dry-run backfill pages and review collisions before running write mode.
+4. Run dry-run backfill pages and review collisions before running write mode. Follow [Dry-run backfill review](#dry-run-backfill-review) page by page.
 5. Before enabling AccountService, decide on slug reservation growth (D-02). Each username change that produces a new slug reserves one more slug permanently: the previous slug stays an alias, and every slug of the user becomes a tombstone on deletion. Today only the `auth-endpoints` rate limit bounds how fast one account can reserve slugs by changing its username repeatedly. Either accept this growth or add a username-change cooldown first. No cooldown exists in this build.
    Also decide on lock contention. Account deletion (self-service and admin) takes the profile-address advisory lock `7402100401` and holds it until Wolverine commits, which is after the Redis token revocation and SignalR logout calls. With the flag on, every registration, Google sign-up, username change and write-mode backfill waits behind a slow deletion. Measure deletion latency on the target environment, or move those network calls after commit, before enabling.
 6. Set `PublicAddresses__Enabled=true` for AccountService and restart it. Then run the user backfill with the step 4 rules (see [Bounded backfill](#bounded-backfill)).
 
 Do not enable writers or execute write-mode backfill for a service before steps 1–2 pass for that service. Do not enable AccountService before step 5 is decided. When disabled (and the prerequisite migrations are applied), new endpoints return 503 and new entities are not assigned addresses; existing GUID APIs are unchanged.
+
+## Live PostgreSQL gate
+
+This is the automated part of step 2. It runs only against a non-production server that you provide, and it never touches deployed configuration.
+
+### What the suite covers
+
+The live suite is an opt-in integration suite in `CoffeePeek.Shops.Infrastructure.Tests` and `CoffeePeek.Account.Infrastructure.Tests`, tagged with the trait `Category=LivePostgres`. Each run creates its own throwaway databases, applies the real EF Core migrations to them and drops them afterwards. There is no Docker dependency. With `COFFEEPEEK_LIVE_PG` unset, every live test reports Skipped, so CI and `dotnet test CoffeePeek.slnx` stay green.
+
+| Project | Step 2 gate item | Test class | Gate IDs |
+| --- | --- | --- | --- |
+| Shops | Server prerequisites, the throwaway database lifecycle and the lock-wait probes that the other live tests rely on | `LivePostgresHarnessTests` | harness |
+| Shops | The Shops migrations apply cleanly to an empty database | `ShopsLiveSchemaTests` | G-S0 |
+| Shops | The unique `Slug` index and the filtered canonical owner index on every registry; `CK_*_Slug`, `CK_*_Lifecycle`, `CK_*_Revision` and `CK_*_Timestamps`; `CK_PublicAddressAudit_Kind` accepts kinds 3 and 4 | `ShopsLiveSchemaTests` | G-S1 |
+| Shops | RESTRICT foreign keys on all four registries, including `FK_CityPublicAddresses_Cities_OwnerId` and `FK_CoffeeZonePublicAddresses_CoffeeZones_OwnerId`; a supported delete retires the addresses before it deletes the owner | `ShopsLiveSchemaTests` | G-S2 |
+| Shops | Two concurrent "Минск" creations serialize on advisory lock `7402100101`; concurrent renames and allocations; the rename A->B->A demotion flush; a failed rename rolls back both steps | `ShopsLiveConcurrencyTests` | G-S3, G-S4, G-S5, G-S6 |
+| Shops | Savepoint rollback inside an ambient transaction; deleting a city that still has coffee zones returns 409 and its address retirement rolls back; zone publish, archive and republish with the real `Polygon` | `ShopsLiveTransactionTests` | G-S7, G-S8, G-S9 |
+| Shops | The migrations apply incrementally over legacy data; page-by-page backfill (dry run, cursor, replay, collisions, the cross-page caveat); an in-flight conflict during write-mode backfill returns 409 and rolls back the page; the data-level rollback rehearsal | `ShopsBackfillRehearsalTests` | G-S0 (incremental), G-S10, G-S10b, G-S11 |
+| Account | `20260928134755_AddUserPublicAddresses` applies cleanly; `CK_UserPublicAddresses_*`, `IX_UserPublicAddresses_Slug` and `IX_UserPublicAddresses_OwnerId`; `FK_UserPublicAddresses_Users_OwnerId` is RESTRICT | `AccountLiveSchemaTests` | G-A0, G-A1, G-A2 |
+| Account | `Ivan`, `ivan` and `Иван` registering at once get distinct slugs, serialized by advisory lock `7402100401`; the rename demotion flush never violates `IX_UserPublicAddresses_OwnerId`; a username unique violation leaves the address unchanged | `AccountLiveConcurrencyTests` | G-A3, G-A4, G-A5 |
+| Account | A duplicate-email registration leaves no address row; the Google concurrent-creation retry succeeds after `ChangeTracker.Clear()` | `AccountLiveRegistrationTests` | G-A6, G-A7 |
+| Account | The migration applies incrementally over populated `Users`; the user backfill cursor translates and pages correctly; a concurrent unique violation during write-mode backfill returns 409; the data-level rollback rehearsal | `AccountBackfillRehearsalTests` | G-A0 (incremental), G-A8, G-A9 |
+
+The HTTP smoke through the gateway is not part of the suite (see [Not covered](#not-covered)).
+
+### Server and role
+
+- Use a NON-production PostgreSQL 17 or newer server that the test machine can reach.
+- `pg_trgm` must be available (standard contrib; the Shops migrations need it), and databases must use UTF8 encoding. The suite checks both and fails with a clear message otherwise.
+- The server admin creates a dedicated login role:
+
+  ```sql
+  CREATE ROLE cp_live_tests LOGIN CREATEDB NOSUPERUSER NOCREATEROLE NOREPLICATION PASSWORD '<secret>';
+  ```
+
+- `pg_hba.conf` must let the role connect to all databases, because each run creates new database names:
+
+  ```text
+  host all cp_live_tests <client-ip>/32 scram-sha-256
+  ```
+
+- The role must not be a member of any production role. It needs no other grants: it owns the databases it creates, so it can create `pg_trgm` in them and drop only them.
+
+### Credentials (D-02)
+
+- Set `COFFEEPEEK_LIVE_PG` to a connection string without a password:
+
+  ```text
+  COFFEEPEEK_LIVE_PG=Host=<host>;Port=5432;Database=postgres;Username=cp_live_tests;SSL Mode=Prefer
+  ```
+
+- The database must be exactly `postgres`, the maintenance database. The suite refuses any other database and refuses a `Password` key. Use `SSL Mode=Require` if the server enforces TLS.
+- Put the password in `%APPDATA%\postgresql\pgpass.conf`, as the line `<host>:5432:*:cp_live_tests:<secret>`, or in a file named by `PGPASSFILE`. Keep that file outside the repository.
+- Set the variables before starting the shell or agent that runs the tests. `setx` affects only new processes, so a shell started earlier does not see the variable and every live test skips.
+- Never commit or paste the connection string or the password, including in chat, issues and logs.
+
+### Safety guards (D-03)
+
+- A superuser role is refused unless `COFFEEPEEK_LIVE_PG_ALLOW_SUPERUSER=1` is also set (exactly `1`). Use it only for a disposable server, such as a local container.
+- Only databases named `cp_live_<service>_<yyyyMMdd>t<HHmmss>_<8hex>` are created or dropped. They are dropped with `DROP DATABASE … WITH (FORCE)`. Any other name is refused before a connection is opened.
+- Each throwaway database is dropped when its tests finish, on success and on failure.
+- At the start of a run, this role's own `cp_live_*` leftovers older than 6 hours are swept. Newer databases, for example those of a concurrent run, are left alone.
+- Every throwaway connection uses `lock_timeout=30s`, so a locking bug fails fast instead of hanging.
+- The suite connects only to `postgres` and to its own `cp_live_*` databases. It never connects to the `cp*db` service databases such as `cpshopsdb` and `cpaccountdb`.
+- Connection failures are reported without the host.
+
+### Running the suite
+
+Build both test projects in Release, then run each one with the in-process xUnit runner from its `bin/Release/net10.0` directory:
+
+```bash
+dotnet build CoffeePeek.Shops.Infrastructure.Tests/CoffeePeek.Shops.Infrastructure.Tests.csproj -c Release
+dotnet build CoffeePeek.Account.Infrastructure.Tests/CoffeePeek.Account.Infrastructure.Tests.csproj -c Release
+(cd CoffeePeek.Shops.Infrastructure.Tests/bin/Release/net10.0 && dotnet exec CoffeePeek.Shops.Infrastructure.Tests.dll -noColor -trait "Category=LivePostgres" -showLiveOutput)
+(cd CoffeePeek.Account.Infrastructure.Tests/bin/Release/net10.0 && dotnet exec CoffeePeek.Account.Infrastructure.Tests.dll -noColor -trait "Category=LivePostgres" -showLiveOutput)
+```
+
+On machines where the xUnit test apphost is not blocked, this is equivalent:
+
+```bash
+dotnet test CoffeePeek.Shops.Infrastructure.Tests --filter "Category=LivePostgres"
+dotnet test CoffeePeek.Account.Infrastructure.Tests --filter "Category=LivePostgres"
+```
+
+Share only these lines:
+
+- the summary line of each project: `Total: …, Errors: …, Failed: …, Skipped: …` from the in-process runner, or the `Passed!`/`Failed!` line from `dotnet test`;
+- the `LIVE-PG server_version=` line, printed by `LivePostgresHarnessTests` (shown live with `-showLiveOutput`);
+- the output of `git rev-parse --short HEAD`.
+
+Share nothing else. Never share the connection string, the host or the password.
+
+### What counts as a pass (D-04)
+
+- Both projects report `Failed: 0` and `Skipped: 0` for the LivePostgres filter, and `Errors: 0` with the in-process runner.
+- The passed count equals the number of live tests that the same build reports as skipped when `COFFEEPEEK_LIVE_PG` is unset. Run each project once with the variable unset to get that number.
+- A run with the variable unset, a run with any skipped live test, and a run on a blocked test host are never evidence. Skipped looks green but proves nothing.
+
+### Cleanup
+
+A normal run leaves nothing behind. After a crashed or cancelled run, connect to `postgres` as the same role and list the leftovers:
+
+```sql
+SELECT datname FROM pg_database WHERE datname LIKE 'cp\_live\_%';
+```
+
+Drop each one as the same role:
+
+```sql
+DROP DATABASE "<name>" WITH (FORCE);
+```
+
+Drop only names that match the `cp_live_<service>_…` pattern. The next run also sweeps this role's leftovers that are older than 6 hours.
+
+### Not covered
+
+- A CI job with a PostgreSQL service container (deferred, D-09). The live suite runs only when an operator provides a server.
+- A rehearsal against a production schema dump (deferred, D-10).
+- The HTTP smoke through the gateway. It is manual; see [HTTP smoke (manual)](#http-smoke-manual).
+- The AccountService enablement decisions in step 5: slug reservation growth (D-02 of the user-profile design), the deletion lock hold and the shared `auth-endpoints` rate-limit bucket.
+
+### HTTP smoke (manual)
+
+This has not been run. Run it in the `dev/` stack, or in a non-production environment that you are authorized to change. `$GW` is the gateway base URL.
+
+- With AccountService's flag off, the slug `reviews` must reach AccountService:
+
+  ```bash
+  curl -i "$GW/api/Users/by-slug/reviews"
+  ```
+
+  The response must be a 503 ProblemDetails from AccountService. That proves routing: without `account-Users-by-slug-route`, Shops would answer through its `/api/users/{userId}/reviews` route.
+- With AccountService's flag on:
+  - Unknown and hidden (blocked or deleted) profiles return 404, and the two bodies are identical except `traceId`:
+
+    ```bash
+    diff <(curl -sS "$GW/api/Users/by-slug/<unknown-slug>" | jq -S 'del(.traceId)') \
+         <(curl -sS "$GW/api/Users/by-slug/<blocked-user-slug>" | jq -S 'del(.traceId)')
+    ```
+
+  - `ids=` query arrays bind. This returns the addresses of both visible users:
+
+    ```bash
+    curl -i "$GW/api/Users/public-addresses?ids=<guid>&ids=<guid>"
+    ```
+
+- With ShopsService's flag on and before any backfill, `curl -i "$GW/api/Catalogs/cities/by-slug/<known>"` returns 404, not 503.
+
+### Live gate evidence
+
+No green run has been recorded yet. `PublicAddresses__Enabled` stays unset for ShopsService and AccountService.
 
 ## Public API
 
@@ -213,6 +364,66 @@ Where the generated slug is not the one you want, choose a manual slug with init
 
 User backfill is a separate run against AccountService, with the same dry-run, cursor and replay semantics. It includes blocked users (allocated but hidden) and excludes soft-deleted users. `hadCollision` is true only when a suffix beyond the stem's first candidate was needed. For an already-initialized user, it compares the existing canonical slug with the first candidate for the current username. Review the dry-run output for transliteration collisions such as `Ivan`/`ivan`/`Иван`, which all produce `ivan`: only one of them gets the bare slug, and the others get a suffix. There is no manual initialize for users, so a slug can be changed only through a username change.
 
+## Dry-run backfill review
+
+This is for authorized operators only, and only after steps 1–3 pass for that service. It is a documentation snippet, not a committed script.
+
+Run it once per entity. `E` is one of `shops`, `roasters`, `cities` or `coffee-zones`. `$GW` is the gateway base URL, and `$TOKEN` holds an admin JWT. Keep the token out of chat and shell history: read it with `read -rs TOKEN` instead of typing it into a command.
+
+Set the entity and an empty cursor once:
+
+```bash
+E=cities; CURSOR=""
+```
+
+Then run the loop. Each page is dry-run, reviewed, written with the same cursor, compared with the dry run, and only then advanced with `nextCursor`:
+
+```bash
+while :; do
+  Q="limit=100${CURSOR:+&afterId=$CURSOR}"; P="$E-${CURSOR:-0}"
+  # 1. Dry run (dryRun=true): writes nothing.
+  curl -sS --fail-with-body -X POST "$GW/api/admin/$E/public-addresses/backfill?$Q&dryRun=true" \
+    -H "Authorization: Bearer $TOKEN" > "dry-$P.json" || break
+  # 2. Review: collision suffixes and place-/user- fallbacks.
+  jq '.items[] | select(.hadCollision or (.slug | test("^(place|user)(-|$)")))' "dry-$P.json"
+  # 3. Unwanted slug? Stop here and initialize that owner by hand BEFORE writing this page:
+  #    POST $GW/api/admin/$E/public-addresses/{id}/initialize  {"slug":"…","expectedRevision":0,"reason":"…"}
+  #    then run the loop again; it resumes at this page with a new dry run.
+  read -rp "Write page $P? [y/N] " OK; [ "$OK" = y ] || break
+  # 4. Write the same page (dryRun=false, same cursor).
+  curl -sS --fail-with-body -X POST "$GW/api/admin/$E/public-addresses/backfill?$Q&dryRun=false" \
+    -H "Authorization: Bearer $TOKEN" > "write-$P.json" || break
+  # 5. The written {entityId, slug} pairs must equal the dry run.
+  diff <(jq -S '[.items[] | {entityId, slug}]' "dry-$P.json") \
+       <(jq -S '[.items[] | {entityId, slug}]' "write-$P.json") || break
+  # 6. Next page.
+  CURSOR=$(jq -r '.nextCursor // empty' "write-$P.json"); [ -z "$CURSOR" ] && break
+done
+```
+
+The loop stops on any HTTP error, on a declined prompt and on a diff. `CURSOR` still points at the page that stopped, so running the loop again resumes there, dry run first.
+
+Review checklist:
+
+- Duplicate city names. The second city in GUID order gets a suffix.
+- RU/BY spelling variants, which produce different slugs: `grodno`/`grodna`, `mogilyov`/`magilyou`.
+- `place-…` fallbacks: shop, roaster, city or zone names that yield no usable slug.
+- Same-name zones in two cities. Zone slugs are global, so the second zone gets a suffix.
+- For users: transliteration collisions such as `Ivan`/`ivan`/`Иван`, which all produce `ivan`.
+
+**Why page by page.** The proposals set is per request, and dry-run writes nothing. A pure dry-run sweep therefore reports a duplicate on a later page as `hadCollision: false`, while write mode would suffix it. Always write page N before dry-running page N+1. `limit=100` keeps page boundaries rare. The live rehearsal tests (`ShopsBackfillRehearsalTests`, `AccountBackfillRehearsalTests`) pin this behavior.
+
+**Replay check.** After the last page, resubmit the first page with `dryRun=false`. Every item must report `alreadyInitialized: true`:
+
+```bash
+curl -sS --fail-with-body -X POST "$GW/api/admin/$E/public-addresses/backfill?limit=100&dryRun=false" \
+  -H "Authorization: Bearer $TOKEN" | jq -e 'all(.items[]; .alreadyInitialized)'
+```
+
+**Conflict.** A 409 "Address is reserved or changed concurrently." means another writer took a slug while the page was being written. The page was rolled back. Re-run the same page, dry run first. This is D-05 for Shops; Account already behaved this way.
+
+**AccountService.** Only after step 5 is decided and AccountService's flag is on (step 6), run the same loop against `$GW/api/admin/users/public-addresses/backfill` instead of `$GW/api/admin/$E/public-addresses/backfill`. The gateway sends it through `account-admin-route` (Admin policy). There is no manual initialize for users, so step 3 of the loop does not apply: a slug changes only through a username change.
+
 ## Catalog filter values
 
 Search and map query contracts are unchanged and GUID-based. No slug query parameters exist. The external frontend composes readable page and filter URLs, then resolves them to GUIDs before calling `GET api/CoffeeShops`.
@@ -232,3 +443,16 @@ The tag slug is immutable and unique, but it uses underscores (for example `lapt
 The external frontend should call by-slug, render `data`, emit a canonical tag for `address.canonicalPath`, and issue a real HTTP 301 from an alias page or legacy GUID page to that fixed relative path. It must not construct redirect targets from the requested slug. This applies to city, coffee zone and `/users/{slug}` pages as well.
 
 Operational rollback is to set `PublicAddresses__Enabled=false` and keep serving the existing GUID routes. Retain the registry and audit tables so published aliases and tombstone reservations are not lost. Do not run the migration `Down` after any addresses have been allocated. In particular, the `AddCityAndZonePublicAddresses` `Down` restores `"Kind" IN (1, 2)` and drops the city and zone registries, so it must not run after any city or zone address was allocated. Likewise, the Account `AddUserPublicAddresses` `Down` drops the user registry, so it must not run after any user address was allocated. For AccountService, rollback means setting its own `PublicAddresses__Enabled=false`: deletion keeps retiring addresses, and `GET api/Users/{id}` keeps hiding deleted and blocked users.
+
+### Rollback rehearsal
+
+Rehearse the rollback in a non-production environment before relying on it, once per service:
+
+1. Set that service's `PublicAddresses__Enabled=false` and restart it.
+2. The by-slug, batch (`public-addresses?ids=`), legacy-GUID (`{id}/public-address`) and admin address endpoints return 503.
+3. Existing GUID routes are unchanged, for example `GET api/CoffeeShops/{id}` and `GET api/Users/{id}`.
+4. Deletions keep retiring addresses: delete a test entity, and its slugs stay reserved as tombstones.
+5. Set the flag back to `true` and restart. Slugs allocated earlier resolve again.
+6. Never run a migration `Down`. It drops populated registries, and with them every alias and tombstone reservation; the Account `Down` succeeds and destroys the user registry.
+
+The data-level part (503 while disabled, retirement while disabled, resolution after re-enabling) is automated as G-S11 and G-A9 and is pending like the rest of the [Live PostgreSQL gate](#live-postgresql-gate).
