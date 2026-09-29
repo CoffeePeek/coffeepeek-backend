@@ -63,7 +63,7 @@ Depends on: Phase 4
 
 Plans: 8 (waves: 1 = 05-01, 05-02; 2 = 05-08; 3 = 05-03, 05-04, 05-05, 05-06; 4 = 05-07)
 - [x] 05-01-PLAN.md — opt-in live PostgreSQL harness: COFFEEPEEK_LIVE_PG gate and skip, safety guards, throwaway `cp_live_*` DB lifecycle, `LiveDatabase<TContext>`, pg_locks/transactionid probes, Account csproj link.
-- [ ] 05-02-PLAN.md — Shops write-mode backfill in-flight conflict -> 409 (D-05) and the runbook: live gate, dry-run backfill review loop, manual HTTP smoke, rollback rehearsal.
+- [x] 05-02-PLAN.md — Shops write-mode backfill in-flight conflict -> 409 (D-05) and the runbook: live gate, dry-run backfill review loop, manual HTTP smoke, rollback rehearsal.
 - [ ] 05-03-PLAN.md — Shops live gate tests G-S0..G-S9: migrations, checks/indexes, RESTRICT FKs, advisory-lock serialization, rename demotion/rollback, ambient savepoint, city-delete 409, zone lifecycle.
 - [ ] 05-04-PLAN.md — Shops backfill and rollback rehearsal: pre-feature migration + legacy seed, page-by-page dry-run/write/replay for four kinds, cross-page caveat, in-flight 409, flag-off rollback (G-S0 incremental, G-S10, G-S10b, G-S11).
 - [ ] 05-05-PLAN.md — Account live gate tests G-A0..G-A7: migrations, UserPublicAddresses checks/indexes/RESTRICT FK, lock 7402100401, rename demotion ordering, savepoint rollback (username, in-flight slug, duplicate email), Google retry after ChangeTracker.Clear().

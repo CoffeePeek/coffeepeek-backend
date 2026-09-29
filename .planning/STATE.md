@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: in_progress
-last_updated: "2026-09-29T13:23:15.000Z"
+last_updated: "2026-09-29T13:35:00.000Z"
 progress:
   total_phases: 5
   completed_phases: 4
   total_plans: 15
-  completed_plans: 8
-  percent: 53
+  completed_plans: 9
+  percent: 60
 ---
 
 # State
@@ -81,7 +81,18 @@ progress:
   - `LivePostgresServer.OpenAsync` is public, an addition to the contract. Later plans open connections through it so connect failures never print the host.
   - Probes and raw writes refuse non-`cp_live_*` databases before connecting. The sweep is best effort per database.
   - On this machine's Git Bash grep 3.0, `\\` does not match a literal backslash. Use `grep -F` for backslash paths in acceptance checks.
-- Next: Phase 5 remaining plans. The live gate stays open until 05-08 (attested) or 05-07 reports `Failed: 0, Skipped: 0`.
+- Phase 5 plan 02 complete (2026-09-29, commits `6386fce5`, `25b6e4ec`, `6073c62d`):
+  - D-05: Shops `PublicAddressService.BackfillAsync` is async and maps `DbUpdateException` when `IsAddressConflict` to `PublicAddressException` 409 "Address is reserved or changed concurrently." (the same message and status as `ChangeAsync`, parity with Account). Unrelated DB errors still propagate. No interface, contract, controller or migration change.
+  - Tests: `PublicAddressBackfillConflictTests` 8/8, red before the fix (5 failing 409 rows). They use a throwing `SaveChangesInterceptor` on InMemory. Shops infrastructure 204 (200 passed = 192 + 8, 4 live skipped); Shops application 224; ShopsService 25; Account infrastructure 89.
+  - `docs/api/public-addresses.md`:
+    - `## Live PostgreSQL gate`: coverage table by test class, server/role, credentials (D-02), guards (D-03), run commands, pass rule (D-04), cleanup, not covered (D-09, D-10), `### HTTP smoke (manual)` (D-06), `### Live gate evidence` ("No green run has been recorded yet.");
+    - `## Dry-run backfill review`: page-by-page loop with a y/N pause, same-cursor write, diff and stop-on-error, plus the replay check and the 409 retry (D-07);
+    - `### Rollback rehearsal`.
+  - Nothing ran live. The flag stays unset everywhere.
+- Phase 5 plan 02 decisions:
+  - Shops backfill 409 reuses `IsAddressConflict` and the exact `ChangeAsync` message; only address constraints are mapped.
+  - The runbook loop asks for confirmation before each write and stops on any HTTP error, 409 or diff; `CURSOR` stays on the stopped page.
+- Next: Phase 5 remaining plans (05-03..05-08). The live gate stays open until 05-08 (attested) or 05-07 reports `Failed: 0, Skipped: 0`.
 
 ## Quick Tasks Completed
 
