@@ -42,10 +42,11 @@ public abstract class PublicAddress
         if (State != expected) throw new InvalidOperationException("Invalid address transition.");
         if (revision <= Revision) throw new ArgumentOutOfRangeException(nameof(revision), "Revision must increase.");
         RequireUtc(now);
-        if (now < UpdatedAtUtc) throw new ArgumentOutOfRangeException(nameof(now), "Time cannot move backwards.");
         State = next;
         Revision = revision;
-        UpdatedAtUtc = now;
+        // Clamp rather than throw: a server clock stepping backwards must not block deletion/retirement (500),
+        // and timestamps stay monotonic.
+        UpdatedAtUtc = now < UpdatedAtUtc ? UpdatedAtUtc : now;
     }
 
     private static void RequireUtc(DateTime now)

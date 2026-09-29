@@ -59,10 +59,10 @@ internal static class PublicAddressConfiguration
         builder.HasIndex(a => new { a.OwnerId, a.State });
         builder.ToTable(table, t =>
         {
-            t.HasCheckConstraint($"CK_{table}_Slug", "\"Slug\" ~ '^[a-z0-9]+(-[a-z0-9]+)*$' AND length(\"Slug\") BETWEEN 1 AND 100");
-            t.HasCheckConstraint($"CK_{table}_Lifecycle", "(\"State\" IN (1, 2) AND \"OwnerId\" IS NOT NULL) OR (\"State\" = 3 AND \"OwnerId\" IS NULL)");
-            t.HasCheckConstraint($"CK_{table}_Revision", "\"Revision\" > 0");
-            t.HasCheckConstraint($"CK_{table}_Timestamps", "\"UpdatedAtUtc\" >= \"CreatedAtUtc\"");
+            t.HasCheckConstraint($"CK_{table}_Slug", PublicAddressChecks.Slug);
+            t.HasCheckConstraint($"CK_{table}_Lifecycle", PublicAddressChecks.Lifecycle);
+            t.HasCheckConstraint($"CK_{table}_Revision", PublicAddressChecks.Revision);
+            t.HasCheckConstraint($"CK_{table}_Timestamps", PublicAddressChecks.Timestamps);
         });
     }
 }

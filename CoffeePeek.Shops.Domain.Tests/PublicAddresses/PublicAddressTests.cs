@@ -45,7 +45,6 @@ public sealed class PublicAddressTests
         var address = CoffeeShopPublicAddress.Create(Guid.NewGuid(), "coffee", 1, Now);
         address.Invoking(a => a.Restore(2, Now)).Should().Throw<InvalidOperationException>();
         address.Invoking(a => a.MakeAlias(1, Now)).Should().Throw<ArgumentOutOfRangeException>();
-        address.Invoking(a => a.MakeAlias(2, Now.AddSeconds(-1))).Should().Throw<ArgumentOutOfRangeException>();
         address.Invoking(a => a.MakeAlias(2, DateTime.SpecifyKind(Now, DateTimeKind.Unspecified))).Should().Throw<ArgumentException>();
         address.State.Should().Be(PublicAddressState.Canonical);
         address.Revision.Should().Be(1);
@@ -66,5 +65,19 @@ public sealed class PublicAddressTests
         reserved.Should().Throw<ArgumentException>();
         revision.Should().Throw<ArgumentOutOfRangeException>();
         localTime.Should().Throw<ArgumentException>();
+    }
+
+    [Fact]
+    public void Transition_ClockStepsBackwards_ClampsInsteadOfThrowing()
+    {
+        // A backwards clock step used to throw, turning account/shop deletion into a 500 until the clock caught up.
+        var address = CoffeeShopPublicAddress.Create(Guid.NewGuid(), "coffee", 1, Now);
+        address.MakeAlias(2, Now.AddSeconds(10));
+
+        address.Retire(3, Now.AddSeconds(5));
+
+        address.State.Should().Be(PublicAddressState.Tombstone);
+        address.Revision.Should().Be(3);
+        address.UpdatedAtUtc.Should().Be(Now.AddSeconds(10), "timestamps stay monotonic");
     }
 }

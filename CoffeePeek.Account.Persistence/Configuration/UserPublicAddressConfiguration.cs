@@ -23,10 +23,10 @@ public sealed class UserPublicAddressConfiguration : IEntityTypeConfiguration<Us
         builder.HasIndex(a => new { a.OwnerId, a.State });
         builder.ToTable(Table, t =>
         {
-            t.HasCheckConstraint($"CK_{Table}_Slug", "\"Slug\" ~ '^[a-z0-9]+(-[a-z0-9]+)*$' AND length(\"Slug\") BETWEEN 1 AND 100");
-            t.HasCheckConstraint($"CK_{Table}_Lifecycle", "(\"State\" IN (1, 2) AND \"OwnerId\" IS NOT NULL) OR (\"State\" = 3 AND \"OwnerId\" IS NULL)");
-            t.HasCheckConstraint($"CK_{Table}_Revision", "\"Revision\" > 0");
-            t.HasCheckConstraint($"CK_{Table}_Timestamps", "\"UpdatedAtUtc\" >= \"CreatedAtUtc\"");
+            t.HasCheckConstraint($"CK_{Table}_Slug", PublicAddressChecks.Slug);
+            t.HasCheckConstraint($"CK_{Table}_Lifecycle", PublicAddressChecks.Lifecycle);
+            t.HasCheckConstraint($"CK_{Table}_Revision", PublicAddressChecks.Revision);
+            t.HasCheckConstraint($"CK_{Table}_Timestamps", PublicAddressChecks.Timestamps);
         });
         builder.HasOne<User>().WithMany().HasForeignKey(a => a.OwnerId).OnDelete(DeleteBehavior.Restrict);
     }

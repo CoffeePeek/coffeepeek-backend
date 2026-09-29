@@ -35,6 +35,7 @@ The flag is per service. `PublicAddresses__Enabled=true` must be set on AccountS
 3. Set `PublicAddresses__Enabled=true` for ShopsService and restart it.
 4. Run dry-run backfill pages and review collisions before running write mode.
 5. Before enabling AccountService, decide on slug reservation growth (D-02). Each username change that produces a new slug reserves one more slug permanently: the previous slug stays an alias, and every slug of the user becomes a tombstone on deletion. Today only the `auth-endpoints` rate limit bounds how fast one account can reserve slugs by changing its username repeatedly. Either accept this growth or add a username-change cooldown first. No cooldown exists in this build.
+   Also decide on lock contention. Account deletion (self-service and admin) takes the profile-address advisory lock `7402100401` and holds it until Wolverine commits, which is after the Redis token revocation and SignalR logout calls. With the flag on, every registration, Google sign-up, username change and write-mode backfill waits behind a slow deletion. Measure deletion latency on the target environment, or move those network calls after commit, before enabling.
 6. Set `PublicAddresses__Enabled=true` for AccountService and restart it. Then run the user backfill with the step 4 rules (see [Bounded backfill](#bounded-backfill)).
 
 Do not enable writers or execute write-mode backfill for a service before steps 1–2 pass for that service. Do not enable AccountService before step 5 is decided. When disabled (and the prerequisite migrations are applied), new endpoints return 503 and new entities are not assigned addresses; existing GUID APIs are unchanged.
@@ -110,7 +111,7 @@ User profile example (`GET api/Users/by-slug/ivan-petrov`, where `ivan-petrov` i
 }
 ```
 
-Gateway routing for user profiles (D-07): the gateway has a dedicated `account-Users-by-slug-route` for `/api/Users/by-slug/{slug}`. Without it, the slug `reviews` would be captured by the Shops `/api/users/{userId}/reviews` route. The literal `by-slug` segment outranks the `{userId}` parameter, so every valid slug reaches AccountService. Batch (`api/Users/public-addresses`) and legacy GUID (`api/Users/{id}/public-address`) lookups use the existing `/api/Users/{**remainder}` route. All three share the `auth-endpoints` limit (20/min per client IP). Revisit this limit for server-side rendering in phase 6.
+Gateway routing for user profiles (D-07): the gateway has a dedicated `account-Users-by-slug-route` for `/api/Users/by-slug/{slug}`. Without it, the slug `reviews` would be captured by the Shops `/api/users/{userId}/reviews` route. The literal `by-slug` segment outranks the `{userId}` parameter, so every valid slug reaches AccountService. Batch (`api/Users/public-addresses`) and legacy GUID (`api/Users/{id}/public-address`) lookups use the existing `/api/Users/{**remainder}` route. All three share the `auth-endpoints` limit (20/min per client IP). That is a single bucket per IP that is also used by login, token refresh and every other `/api/Users/**` call, so a client browsing many profiles can make its own token refresh return 429 and log the user out. Revisit this (a separate policy with the same numbers, or a higher limit for lookups) before enabling AccountService and for server-side rendering in phase 6.
 
 `canonicalPath` is a server-built relative page path. The API never redirects JSON and never accepts a redirect target from the request. Existing `GET api/CoffeeShops/{id:guid}` and `GET api/roasters/{id:guid}` contracts remain unchanged. The existing `GET api/Catalogs/cities` list and `GET api/Map` payloads are also unchanged and carry no address metadata.
 
@@ -157,7 +158,8 @@ User addresses live in AccountService (`UserPublicAddresses` in `cpaccountdb`). 
 **Deletion (D-03, D-06).**
 - Deletion always retires every address of the user, even when the feature is disabled.
 - Tombstones keep only the reserved slug, with no owner, display name, email or history.
-- Account keeps no address audit or history, so nothing links a deleted user to former slugs. The reserved slug text itself is still derived from the former username.
+- Account keeps no address audit or history, and no API returns tombstones, so nothing *public* links a deleted user to former slugs.
+- Known limit: anyone with database access can still correlate them. All of a user's tombstones share one `Revision` and `UpdatedAtUtc`, written in the same transaction as the soft-deleted `Users` row, and that row keeps the username, so the last slug can be recomputed. Suffixed slugs (`-<8hex>`, `user-<8hex>`) also contain the first 8 hex digits of the user GUID, which Shops review DTOs expose. Treat tombstones as personal data when handling database dumps; full unlinkability would require anonymizing the soft-deleted user row, which is out of scope.
 
 **Disclosure notes.**
 - Anyone holding an old link learns the new username through the alias.

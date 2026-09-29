@@ -17,7 +17,8 @@ public sealed class UserPublicAddressPersistenceTests
 {
     private const string Table = "UserPublicAddresses";
 
-    // Literal copies of CoffeePeek.Shops.Persistance/Configuration/PublicAddressConfiguration.cs; do not reference Shops.
+    // Parity with Shops is structural: both configurations use CoffeePeek.Shared.Domain PublicAddressChecks.
+    // These literals pin the exact SQL so a change to the shared constants is a deliberate, migrated decision.
     private const string SlugSql = "\"Slug\" ~ '^[a-z0-9]+(-[a-z0-9]+)*$' AND length(\"Slug\") BETWEEN 1 AND 100";
     private const string LifecycleSql = "(\"State\" IN (1, 2) AND \"OwnerId\" IS NOT NULL) OR (\"State\" = 3 AND \"OwnerId\" IS NULL)";
     private const string RevisionSql = "\"Revision\" > 0";
