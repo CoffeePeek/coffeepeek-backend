@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: in_progress
-last_updated: "2026-09-29T13:06:47.043Z"
+last_updated: "2026-09-29T13:23:15.000Z"
 progress:
   total_phases: 5
   completed_phases: 4
   total_plans: 15
-  completed_plans: 7
-  percent: 47
+  completed_plans: 8
+  percent: 53
 ---
 
 # State
@@ -61,6 +61,27 @@ progress:
   - The reviews-slug capture is fixed by the dedicated gateway route, not by reserving `reviews` in the shared `PublicSlug` list.
   - The flag is enabled per service; AccountService needs its own live gate and the D-02 decision first.
 - Next: Phase 4 verification. The live PostgreSQL gate (phases 1–4) is still open, so `PublicAddresses__Enabled` stays false for ShopsService and AccountService.
+- Phase 5 plan 01 complete (2026-09-29, commits `d356798e`, `47fc3f69`, `84a96b01`):
+  - Opt-in live PostgreSQL harness: the single shared helper `CoffeePeek.Shops.Infrastructure.Tests/LivePostgres/LivePostgresServer.cs` (namespace `CoffeePeek.Testing`), linked into `CoffeePeek.Account.Infrastructure.Tests` through `<Compile Include ... Link=...>` (D-01). No new project or package.
+  - Contents:
+    - guards: owned-name regex `\A...\z` with the 63-byte limit, only `Database=postgres`, no Password key, superuser only with `COFFEEPEEK_LIVE_PG_ALLOW_SUPERUSER=1`, 6 h sweep, registry allowlist;
+    - create/drop/sweep: `DROP ... WITH (FORCE)`, with the name guard before any I/O;
+    - pg_locks and pg_stat_activity probes;
+    - raw registry-row and uncommitted-tombstone helpers;
+    - the `LiveDatabase<TContext>` fixture base.
+  - Connect errors are sanitized: no host in any message.
+  - Tests with the env var unset:
+    - guard class 128/128 (runs in CI);
+    - LivePostgres trait `Total: 4, Skipped: 4`;
+    - Shops infrastructure 196 (192 passed = 64 + 128, 4 skipped);
+    - Account infrastructure 89.
+  - Nothing ran live.
+- Phase 5 plan 01 decisions:
+  - Research A1 verified: `Assert.SkipUnless` in the test-class constructor is reported as Skipped, by both the in-process runner and `dotnet test` (VSTest). A2 verified: exit 0 when all filtered tests are skipped. Later plans keep the constructor skip.
+  - `LivePostgresServer.OpenAsync` is public, an addition to the contract. Later plans open connections through it so connect failures never print the host.
+  - Probes and raw writes refuse non-`cp_live_*` databases before connecting. The sweep is best effort per database.
+  - On this machine's Git Bash grep 3.0, `\\` does not match a literal backslash. Use `grep -F` for backslash paths in acceptance checks.
+- Next: Phase 5 remaining plans. The live gate stays open until 05-08 (attested) or 05-07 reports `Failed: 0, Skipped: 0`.
 
 ## Quick Tasks Completed
 
