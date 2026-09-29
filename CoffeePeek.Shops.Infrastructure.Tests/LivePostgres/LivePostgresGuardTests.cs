@@ -355,6 +355,106 @@ public class LivePostgresGuardTests
         ex.Message.Should().StartWith("Refusing to touch a database that is not a cp_live_* throwaway database");
     }
 
+    // ---- Task 2 server helpers: argument and ownership guards run before any I/O ----------
+
+    private const string OwnedUnreachable = "Host=invalid.invalid;Database=" + ValidName + ";Username=u;Timeout=1";
+    private const string ProductionUnreachable = "Host=invalid.invalid;Database=cpshopsdb;Username=u;Timeout=1";
+    private const string RefusalPrefix = "Refusing to touch a database that is not a cp_live_* throwaway database";
+
+    [Fact]
+    public async Task InsertRegistryRowAsync_UnknownTable_ThrowsArgumentException()
+    {
+        await using var connection = new NpgsqlConnection(OwnedUnreachable);
+
+        var act = () => LivePostgresServer.InsertRegistryRowAsync(connection, null, "Users", null, "a", 3, 1,
+            DateTime.UtcNow, DateTime.UtcNow, CancellationToken.None);
+
+        await act.Should().ThrowAsync<ArgumentException>();
+    }
+
+    [Theory]
+    [InlineData(DateTimeKind.Unspecified, DateTimeKind.Utc)]
+    [InlineData(DateTimeKind.Local, DateTimeKind.Utc)]
+    [InlineData(DateTimeKind.Utc, DateTimeKind.Unspecified)]
+    [InlineData(DateTimeKind.Utc, DateTimeKind.Local)]
+    public async Task InsertRegistryRowAsync_NonUtcTimestamp_ThrowsArgumentException(DateTimeKind created, DateTimeKind updated)
+    {
+        await using var connection = new NpgsqlConnection(OwnedUnreachable);
+        var at = new DateTime(2026, 9, 29, 10, 0, 0);
+
+        var act = () => LivePostgresServer.InsertRegistryRowAsync(connection, null, "UserPublicAddresses", null, "a", 3, 1,
+            DateTime.SpecifyKind(at, created), DateTime.SpecifyKind(at, updated), CancellationToken.None);
+
+        await act.Should().ThrowAsync<ArgumentException>();
+    }
+
+    [Fact]
+    public async Task InsertRegistryRowAsync_NonThrowawayDatabase_RefusedBeforeConnecting()
+    {
+        await using var connection = new NpgsqlConnection(ProductionUnreachable);
+
+        var act = () => LivePostgresServer.InsertRegistryRowAsync(connection, null, "UserPublicAddresses", null, "a", 3, 1,
+            DateTime.UtcNow, DateTime.UtcNow, CancellationToken.None);
+
+        (await act.Should().ThrowAsync<InvalidOperationException>()).Which.Message.Should().StartWith(RefusalPrefix);
+    }
+
+    [Fact]
+    public async Task BeginUncommittedTombstoneAsync_Guards_RunBeforeConnecting()
+    {
+        var badTable = () => LivePostgresServer.BeginUncommittedTombstoneAsync(OwnedUnreachable, "Users", "a", CancellationToken.None);
+        var notOwned = () => LivePostgresServer.BeginUncommittedTombstoneAsync(ProductionUnreachable, "UserPublicAddresses", "a",
+            CancellationToken.None);
+
+        await badTable.Should().ThrowAsync<ArgumentException>();
+        (await notOwned.Should().ThrowAsync<InvalidOperationException>()).Which.Message.Should().StartWith(RefusalPrefix);
+    }
+
+    [Fact]
+    public async Task Probes_NonThrowawayDatabase_RefusedBeforeConnecting()
+    {
+        var advisory = () => LivePostgresServer.WaitForAdvisoryWaitersAsync(ProductionUnreachable, LivePostgresServer.ShopsLockKey, 1,
+            CancellationToken.None);
+        var lockWaits = () => LivePostgresServer.WaitForLockWaitsAsync(ProductionUnreachable, "transactionid", 1,
+            CancellationToken.None);
+
+        (await advisory.Should().ThrowAsync<InvalidOperationException>()).Which.Message.Should().StartWith(RefusalPrefix);
+        (await lockWaits.Should().ThrowAsync<InvalidOperationException>()).Which.Message.Should().StartWith(RefusalPrefix);
+    }
+
+    [Fact]
+    public void ThrowawayConnectionString_NeverCarriesAPassword()
+    {
+        var admin = new NpgsqlConnectionStringBuilder(ValidAdmin) { Password = Secret };
+
+        var result = LivePostgresServer.ThrowawayConnectionString(admin, ValidName);
+
+        result.Should().NotContain(Secret);
+        new NpgsqlConnectionStringBuilder(result).Password.Should().BeNullOrEmpty();
+    }
+
+    [Fact]
+    public async Task LiveDatabase_BeforeInitialization_ContextThrowsAndDisposeIsNoOp()
+    {
+        var fixture = new UninitializedDatabase();
+
+        var act = () => fixture.Context();
+
+        act.Should().Throw<InvalidOperationException>();
+        fixture.ConnectionString.Should().BeEmpty();
+        fixture.DatabaseName.Should().BeEmpty();
+        await fixture.DisposeAsync(); // nothing to drop: must not touch a server
+    }
+
+    private sealed class ProbeContext(DbContextOptions<ProbeContext> options) : DbContext(options);
+
+    private sealed class UninitializedDatabase : LiveDatabase<ProbeContext>
+    {
+        protected override string Service => "guard";
+
+        protected override ProbeContext Create(DbContextOptions<ProbeContext> options, bool enabled) => new(options);
+    }
+
     [Fact]
     public void Constants_MatchProductionLockKeysAndGateNames()
     {

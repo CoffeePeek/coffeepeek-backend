@@ -28,6 +28,11 @@
     </ItemGroup>
 
     <ItemGroup>
+        <!-- Single shared live-PostgreSQL helper (phase 5, D-01): one copy of the safety guards. -->
+        <Compile Include="..\CoffeePeek.Shops.Infrastructure.Tests\LivePostgres\LivePostgresServer.cs" Link="LivePostgres\LivePostgresServer.cs" />
+    </ItemGroup>
+
+    <ItemGroup>
       <ProjectReference Include="..\CoffeePeek.Account.Infrastructure\CoffeePeek.Account.Infrastructure.csproj" />
       <ProjectReference Include="..\CoffeePeek.Shared.Web\CoffeePeek.Shared.Web.csproj" />
       <ProjectReference Include="..\CoffeePeek.AccountService\CoffeePeek.AccountService.csproj" />
