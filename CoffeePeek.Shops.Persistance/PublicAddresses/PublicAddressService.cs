@@ -123,7 +123,7 @@ public sealed class PublicAddressService(ShopsDbContext db) : IPublicAddressServ
             .Select(a => new PublicAddressHistoryItem(a.Revision, a.PreviousSlug, a.Slug, a.Action, a.ActorId, a.Reason, a.AtUtc)).ToArrayAsync(ct);
     }
 
-    public Task<PublicAddressBackfillResult> BackfillAsync(PublicAddressKind kind, Guid? afterId, int limit, bool dryRun, Guid actorId, CancellationToken ct)
+    public async Task<PublicAddressBackfillResult> BackfillAsync(PublicAddressKind kind, Guid? afterId, int limit, bool dryRun, Guid actorId, CancellationToken ct)
     {
         RequireEnabled(kind);
         if (limit is < 1 or > 100 || actorId == Guid.Empty) throw new PublicAddressException("Limit must be 1–100 and actor required.", 400);
@@ -135,7 +135,12 @@ public sealed class PublicAddressService(ShopsDbContext db) : IPublicAddressServ
             PublicAddressKind.CoffeeZone => BackfillAsync<CoffeeZonePublicAddress>(kind, afterId, limit, dryRun, actorId, ct),
             _ => throw UnknownKind()
         };
-        return dryRun ? Execute() : PublicAddressTransaction.RunAsync(db, Execute, ct);
+        try
+        {
+            return dryRun ? await Execute() : await PublicAddressTransaction.RunAsync(db, Execute, ct);
+        }
+        // A concurrent out-of-band writer took the slug: 409, not 500 (live gate G-S10b); the owned transaction already rolled back the page.
+        catch (DbUpdateException ex) when (IsAddressConflict(ex)) { throw new PublicAddressException("Address is reserved or changed concurrently.", 409); }
     }
 
     private async Task<PublicAddressBackfillResult> BackfillAsync<T>(PublicAddressKind kind, Guid? afterId, int limit, bool dryRun, Guid actorId, CancellationToken ct) where T : PublicAddress
