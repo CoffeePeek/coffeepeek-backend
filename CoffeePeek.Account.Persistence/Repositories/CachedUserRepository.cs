@@ -17,6 +17,13 @@ public class CachedUserRepository(
 
     public Task Add(User user, CancellationToken ct = default) => decorated.Add(user, ct);
 
+    public async Task Delete(User user, CancellationToken ct = default)
+    {
+        await decorated.Delete(user, ct);
+        await redisService.RemoveAsync(CacheKey.User.Profile(user.Id));
+        await redisService.RemoveAsync(CacheKey.User.Entity(user.Id));
+    }
+
     public Task<User?> GetByEmail(string email, CancellationToken ct) =>
         decorated.GetByEmail(email, ct);
 

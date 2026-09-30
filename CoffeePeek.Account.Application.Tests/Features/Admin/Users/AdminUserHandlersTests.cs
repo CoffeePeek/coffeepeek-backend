@@ -74,7 +74,8 @@ public class AdminUserHandlersTests
             _revokedUserStoreMock.Object, _jwtOptions, _ct);
 
         response.IsSuccess.Should().BeTrue();
-        _target.IsSoftDelete.Should().BeTrue();
+        _userRepoMock.Verify(r => r.Delete(_target, _ct), Times.Once);
+        _userRepoMock.Verify(r => r.Update(It.IsAny<DomainUser>(), _ct), Times.Never);
         VerifyAccessTokensRevoked();
     }
 
@@ -89,6 +90,7 @@ public class AdminUserHandlersTests
         response.IsSuccess.Should().BeFalse();
         response.StatusCode.Should().Be(400);
         _target.IsSoftDelete.Should().BeFalse();
+        _userRepoMock.Verify(r => r.Delete(It.IsAny<DomainUser>(), _ct), Times.Never);
     }
 
     [Fact]
