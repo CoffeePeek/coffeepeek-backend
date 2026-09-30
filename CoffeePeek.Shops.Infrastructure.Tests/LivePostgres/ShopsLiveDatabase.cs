@@ -1,0 +1,63 @@
+using CoffeePeek.Shared.Domain.PublicAddresses;
+using CoffeePeek.Shops.Application.PublicAddresses;
+using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
+using CoffeePeek.Shops.Domain.Aggregates.CoffeeZoneAggregate;
+using CoffeePeek.Shops.Domain.Aggregates.PublicAddressAggregate;
+using CoffeePeek.Shops.Domain.Entities;
+using CoffeePeek.Shops.Persistance.Configuration;
+using CoffeePeek.Testing;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
+
+namespace CoffeePeek.Shops.Infrastructure.Tests.LivePostgres;
+
+public class ShopsLiveDatabase : LiveDatabase<ShopsDbContext>
+{
+    protected override string Service => "shops";
+    protected override ShopsDbContext Create(DbContextOptions<ShopsDbContext> options, bool enabled) =>
+        new(options, Options.Create(new PublicAddressOptions { Enabled = enabled }));
+
+    public static CoffeeShop NewShop(string name, Guid? cityId = null)
+    {
+        var shop = new CoffeeShop(Guid.NewGuid(), name, null, PriceRange.Moderate, Guid.NewGuid());
+        shop.SetDraftLocation(cityId ?? Guid.NewGuid(), name + " address");
+        return shop;
+    }
+
+    public static CoffeeZone NewZone(Guid cityId, string name) =>
+        new(cityId, name, null, CoffeeZonePoint.Circle(53.9m, 27.56m, 400));
+
+    public async Task<Guid> AddOwnerAsync(PublicAddressKind kind, string name, bool enabled, CancellationToken ct)
+    {
+        await using var db = Context(enabled);
+        object owner = kind switch
+        {
+            PublicAddressKind.CoffeeShop => NewShop(name),
+            PublicAddressKind.Roaster => new Roaster(name),
+            PublicAddressKind.City => new City(name),
+            PublicAddressKind.CoffeeZone => await ZoneAsync(),
+            _ => throw new ArgumentOutOfRangeException(nameof(kind))
+        };
+        db.Add(owner);
+        await db.SaveChangesAsync(ct);
+        return (Guid)db.Entry(owner).Property("Id").CurrentValue!;
+
+        async Task<CoffeeZone> ZoneAsync()
+        {
+            var city = new City(name + " city");
+            db.Cities.Add(city);
+            var zone = NewZone(city.Id, name);
+            zone.Publish();
+            return zone;
+        }
+    }
+
+    public static (string Registry, string Owners, Type AddressType, Type OwnerType) Tables(PublicAddressKind kind) => kind switch
+    {
+        PublicAddressKind.CoffeeShop => ("CoffeeShopPublicAddresses", "Shops", typeof(CoffeeShopPublicAddress), typeof(CoffeeShop)),
+        PublicAddressKind.Roaster => ("RoasterPublicAddresses", "Roasters", typeof(RoasterPublicAddress), typeof(Roaster)),
+        PublicAddressKind.City => ("CityPublicAddresses", "Cities", typeof(CityPublicAddress), typeof(City)),
+        PublicAddressKind.CoffeeZone => ("CoffeeZonePublicAddresses", "CoffeeZones", typeof(CoffeeZonePublicAddress), typeof(CoffeeZone)),
+        _ => throw new ArgumentOutOfRangeException(nameof(kind))
+    };
+}

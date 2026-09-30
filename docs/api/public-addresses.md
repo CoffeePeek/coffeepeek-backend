@@ -13,14 +13,14 @@ AccountService has the same requirement. Apply the Account migration `2026092813
 The flag is per service. `PublicAddresses__Enabled=true` must be set on AccountService separately from ShopsService, and each service has its own gate below. It is currently unset (false) for both services.
 
 1. Confirm the deployment prerequisite migrations above (Shops and Account) are applied in the target environment.
-2. Run the live PostgreSQL suite described in [Live PostgreSQL gate](#live-postgresql-gate) against a non-production server. It covers uniqueness, restrictive foreign keys, concurrent allocation/rename and transaction/savepoint rollback. Cities and coffee zones add the checks below. They are automated by the live suite and remain pending until a green run is recorded under [Live gate evidence](#live-gate-evidence).
+2. Run the live PostgreSQL suite described in [Live PostgreSQL gate](#live-postgresql-gate) against a non-production server. It covers uniqueness, restrictive foreign keys, concurrent allocation/rename and transaction/savepoint rollback. Cities and coffee zones add the checks below. The automated gate passed on 2026-09-30; see [Live gate evidence](#live-gate-evidence). Re-run it for changes to the address implementation or migrations.
    - The unique `Slug` index and the filtered canonical owner index on `CityPublicAddresses` and `CoffeeZonePublicAddresses` hold under concurrent allocation. Two concurrent "Минск" creations serialize on the advisory lock.
    - `FK_CityPublicAddresses_Cities_OwnerId` and `FK_CoffeeZonePublicAddresses_CoffeeZones_OwnerId` are RESTRICT: deleting a city without retiring its addresses fails.
    - Deleting a city that still has coffee zones returns 409, and its address retirement rolls back.
    - `CK_PublicAddressAudit_Kind` accepts kinds 3 (city) and 4 (coffee zone).
    - `CK_CityPublicAddresses_Lifecycle` and `CK_CoffeeZonePublicAddresses_Lifecycle` reject a canonical row without an owner.
 
-   User profiles (AccountService, `cpaccountdb`) add the checks below. They are also automated by the live suite and remain pending until a green run is recorded under [Live gate evidence](#live-gate-evidence).
+   User profiles (AccountService, `cpaccountdb`) add the checks below. These automated checks also passed in the recorded [Live gate evidence](#live-gate-evidence).
    - The unique `Slug` index and the filtered canonical owner index `IX_UserPublicAddresses_OwnerId` on `UserPublicAddresses` hold under concurrent registrations. `Ivan`, `ivan` and `Иван` registering at once get distinct slugs, serialized by advisory lock `7402100401`.
    - The rename demotion flush never violates `IX_UserPublicAddresses_OwnerId`.
    - `FK_UserPublicAddresses_Users_OwnerId` is RESTRICT: a physical user delete without retirement fails.
@@ -58,8 +58,8 @@ The live suite is an opt-in integration suite in `CoffeePeek.Shops.Infrastructur
 | Shops | Savepoint rollback inside an ambient transaction; deleting a city that still has coffee zones returns 409 and its address retirement rolls back; zone publish, archive and republish with the real `Polygon` | `ShopsLiveTransactionTests` | G-S7, G-S8, G-S9 |
 | Shops | The migrations apply incrementally over legacy data; page-by-page backfill (dry run, cursor, replay, collisions, the cross-page caveat); an in-flight conflict during write-mode backfill returns 409 and rolls back the page; the data-level rollback rehearsal | `ShopsBackfillRehearsalTests` | G-S0 (incremental), G-S10, G-S10b, G-S11 |
 | Account | `20260928134755_AddUserPublicAddresses` applies cleanly; `CK_UserPublicAddresses_*`, `IX_UserPublicAddresses_Slug` and `IX_UserPublicAddresses_OwnerId`; `FK_UserPublicAddresses_Users_OwnerId` is RESTRICT | `AccountLiveSchemaTests` | G-A0, G-A1, G-A2 |
-| Account | `Ivan`, `ivan` and `Иван` registering at once get distinct slugs, serialized by advisory lock `7402100401`; the rename demotion flush never violates `IX_UserPublicAddresses_OwnerId`; a username unique violation leaves the address unchanged | `AccountLiveConcurrencyTests` | G-A3, G-A4, G-A5 |
-| Account | A duplicate-email registration leaves no address row; the Google concurrent-creation retry succeeds after `ChangeTracker.Clear()` | `AccountLiveRegistrationTests` | G-A6, G-A7 |
+| Account | `Ivan`, `ivan` and `Иван` registering at once get distinct slugs, serialized by advisory lock `7402100401`; the rename demotion flush never violates `IX_UserPublicAddresses_OwnerId`; a username unique violation leaves the address unchanged | `AccountLiveTransactionTests` | G-A3, G-A4, G-A5 |
+| Account | A duplicate-email registration leaves no address row; the Google concurrent-creation retry succeeds after `ChangeTracker.Clear()` | `AccountLiveTransactionTests`, `AccountLiveRegistrationTests` | G-A6, G-A7 |
 | Account | The migration applies incrementally over populated `Users`; the user backfill cursor translates and pages correctly; a concurrent unique violation during write-mode backfill returns 409; the data-level rollback rehearsal | `AccountBackfillRehearsalTests` | G-A0 (incremental), G-A8, G-A9 |
 
 The HTTP smoke through the gateway is not part of the suite (see [Not covered](#not-covered)).
@@ -189,7 +189,20 @@ This has not been run. Run it in the `dev/` stack, or in a non-production enviro
 
 ### Live gate evidence
 
-No green run has been recorded yet. `PublicAddresses__Enabled` stays unset for ShopsService and AccountService.
+The automated PostgreSQL gate passed on **2026-09-30 (UTC)** on PostgreSQL **17.11 (Debian 17.11-1.pgdg13+2)**. The user authorized a separate disposable PostgreSQL container on the supplied server. It had its own storage, a 512 MiB memory limit, a 0.5 CPU limit and a loopback-only port accessed through an SSH tunnel. No application database was used. The harness left zero `cp_live_*` databases; the container, its anonymous volume and the temporary pgpass file were removed after the run.
+
+Source: base commit `281696be483daa449465ea5a3afefc1d39bec57b` plus the phase-5 test additions in this working tree, implemented directly without GSD. Production source, migrations, packages and deployed flags were unchanged. SHA-256 of the test-source manifest: `576ae385b3a16ed77277bba99cf994065ae158abcb39a564920f93ccc0df5ff8`. The manifest contains all new `Account*.cs` and `Shops*.cs` files under the two `LivePostgres` directories, sorted by repository-relative path, one `path lowercase-sha256` line each, UTF-8 without BOM, LF endings and a final LF.
+
+Runner: xUnit v3 in-process, Release build, `dotnet exec <project>.dll -noColor -parallel none -trait "Category=LivePostgres"`.
+
+```text
+CoffeePeek.Shops.Infrastructure.Tests   Total: 24, Errors: 0, Failed: 0, Skipped: 0, Not Run: 0
+CoffeePeek.Account.Infrastructure.Tests Total: 15, Errors: 0, Failed: 0, Skipped: 0, Not Run: 0
+```
+
+For the same build with `COFFEEPEEK_LIVE_PG` unset, Shops reported `Total: 24, Skipped: 24` and Account reported `Total: 15, Skipped: 15`, both with zero errors, failures and not-run tests. Thus all 39 discovered live checks ran and passed. The CI solution Release build had zero errors; all ten test projects passed their ordinary checks (1,460 passed, 39 opt-in live checks skipped).
+
+`PublicAddresses__Enabled` stays unset for ShopsService and AccountService. This evidence closes the automated database gate only. The manual HTTP/YARP smoke, production migration application, reviewed production backfill and Account enablement decisions remain deployment prerequisites.
 
 ## Public API
 
@@ -455,4 +468,4 @@ Rehearse the rollback in a non-production environment before relying on it, once
 5. Set the flag back to `true` and restart. Slugs allocated earlier resolve again.
 6. Never run a migration `Down`. It drops populated registries, and with them every alias and tombstone reservation; the Account `Down` succeeds and destroys the user registry.
 
-The data-level part (503 while disabled, retirement while disabled, resolution after re-enabling) is automated as G-S11 and G-A9 and is pending like the rest of the [Live PostgreSQL gate](#live-postgresql-gate).
+The data-level part (503 while disabled, retirement while disabled, resolution after re-enabling) is automated as G-S11 and G-A9 and passed in the recorded [Live gate evidence](#live-gate-evidence).

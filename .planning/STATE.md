@@ -3,18 +3,31 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: in_progress
-last_updated: "2026-09-29T13:35:00.000Z"
+last_updated: "2026-09-30T08:16:25.000Z"
 progress:
-  total_phases: 5
-  completed_phases: 4
+  total_phases: 6
+  completed_phases: 5
   total_plans: 15
-  completed_plans: 9
-  percent: 60
+  completed_plans: 15
+  percent: 83
 ---
 
 # State
 
 ## Active work: public slugs (2026-09-27)
+
+### Current status (2026-09-30)
+
+- Phase 5 complete, implemented directly without GSD at the user's request. All backend rollout phases (1–5) are implemented and the automated PostgreSQL gate is closed.
+- Added Shops and Account live schema, lifecycle, advisory-lock, concurrency, ambient-savepoint, Google-login retry and legacy-data backfill/rollback rehearsals using the existing shared harness. No production source, migration, API contract or package change was needed.
+- Final PostgreSQL 17.11 run: Shops 24/24 and Account 15/15 passed, Errors/Failed/Skipped/Not Run all zero. The same Release build reports 24 and 15 skipped checks when unconfigured, proving the complete live category ran.
+- Release CI solution build: zero errors. All ten test projects passed: 1,460 ordinary tests passed, 39 opt-in live tests skipped without configuration. The Wolverine codegen guard is included in the Account infrastructure run.
+- The user authorized an isolated disposable container on the supplied server, with independent storage and resource limits, reached over an SSH tunnel. Application databases were not used; all harness databases were removed (remaining `cp_live_*` count: 0). The container, its temporary volume and the pgpass file were removed and the tunnel closed.
+- Evidence and coverage map: `docs/api/public-addresses.md#live-gate-evidence`. Source base `281696be` plus the working-tree test additions; source manifest SHA-256 `576ae385b3a16ed77277bba99cf994065ae158abcb39a564920f93ccc0df5ff8`.
+- NuGet vulnerability audit completed. Pre-existing Microsoft.OpenApi 2.0.0 (High) and OpenTelemetry.Api 1.15.0 (Moderate) advisories remain; phase 5 changes no dependencies.
+- Next implementation work: Phase 6 in the external frontend repository. Production migration application, manual HTTP/YARP smoke, reviewed production backfill and Account slug-reservation/lock-contention decisions remain deployment prerequisites. `PublicAddresses__Enabled` remains unset.
+
+### Implementation history (earlier pending gates below are closed by the current status)
 
 - Approved full staged rollout: `specs/PUBLIC-SLUGS.md`.
 - Phase 1 implemented: commits `7aba62c2`, `0e562a2a`; Shops domain 173/173 and infrastructure 49/49 pass.
