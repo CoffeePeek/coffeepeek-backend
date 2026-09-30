@@ -31,6 +31,7 @@ public sealed class AccountBackfillRehearsalTests : IClassFixture<AccountBackfil
         db.Database.HasPendingModelChanges().Should().BeFalse();
         var users = await db.Users.AsNoTracking().Where(x => fixture.OriginalUsernames.Keys.Contains(x.Id)).ToArrayAsync(Ct);
         users.ToDictionary(x => x.Id, x => x.Username.Value).Should().BeEquivalentTo(fixture.OriginalUsernames);
+        users.Should().OnlyContain(x => x.UsernameChangedAtUtc == null);
         users.Single(x => x.Id == fixture.BlockedId).IsBlocked.Should().BeTrue();
         users.Single(x => x.Id == fixture.DeletedId).IsSoftDelete.Should().BeTrue();
     }

@@ -22,8 +22,7 @@ public class UpdateUsernameHandlerTest
     {
         // Since this is in the namespace CoffeePeek.Account.Application.Tests.Features.User..., 
         // we need to use the fully qualified name to avoid confusion with the namespace
-        var user = CoffeePeek.Account.Domain.Entities.UserAggregate.User.CreateExternal("test@example.com", "external_provider", "provider_id");
-        user.UpdateUsername(Username.Create(username));
+        var user = CoffeePeek.Account.Domain.Entities.UserAggregate.User.CreateExternal("test@example.com", "external_provider", "provider_id", username);
         
         // Set the Id using reflection
         var aggregateRootType = typeof(CoffeePeek.Shared.Domain.Entities.AggregateRoot<Guid>);
@@ -34,6 +33,18 @@ public class UpdateUsernameHandlerTest
         return user;
     }
     
+    [Fact]
+    public async Task Handle_DuringCooldown_RejectsBeforeSaving()
+    {
+        var user = CreateUserMock(Guid.NewGuid(), "Original");
+        user.UpdateUsername(Username.Create("Changed"));
+        _userRepositoryMock.Setup(x => x.GetById(user.Id, _cancellationToken)).ReturnsAsync(user);
+        await Assert.ThrowsAsync<ConflictException>(() => UpdateUsernameHandler.Handle(new(user.Id, "Rejected"),
+            _userRepositoryMock.Object, _unitOfWorkMock.Object, _cancellationToken));
+        _userRepositoryMock.Verify(x => x.Update(It.IsAny<DomainUser>(), It.IsAny<CancellationToken>()), Times.Never);
+        _unitOfWorkMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
     [Fact]
     public async Task Handle_WithValidUserAndUsername_ShouldUpdateUsernameSuccessfully()
     {

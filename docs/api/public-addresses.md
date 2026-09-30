@@ -1,12 +1,12 @@
 # Public addresses
 
-This backend slice adds readable addresses for coffee shops, roasters, cities, coffee zones and user profiles without changing existing GUID routes or DTOs. The one intended exception, independent of the flag, is that `GET api/Users/{id}` no longer returns deleted or blocked users (see [User profiles](#user-profiles)). It is disabled by default and has not been run against production data.
+This backend slice adds readable addresses for coffee shops, roasters, cities, coffee zones and user profiles without changing existing GUID routes or DTOs. Independent of the address flag, `GET api/Users/{id}` no longer returns deleted or blocked users, and username changes have a seven-day cooldown (see [User profiles](#user-profiles)). Addresses are disabled by default and have not been run against production data.
 
 ## Deployment prerequisite (independent of the flag)
 
 Apply the Shops migrations `20260927112559_AddPublicAddressRegistries`, `20260928072406_AddPublicAddressAudit` and `20260928082712_AddCityAndZonePublicAddresses` **before** this build starts serving traffic, even with `PublicAddresses__Enabled=false`. Deleting a coffee shop, roaster or city always retires its registry rows, so without these tables those deletes fail with 500. `deploy/scripts/ci-deploy.sh` and `deploy/scripts/deploy.sh` apply migrations before restarting; do not deploy with `SKIP_MIGRATIONS=1`. `deploy/scripts/update.sh` restarts without migrating, so run `deploy/scripts/apply-migrations.sh` first when using it.
 
-AccountService has the same requirement. Apply the Account migration `20260928134755_AddUserPublicAddresses` to `cpaccountdb` **before** this AccountService build serves traffic, even with `PublicAddresses__Enabled=false`. Account deletion (self-service confirmation and admin delete) always retires the user's addresses, so without the `UserPublicAddresses` table those requests fail with 500. `deploy/scripts/apply-migrations.sh` migrates Account first, before Shops and Moderation. The script rules above apply unchanged: no `SKIP_MIGRATIONS=1`, and run `apply-migrations.sh` before `update.sh`.
+AccountService has the same requirement. Apply Account migrations `20260928134755_AddUserPublicAddresses` and `20260930083625_AddUsernameChangeCooldown` to `cpaccountdb` **before** this AccountService build serves traffic, even with `PublicAddresses__Enabled=false`. Account deletion always retires addresses; Account queries also require the nullable `Users.UsernameChangedAtUtc` column. Existing users start with no cooldown timestamp and can change their username immediately. `deploy/scripts/apply-migrations.sh` migrates Account first, before Shops and Moderation. The script rules above apply unchanged: no `SKIP_MIGRATIONS=1`, and run `apply-migrations.sh` before `update.sh`.
 
 ## Enablement gate
 
@@ -31,14 +31,14 @@ The flag is per service. `PublicAddresses__Enabled=true` must be set on AccountS
      - the Google concurrent-creation retry still succeeds after `ChangeTracker.Clear()`.
    - The user backfill cursor query translates and pages correctly on PostgreSQL, and a concurrent unique violation during write-mode backfill returns 409.
    - The migration `20260928134755_AddUserPublicAddresses` applies cleanly to `cpaccountdb`.
-   - An HTTP smoke run through the gateway has not been done either. It is manual and not part of the live suite; follow [HTTP smoke (manual)](#http-smoke-manual). It should show that `/api/Users/by-slug/reviews` reaches AccountService, that `ids=` query arrays bind and that hidden profiles return the identical 404 body. Only the ASP.NET Core routing precedence API proves the route order today.
+   - `PublicAddressGatewaySmokeTests` exercises real HTTP, production YARP routes and the actual Account/city controllers against synthetic InMemory data. It verifies the `reviews` slug route, query-array binding, envelopes, identical hidden-profile 404s, GUID behavior and flag rollback. It also checks that more than 20 public lookups do not consume the login/token-refresh limiter. Run [HTTP smoke (manual)](#http-smoke-manual) on the target deployment too, to validate its service discovery, authentication and proxy configuration.
 3. Set `PublicAddresses__Enabled=true` for ShopsService and restart it.
 4. Run dry-run backfill pages and review collisions before running write mode. Follow [Dry-run backfill review](#dry-run-backfill-review) page by page.
-5. Before enabling AccountService, decide on slug reservation growth (D-02). Each username change that produces a new slug reserves one more slug permanently: the previous slug stays an alias, and every slug of the user becomes a tombstone on deletion. Today only the `auth-endpoints` rate limit bounds how fast one account can reserve slugs by changing its username repeatedly. Either accept this growth or add a username-change cooldown first. No cooldown exists in this build.
-   Also decide on lock contention. Account deletion (self-service and admin) takes the profile-address advisory lock `7402100401` and holds it until Wolverine commits, which is after the Redis token revocation and SignalR logout calls. With the flag on, every registration, Google sign-up, username change and write-mode backfill waits behind a slow deletion. Measure deletion latency on the target environment, or move those network calls after commit, before enabling.
+5. Account policy is decided: a username can change once every seven days, including while addresses are disabled. An unchanged username is a retry and does not reset the cooldown. A rejected change returns 409 and allocates nothing; a concurrency token prevents two requests from both changing the same stale snapshot. Each successful new slug still reserves its predecessors permanently.
+   Self-service and admin deletion finish Redis revocation and SignalR notification before `SaveChanges` acquires advisory lock `7402100401`. Wolverine still commits afterwards. The live tests pause each network call and prove that another registration completes during both pauses. The lock still serializes address database writes; watch their duration in the target environment.
 6. Set `PublicAddresses__Enabled=true` for AccountService and restart it. Then run the user backfill with the step 4 rules (see [Bounded backfill](#bounded-backfill)).
 
-Do not enable writers or execute write-mode backfill for a service before steps 1–2 pass for that service. Do not enable AccountService before step 5 is decided. When disabled (and the prerequisite migrations are applied), new endpoints return 503 and new entities are not assigned addresses; existing GUID APIs are unchanged.
+Do not enable writers or execute write-mode backfill for a service before steps 1–2 pass for that service. When disabled (and the prerequisite migrations are applied), new endpoints return 503 and new entities are not assigned addresses; existing GUID APIs remain available with the visibility rules above.
 
 ## Live PostgreSQL gate
 
@@ -170,7 +170,7 @@ This has not been run. Run it in the `dev/` stack, or in a non-production enviro
   curl -i "$GW/api/Users/by-slug/reviews"
   ```
 
-  The response must be a 503 ProblemDetails from AccountService. That proves routing: without `account-Users-by-slug-route`, Shops would answer through its `/api/users/{userId}/reviews` route.
+  The response must be a 503 ErrorResponse from AccountService. That proves routing: without `account-Users-by-slug-route`, Shops would answer through its `/api/users/{userId}/reviews` route.
 - With AccountService's flag on:
   - Unknown and hidden (blocked or deleted) profiles return 404, and the two bodies are identical except `traceId`:
 
@@ -189,7 +189,7 @@ This has not been run. Run it in the `dev/` stack, or in a non-production enviro
 
 ### Live gate evidence
 
-The automated PostgreSQL gate passed on **2026-09-30 (UTC)** on PostgreSQL **17.11 (Debian 17.11-1.pgdg13+2)**. The user authorized a separate disposable PostgreSQL container on the supplied server. It had its own storage, a 512 MiB memory limit, a 0.5 CPU limit and a loopback-only port accessed through an SSH tunnel. No application database was used. The harness left zero `cp_live_*` databases; the container, its anonymous volume and the temporary pgpass file were removed after the run.
+The original phase-5 PostgreSQL gate passed on **2026-09-30 (UTC)** on PostgreSQL **17.11 (Debian 17.11-1.pgdg13+2)**. The user authorized a separate disposable PostgreSQL container on the supplied server. It had its own storage, a 512 MiB memory limit, a 0.5 CPU limit and a loopback-only port accessed through an SSH tunnel. No application database was used. The harness left zero `cp_live_*` databases; the container, its anonymous volume and the temporary pgpass file were removed after the run.
 
 Source: base commit `281696be483daa449465ea5a3afefc1d39bec57b` plus the phase-5 test additions in this working tree, implemented directly without GSD. Production source, migrations, packages and deployed flags were unchanged. SHA-256 of the test-source manifest: `576ae385b3a16ed77277bba99cf994065ae158abcb39a564920f93ccc0df5ff8`. The manifest contains all new `Account*.cs` and `Shops*.cs` files under the two `LivePostgres` directories, sorted by repository-relative path, one `path lowercase-sha256` line each, UTF-8 without BOM, LF endings and a final LF.
 
@@ -202,7 +202,28 @@ CoffeePeek.Account.Infrastructure.Tests Total: 15, Errors: 0, Failed: 0, Skipped
 
 For the same build with `COFFEEPEEK_LIVE_PG` unset, Shops reported `Total: 24, Skipped: 24` and Account reported `Total: 15, Skipped: 15`, both with zero errors, failures and not-run tests. Thus all 39 discovered live checks ran and passed. The CI solution Release build had zero errors; all ten test projects passed their ordinary checks (1,460 passed, 39 opt-in live checks skipped).
 
-`PublicAddresses__Enabled` stays unset for ShopsService and AccountService. This evidence closes the automated database gate only. The manual HTTP/YARP smoke, production migration application, reviewed production backfill and Account enablement decisions remain deployment prerequisites.
+That initial run closed the automated database gate. The later HTTP and Account policy work is recorded below. `PublicAddresses__Enabled` stays unset for ShopsService and AccountService; target-environment smoke, production migration application and reviewed production backfill remain deployment prerequisites.
+
+### Rollout follow-up evidence (2026-09-30)
+
+The user chose a seven-day username-change cooldown. This build adds nullable migration `20260930083625_AddUsernameChangeCooldown` and an EF concurrency token, moves both deletion handlers' Redis/SignalR calls before the address lock is acquired, and puts public profile address reads on the existing `global` limiter instead of the authentication bucket. No package or public DTO was added.
+
+Source: base `672902e8` plus the 19 changed/new feature source files in the working tree (excluding the unrelated `EmailTemplateService.cs` edit). SHA-256 of their sorted `path lowercase-sha256` manifest, UTF-8 without BOM, LF endings and a final LF: `cc403c344c73885735caa66c992eae356c5e2554974d3f465355f5844b7f9c45`. Documentation is excluded from this source manifest.
+
+The live category was rerun on a fresh, separately authorized disposable PostgreSQL 17.11 container with the same limits and SSH isolation:
+
+```text
+CoffeePeek.Shops.Infrastructure.Tests   Total: 24, Errors: 0, Failed: 0, Skipped: 0, Not Run: 0
+CoffeePeek.Account.Infrastructure.Tests Total: 19, Errors: 0, Failed: 0, Skipped: 0, Not Run: 0
+```
+
+All 43 discovered live checks passed. The four new rows cover stale concurrent username changes with the flag on/off, and self-service/admin deletion while Redis and then SignalR are deliberately paused. An initial rehearsal-only SQL parameter issue was corrected; the final complete Account run has no failures. The legacy migration rehearsal also verifies existing users retain null cooldown timestamps.
+
+Release CI solution build: zero errors. All ten test projects: **1,465 ordinary tests passed**, 43 live checks skipped without configuration. `PublicAddressGatewaySmokeTests` passed against three local Kestrel hosts: real MVC controllers, production YARP routes/transforms/rate limiters and synthetic EF data; the command bus dispatches to the real public-profile handler. It covers route selection, case-insensitive aliases/envelopes, hidden-profile 404 equivalence, GUID/batch binding, more than 20 profile reads, city backfill and flag rollback. Full deployed Wolverine, Redis and infrastructure configuration still need the target-environment smoke above.
+
+Cleanup: zero remaining `cp_live_*` databases; the container and its anonymous volume removed, pgpass deleted, SSH tunnel stopped. Production application databases and flags were not changed.
+
+NuGet audit still reports the pre-existing Microsoft.OpenApi 2.0.0 High advisory and OpenTelemetry.Api 1.15.0 Moderate advisory. They remain dependency-maintenance work; this follow-up changes no package versions.
 
 ## Public API
 
@@ -275,7 +296,7 @@ User profile example (`GET api/Users/by-slug/ivan-petrov`, where `ivan-petrov` i
 }
 ```
 
-Gateway routing for user profiles (D-07): the gateway has a dedicated `account-Users-by-slug-route` for `/api/Users/by-slug/{slug}`. Without it, the slug `reviews` would be captured by the Shops `/api/users/{userId}/reviews` route. The literal `by-slug` segment outranks the `{userId}` parameter, so every valid slug reaches AccountService. Batch (`api/Users/public-addresses`) and legacy GUID (`api/Users/{id}/public-address`) lookups use the existing `/api/Users/{**remainder}` route. All three share the `auth-endpoints` limit (20/min per client IP). That is a single bucket per IP that is also used by login, token refresh and every other `/api/Users/**` call, so a client browsing many profiles can make its own token refresh return 429 and log the user out. Revisit this (a separate policy with the same numbers, or a higher limit for lookups) before enabling AccountService and for server-side rendering in phase 6.
+Gateway routing for user profiles (D-07): `/api/Users/by-slug/{slug}` has a dedicated Account route. Its literal `by-slug` segment outranks the Shops `/api/users/{userId}/reviews` parameter, so the slug `reviews` reaches Account too. Batch (`api/Users/public-addresses`) and legacy GUID (`api/Users/{id}/public-address`) lookups also have explicit Account GET routes. All three use the existing `global` read policy (200/min per client IP), independent of the `auth-endpoints` bucket (20/min for login, token refresh and the remaining Users routes); the overall 300/min limiter still applies.
 
 `canonicalPath` is a server-built relative page path. The API never redirects JSON and never accepts a redirect target from the request. Existing `GET api/CoffeeShops/{id:guid}` and `GET api/roasters/{id:guid}` contracts remain unchanged. The existing `GET api/Catalogs/cities` list and `GET api/Map` payloads are also unchanged and carry no address metadata.
 
@@ -303,8 +324,9 @@ User addresses live in AccountService (`UserPublicAddresses` in `cpaccountdb`). 
 
 **Username policy (D-01).**
 - An address is allocated when the user is created, by email registration or Google sign-in, from the username.
-- A username change is an owner-authorized rename. The previous slug stays an alias of the same user, and changing back (A->B->A) restores it.
-- Case- or punctuation-only changes that produce the same slug change nothing.
+- A username change is an owner-authorized rename, limited to once every seven days (UTC), with a 409 while waiting. Existing users may make their first change immediately; submitting the current username does not reset the timer. Concurrent changes are protected even when addresses are disabled.
+- The previous slug stays an alias of the same user, and changing back (A->B->A), after the cooldown, restores it.
+- Case- or punctuation-only changes that produce the same slug leave address metadata unchanged, but a different username still consumes the cooldown.
 - Colliding usernames get a `-<8hex>` suffix derived from the user GUID.
 - Reserved or unsupported names get `user-<8hex>`. Examples are `admin`, a bare `user`, and names with no Latin letters, supported Cyrillic letters or digits, such as Greek-only or CJK-only names.
 - Users created before enablement get an address through backfill or on their next username change.
@@ -435,7 +457,7 @@ curl -sS --fail-with-body -X POST "$GW/api/admin/$E/public-addresses/backfill?li
 
 **Conflict.** A 409 "Address is reserved or changed concurrently." means another writer took a slug while the page was being written. The page was rolled back. Re-run the same page, dry run first. This is D-05 for Shops; Account already behaved this way.
 
-**AccountService.** Only after step 5 is decided and AccountService's flag is on (step 6), run the same loop against `$GW/api/admin/users/public-addresses/backfill` instead of `$GW/api/admin/$E/public-addresses/backfill`. The gateway sends it through `account-admin-route` (Admin policy). There is no manual initialize for users, so step 3 of the loop does not apply: a slug changes only through a username change.
+**AccountService.** After the deployment gate passes and AccountService's flag is on (step 6), run the same loop against `$GW/api/admin/users/public-addresses/backfill` instead of `$GW/api/admin/$E/public-addresses/backfill`. The gateway sends it through `account-admin-route` (Admin policy). There is no manual initialize for users, so step 3 of the loop does not apply: a slug changes only through a username change.
 
 ## Catalog filter values
 

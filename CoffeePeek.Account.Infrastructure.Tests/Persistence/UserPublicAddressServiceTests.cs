@@ -272,7 +272,8 @@ public sealed class UserPublicAddressServiceTests
     }
 
     private Task RenameAsync(bool enabled, Guid id, string username) =>
-        MutateAsync(enabled, id, u => u.UpdateUsername(Username.Create(username)), callUpdate: true);
+        MutateAsync(enabled, id, u => u.UpdateUsername(Username.Create(username),
+            u.UsernameChangedAtUtc?.AddDays(7) ?? DateTime.UtcNow), callUpdate: true);
 
     // The account-deletion confirmation and admin-delete path.
     private Task SoftDeleteAsync(bool enabled, Guid id) =>

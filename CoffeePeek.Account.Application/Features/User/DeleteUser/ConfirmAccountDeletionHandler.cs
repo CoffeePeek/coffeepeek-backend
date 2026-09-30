@@ -70,13 +70,13 @@ public static class ConfirmAccountDeletionHandler
         user.RevokeAllSessions();
         await deletionRequestRepository.Update(request, ct);
         await userRepository.Update(user, ct);
-        await unitOfWork.SaveChangesAsync(ct);
-
+        // Wolverine commits after the handler; finish network calls before SaveChanges acquires the address lock.
         await revokedUserStore.RevokeAccessTokensAsync(user.Id, jwtOptions.Value, ct);
         await sessionTerminationNotifier.NotifyForceLogoutAsync(
             user.Id,
             SessionTerminationReasons.UserDeleted,
             ct);
+        await unitOfWork.SaveChangesAsync(ct);
 
         var @event = new AccountDeletionRequestedV1(
             request.Id,

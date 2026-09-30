@@ -61,7 +61,7 @@ Goal: close the live PostgreSQL enablement gate for phases 1–4 with an opt-in,
 
 Depends on: Phase 4
 
-Completed directly on 2026-09-30 at the user's request, without GSD execution. The eight plans below remain the coverage checklist; evidence is in docs/api/public-addresses.md#live-gate-evidence. HTTP/YARP smoke and production enablement remain deployment steps, as specified by 05-07.
+Completed directly on 2026-09-30 at the user's request, without GSD execution. The eight plans below remain the coverage checklist; evidence is in docs/api/public-addresses.md#live-gate-evidence. Follow-up also completed: real HTTP/YARP smoke with synthetic data, seven-day username cooldown with concurrency protection, deletion network calls before address locking, and public-read/auth limiter separation. Final live gate: Shops 24/24, Account 19/19. Target-environment smoke and production enablement remain deployment steps.
 
 Plans: 8 (original waves: 1 = 05-01, 05-02; 2 = 05-08; 3 = 05-03, 05-04, 05-05, 05-06; 4 = 05-07)
 - [x] 05-01-PLAN.md — opt-in live PostgreSQL harness: COFFEEPEEK_LIVE_PG gate and skip, safety guards, throwaway `cp_live_*` DB lifecycle, `LiveDatabase<TContext>`, pg_locks/transactionid probes, Account csproj link.

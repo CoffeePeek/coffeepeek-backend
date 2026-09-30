@@ -8,6 +8,14 @@ using CoffeePeek.Shared.Domain.PublicAddresses;
 using CoffeePeek.Testing;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
+using CoffeePeek.Account.Application.Common.Interfaces;
+using CoffeePeek.Account.Application.Features.Admin.Users;
+using CoffeePeek.Account.Application.Features.User.DeleteUser;
+using CoffeePeek.Account.Domain.Entities.AccountDeletionRequestAggregate;
+using CoffeePeek.Shared.Auth;
+using CoffeePeek.Shared.Auth.Options;
+using MsOptions = Microsoft.Extensions.Options.Options;
+using Moq;
 
 namespace CoffeePeek.Account.Infrastructure.Tests.LivePostgres;
 
@@ -20,6 +28,72 @@ public sealed class AccountLiveTransactionTests : IClassFixture<AccountLiveDatab
     {
         Assert.SkipUnless(LivePostgresServer.IsConfigured, LivePostgresServer.SkipReason);
         this.fixture = fixture;
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Deletion_DoesNotHoldAddressLockDuringRedisOrSignalR(bool admin)
+    {
+        var prefix = admin ? "AdminDelete" : "ConfirmedDelete";
+        var id = await fixture.RegisterAsync(prefix + ".Owner", true, Ct);
+        await using var db = fixture.Context();
+        await using var transaction = await db.Database.BeginTransactionAsync(Ct);
+        var redisEntered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var redisRelease = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var signalEntered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var signalRelease = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var revoked = new Mock<IRevokedUserStore>();
+        revoked.Setup(x => x.RevokeAsync(id, It.IsAny<TimeSpan>(), It.IsAny<CancellationToken>()))
+            .Returns(() => { redisEntered.TrySetResult(); return redisRelease.Task; });
+        var notifier = new Mock<ISessionTerminationNotifier>();
+        notifier.Setup(x => x.NotifyForceLogoutAsync(id, SessionTerminationReasons.UserDeleted, It.IsAny<CancellationToken>()))
+            .Returns(() => { signalEntered.TrySetResult(); return signalRelease.Task; });
+        var jwt = MsOptions.Create(new JWTOptions { AccessTokenLifetimeMinutes = 60 });
+        var users = new UserRepository(db);
+        var uow = new UnitOfWork<AccountDbContext>(db);
+        Task deletion;
+        if (admin)
+            deletion = AdminDeleteUserHandler.Handle(new(id, Guid.NewGuid()), users, uow, notifier.Object, revoked.Object, jwt, Ct);
+        else
+        {
+            var request = AccountDeletionRequest.Create(id, "hash", DateTime.UtcNow, TimeSpan.FromHours(24), TimeSpan.FromMinutes(5));
+            db.AccountDeletionRequests.Add(request);
+            // Persist the request before the handler; this write does not acquire the profile-address lock.
+            await db.SaveChangesAsync(Ct);
+            var requests = new Mock<IAccountDeletionRequestRepository>();
+            requests.Setup(x => x.GetByTokenHash("hash", It.IsAny<CancellationToken>())).ReturnsAsync(request);
+            var tokens = new Mock<IAccountDeletionTokenService>();
+            tokens.Setup(x => x.Hash("token")).Returns("hash");
+            deletion = ConfirmAccountDeletionHandler.Handle(new("token", AccountDeletionReason.PrivacyConcerns),
+                requests.Object, tokens.Object, users, revoked.Object, notifier.Object, jwt, TimeProvider.System, uow, Ct);
+        }
+        var registrations = new List<Task<Guid>>();
+        try
+        {
+            await redisEntered.Task.WaitAsync(TimeSpan.FromSeconds(10), Ct);
+            registrations.Add(fixture.RegisterAsync(prefix + ".DuringRedis", true, Ct));
+            await registrations[^1].WaitAsync(TimeSpan.FromSeconds(10), Ct);
+            redisRelease.TrySetResult(true);
+            await signalEntered.Task.WaitAsync(TimeSpan.FromSeconds(10), Ct);
+            registrations.Add(fixture.RegisterAsync(prefix + ".DuringSignal", true, Ct));
+            await registrations[^1].WaitAsync(TimeSpan.FromSeconds(10), Ct);
+            signalRelease.TrySetResult();
+            await deletion;
+            await transaction.CommitAsync(Ct);
+        }
+        finally
+        {
+            redisRelease.TrySetResult(true);
+            signalRelease.TrySetResult();
+            try { await deletion; } catch { }
+            await transaction.DisposeAsync();
+            foreach (var pending in registrations) try { await pending; } catch { }
+        }
+        await using var check = fixture.Context();
+        (await check.Users.SingleAsync(x => x.Id == id, Ct)).IsSoftDelete.Should().BeTrue();
+        (await check.UserPublicAddresses.SingleAsync(x => x.Slug == PublicSlug.Generate(prefix + ".Owner"), Ct))
+            .State.Should().Be(PublicAddressState.Tombstone);
     }
 
     [Fact]
@@ -69,12 +143,40 @@ public sealed class AccountLiveTransactionTests : IClassFixture<AccountLiveDatab
         var original = await db.UserPublicAddresses.AsNoTracking().SingleAsync(x => x.OwnerId == id, Ct);
         await using var transaction = await db.Database.BeginTransactionAsync(Ct);
         await UpdateUsernameHandler.Handle(new(id, "Restore.Beta"), new UserRepository(db), new UnitOfWork<AccountDbContext>(db), Ct);
+        // Model a second change after the cooldown without waiting seven real days.
+        var previousChange = DateTime.UtcNow.AddDays(-7);
+        await db.Database.ExecuteSqlInterpolatedAsync($"UPDATE \"Users\" SET \"UsernameChangedAtUtc\" = {previousChange} WHERE \"Id\" = {id}", Ct);
+        db.ChangeTracker.Clear();
         await UpdateUsernameHandler.Handle(new(id, "Restore.Alpha"), new UserRepository(db), new UnitOfWork<AccountDbContext>(db), Ct);
         await transaction.CommitAsync(Ct);
         var rows = await db.UserPublicAddresses.AsNoTracking().Where(x => x.OwnerId == id).ToArrayAsync(Ct);
         rows.Should().HaveCount(2);
         rows.Single(x => x.State == PublicAddressState.Canonical).Id.Should().Be(original.Id);
         rows.Single(x => x.State == PublicAddressState.Canonical).Revision.Should().Be(3);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task UsernameCooldown_RejectsStaleConcurrentRenameWithFlagOnOrOff(bool enabled)
+    {
+        var prefix = enabled ? "Cooldown.On" : "Cooldown.Off";
+        var id = await fixture.RegisterAsync(prefix, enabled, Ct);
+        await using var first = fixture.Context(enabled);
+        await using var stale = fixture.Context(enabled);
+        var a = await first.Users.SingleAsync(x => x.Id == id, Ct);
+        var b = await stale.Users.SingleAsync(x => x.Id == id, Ct);
+        a.UpdateUsername(Username.Create(prefix + ".First"));
+        b.UpdateUsername(Username.Create(prefix + ".Second"));
+        await first.SaveChangesAsync(Ct);
+        var error = await Assert.ThrowsAsync<ConflictException>(() => new UnitOfWork<AccountDbContext>(stale).SaveChangesAsync(Ct));
+        error.InnerException.Should().BeOfType<DbUpdateConcurrencyException>();
+        await using var check = fixture.Context(enabled);
+        var saved = await check.Users.SingleAsync(x => x.Id == id, Ct);
+        saved.Username.Value.Should().Be(prefix + ".First");
+        saved.UsernameChangedAtUtc.Should().NotBeNull();
+        Assert.Throws<ConflictException>(() => saved.UpdateUsername(Username.Create(prefix + ".Retry")));
+        (await check.UserPublicAddresses.CountAsync(x => x.OwnerId == id, Ct)).Should().Be(enabled ? 2 : 0);
     }
 
     [Fact]

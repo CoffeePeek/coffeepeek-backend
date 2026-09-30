@@ -160,25 +160,28 @@ public class ReverseProxyRouteConfigurationTests
         routeIds.IndexOf("account-deletion-request-route").Should().BeLessThan(usersCatchAllIndex);
     }
 
-    [Fact]
-    public void UserBySlugRoute_TargetsAccountOnAuthRateLimitWithoutAuthPolicy()
+    [Theory]
+    [InlineData("account-Users-by-slug-route", "/api/Users/by-slug/{slug}")]
+    [InlineData("account-Users-public-addresses-route", "/api/Users/public-addresses")]
+    [InlineData("account-Users-public-address-route", "/api/Users/{id:guid}/public-address")]
+    public void PublicUserAddressRoutes_TargetAccountWithoutConsumingAuthRateLimit(string routeId, string path)
     {
         using var document = LoadGatewayAppsettings();
         var routes = document.RootElement.GetProperty("ReverseProxy").GetProperty("Routes");
 
-        routes.TryGetProperty("account-Users-by-slug-route", out var route).Should().BeTrue();
+        routes.TryGetProperty(routeId, out var route).Should().BeTrue();
         route.GetProperty("ClusterId").GetString().Should().Be("account-cluster");
-        route.GetProperty("Match").GetProperty("Path").GetString().Should().Be("/api/Users/by-slug/{slug}");
-        route.GetProperty("RateLimiterPolicy").GetString().Should().Be("auth-endpoints");
+        route.GetProperty("Match").GetProperty("Path").GetString().Should().Be(path);
+        route.GetProperty("RateLimiterPolicy").GetString().Should().Be("global");
+        routes.GetProperty("account-Users-route").GetProperty("RateLimiterPolicy").GetString().Should().Be("auth-endpoints");
 
         // D-07: anonymous read, same as the existing GUID profile lookup on the Users catch-all.
         route.TryGetProperty("AuthorizationPolicy", out _).Should().BeFalse();
-        route.GetProperty("Match").TryGetProperty("Methods", out _).Should().BeFalse();
 
         var routeIds = routes.EnumerateObject().Select(r => r.Name).ToList();
         var usersCatchAllIndex = routeIds.IndexOf("account-Users-route");
         usersCatchAllIndex.Should().BeGreaterThan(-1);
-        routeIds.IndexOf("account-Users-by-slug-route").Should().BeLessThan(usersCatchAllIndex);
+        routeIds.IndexOf(routeId).Should().BeLessThan(usersCatchAllIndex);
     }
 
     [Fact]

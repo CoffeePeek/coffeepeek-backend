@@ -147,6 +147,7 @@ public class ConfirmAccountDeletionHandlerTests
             new ConfirmAccountDeletionCommand("raw-token", AccountDeletionReason.NoLongerUsing));
 
         await act.Should().ThrowAsync<InvalidOperationException>();
+        _unitOfWork.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
         _notifier.Verify(
             x => x.NotifyForceLogoutAsync(
                 It.IsAny<Guid>(),

@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: in_progress
-last_updated: "2026-09-30T08:16:25.000Z"
+last_updated: "2026-09-30T08:57:56.000Z"
 progress:
   total_phases: 6
   completed_phases: 5
@@ -19,13 +19,15 @@ progress:
 ### Current status (2026-09-30)
 
 - Phase 5 complete, implemented directly without GSD at the user's request. All backend rollout phases (1–5) are implemented and the automated PostgreSQL gate is closed.
-- Added Shops and Account live schema, lifecycle, advisory-lock, concurrency, ambient-savepoint, Google-login retry and legacy-data backfill/rollback rehearsals using the existing shared harness. No production source, migration, API contract or package change was needed.
-- Final PostgreSQL 17.11 run: Shops 24/24 and Account 15/15 passed, Errors/Failed/Skipped/Not Run all zero. The same Release build reports 24 and 15 skipped checks when unconfigured, proving the complete live category ran.
-- Release CI solution build: zero errors. All ten test projects passed: 1,460 ordinary tests passed, 39 opt-in live tests skipped without configuration. The Wolverine codegen guard is included in the Account infrastructure run.
+- Added Shops and Account live schema, lifecycle, advisory-lock, concurrency, ambient-savepoint, Google-login retry and legacy-data backfill/rollback rehearsals using the existing shared harness.
+- Rollout follow-up complete without GSD: user-approved seven-day username cooldown, nullable `20260930083625_AddUsernameChangeCooldown` migration and stale-write concurrency protection. Same-name retries do not consume the cooldown; legacy users can make the first change immediately. Policy applies with the address flag on/off.
+- Self-service and admin deletion now perform Redis/SignalR calls before SaveChanges acquires the global address lock; live tests pause both calls and prove parallel registration completes. Public Account address routes use the existing read limiter independently of the authentication bucket.
+- Final PostgreSQL 17.11 rerun: Shops 24/24 and Account 19/19 passed, Errors/Failed/Skipped/Not Run all zero. Unconfigured runs skip all 43 live checks.
+- Release CI solution build: zero errors. All ten test projects passed: 1,465 ordinary tests passed. Real HTTP/YARP/MVC smoke passed with synthetic EF data and a dispatcher to the actual public-profile handler. The Wolverine codegen guard is included in the Account infrastructure run.
 - The user authorized an isolated disposable container on the supplied server, with independent storage and resource limits, reached over an SSH tunnel. Application databases were not used; all harness databases were removed (remaining `cp_live_*` count: 0). The container, its temporary volume and the pgpass file were removed and the tunnel closed.
-- Evidence and coverage map: `docs/api/public-addresses.md#live-gate-evidence`. Source base `281696be` plus the working-tree test additions; source manifest SHA-256 `576ae385b3a16ed77277bba99cf994065ae158abcb39a564920f93ccc0df5ff8`.
+- Evidence and coverage map: `docs/api/public-addresses.md#live-gate-evidence`. Follow-up base `672902e8` plus 19 changed/new feature source files; manifest SHA-256 `cc403c344c73885735caa66c992eae356c5e2554974d3f465355f5844b7f9c45` (unrelated email-template edit excluded).
 - NuGet vulnerability audit completed. Pre-existing Microsoft.OpenApi 2.0.0 (High) and OpenTelemetry.Api 1.15.0 (Moderate) advisories remain; phase 5 changes no dependencies.
-- Next implementation work: Phase 6 in the external frontend repository. Production migration application, manual HTTP/YARP smoke, reviewed production backfill and Account slug-reservation/lock-contention decisions remain deployment prerequisites. `PublicAddresses__Enabled` remains unset.
+- Backend implementation is ready for review. Next implementation work: Phase 6 in the external frontend repository. Production migration application (including cooldown), target-environment HTTP/YARP smoke and reviewed production backfill remain deployment steps. `PublicAddresses__Enabled` remains unset.
 
 ### Implementation history (earlier pending gates below are closed by the current status)
 
