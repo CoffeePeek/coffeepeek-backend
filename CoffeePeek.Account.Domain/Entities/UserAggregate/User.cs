@@ -9,6 +9,7 @@ namespace CoffeePeek.Account.Domain.Entities.UserAggregate;
 public class User : AggregateRoot<Guid>
 {
     public Username Username { get; private set; }
+    public DateTime? UsernameChangedAtUtc { get; private set; }
     public PhoneNumber? PhoneNumber { get; private set; }
 
     public UserCredential Credentials { get; private set; }
@@ -192,12 +193,15 @@ public class User : AggregateRoot<Guid>
         }
     }
     
-    public void UpdateUsername(Username userName)
+    public void UpdateUsername(Username userName, DateTime? nowUtc = null)
     {
-        if (userName != Username)
-        {
-            Username = userName;
-        }
+        if (userName == Username) return;
+        var now = nowUtc ?? DateTime.UtcNow;
+        if (now.Kind != DateTimeKind.Utc) throw new ArgumentException("UTC time is required.", nameof(nowUtc));
+        if (UsernameChangedAtUtc is { } changed && now < changed.AddDays(7))
+            throw new ConflictException($"Username can be changed once every 7 days. Try again after {changed.AddDays(7):O}.");
+        Username = userName;
+        UsernameChangedAtUtc = now;
     }
 
     public void ConfirmEmail(string token)

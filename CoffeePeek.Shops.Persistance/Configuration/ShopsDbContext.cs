@@ -6,6 +6,10 @@ using CoffeePeek.Shops.Domain.Aggregates.CoffeeZoneAggregate;
 using CoffeePeek.Shops.Domain.Aggregates.MenuAggregate;
 using CoffeePeek.Shops.Domain.Aggregates.ShopTagAggregate;
 using CoffeePeek.Shops.Domain.Entities;
+using CoffeePeek.Shops.Domain.Aggregates.PublicAddressAggregate;
+using CoffeePeek.Shops.Application.PublicAddresses;
+using CoffeePeek.Shops.Persistance.PublicAddresses;
+using Microsoft.Extensions.Options;
 using Microsoft.EntityFrameworkCore;
 using CoffeePeek.Shops.Domain.Aggregates.ReviewAggregate;
 using Review = CoffeePeek.Shops.Domain.Aggregates.ReviewAggregate.Review;
@@ -13,8 +17,36 @@ using CheckIn = CoffeePeek.Shops.Domain.Aggregates.CheckInAggregate.CheckIn;
 
 namespace CoffeePeek.Shops.Persistance.Configuration;
 
-public class ShopsDbContext(DbContextOptions<ShopsDbContext> options) : DbContext(options)
+public class ShopsDbContext(DbContextOptions<ShopsDbContext> options, IOptions<PublicAddressOptions>? addressOptions = null) : DbContext(options)
 {
+    public bool PublicAddressesEnabled => addressOptions?.Value.Enabled == true;
+    public DbSet<PublicAddressAudit> PublicAddressAudit { get; set; }
+    public virtual DbSet<CoffeeShopPublicAddress> CoffeeShopPublicAddresses { get; set; }
+    public virtual DbSet<RoasterPublicAddress> RoasterPublicAddresses { get; set; }
+    public virtual DbSet<CityPublicAddress> CityPublicAddresses { get; set; }
+    public virtual DbSet<CoffeeZonePublicAddress> CoffeeZonePublicAddresses { get; set; }
+
+    public override int SaveChanges(bool acceptAllChangesOnSuccess) =>
+        SaveChangesAsync(acceptAllChangesOnSuccess).GetAwaiter().GetResult();
+
+    public override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
+    {
+        ChangeTracker.DetectChanges();
+        // Deletions always retire (even when disabled); allocation only when enabled: creation for shops,
+        // roasters and cities, first publication for coffee zones.
+        var ownerChanges = ChangeTracker.Entries().Any(e =>
+            (e.Entity is CoffeeShop or Roaster or City or CoffeeZone && e.State == EntityState.Deleted) ||
+            (PublicAddressesEnabled && e.Entity is CoffeeShop or Roaster or City && e.State == EntityState.Added) ||
+            (PublicAddressesEnabled && PublicAddressWriter.IsNewlyPublished(e)));
+        if (!ownerChanges) return base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+
+        // Intercepts every supported repository/UoW/Wolverine save, including menu imports' early save.
+        return PublicAddressTransaction.RunAsync(this, async () =>
+        {
+            await PublicAddressWriter.PrepareOwnerChangesAsync(this, cancellationToken);
+            return await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+        }, cancellationToken);
+    }
     //category
     public virtual DbSet<BrewMethod> BrewMethods { get; set; }
     
@@ -53,6 +85,11 @@ public class ShopsDbContext(DbContextOptions<ShopsDbContext> options) : DbContex
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.HasPostgresExtension("pg_trgm");
+        modelBuilder.ApplyConfiguration(new PublicAddressAuditConfiguration());
+        modelBuilder.ApplyConfiguration(new CoffeeShopPublicAddressConfiguration());
+        modelBuilder.ApplyConfiguration(new RoasterPublicAddressConfiguration());
+        modelBuilder.ApplyConfiguration(new CityPublicAddressConfiguration());
+        modelBuilder.ApplyConfiguration(new CoffeeZonePublicAddressConfiguration());
         modelBuilder.ApplyConfiguration(new CoffeeShopConfiguration());
         modelBuilder.ApplyConfiguration(new CoffeeZoneConfiguration());
         modelBuilder.ApplyConfiguration(new CoffeeZoneMembershipOverrideConfiguration());

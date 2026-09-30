@@ -15,7 +15,10 @@ public class GetPublicUserProfileHandler
     {
         var user = await userRepository.GetById(command.UserId, ct);
 
-        if (user == null)
+        // D-04: deleted and blocked profiles are not public. The message is identical to the unknown-id case so they are
+        // indistinguishable. The signature is unchanged, so pre-generated GetPublicUserProfileCommandHandler1926808727
+        // stays valid.
+        if (user is null || user.IsSoftDelete || user.IsBlocked)
         {
             throw new NotFoundException("User not found");
         }

@@ -808,6 +808,210 @@ namespace CoffeePeek.Shops.Persistance.Migrations
                     b.ToTable("ShopMenuPhotos", (string)null);
                 });
 
+            modelBuilder.Entity("CoffeePeek.Shops.Domain.Aggregates.PublicAddressAggregate.CityPublicAddress", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("OwnerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("Revision")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Slug")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .UseCollation("C");
+
+                    b.Property<int>("State")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OwnerId")
+                        .IsUnique()
+                        .HasFilter("\"State\" = 1");
+
+                    b.HasIndex("Slug")
+                        .IsUnique();
+
+                    b.HasIndex("OwnerId", "State");
+
+                    b.ToTable("CityPublicAddresses", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_CityPublicAddresses_Lifecycle", "(\"State\" IN (1, 2) AND \"OwnerId\" IS NOT NULL) OR (\"State\" = 3 AND \"OwnerId\" IS NULL)");
+
+                            t.HasCheckConstraint("CK_CityPublicAddresses_Revision", "\"Revision\" > 0");
+
+                            t.HasCheckConstraint("CK_CityPublicAddresses_Slug", "\"Slug\" ~ '^[a-z0-9]+(-[a-z0-9]+)*$' AND length(\"Slug\") BETWEEN 1 AND 100");
+
+                            t.HasCheckConstraint("CK_CityPublicAddresses_Timestamps", "\"UpdatedAtUtc\" >= \"CreatedAtUtc\"");
+                        });
+                });
+
+            modelBuilder.Entity("CoffeePeek.Shops.Domain.Aggregates.PublicAddressAggregate.CoffeeShopPublicAddress", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("OwnerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("Revision")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Slug")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .UseCollation("C");
+
+                    b.Property<int>("State")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OwnerId")
+                        .IsUnique()
+                        .HasFilter("\"State\" = 1");
+
+                    b.HasIndex("Slug")
+                        .IsUnique();
+
+                    b.HasIndex("OwnerId", "State");
+
+                    b.ToTable("CoffeeShopPublicAddresses", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_CoffeeShopPublicAddresses_Lifecycle", "(\"State\" IN (1, 2) AND \"OwnerId\" IS NOT NULL) OR (\"State\" = 3 AND \"OwnerId\" IS NULL)");
+
+                            t.HasCheckConstraint("CK_CoffeeShopPublicAddresses_Revision", "\"Revision\" > 0");
+
+                            t.HasCheckConstraint("CK_CoffeeShopPublicAddresses_Slug", "\"Slug\" ~ '^[a-z0-9]+(-[a-z0-9]+)*$' AND length(\"Slug\") BETWEEN 1 AND 100");
+
+                            t.HasCheckConstraint("CK_CoffeeShopPublicAddresses_Timestamps", "\"UpdatedAtUtc\" >= \"CreatedAtUtc\"");
+                        });
+                });
+
+            modelBuilder.Entity("CoffeePeek.Shops.Domain.Aggregates.PublicAddressAggregate.CoffeeZonePublicAddress", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("OwnerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("Revision")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Slug")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .UseCollation("C");
+
+                    b.Property<int>("State")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OwnerId")
+                        .IsUnique()
+                        .HasFilter("\"State\" = 1");
+
+                    b.HasIndex("Slug")
+                        .IsUnique();
+
+                    b.HasIndex("OwnerId", "State");
+
+                    b.ToTable("CoffeeZonePublicAddresses", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_CoffeeZonePublicAddresses_Lifecycle", "(\"State\" IN (1, 2) AND \"OwnerId\" IS NOT NULL) OR (\"State\" = 3 AND \"OwnerId\" IS NULL)");
+
+                            t.HasCheckConstraint("CK_CoffeeZonePublicAddresses_Revision", "\"Revision\" > 0");
+
+                            t.HasCheckConstraint("CK_CoffeeZonePublicAddresses_Slug", "\"Slug\" ~ '^[a-z0-9]+(-[a-z0-9]+)*$' AND length(\"Slug\") BETWEEN 1 AND 100");
+
+                            t.HasCheckConstraint("CK_CoffeeZonePublicAddresses_Timestamps", "\"UpdatedAtUtc\" >= \"CreatedAtUtc\"");
+                        });
+                });
+
+            modelBuilder.Entity("CoffeePeek.Shops.Domain.Aggregates.PublicAddressAggregate.RoasterPublicAddress", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("OwnerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("Revision")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Slug")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .UseCollation("C");
+
+                    b.Property<int>("State")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OwnerId")
+                        .IsUnique()
+                        .HasFilter("\"State\" = 1");
+
+                    b.HasIndex("Slug")
+                        .IsUnique();
+
+                    b.HasIndex("OwnerId", "State");
+
+                    b.ToTable("RoasterPublicAddresses", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_RoasterPublicAddresses_Lifecycle", "(\"State\" IN (1, 2) AND \"OwnerId\" IS NOT NULL) OR (\"State\" = 3 AND \"OwnerId\" IS NULL)");
+
+                            t.HasCheckConstraint("CK_RoasterPublicAddresses_Revision", "\"Revision\" > 0");
+
+                            t.HasCheckConstraint("CK_RoasterPublicAddresses_Slug", "\"Slug\" ~ '^[a-z0-9]+(-[a-z0-9]+)*$' AND length(\"Slug\") BETWEEN 1 AND 100");
+
+                            t.HasCheckConstraint("CK_RoasterPublicAddresses_Timestamps", "\"UpdatedAtUtc\" >= \"CreatedAtUtc\"");
+                        });
+                });
+
             modelBuilder.Entity("CoffeePeek.Shops.Domain.Aggregates.ReviewAggregate.Review", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1032,6 +1236,58 @@ namespace CoffeePeek.Shops.Persistance.Migrations
                         .HasDatabaseName("IX_ShopPhotos_CoffeeShopId_SortIndex");
 
                     b.ToTable("ShopPhotos");
+                });
+
+            modelBuilder.Entity("CoffeePeek.Shops.Persistance.PublicAddresses.PublicAddressAudit", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<Guid?>("ActorId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("AtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Kind")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("OwnerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("PreviousSlug")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<long>("Revision")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Slug")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Kind", "OwnerId", "Revision")
+                        .IsUnique();
+
+                    b.ToTable("PublicAddressAudit", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_PublicAddressAudit_Kind", "\"Kind\" IN (1, 2, 3, 4)");
+
+                            t.HasCheckConstraint("CK_PublicAddressAudit_Revision", "\"Revision\" > 0");
+                        });
                 });
 
             modelBuilder.Entity("CoffeeShopBrewMethods", b =>
@@ -1438,6 +1694,38 @@ namespace CoffeePeek.Shops.Persistance.Migrations
                         .HasForeignKey("ShopMenuId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("CoffeePeek.Shops.Domain.Aggregates.PublicAddressAggregate.CityPublicAddress", b =>
+                {
+                    b.HasOne("CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate.City", null)
+                        .WithMany()
+                        .HasForeignKey("OwnerId")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("CoffeePeek.Shops.Domain.Aggregates.PublicAddressAggregate.CoffeeShopPublicAddress", b =>
+                {
+                    b.HasOne("CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate.CoffeeShop", null)
+                        .WithMany()
+                        .HasForeignKey("OwnerId")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("CoffeePeek.Shops.Domain.Aggregates.PublicAddressAggregate.CoffeeZonePublicAddress", b =>
+                {
+                    b.HasOne("CoffeePeek.Shops.Domain.Aggregates.CoffeeZoneAggregate.CoffeeZone", null)
+                        .WithMany()
+                        .HasForeignKey("OwnerId")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("CoffeePeek.Shops.Domain.Aggregates.PublicAddressAggregate.RoasterPublicAddress", b =>
+                {
+                    b.HasOne("CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate.Roaster", null)
+                        .WithMany()
+                        .HasForeignKey("OwnerId")
+                        .OnDelete(DeleteBehavior.Restrict);
                 });
 
             modelBuilder.Entity("CoffeePeek.Shops.Domain.Aggregates.ReviewAggregate.Review", b =>

@@ -17,6 +17,8 @@ using CoffeePeek.Shops.Domain.Aggregates.MenuAggregate;
 using CoffeePeek.Shops.Persistance.Configuration;
 using CoffeePeek.Shops.Persistance.Queries;
 using CoffeePeek.Shops.Persistance.Repositories;
+using CoffeePeek.Shops.Application.PublicAddresses;
+using CoffeePeek.Shops.Persistance.PublicAddresses;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -27,6 +29,8 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddPersistence(this IServiceCollection services, WebApplicationBuilder builder)
     {
+        services.Configure<PublicAddressOptions>(builder.Configuration.GetSection("PublicAddresses"));
+        services.AddScoped<IPublicAddressService, PublicAddressService>();
         if (builder.Environment.IsDevelopment())
         {
             builder.AddNpgsqlDbContext<ShopsDbContext>(

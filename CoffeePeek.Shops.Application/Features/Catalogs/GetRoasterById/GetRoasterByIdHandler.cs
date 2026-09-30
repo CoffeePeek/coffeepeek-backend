@@ -59,6 +59,7 @@ public static class GetRoasterByIdHandler
             })
             .ToArray(),
         Shops = roaster.CoffeeShops
+            .Where(s => !s.IsHidden)
             .Select(s =>
             {
                 var coverPhoto = s.ShopPhotos
