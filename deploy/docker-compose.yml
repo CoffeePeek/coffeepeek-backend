@@ -199,6 +199,7 @@ services:
     environment:
       <<: [*dotnet-common, *rabbitmq-env, *redis-env, *jwt-env, *media-public-env, *gateway-auth-env, *aspire-service-discovery]
       PostgresCpOptions__ConnectionString: Host=postgres;Port=5432;Database=cpaccountdb;Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD};SslMode=Disable;GSS Encryption Mode=Disable
+      PublicAddresses__Enabled: "${ACCOUNT_PUBLIC_ADDRESSES_ENABLED:-false}"
       MinIOOptions__Endpoint: http://minio:9000
       MinIOOptions__AccessKey: ${MINIO_ROOT_USER}
       MinIOOptions__SecretKey: ${MINIO_ROOT_PASSWORD}
@@ -237,6 +238,7 @@ services:
     environment:
       <<: [*dotnet-common, *rabbitmq-env, *redis-env, *media-public-env, *gateway-auth-env, *aspire-service-discovery]
       PostgresCpOptions__ConnectionString: Host=postgres;Port=5432;Database=cpshopsdb;Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD};SslMode=Disable;GSS Encryption Mode=Disable
+      PublicAddresses__Enabled: "${SHOPS_PUBLIC_ADDRESSES_ENABLED:-false}"
       OpenAiOptions__ApiKey: ${OPENAI_API_KEY:-}
       OpenAiOptions__Model: ${OPENAI_MODEL:-gpt-4.1-mini}
       OpenAiOptions__BaseUrl: ${OPENAI_BASE_URL:-https://api.openai.com/v1}
