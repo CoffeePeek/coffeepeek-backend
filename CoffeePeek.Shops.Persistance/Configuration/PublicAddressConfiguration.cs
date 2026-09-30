@@ -1,3 +1,5 @@
+using CoffeePeek.Shops.Domain.Aggregates.BrewMethods;
+using CoffeePeek.Shops.Domain.Aggregates.ShopTagAggregate;
 using CoffeePeek.Shared.Domain.PublicAddresses;
 using CoffeePeek.Shops.Domain;
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
@@ -64,5 +66,41 @@ internal static class PublicAddressConfiguration
             t.HasCheckConstraint($"CK_{table}_Revision", PublicAddressChecks.Revision);
             t.HasCheckConstraint($"CK_{table}_Timestamps", PublicAddressChecks.Timestamps);
         });
+    }
+}
+
+public sealed class CoffeeBeanPublicAddressConfiguration : IEntityTypeConfiguration<CoffeeBeanPublicAddress>
+{
+    public void Configure(EntityTypeBuilder<CoffeeBeanPublicAddress> builder)
+    {
+        PublicAddressConfiguration.Configure(builder, "CoffeeBeanPublicAddresses");
+        builder.HasOne<CoffeeBean>().WithMany().HasForeignKey(a => a.OwnerId).OnDelete(DeleteBehavior.Restrict);
+    }
+}
+
+public sealed class EquipmentPublicAddressConfiguration : IEntityTypeConfiguration<EquipmentPublicAddress>
+{
+    public void Configure(EntityTypeBuilder<EquipmentPublicAddress> builder)
+    {
+        PublicAddressConfiguration.Configure(builder, "EquipmentPublicAddresses");
+        builder.HasOne<Equipment>().WithMany().HasForeignKey(a => a.OwnerId).OnDelete(DeleteBehavior.Restrict);
+    }
+}
+
+public sealed class BrewMethodPublicAddressConfiguration : IEntityTypeConfiguration<BrewMethodPublicAddress>
+{
+    public void Configure(EntityTypeBuilder<BrewMethodPublicAddress> builder)
+    {
+        PublicAddressConfiguration.Configure(builder, "BrewMethodPublicAddresses");
+        builder.HasOne<BrewMethod>().WithMany().HasForeignKey(a => a.OwnerId).OnDelete(DeleteBehavior.Restrict);
+    }
+}
+
+public sealed class ShopTagPublicAddressConfiguration : IEntityTypeConfiguration<ShopTagPublicAddress>
+{
+    public void Configure(EntityTypeBuilder<ShopTagPublicAddress> builder)
+    {
+        PublicAddressConfiguration.Configure(builder, "ShopTagPublicAddresses");
+        builder.HasOne<ShopTag>().WithMany().HasForeignKey(a => a.OwnerId).OnDelete(DeleteBehavior.Restrict);
     }
 }

@@ -54,7 +54,7 @@ public sealed class AccountBackfillRehearsalTests : IClassFixture<AccountBackfil
         } while (cursor is not null);
         previewOnly.Select(x => x.EntityId).Should().BeEquivalentTo(fixture.OriginalUsernames.Keys.Where(x => x != fixture.DeletedId));
         previewOnly.Where(x => fixture.IvanIds.Contains(x.EntityId)).Should().OnlyContain(x => x.Slug == "ivan" && !x.HadCollision);
-        previewOnly.Single(x => x.EntityId == fixture.AdminId).Slug.Should().Be("user-" + fixture.AdminId.ToString("N")[..8]);
+        previewOnly.Single(x => x.EntityId == fixture.AdminId).Slug.Should().Be(CoffeePeek.Shared.Domain.PublicAddresses.PublicSlug.Candidate("user", fixture.AdminId, 1));
         (await db.UserPublicAddresses.CountAsync(Ct)).Should().Be(0);
         // Dry-run pages do not reserve earlier proposals: review/write N before reviewing N+1.
         var written = new List<PublicAddressBackfillItem>();

@@ -5,6 +5,10 @@ using CoffeePeek.Shops.Application.Features.CheckIn.GetUserCheckIns;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Wolverine;
+using System.ComponentModel.DataAnnotations;
+using CoffeePeek.Contract.Dtos;
+using CoffeePeek.Contract.Dtos.PublicAddresses;
+using CoffeePeek.Shops.Application.PublicAddresses;
 
 namespace CoffeePeek.ShopsService.Controllers;
 
@@ -14,20 +18,21 @@ namespace CoffeePeek.ShopsService.Controllers;
 [Tags("Check-ins")]
 [Produces("application/json")]
 [ProducesErrorResponseType(typeof(ErrorResponse))]
-public class CheckInsController(IMessageBus bus, IUserContext userContext) : ControllerBase
+[ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
+public class CheckInsController(IMessageBus bus, IUserContext userContext, PublicDiscoveryService discovery) : ControllerBase
 {
     /// <summary>
     /// Create a new check-in at a coffee shop
     /// </summary>
     /// <remarks>
     /// **Process:**
-    /// 1. Takes shop ID and optional message from body.
+    /// 1. Takes the shop slug and optional message from body.
     /// 2. Automatically injects User ID and Name from Gateway headers.
     /// 3. Registers the visit in the system.
     /// </remarks>
-    /// <param name="command">Check-in details (ShopId is required)</param>
+    /// <param name="request">Check-in details (shop slug is required)</param>
     /// <response code="200">Check-in successfully created</response>
-    /// <response code="400">Invalid shop ID or business logic violation</response>
+    /// <response code="400">Invalid shop slug or business logic violation</response>
     /// <response code="401">Unauthorized: Missing user context headers</response>
     /// <response code="503">Media service could not verify attached photos</response>
     [HttpPost]
@@ -35,10 +40,13 @@ public class CheckInsController(IMessageBus bus, IUserContext userContext) : Con
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status503ServiceUnavailable)]
-    public async Task<IActionResult> CreateCheckIn([FromBody] CreateCheckInCommand command)
+    public async Task<IActionResult> CreateCheckIn([FromBody] PublicCreateCheckInRequest request, CancellationToken ct)
     {
-        command = command with { UserId = userContext.GetUserIdOrThrow(), UserName = userContext.GetUsernameOrThrow() };
-        var response = await bus.InvokeAsync<Response<CreateCheckInResponse>>(command);
+        var shopId = await discovery.ResolveIdAsync(PublicAddressKind.CoffeeShop, request.Shop, ct);
+        var command = new CreateCheckInCommand(shopId, request.IsPublic, request.VisitedAt, request.Note,
+            request.Photos, request.Rating, request.Header)
+        { UserId = userContext.GetUserIdOrThrow(), UserName = userContext.GetUsernameOrThrow() };
+        var response = await bus.InvokeAsync<Response<CreateCheckInResponse>>(command, ct);
 
         return Ok(response);
     }
@@ -66,14 +74,15 @@ public class CheckInsController(IMessageBus bus, IUserContext userContext) : Con
     /// <response code="400">`from` is not earlier than `to`</response>
     /// <response code="401">Unauthorized: Missing user context headers</response>
     [HttpGet]
-    [ProducesResponseType(typeof(Response<GetUserCheckInsResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(Response<PublicPage<PublicCheckInDto>>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> GetMyCheckIns(
         [FromHeader(Name = "X-Page-Number")] int pageNumber = 1,
         [FromHeader(Name = "X-Page-Size")] int pageSize = 10,
         [FromQuery] DateTimeOffset? from = null,
-        [FromQuery] DateTimeOffset? to = null)
+        [FromQuery] DateTimeOffset? to = null,
+        CancellationToken ct = default)
     {
         if (from.HasValue && to.HasValue && from >= to)
             return BadRequest(new ErrorResponse("'from' must be earlier than 'to'."));
@@ -84,14 +93,17 @@ public class CheckInsController(IMessageBus bus, IUserContext userContext) : Con
         var userId = userContext.GetUserIdOrThrow();
         
         var command = new GetUserCheckInsCommand(userId, pageNumber, pageSize, from?.UtcDateTime, to?.UtcDateTime);
-        var response = await bus.InvokeAsync<Response<GetUserCheckInsResponse>>(command);
+        var response = await bus.InvokeAsync<Response<GetUserCheckInsResponse>>(command, ct);
 
         if (response is { IsSuccess: true, Data: not null })
         {
             AddPaginationHeaders(response.Data.TotalItems, response.Data.TotalPages, response.Data.CurrentPage, response.Data.PageSize);
         }
 
-        return Ok(response);
+        if (response is not { IsSuccess: true, Data: not null }) return BadRequest(CoffeePeek.Shared.Kernel.Response.Response.Error(400, response.Message));
+        var data = response.Data;
+        return Ok(Response<PublicPage<PublicCheckInDto>>.Success(new(await discovery.CheckInsAsync(data.CheckIns, ct),
+            data.TotalItems, data.TotalPages, data.CurrentPage, data.PageSize)));
     }
 
     private void AddPaginationHeaders(int totalItems, int totalPages, int currentPage, int pageSize)
@@ -102,3 +114,9 @@ public class CheckInsController(IMessageBus bus, IUserContext userContext) : Con
         Response.Headers.TryAdd("X-Page-Size", pageSize.ToString());
     }
 }
+
+public sealed record PublicCreateCheckInRequest(
+    [Required, MaxLength(100)] string Shop, bool IsPublic, DateTime VisitedAt,
+    [MaxLength(CoffeePeek.Shops.Domain.BusinessConstants.MaxCheckInNoteLength)] string? Note = null,
+    ICollection<UploadedPhotoDto>? Photos = null, [Required] RatingDto? Rating = null,
+    [MaxLength(CoffeePeek.Shops.Domain.BusinessConstants.MaxReviewHeaderLength)] string? Header = null);

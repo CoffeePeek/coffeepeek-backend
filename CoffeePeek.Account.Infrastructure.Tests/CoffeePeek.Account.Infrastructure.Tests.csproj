@@ -37,7 +37,8 @@
       <ProjectReference Include="..\CoffeePeek.Shared.Web\CoffeePeek.Shared.Web.csproj" />
       <ProjectReference Include="..\CoffeePeek.AccountService\CoffeePeek.AccountService.csproj" />
       <ProjectReference Include="..\CoffeePeek.Gateway\CoffeePeek.Gateway.csproj" />
-      <ProjectReference Include="..\CoffeePeek.ShopsService\CoffeePeek.ShopsService.csproj" />
+    <ProjectReference Include="..\CoffeePeek.ShopsService\CoffeePeek.ShopsService.csproj" />
+    <ProjectReference Include="..\CoffeePeek.ModerationService\CoffeePeek.ModerationService.csproj" />
       <Content Include="..\CoffeePeek.Gateway\appsettings.json" Link="gateway-smoke.json" CopyToOutputDirectory="PreserveNewest" />
     </ItemGroup>
 

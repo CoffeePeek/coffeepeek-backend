@@ -18,6 +18,7 @@ public sealed class PublicCoffeeZoneAddressesController(IPublicAddressService ad
 {
     /// <summary>Resolves a zone slug or alias to the map zone data and its current canonical address.</summary>
     [HttpGet("by-slug/{slug}")]
+    [HttpGet("{slug}")]
     public async Task<IActionResult> GetBySlug(string slug, CancellationToken ct)
     {
         var address = await addresses.ResolveAsync(PublicAddressKind.CoffeeZone, slug, ct);
@@ -26,22 +27,10 @@ public sealed class PublicCoffeeZoneAddressesController(IPublicAddressService ad
         // Re-check status on the data read: never return a zone archived or drafted between resolve and read.
         if (zone is null || zone.Status != CoffeeZoneStatus.Published) return NotFound();
         // Same field mapping as the /api/Map zone DTO.
-        var data = new MapCoffeeZoneDto(zone.Id, zone.Name, zone.Description, zone.CenterLatitude, zone.CenterLongitude,
+        var data = new PublicZoneDto(PublicAddressDto.From(address), zone.Name, zone.Description, zone.CenterLatitude, zone.CenterLongitude,
             zone.RadiusMeters, zone.ShopCount,
             zone.Polygon.Select(p => new MapCoffeeZonePointDto(p.Latitude, p.Longitude)).ToArray());
-        return Ok(new PublicAddressEnvelope<MapCoffeeZoneDto>(data, address));
+        return Ok(data);
     }
 
-    /// <summary>Returns canonical addresses for up to 100 Published zone ids; other ids are omitted.</summary>
-    [HttpGet("public-addresses")]
-    public async Task<ActionResult<PublicAddressMetadata[]>> GetBatch([FromQuery] Guid[] ids, CancellationToken ct) =>
-        Ok(await addresses.GetByIdsAsync(PublicAddressKind.CoffeeZone, ids, ct));
-
-    /// <summary>Returns the canonical address for a legacy Published zone GUID.</summary>
-    [HttpGet("{id:guid}/public-address")]
-    public async Task<IActionResult> GetById(Guid id, CancellationToken ct)
-    {
-        var result = await addresses.GetByIdsAsync(PublicAddressKind.CoffeeZone, [id], ct);
-        return result.Length == 0 ? NotFound() : Ok(result[0]);
-    }
 }

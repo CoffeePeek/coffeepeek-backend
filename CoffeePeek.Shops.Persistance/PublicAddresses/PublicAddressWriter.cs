@@ -1,3 +1,5 @@
+using CoffeePeek.Shops.Domain.Aggregates.BrewMethods;
+using CoffeePeek.Shops.Domain.Aggregates.ShopTagAggregate;
 using CoffeePeek.Shared.Domain.PublicAddresses;
 using CoffeePeek.Shops.Application.PublicAddresses;
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
@@ -26,7 +28,24 @@ internal static class PublicAddressWriter
         // No physical zone delete exists today (admin DELETE archives); retiring keeps the RESTRICT FK safe if one is added.
         foreach (var entry in zones.Where(e => e.State == EntityState.Deleted))
             await RetireAsync<CoffeeZonePublicAddress>(db, PublicAddressKind.CoffeeZone, entry.Entity.Id, ct);
+        foreach (var entry in db.ChangeTracker.Entries<CoffeeBean>().Where(e => e.State == EntityState.Deleted).ToArray())
+            await RetireAsync<CoffeeBeanPublicAddress>(db, PublicAddressKind.CoffeeBean, entry.Entity.Id, ct);
+        foreach (var entry in db.ChangeTracker.Entries<Equipment>().Where(e => e.State == EntityState.Deleted).ToArray())
+            await RetireAsync<EquipmentPublicAddress>(db, PublicAddressKind.Equipment, entry.Entity.Id, ct);
+        foreach (var entry in db.ChangeTracker.Entries<BrewMethod>().Where(e => e.State == EntityState.Deleted).ToArray())
+            await RetireAsync<BrewMethodPublicAddress>(db, PublicAddressKind.BrewMethod, entry.Entity.Id, ct);
+        foreach (var entry in db.ChangeTracker.Entries<ShopTag>().Where(e => e.State == EntityState.Deleted).ToArray())
+            await RetireAsync<ShopTagPublicAddress>(db, PublicAddressKind.ShopTag, entry.Entity.Id, ct);
         if (!db.PublicAddressesEnabled) return;
+        foreach (var entry in db.ChangeTracker.Entries<CoffeeBean>().Where(e => e.State == EntityState.Added).ToArray())
+            await InitializeAsync<CoffeeBeanPublicAddress>(db, PublicAddressKind.CoffeeBean, entry.Entity.Id, entry.Entity.Name, null, "Automatically allocated on creation", ct);
+        foreach (var entry in db.ChangeTracker.Entries<Equipment>().Where(e => e.State == EntityState.Added).ToArray())
+            await InitializeAsync<EquipmentPublicAddress>(db, PublicAddressKind.Equipment, entry.Entity.Id, entry.Entity.Name, null, "Automatically allocated on creation", ct);
+        foreach (var entry in db.ChangeTracker.Entries<BrewMethod>().Where(e => e.State == EntityState.Added).ToArray())
+            await InitializeAsync<BrewMethodPublicAddress>(db, PublicAddressKind.BrewMethod, entry.Entity.Id, entry.Entity.Name, null, "Automatically allocated on creation", ct);
+        foreach (var entry in db.ChangeTracker.Entries<ShopTag>().Where(e => e.State == EntityState.Added).ToArray())
+            await InitializeAsync<ShopTagPublicAddress>(db, PublicAddressKind.ShopTag, entry.Entity.Id, entry.Entity.Slug, null, "Automatically allocated on creation", ct);
+
         foreach (var entry in shops.Where(e => e.State == EntityState.Added))
             await InitializeAsync<CoffeeShopPublicAddress>(db, PublicAddressKind.CoffeeShop, entry.Entity.Id,
                 ShopStem(entry.Entity), null, "Automatically allocated on creation", ct);
@@ -86,6 +105,10 @@ internal static class PublicAddressWriter
             var t when t == typeof(RoasterPublicAddress) => RoasterPublicAddress.Create(ownerId, slug, revision, now),
             var t when t == typeof(CityPublicAddress) => CityPublicAddress.Create(ownerId, slug, revision, now),
             var t when t == typeof(CoffeeZonePublicAddress) => CoffeeZonePublicAddress.Create(ownerId, slug, revision, now),
+            var t when t == typeof(CoffeeBeanPublicAddress) => CoffeeBeanPublicAddress.Create(ownerId, slug, revision, now),
+            var t when t == typeof(EquipmentPublicAddress) => EquipmentPublicAddress.Create(ownerId, slug, revision, now),
+            var t when t == typeof(BrewMethodPublicAddress) => BrewMethodPublicAddress.Create(ownerId, slug, revision, now),
+            var t when t == typeof(ShopTagPublicAddress) => ShopTagPublicAddress.Create(ownerId, slug, revision, now),
             _ => throw new InvalidOperationException($"No public address registry is mapped for {typeof(T).Name}.")
         };
         return (T)row;

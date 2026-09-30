@@ -6,6 +6,8 @@ using CoffeePeek.Shops.Application.Features.CoffeeShop.GetCoffeeShop;
 using CoffeePeek.Shops.Application.Features.CoffeeShop.SearchCoffeeShops;
 using Microsoft.AspNetCore.Mvc;
 using Wolverine;
+using CoffeePeek.Contract.Dtos.PublicAddresses;
+using CoffeePeek.Shops.Application.PublicAddresses;
 
 namespace CoffeePeek.ShopsService.Controllers;
 
@@ -14,7 +16,8 @@ namespace CoffeePeek.ShopsService.Controllers;
 [Tags("Coffee Shops Management")]
 [Produces("application/json")]
 [ProducesErrorResponseType(typeof(ErrorResponse))]
-public class CoffeeShopsController(IMessageBus bus, IUserContext userContext) : ControllerBase
+[ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
+public class CoffeeShopsController(PublicDiscoveryService discovery, IUserContext userContext) : ControllerBase
 {
     /// <summary>
     /// Search for coffee shops with advanced filters
@@ -25,19 +28,19 @@ public class CoffeeShopsController(IMessageBus bus, IUserContext userContext) : 
     /// </remarks>
     /// <response code="200">Returns list of coffee shops. Check X-Total-Count header for pagination metadata.</response>
     [HttpGet]
-    [ProducesResponseType(typeof(Response<GetCoffeeShopsResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(Response<PublicCoffeeShopsResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     [ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
     public async Task<IActionResult> GetCoffeeShops(
-        [FromQuery] Guid? cityId = null,
+        [FromQuery] string? city = null,
         [FromQuery, MaxLength(100)] string? q = null,
-        [FromQuery] Guid[]? roasters = null,
-        [FromQuery] Guid[]? equipments = null,
-        [FromQuery] Guid[]? beans = null,
-        [FromQuery] Guid[]? brewMethods = null,
-        [FromQuery] Guid[]? tags = null,
+        [FromQuery] string[]? roasters = null,
+        [FromQuery] string[]? equipments = null,
+        [FromQuery] string[]? beans = null,
+        [FromQuery] string[]? brewMethods = null,
+        [FromQuery] string[]? tags = null,
         [FromQuery] bool? isOpen = null,
         [FromQuery] bool? isNew = null,
         [FromQuery] bool? isVisited = null,
@@ -45,7 +48,8 @@ public class CoffeeShopsController(IMessageBus bus, IUserContext userContext) : 
         [FromQuery] Contract.Enums.CoffeeShopType? type = null,
         [FromQuery][Range(0, 5)] decimal? minRating = null,
         [FromQuery][Range(1, 10_000)] int page = 1, // (page-1)*size overflowed int and made Skip throw (500)
-        [FromQuery][Range(1, 100)] int pageSize = 10)
+        [FromQuery][Range(1, 100)] int pageSize = 10,
+        CancellationToken ct = default)
     {
         page = Math.Max(1, page);
         pageSize = pageSize <= 0 ? 10 : Math.Min(pageSize, 100);
@@ -53,12 +57,6 @@ public class CoffeeShopsController(IMessageBus bus, IUserContext userContext) : 
         var query = new SearchCoffeeShopsQuery(
             UserId: userContext.GetUserId(),
             Query: q,
-            CityId: cityId,
-            Roasters: roasters,
-            Equipments: equipments,
-            Beans: beans,
-            BrewMethods: brewMethods,
-            Tags: tags,
             IsOpen: isOpen,
             IsNew: isNew,
             IsVisited: isVisited,
@@ -68,7 +66,7 @@ public class CoffeeShopsController(IMessageBus bus, IUserContext userContext) : 
             PageNumber: page,
             PageSize: pageSize);
 
-        var response = await bus.InvokeAsync<Response<GetCoffeeShopsResponse>>(query);
+        var response = Response<PublicCoffeeShopsResponse>.Success(await discovery.SearchAsync(query, city, roasters, equipments, beans, brewMethods, tags, ct));
 
         if (response is { IsSuccess: true, Data: not null })
         {
@@ -77,7 +75,7 @@ public class CoffeeShopsController(IMessageBus bus, IUserContext userContext) : 
 
         return Ok(response);
 
-        void AddPaginationHeaders(GetCoffeeShopsResponse data)
+        void AddPaginationHeaders(PublicCoffeeShopsResponse data)
         {
             Response.Headers.TryAdd("X-Total-Count", data.TotalItems.ToString());
             Response.Headers.TryAdd("X-Total-Pages", data.TotalPages.ToString());
@@ -95,18 +93,17 @@ public class CoffeeShopsController(IMessageBus bus, IUserContext userContext) : 
     /// - Top 10 recent reviews
     /// - Personal user interaction status (IsVisited) if authenticated
     /// </remarks>
-    /// <param name="id">The unique identifier (GUID) of the coffee shop</param>
+    /// <param name="slug">Canonical public slug or an existing alias.</param>
     /// <returns>Returns coffee shop details or an error message</returns>
-    [HttpGet("{id:guid}")]
-    [ProducesResponseType(typeof(Response<GetCoffeeShopResponse>), StatusCodes.Status200OK)]
+    [HttpGet("{slug}")]
+    [HttpGet("by-slug/{slug}")]
+    [ProducesResponseType(typeof(Response<PublicShopDetailsDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> GetCoffeeShop(Guid id)
+    public async Task<IActionResult> GetCoffeeShop(string slug, CancellationToken ct)
     {
-        var query = new GetCoffeeShopQuery(id, userContext.GetUserId());
-        var response = await bus.InvokeAsync<Response<GetCoffeeShopResponse>>(query);
-        
-        return Ok(response);
+        var data = await discovery.GetShopAsync(slug, userContext.GetUserId(), ct);
+        return data is null ? NotFound() : Ok(Response<PublicShopDetailsDto>.Success(data));
     }
 }

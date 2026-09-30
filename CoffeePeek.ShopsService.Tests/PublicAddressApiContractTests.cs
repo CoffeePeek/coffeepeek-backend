@@ -11,44 +11,18 @@ namespace CoffeePeek.ShopsService.Tests;
 
 public sealed class PublicAddressApiContractTests
 {
-    private const string AdminRoute = "api/admin/{entity:regex(^(shops|roasters|cities|coffee-zones)$)}/public-addresses";
+    private const string AdminRoute = "api/admin/{entity:regex(^(shops|roasters|cities|coffee-zones|beans|equipments|brew-methods|shop-tags)$)}/public-addresses";
 
     [Fact]
-    public void PublicRoutes_AreExplicitAndDoNotReplaceGuidDetails()
+    public void PublicRoutes_UseSlugsAndHaveNoGuidAddressLookup()
     {
-        Route(typeof(PublicCoffeeShopAddressesController)).Should().Be("api/CoffeeShops");
-        Route(typeof(PublicRoasterAddressesController)).Should().Be("api/roasters");
-        Template<PublicCoffeeShopAddressesController>(nameof(PublicCoffeeShopAddressesController.GetBySlug))
-            .Should().Be("by-slug/{slug}");
-        Template<PublicRoasterAddressesController>(nameof(PublicRoasterAddressesController.GetBySlug))
-            .Should().Be("by-slug/{slug}");
-        Template<PublicCoffeeShopAddressesController>(nameof(PublicCoffeeShopAddressesController.GetBatch))
-            .Should().Be("public-addresses");
-        Template<PublicRoasterAddressesController>(nameof(PublicRoasterAddressesController.GetBatch))
-            .Should().Be("public-addresses");
-        Template<CoffeeShopsController>(nameof(CoffeeShopsController.GetCoffeeShop))
-            .Should().Be("{id:guid}");
-        Template<RoastersController>(nameof(RoastersController.GetById))
-            .Should().Be("{id:guid}");
-
-        Route(typeof(PublicCityAddressesController)).Should().Be("api/Catalogs/cities");
-        Route(typeof(PublicCoffeeZoneAddressesController)).Should().Be("api/Catalogs/coffee-zones");
-        Template<PublicCityAddressesController>(nameof(PublicCityAddressesController.GetBySlug))
-            .Should().Be("by-slug/{slug}");
-        Template<PublicCoffeeZoneAddressesController>(nameof(PublicCoffeeZoneAddressesController.GetBySlug))
-            .Should().Be("by-slug/{slug}");
-        Template<PublicCityAddressesController>(nameof(PublicCityAddressesController.GetBatch))
-            .Should().Be("public-addresses");
-        Template<PublicCoffeeZoneAddressesController>(nameof(PublicCoffeeZoneAddressesController.GetBatch))
-            .Should().Be("public-addresses");
-        Template<PublicCityAddressesController>(nameof(PublicCityAddressesController.GetById))
-            .Should().Be("{id:guid}/public-address");
-        Template<PublicCoffeeZoneAddressesController>(nameof(PublicCoffeeZoneAddressesController.GetById))
-            .Should().Be("{id:guid}/public-address");
-
-        // The existing city catalog list keeps its route and payload.
-        Route(typeof(CatalogsController)).Should().Be("api/[controller]");
-        Template<CatalogsController>(nameof(CatalogsController.GetCities)).Should().Be("cities");
+        typeof(CoffeeShopsController).GetMethod(nameof(CoffeeShopsController.GetCoffeeShop))!
+            .GetCustomAttributes<HttpGetAttribute>().Select(x => x.Template).Should().BeEquivalentTo("{slug}", "by-slug/{slug}");
+        typeof(RoastersController).GetMethod(nameof(RoastersController.GetById))!
+            .GetCustomAttributes<HttpGetAttribute>().Select(x => x.Template).Should().BeEquivalentTo("{slug}", "by-slug/{slug}");
+        foreach (var type in new[] { typeof(CoffeeShopsController), typeof(RoastersController), typeof(PublicCityAddressesController), typeof(PublicCoffeeZoneAddressesController) })
+            type.GetMethods().SelectMany(m => m.GetCustomAttributes<HttpGetAttribute>()).Select(x => x.Template)
+                .Should().NotContain(x => x != null && (x.Contains(":guid") || x.Contains("public-address")));
     }
 
     [Fact]
@@ -56,7 +30,7 @@ public sealed class PublicAddressApiContractTests
     {
         foreach (var controller in new[]
                  {
-                     typeof(PublicCoffeeShopAddressesController), typeof(PublicRoasterAddressesController),
+                     typeof(CoffeeShopsController), typeof(RoastersController),
                      typeof(PublicCityAddressesController), typeof(PublicCoffeeZoneAddressesController)
                  })
         {
@@ -97,7 +71,7 @@ public sealed class PublicAddressApiContractTests
         entities.Select(AdminKind).Should().BeEquivalentTo(Enum.GetValues<PublicAddressKind>());
 
         // Anything outside the route regex is rejected instead of defaulting to a kind.
-        var unknown = () => AdminKind("equipments");
+        var unknown = () => AdminKind("unknown");
         unknown.Should().Throw<TargetInvocationException>()
             .WithInnerException<PublicAddressException>()
             .Which.StatusCode.Should().Be(400);

@@ -21,6 +21,8 @@ using CoffeePeek.AccountService.Controllers.Contracts;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Wolverine;
+using CoffeePeek.Account.Application.Common.Interfaces;
+using CoffeePeek.Contract.Dtos.PublicAddresses;
 
 namespace CoffeePeek.AccountService.Controllers;
 
@@ -33,12 +35,16 @@ public class UsersController(IMessageBus bus, IUserContext userContext) : Contro
     /// <summary>
     /// Get user profile by id or current user profile
     /// </summary>
-    [HttpGet("{id:guid}")]
+    [HttpGet("/internal/users/{id:guid}")]
+    [ApiExplorerSettings(IgnoreApi = true)]
     [ProducesResponseType<Response<PublicUserProfileResponse>>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> GetById(Guid? id)
+    public async Task<IActionResult> GetById(Guid? id,
+        [FromServices] Microsoft.Extensions.Options.IOptions<CoffeePeek.Shared.Auth.Options.GatewayAuthOptions> options)
     {
+        if (!GatewayAuthVerifier.IsTrusted(Request.Headers[CoffeePeek.Shared.Auth.Constants.GatewayHeaderConsts.XGatewayAuth], options.Value.SecretKey))
+            return Unauthorized();
         var command = new GetPublicUserProfileCommand(id ?? userContext.GetUserIdOrThrow());
         var response = await bus.InvokeAsync<Response<PublicUserProfileResponse>>(command);
         return Ok(response);
@@ -78,14 +84,24 @@ public class UsersController(IMessageBus bus, IUserContext userContext) : Contro
     /// Get user profile by id or current user profile
     /// </summary>
     [HttpGet("me")]
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
     [Authorize]
     [ProducesResponseType<Response<UserProfileResponse>>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> GetById()
+    public async Task<IActionResult> GetById(
+        [FromServices] IProfileAddressService addresses,
+        [FromServices] Microsoft.Extensions.Options.IOptions<CoffeePeek.Account.Application.Common.Options.PublicAddressOptions> flags,
+        CancellationToken ct)
     {
         var request = new GetProfileCommand(userContext.GetUserIdOrThrow());
         var response = await bus.InvokeAsync<Response<UserProfileResponse>>(request);
+        if (response is { IsSuccess: true, Data: not null } && flags.Value.Enabled)
+        {
+            var address = (await addresses.GetByIdsAsync([userContext.GetUserIdOrThrow()], ct)).SingleOrDefault();
+            return Ok(Response<UserProfileResponse>.Success(response.Data with
+                { Address = address is null ? null : PublicAddressDto.From(address) }, response.Message));
+        }
         return Ok(response);
     }
 
@@ -162,10 +178,12 @@ public class UsersController(IMessageBus bus, IUserContext userContext) : Contro
     /// </summary>
     [HttpPatch("me/username")]
     [Authorize]
-    [ProducesResponseType<UpdateEntityResponse<string>>(StatusCodes.Status202Accepted)]
+    [ProducesResponseType<Response<PublicUsernameUpdateResponse>>(StatusCodes.Status202Accepted)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> UpdateEmail([FromBody] UpdateProfileUsernameCommand command,
+        [FromServices] IProfileAddressService addresses,
+        [FromServices] Microsoft.Extensions.Options.IOptions<CoffeePeek.Account.Application.Common.Options.PublicAddressOptions> flags,
         CancellationToken cancellationToken)
     {
         command = command with
@@ -174,8 +192,11 @@ public class UsersController(IMessageBus bus, IUserContext userContext) : Contro
         };
 
         var response = await bus.InvokeAsync<UpdateEntityResponse<string>>(command, cancellationToken);
-
-        return Accepted(response);
+        if (response is not { IsSuccess: true, Data: not null }) return BadRequest(response);
+        var address = flags.Value.Enabled
+            ? (await addresses.GetByIdsAsync([command.UserId], cancellationToken)).SingleOrDefault() : null;
+        return Accepted(Response<PublicUsernameUpdateResponse>.Success(new(response.Data,
+            address is null ? null : PublicAddressDto.From(address)), response.Message));
     }
 
     /// <summary>

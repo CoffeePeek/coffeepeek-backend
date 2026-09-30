@@ -63,14 +63,16 @@ public sealed class PublicSlugTests
         var initial = PublicSlug.Candidate(name, owner, 0);
         initial.Should().HaveLength(99);
         var first = PublicSlug.Candidate(name, owner, 1);
-        first.Should().HaveLength(100).And.EndWith("-491e394e");
-        PublicSlug.Candidate("coffee", owner, 2).Should().Be("coffee-491e394ed443");
-        PublicSlug.Candidate("coffee", owner, 3).Should().Be("coffee-491e394ed4434383");
+        first.Should().HaveLength(100).And.EndWith("-e98ba429");
+        PublicSlug.Candidate("coffee", owner, 2).Should().Be("coffee-e98ba42921bb");
+        PublicSlug.Candidate("coffee", owner, 3).Should().Be("coffee-e98ba42921bb6bc2");
         first.Should().Be(PublicSlug.Candidate(name, owner, 1));
         first.Should().NotBe(PublicSlug.Candidate(name, Guid.NewGuid(), 1));
         var retry = PublicSlug.Candidate(name, owner, int.MaxValue);
         retry.Should().HaveLength(100);
         PublicSlug.IsValid(retry).Should().BeTrue();
+        retry.Should().NotContain(owner.ToString("N"));
+        first.Should().NotContain(owner.ToString("N")[..8]);
         PublicSlug.IsValid(new string('a', 101)).Should().BeFalse();
     }
 }

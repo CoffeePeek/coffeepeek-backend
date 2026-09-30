@@ -1,4 +1,4 @@
-﻿using System.ComponentModel;
+using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using CoffeePeek.Contract.Dtos.CoffeeShop;
 using CoffeePeek.Contract.Dtos.Menu;
@@ -15,13 +15,17 @@ using CoffeePeek.Shared.Kernel.Response;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Wolverine;
+using CoffeePeek.Contract.Dtos.PublicAddresses;
+using CoffeePeek.Moderation.Application.Services;
+using Mapster;
 
 namespace CoffeePeek.ModerationService.Controllers;
 
 [ApiController]
+[ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
 [Route("api/[controller]")]
 [ProducesErrorResponseType(typeof(ErrorResponse))]
-public class ModerationShopsController(IMessageBus bus, IUserContext userContext) : ControllerBase
+public class ModerationShopsController(IMessageBus bus, IUserContext userContext, PublicModerationService discovery) : ControllerBase
 {
     [HttpGet]
     [Authorize(Policy = RoleConsts.Moderator)]
@@ -45,7 +49,7 @@ public class ModerationShopsController(IMessageBus bus, IUserContext userContext
     [HttpGet("mine")]
     [Authorize]
     [Description("Get the caller's own coffee shop submissions with moderation status")]
-    [ProducesResponseType<Response<GetAllModerationShopsResponse>>(StatusCodes.Status200OK)]
+    [ProducesResponseType<Response<PublicPage<PublicModerationShopDto>>>(StatusCodes.Status200OK)]
     [ProducesResponseType<ErrorResponse>(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> GetMine(
         [FromQuery, Range(1, int.MaxValue)] int page = 1,
@@ -59,7 +63,10 @@ public class ModerationShopsController(IMessageBus bus, IUserContext userContext
         if (response.IsSuccess && response.Data is not null)
             AddPagingHeaders(response.Data.TotalItems, response.Data.TotalPages, response.Data.CurrentPage, response.Data.PageSize);
 
-        return Ok(response);
+        if (response is not { IsSuccess: true, Data: not null }) return BadRequest(response);
+        var data = response.Data;
+        return Ok(Response<PublicPage<PublicModerationShopDto>>.Success(new(await discovery.ShopsAsync(data.ModerationShops, ct),
+            data.TotalItems, data.TotalPages, data.CurrentPage, data.PageSize)));
     }
 
     [HttpGet("{id:guid}")]
@@ -80,10 +87,17 @@ public class ModerationShopsController(IMessageBus bus, IUserContext userContext
     [ProducesResponseType<ErrorResponse>(StatusCodes.Status409Conflict)]
     [ProducesResponseType<ErrorResponse>(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> SendCoffeeShopToModeration(
-        [FromBody] SendCoffeeShopToModerationCommand command, CancellationToken ct)
+        [FromBody] PublicSubmitShopRequest request, CancellationToken ct)
     {
         // Anonymous submissions carry a null UserId; approval consumer skips user crediting for these.
-        var commandWithUser = command with { UserId = userContext.GetUserId() };
+        var commandWithUser = request.Adapt<SendCoffeeShopToModerationCommand>() with
+        {
+            UserId = userContext.GetUserId(), CityId = await discovery.ResolveIdAsync("cities", request.City, ct),
+            EquipmentIds = request.Equipments is null ? null : (await discovery.ResolveIdsAsync("equipments", request.Equipments, ct)).ToList(),
+            CoffeeBeanIds = request.Beans is null ? null : (await discovery.ResolveIdsAsync("beans", request.Beans, ct)).ToList(),
+            RoasterIds = request.Roasters is null ? null : (await discovery.ResolveIdsAsync("roasters", request.Roasters, ct)).ToList(),
+            BrewMethodIds = request.BrewMethods is null ? null : (await discovery.ResolveIdsAsync("brew-methods", request.BrewMethods, ct)).ToList()
+        };
 
         var response = await bus.InvokeAsync<Response<SendCoffeeShopToModerationResponse>>(commandWithUser, ct);
 

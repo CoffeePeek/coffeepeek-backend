@@ -1,4 +1,4 @@
-﻿using CoffeePeek.Shared.Auth;
+using CoffeePeek.Shared.Auth;
 using CoffeePeek.Shared.Kernel.Response;
 using CoffeePeek.Shops.Application.Features.Review.DeleteReviewFromCoffeeShop;
 using CoffeePeek.Shops.Application.Features.Review.GetReviewById;
@@ -6,6 +6,8 @@ using CoffeePeek.Shops.Application.Features.Review.SetReviewHelpful;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Wolverine;
+using CoffeePeek.Contract.Dtos.PublicAddresses;
+using CoffeePeek.Shops.Application.PublicAddresses;
 
 namespace CoffeePeek.ShopsService.Controllers;
 
@@ -13,27 +15,28 @@ namespace CoffeePeek.ShopsService.Controllers;
 [Authorize]
 [Route("api/[controller]")]
 [ProducesErrorResponseType(typeof(ErrorResponse))]
-public class CoffeeShopReviewsController(IMessageBus bus, IUserContext userContext) : ControllerBase
+[ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
+public class CoffeeShopReviewsController(IMessageBus bus, IUserContext userContext, PublicDiscoveryService discovery) : ControllerBase
 {
     /// <summary>
     /// Get review by ID
     /// </summary>
     [HttpGet("{reviewId:guid}")]
-    [ProducesResponseType(typeof(Response<GetReviewByIdResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(Response<PublicReviewDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> GetReviewById(Guid reviewId)
+    public async Task<IActionResult> GetReviewById(Guid reviewId, CancellationToken ct)
     {
         var response = await bus.InvokeAsync<Response<GetReviewByIdResponse>>(
-            new GetReviewByIdQuery(reviewId));
+            new GetReviewByIdQuery(reviewId), ct);
 
-        return response.IsSuccess ? Ok(response) : NotFound(response);
+        if (response is not { IsSuccess: true, Data: not null }) return NotFound();
+        return Ok(Response<PublicReviewDto>.Success((await discovery.ReviewsAsync([response.Data.Review], ct))[0]));
     }
 
     /// <summary>
     /// Delete review by ID
     /// </summary>
-    /// <param name="shopId"></param>
     /// <param name="reviewId"></param>
     /// <returns></returns>
     [HttpDelete("{reviewId:guid}")]
@@ -41,7 +44,7 @@ public class CoffeeShopReviewsController(IMessageBus bus, IUserContext userConte
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> DeleteReview(Guid shopId, Guid reviewId)
+    public async Task<IActionResult> DeleteReview(Guid reviewId)
     {
         var command = new DeleteReviewFromCoffeeShopCommand(reviewId, userContext.GetUserIdOrThrow());
         var response = await bus.InvokeAsync<Response>(command);

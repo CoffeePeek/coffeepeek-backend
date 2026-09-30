@@ -17,6 +17,7 @@ public sealed class PublicCityAddressesController(IPublicAddressService addresse
 {
     /// <summary>Resolves a city slug or alias to the city and its current canonical address.</summary>
     [HttpGet("by-slug/{slug}")]
+    [HttpGet("{slug}")]
     public async Task<IActionResult> GetBySlug(string slug, CancellationToken ct)
     {
         var address = await addresses.ResolveAsync(PublicAddressKind.City, slug, ct);
@@ -24,19 +25,7 @@ public sealed class PublicCityAddressesController(IPublicAddressService addresse
         // The city can be deleted between resolve and read; treat it like an unknown slug.
         var city = await cities.GetById(address.EntityId, ct);
         if (city is null) return NotFound();
-        return Ok(new PublicAddressEnvelope<CityDto>(new CityDto { Id = city.Id, Name = city.Name }, address));
+        return Ok(new PublicCityDto(PublicAddressDto.From(address), city.Name));
     }
 
-    /// <summary>Returns canonical addresses for up to 100 city ids; unknown ids are omitted.</summary>
-    [HttpGet("public-addresses")]
-    public async Task<ActionResult<PublicAddressMetadata[]>> GetBatch([FromQuery] Guid[] ids, CancellationToken ct) =>
-        Ok(await addresses.GetByIdsAsync(PublicAddressKind.City, ids, ct));
-
-    /// <summary>Returns the canonical address for a legacy city GUID.</summary>
-    [HttpGet("{id:guid}/public-address")]
-    public async Task<IActionResult> GetById(Guid id, CancellationToken ct)
-    {
-        var result = await addresses.GetByIdsAsync(PublicAddressKind.City, [id], ct);
-        return result.Length == 0 ? NotFound() : Ok(result[0]);
-    }
 }

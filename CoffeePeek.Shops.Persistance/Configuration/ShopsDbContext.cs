@@ -25,6 +25,11 @@ public class ShopsDbContext(DbContextOptions<ShopsDbContext> options, IOptions<P
     public virtual DbSet<RoasterPublicAddress> RoasterPublicAddresses { get; set; }
     public virtual DbSet<CityPublicAddress> CityPublicAddresses { get; set; }
     public virtual DbSet<CoffeeZonePublicAddress> CoffeeZonePublicAddresses { get; set; }
+    public virtual DbSet<CoffeeBeanPublicAddress> CoffeeBeanPublicAddresses { get; set; }
+    public virtual DbSet<EquipmentPublicAddress> EquipmentPublicAddresses { get; set; }
+    public virtual DbSet<BrewMethodPublicAddress> BrewMethodPublicAddresses { get; set; }
+    public virtual DbSet<ShopTagPublicAddress> ShopTagPublicAddresses { get; set; }
+
 
     public override int SaveChanges(bool acceptAllChangesOnSuccess) =>
         SaveChangesAsync(acceptAllChangesOnSuccess).GetAwaiter().GetResult();
@@ -35,8 +40,8 @@ public class ShopsDbContext(DbContextOptions<ShopsDbContext> options, IOptions<P
         // Deletions always retire (even when disabled); allocation only when enabled: creation for shops,
         // roasters and cities, first publication for coffee zones.
         var ownerChanges = ChangeTracker.Entries().Any(e =>
-            (e.Entity is CoffeeShop or Roaster or City or CoffeeZone && e.State == EntityState.Deleted) ||
-            (PublicAddressesEnabled && e.Entity is CoffeeShop or Roaster or City && e.State == EntityState.Added) ||
+            (e.Entity is CoffeeShop or Roaster or City or CoffeeZone or CoffeeBean or Equipment or BrewMethod or ShopTag && e.State == EntityState.Deleted) ||
+            (PublicAddressesEnabled && e.Entity is CoffeeShop or Roaster or City or CoffeeBean or Equipment or BrewMethod or ShopTag && e.State == EntityState.Added) ||
             (PublicAddressesEnabled && PublicAddressWriter.IsNewlyPublished(e)));
         if (!ownerChanges) return base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
 
@@ -90,6 +95,11 @@ public class ShopsDbContext(DbContextOptions<ShopsDbContext> options, IOptions<P
         modelBuilder.ApplyConfiguration(new RoasterPublicAddressConfiguration());
         modelBuilder.ApplyConfiguration(new CityPublicAddressConfiguration());
         modelBuilder.ApplyConfiguration(new CoffeeZonePublicAddressConfiguration());
+        modelBuilder.ApplyConfiguration(new CoffeeBeanPublicAddressConfiguration());
+        modelBuilder.ApplyConfiguration(new EquipmentPublicAddressConfiguration());
+        modelBuilder.ApplyConfiguration(new BrewMethodPublicAddressConfiguration());
+        modelBuilder.ApplyConfiguration(new ShopTagPublicAddressConfiguration());
+
         modelBuilder.ApplyConfiguration(new CoffeeShopConfiguration());
         modelBuilder.ApplyConfiguration(new CoffeeZoneConfiguration());
         modelBuilder.ApplyConfiguration(new CoffeeZoneMembershipOverrideConfiguration());

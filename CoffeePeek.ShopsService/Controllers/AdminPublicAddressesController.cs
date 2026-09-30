@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace CoffeePeek.ShopsService.Controllers;
 
 [ApiController]
-[Route("api/admin/{entity:regex(^(shops|roasters|cities|coffee-zones)$)}/public-addresses")]
+[Route("api/admin/{entity:regex(^(shops|roasters|cities|coffee-zones|beans|equipments|brew-methods|shop-tags)$)}/public-addresses")]
 [Authorize(Policy = RoleConsts.Admin)]
 [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
 public sealed class AdminPublicAddressesController(IPublicAddressService addresses, IUserContext userContext) : ControllerBase
@@ -43,6 +43,10 @@ public sealed class AdminPublicAddressesController(IPublicAddressService address
         "roasters" => PublicAddressKind.Roaster,
         "cities" => PublicAddressKind.City,
         "coffee-zones" => PublicAddressKind.CoffeeZone,
+        "beans" => PublicAddressKind.CoffeeBean,
+        "equipments" => PublicAddressKind.Equipment,
+        "brew-methods" => PublicAddressKind.BrewMethod,
+        "shop-tags" => PublicAddressKind.ShopTag,
         _ => throw new PublicAddressException("Unknown address kind.", 400)
     };
 }

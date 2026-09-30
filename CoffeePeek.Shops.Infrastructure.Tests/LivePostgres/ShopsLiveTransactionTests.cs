@@ -26,6 +26,28 @@ public sealed class ShopsLiveTransactionTests : IClassFixture<ShopsLiveDatabase>
     }
 
     [Fact]
+    public async Task CatalogBackfillAndBatchFilters_UsePersistedCanonicalAndAliasAddresses()
+    {
+        foreach (var kind in new[] { PublicAddressKind.CoffeeBean, PublicAddressKind.Equipment, PublicAddressKind.BrewMethod, PublicAddressKind.ShopTag })
+        {
+            var id = await fixture.AddOwnerAsync(kind, "legacy catalog " + kind, false, Ct);
+            await using var db = fixture.Context();
+            var service = new PublicAddressService(db);
+            var preview = await service.BackfillAsync(kind, null, 100, true, Guid.NewGuid(), Ct);
+            var suggested = preview.Items.Single(x => x.EntityId == id).Slug;
+            (await service.GetByIdsAsync(kind, [id], Ct)).Should().BeEmpty();
+            await service.BackfillAsync(kind, null, 100, false, Guid.NewGuid(), Ct);
+            var current = (await service.GetForReadAsync(kind, [id], Ct)).Single();
+            current.Slug.Should().Be(suggested);
+            await service.ChangeAsync(kind, id, new(suggested + "-new", 1, "Live catalog alias"), Guid.NewGuid(), Ct);
+            (await service.ResolveIdsAsync(kind, [suggested.ToUpperInvariant(), suggested + "-new"], Ct)).Should().Equal(id);
+            (await service.ResolveAsync(kind, suggested, Ct))!.IsAlias.Should().BeTrue();
+            var unknown = () => service.ResolveIdsAsync(kind, ["missing-public-catalog-value"], Ct);
+            (await unknown.Should().ThrowAsync<PublicAddressException>()).Which.StatusCode.Should().Be(404);
+        }
+    }
+
+    [Fact]
     public async Task FailedOwnerSave_RollsBackAddressesAndAuditInsideAmbientTransaction()
     {
         var original = ShopsLiveDatabase.NewShop("duplicate moderation original");

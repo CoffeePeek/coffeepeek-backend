@@ -74,6 +74,8 @@ public static class DependencyInjection
         });
 
         services.AddScoped<IUserExistenceLookup, AccountUserExistenceLookup>();
+        services.AddScoped<CoffeePeek.Shared.Auth.PublicAddressHttpClient>();
+        services.AddScoped<IProfileAddressLookup, AccountProfileAddressLookup>();
         services.AddScoped<IUploadedPhotoLookup, MediaUploadedPhotoLookup>();
         services.AddScoped<IMenuVisionParser, OpenAiMenuVisionParser>();
         services.AddScoped<IMenuPhotoDownloader, HttpMenuPhotoDownloader>();

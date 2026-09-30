@@ -4,13 +4,15 @@ using CoffeePeek.Shared.Kernel.Response;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Wolverine;
+using CoffeePeek.Moderation.Application.Services;
 
 namespace CoffeePeek.ModerationService.Controllers;
 
 [ApiController]
+[ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
 [Route("api/[controller]")]
 [ProducesErrorResponseType(typeof(ErrorResponse))]
-public class ShopIssueReportsController(IMessageBus bus, IUserContext userContext) : ControllerBase
+public class ShopIssueReportsController(IMessageBus bus, IUserContext userContext, PublicModerationService discovery) : ControllerBase
 {
     [HttpPost]
     [Authorize]
@@ -19,9 +21,10 @@ public class ShopIssueReportsController(IMessageBus bus, IUserContext userContex
     [ProducesResponseType<ErrorResponse>(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType<ErrorResponse>(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> CreateShopIssueReport(
-        [FromBody] CreateShopIssueReportCommand command, CancellationToken ct)
+        [FromBody] PublicCreateShopIssueRequest request, CancellationToken ct)
     {
-        command = command with { UserId = userContext.GetUserIdOrThrow() };
+        var command = new CreateShopIssueReportCommand(await discovery.ResolveIdAsync("shops", request.Shop, ct), request.Category, request.Description)
+        { UserId = userContext.GetUserIdOrThrow() };
 
         var response = await bus.InvokeAsync<CreateEntityResponse>(command, ct);
 

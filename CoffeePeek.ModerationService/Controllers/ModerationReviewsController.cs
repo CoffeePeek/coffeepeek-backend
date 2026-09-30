@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using CoffeePeek.Contract.Dtos.CoffeeShop;
 using CoffeePeek.Contract.Enums;
 using CoffeePeek.Moderation.Application.Features.Review.ChangeStatusModerationReview;
@@ -12,13 +12,16 @@ using CoffeePeek.Shared.Kernel.Response;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Wolverine;
+using CoffeePeek.Contract.Dtos.PublicAddresses;
+using CoffeePeek.Moderation.Application.Services;
 
 namespace CoffeePeek.ModerationService.Controllers;
 
 [ApiController]
+[ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
 [Route("api/[controller]")]
 [ProducesErrorResponseType(typeof(ErrorResponse))]
-public class ModerationReviewsController(IMessageBus bus, IUserContext userContext) : ControllerBase
+public class ModerationReviewsController(IMessageBus bus, IUserContext userContext, PublicModerationService discovery) : ControllerBase
 {
     [HttpGet]
     [Authorize(Policy = RoleConsts.Moderator)]
@@ -43,7 +46,7 @@ public class ModerationReviewsController(IMessageBus bus, IUserContext userConte
     /// </summary>
     [HttpGet("mine")]
     [Authorize]
-    [ProducesResponseType<Response<GetAllModerationReviewsResponse>>(StatusCodes.Status200OK)]
+    [ProducesResponseType<Response<PublicPage<PublicModerationReviewDto>>>(StatusCodes.Status200OK)]
     [ProducesResponseType<ErrorResponse>(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> GetMine(
         [FromQuery, Range(1, int.MaxValue)] int page = 1,
@@ -57,7 +60,10 @@ public class ModerationReviewsController(IMessageBus bus, IUserContext userConte
         if (response.IsSuccess && response.Data is not null)
             AddPagingHeaders(response.Data.TotalItems, response.Data.TotalPages, response.Data.CurrentPage, response.Data.PageSize);
 
-        return Ok(response);
+        if (response is not { IsSuccess: true, Data: not null }) return BadRequest(response);
+        var data = response.Data;
+        return Ok(Response<PublicPage<PublicModerationReviewDto>>.Success(new(await discovery.ReviewsAsync(data.ReviewDtos, ct),
+            data.TotalItems, data.TotalPages, data.CurrentPage, data.PageSize)));
     }
 
     [HttpGet("{id:guid}")]
@@ -78,12 +84,14 @@ public class ModerationReviewsController(IMessageBus bus, IUserContext userConte
     [ProducesResponseType<ErrorResponse>(StatusCodes.Status500InternalServerError)]
     [ProducesResponseType<ErrorResponse>(StatusCodes.Status503ServiceUnavailable)]
     public async Task<IActionResult> SendReviewToModeration(
-        [FromBody] SendReviewToModerationCommand command, CancellationToken ct)
+        [FromBody] PublicCreateReviewRequest request, CancellationToken ct)
     {
-        command = command with
+        var command = new SendReviewToModerationCommand(await discovery.ResolveIdAsync("shops", request.Shop, ct),
+            request.Header, request.Comment, request.Rating, request.Photos)
         {
             UserId = userContext.GetUserIdOrThrow(),
-            UserName = userContext.GetUsernameOrThrow()
+            UserName = userContext.GetUsernameOrThrow(),
+            RatingCoffee = request.RatingCoffee, RatingPlace = request.RatingPlace, RatingService = request.RatingService
         };
 
         var response = await bus.InvokeAsync<CreateEntityResponse>(command, ct);

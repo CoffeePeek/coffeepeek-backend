@@ -43,6 +43,7 @@ public static class DependencyInjection
         services.AddValidators();
 
         // Application Services
+        services.AddScoped<PublicAddresses.PublicDiscoveryService>();
         services.AddScoped<ICreateShopFromModerationService, CreateShopFromModerationService>();
         services.AddScoped<ICreateShopFromImportService, CreateShopFromImportService>();
         services.AddScoped<IEnrichShopFromImportService, EnrichShopFromImportService>();

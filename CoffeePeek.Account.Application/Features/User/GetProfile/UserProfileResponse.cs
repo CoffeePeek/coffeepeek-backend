@@ -9,4 +9,7 @@ public record UserProfileResponse(
     int ReviewCount,
     int CheckInCount,
     int AddedShopsCount
-);
+)
+{
+    public CoffeePeek.Contract.Dtos.PublicAddresses.PublicAddressDto? Address { get; init; }
+}

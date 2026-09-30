@@ -191,7 +191,7 @@ public sealed class UserPublicAddressServiceTests
         suffixed.HadCollision.Should().BeTrue();
         suffixed.Slug.Should().Be(PublicSlug.Candidate("ivan", suffixed.EntityId, 1));
         var adminItem = full.Items.Single(i => i.EntityId == admin.Id);
-        adminItem.Slug.Should().Be("user-" + admin.Id.ToString("N")[..8]);
+        adminItem.Slug.Should().Be(CoffeePeek.Shared.Domain.PublicAddresses.PublicSlug.Candidate("user", admin.Id, 1));
         adminItem.Slug.Should().Be(PublicSlug.Candidate("user", admin.Id, 1));
         adminItem.HadCollision.Should().BeFalse();
         full.Items.Single(i => i.EntityId == blocked.Id).Slug.Should().Be("blocked-user");

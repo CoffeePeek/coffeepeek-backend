@@ -25,32 +25,17 @@ public sealed class PublicUserAddressControllerTests
     private readonly Mock<IMessageBus> _bus = new();
     private readonly CancellationToken _ct = TestContext.Current.CancellationToken;
 
-    private static readonly string[] NewPublicTemplates = ["by-slug/{slug}", "public-addresses", "{id:guid}/public-address"];
+    private static readonly string[] NewPublicTemplates = ["by-slug/{slug}", "{slug}"];
 
     #region Reflection
 
     [Fact]
-    public void PublicRoutes_AreExplicitAndDoNotReplaceGuidProfile()
+    public void PublicRoutes_UseSlugsAndKeepGuidLookupInternal()
     {
         Route(typeof(PublicUserAddressesController)).Should().Be("api/Users");
-        Template<PublicUserAddressesController>(nameof(PublicUserAddressesController.GetBySlug)).Should().Be("by-slug/{slug}");
-        Template<PublicUserAddressesController>(nameof(PublicUserAddressesController.GetBatch)).Should().Be("public-addresses");
-        Template<PublicUserAddressesController>(nameof(PublicUserAddressesController.GetById)).Should().Be("{id:guid}/public-address");
-        foreach (var method in new[]
-                 {
-                     nameof(PublicUserAddressesController.GetBySlug), nameof(PublicUserAddressesController.GetBatch),
-                     nameof(PublicUserAddressesController.GetById)
-                 })
-        {
-            typeof(PublicUserAddressesController).GetMethod(method)!
-                .GetCustomAttributes<HttpGetAttribute>().Should().ContainSingle();
-        }
-
-        // The existing GUID profile route keeps its prefix and template, and no existing template is shadowed.
-        Route(typeof(UsersController)).Should().Be("api/[controller]");
-        // UsersController overloads GetById (the anonymous GUID route and "me"); select the GUID route explicitly.
-        Template<UsersController>(nameof(UsersController.GetById), typeof(Guid?)).Should().Be("{id:guid}");
-        Templates(typeof(UsersController)).Should().NotIntersectWith(NewPublicTemplates);
+        Templates(typeof(PublicUserAddressesController)).Should().BeEquivalentTo(NewPublicTemplates);
+        Templates(typeof(UsersController)).Should().Contain("/internal/users/{id:guid}");
+        Templates(typeof(UsersController)).Should().NotContain("{id:guid}");
     }
 
     [Fact]
@@ -146,9 +131,10 @@ public sealed class PublicUserAddressControllerTests
         // The profile is read for the resolved owner id, not anything derived from the request slug.
         captured.Should().BeOfType<GetPublicUserProfileCommand>().Which.UserId.Should().Be(ownerId);
         var envelope = result.Should().BeOfType<OkObjectResult>().Which.Value
-            .Should().BeOfType<PublicAddressEnvelope<PublicUserProfileResponse>>().Subject;
+            .Should().BeOfType<PublicEntityEnvelope<PublicUserProfileResponse>>().Subject;
         envelope.Data.Should().Be(profile);
-        envelope.Address.Should().Be(address);
+        envelope.Address.Should().Be(PublicAddressDto.From(address));
+        System.Text.Json.JsonSerializer.Serialize(envelope).Should().NotContain(ownerId.ToString());
 
         // T-04-10: the public payload has no private contact data.
         typeof(PublicUserProfileResponse).GetProperty("Email").Should().BeNull();
@@ -156,35 +142,14 @@ public sealed class PublicUserAddressControllerTests
     }
 
     [Fact]
-    public async Task GetById_NotFoundWhenHidden_MetadataWhenVisible()
+    public async Task InternalLookup_RejectsUntrustedRequestsBeforeReadingAddresses()
     {
-        var id = Guid.NewGuid();
-        var metadata = Metadata(id);
-        var calls = new List<Guid[]>();
-        var responses = new Queue<PublicAddressMetadata[]>([[], [metadata]]);
-        _addresses.Setup(a => a.GetByIdsAsync(It.IsAny<Guid[]>(), _ct))
-            .Callback<Guid[], CancellationToken>((ids, _) => calls.Add(ids))
-            .ReturnsAsync(() => responses.Dequeue());
-
-        var hidden = await Controller().GetById(id, _ct);
-        var visible = await Controller().GetById(id, _ct);
-
-        hidden.Should().BeOfType<NotFoundResult>();
-        visible.Should().BeOfType<OkObjectResult>().Which.Value.Should().Be(metadata);
-        calls.Should().HaveCount(2).And.AllSatisfy(ids => ids.Should().Equal(id));
-    }
-
-    [Fact]
-    public async Task GetBatch_PassesIdsThrough()
-    {
-        Guid[] ids = [Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid()];
-        PublicAddressMetadata[] found = [Metadata(ids[2]), Metadata(ids[0])];
-        _addresses.Setup(a => a.GetByIdsAsync(ids, _ct)).ReturnsAsync(found);
-
-        var result = await Controller().GetBatch(ids, _ct);
-
-        result.Result.Should().BeOfType<OkObjectResult>().Which.Value.Should().BeSameAs(found);
-        _addresses.Verify(a => a.GetByIdsAsync(ids, _ct), Times.Once);
+        var controller = new InternalPublicAddressesController(_addresses.Object,
+            Microsoft.Extensions.Options.Options.Create(new CoffeePeek.Shared.Auth.Options.GatewayAuthOptions { SecretKey = "internal-secret" }));
+        controller.ControllerContext = new ControllerContext { HttpContext = new Microsoft.AspNetCore.Http.DefaultHttpContext() };
+        (await controller.GetBatch([Guid.NewGuid()], _ct)).Should().BeOfType<UnauthorizedResult>();
+        (await controller.Resolve("petr", _ct)).Should().BeOfType<UnauthorizedResult>();
+        _addresses.VerifyNoOtherCalls();
     }
 
     [Fact]

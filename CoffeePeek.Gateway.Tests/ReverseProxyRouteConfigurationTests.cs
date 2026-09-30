@@ -162,8 +162,7 @@ public class ReverseProxyRouteConfigurationTests
 
     [Theory]
     [InlineData("account-Users-by-slug-route", "/api/Users/by-slug/{slug}")]
-    [InlineData("account-Users-public-addresses-route", "/api/Users/public-addresses")]
-    [InlineData("account-Users-public-address-route", "/api/Users/{id:guid}/public-address")]
+    [InlineData("account-Users-public-profile-route", "/api/Users/{slug}")]
     public void PublicUserAddressRoutes_TargetAccountWithoutConsumingAuthRateLimit(string routeId, string path)
     {
         using var document = LoadGatewayAppsettings();
@@ -182,6 +181,19 @@ public class ReverseProxyRouteConfigurationTests
         var usersCatchAllIndex = routeIds.IndexOf("account-Users-route");
         usersCatchAllIndex.Should().BeGreaterThan(-1);
         routeIds.IndexOf(routeId).Should().BeLessThan(usersCatchAllIndex);
+    }
+
+    [Fact]
+    public void EmailExistenceRoute_KeepsAuthRateLimitAheadOfGenericPublicProfileRoute()
+    {
+        using var document = LoadGatewayAppsettings();
+        var routes = document.RootElement.GetProperty("ReverseProxy").GetProperty("Routes");
+        var exists = routes.GetProperty("account-Users-exists-route");
+        exists.GetProperty("RateLimiterPolicy").GetString().Should().Be("auth-endpoints");
+        exists.GetProperty("ClusterId").GetString().Should().Be("account-cluster");
+        exists.GetProperty("Match").GetProperty("Methods").EnumerateArray().Select(x => x.GetString()).Should().Equal("GET");
+        RoutePrecedence.ComputeInbound(ParseRouteTemplate(routes, "account-Users-exists-route"))
+            .Should().BeLessThan(RoutePrecedence.ComputeInbound(ParseRouteTemplate(routes, "account-Users-public-profile-route")));
     }
 
     [Fact]
@@ -208,7 +220,7 @@ public class ReverseProxyRouteConfigurationTests
         Matches(bySlug, "/api/Users/by-slug/ivan-petrov").Should().BeTrue();
 
         // Real Shops user-review paths are not captured by the by-slug route.
-        const string shopsUserReviewsPath = "/api/users/3fa85f64-5717-4562-b3fc-2c963f66afa6/reviews";
+        const string shopsUserReviewsPath = "/api/users/ivan-petrov/reviews";
         Matches(bySlug, shopsUserReviewsPath).Should().BeFalse();
         Matches(shopsReviews, shopsUserReviewsPath).Should().BeTrue();
     }

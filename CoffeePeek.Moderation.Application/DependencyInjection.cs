@@ -27,6 +27,7 @@ public static class DependencyInjection
         services.AddTransient<IValidationStrategy<UpdateCoffeeShopReviewCommand>, ReviewUpdateValidationStrategy>();
 
         // Application Services
+        services.AddScoped<Services.PublicModerationService>();
         services.AddScoped<IModerationShopCreationService, ModerationShopCreationService>();
 
         return services;

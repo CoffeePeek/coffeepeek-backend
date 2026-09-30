@@ -35,6 +35,10 @@ public sealed class ShopsLiveSchemaTests : IClassFixture<ShopsLiveDatabase>
     [InlineData(PublicAddressKind.Roaster)]
     [InlineData(PublicAddressKind.City)]
     [InlineData(PublicAddressKind.CoffeeZone)]
+    [InlineData(PublicAddressKind.CoffeeBean)]
+    [InlineData(PublicAddressKind.Equipment)]
+    [InlineData(PublicAddressKind.BrewMethod)]
+    [InlineData(PublicAddressKind.ShopTag)]
     public async Task RegistryConstraints_RejectInvalidRows(PublicAddressKind kind)
     {
         var owner = await fixture.AddOwnerAsync(kind, "schema owner one", false, Ct);
@@ -77,8 +81,8 @@ public sealed class ShopsLiveSchemaTests : IClassFixture<ShopsLiveDatabase>
             command.Parameters.AddWithValue("now", DateTime.UtcNow);
             await command.ExecuteNonQueryAsync(Ct);
         }
-        foreach (var kind in new[] { 1, 2, 3, 4 }) await Insert(kind, 1);
-        foreach (var kind in new[] { 0, 5 }) await Reject(() => Insert(kind, 2), "23514", "CK_PublicAddressAudit_Kind");
+        foreach (var kind in new[] { 1, 2, 3, 4, 5, 6, 7, 8 }) await Insert(kind, 1);
+        foreach (var kind in new[] { 0, 9 }) await Reject(() => Insert(kind, 2), "23514", "CK_PublicAddressAudit_Kind");
         await Reject(() => Insert(1, 0), "23514", "CK_PublicAddressAudit_Revision");
         await Reject(() => Insert(3, 1), "23505", "IX_PublicAddressAudit_Kind_OwnerId_Revision");
     }
@@ -88,6 +92,10 @@ public sealed class ShopsLiveSchemaTests : IClassFixture<ShopsLiveDatabase>
     [InlineData(PublicAddressKind.Roaster)]
     [InlineData(PublicAddressKind.City)]
     [InlineData(PublicAddressKind.CoffeeZone)]
+    [InlineData(PublicAddressKind.CoffeeBean)]
+    [InlineData(PublicAddressKind.Equipment)]
+    [InlineData(PublicAddressKind.BrewMethod)]
+    [InlineData(PublicAddressKind.ShopTag)]
     public async Task OwnerDelete_RestrictsRawDeleteAndRetiresWithFlagOff(PublicAddressKind kind)
     {
         var id = await fixture.AddOwnerAsync(kind, "delete " + kind, true, Ct);

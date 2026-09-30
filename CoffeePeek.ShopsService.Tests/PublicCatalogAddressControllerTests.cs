@@ -52,17 +52,16 @@ public sealed class PublicCatalogAddressControllerTests
         var result = await ZoneController().GetBySlug("nemiga", TestContext.Current.CancellationToken);
 
         var envelope = result.Should().BeOfType<OkObjectResult>().Which.Value
-            .Should().BeOfType<PublicAddressEnvelope<MapCoffeeZoneDto>>().Subject;
-        envelope.Data.Id.Should().Be(zone.Id);
-        envelope.Data.Name.Should().Be(zone.Name);
-        envelope.Data.Description.Should().Be(zone.Description);
-        envelope.Data.Latitude.Should().Be(zone.CenterLatitude);
-        envelope.Data.Longitude.Should().Be(zone.CenterLongitude);
-        envelope.Data.RadiusMeters.Should().Be(zone.RadiusMeters);
-        envelope.Data.ShopCount.Should().Be(zone.ShopCount);
-        envelope.Data.Polygon.Should().HaveCount(zone.Polygon.Length);
-        envelope.Data.Polygon[0].Should().Be(new MapCoffeeZonePointDto(zone.Polygon[0].Latitude, zone.Polygon[0].Longitude));
-        envelope.Address.Should().Be(address);
+            .Should().BeOfType<PublicZoneDto>().Subject;
+        envelope.Name.Should().Be(zone.Name);
+        envelope.Description.Should().Be(zone.Description);
+        envelope.Latitude.Should().Be(zone.CenterLatitude);
+        envelope.Longitude.Should().Be(zone.CenterLongitude);
+        envelope.RadiusMeters.Should().Be(zone.RadiusMeters);
+        envelope.ShopCount.Should().Be(zone.ShopCount);
+        envelope.Polygon.Should().HaveCount(zone.Polygon.Length);
+        envelope.Polygon[0].Should().Be(new MapCoffeeZonePointDto(zone.Polygon[0].Latitude, zone.Polygon[0].Longitude));
+        envelope.Address.Should().Be(PublicAddressDto.From(address));
         envelope.Address.CanonicalPath.Should().Be("/coffee-zones/nemiga");
     }
 
@@ -106,10 +105,9 @@ public sealed class PublicCatalogAddressControllerTests
         var result = await CityController().GetBySlug("minsk", TestContext.Current.CancellationToken);
 
         var envelope = result.Should().BeOfType<OkObjectResult>().Which.Value
-            .Should().BeOfType<PublicAddressEnvelope<CityDto>>().Subject;
-        envelope.Data.Id.Should().Be(city.Id);
-        envelope.Data.Name.Should().Be(city.Name);
-        envelope.Address.Should().Be(address);
+            .Should().BeOfType<PublicCityDto>().Subject;
+        envelope.Name.Should().Be(city.Name);
+        envelope.Address.Should().Be(PublicAddressDto.From(address));
         envelope.Address.CanonicalPath.Should().Be("/cities/minsk");
     }
 
@@ -137,6 +135,9 @@ public sealed class PublicCatalogAddressControllerTests
 
         public Task<PublicAddressMetadata[]> GetByIdsAsync(PublicAddressKind kind, Guid[] ids, CancellationToken ct) =>
             throw new NotSupportedException();
+
+        public Task<PublicAddressMetadata[]> GetForReadAsync(PublicAddressKind kind, Guid[] ids, CancellationToken ct) => throw new NotSupportedException();
+        public Task<Guid[]> ResolveIdsAsync(PublicAddressKind kind, string[] slugs, CancellationToken ct) => throw new NotSupportedException();
 
         public Task<PublicAddressMetadata> ChangeAsync(PublicAddressKind kind, Guid id, ChangePublicAddressRequest request,
             Guid actorId, CancellationToken ct) => throw new NotSupportedException();

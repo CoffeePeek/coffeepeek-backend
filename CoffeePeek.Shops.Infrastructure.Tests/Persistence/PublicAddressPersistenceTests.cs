@@ -19,6 +19,10 @@ public sealed class PublicAddressPersistenceTests
     [InlineData(typeof(RoasterPublicAddress), "RoasterPublicAddresses", typeof(Roaster))]
     [InlineData(typeof(CityPublicAddress), "CityPublicAddresses", typeof(City))]
     [InlineData(typeof(CoffeeZonePublicAddress), "CoffeeZonePublicAddresses", typeof(CoffeeZone))]
+    [InlineData(typeof(CoffeeBeanPublicAddress), "CoffeeBeanPublicAddresses", typeof(CoffeeBean))]
+    [InlineData(typeof(EquipmentPublicAddress), "EquipmentPublicAddresses", typeof(Equipment))]
+    [InlineData(typeof(BrewMethodPublicAddress), "BrewMethodPublicAddresses", typeof(CoffeePeek.Shops.Domain.Aggregates.BrewMethods.BrewMethod))]
+    [InlineData(typeof(ShopTagPublicAddress), "ShopTagPublicAddresses", typeof(CoffeePeek.Shops.Domain.Aggregates.ShopTagAggregate.ShopTag))]
     public void Model_ReservesHistoryAndRequiresExplicitRetirementBeforeDelete(Type type, string table, Type principal)
     {
         using var db = CreateNpgsqlDb();
@@ -47,10 +51,10 @@ public sealed class PublicAddressPersistenceTests
         using var db = CreateNpgsqlDb();
         var audit = db.GetService<IDesignTimeModel>().Model.FindEntityType(typeof(PublicAddressAudit))!;
         var check = audit.GetCheckConstraints().Single(c => c.Name == "CK_PublicAddressAudit_Kind");
-        check.Sql.Should().Be("\"Kind\" IN (1, 2, 3, 4)");
+        check.Sql.Should().Be("\"Kind\" IN (1, 2, 3, 4, 5, 6, 7, 8)");
 
         var values = Enum.GetValues<PublicAddressKind>().Select(k => (int)k).ToArray();
-        values.Should().Equal(1, 2, 3, 4);
+        values.Should().Equal(1, 2, 3, 4, 5, 6, 7, 8);
         foreach (var value in values) check.Sql.Should().Contain(value.ToString());
     }
 

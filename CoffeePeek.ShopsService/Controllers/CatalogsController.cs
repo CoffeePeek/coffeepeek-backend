@@ -1,12 +1,7 @@
 using CoffeePeek.Shared.Kernel.Response;
-using CoffeePeek.Shops.Application.Features.Catalogs.GetAllBeans;
-using CoffeePeek.Shops.Application.Features.Catalogs.GetAllBrewMethods;
-using CoffeePeek.Shops.Application.Features.Catalogs.GetAllCities;
-using CoffeePeek.Shops.Application.Features.Catalogs.GetAllEquipment;
-using CoffeePeek.Shops.Application.Features.Catalogs.GetAllRoasters;
-using CoffeePeek.Shops.Application.Features.Catalogs.GetShopTags;
 using Microsoft.AspNetCore.Mvc;
-using Wolverine;
+using CoffeePeek.Contract.Dtos.PublicAddresses;
+using CoffeePeek.Shops.Application.PublicAddresses;
 
 namespace CoffeePeek.ShopsService.Controllers;
 
@@ -14,71 +9,59 @@ namespace CoffeePeek.ShopsService.Controllers;
 [Route("api/[controller]")]
 [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
 [ProducesErrorResponseType(typeof(ErrorResponse))]
-public class CatalogsController(IMessageBus bus) : ControllerBase
+public class CatalogsController(PublicDiscoveryService discovery) : ControllerBase
 {
     [HttpGet("cities")]
-    [ProducesResponseType<Response<GetCitiesResponse>>(statusCode:StatusCodes.Status200OK)]
+    [ProducesResponseType<Response<PublicCityDto[]>>(statusCode:StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType( StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> GetCities()
+    public async Task<IActionResult> GetCities(CancellationToken ct)
     {
-        var command = new GetCitiesCommand();
-        var response = await bus.InvokeAsync<Response<GetCitiesResponse>>(command);
-        
-        return response.IsSuccess ? Ok(response) : BadRequest(response);
+        return Ok(Response<PublicCityDto[]>.Success(await discovery.CitiesAsync(ct)));
     }
 
     [HttpGet("beans")]
-    [ProducesResponseType(typeof(Response<GetAllCoffeeBeansResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(Response<PublicBeanDto[]>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType( StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> GetBeans()
+    public async Task<IActionResult> GetBeans(CancellationToken ct)
     {
-        var response = await bus.InvokeAsync<Response<GetAllCoffeeBeansResponse>>(new GetAllBeansCommand());
-        
-        return response.IsSuccess ? Ok(response) : BadRequest(response);
+        return Ok(Response<PublicBeanDto[]>.Success(await discovery.BeansAsync(ct)));
     }
 
     [HttpGet("equipments")]
-    [ProducesResponseType(typeof(Response<GetAllEquipmentResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(Response<PublicEquipmentDto[]>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType( StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> GetEquipment()
+    public async Task<IActionResult> GetEquipment(CancellationToken ct)
     {
-        var response = await bus.InvokeAsync<Response<GetAllEquipmentResponse>>(new GetAllEquipmentCommand());
-        
-        return response.IsSuccess ? Ok(response) : BadRequest(response);
+        return Ok(Response<PublicEquipmentDto[]>.Success(await discovery.EquipmentsAsync(ct)));
     }
 
     [HttpGet("roasters")]
-    [ProducesResponseType(typeof(Response<GetAllRoastersResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(Response<PublicRoasterSummaryDto[]>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType( StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> GetRoasters()
+    public async Task<IActionResult> GetRoasters(CancellationToken ct)
     {
-        var response = await bus.InvokeAsync<Response<GetAllRoastersResponse>>(new GetAllRoastersCommand());
-        
-        return response.IsSuccess ? Ok(response) : BadRequest(response);
+        return Ok(Response<PublicRoasterSummaryDto[]>.Success(await discovery.RoastersAsync(ct)));
     }
 
     [HttpGet("brew-methods")]
-    [ProducesResponseType(typeof(Response<GetAllBrewMethodsResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(Response<PublicBrewMethodDto[]>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType( StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> GetBrewMethods()
+    public async Task<IActionResult> GetBrewMethods(CancellationToken ct)
     {
-        var response = await bus.InvokeAsync<Response<GetAllBrewMethodsResponse>>(new GetAllBrewMethodsCommand());
-        
-        return response.IsSuccess ? Ok(response) : BadRequest(response);
+        return Ok(Response<PublicBrewMethodDto[]>.Success(await discovery.MethodsAsync(ct)));
     }
 
     [HttpGet("shop-tags")]
-    [ProducesResponseType(typeof(Response<GetShopTagsResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(Response<PublicTagDto[]>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> GetShopTags(CancellationToken ct)
     {
-        var response = await bus.InvokeAsync<Response<GetShopTagsResponse>>(new GetShopTagsCommand(), ct);
-        return response.IsSuccess ? Ok(response) : BadRequest(response);
+        return Ok(Response<PublicTagDto[]>.Success(await discovery.TagsAsync(ct)));
     }
 }

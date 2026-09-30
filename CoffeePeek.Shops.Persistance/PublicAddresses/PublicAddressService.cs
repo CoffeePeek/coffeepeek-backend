@@ -23,6 +23,10 @@ public sealed class PublicAddressService(ShopsDbContext db) : IPublicAddressServ
             PublicAddressKind.Roaster => ResolveAsync<RoasterPublicAddress>(kind, normalized, ct),
             PublicAddressKind.City => ResolveAsync<CityPublicAddress>(kind, normalized, ct),
             PublicAddressKind.CoffeeZone => ResolveAsync<CoffeeZonePublicAddress>(kind, normalized, ct),
+            PublicAddressKind.CoffeeBean => ResolveAsync<CoffeeBeanPublicAddress>(kind, normalized, ct),
+            PublicAddressKind.Equipment => ResolveAsync<EquipmentPublicAddress>(kind, normalized, ct),
+            PublicAddressKind.BrewMethod => ResolveAsync<BrewMethodPublicAddress>(kind, normalized, ct),
+            PublicAddressKind.ShopTag => ResolveAsync<ShopTagPublicAddress>(kind, normalized, ct),
             _ => throw UnknownKind()
         };
     }
@@ -37,10 +41,52 @@ public sealed class PublicAddressService(ShopsDbContext db) : IPublicAddressServ
         return current is null ? null : Metadata(kind, current, normalized != current.Slug);
     }
 
+    public Task<Guid[]> ResolveIdsAsync(PublicAddressKind kind, string[] slugs, CancellationToken ct)
+    {
+        RequireEnabled(kind);
+        if (slugs.Length > 100 || slugs.Any(s => !PublicSlug.IsValid(s?.ToLowerInvariant())))
+            throw new PublicAddressException("Supply at most 100 valid public slugs.", 400);
+        var normalized = slugs.Select(s => s.ToLowerInvariant()).Distinct().ToArray();
+        return kind switch
+        {
+            PublicAddressKind.CoffeeShop => ResolveIdsAsync<CoffeeShopPublicAddress>(kind, normalized, ct),
+            PublicAddressKind.Roaster => ResolveIdsAsync<RoasterPublicAddress>(kind, normalized, ct),
+            PublicAddressKind.City => ResolveIdsAsync<CityPublicAddress>(kind, normalized, ct),
+            PublicAddressKind.CoffeeZone => ResolveIdsAsync<CoffeeZonePublicAddress>(kind, normalized, ct),
+            PublicAddressKind.CoffeeBean => ResolveIdsAsync<CoffeeBeanPublicAddress>(kind, normalized, ct),
+            PublicAddressKind.Equipment => ResolveIdsAsync<EquipmentPublicAddress>(kind, normalized, ct),
+            PublicAddressKind.BrewMethod => ResolveIdsAsync<BrewMethodPublicAddress>(kind, normalized, ct),
+            PublicAddressKind.ShopTag => ResolveIdsAsync<ShopTagPublicAddress>(kind, normalized, ct),
+            _ => throw UnknownKind()
+        };
+    }
+
+    private async Task<Guid[]> ResolveIdsAsync<T>(PublicAddressKind kind, string[] slugs, CancellationToken ct) where T : PublicAddress
+    {
+        if (slugs.Length == 0) return [];
+        var rows = await db.Set<T>().AsNoTracking().Where(a => slugs.Contains(a.Slug) && a.OwnerId.HasValue)
+            .Select(a => new { a.Slug, Id = a.OwnerId!.Value }).ToArrayAsync(ct);
+        var visible = await GetForReadAsync(kind, rows.Select(x => x.Id).Distinct().ToArray(), ct);
+        var ids = visible.Select(x => x.EntityId).ToHashSet();
+        if (rows.Length != slugs.Length || rows.Any(x => !ids.Contains(x.Id)))
+            throw new PublicAddressException("Entity not found.", 404);
+        return rows.Select(x => x.Id).Distinct().ToArray();
+    }
+
     public Task<PublicAddressMetadata[]> GetByIdsAsync(PublicAddressKind kind, Guid[] ids, CancellationToken ct)
     {
         RequireEnabled(kind);
         if (ids.Length is < 1 or > 100 || ids.Contains(Guid.Empty)) throw new PublicAddressException("Supply 1–100 nonempty entity IDs.", 400);
+        return GetForReadAsync(kind, ids, ct);
+    }
+
+    // Read-model composition is a single batch per kind, including large map responses.
+    // The internal HTTP endpoint keeps its independent 100-ID input limit.
+    public Task<PublicAddressMetadata[]> GetForReadAsync(PublicAddressKind kind, Guid[] ids, CancellationToken ct)
+    {
+        RequireEnabled(kind);
+        if (ids.Length > 20_000 || ids.Contains(Guid.Empty)) throw new PublicAddressException("Invalid address read batch.", 400);
+        if (ids.Length == 0) return Task.FromResult(Array.Empty<PublicAddressMetadata>());
         var distinct = ids.Distinct().ToArray();
         return kind switch
         {
@@ -48,6 +94,10 @@ public sealed class PublicAddressService(ShopsDbContext db) : IPublicAddressServ
             PublicAddressKind.Roaster => GetByIdsAsync<RoasterPublicAddress>(kind, distinct, ct),
             PublicAddressKind.City => GetByIdsAsync<CityPublicAddress>(kind, distinct, ct),
             PublicAddressKind.CoffeeZone => GetByIdsAsync<CoffeeZonePublicAddress>(kind, distinct, ct),
+            PublicAddressKind.CoffeeBean => GetByIdsAsync<CoffeeBeanPublicAddress>(kind, distinct, ct),
+            PublicAddressKind.Equipment => GetByIdsAsync<EquipmentPublicAddress>(kind, distinct, ct),
+            PublicAddressKind.BrewMethod => GetByIdsAsync<BrewMethodPublicAddress>(kind, distinct, ct),
+            PublicAddressKind.ShopTag => GetByIdsAsync<ShopTagPublicAddress>(kind, distinct, ct),
             _ => throw UnknownKind()
         };
     }
@@ -56,7 +106,8 @@ public sealed class PublicAddressService(ShopsDbContext db) : IPublicAddressServ
     {
         var visible = await VisibleIdsAsync(kind, ids, ct);
         var rows = await db.Set<T>().AsNoTracking().Where(a => a.OwnerId.HasValue && visible.Contains(a.OwnerId.Value) && a.State == PublicAddressState.Canonical).ToArrayAsync(ct);
-        return rows.Select(a => Metadata(kind, a)).OrderBy(a => Array.IndexOf(ids, a.EntityId)).ToArray();
+        var byOwner = rows.ToDictionary(a => a.OwnerId!.Value);
+        return ids.Where(byOwner.ContainsKey).Select(id => Metadata(kind, byOwner[id])).ToArray();
     }
 
     public async Task<PublicAddressMetadata> ChangeAsync(PublicAddressKind kind, Guid id, ChangePublicAddressRequest request, Guid actorId, CancellationToken ct)
@@ -73,6 +124,10 @@ public sealed class PublicAddressService(ShopsDbContext db) : IPublicAddressServ
                 PublicAddressKind.Roaster => ChangeAsync<RoasterPublicAddress>(kind, id, request, actorId, ct),
                 PublicAddressKind.City => ChangeAsync<CityPublicAddress>(kind, id, request, actorId, ct),
                 PublicAddressKind.CoffeeZone => ChangeAsync<CoffeeZonePublicAddress>(kind, id, request, actorId, ct),
+                PublicAddressKind.CoffeeBean => ChangeAsync<CoffeeBeanPublicAddress>(kind, id, request, actorId, ct),
+                PublicAddressKind.Equipment => ChangeAsync<EquipmentPublicAddress>(kind, id, request, actorId, ct),
+                PublicAddressKind.BrewMethod => ChangeAsync<BrewMethodPublicAddress>(kind, id, request, actorId, ct),
+                PublicAddressKind.ShopTag => ChangeAsync<ShopTagPublicAddress>(kind, id, request, actorId, ct),
                 _ => throw UnknownKind()
             }, ct);
         }
@@ -133,6 +188,10 @@ public sealed class PublicAddressService(ShopsDbContext db) : IPublicAddressServ
             PublicAddressKind.Roaster => BackfillAsync<RoasterPublicAddress>(kind, afterId, limit, dryRun, actorId, ct),
             PublicAddressKind.City => BackfillAsync<CityPublicAddress>(kind, afterId, limit, dryRun, actorId, ct),
             PublicAddressKind.CoffeeZone => BackfillAsync<CoffeeZonePublicAddress>(kind, afterId, limit, dryRun, actorId, ct),
+            PublicAddressKind.CoffeeBean => BackfillAsync<CoffeeBeanPublicAddress>(kind, afterId, limit, dryRun, actorId, ct),
+            PublicAddressKind.Equipment => BackfillAsync<EquipmentPublicAddress>(kind, afterId, limit, dryRun, actorId, ct),
+            PublicAddressKind.BrewMethod => BackfillAsync<BrewMethodPublicAddress>(kind, afterId, limit, dryRun, actorId, ct),
+            PublicAddressKind.ShopTag => BackfillAsync<ShopTagPublicAddress>(kind, afterId, limit, dryRun, actorId, ct),
             _ => throw UnknownKind()
         };
         try
@@ -182,6 +241,14 @@ public sealed class PublicAddressService(ShopsDbContext db) : IPublicAddressServ
         PublicAddressKind.CoffeeZone => db.CoffeeZones.AsNoTracking()
             .Where(z => z.Status == CoffeeZoneStatus.Published && (!afterId.HasValue || z.Id.CompareTo(afterId.Value) > 0)).OrderBy(z => z.Id).Take(limit + 1)
             .Select(z => new OwnerStem(z.Id, z.Name, null)).ToArrayAsync(ct),
+        PublicAddressKind.CoffeeBean => db.CoffeeBeans.AsNoTracking().Where(s => !afterId.HasValue || s.Id.CompareTo(afterId.Value) > 0).OrderBy(s => s.Id).Take(limit + 1)
+            .Select(s => new OwnerStem(s.Id, s.Name, null)).ToArrayAsync(ct),
+        PublicAddressKind.Equipment => db.Equipments.AsNoTracking().Where(s => !afterId.HasValue || s.Id.CompareTo(afterId.Value) > 0).OrderBy(s => s.Id).Take(limit + 1)
+            .Select(s => new OwnerStem(s.Id, s.Name, null)).ToArrayAsync(ct),
+        PublicAddressKind.BrewMethod => db.BrewMethods.AsNoTracking().Where(s => !afterId.HasValue || s.Id.CompareTo(afterId.Value) > 0).OrderBy(s => s.Id).Take(limit + 1)
+            .Select(s => new OwnerStem(s.Id, s.Name, null)).ToArrayAsync(ct),
+        PublicAddressKind.ShopTag => db.ShopTags.AsNoTracking().Where(s => !afterId.HasValue || s.Id.CompareTo(afterId.Value) > 0).OrderBy(s => s.Id).Take(limit + 1)
+            .Select(s => new OwnerStem(s.Id, s.Slug, null)).ToArrayAsync(ct),
         _ => throw UnknownKind()
     };
 
@@ -194,6 +261,10 @@ public sealed class PublicAddressService(ShopsDbContext db) : IPublicAddressServ
         PublicAddressKind.Roaster => await db.Roasters.AsNoTracking().Where(s => s.Id == id).Select(s => s.Name).SingleOrDefaultAsync(ct),
         PublicAddressKind.City => await db.Cities.AsNoTracking().Where(c => c.Id == id).Select(c => c.Name).SingleOrDefaultAsync(ct),
         PublicAddressKind.CoffeeZone => await db.CoffeeZones.AsNoTracking().Where(z => z.Id == id).Select(z => z.Name).SingleOrDefaultAsync(ct),
+        PublicAddressKind.CoffeeBean => await db.CoffeeBeans.AsNoTracking().Where(s => s.Id == id).Select(s => s.Name).SingleOrDefaultAsync(ct),
+        PublicAddressKind.Equipment => await db.Equipments.AsNoTracking().Where(s => s.Id == id).Select(s => s.Name).SingleOrDefaultAsync(ct),
+        PublicAddressKind.BrewMethod => await db.BrewMethods.AsNoTracking().Where(s => s.Id == id).Select(s => s.Name).SingleOrDefaultAsync(ct),
+        PublicAddressKind.ShopTag => await db.ShopTags.AsNoTracking().Where(s => s.Id == id).Select(s => s.Slug).SingleOrDefaultAsync(ct),
         _ => throw UnknownKind()
     };
 
@@ -205,6 +276,10 @@ public sealed class PublicAddressService(ShopsDbContext db) : IPublicAddressServ
         PublicAddressKind.City => db.Cities.AsNoTracking().AnyAsync(c => c.Id == id, ct),
         // D-02: matches GET api/Map; Draft/Archived resolve exactly like unknown slugs.
         PublicAddressKind.CoffeeZone => db.CoffeeZones.AsNoTracking().AnyAsync(z => z.Id == id && z.Status == CoffeeZoneStatus.Published, ct),
+        PublicAddressKind.CoffeeBean => db.CoffeeBeans.AsNoTracking().AnyAsync(s => s.Id == id, ct),
+        PublicAddressKind.Equipment => db.Equipments.AsNoTracking().AnyAsync(s => s.Id == id, ct),
+        PublicAddressKind.BrewMethod => db.BrewMethods.AsNoTracking().AnyAsync(s => s.Id == id, ct),
+        PublicAddressKind.ShopTag => db.ShopTags.AsNoTracking().AnyAsync(s => s.Id == id && s.IsActive, ct),
         _ => throw UnknownKind()
     };
 
@@ -215,6 +290,10 @@ public sealed class PublicAddressService(ShopsDbContext db) : IPublicAddressServ
         PublicAddressKind.City => db.Cities.AsNoTracking().Where(c => ids.Contains(c.Id)).Select(c => c.Id).ToArrayAsync(ct),
         PublicAddressKind.CoffeeZone => db.CoffeeZones.AsNoTracking()
             .Where(z => ids.Contains(z.Id) && z.Status == CoffeeZoneStatus.Published).Select(z => z.Id).ToArrayAsync(ct),
+        PublicAddressKind.CoffeeBean => db.CoffeeBeans.AsNoTracking().Where(s => ids.Contains(s.Id)).Select(s => s.Id).ToArrayAsync(ct),
+        PublicAddressKind.Equipment => db.Equipments.AsNoTracking().Where(s => ids.Contains(s.Id)).Select(s => s.Id).ToArrayAsync(ct),
+        PublicAddressKind.BrewMethod => db.BrewMethods.AsNoTracking().Where(s => ids.Contains(s.Id)).Select(s => s.Id).ToArrayAsync(ct),
+        PublicAddressKind.ShopTag => db.ShopTags.AsNoTracking().Where(s => ids.Contains(s.Id) && s.IsActive).Select(s => s.Id).ToArrayAsync(ct),
         _ => throw UnknownKind()
     };
 
@@ -228,6 +307,10 @@ public sealed class PublicAddressService(ShopsDbContext db) : IPublicAddressServ
         PublicAddressKind.Roaster => "roasters",
         PublicAddressKind.City => "cities",
         PublicAddressKind.CoffeeZone => "coffee-zones",
+        PublicAddressKind.CoffeeBean => "catalogs/beans",
+        PublicAddressKind.Equipment => "catalogs/equipments",
+        PublicAddressKind.BrewMethod => "catalogs/brew-methods",
+        PublicAddressKind.ShopTag => "catalogs/shop-tags",
         _ => throw UnknownKind()
     };
 
@@ -246,5 +329,9 @@ public sealed class PublicAddressService(ShopsDbContext db) : IPublicAddressServ
         || constraint.StartsWith("IX_RoasterPublicAddresses_", StringComparison.Ordinal)
         || constraint.StartsWith("IX_CityPublicAddresses_", StringComparison.Ordinal)
         || constraint.StartsWith("IX_CoffeeZonePublicAddresses_", StringComparison.Ordinal)
+        || constraint.StartsWith("IX_CoffeeBeanPublicAddresses_", StringComparison.Ordinal)
+        || constraint.StartsWith("IX_EquipmentPublicAddresses_", StringComparison.Ordinal)
+        || constraint.StartsWith("IX_BrewMethodPublicAddresses_", StringComparison.Ordinal)
+        || constraint.StartsWith("IX_ShopTagPublicAddresses_", StringComparison.Ordinal)
         || constraint == "IX_PublicAddressAudit_Kind_OwnerId_Revision");
 }

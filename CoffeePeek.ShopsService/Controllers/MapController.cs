@@ -4,6 +4,8 @@ using CoffeePeek.Shops.Application.Features.CoffeeShop.GetShopsInBounds;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Wolverine;
+using CoffeePeek.Contract.Dtos.PublicAddresses;
+using CoffeePeek.Shops.Application.PublicAddresses;
 
 namespace CoffeePeek.ShopsService.Controllers;
 
@@ -13,7 +15,8 @@ namespace CoffeePeek.ShopsService.Controllers;
 [Produces("application/json")]
 [ProducesErrorResponseType(typeof(ErrorResponse))]
 [AllowAnonymous] // This endpoint is intentionally public — authentication not required
-public class MapController(IMessageBus bus) : ControllerBase
+[ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
+public class MapController(IMessageBus bus, PublicDiscoveryService discovery) : ControllerBase
 {
     /// <summary>
     /// Get coffee shops within geographical boundaries
@@ -35,7 +38,7 @@ public class MapController(IMessageBus bus) : ControllerBase
     /// <response code="200">Returns a list of shops found within the specified area</response>
     /// <response code="400">Invalid coordinates or bounding box geometry</response>
     [HttpGet]
-    [ProducesResponseType(typeof(Response<GetShopsInBoundsResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(Response<PublicMapDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> GetShopsInBounds(
@@ -54,6 +57,8 @@ public class MapController(IMessageBus bus) : ControllerBase
         var query = new GetShopsInBoundsQuery(minLat, minLon, maxLat, maxLon, zoom);
         
         var response = await bus.InvokeAsync<Response<GetShopsInBoundsResponse>>(query, ct);
-        return Ok(response);
+        if (response is not { IsSuccess: true, Data: not null }) return BadRequest(CoffeePeek.Shared.Kernel.Response.Response.Error(400, response.Message));
+        var data = response.Data;
+        return Ok(Response<PublicMapDto>.Success(await discovery.MapAsync(data.Shops, data.Clusters, data.Zones, data.IsTruncated, ct)));
     }
 }

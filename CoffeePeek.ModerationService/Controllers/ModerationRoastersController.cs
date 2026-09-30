@@ -12,13 +12,17 @@ using CoffeePeek.Shared.Kernel.Response;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Wolverine;
+using CoffeePeek.Contract.Dtos.PublicAddresses;
+using CoffeePeek.Moderation.Application.Services;
+using Mapster;
 
 namespace CoffeePeek.ModerationService.Controllers;
 
 [ApiController]
+[ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
 [Route("api/[controller]")]
 [ProducesErrorResponseType(typeof(ErrorResponse))]
-public class ModerationRoastersController(IMessageBus bus, IUserContext userContext) : ControllerBase
+public class ModerationRoastersController(IMessageBus bus, IUserContext userContext, PublicModerationService discovery) : ControllerBase
 {
     [HttpGet]
     [Authorize(Policy = RoleConsts.Moderator)]
@@ -42,7 +46,7 @@ public class ModerationRoastersController(IMessageBus bus, IUserContext userCont
     [HttpGet("mine")]
     [Authorize]
     [Description("Get the caller's own roaster submissions with moderation status")]
-    [ProducesResponseType<Response<GetAllModerationRoastersResponse>>(StatusCodes.Status200OK)]
+    [ProducesResponseType<Response<PublicPage<PublicModerationRoasterDto>>>(StatusCodes.Status200OK)]
     [ProducesResponseType<ErrorResponse>(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> GetMine(
         [FromQuery, Range(1, int.MaxValue)] int page = 1,
@@ -56,7 +60,10 @@ public class ModerationRoastersController(IMessageBus bus, IUserContext userCont
         if (response.IsSuccess && response.Data is not null)
             AddPagingHeaders(response.Data.TotalItems, response.Data.TotalPages, response.Data.CurrentPage, response.Data.PageSize);
 
-        return Ok(response);
+        if (response is not { IsSuccess: true, Data: not null }) return BadRequest(response);
+        var data = response.Data;
+        return Ok(Response<PublicPage<PublicModerationRoasterDto>>.Success(new(await discovery.RoastersAsync(data.Items, ct),
+            data.TotalItems, data.TotalPages, data.CurrentPage, data.PageSize)));
     }
 
     [HttpGet("{id:guid}")]
@@ -75,10 +82,11 @@ public class ModerationRoastersController(IMessageBus bus, IUserContext userCont
     [ProducesResponseType<Response<SubmitRoasterResponse>>(StatusCodes.Status201Created)]
     [ProducesResponseType<ErrorResponse>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType<ErrorResponse>(StatusCodes.Status409Conflict)]
-    public async Task<IActionResult> SubmitRoaster([FromBody] SubmitRoasterCommand command, CancellationToken ct)
+    public async Task<IActionResult> SubmitRoaster([FromBody] PublicSubmitRoasterRequest request, CancellationToken ct)
     {
         // Anonymous submissions carry a null UserId.
-        var commandWithUser = command with { UserId = userContext.GetUserId() };
+        var commandWithUser = request.Adapt<SubmitRoasterCommand>() with
+        { UserId = userContext.GetUserId(), CityId = request.City is null ? null : await discovery.ResolveIdAsync("cities", request.City, ct) };
         var response = await bus.InvokeAsync<Response<SubmitRoasterResponse>>(commandWithUser, ct);
 
         if (!response.IsSuccess)

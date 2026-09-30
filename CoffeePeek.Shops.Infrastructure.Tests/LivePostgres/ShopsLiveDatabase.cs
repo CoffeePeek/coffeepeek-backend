@@ -1,3 +1,5 @@
+using CoffeePeek.Shops.Domain.Aggregates.BrewMethods;
+using CoffeePeek.Shops.Domain.Aggregates.ShopTagAggregate;
 using CoffeePeek.Shared.Domain.PublicAddresses;
 using CoffeePeek.Shops.Application.PublicAddresses;
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
@@ -36,11 +38,23 @@ public class ShopsLiveDatabase : LiveDatabase<ShopsDbContext>
             PublicAddressKind.Roaster => new Roaster(name),
             PublicAddressKind.City => new City(name),
             PublicAddressKind.CoffeeZone => await ZoneAsync(),
+            PublicAddressKind.CoffeeBean => new CoffeeBean(name),
+            PublicAddressKind.Equipment => Equipment(),
+            PublicAddressKind.BrewMethod => new BrewMethod(name, BrewMethodCategory.Gravity),
+            PublicAddressKind.ShopTag => ShopTag.Create(PublicSlug.Generate(name), name),
             _ => throw new ArgumentOutOfRangeException(nameof(kind))
         };
         db.Add(owner);
         await db.SaveChangesAsync(ct);
         return (Guid)db.Entry(owner).Property("Id").CurrentValue!;
+
+        Equipment Equipment()
+        {
+            var category = new EquipmentCategory();
+            db.Add(category);
+            db.Entry(category).Property(nameof(EquipmentCategory.Name)).CurrentValue = "live category";
+            return new Equipment(name, "model", category);
+        }
 
         async Task<CoffeeZone> ZoneAsync()
         {
@@ -58,6 +72,10 @@ public class ShopsLiveDatabase : LiveDatabase<ShopsDbContext>
         PublicAddressKind.Roaster => ("RoasterPublicAddresses", "Roasters", typeof(RoasterPublicAddress), typeof(Roaster)),
         PublicAddressKind.City => ("CityPublicAddresses", "Cities", typeof(CityPublicAddress), typeof(City)),
         PublicAddressKind.CoffeeZone => ("CoffeeZonePublicAddresses", "CoffeeZones", typeof(CoffeeZonePublicAddress), typeof(CoffeeZone)),
+        PublicAddressKind.CoffeeBean => ("CoffeeBeanPublicAddresses", "CoffeeBeans", typeof(CoffeeBeanPublicAddress), typeof(CoffeeBean)),
+        PublicAddressKind.Equipment => ("EquipmentPublicAddresses", "Equipments", typeof(EquipmentPublicAddress), typeof(Equipment)),
+        PublicAddressKind.BrewMethod => ("BrewMethodPublicAddresses", "BrewMethods", typeof(BrewMethodPublicAddress), typeof(BrewMethod)),
+        PublicAddressKind.ShopTag => ("ShopTagPublicAddresses", "ShopTags", typeof(ShopTagPublicAddress), typeof(ShopTag)),
         _ => throw new ArgumentOutOfRangeException(nameof(kind))
     };
 }

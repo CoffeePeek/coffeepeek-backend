@@ -10,10 +10,7 @@ namespace CoffeePeek.AccountService.Controllers;
 
 /// <summary>
 /// Anonymous public profile addresses under the existing <c>api/Users</c> prefix.
-/// Address metadata comes directly from the read-only <see cref="IProfileAddressService"/>, as in the phase 2 and 3
-/// public address controllers: there is no new Wolverine handler, so the pre-generated handler code does not change.
-/// Profile data still goes through <see cref="IMessageBus"/> with the existing <see cref="GetPublicUserProfileCommand"/>,
-/// which keeps a single mapping path and re-checks visibility on the data read (D-04).
+/// Profile data uses the existing handler and rechecks visibility after resolving the address.
 /// Every hidden case (unknown, retired, deleted or blocked) returns the same 404 with the framework's generic
 /// ProblemDetails body and no user data.
 /// </summary>
@@ -28,7 +25,8 @@ public sealed class PublicUserAddressesController(IProfileAddressService address
     /// Resolves a profile slug or alias (case-insensitive) to the public profile and its current canonical address.
     /// </summary>
     [HttpGet("by-slug/{slug}")]
-    [ProducesResponseType<PublicAddressEnvelope<PublicUserProfileResponse>>(StatusCodes.Status200OK)]
+    [HttpGet("{slug}")]
+    [ProducesResponseType<PublicEntityEnvelope<PublicUserProfileResponse>>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
@@ -42,7 +40,7 @@ public sealed class PublicUserAddressesController(IProfileAddressService address
             var response = await bus.InvokeAsync<Response<PublicUserProfileResponse>>(
                 new GetPublicUserProfileCommand(address.EntityId), ct);
             return response is { IsSuccess: true, Data: not null }
-                ? Ok(new PublicAddressEnvelope<PublicUserProfileResponse>(response.Data, address))
+                ? Ok(new PublicEntityEnvelope<PublicUserProfileResponse>(response.Data, PublicAddressDto.From(address)))
                 : NotFound();
         }
         catch (NotFoundException)
@@ -53,26 +51,4 @@ public sealed class PublicUserAddressesController(IProfileAddressService address
         }
     }
 
-    /// <summary>
-    /// Returns the canonical addresses of up to 100 visible users, in input order; hidden and unknown ids are omitted.
-    /// </summary>
-    [HttpGet("public-addresses")]
-    [ProducesResponseType<PublicAddressMetadata[]>(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
-    public async Task<ActionResult<PublicAddressMetadata[]>> GetBatch([FromQuery] Guid[] ids, CancellationToken ct) =>
-        Ok(await addresses.GetByIdsAsync(ids, ct));
-
-    /// <summary>
-    /// Returns the current canonical address for a legacy user GUID, or 404 when the user is unknown or hidden.
-    /// </summary>
-    [HttpGet("{id:guid}/public-address")]
-    [ProducesResponseType<PublicAddressMetadata>(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
-    public async Task<IActionResult> GetById(Guid id, CancellationToken ct)
-    {
-        var result = await addresses.GetByIdsAsync([id], ct);
-        return result.Length == 0 ? NotFound() : Ok(result[0]);
-    }
 }

@@ -19,10 +19,10 @@ public class ShopsRoasterExistenceLookup(
 
         try
         {
-            var response = await client.GetFromJsonAsync<Response<RoasterListResponse>>(
+            var response = await client.GetFromJsonAsync<Response<CoffeePeek.Contract.Dtos.PublicAddresses.PublicRoasterSummaryDto[]>>(
                 "/api/catalogs/roasters", ct);
 
-            return response?.Data?.Roasters?.Any(r =>
+            return response?.Data?.Any(r =>
                 string.Equals(r.Name, name, StringComparison.OrdinalIgnoreCase)) == true;
         }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
@@ -32,5 +32,4 @@ public class ShopsRoasterExistenceLookup(
         }
     }
 
-    private record RoasterListResponse(RoasterDto[] Roasters);
 }

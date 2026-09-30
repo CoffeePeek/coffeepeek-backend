@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -61,7 +62,9 @@ public static partial class PublicSlug
         ArgumentOutOfRangeException.ThrowIfNegative(attempt);
         var stem = Generate(name);
         if (attempt == 0) return stem;
-        var identity = entityId.ToString("N");
+        // Collision suffixes must not publish the aggregate's GUID, even partially.
+        // Existing reserved addresses are unchanged; only new allocations use this digest.
+        var identity = Convert.ToHexStringLower(SHA256.HashData(entityId.ToByteArray()))[..32];
         var suffix = attempt switch
         {
             1 => "-" + identity[..8],

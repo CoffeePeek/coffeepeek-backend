@@ -20,7 +20,7 @@ public class AccountUserExistenceLookup(
             return false;
 
         var client = httpClientFactory.CreateClient("account-user-lookup");
-        using var request = new HttpRequestMessage(HttpMethod.Get, $"/api/Users/{userId}");
+        using var request = new HttpRequestMessage(HttpMethod.Get, $"/internal/users/{userId}");
         request.AddGatewayAuthHeader(gatewayAuthOptions.Value.SecretKey);
 
         try

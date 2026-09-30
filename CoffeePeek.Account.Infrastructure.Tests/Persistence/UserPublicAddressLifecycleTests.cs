@@ -63,9 +63,9 @@ public sealed class UserPublicAddressLifecycleTests
             "ivan",
             PublicSlug.Candidate("ivan", ids[1], 1),
             PublicSlug.Candidate("ivan", ids[2], 1),
-            "user-" + ids[3].ToString("N")[..8],
-            "user-" + ids[4].ToString("N")[..8],
-            "user-" + ids[5].ToString("N")[..8]);
+            CoffeePeek.Shared.Domain.PublicAddresses.PublicSlug.Candidate("user", ids[3], 1),
+            CoffeePeek.Shared.Domain.PublicAddresses.PublicSlug.Candidate("user", ids[4], 1),
+            CoffeePeek.Shared.Domain.PublicAddresses.PublicSlug.Candidate("user", ids[5], 1));
         slugs.Should().OnlyHaveUniqueItems();
         rows.Should().HaveCount(6);
         rows.Should().NotContain(r => r.Slug == "place" || r.Slug == "user");
