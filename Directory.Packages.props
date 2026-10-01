@@ -39,6 +39,10 @@
     <PackageVersion Include="Mapster" Version="10.0.7" />
     <PackageVersion Include="Mapster.DependencyInjection" Version="10.0.7" />
   </ItemGroup>
+  <ItemGroup Label="Transitive.SecurityPins">
+    <PackageVersion Include="Microsoft.OpenApi" Version="2.7.5" />
+    <PackageVersion Include="OpenTelemetry.Api" Version="1.15.3" />
+  </ItemGroup>
   <ItemGroup Label="Account">
     <PackageVersion Include="Google.Apis.Auth" Version="1.73.0" />
     <PackageVersion Include="Resend" Version="0.16.0" />
