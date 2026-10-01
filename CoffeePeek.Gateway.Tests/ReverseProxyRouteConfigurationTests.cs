@@ -25,6 +25,21 @@ public class ReverseProxyRouteConfigurationTests
             .Should().Equal("GET", "POST");
     }
 
+    [Fact]
+    public void AppVersionRoute_IsAnonymousAndTargetsShopsCluster()
+    {
+        using var document = LoadGatewayAppsettings();
+        var routes = document.RootElement.GetProperty("ReverseProxy").GetProperty("Routes");
+
+        routes.TryGetProperty("shops-app-version-v1-route", out var route).Should().BeTrue();
+        route.GetProperty("ClusterId").GetString().Should().Be("shops-cluster");
+        route.GetProperty("Match").GetProperty("Path").GetString().Should().Be("/api/v1/app-version");
+        route.GetProperty("RateLimiterPolicy").GetString().Should().Be("global");
+
+        // Outdated clients must reach the update policy before they can log in.
+        route.TryGetProperty("AuthorizationPolicy", out _).Should().BeFalse();
+    }
+
     [Theory]
     [InlineData("shops-admin-cities-route", "/api/admin/cities/{**remainder}")]
     [InlineData("shops-admin-equipments-route", "/api/admin/equipments/{**remainder}")]

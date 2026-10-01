@@ -66,6 +66,24 @@ public class AdminAppDownloadsController(IMessageBus bus, IUserContext userConte
         return AppDistributionResult(response);
     }
 
+    [HttpPut("{platform}/version")]
+    [ProducesResponseType<Response<AdminAppDownloadsDto>>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> UpdateVersionPolicy(
+        string platform,
+        [FromBody] UpdateAppVersionPolicyRequest request,
+        CancellationToken ct)
+    {
+        var response = await bus.InvokeAsync<Response<AdminAppDownloadsDto>>(
+            new UpdateAppVersionPolicyCommand(
+                userContext.GetUserIdOrThrow(),
+                platform,
+                request.LatestVersionCode,
+                request.MinVersionCode),
+            ct);
+
+        return AppDistributionResult(response);
+    }
+
     [HttpGet("android/releases")]
     [ProducesResponseType<Response<AndroidReleaseDto[]>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetAndroidReleases(CancellationToken ct)

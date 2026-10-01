@@ -13,6 +13,13 @@ public sealed class AppDistributionSettings : Entity<Guid>
     public bool AndroidApkEnabled { get; private set; }
     public bool IosAppStoreEnabled { get; private set; }
 
+    // 0 = not configured; clients below Min*VersionCode must update before using the app.
+    // AndroidLatestVersionCode is the Play build; the APK channel reports the active AndroidRelease instead.
+    public int AndroidLatestVersionCode { get; private set; }
+    public int AndroidMinVersionCode { get; private set; }
+    public int IosLatestVersionCode { get; private set; }
+    public int IosMinVersionCode { get; private set; }
+
     // ReSharper disable once UnusedMember.Local
     private AppDistributionSettings()
     {
@@ -52,6 +59,32 @@ public sealed class AppDistributionSettings : Entity<Guid>
     }
 
     public void SetApkEnabled(bool enabled) => AndroidApkEnabled = enabled;
+
+    public void UpdateAndroidVersionPolicy(int latestVersionCode, int minVersionCode)
+    {
+        ValidateVersionPolicy(latestVersionCode, minVersionCode);
+        AndroidLatestVersionCode = latestVersionCode;
+        AndroidMinVersionCode = minVersionCode;
+    }
+
+    public void UpdateIosVersionPolicy(int latestVersionCode, int minVersionCode)
+    {
+        ValidateVersionPolicy(latestVersionCode, minVersionCode);
+        IosLatestVersionCode = latestVersionCode;
+        IosMinVersionCode = minVersionCode;
+    }
+
+    private static void ValidateVersionPolicy(int latestVersionCode, int minVersionCode)
+    {
+        if (latestVersionCode <= 0)
+            throw new DomainException("Latest version code must be greater than zero.");
+
+        if (minVersionCode < 0)
+            throw new DomainException("Minimum version code cannot be negative.");
+
+        if (minVersionCode > latestVersionCode)
+            throw new DomainException("Minimum version code cannot be greater than the latest version code.");
+    }
 
     private static string? NormalizeOptionalUrl(string? url) =>
         string.IsNullOrWhiteSpace(url) ? null : url.Trim();
