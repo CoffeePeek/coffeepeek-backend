@@ -91,7 +91,9 @@ public class WolverinePreGeneratedHandlersTests
         // message). Restricted to CoffeePeek message types to skip helper methods on *Handler classes.
         var discoveredMessageNames = handlerAssemblies
             .SelectMany(a => a.GetTypes())
-            .Where(t => t is { IsClass: true, IsAbstract: false }
+            // Static classes are abstract+sealed in IL; excluding all abstract types skipped every
+            // static handler and let GetAppVersionQuery ship without pre-generated code.
+            .Where(t => t.IsClass && (!t.IsAbstract || t.IsSealed)
                         && (t.Name.EndsWith("Handler", StringComparison.Ordinal)
                             || t.Name.EndsWith("Consumer", StringComparison.Ordinal)))
             .SelectMany(t => t.GetMethods(BindingFlags.Public | BindingFlags.Static | BindingFlags.Instance | BindingFlags.DeclaredOnly))
