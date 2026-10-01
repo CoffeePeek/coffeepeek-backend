@@ -5,6 +5,7 @@ using CoffeePeek.Shared.Kernel.Response;
 using CoffeePeek.Shops.Application.Features.Admin.Catalogs.BrewMethods;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using CoffeePeek.Shops.Application.Features.Catalogs.GetAllBrewMethods;
 using Wolverine;
 
 namespace CoffeePeek.ShopsService.Controllers;
@@ -17,6 +18,12 @@ namespace CoffeePeek.ShopsService.Controllers;
 [ProducesErrorResponseType(typeof(ErrorResponse))]
 public class AdminBrewMethodsController(IMessageBus bus) : ControllerBase
 {
+    /// <summary>Full list with aggregate GUIDs (the public /api/Catalogs lists expose only slugs).</summary>
+    [HttpGet]
+    [ProducesResponseType<Response<GetAllBrewMethodsResponse>>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetAll(CancellationToken ct) =>
+        Ok(await bus.InvokeAsync<Response<GetAllBrewMethodsResponse>>(new GetAllBrewMethodsCommand(), ct));
+
     [HttpPost]
     [ProducesResponseType<Response<BrewMethodDto>>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]

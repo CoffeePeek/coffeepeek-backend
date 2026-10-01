@@ -6,6 +6,7 @@ using CoffeePeek.Shared.Kernel.Response;
 using CoffeePeek.Shops.Application.Features.Admin.Catalogs.Roasters;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using CoffeePeek.Shops.Application.Features.Catalogs.GetAllRoasters;
 using Wolverine;
 
 namespace CoffeePeek.ShopsService.Controllers;
@@ -18,6 +19,12 @@ namespace CoffeePeek.ShopsService.Controllers;
 [ProducesErrorResponseType(typeof(ErrorResponse))]
 public class AdminRoastersController(IMessageBus bus, IUserContext userContext) : ControllerBase
 {
+    /// <summary>Full list with aggregate GUIDs (the public /api/Catalogs lists expose only slugs).</summary>
+    [HttpGet]
+    [ProducesResponseType<Response<GetAllRoastersResponse>>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetAll(CancellationToken ct) =>
+        Ok(await bus.InvokeAsync<Response<GetAllRoastersResponse>>(new GetAllRoastersCommand(), ct));
+
     [HttpPost]
     [ProducesResponseType<Response<RoasterDto>>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
