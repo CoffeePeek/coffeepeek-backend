@@ -135,6 +135,7 @@ progress:
 | 260925-kjj | add-optional-date-range-filter-from-to-t | complete | 2026-09-25 |
 | 260925-l0p | imgproxy-image-variants-with-urls-on-pho | complete | 2026-09-25 |
 | 260925-fast | deploy-start-imgproxy-recreate-caddy-on-caddyfile-change | complete | 2026-09-25 |
+| fast-af646f00 | pin-patched-openapi-otel-api | complete | 2026-10-01 |
 
 ## Milestone Progress
 
