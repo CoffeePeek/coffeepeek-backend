@@ -18,6 +18,7 @@ public class ResponseCachePolicyTests
     [Theory]
     [InlineData(typeof(PublicStatsController), nameof(PublicStatsController.GetStats))]
     [InlineData(typeof(AppDownloadsController), nameof(AppDownloadsController.Get))]
+    [InlineData(typeof(AppDownloadsController), nameof(AppDownloadsController.GetVersion))]
     [InlineData(typeof(MenuController), nameof(MenuController.GetDrinks))]
     public void MutablePublicEndpoints_DoNotAllowHttpResponseCaching(Type controllerType, string actionName)
     {

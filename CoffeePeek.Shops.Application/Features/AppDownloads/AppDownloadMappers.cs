@@ -45,7 +45,9 @@ internal static class AppDownloadMappers
                 settings.IosAppStoreEnabled && !string.IsNullOrWhiteSpace(settings.IosAppStoreUrl),
                 AppDownloadRoutes.IosUrl,
                 settings.IosAppStoreUrl),
-            settings.UpdatedAtUtc ?? settings.CreatedAtUtc);
+            settings.UpdatedAtUtc ?? settings.CreatedAtUtc,
+            new AppVersionPolicyDto(settings.AndroidLatestVersionCode, settings.AndroidMinVersionCode),
+            new AppVersionPolicyDto(settings.IosLatestVersionCode, settings.IosMinVersionCode));
 
     public static AndroidReleaseDto ToDto(this AndroidRelease release) =>
         new AndroidReleaseDto(

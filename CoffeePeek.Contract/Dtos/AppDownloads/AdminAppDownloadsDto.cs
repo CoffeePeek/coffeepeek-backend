@@ -6,7 +6,9 @@ public record AdminAppDownloadsDto(
     AdminStoreChannelDto AndroidGooglePlay,
     AdminApkChannelDto AndroidApk,
     AdminStoreChannelDto IosAppStore,
-    DateTime? UpdatedAt);
+    DateTime? UpdatedAt,
+    AppVersionPolicyDto AndroidVersion,
+    AppVersionPolicyDto IosVersion);
 
 public record AdminStoreChannelDto(
     bool Enabled,

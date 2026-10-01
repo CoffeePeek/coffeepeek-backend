@@ -135,6 +135,12 @@ namespace CoffeePeek.Shops.Persistance.Migrations
                         .HasMaxLength(2048)
                         .HasColumnType("character varying(2048)");
 
+                    b.Property<int>("AndroidLatestVersionCode")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("AndroidMinVersionCode")
+                        .HasColumnType("integer");
+
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
@@ -144,6 +150,12 @@ namespace CoffeePeek.Shops.Persistance.Migrations
                     b.Property<string>("IosAppStoreUrl")
                         .HasMaxLength(2048)
                         .HasColumnType("character varying(2048)");
+
+                    b.Property<int>("IosLatestVersionCode")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("IosMinVersionCode")
+                        .HasColumnType("integer");
 
                     b.Property<DateTime?>("UpdatedAtUtc")
                         .HasColumnType("timestamp with time zone");

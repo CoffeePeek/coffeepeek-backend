@@ -17,3 +17,5 @@ public record CreateAndroidReleaseCommand(
     DateTime? ReleasedAt);
 
 public record PublishAndroidReleaseCommand(Guid UserId, Guid Id);
+
+public record UpdateAppVersionPolicyCommand(Guid UserId, string Platform, int LatestVersionCode, int MinVersionCode);

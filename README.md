@@ -220,7 +220,7 @@ Main route groups through the gateway:
 | `/api/ModerationShops/*`, `/api/ModerationReviews/*`, `/api/ModerationRoasters/*`, `/api/ShopChangeRequests/*`, `/api/ShopIssueReports/*` | Moderation |
 | `/api/Photos/*` | Media |
 | `/api/admin/*` | Admin tools (Moderator/Admin roles) |
-| `/download/*`, `/api/v1/app-downloads` | App download links |
+| `/download/*`, `/api/v1/app-downloads`, `/api/v1/app-version` | App download links, update policy |
 
 Every service exposes `/health` and `/alive`.
 
