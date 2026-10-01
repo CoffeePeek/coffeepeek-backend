@@ -31,10 +31,9 @@ public static class AdminDeleteUserHandler
         if (user is null)
             return Response<bool>.Error("User not found");
 
-        user.SetSoftDelete();
         user.RevokeAllSessions();
 
-        await userRepository.Update(user, ct);
+        await userRepository.Delete(user, ct);
         // Wolverine commits after the handler; finish network calls before SaveChanges acquires the address lock.
         await revokedUserStore.RevokeAccessTokensAsync(user.Id, jwtOptions.Value, ct);
         await sessionTerminationNotifier.NotifyForceLogoutAsync(user.Id, SessionTerminationReasons.UserDeleted, ct);

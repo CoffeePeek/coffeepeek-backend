@@ -66,10 +66,8 @@ public static class ConfirmAccountDeletionHandler
                 "User not found."), null);
 
         request.Confirm(command.Reason, command.OtherReason, nowUtc);
-        user.SetSoftDelete();
         user.RevokeAllSessions();
-        await deletionRequestRepository.Update(request, ct);
-        await userRepository.Update(user, ct);
+        await userRepository.Delete(user, ct);
         // Wolverine commits after the handler; finish network calls before SaveChanges acquires the address lock.
         await revokedUserStore.RevokeAccessTokensAsync(user.Id, jwtOptions.Value, ct);
         await sessionTerminationNotifier.NotifyForceLogoutAsync(

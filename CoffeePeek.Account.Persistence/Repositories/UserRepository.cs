@@ -28,6 +28,12 @@ public class UserRepository(AccountDbContext dbContext) : IUserRepository
         return Task.CompletedTask;
     }
 
+    public Task Delete(User user, CancellationToken ct = default)
+    {
+        _repository.Remove(user);
+        return Task.CompletedTask;
+    }
+
     public Task<User?> GetByEmail(string email, CancellationToken ct)
     {
         return _repository

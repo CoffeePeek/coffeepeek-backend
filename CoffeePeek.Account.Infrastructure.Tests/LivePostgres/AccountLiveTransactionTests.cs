@@ -38,6 +38,7 @@ public sealed class AccountLiveTransactionTests : IClassFixture<AccountLiveDatab
         var prefix = admin ? "AdminDelete" : "ConfirmedDelete";
         var id = await fixture.RegisterAsync(prefix + ".Owner", true, Ct);
         await using var db = fixture.Context();
+        var email = (await db.Users.AsNoTracking().SingleAsync(x => x.Id == id, Ct)).Credentials.Email.Value;
         await using var transaction = await db.Database.BeginTransactionAsync(Ct);
         var redisEntered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var redisRelease = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -91,9 +92,12 @@ public sealed class AccountLiveTransactionTests : IClassFixture<AccountLiveDatab
             foreach (var pending in registrations) try { await pending; } catch { }
         }
         await using var check = fixture.Context();
-        (await check.Users.SingleAsync(x => x.Id == id, Ct)).IsSoftDelete.Should().BeTrue();
+        (await check.Users.AnyAsync(x => x.Id == id, Ct)).Should().BeFalse();
         (await check.UserPublicAddresses.SingleAsync(x => x.Slug == PublicSlug.Generate(prefix + ".Owner"), Ct))
             .State.Should().Be(PublicAddressState.Tombstone);
+        var replacementId = await fixture.RegisterAsync(prefix + ".Replacement", true, Ct, email);
+        (await check.Users.CountAsync(x => x.Credentials.Email == email, Ct)).Should().Be(1);
+        replacementId.Should().NotBe(id);
     }
 
     [Fact]

@@ -46,7 +46,7 @@ public class ConfirmAccountDeletionHandlerTests
     }
 
     [Fact]
-    public async Task Handle_WithPendingRequest_DisablesUserRevokesSessionsAndEmitsEvent()
+    public async Task Handle_WithPendingRequest_DeletesUserRevokesSessionsAndEmitsEvent()
     {
         var user = CreateUser();
         user.AddSession("refresh-token", TimeSpan.FromDays(7), "device", "127.0.0.1");
@@ -62,7 +62,8 @@ public class ConfirmAccountDeletionHandlerTests
         response.IsSuccess.Should().BeTrue();
         response.Data.Status.Should().Be(AccountDeletionRequestStatus.Processing);
         request.ConfirmedAtUtc.Should().Be(Now);
-        user.IsSoftDelete.Should().BeTrue();
+        _userRepository.Verify(x => x.Delete(user, It.IsAny<CancellationToken>()), Times.Once);
+        _userRepository.Verify(x => x.Update(It.IsAny<DomainUser>(), It.IsAny<CancellationToken>()), Times.Never);
         user.RefreshTokens.Should().OnlyContain(x => x.IsRevoked);
         @event.Should().BeEquivalentTo(new AccountDeletionRequestedV1(request.Id, user.Id, request.RequestedAtUtc));
         _revokedUserStore.Verify(
