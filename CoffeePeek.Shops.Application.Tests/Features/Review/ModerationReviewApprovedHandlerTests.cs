@@ -51,6 +51,10 @@ public class ModerationReviewApprovedHandlerTests
             Header = "new header",
             Comment = "new comment body text",
             Rating = new RatingDto { Place = 5, Service = 4, Coffee = 3 },
+            DrinkSlug = "other",
+            CustomDrinkName = "Эспрессо-тоник",
+            DrinkNameRu = "Эспрессо-тоник",
+            DrinkNameEn = "Эспрессо-тоник",
             Photos = photos ?? []
         };
 
@@ -87,7 +91,9 @@ public class ModerationReviewApprovedHandlerTests
             @event, _reviewRepoMock.Object, _unitOfWorkMock.Object, _cacheMock.Object, _ct);
 
         added.Should().NotBeNull();
-        var published = added!.Photos.ToList();
+        added!.DrinkSlug.Should().Be("other");
+        added.CustomDrinkName.Should().Be("Эспрессо-тоник");
+        var published = added.Photos.ToList();
         published.Should().HaveCount(3);
         for (var i = 0; i < photos.Length; i++)
         {
@@ -128,6 +134,8 @@ public class ModerationReviewApprovedHandlerTests
         await ModerationReviewApprovedHandler.Handle(
             @event, _reviewRepoMock.Object, _unitOfWorkMock.Object, _cacheMock.Object, _ct);
 
+        existing.DrinkSlug.Should().Be("other");
+        existing.DrinkNameRu.Should().Be("Эспрессо-тоник");
         existing.Photos.Select(p => p.StorageKey).Should().Equal("reviews/n1.jpg", "reviews/n2.jpg");
         _reviewRepoMock.Verify(
             r => r.TrackPhotoReplacement(It.IsAny<IReadOnlyCollection<ShopPhoto>>(), It.IsAny<IReadOnlyCollection<ShopPhoto>>()),

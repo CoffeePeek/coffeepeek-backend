@@ -47,6 +47,8 @@ public class CheckInContractTests
     {
         var command = Command(isPublic) with
         {
+            DrinkSlug = "other",
+            CustomDrinkName = "Эспрессо-тоник",
             Photos = [new UploadedPhotoDto("coffee.jpg", "image/jpeg", "checkins/coffee.jpg", 1234)]
         };
         var repo = new Mock<IQueryCheckInRepository>();
@@ -67,9 +69,12 @@ public class CheckInContractTests
             .Returns(ValueTask.CompletedTask);
 
         var response = await CreateCheckInHandler.Handle(command, repo.Object, uow.Object,
-            bus.Object, Validator(), mapper, cache.Object, lookup.Object, CancellationToken.None);
+            bus.Object, Validator(), mapper, cache.Object, lookup.Object, Mock.Of<CoffeePeek.Shared.Kernel.Drinks.IDrinkCatalog>(), CancellationToken.None);
 
         response.IsSuccess.Should().BeTrue();
+        saved.DrinkSlug.Should().Be("other");
+        saved.DrinkNameRu.Should().Be("Эспрессо-тоник");
+        mapper.Map<CoffeePeek.Contract.Dtos.CoffeeShop.CheckInDto>(saved).CustomDrinkName.Should().Be("Эспрессо-тоник");
         saved.Rating.Coffee.Should().Be(5);
         saved.Rating.Place.Should().Be(4);
         saved.Rating.Service.Should().Be(3);
@@ -78,6 +83,8 @@ public class CheckInContractTests
         uow.Verify(u => u.SaveChangesAsync(CancellationToken.None), Times.Once);
         if (isPublic)
         {
+            published.ReviewDto.DrinkSlug.Should().Be("other");
+            published.ReviewDto.CustomDrinkName.Should().Be("Эспрессо-тоник");
             published.Should().NotBeNull();
             published.ReviewDto.Header.Should().Be(command.Header);
             published.ReviewDto.Comment.Should().Be(command.Note);

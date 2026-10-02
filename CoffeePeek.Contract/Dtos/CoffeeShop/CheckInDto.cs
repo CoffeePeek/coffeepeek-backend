@@ -2,6 +2,11 @@ namespace CoffeePeek.Contract.Dtos.CoffeeShop;
 
 public class CheckInDto
 {
+    public string? DrinkSlug { get; set; }
+    public string? CustomDrinkName { get; set; }
+    public string? DrinkNameRu { get; set; }
+    public string? DrinkNameEn { get; set; }
+
     public Guid Id { get; set; }
     public Guid UserId { get; set; }
     public Guid ShopId { get; set; }

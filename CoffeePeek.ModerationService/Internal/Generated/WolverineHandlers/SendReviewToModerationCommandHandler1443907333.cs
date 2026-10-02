@@ -30,6 +30,8 @@ namespace Internal.Generated.WolverineHandlers
             var moderationReviewRepository = new CoffeeShop.Moderation.Persistence.Repositories.ModerationReviewRepository(moderationDbContext);
             var queryModerationShopRepository = new CoffeeShop.Moderation.Persistence.Repositories.QueryModerationShopRepository(moderationDbContext);
             var sendReviewToModerationValidationStrategy = new CoffeePeek.Moderation.Application.Features.Review.SendReviewToModeration.SendReviewToModerationValidationStrategy();
+            // This service has been marked as requiring service location independent of Wolverine's ability to use constructor injection of everything else
+            var drinkCatalog = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<CoffeePeek.Shared.Kernel.Drinks.IDrinkCatalog>(serviceScope.ServiceProvider);
             // The actual message body
             var sendReviewToModerationCommand = (CoffeePeek.Moderation.Application.Features.Review.SendReviewToModeration.SendReviewToModerationCommand)context.Envelope.Message;
 
@@ -49,7 +51,7 @@ namespace Internal.Generated.WolverineHandlers
                 System.Diagnostics.Activity.Current?.SetTag("handler.type", "CoffeePeek.Moderation.Application.Features.Review.SendReviewToModeration.SendReviewToModerationHandler");
                 
                 // The actual message execution
-                var outgoing1 = await CoffeePeek.Moderation.Application.Features.Review.SendReviewToModeration.SendReviewToModerationHandler.Handle(sendReviewToModerationCommand, sendReviewToModerationValidationStrategy, queryModerationShopRepository, moderationReviewRepository, unitOfWorkOfModerationDbContext, cancellation).ConfigureAwait(false);
+                var outgoing1 = await CoffeePeek.Moderation.Application.Features.Review.SendReviewToModeration.SendReviewToModerationHandler.Handle(sendReviewToModerationCommand, sendReviewToModerationValidationStrategy, queryModerationShopRepository, moderationReviewRepository, unitOfWorkOfModerationDbContext, drinkCatalog, cancellation).ConfigureAwait(false);
 
                 
                 // Outgoing, cascaded message

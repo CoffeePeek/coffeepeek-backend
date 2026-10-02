@@ -30,6 +30,8 @@ public static class ModerationReviewApprovedHandler
             .Select((p, i) => new ShopPhoto(p.FileName, p.ContentType, p.StorageKey, p.SizeBytes, p.OwnerId, i))
             .ToList();
 
+        var drink = reviewDto.DrinkSlug is null ? null : new CoffeePeek.Shared.Kernel.Drinks.DrinkSelection(
+            reviewDto.DrinkSlug, reviewDto.CustomDrinkName, reviewDto.DrinkNameRu!, reviewDto.DrinkNameEn!);
         Guid? addedReviewId = null;
         if (existing != null)
         {
@@ -37,6 +39,7 @@ public static class ModerationReviewApprovedHandler
                 reviewDto.Header,
                 reviewDto.Comment,
                 Rating.Create(reviewDto.Rating.Place, reviewDto.Rating.Service, reviewDto.Rating.Coffee));
+            existing.SetDrink(drink);
             existing.Restore(); // un-hide a review that was hidden by an edit
 
             var removed = existing.ReplacePhotos(photos);
@@ -54,6 +57,7 @@ public static class ModerationReviewApprovedHandler
                 moderationReviewId: reviewDto.Id);
 
             // Add() cascades the whole graph as Added, so no TrackPhotoReplacement is needed here.
+            review.SetDrink(drink);
             review.ReplacePhotos(photos);
             reviewRepository.Add(review);
             addedReviewId = review.Id;

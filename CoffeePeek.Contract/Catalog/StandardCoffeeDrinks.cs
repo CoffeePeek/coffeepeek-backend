@@ -9,6 +9,7 @@ public static class StandardCoffeeDrinks
     public static readonly CoffeeDrinkDefinitionDto[] All =
     [
         new("espresso", "Эспрессо", "Espresso", CoffeeDrinkCategory.Espresso, 10),
+        new("lungo", "Лунго", "Lungo", CoffeeDrinkCategory.Espresso, 25),
         new("doppio", "Доппио", "Doppio", CoffeeDrinkCategory.Espresso, 20),
         new("americano", "Американо", "Americano", CoffeeDrinkCategory.Espresso, 30),
         new("cappuccino", "Капучино", "Cappuccino", CoffeeDrinkCategory.Espresso, 40),

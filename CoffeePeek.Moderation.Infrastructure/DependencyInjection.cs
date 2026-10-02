@@ -54,6 +54,12 @@ public static class DependencyInjection
             client.BaseAddress = new Uri($"http://{AppResources.ShopsService}");
             client.Timeout = Timeout.InfiniteTimeSpan;
         });
+        services.AddHttpClient("shops-drink-catalog", client =>
+        {
+            client.BaseAddress = new Uri($"http://{AppResources.ShopsService}");
+            client.Timeout = TimeSpan.FromSeconds(35);
+        });
+        services.AddScoped<CoffeePeek.Shared.Kernel.Drinks.IDrinkCatalog, ShopsDrinkCatalog>();
         services.AddScoped<IRoasterExistenceLookup, ShopsRoasterExistenceLookup>();
         services.AddScoped<CoffeePeek.Shared.Auth.PublicAddressHttpClient>();
         services.AddScoped<IPublicAddressLookup, ShopsPublicAddressLookup>();

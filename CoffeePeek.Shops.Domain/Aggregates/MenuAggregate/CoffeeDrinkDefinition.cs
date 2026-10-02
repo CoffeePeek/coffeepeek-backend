@@ -51,9 +51,15 @@ public sealed class CoffeeDrinkDefinition : Entity<Guid>
     {
         ValidateName(nameRu);
         ValidateName(nameEn);
-        if (string.IsNullOrWhiteSpace(slug))
-            throw new DomainException("Slug is required.");
-        if (aliases.Length > BusinessConstants.MaxCoffeeDrinkAliasesLength)
+        slug = slug?.Trim().ToLowerInvariant()!;
+        if (string.IsNullOrWhiteSpace(slug) || slug.Length > BusinessConstants.MaxCoffeeDrinkSlugLength ||
+            slug == "other" || !System.Text.RegularExpressions.Regex.IsMatch(slug, "^[a-z0-9]+(?:[_-][a-z0-9]+)*$"))
+            throw new DomainException("Slug must contain lowercase letters, digits, underscores or hyphens; other is reserved.");
+        if (!Enum.IsDefined(category))
+            throw new DomainException("Unknown drink category.");
+        if (sortOrder < 0)
+            throw new DomainException("Sort order cannot be negative.");
+        if (aliases is null || aliases.Length > BusinessConstants.MaxCoffeeDrinkAliasesLength)
             throw new DomainException(
                 $"Aliases cannot be longer than {BusinessConstants.MaxCoffeeDrinkAliasesLength} characters.");
 
@@ -68,6 +74,19 @@ public sealed class CoffeeDrinkDefinition : Entity<Guid>
         {
             IsActive = isActive
         };
+    }
+
+    public void Update(string nameRu, string nameEn, CoffeeDrinkCategory category, string aliases, int sortOrder, bool isActive)
+    {
+        // Use the same validation for catalog creation and editing; the stable slug never changes.
+        var validated = CreateWithId(Id, Slug, nameRu, nameEn, category, aliases, sortOrder, isActive);
+        NameRu = validated.NameRu;
+        NameEn = validated.NameEn;
+        Category = validated.Category;
+        Aliases = validated.Aliases;
+        SortOrder = validated.SortOrder;
+        IsActive = validated.IsActive;
+        UpdatedAtUtc = DateTime.UtcNow;
     }
 
     public IReadOnlyList<string> AliasList =>

@@ -85,6 +85,8 @@ public static class DependencyInjection
         services.AddScoped<IShopTagRepository, ShopTagRepository>();
         services.AddScoped<IQueryShopTagRepository, QueryShopTagRepository>();
         services.AddScoped<IQueryCoffeeDrinkRepository, QueryCoffeeDrinkRepository>();
+        services.AddScoped<ICoffeeDrinkRepository, QueryCoffeeDrinkRepository>();
+        services.AddScoped<CoffeePeek.Shared.Kernel.Drinks.IDrinkCatalog, QueryCoffeeDrinkRepository>();
         services.AddScoped<IQueryShopMenuRepository, QueryShopMenuRepository>();
         services.AddScoped<IShopMenuRepository, ShopMenuRepository>();
         services.AddCacheModule();

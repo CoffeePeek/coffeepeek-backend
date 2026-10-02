@@ -1,10 +1,23 @@
-﻿using CoffeePeek.Shared.Domain.Entities;
+using CoffeePeek.Shared.Domain.Entities;
 using CoffeePeek.Shops.Domain.Entities;
 
 namespace CoffeePeek.Shops.Domain.Aggregates.ReviewAggregate;
 
 public sealed partial class Review : Entity<Guid>
 {
+    public string? DrinkSlug { get; private set; }
+    public string? CustomDrinkName { get; private set; }
+    public string? DrinkNameRu { get; private set; }
+    public string? DrinkNameEn { get; private set; }
+
+    public void SetDrink(CoffeePeek.Shared.Kernel.Drinks.DrinkSelection? drink)
+    {
+        DrinkSlug = drink?.Slug;
+        CustomDrinkName = drink?.CustomName;
+        DrinkNameRu = drink?.NameRu;
+        DrinkNameEn = drink?.NameEn;
+    }
+
     public string? Header { get; private set; }
     public string Comment { get; private set; }
     public Guid CoffeeShopId { get; private set; }

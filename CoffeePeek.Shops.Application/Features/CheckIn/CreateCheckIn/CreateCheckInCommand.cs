@@ -15,6 +15,9 @@ public record CreateCheckInCommand(
     [Required] RatingDto? Rating = null,
     [MaxLength(BusinessConstants.MaxReviewHeaderLength)] string? Header = null)
 {
+    public string? DrinkSlug { get; init; }
+    public string? CustomDrinkName { get; init; }
+
     [JsonIgnore] public Guid UserId { get; init; }
     [JsonIgnore] public string UserName { get; init; } = string.Empty;
 }

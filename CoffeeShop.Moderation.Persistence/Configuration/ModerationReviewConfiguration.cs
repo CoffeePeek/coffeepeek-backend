@@ -31,6 +31,10 @@ public class ModerationReviewConfiguration : IEntityTypeConfiguration<Moderation
         entity.Property(mr => mr.Header)
             .IsRequired(false)
             .HasMaxLength(BusinessConstants.MaxReviewHeaderLength);
+        entity.Property(mr => mr.DrinkSlug).HasMaxLength(50);
+        entity.Property(mr => mr.CustomDrinkName).HasMaxLength(100);
+        entity.Property(mr => mr.DrinkNameRu).HasMaxLength(100);
+        entity.Property(mr => mr.DrinkNameEn).HasMaxLength(100);
         entity.Property(mr => mr.Comment).HasMaxLength(BusinessConstants.MaxReviewCommentLength);
         entity.Property(mr => mr.RejectedReason).HasMaxLength(BusinessConstants.MaxRejectReasonCommentLength);
             

@@ -17,6 +17,7 @@ public static class SendReviewToModerationHandler
         IQueryModerationShopRepository moderationShopRepository,
         IModerationReviewRepository repository,
         IUnitOfWork unitOfWork,
+        CoffeePeek.Shared.Kernel.Drinks.IDrinkCatalog drinkCatalog,
         CancellationToken ct)
     {
         var validationResult = await validationStrategy.ValidateAsync(command, ct);
@@ -52,6 +53,9 @@ public static class SendReviewToModerationHandler
             command.EffectiveRating.Place, command.EffectiveRating.Service, command.EffectiveRating.Coffee,
             photos);
 
+        review.SetDrink(command.TrustedDrink ??
+            await CoffeePeek.Shared.Kernel.Drinks.DrinkSelection.ResolveAsync(
+                command.DrinkSlug, command.CustomDrinkName, drinkCatalog, ct));
         repository.Add(review);
         
         await unitOfWork.SaveChangesAsync(ct);

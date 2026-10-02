@@ -11,6 +11,14 @@ public interface IQueryCoffeeDrinkRepository
     Task<CoffeeDrinkDefinition[]> GetActiveAsync(CancellationToken ct = default);
 }
 
+public interface ICoffeeDrinkRepository : IQueryCoffeeDrinkRepository
+{
+    Task<CoffeeDrinkDefinition[]> GetAllAsync(CancellationToken ct);
+    Task<CoffeeDrinkDefinition?> FindTrackedAsync(string slug, CancellationToken ct);
+    void Add(CoffeeDrinkDefinition drink);
+    Task SaveAsync(CancellationToken ct);
+}
+
 public interface IQueryShopMenuRepository
 {
     Task<ShopMenu?> GetByShopIdAsync(Guid shopId, CancellationToken ct = default);

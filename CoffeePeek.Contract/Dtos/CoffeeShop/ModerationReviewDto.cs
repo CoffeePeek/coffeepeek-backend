@@ -1,10 +1,15 @@
-﻿using CoffeePeek.Contract.Dtos;
+using CoffeePeek.Contract.Dtos;
 using CoffeePeek.Contract.Enums;
 
 namespace CoffeePeek.Contract.Dtos.CoffeeShop;
 
 public record ModerationReviewDto
 {
+    public string? DrinkSlug { get; init; }
+    public string? CustomDrinkName { get; init; }
+    public string? DrinkNameRu { get; init; }
+    public string? DrinkNameEn { get; init; }
+
     public Guid Id { get; init; }
 
     public string? Header { get; init; }

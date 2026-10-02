@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 using CoffeePeek.Contract.Dtos;
 using CoffeePeek.Moderation.Domain;
@@ -14,8 +14,12 @@ public record SendReviewToModerationCommand(
     RatingDto? Rating,
     ICollection<UploadedPhotoDto>? Photos)
 {
+    public string? DrinkSlug { get; init; }
+    public string? CustomDrinkName { get; init; }
+
     [JsonIgnore] public Guid UserId { get; init; }
     [JsonIgnore] public string UserName { get; init; } = string.Empty;
+    [JsonIgnore] public CoffeePeek.Shared.Kernel.Drinks.DrinkSelection? TrustedDrink { get; init; }
     [JsonIgnore] public Guid? CheckInId { get; init; }
 
     [JsonPropertyName("ratingCoffee")] public int? RatingCoffee { get; init; }

@@ -136,6 +136,10 @@ public class ShopsDbContext(DbContextOptions<ShopsDbContext> options, IOptions<P
             entity.Property(r => r.Header)
                 .IsRequired(false)
                 .HasMaxLength(BusinessConstants.MaxReviewHeaderLength);
+            entity.Property(r => r.DrinkSlug).HasMaxLength(50);
+            entity.Property(r => r.CustomDrinkName).HasMaxLength(100);
+            entity.Property(r => r.DrinkNameRu).HasMaxLength(100);
+            entity.Property(r => r.DrinkNameEn).HasMaxLength(100);
             entity.Property(r => r.Comment).HasMaxLength(BusinessConstants.MaxReviewCommentLength);
             entity.Property(r => r.UserName).IsRequired().HasMaxLength(30);
             entity.Property(r => r.HelpfulCount).HasDefaultValue(0);
@@ -182,6 +186,10 @@ public class ShopsDbContext(DbContextOptions<ShopsDbContext> options, IOptions<P
             entity.Property(c => c.ShopId).IsRequired();
             entity.Property(c => c.ReviewId).IsRequired(false);
                 
+            entity.Property(c => c.DrinkSlug).HasMaxLength(50);
+            entity.Property(c => c.CustomDrinkName).HasMaxLength(100);
+            entity.Property(c => c.DrinkNameRu).HasMaxLength(100);
+            entity.Property(c => c.DrinkNameEn).HasMaxLength(100);
             entity.Property(c => c.Note).HasMaxLength(BusinessConstants.MaxCheckInNoteLength);
             
             // Foreign keys without navigation properties (DDD aggregate separation)

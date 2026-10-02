@@ -18,6 +18,7 @@ public static class UpdateCoffeeShopReviewHandler
         IModerationReviewRepository reviewRepository,
         IMapper mapper,
         IUnitOfWork unitOfWork,
+        CoffeePeek.Shared.Kernel.Drinks.IDrinkCatalog drinkCatalog,
         CancellationToken ct)
     {
         var validationResult = validationStrategy.Validate(command);
@@ -36,6 +37,21 @@ public static class UpdateCoffeeShopReviewHandler
         {
             return (Response<UpdateCoffeeShopReviewResponse>.Error(
                 HttpStatusCode.Forbidden, "You are not authorized to update this review"), null);
+        }
+
+        if (command.ClearDrink)
+        {
+            if (command.DrinkSlug is not null || command.CustomDrinkName is not null)
+                throw new ValidationException("ClearDrink cannot be combined with a drink selection.");
+            review.SetDrink(null);
+        }
+        else if (command.DrinkSlug is not null || command.CustomDrinkName is not null)
+        {
+            // An unchanged choice remains valid after catalog deactivation or renaming.
+            if (command.DrinkSlug?.Trim().ToLowerInvariant() != review.DrinkSlug ||
+                (string.IsNullOrWhiteSpace(command.CustomDrinkName) ? null : command.CustomDrinkName.Trim()) != review.CustomDrinkName)
+                review.SetDrink(await CoffeePeek.Shared.Kernel.Drinks.DrinkSelection.ResolveAsync(
+                    command.DrinkSlug, command.CustomDrinkName, drinkCatalog, ct));
         }
 
         review.UpdateHeader(command.Header);

@@ -61,7 +61,7 @@ public class CreateCheckInHandlerTests
             _mapperMock.Object,
             _cacheMock.Object,
             _photoLookupMock.Object,
-            _ct);
+            Mock.Of<CoffeePeek.Shared.Kernel.Drinks.IDrinkCatalog>(), _ct);
 
     [Fact]
     public async Task Handle_PrivateCheckIn_CreatesCheckInAndSaves()
@@ -79,7 +79,7 @@ public class CreateCheckInHandlerTests
             _mapperMock.Object,
             _cacheMock.Object,
             _photoLookupMock.Object,
-            _ct);
+            Mock.Of<CoffeePeek.Shared.Kernel.Drinks.IDrinkCatalog>(), _ct);
 
         result.IsSuccess.Should().BeTrue();
         _busMock.Verify(b => b.PublishAsync(It.IsAny<object>()), Times.Never);
@@ -105,7 +105,7 @@ public class CreateCheckInHandlerTests
             .Callback(() => order.Add("validate")).ReturnsAsync(ValidationResult.Valid);
 
         await CreateCheckInHandler.Handle(command, _checkInRepoMock.Object, _unitOfWorkMock.Object, _busMock.Object,
-            _validationMock.Object, _mapperMock.Object, _cacheMock.Object, _photoLookupMock.Object, _ct);
+            _validationMock.Object, _mapperMock.Object, _cacheMock.Object, _photoLookupMock.Object, Mock.Of<CoffeePeek.Shared.Kernel.Drinks.IDrinkCatalog>(), _ct);
 
         order.Should().Equal("lock", "validate");
     }
@@ -138,7 +138,7 @@ public class CreateCheckInHandlerTests
             _mapperMock.Object,
             _cacheMock.Object,
             _photoLookupMock.Object,
-            _ct);
+            Mock.Of<CoffeePeek.Shared.Kernel.Drinks.IDrinkCatalog>(), _ct);
 
         result.IsSuccess.Should().BeTrue();
         saved.Should().NotBeNull();
@@ -176,7 +176,7 @@ public class CreateCheckInHandlerTests
             _mapperMock.Object,
             _cacheMock.Object,
             _photoLookupMock.Object,
-            _ct);
+            Mock.Of<CoffeePeek.Shared.Kernel.Drinks.IDrinkCatalog>(), _ct);
 
         result.IsSuccess.Should().BeTrue();
         saved.Should().NotBeNull();
@@ -208,7 +208,7 @@ public class CreateCheckInHandlerTests
             _mapperMock.Object,
             _cacheMock.Object,
             _photoLookupMock.Object,
-            _ct);
+            Mock.Of<CoffeePeek.Shared.Kernel.Drinks.IDrinkCatalog>(), _ct);
 
         // TEST-04 regression: DomainException must NOT be swallowed by catch block
         await act.Should().ThrowAsync<DomainException>();
@@ -231,7 +231,7 @@ public class CreateCheckInHandlerTests
             _mapperMock.Object,
             _cacheMock.Object,
             _photoLookupMock.Object,
-            _ct);
+            Mock.Of<CoffeePeek.Shared.Kernel.Drinks.IDrinkCatalog>(), _ct);
 
         await act.Should().ThrowAsync<CoffeePeek.Shared.Kernel.Exceptions.ValidationException>();
         _unitOfWorkMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);

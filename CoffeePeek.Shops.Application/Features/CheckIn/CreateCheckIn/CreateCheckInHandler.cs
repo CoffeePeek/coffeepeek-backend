@@ -33,6 +33,7 @@ public static class CreateCheckInHandler
         IMapper mapper,
         ICacheService cacheService,
         IUploadedPhotoLookup photoLookup,
+        CoffeePeek.Shared.Kernel.Drinks.IDrinkCatalog drinkCatalog,
         CancellationToken ct)
     {
         // Cooldown and daily cap are read-then-insert checks; without the lock parallel requests all pass.
@@ -46,6 +47,10 @@ public static class CreateCheckInHandler
             command.UserId,
             command.CoffeeShopId,
             command.VisitedAt);
+
+        var drink = await CoffeePeek.Shared.Kernel.Drinks.DrinkSelection.ResolveAsync(
+            command.DrinkSlug, command.CustomDrinkName, drinkCatalog, ct);
+        checkIn.SetDrink(drink);
 
         if (!string.IsNullOrEmpty(command.Note))
             checkIn.UpdateNote(command.Note);
@@ -103,6 +108,8 @@ public static class CreateCheckInHandler
                 ratingService: command.Rating.Service,
                 ratingCoffee: command.Rating.Coffee,
                 moderationReviewId: Guid.Empty);
+
+            review.SetDrink(drink);
 
             await bus.PublishAsync(new CheckinCreatedEvent
             {

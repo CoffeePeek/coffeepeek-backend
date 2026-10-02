@@ -25,7 +25,7 @@ public static class InfrastructureExtensions
         builder.AddWolverine(
             typeof(InfrastructureExtensions).Assembly,
             [applicationAssembly, infrastructureAssembly],
-            [typeof(ShopsDbContext)]);
+            [typeof(ShopsDbContext), typeof(CoffeePeek.Shared.Kernel.Drinks.IDrinkCatalog), typeof(CoffeePeek.Shops.Domain.Aggregates.MenuAggregate.ICoffeeDrinkRepository)]);
         
         builder.Services
             .AddApplication()

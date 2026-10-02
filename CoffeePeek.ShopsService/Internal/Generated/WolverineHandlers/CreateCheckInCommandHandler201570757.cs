@@ -46,6 +46,8 @@ namespace Internal.Generated.WolverineHandlers
             var queryCheckInRepository = new CoffeePeek.Shops.Persistance.Repositories.QueryCheckInRepository(shopsDbContext);
             var checkInValidationStrategy = new CoffeePeek.Shops.Application.ValidationStrategy.CheckIn.CheckInValidationStrategy(queryCoffeeShopRepository, queryCheckInRepository);
             var unitOfWorkOfShopsDbContext = new CoffeePeek.Shared.Persistence.Data.UnitOfWork<CoffeePeek.Shops.Persistance.Configuration.ShopsDbContext>(shopsDbContext);
+            // This service has been marked as requiring service location independent of Wolverine's ability to use constructor injection of everything else
+            var drinkCatalog = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<CoffeePeek.Shared.Kernel.Drinks.IDrinkCatalog>(serviceScope.ServiceProvider);
             // The actual message body
             var createCheckInCommand = (CoffeePeek.Shops.Application.Features.CheckIn.CreateCheckIn.CreateCheckInCommand)context.Envelope.Message;
 
@@ -65,7 +67,7 @@ namespace Internal.Generated.WolverineHandlers
                 System.Diagnostics.Activity.Current?.SetTag("handler.type", "CoffeePeek.Shops.Application.Features.CheckIn.CreateCheckIn.CreateCheckInHandler");
                 
                 // The actual message execution
-                var outgoing1 = await CoffeePeek.Shops.Application.Features.CheckIn.CreateCheckIn.CreateCheckInHandler.Handle(createCheckInCommand, queryCheckInRepository, unitOfWorkOfShopsDbContext, context, checkInValidationStrategy, _mapper, _cacheService, mediaUploadedPhotoLookup, cancellation).ConfigureAwait(false);
+                var outgoing1 = await CoffeePeek.Shops.Application.Features.CheckIn.CreateCheckIn.CreateCheckInHandler.Handle(createCheckInCommand, queryCheckInRepository, unitOfWorkOfShopsDbContext, context, checkInValidationStrategy, _mapper, _cacheService, mediaUploadedPhotoLookup, drinkCatalog, cancellation).ConfigureAwait(false);
 
                 
                 // Outgoing, cascaded message
