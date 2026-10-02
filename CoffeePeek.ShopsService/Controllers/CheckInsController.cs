@@ -45,7 +45,12 @@ public class CheckInsController(IMessageBus bus, IUserContext userContext, Publi
         var shopId = await discovery.ResolveIdAsync(PublicAddressKind.CoffeeShop, request.Shop, ct);
         var command = new CreateCheckInCommand(shopId, request.IsPublic, request.VisitedAt, request.Note,
             request.Photos, request.Rating, request.Header)
-        { UserId = userContext.GetUserIdOrThrow(), UserName = userContext.GetUsernameOrThrow() };
+        {
+            DrinkSlug = request.DrinkSlug,
+            CustomDrinkName = request.CustomDrinkName,
+            UserId = userContext.GetUserIdOrThrow(),
+            UserName = userContext.GetUsernameOrThrow()
+        };
         var response = await bus.InvokeAsync<Response<CreateCheckInResponse>>(command, ct);
 
         return Ok(response);
@@ -119,4 +124,11 @@ public sealed record PublicCreateCheckInRequest(
     [Required, MaxLength(100)] string Shop, bool IsPublic, DateTime VisitedAt,
     [MaxLength(CoffeePeek.Shops.Domain.BusinessConstants.MaxCheckInNoteLength)] string? Note = null,
     ICollection<UploadedPhotoDto>? Photos = null, [Required] RatingDto? Rating = null,
-    [MaxLength(CoffeePeek.Shops.Domain.BusinessConstants.MaxReviewHeaderLength)] string? Header = null);
+    [MaxLength(CoffeePeek.Shops.Domain.BusinessConstants.MaxReviewHeaderLength)] string? Header = null)
+{
+    [MaxLength(CoffeePeek.Shops.Domain.BusinessConstants.MaxCoffeeDrinkSlugLength)]
+    public string? DrinkSlug { get; init; }
+
+    [MaxLength(CoffeePeek.Shops.Domain.BusinessConstants.MaxCoffeeDrinkNameLength)]
+    public string? CustomDrinkName { get; init; }
+}

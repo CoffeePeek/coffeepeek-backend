@@ -62,6 +62,11 @@ public sealed record PublicShopDetailsDto : PublicShopSummaryDto
 
 public sealed record PublicReviewDto
 {
+    public string? DrinkSlug { get; init; }
+    public string? CustomDrinkName { get; init; }
+    public string? DrinkNameRu { get; init; }
+    public string? DrinkNameEn { get; init; }
+
     public Guid Id { get; init; }
     public PublicAddressDto? Author { get; init; }
     public PublicAddressDto? Shop { get; init; }
@@ -78,6 +83,11 @@ public sealed record PublicReviewDto
 
 public sealed record PublicCheckInDto
 {
+    public string? DrinkSlug { get; init; }
+    public string? CustomDrinkName { get; init; }
+    public string? DrinkNameRu { get; init; }
+    public string? DrinkNameEn { get; init; }
+
     public Guid Id { get; init; }
     public PublicAddressDto? Shop { get; init; }
     public string Note { get; init; } = string.Empty;
