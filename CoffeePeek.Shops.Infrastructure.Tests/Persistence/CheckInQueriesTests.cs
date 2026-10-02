@@ -48,6 +48,7 @@ public class CheckInQueriesTests
         var userId = Guid.NewGuid();
 
         var checkIn = CheckIn.Create(userId, Guid.NewGuid(), Utc(9, 15));
+        checkIn.SetDrink(new("other", "Эспрессо-тоник", "Эспрессо-тоник", "Espresso tonic"));
         checkIn.AddPhotos([new ShopPhoto("p.jpg", "image/jpeg", "checkins/p.jpg", 1024, userId)]);
         db.CheckIns.Add(checkIn);
         await db.SaveChangesAsync(_ct);
@@ -60,7 +61,12 @@ public class CheckInQueriesTests
 
         var (items, _) = await sut.GetByUserId(userId, 1, 100, null, null, _ct);
 
-        var photo = items.Should().ContainSingle().Subject.Photos.Should().ContainSingle().Subject;
+        var projected = items.Should().ContainSingle().Subject;
+        projected.DrinkSlug.Should().Be("other");
+        projected.CustomDrinkName.Should().Be("Эспрессо-тоник");
+        projected.DrinkNameRu.Should().Be("Эспрессо-тоник");
+        projected.DrinkNameEn.Should().Be("Espresso tonic");
+        var photo = projected.Photos.Should().ContainSingle().Subject;
         photo.FullUrl.Should().Be("https://media.coffeepeek.by/coffeepeek.shops/checkins/p.jpg");
         photo.Urls.Should().NotBeNull();
         photo.Urls!.Thumbnail.Should().Be("https://media.coffeepeek.by/img/_/thumb/plain/coffeepeek.shops/checkins/p.jpg");

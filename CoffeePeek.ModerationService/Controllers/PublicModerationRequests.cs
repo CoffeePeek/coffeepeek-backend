@@ -13,6 +13,12 @@ public sealed record PublicCreateReviewRequest([Required, MaxLength(100)] string
     [Required, MaxLength(BusinessConstants.MaxReviewCommentLength)] string Comment,
     RatingDto? Rating, ICollection<UploadedPhotoDto>? Photos)
 {
+    [MaxLength(CoffeePeek.Shared.Kernel.Drinks.DrinkSelection.MaxSlugLength)]
+    public string? DrinkSlug { get; init; }
+
+    [MaxLength(CoffeePeek.Shared.Kernel.Drinks.DrinkSelection.MaxNameLength)]
+    public string? CustomDrinkName { get; init; }
+
     public int? RatingCoffee { get; init; }
     public int? RatingPlace { get; init; }
     public int? RatingService { get; init; }

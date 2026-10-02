@@ -25,6 +25,7 @@ using CoffeePeek.Moderation.Application.Features.Shop.CreateShop;
 using CoffeePeek.Moderation.Application.Features.ShopChangeRequests;
 using CoffeePeek.ModerationService.Controllers;
 using CoffeePeek.Shops.Application.Features.CheckIn.CreateCheckIn;
+using CoffeePeek.Shops.Application.Features.CheckIn.GetUserCheckIns;
 using CoffeePeek.Shops.Domain.Aggregates.CheckInAggregate;
 using CoffeePeek.Shops.Domain.Aggregates.BrewMethods;
 using CoffeePeek.Shops.Domain.Aggregates.ShopTagAggregate;
@@ -125,7 +126,9 @@ public sealed class PublicAddressGatewaySmokeTests
             BrewMethods = [new BrewMethodDto { Id = method.Id, Name = method.Name }]
         };
         var review = new ReviewDto { Id = Guid.NewGuid(), UserId = user.Id, CoffeeShopId = shop.Id,
-            Username = "Petr", Comment = "Lovely coffee", Rating = new RatingDto { Place = 5, Coffee = 5, Service = 5 } };
+            Username = "Petr", Comment = "Lovely coffee", Rating = new RatingDto { Place = 5, Coffee = 5, Service = 5 },
+            DrinkSlug = "other", CustomDrinkName = "Эспрессо-тоник",
+            DrinkNameRu = "Эспрессо-тоник", DrinkNameEn = "Espresso tonic" };
         var detail = new CoffeeShopDetailsDto { Id = shop.Id, CityId = city.Id, Name = shop.Name, Photos = [],
             CoffeeBeans = summary.Beans, Roasters = summary.Roasters, Equipments = summary.Equipments,
             BrewMethods = summary.BrewMethods, Reviews = [review], Tags = [new ShopTagDto(tag.Id, tag.Slug, tag.Name, null, 0)] };
@@ -187,6 +190,11 @@ public sealed class PublicAddressGatewaySmokeTests
         bus.Setup(x => x.InvokeAsync<Response<CreateCheckInResponse>>(It.IsAny<object>(), It.IsAny<CancellationToken>(), It.IsAny<TimeSpan?>()))
             .Callback<object, CancellationToken, TimeSpan?>((command, _, _) => capturedCheckIn = (CreateCheckInCommand)command)
             .ReturnsAsync(Response<CreateCheckInResponse>.Success(new(Guid.NewGuid())));
+        bus.Setup(x => x.InvokeAsync<Response<GetUserCheckInsResponse>>(It.IsAny<object>(), It.IsAny<CancellationToken>(), It.IsAny<TimeSpan?>()))
+            .ReturnsAsync(Response<GetUserCheckInsResponse>.Success(new(
+                [new CheckInDto { Id = Guid.NewGuid(), UserId = user.Id, ShopId = shop.Id,
+                    DrinkSlug = "other", CustomDrinkName = "Эспрессо-тоник",
+                    DrinkNameRu = "Эспрессо-тоник", DrinkNameEn = "Espresso tonic" }], 1, 1, 1, 10)));
         var accountBuilder = ControllerHost(typeof(PublicUserAddressesController));
         accountBuilder.Services.AddScoped(_ => Account());
         accountBuilder.Services.AddScoped<IProfileAddressService, ProfileAddressService>();
@@ -310,16 +318,31 @@ public sealed class PublicAddressGatewaySmokeTests
         NoInternalIds(shopDetail);
         shopDetail!["data"]!["reviews"]![0]!["author"]!["slug"]!.GetValue<string>().Should().Be("petr");
         shopDetail["data"]!["reviews"]![0]!["id"]!.GetValue<Guid>().Should().Be(review.Id);
+        shopDetail["data"]!["reviews"]![0]!["drinkSlug"]!.GetValue<string>().Should().Be("other");
+        shopDetail["data"]!["reviews"]![0]!["customDrinkName"]!.GetValue<string>().Should().Be("Эспрессо-тоник");
+        shopDetail["data"]!["reviews"]![0]!["drinkNameRu"]!.GetValue<string>().Should().Be("Эспрессо-тоник");
+        shopDetail["data"]!["reviews"]![0]!["drinkNameEn"]!.GetValue<string>().Should().Be("Espresso tonic");
         using (var authenticated = new HttpClient { BaseAddress = new Uri(Address(shops)) })
         {
             authenticated.DefaultRequestHeaders.Add(GatewayHeaderConsts.XGatewayAuth, "http-smoke-internal-secret-at-least-32-characters");
             authenticated.DefaultRequestHeaders.Add(GatewayHeaderConsts.XUserId, user.Id.ToString());
             authenticated.DefaultRequestHeaders.Add(GatewayHeaderConsts.XUserName, "Petr");
             using var created = await authenticated.PostAsJsonAsync("/api/CheckIns", new
-            { shop = "26-october-16", isPublic = false, visitedAt = DateTime.UtcNow, rating = new { place = 5, coffee = 5, service = 5 } }, Ct);
+            { shop = "26-october-16", isPublic = false, visitedAt = DateTime.UtcNow,
+              drinkSlug = "other", customDrinkName = "Эспрессо-тоник", rating = new { place = 5, coffee = 5, service = 5 } }, Ct);
             created.StatusCode.Should().Be(HttpStatusCode.OK, await created.Content.ReadAsStringAsync(Ct));
             capturedCheckIn!.CoffeeShopId.Should().Be(shop.Id);
             capturedCheckIn.UserId.Should().Be(user.Id);
+            capturedCheckIn.DrinkSlug.Should().Be("other");
+            capturedCheckIn.CustomDrinkName.Should().Be("Эспрессо-тоник");
+            using var checkInsResponse = await authenticated.GetAsync("/api/CheckIns", Ct);
+            checkInsResponse.StatusCode.Should().Be(HttpStatusCode.OK, await checkInsResponse.Content.ReadAsStringAsync(Ct));
+            var checkIns = JsonNode.Parse(await checkInsResponse.Content.ReadAsStringAsync(Ct));
+            var checkIn = checkIns!["data"]!["items"]![0]!;
+            checkIn["drinkSlug"]!.GetValue<string>().Should().Be("other");
+            checkIn["customDrinkName"]!.GetValue<string>().Should().Be("Эспрессо-тоник");
+            checkIn["drinkNameRu"]!.GetValue<string>().Should().Be("Эспрессо-тоник");
+            checkIn["drinkNameEn"]!.GetValue<string>().Should().Be("Espresso tonic");
             using var invalid = await authenticated.PostAsJsonAsync("/api/CheckIns", new
             { shop = shop.Id.ToString(), isPublic = false, visitedAt = DateTime.UtcNow, rating = new { place = 5, coffee = 5, service = 5 } }, Ct);
             invalid.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -330,11 +353,14 @@ public sealed class PublicAddressGatewaySmokeTests
             authenticated.DefaultRequestHeaders.Add(GatewayHeaderConsts.XUserId, user.Id.ToString());
             authenticated.DefaultRequestHeaders.Add(GatewayHeaderConsts.XUserName, "Petr");
             using var reviewCreated = await authenticated.PostAsJsonAsync("/api/ModerationReviews", new
-                { shop = "26-october-16", comment = "Great coffee", ratingCoffee = 4, ratingPlace = 5, ratingService = 4 }, Ct);
+                { shop = "26-october-16", comment = "Great coffee", drinkSlug = "other",
+                  customDrinkName = "Эспрессо-тоник", ratingCoffee = 4, ratingPlace = 5, ratingService = 4 }, Ct);
             reviewCreated.StatusCode.Should().Be(HttpStatusCode.OK, await reviewCreated.Content.ReadAsStringAsync(Ct));
             capturedReview!.ShopId.Should().Be(shop.Id);
             capturedReview.UserId.Should().Be(user.Id);
             capturedReview.EffectiveRating.Coffee.Should().Be(4);
+            capturedReview.DrinkSlug.Should().Be("other");
+            capturedReview.CustomDrinkName.Should().Be("Эспрессо-тоник");
             using var shopSubmitted = await authenticated.PostAsJsonAsync("/api/ModerationShops", new
                 { name = "New cafe", address = "October 18", city = "minsk", beans = new[] { "arabica" },
                   equipments = new[] { "la-marzocco-linea" }, roasters = new[] { "beans-roastery" }, brewMethods = new[] { "v60" } }, Ct);

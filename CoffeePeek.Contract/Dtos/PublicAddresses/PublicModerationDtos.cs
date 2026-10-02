@@ -17,6 +17,11 @@ public sealed record PublicShopChangeRequestDto(Guid Id, PublicAddressDto? Shop,
 
 public sealed record PublicModerationReviewDto
 {
+    public string? DrinkSlug { get; init; }
+    public string? CustomDrinkName { get; init; }
+    public string? DrinkNameRu { get; init; }
+    public string? DrinkNameEn { get; init; }
+
     public Guid Id { get; init; }
     public string? Header { get; init; }
     public string Comment { get; init; } = string.Empty;

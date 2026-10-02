@@ -91,6 +91,8 @@ public class ModerationReviewsController(IMessageBus bus, IUserContext userConte
                 () => discovery.ResolveIdAsync("shops", request.Shop, ct)),
             request.Header, request.Comment, request.Rating, request.Photos)
         {
+            DrinkSlug = request.DrinkSlug,
+            CustomDrinkName = request.CustomDrinkName,
             UserId = userContext.GetUserIdOrThrow(),
             UserName = userContext.GetUsernameOrThrow(),
             RatingCoffee = request.RatingCoffee, RatingPlace = request.RatingPlace, RatingService = request.RatingService
