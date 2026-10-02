@@ -29,7 +29,7 @@ public sealed class PublicCoffeeZoneAddressesController(IPublicAddressService ad
         // Same field mapping as the /api/Map zone DTO.
         var data = new PublicZoneDto(PublicAddressDto.From(address), zone.Name, zone.Description, zone.CenterLatitude, zone.CenterLongitude,
             zone.RadiusMeters, zone.ShopCount,
-            zone.Polygon.Select(p => new MapCoffeeZonePointDto(p.Latitude, p.Longitude)).ToArray());
+            zone.Polygon.Select(p => new MapCoffeeZonePointDto(p.Latitude, p.Longitude)).ToArray(), zone.Color);
         return Ok(data);
     }
 

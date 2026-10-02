@@ -18,11 +18,13 @@ public sealed class CoffeeZoneConfiguration : IEntityTypeConfiguration<CoffeeZon
                 "CK_CoffeeZones_RadiusMeters",
                 $"\"RadiusMeters\" BETWEEN {BusinessConstants.MinCoffeeZoneRadiusMeters} AND {BusinessConstants.MaxCoffeeZoneRadiusMeters}");
             table.HasCheckConstraint("CK_CoffeeZones_Status", "\"Status\" BETWEEN 0 AND 2");
+            table.HasCheckConstraint("CK_CoffeeZones_Color", "\"Color\" ~ '^#[0-9A-F]{6}$'");
         });
 
         builder.HasKey(z => z.Id);
         builder.Property(z => z.Name).HasMaxLength(BusinessConstants.MaxCoffeeZoneNameLength).IsRequired();
         builder.Property(z => z.Description).HasMaxLength(BusinessConstants.MaxCoffeeZoneDescriptionLength);
+        builder.Property(z => z.Color).HasMaxLength(7).HasDefaultValue(CoffeeZone.DefaultColor).IsRequired();
         builder.Property(z => z.CenterLatitude).HasPrecision(BusinessConstants.MaxLocationPrecision, BusinessConstants.MaxLocationScale);
         builder.Property(z => z.CenterLongitude).HasPrecision(BusinessConstants.MaxLocationPrecision, BusinessConstants.MaxLocationScale);
         builder.ComplexCollection(z => z.Polygon, polygon => polygon.ToJson());

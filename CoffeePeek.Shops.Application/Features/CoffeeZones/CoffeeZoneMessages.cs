@@ -12,11 +12,11 @@ public record GetAdminCoffeeZoneQuery(Guid Id);
 public record PreviewCoffeeZoneMembershipQuery(Guid Id);
 public record GenerateCoffeeZoneCandidatesQuery(Guid CityId, int RadiusMeters = 400, int MinShops = 4);
 
-public record CreateCoffeeZoneCommand(Guid CityId, string Name, string? Description, CoffeeZonePoint[] Polygon);
+public record CreateCoffeeZoneCommand(Guid CityId, string Name, string? Description, CoffeeZonePoint[] Polygon, string? Color = null);
 
 public record UpdateCoffeeZoneCommand(
     [property: JsonIgnore] Guid Id,
-    Guid CityId, string Name, string? Description, CoffeeZonePoint[] Polygon);
+    Guid CityId, string Name, string? Description, CoffeeZonePoint[] Polygon, string? Color = null);
 
 public record SetCoffeeZoneStatusCommand([property: JsonIgnore] Guid Id, CoffeeZoneStatus Status);
 
@@ -82,7 +82,7 @@ public static class CreateCoffeeZoneHandler
         if (!await cityRepository.Exists(command.CityId, ct))
             return Response<AdminCoffeeZoneDto>.Error(HttpStatusCode.BadRequest, "City not found.");
 
-        var zone = new CoffeeZone(command.CityId, command.Name, command.Description, command.Polygon);
+        var zone = new CoffeeZone(command.CityId, command.Name, command.Description, command.Polygon, command.Color);
         repository.Add(zone);
         await unitOfWork.SaveChangesAsync(ct);
         return Response<AdminCoffeeZoneDto>.Success((await queries.GetByIdAsync(zone.Id, ct))!);
@@ -105,7 +105,7 @@ public static class UpdateCoffeeZoneHandler
         if (!await cityRepository.Exists(command.CityId, ct))
             return Response<AdminCoffeeZoneDto>.Error(HttpStatusCode.BadRequest, "City not found.");
 
-        zone.Update(command.CityId, command.Name, command.Description, command.Polygon);
+        zone.Update(command.CityId, command.Name, command.Description, command.Polygon, command.Color);
         await unitOfWork.SaveChangesAsync(ct);
         return Response<AdminCoffeeZoneDto>.Success((await queries.GetByIdAsync(zone.Id, ct))!);
     }

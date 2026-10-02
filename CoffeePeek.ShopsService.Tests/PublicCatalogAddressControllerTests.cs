@@ -59,6 +59,7 @@ public sealed class PublicCatalogAddressControllerTests
         envelope.Longitude.Should().Be(zone.CenterLongitude);
         envelope.RadiusMeters.Should().Be(zone.RadiusMeters);
         envelope.ShopCount.Should().Be(zone.ShopCount);
+        envelope.Color.Should().Be(zone.Color);
         envelope.Polygon.Should().HaveCount(zone.Polygon.Length);
         envelope.Polygon[0].Should().Be(new MapCoffeeZonePointDto(zone.Polygon[0].Latitude, zone.Polygon[0].Longitude));
         envelope.Address.Should().Be(PublicAddressDto.From(address));
@@ -116,7 +117,7 @@ public sealed class PublicCatalogAddressControllerTests
     private PublicCityAddressesController CityController() => new(_addresses, _cities);
 
     private static AdminCoffeeZoneDto Zone(CoffeeZoneStatus status) => new(Guid.NewGuid(), Guid.NewGuid(), "Nemiga",
-        "Old town", 53.9m, 27.56m, 400, status, 3, DateTime.UtcNow, null, CoffeeZonePoint.Circle(53.9m, 27.56m, 400));
+        "Old town", 53.9m, 27.56m, 400, status, 3, DateTime.UtcNow, null, CoffeeZonePoint.Circle(53.9m, 27.56m, 400), "#A1B2C3");
 
     private static PublicAddressMetadata ZoneAddress(Guid id) => new(id, "nemiga", "/coffee-zones/nemiga", 1);
 

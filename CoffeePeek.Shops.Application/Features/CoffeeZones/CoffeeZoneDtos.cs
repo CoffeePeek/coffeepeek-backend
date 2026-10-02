@@ -14,7 +14,8 @@ public sealed record AdminCoffeeZoneDto(
     int ShopCount,
     DateTime CreatedAtUtc,
     DateTime? UpdatedAtUtc,
-    CoffeeZonePoint[] Polygon);
+    CoffeeZonePoint[] Polygon,
+    string Color);
 
 public sealed record CoffeeZoneMemberDto(
     Guid ShopId,

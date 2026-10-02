@@ -16,6 +16,38 @@ public sealed class CoffeeZoneTests
         zone.Status.Should().Be(CoffeeZoneStatus.Draft);
         zone.Name.Should().Be("Center");
         zone.Description.Should().Be("Guide");
+        zone.Color.Should().Be(CoffeeZone.DefaultColor);
+    }
+
+    [Fact]
+    public void Color_IsNormalizedAndPreservedWhenUpdateOmitsIt()
+    {
+        var cityId = Guid.NewGuid();
+        var zone = new CoffeeZone(cityId, "Center", null, Circle400, "#a1b2c3");
+
+        zone.Color.Should().Be("#A1B2C3");
+        zone.Update(cityId, "Renamed", null, Circle400);
+        zone.Color.Should().Be("#A1B2C3");
+        zone.Update(cityId, "Renamed", null, Circle400, "#123456");
+        zone.Color.Should().Be("#123456");
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("red")]
+    [InlineData("#12345")]
+    [InlineData("#1234567")]
+    [InlineData("#12GG56")]
+    public void Update_RejectsInvalidColorWithoutChangingZone(string color)
+    {
+        var cityId = Guid.NewGuid();
+        var zone = new CoffeeZone(cityId, "Center", null, Circle400);
+
+        var act = () => zone.Update(cityId, "Renamed", null, Circle400, color);
+
+        act.Should().Throw<DomainException>();
+        zone.Name.Should().Be("Center");
+        zone.Color.Should().Be(CoffeeZone.DefaultColor);
     }
 
 

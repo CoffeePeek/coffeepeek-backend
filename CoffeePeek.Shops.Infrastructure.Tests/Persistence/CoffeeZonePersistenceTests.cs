@@ -26,7 +26,12 @@ public sealed class CoffeeZonePersistenceTests
             "CK_CoffeeZones_Latitude",
             "CK_CoffeeZones_Longitude",
             "CK_CoffeeZones_RadiusMeters",
-            "CK_CoffeeZones_Status");
+            "CK_CoffeeZones_Status",
+            "CK_CoffeeZones_Color");
+        var color = zone.FindProperty(nameof(CoffeeZone.Color));
+        color.Should().NotBeNull();
+        color!.GetMaxLength().Should().Be(7);
+        color.GetDefaultValue().Should().Be(CoffeeZone.DefaultColor);
         var cityStatusIndexes = zone.GetIndexes()
             .Count(index => index.Properties.Select(p => p.Name).SequenceEqual(
                 new[] { nameof(CoffeeZone.CityId), nameof(CoffeeZone.Status) }));

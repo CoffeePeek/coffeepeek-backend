@@ -147,7 +147,7 @@ public sealed class CoffeeZoneQueries(ShopsDbContext context) : ICoffeeZoneQueri
     private static AdminCoffeeZoneDto ToDto(CoffeeZone zone, int shopCount) => new(
         zone.Id, zone.CityId, zone.Name, zone.Description,
         zone.CenterLatitude, zone.CenterLongitude, zone.RadiusMeters,
-        zone.Status, shopCount, zone.CreatedAtUtc, zone.UpdatedAtUtc, zone.Polygon.ToArray());
+        zone.Status, shopCount, zone.CreatedAtUtc, zone.UpdatedAtUtc, zone.Polygon.ToArray(), zone.Color);
 
     private sealed record ZoneShopPoint(Guid Id, string Name, Guid CityId, decimal Latitude, decimal Longitude);
 }

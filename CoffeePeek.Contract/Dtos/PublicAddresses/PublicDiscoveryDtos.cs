@@ -104,5 +104,5 @@ public sealed record PublicRoasterDetailsDto(PublicAddressDto Address, string Na
 public sealed record PublicMapShopDto(PublicAddressDto Address, decimal Latitude, decimal Longitude, string Title,
     CoffeeShopType? Type, PublicAddressDto? PrimaryZone);
 public sealed record PublicZoneDto(PublicAddressDto Address, string Name, string? Description,
-    decimal Latitude, decimal Longitude, int RadiusMeters, int ShopCount, MapCoffeeZonePointDto[] Polygon);
+    decimal Latitude, decimal Longitude, int RadiusMeters, int ShopCount, MapCoffeeZonePointDto[] Polygon, string Color);
 public sealed record PublicMapDto(PublicMapShopDto[] Shops, MapClusterDto[] Clusters, PublicZoneDto[] Zones, bool IsTruncated);

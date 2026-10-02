@@ -156,7 +156,7 @@ public sealed class PublicDiscoveryService(IPublicAddressService addresses, IPro
         return new(shops.Select(x => new PublicMapShopDto(Required(shopAddresses, x.Id), x.Latitude, x.Longitude,
                 x.Title, x.Type, x.PrimaryZoneId is { } id ? Find(zoneAddresses, id) : null)).ToArray(),
             clusters ?? [], (zones ?? []).Select(x => new PublicZoneDto(Required(zoneAddresses, x.Id), x.Name, x.Description,
-                x.Latitude, x.Longitude, x.RadiusMeters, x.ShopCount, x.Polygon)).ToArray(), truncated ?? false);
+                x.Latitude, x.Longitude, x.RadiusMeters, x.ShopCount, x.Polygon, x.Color)).ToArray(), truncated ?? false);
     }
 
     private async Task<Dictionary<Guid, PublicAddressDto>> ReadAsync(PublicAddressKind kind, IEnumerable<Guid> ids, CancellationToken ct) =>

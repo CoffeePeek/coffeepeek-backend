@@ -5,9 +5,12 @@ namespace CoffeePeek.Shops.Domain.Aggregates.CoffeeZoneAggregate;
 
 public sealed class CoffeeZone : Entity<Guid>
 {
+    public const string DefaultColor = "#F59E0B";
+
     public Guid CityId { get; private set; }
     public string Name { get; private set; } = null!;
     public string? Description { get; private set; }
+    public string Color { get; private set; } = DefaultColor;
     /// <summary>Centroid of <see cref="Polygon"/>; derived, used as the map label anchor.</summary>
     public decimal CenterLatitude { get; private set; }
     public decimal CenterLongitude { get; private set; }
@@ -20,14 +23,14 @@ public sealed class CoffeeZone : Entity<Guid>
     {
     }
 
-    public CoffeeZone(Guid cityId, string name, string? description, IReadOnlyCollection<CoffeeZonePoint> polygon)
+    public CoffeeZone(Guid cityId, string name, string? description, IReadOnlyCollection<CoffeeZonePoint> polygon, string? color = null)
     {
         Id = Guid.NewGuid();
         Status = CoffeeZoneStatus.Draft;
-        Update(cityId, name, description, polygon);
+        Update(cityId, name, description, polygon, color);
     }
 
-    public void Update(Guid cityId, string name, string? description, IReadOnlyCollection<CoffeeZonePoint> polygon)
+    public void Update(Guid cityId, string name, string? description, IReadOnlyCollection<CoffeeZonePoint> polygon, string? color = null)
     {
         if (CityId != Guid.Empty && CityId != cityId)
             throw new DomainException("A coffee zone cannot be moved to another city.");
@@ -64,9 +67,19 @@ public sealed class CoffeeZone : Entity<Guid>
             throw new DomainException(
                 $"Coffee zone polygon must fit within {BusinessConstants.MaxCoffeeZoneRadiusMeters} meters of its center.");
 
+        var normalizedColor = Color;
+        if (color is not null)
+        {
+            normalizedColor = color.ToUpperInvariant();
+            if (normalizedColor.Length != 7 || normalizedColor[0] != '#' ||
+                normalizedColor[1..].Any(c => !Uri.IsHexDigit(c)))
+                throw new DomainException("Coffee zone color must be a #RRGGBB hex value.");
+        }
+
         CityId = cityId;
         Name = trimmedName;
         Description = trimmedDescription;
+        Color = normalizedColor;
         CenterLatitude = centerLatitude;
         CenterLongitude = centerLongitude;
         RadiusMeters = Math.Max(boundingRadius, BusinessConstants.MinCoffeeZoneRadiusMeters);

@@ -570,6 +570,13 @@ namespace CoffeePeek.Shops.Persistance.Migrations
                     b.Property<Guid>("CityId")
                         .HasColumnType("uuid");
 
+                    b.Property<string>("Color")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(7)
+                        .HasColumnType("character varying(7)")
+                        .HasDefaultValue("#F59E0B");
+
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
@@ -610,6 +617,8 @@ namespace CoffeePeek.Shops.Persistance.Migrations
 
                     b.ToTable("CoffeeZones", null, t =>
                         {
+                            t.HasCheckConstraint("CK_CoffeeZones_Color", "\"Color\" ~ '^#[0-9A-F]{6}$'");
+
                             t.HasCheckConstraint("CK_CoffeeZones_Latitude", "\"CenterLatitude\" BETWEEN -90 AND 90");
 
                             t.HasCheckConstraint("CK_CoffeeZones_Longitude", "\"CenterLongitude\" BETWEEN -180 AND 180");

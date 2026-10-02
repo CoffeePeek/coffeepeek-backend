@@ -12,6 +12,32 @@ namespace CoffeePeek.Shops.Application.Tests.Features.CoffeeZones;
 public sealed class CoffeeZoneHandlerTests
 {
     [Fact]
+    public async Task Update_StoresRequestedColor()
+    {
+        var cityId = Guid.NewGuid();
+        var zone = new CoffeeZone(cityId, "Center", null, CoffeeZonePoint.Circle(53.9m, 27.56m, 400));
+        var cities = new Mock<IQueryCityRepository>();
+        var repository = new Mock<ICoffeeZoneRepository>();
+        var queries = new Mock<ICoffeeZoneQueries>();
+        var unitOfWork = new Mock<IUnitOfWork>();
+        cities.Setup(r => r.Exists(cityId, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        repository.Setup(r => r.GetByIdAsync(zone.Id, It.IsAny<CancellationToken>())).ReturnsAsync(zone);
+        queries.Setup(q => q.GetByIdAsync(zone.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(() => new AdminCoffeeZoneDto(zone.Id, cityId, zone.Name, null,
+                zone.CenterLatitude, zone.CenterLongitude, zone.RadiusMeters, zone.Status, 0,
+                default, null, zone.Polygon.ToArray(), zone.Color));
+
+        var result = await UpdateCoffeeZoneHandler.Handle(
+            new UpdateCoffeeZoneCommand(zone.Id, cityId, "Center", null, zone.Polygon.ToArray(), "#a1b2c3"),
+            cities.Object, repository.Object, queries.Object, unitOfWork.Object, CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal("#A1B2C3", zone.Color);
+        Assert.Equal(zone.Color, result.Data!.Color);
+        unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
     public async Task SetPrimaryOverride_ReplacesPreviousPrimary()
     {
         var cityId = Guid.NewGuid();
@@ -24,7 +50,7 @@ public sealed class CoffeeZoneHandlerTests
         var unitOfWork = new Mock<IUnitOfWork>();
         var preview = new CoffeeZoneMembershipPreviewDto(
             new AdminCoffeeZoneDto(zone.Id, cityId, zone.Name, null, 53.9m, 27.56m, 400,
-                CoffeeZoneStatus.Draft, 1, default, null, []),
+                CoffeeZoneStatus.Draft, 1, default, null, [], zone.Color),
             []);
 
         repository.Setup(r => r.GetByIdAsync(zone.Id, It.IsAny<CancellationToken>())).ReturnsAsync(zone);
