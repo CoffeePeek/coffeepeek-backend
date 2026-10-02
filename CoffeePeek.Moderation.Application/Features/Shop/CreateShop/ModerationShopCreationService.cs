@@ -1,4 +1,3 @@
-using CoffeePeek.Moderation.Application.Common.Models;
 using CoffeePeek.Moderation.Domain.Aggregates;
 using CoffeePeek.Shared.Kernel;
 using DomainCoffeeFocus = CoffeePeek.Moderation.Domain.Aggregates.Enums.CoffeeFocus;
@@ -12,7 +11,6 @@ public class ModerationShopCreationService(IModerationShopRepository shopReposit
 {
     public async Task<Guid> Create(
         SendCoffeeShopToModerationCommand command,
-        GeocodingResult? geocodingResult,
         CancellationToken ct)
     {
         var shop = ModerationShop.Create(
@@ -23,10 +21,7 @@ public class ModerationShopCreationService(IModerationShopRepository shopReposit
             command.Type is null ? null : (DomainCoffeeFocus)command.Type.Value
         );
 
-        var location = geocodingResult != null
-            ? new ModerationLocation(command.Address, geocodingResult.Latitude, geocodingResult.Longitude)
-            : new ModerationLocation(command.Address);
-        shop.SetLocation(location);
+        shop.SetLocation(new ModerationLocation(command.Address));
 
         if (command.PriceRange != null)
         {

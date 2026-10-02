@@ -31,7 +31,9 @@ public static class DependencyInjection
         {
             // Hostname is the Aspire resource name; production compose maps it via services__* env vars.
             client.BaseAddress = new Uri($"http://{AppResources.MediaService}");
-            client.Timeout = Timeout.InfiniteTimeSpan;
+            // Photo ownership must be verified before accepting a check-in. Fail with the existing
+            // 503 promptly when Media is unavailable instead of waiting for the default retry budget.
+            client.Timeout = TimeSpan.FromSeconds(5);
         });
 
         var timeoutRaw = configuration.GetSection(nameof(OpenAiOptions))["TimeoutSeconds"];

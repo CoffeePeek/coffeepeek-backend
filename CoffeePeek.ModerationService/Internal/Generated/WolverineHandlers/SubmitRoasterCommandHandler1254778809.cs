@@ -2,6 +2,7 @@
 #pragma warning disable
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using System.Collections.Generic;
 using System.Net.Http;
 
@@ -14,14 +15,16 @@ namespace Internal.Generated.WolverineHandlers
         private readonly Microsoft.Extensions.DependencyInjection.IServiceScopeFactory _serviceScopeFactory;
         private readonly Microsoft.Extensions.Logging.ILogger<CoffeePeek.Moderation.Application.Features.Roaster.SubmitRoaster.SubmitRoasterCommand> _loggerForMessage;
         private readonly Microsoft.Extensions.Logging.ILogger<CoffeePeek.Moderation.Infrastructure.Shops.ShopsRoasterExistenceLookup> _loggerOfShopsRoasterExistenceLookup;
+        private readonly Microsoft.Extensions.Options.IOptions<CoffeePeek.Shared.Auth.Options.GatewayAuthOptions> _optionsOfGatewayAuthOptions;
         private readonly System.Collections.Generic.IEnumerable<Wolverine.EntityFrameworkCore.IDomainEventScraper> _domainEventScraperIEnumerable;
         private readonly System.Net.Http.IHttpClientFactory _httpClientFactory;
 
-        public SubmitRoasterCommandHandler1254778809(Microsoft.Extensions.DependencyInjection.IServiceScopeFactory serviceScopeFactory, Microsoft.Extensions.Logging.ILogger<CoffeePeek.Moderation.Application.Features.Roaster.SubmitRoaster.SubmitRoasterCommand> loggerForMessage, Microsoft.Extensions.Logging.ILogger<CoffeePeek.Moderation.Infrastructure.Shops.ShopsRoasterExistenceLookup> loggerOfShopsRoasterExistenceLookup, System.Collections.Generic.IEnumerable<Wolverine.EntityFrameworkCore.IDomainEventScraper> domainEventScraperIEnumerable, System.Net.Http.IHttpClientFactory httpClientFactory)
+        public SubmitRoasterCommandHandler1254778809(Microsoft.Extensions.DependencyInjection.IServiceScopeFactory serviceScopeFactory, Microsoft.Extensions.Logging.ILogger<CoffeePeek.Moderation.Application.Features.Roaster.SubmitRoaster.SubmitRoasterCommand> loggerForMessage, Microsoft.Extensions.Logging.ILogger<CoffeePeek.Moderation.Infrastructure.Shops.ShopsRoasterExistenceLookup> loggerOfShopsRoasterExistenceLookup, Microsoft.Extensions.Options.IOptions<CoffeePeek.Shared.Auth.Options.GatewayAuthOptions> optionsOfGatewayAuthOptions, System.Collections.Generic.IEnumerable<Wolverine.EntityFrameworkCore.IDomainEventScraper> domainEventScraperIEnumerable, System.Net.Http.IHttpClientFactory httpClientFactory)
         {
             _serviceScopeFactory = serviceScopeFactory;
             _loggerForMessage = loggerForMessage;
             _loggerOfShopsRoasterExistenceLookup = loggerOfShopsRoasterExistenceLookup;
+            _optionsOfGatewayAuthOptions = optionsOfGatewayAuthOptions;
             _domainEventScraperIEnumerable = domainEventScraperIEnumerable;
             _httpClientFactory = httpClientFactory;
         }
@@ -35,10 +38,8 @@ namespace Internal.Generated.WolverineHandlers
             // This service has been marked as requiring service location independent of Wolverine's ability to use constructor injection of everything else
             var moderationDbContext = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<CoffeeShop.Moderation.Persistence.Configuration.ModerationDbContext>(serviceScope.ServiceProvider);
             var unitOfWorkOfModerationDbContext = new CoffeePeek.Shared.Persistence.Data.UnitOfWork<CoffeeShop.Moderation.Persistence.Configuration.ModerationDbContext>(moderationDbContext);
-            var shopsRoasterExistenceLookup = new CoffeePeek.Moderation.Infrastructure.Shops.ShopsRoasterExistenceLookup(_httpClientFactory, _loggerOfShopsRoasterExistenceLookup);
+            var shopsRoasterExistenceLookup = new CoffeePeek.Moderation.Infrastructure.Shops.ShopsRoasterExistenceLookup(_httpClientFactory, _optionsOfGatewayAuthOptions, _loggerOfShopsRoasterExistenceLookup);
             var moderationRoasterRepository = new CoffeeShop.Moderation.Persistence.Repositories.ModerationRoasterRepository(moderationDbContext);
-            // This service has been marked as requiring service location independent of Wolverine's ability to use constructor injection of everything else
-            var yandexGeocodingService = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<CoffeePeek.Moderation.Application.Abstractions.IYandexGeocodingService>(serviceScope.ServiceProvider);
             // The actual message body
             var submitRoasterCommand = (CoffeePeek.Moderation.Application.Features.Roaster.SubmitRoaster.SubmitRoasterCommand)context.Envelope.Message;
 
@@ -58,13 +59,17 @@ namespace Internal.Generated.WolverineHandlers
                 System.Diagnostics.Activity.Current?.SetTag("handler.type", "CoffeePeek.Moderation.Application.Features.Roaster.SubmitRoaster.SubmitRoasterHandler");
                 
                 // The actual message execution
-                var outgoing1 = await CoffeePeek.Moderation.Application.Features.Roaster.SubmitRoaster.SubmitRoasterHandler.Handle(submitRoasterCommand, moderationRoasterRepository, shopsRoasterExistenceLookup, yandexGeocodingService, unitOfWorkOfModerationDbContext, _loggerForMessage, cancellation).ConfigureAwait(false);
+                (var outgoing1, var outgoing2) = await CoffeePeek.Moderation.Application.Features.Roaster.SubmitRoaster.SubmitRoasterHandler.Handle(submitRoasterCommand, moderationRoasterRepository, shopsRoasterExistenceLookup, unitOfWorkOfModerationDbContext, _loggerForMessage, cancellation).ConfigureAwait(false);
 
                 
                 // Outgoing, cascaded message
                 await context.EnqueueCascadingAsync(outgoing1).ConfigureAwait(false);
 
                 
+                // Outgoing, cascaded message
+                await context.EnqueueCascadingAsync(outgoing2).ConfigureAwait(false);
+
+
                 // Added by EF Core Transaction Middleware
                 var result_of_SaveChangesAsync = await moderationDbContext.SaveChangesAsync(cancellation).ConfigureAwait(false);
 
@@ -86,4 +91,3 @@ namespace Internal.Generated.WolverineHandlers
     
     
 }
-

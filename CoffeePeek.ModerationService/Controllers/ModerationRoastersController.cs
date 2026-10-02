@@ -9,6 +9,7 @@ using CoffeePeek.Moderation.Application.Features.Roaster.UpdateModerationRoaster
 using CoffeePeek.Shared.Auth;
 using CoffeePeek.Shared.Auth.Constants;
 using CoffeePeek.Shared.Kernel.Response;
+using CoffeePeek.Shared.Kernel.Diagnostics;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Wolverine;
@@ -86,8 +87,10 @@ public class ModerationRoastersController(IMessageBus bus, IUserContext userCont
     {
         // Anonymous submissions carry a null UserId.
         var commandWithUser = request.Adapt<SubmitRoasterCommand>() with
-        { UserId = userContext.GetUserId(), CityId = request.City is null ? null : await discovery.ResolveIdAsync("cities", request.City, ct) };
-        var response = await bus.InvokeAsync<Response<SubmitRoasterResponse>>(commandWithUser, ct);
+        { UserId = userContext.GetUserId(), CityId = request.City is null ? null : await WriteStageTrace.MeasureAsync("roaster_submit", "city_lookup",
+            () => discovery.ResolveIdAsync("cities", request.City, ct)) };
+        var response = await WriteStageTrace.MeasureAsync("roaster_submit", "commit",
+            () => bus.InvokeAsync<Response<SubmitRoasterResponse>>(commandWithUser, ct));
 
         if (!response.IsSuccess)
         {

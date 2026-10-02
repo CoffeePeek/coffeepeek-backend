@@ -10,6 +10,23 @@ namespace CoffeePeek.Shops.Infrastructure.Tests.Persistence;
 public sealed class QueryRoasterRepositoryTests
 {
     [Fact]
+    public async Task ExistsByNameAsync_IsCaseInsensitiveAndTreatsWildcardsLiterally()
+    {
+        var options = new DbContextOptionsBuilder<ShopsDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .Options;
+        await using var dbContext = new ShopsDbContext(options);
+        dbContext.Roasters.AddRange(new Roaster("Coffee_Circus"), new Roaster("Roast%House"));
+        await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+        var repository = new QueryRoasterRepository(dbContext);
+
+        (await repository.ExistsByNameAsync("coffee_circus", TestContext.Current.CancellationToken)).Should().BeTrue();
+        (await repository.ExistsByNameAsync("ROAST%HOUSE", TestContext.Current.CancellationToken)).Should().BeTrue();
+        (await repository.ExistsByNameAsync("CoffeeXCircus", TestContext.Current.CancellationToken)).Should().BeFalse();
+        (await repository.ExistsByNameAsync("RoastXHouse", TestContext.Current.CancellationToken)).Should().BeFalse();
+    }
+
+    [Fact]
     public async Task GetAll_LoadsRoasterPhotos()
     {
         var options = new DbContextOptionsBuilder<ShopsDbContext>()

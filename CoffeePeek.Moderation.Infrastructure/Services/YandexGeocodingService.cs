@@ -65,18 +65,17 @@ public class YandexGeocodingService(
         catch (HttpRequestException ex)
         {
             logger.LogError(ex, "HTTP error while geocoding address: {Address}", address);
-            return null;
+            throw;
         }
         catch (TaskCanceledException ex) when (!cancellationToken.IsCancellationRequested)
         {
             logger.LogError(ex, "Timeout while geocoding address: {Address}", address);
-            return null;
+            throw new HttpRequestException("Geocoding request timed out.", ex);
         }
         catch (Exception ex) when (ex is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
         {
             logger.LogError(ex, "Unexpected error while geocoding address: {Address}", address);
-            return null;
+            throw;
         }
     }
 }
-

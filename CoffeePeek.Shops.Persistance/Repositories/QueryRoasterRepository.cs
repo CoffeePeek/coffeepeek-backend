@@ -7,6 +7,12 @@ namespace CoffeePeek.Shops.Persistance.Repositories;
 public class QueryRoasterRepository(ShopsDbContext dbContext) : IQueryRoasterRepository
 {
     private readonly DbSet<Roaster> _repository = dbContext.Roasters;
+
+    public Task<bool> ExistsByNameAsync(string name, CancellationToken ct = default)
+    {
+        var normalized = name.Trim().ToLowerInvariant();
+        return _repository.AnyAsync(r => r.Name.ToLower() == normalized, ct);
+    }
     
     public Task<Roaster[]> GetAll()
     {

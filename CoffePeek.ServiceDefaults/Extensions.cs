@@ -52,11 +52,13 @@ public static class Extensions
                 {
                     metrics.AddAspNetCoreInstrumentation()
                         .AddHttpClientInstrumentation()
-                        .AddRuntimeInstrumentation();
+                        .AddRuntimeInstrumentation()
+                        .AddMeter("CoffeePeek.UserWrites");
                 })
                 .WithTracing(tracing =>
                 {
                     tracing.AddSource(builder.Environment.ApplicationName)
+                        .AddSource("CoffeePeek.UserWrites")
                         .AddAspNetCoreInstrumentation(options =>
                         {
                             // Exclude health check requests from tracing

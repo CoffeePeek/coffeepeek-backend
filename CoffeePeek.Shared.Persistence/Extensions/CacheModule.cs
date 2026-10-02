@@ -11,7 +11,9 @@ public static class CacheModule
     public static IServiceCollection AddCacheModule(this IServiceCollection services)
     {
         services.AddUserRevocationStore();
-        services.AddSingleton<ICacheService, RedisService>();
+        services.AddSingleton<RedisService>();
+        services.AddSingleton<ICacheService>(sp => sp.GetRequiredService<RedisService>());
+        services.AddSingleton<IStrictCacheInvalidator>(sp => sp.GetRequiredService<RedisService>());
         services.AddSingleton<ICacheInvalidationStrategy, CacheInvalidationStrategy>();
         
         return services;
@@ -25,4 +27,3 @@ public static class CacheModule
         return services;
     }
 }
-

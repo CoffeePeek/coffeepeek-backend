@@ -74,6 +74,7 @@ public static class WolverineModule
                 // published). Durable inbox also dedupes redelivered envelopes before handlers run.
                 opts.Policies.UseDurableOutboxOnAllSendingEndpoints();
                 opts.Policies.UseDurableInboxOnAllListeners();
+                opts.Policies.UseDurableLocalQueues();
 
                 // Every CoffeePeek service is deployed as a single instance (no replicas in
                 // deploy/docker-compose.yml or CoffePeek.AppHost). Wolverine's default

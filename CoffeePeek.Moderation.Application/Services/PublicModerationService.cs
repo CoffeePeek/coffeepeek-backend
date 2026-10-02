@@ -11,10 +11,16 @@ public sealed class PublicModerationService(IPublicAddressLookup addresses)
     public async Task<Guid> ResolveIdAsync(string kind, string slug, CancellationToken ct) =>
         (await addresses.ResolveAsync(kind, slug, ct))?.EntityId ?? throw new NotFoundException("Entity not found.");
 
-    public async Task<ShopChangePayloadDto> PayloadAsync(PublicShopChangePayloadDto x, CancellationToken ct) =>
-        new(x.Description, x.Contacts, x.Photos, await FilterAsync("shop-tags", x.Tags, ct),
-            await FilterAsync("roasters", x.Roasters, ct), await FilterAsync("equipments", x.Equipments, ct),
-            x.Menu, await FilterAsync("brew-methods", x.BrewMethods, ct));
+    public async Task<ShopChangePayloadDto> PayloadAsync(PublicShopChangePayloadDto x, CancellationToken ct)
+    {
+        var tagsTask = FilterAsync("shop-tags", x.Tags, ct);
+        var roastersTask = FilterAsync("roasters", x.Roasters, ct);
+        var equipmentsTask = FilterAsync("equipments", x.Equipments, ct);
+        var methodsTask = FilterAsync("brew-methods", x.BrewMethods, ct);
+        await Task.WhenAll(tagsTask, roastersTask, equipmentsTask, methodsTask);
+        return new(x.Description, x.Contacts, x.Photos, await tagsTask, await roastersTask,
+            await equipmentsTask, x.Menu, await methodsTask);
+    }
 
     public Task<Guid[]> ResolveIdsAsync(string kind, string[] slugs, CancellationToken ct) => addresses.ResolveIdsAsync(kind, slugs, ct);
     private async Task<Guid[]?> FilterAsync(string kind, string[]? slugs, CancellationToken ct) =>
@@ -22,11 +28,17 @@ public sealed class PublicModerationService(IPublicAddressLookup addresses)
 
     public async Task<PublicShopChangeRequestDto[]> ChangesAsync(IReadOnlyList<ShopChangeRequestDto> items, CancellationToken ct)
     {
-        var shops = await ReadAsync("shops", items.Select(x => x.ShopId), ct);
-        var roasters = await ReadAsync("roasters", items.SelectMany(x => x.Payload.RoasterIds ?? []), ct);
-        var tags = await ReadAsync("shop-tags", items.SelectMany(x => x.Payload.TagIds ?? []), ct);
-        var equipments = await ReadAsync("equipments", items.SelectMany(x => x.Payload.EquipmentIds ?? []), ct);
-        var methods = await ReadAsync("brew-methods", items.SelectMany(x => x.Payload.BrewMethodIds ?? []), ct);
+        var shopsTask = ReadAsync("shops", items.Select(x => x.ShopId), ct);
+        var roastersTask = ReadAsync("roasters", items.SelectMany(x => x.Payload.RoasterIds ?? []), ct);
+        var tagsTask = ReadAsync("shop-tags", items.SelectMany(x => x.Payload.TagIds ?? []), ct);
+        var equipmentsTask = ReadAsync("equipments", items.SelectMany(x => x.Payload.EquipmentIds ?? []), ct);
+        var methodsTask = ReadAsync("brew-methods", items.SelectMany(x => x.Payload.BrewMethodIds ?? []), ct);
+        await Task.WhenAll(shopsTask, roastersTask, tagsTask, equipmentsTask, methodsTask);
+        var shops = await shopsTask;
+        var roasters = await roastersTask;
+        var tags = await tagsTask;
+        var equipments = await equipmentsTask;
+        var methods = await methodsTask;
         return items.Select(x => new PublicShopChangeRequestDto(x.Id, shops.GetValueOrDefault(x.ShopId), x.Section,
             new(x.Payload.Description, x.Payload.Contacts, x.Payload.Photos, Slugs(x.Payload.TagIds, tags),
                 Slugs(x.Payload.RoasterIds, roasters), Slugs(x.Payload.EquipmentIds, equipments),

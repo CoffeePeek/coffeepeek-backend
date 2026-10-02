@@ -48,9 +48,11 @@ public class ModerationShopCreationServiceTests
         };
 
         var service = new ModerationShopCreationService(repository.Object, unitOfWork.Object);
-        await service.Create(command, null, _ct);
+        await service.Create(command, _ct);
 
         persistedShop.Should().NotBeNull();
+        persistedShop!.Location!.Address.Should().Be(command.Address);
+        persistedShop.Location.IsAddressValidated.Should().BeFalse();
         persistedShop!.Contact.Should().BeEquivalentTo(command.ShopContact);
         persistedShop.Schedules.Should().HaveCount(3);
         var monday = persistedShop.Schedules.Single(s => s.DayOfWeek == DayOfWeek.Monday);

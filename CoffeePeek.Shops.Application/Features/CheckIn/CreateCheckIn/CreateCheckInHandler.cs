@@ -2,13 +2,13 @@ using CoffeePeek.Contract.Dtos;
 using CoffeePeek.Contract.Dtos.CoffeeShop;
 using CoffeePeek.Contract.Events;
 using CoffeePeek.Contract.Events.Shops;
-using CoffeePeek.Shared.Domain.Interfaces.Infrastructure;
 using CoffeePeek.Shared.Kernel;
+using CoffeePeek.Shared.Kernel.Diagnostics;
 using CoffeePeek.Shared.Kernel.Exceptions;
 using CoffeePeek.Shared.Kernel.Response;
 using CoffeePeek.Shared.Validation;
 using CoffeePeek.Shops.Application.Abstractions;
-using CoffeePeek.Shops.Application.Features.Public.Stats;
+using CoffeePeek.Shops.Application.Features.CheckIn;
 using CoffeePeek.Shops.Domain.Aggregates.CheckInAggregate;
 using CoffeePeek.Shops.Domain.Entities;
 using MapsterMapper;
@@ -31,7 +31,6 @@ public static class CreateCheckInHandler
         IMessageBus bus,
         IAsyncValidationStrategy<CreateCheckInCommand> validationStrategy,
         IMapper mapper,
-        ICacheService cacheService,
         IUploadedPhotoLookup photoLookup,
         CoffeePeek.Shared.Kernel.Drinks.IDrinkCatalog drinkCatalog,
         CancellationToken ct)
@@ -61,7 +60,9 @@ public static class CreateCheckInHandler
         UploadedPhotoDto[] trustedPhotos = [];
         if (storageKeys.Length > 0)
         {
-            var lookup = await photoLookup.ResolveAsync(command.UserId, storageKeys, ct);
+            var lookup = await WriteStageTrace.MeasureAsync(
+                "checkin_create", "photo_verification",
+                () => photoLookup.ResolveAsync(command.UserId, storageKeys, ct));
             if (!lookup.Succeeded)
             {
                 if (lookup.IsTransientFailure)
@@ -125,9 +126,12 @@ public static class CreateCheckInHandler
             });
         }
 
-        await unitOfWork.SaveChangesAsync(ct);
-        await PublicStatsCacheInvalidator.InvalidateAsync(cacheService, ct);
-        await cacheService.RemoveByPattern(CacheKey.Shop.SearchPattern(), ct);
+        // The local durable queue is enlisted in this same Shops outbox transaction. Redis
+        // invalidation starts only after the check-in and all published events commit.
+        await WriteStageTrace.MeasureAsync("checkin_create", "cache_outbox_enqueue",
+            async () => await bus.PublishAsync(new CheckInCacheInvalidationRequested(checkIn.Id)));
+        await WriteStageTrace.MeasureAsync("checkin_create", "db_save",
+            () => unitOfWork.SaveChangesAsync(ct));
 
         return Response<CreateCheckInResponse>.Success(new CreateCheckInResponse(checkIn.Id));
     }

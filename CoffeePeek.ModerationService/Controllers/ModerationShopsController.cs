@@ -12,6 +12,7 @@ using CoffeePeek.Moderation.Application.Features.Shop.UpdateShop;
 using CoffeePeek.Shared.Auth;
 using CoffeePeek.Shared.Auth.Constants;
 using CoffeePeek.Shared.Kernel.Response;
+using CoffeePeek.Shared.Kernel.Diagnostics;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Wolverine;
@@ -89,23 +90,38 @@ public class ModerationShopsController(IMessageBus bus, IUserContext userContext
     public async Task<IActionResult> SendCoffeeShopToModeration(
         [FromBody] PublicSubmitShopRequest request, CancellationToken ct)
     {
+        var cityTask = WriteStageTrace.MeasureAsync("shop_submit", "city_lookup",
+            () => discovery.ResolveIdAsync("cities", request.City, ct));
+        var equipmentTask = ResolveOptionalAsync("equipments", request.Equipments, ct);
+        var beansTask = ResolveOptionalAsync("beans", request.Beans, ct);
+        var roastersTask = ResolveOptionalAsync("roasters", request.Roasters, ct);
+        var methodsTask = ResolveOptionalAsync("brew-methods", request.BrewMethods, ct);
+        await Task.WhenAll(cityTask, equipmentTask, beansTask, roastersTask, methodsTask);
+
         // Anonymous submissions carry a null UserId; approval consumer skips user crediting for these.
         var commandWithUser = request.Adapt<SendCoffeeShopToModerationCommand>() with
         {
-            UserId = userContext.GetUserId(), CityId = await discovery.ResolveIdAsync("cities", request.City, ct),
-            EquipmentIds = request.Equipments is null ? null : (await discovery.ResolveIdsAsync("equipments", request.Equipments, ct)).ToList(),
-            CoffeeBeanIds = request.Beans is null ? null : (await discovery.ResolveIdsAsync("beans", request.Beans, ct)).ToList(),
-            RoasterIds = request.Roasters is null ? null : (await discovery.ResolveIdsAsync("roasters", request.Roasters, ct)).ToList(),
-            BrewMethodIds = request.BrewMethods is null ? null : (await discovery.ResolveIdsAsync("brew-methods", request.BrewMethods, ct)).ToList()
+            UserId = userContext.GetUserId(), CityId = await cityTask,
+            EquipmentIds = (await equipmentTask)?.ToList(),
+            CoffeeBeanIds = (await beansTask)?.ToList(),
+            RoasterIds = (await roastersTask)?.ToList(),
+            BrewMethodIds = (await methodsTask)?.ToList()
         };
 
-        var response = await bus.InvokeAsync<Response<SendCoffeeShopToModerationResponse>>(commandWithUser, ct);
+        var response = await WriteStageTrace.MeasureAsync("shop_submit", "commit",
+            () => bus.InvokeAsync<Response<SendCoffeeShopToModerationResponse>>(commandWithUser, ct));
 
         if (!response.IsSuccess)
             return BadRequest(response);
 
         return StatusCode(StatusCodes.Status201Created, response);
     }
+
+    private Task<Guid[]?> ResolveOptionalAsync(string kind, string[]? slugs, CancellationToken ct) =>
+        slugs is null
+            ? Task.FromResult<Guid[]?>(null)
+            : WriteStageTrace.MeasureAsync<Guid[]?>("shop_submit", $"{kind}_lookup",
+                async () => await discovery.ResolveIdsAsync(kind, slugs, ct));
 
     [HttpPut]
     [Authorize(Policy = RoleConsts.Moderator)]

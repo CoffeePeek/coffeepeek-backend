@@ -1,10 +1,10 @@
 using CoffeePeek.Contract.Events.Menu;
-using CoffeePeek.Moderation.Application.Abstractions;
-using CoffeePeek.Moderation.Application.Common.Models;
 using CoffeePeek.Moderation.Application.ErrorCodes;
+using CoffeePeek.Moderation.Application.Features.Geocoding;
 using CoffeePeek.Moderation.Application.Features.Menu;
 using CoffeePeek.Moderation.Domain.Aggregates;
 using CoffeePeek.Shared.Kernel;
+using CoffeePeek.Shared.Kernel.Diagnostics;
 using CoffeePeek.Shared.Kernel.Exceptions;
 using CoffeePeek.Shared.Kernel.Response;
 using Microsoft.Extensions.Logging;
@@ -14,11 +14,10 @@ namespace CoffeePeek.Moderation.Application.Features.Shop.CreateShop;
 
 public static class SendCoffeeShopToModerationHandler
 {
-    public static async Task<(Response<SendCoffeeShopToModerationResponse>, ParseMenuRequestedEvent?)> Handle(
+    public static async Task<(Response<SendCoffeeShopToModerationResponse>, ParseMenuRequestedEvent?, ModerationGeocodingRequested)> Handle(
         SendCoffeeShopToModerationCommand command,
         IModerationShopRepository repository,
         IModerationShopCreationService creationService,
-        IYandexGeocodingService geocodingService,
         ILogger<SendCoffeeShopToModerationCommand> logger,
         CancellationToken ct)
     {
@@ -26,7 +25,8 @@ public static class SendCoffeeShopToModerationHandler
             command.Name, command.UserId);
 
         var duplicateSpec = new DuplicateShopSpecification(command.Name, command.Address);
-        if (await repository.Any(duplicateSpec, ct))
+        if (await WriteStageTrace.MeasureAsync("shop_submit", "duplicate_validation",
+                () => repository.Any(duplicateSpec, ct)))
         {
             logger.LogWarning("Duplicate shop detected: {Name} at {Address}",
                 command.Name, command.Address);
@@ -36,25 +36,14 @@ public static class SendCoffeeShopToModerationHandler
                 ShopModerationErrorCodes.DuplicateShop);
         }
 
-        var geocodingResult = await TryGeocodeAsync(command.Address, geocodingService, logger, ct);
-        var isAddressValidated = geocodingResult != null;
+        var shopId = await WriteStageTrace.MeasureAsync("shop_submit", "db_save",
+            () => creationService.Create(command, ct));
 
-        if (!isAddressValidated)
-        {
-            logger.LogWarning(
-                "Geocoding failed for address: {Address}. Shop will be saved with unvalidated address.",
-                command.Address);
-        }
-
-        var shopId = await creationService.Create(command, geocodingResult, ct);
-
-        var responseData = new SendCoffeeShopToModerationResponse(shopId, "Pending", isAddressValidated);
+        var responseData = new SendCoffeeShopToModerationResponse(shopId, "Pending", false);
 
         logger.LogInformation("Shop {ShopId} successfully sent to moderation", shopId);
 
-        var message = isAddressValidated
-            ? "The application has been accepted and will be reviewed by the moderator."
-            : "The application has been accepted. Address coordinates could not be verified automatically and will be checked by a moderator.";
+        const string message = "The application has been accepted. Address verification is pending.";
 
         ParseMenuRequestedEvent? parseEvent = null;
         if (command.MenuPhotos is { Count: > 0 })
@@ -68,25 +57,7 @@ public static class SendCoffeeShopToModerationHandler
                 command.UserId);
         }
 
-        return (Response<SendCoffeeShopToModerationResponse>.Success(responseData, message), parseEvent);
-    }
-
-    private static async Task<GeocodingResult?> TryGeocodeAsync(
-        string address,
-        IYandexGeocodingService geocodingService,
-        ILogger logger,
-        CancellationToken ct)
-    {
-        if (string.IsNullOrWhiteSpace(address)) return null;
-
-        try
-        {
-            return await geocodingService.GeocodeAsync(address, ct);
-        }
-        catch (Exception ex)
-        {
-            logger.LogWarning(ex, "Geocoding service unavailable for address: {Address}", address);
-            return null;
-        }
+        return (Response<SendCoffeeShopToModerationResponse>.Success(responseData, message), parseEvent,
+            new ModerationGeocodingRequested(ModerationGeocodingKind.Shop, shopId, command.Address));
     }
 }

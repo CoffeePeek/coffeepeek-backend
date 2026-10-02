@@ -32,8 +32,6 @@ namespace Internal.Generated.WolverineHandlers
             var unitOfWorkOfModerationDbContext = new CoffeePeek.Shared.Persistence.Data.UnitOfWork<CoffeeShop.Moderation.Persistence.Configuration.ModerationDbContext>(moderationDbContext);
             var moderationShopRepository = new CoffeeShop.Moderation.Persistence.Repositories.ModerationShopRepository(moderationDbContext);
             var moderationShopCreationService = new CoffeePeek.Moderation.Application.Features.Shop.CreateShop.ModerationShopCreationService(moderationShopRepository, unitOfWorkOfModerationDbContext);
-            // This service has been marked as requiring service location independent of Wolverine's ability to use constructor injection of everything else
-            var yandexGeocodingService = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<CoffeePeek.Moderation.Application.Abstractions.IYandexGeocodingService>(serviceScope.ServiceProvider);
             // The actual message body
             var sendCoffeeShopToModerationCommand = (CoffeePeek.Moderation.Application.Features.Shop.CreateShop.SendCoffeeShopToModerationCommand)context.Envelope.Message;
 
@@ -53,7 +51,7 @@ namespace Internal.Generated.WolverineHandlers
                 System.Diagnostics.Activity.Current?.SetTag("handler.type", "CoffeePeek.Moderation.Application.Features.Shop.CreateShop.SendCoffeeShopToModerationHandler");
                 
                 // The actual message execution
-                (var outgoing1, var outgoing2) = await CoffeePeek.Moderation.Application.Features.Shop.CreateShop.SendCoffeeShopToModerationHandler.Handle(sendCoffeeShopToModerationCommand, moderationShopRepository, moderationShopCreationService, yandexGeocodingService, _loggerForMessage, cancellation).ConfigureAwait(false);
+                (var outgoing1, var outgoing2, var outgoing3) = await CoffeePeek.Moderation.Application.Features.Shop.CreateShop.SendCoffeeShopToModerationHandler.Handle(sendCoffeeShopToModerationCommand, moderationShopRepository, moderationShopCreationService, _loggerForMessage, cancellation).ConfigureAwait(false);
 
                 
                 // Outgoing, cascaded message
@@ -64,6 +62,10 @@ namespace Internal.Generated.WolverineHandlers
                 await context.EnqueueCascadingAsync(outgoing2).ConfigureAwait(false);
 
                 
+                // Outgoing, cascaded message
+                await context.EnqueueCascadingAsync(outgoing3).ConfigureAwait(false);
+
+
                 // Added by EF Core Transaction Middleware
                 var result_of_SaveChangesAsync = await moderationDbContext.SaveChangesAsync(cancellation).ConfigureAwait(false);
 
@@ -85,4 +87,3 @@ namespace Internal.Generated.WolverineHandlers
     
     
 }
-

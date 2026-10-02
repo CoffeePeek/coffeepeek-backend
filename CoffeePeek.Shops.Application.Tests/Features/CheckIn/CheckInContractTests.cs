@@ -3,7 +3,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using CoffeePeek.Contract.Dtos;
 using CoffeePeek.Contract.Events.Shops;
-using CoffeePeek.Shared.Domain.Interfaces.Infrastructure;
 using CoffeePeek.Shared.Kernel;
 using CoffeePeek.Shared.Kernel.Options;
 using CoffeePeek.Shops.Application.Abstractions;
@@ -54,7 +53,6 @@ public class CheckInContractTests
         var repo = new Mock<IQueryCheckInRepository>();
         var uow = new Mock<IUnitOfWork>();
         var bus = new Mock<IMessageBus>();
-        var cache = new Mock<ICacheService>();
         var lookup = new Mock<IUploadedPhotoLookup>();
         lookup.Setup(l => l.ResolveAsync(command.UserId, It.IsAny<System.Collections.Generic.IReadOnlyCollection<string>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new UploadedPhotoLookupResult(true,
@@ -69,7 +67,7 @@ public class CheckInContractTests
             .Returns(ValueTask.CompletedTask);
 
         var response = await CreateCheckInHandler.Handle(command, repo.Object, uow.Object,
-            bus.Object, Validator(), mapper, cache.Object, lookup.Object, Mock.Of<CoffeePeek.Shared.Kernel.Drinks.IDrinkCatalog>(), CancellationToken.None);
+            bus.Object, Validator(), mapper, lookup.Object, Mock.Of<CoffeePeek.Shared.Kernel.Drinks.IDrinkCatalog>(), CancellationToken.None);
 
         response.IsSuccess.Should().BeTrue();
         saved.DrinkSlug.Should().Be("other");

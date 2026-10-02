@@ -1,5 +1,6 @@
 using CoffeePeek.Shared.Auth;
 using CoffeePeek.Shared.Kernel.Response;
+using CoffeePeek.Shared.Kernel.Diagnostics;
 using CoffeePeek.Shops.Application.Features.CheckIn.CreateCheckIn;
 using CoffeePeek.Shops.Application.Features.CheckIn.GetUserCheckIns;
 using Microsoft.AspNetCore.Authorization;
@@ -42,11 +43,13 @@ public class CheckInsController(IMessageBus bus, IUserContext userContext, Publi
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status503ServiceUnavailable)]
     public async Task<IActionResult> CreateCheckIn([FromBody] PublicCreateCheckInRequest request, CancellationToken ct)
     {
-        var shopId = await discovery.ResolveIdAsync(PublicAddressKind.CoffeeShop, request.Shop, ct);
+        var shopId = await WriteStageTrace.MeasureAsync("checkin_create", "shop_lookup",
+            () => discovery.ResolveIdAsync(PublicAddressKind.CoffeeShop, request.Shop, ct));
         var command = new CreateCheckInCommand(shopId, request.IsPublic, request.VisitedAt, request.Note,
             request.Photos, request.Rating, request.Header)
         { UserId = userContext.GetUserIdOrThrow(), UserName = userContext.GetUsernameOrThrow() };
-        var response = await bus.InvokeAsync<Response<CreateCheckInResponse>>(command, ct);
+        var response = await WriteStageTrace.MeasureAsync("checkin_create", "commit",
+            () => bus.InvokeAsync<Response<CreateCheckInResponse>>(command, ct));
 
         return Ok(response);
     }

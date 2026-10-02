@@ -9,6 +9,7 @@ using CoffeePeek.Moderation.Application.Features.Review.UpdateCoffeeShopReview;
 using CoffeePeek.Shared.Auth;
 using CoffeePeek.Shared.Auth.Constants;
 using CoffeePeek.Shared.Kernel.Response;
+using CoffeePeek.Shared.Kernel.Diagnostics;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Wolverine;
@@ -86,7 +87,8 @@ public class ModerationReviewsController(IMessageBus bus, IUserContext userConte
     public async Task<IActionResult> SendReviewToModeration(
         [FromBody] PublicCreateReviewRequest request, CancellationToken ct)
     {
-        var command = new SendReviewToModerationCommand(await discovery.ResolveIdAsync("shops", request.Shop, ct),
+        var command = new SendReviewToModerationCommand(await WriteStageTrace.MeasureAsync("review_submit", "shop_lookup",
+                () => discovery.ResolveIdAsync("shops", request.Shop, ct)),
             request.Header, request.Comment, request.Rating, request.Photos)
         {
             UserId = userContext.GetUserIdOrThrow(),
@@ -94,7 +96,8 @@ public class ModerationReviewsController(IMessageBus bus, IUserContext userConte
             RatingCoffee = request.RatingCoffee, RatingPlace = request.RatingPlace, RatingService = request.RatingService
         };
 
-        var response = await bus.InvokeAsync<CreateEntityResponse>(command, ct);
+        var response = await WriteStageTrace.MeasureAsync("review_submit", "commit",
+            () => bus.InvokeAsync<CreateEntityResponse>(command, ct));
 
         return response.IsSuccess
             ? Ok(response)

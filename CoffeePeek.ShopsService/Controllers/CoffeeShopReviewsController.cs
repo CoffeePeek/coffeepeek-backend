@@ -1,5 +1,6 @@
 using CoffeePeek.Shared.Auth;
 using CoffeePeek.Shared.Kernel.Response;
+using CoffeePeek.Shared.Kernel.Diagnostics;
 using CoffeePeek.Shops.Application.Features.Review.DeleteReviewFromCoffeeShop;
 using CoffeePeek.Shops.Application.Features.Review.GetReviewById;
 using CoffeePeek.Shops.Application.Features.Review.SetReviewHelpful;
@@ -27,8 +28,9 @@ public class CoffeeShopReviewsController(IMessageBus bus, IUserContext userConte
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Report(Guid reviewId, [FromBody] SubmitReviewReportRequest request, CancellationToken ct)
     {
-        var response = await bus.InvokeAsync<Response<ReviewReportDto>>(
-            new SubmitReviewReportCommand(reviewId, userContext.GetUserIdOrThrow(), request.Text), ct);
+        var response = await WriteStageTrace.MeasureAsync("review_report", "commit",
+            () => bus.InvokeAsync<Response<ReviewReportDto>>(
+                new SubmitReviewReportCommand(reviewId, userContext.GetUserIdOrThrow(), request.Text), ct));
         return StatusCode(StatusCodes.Status201Created, response);
     }
 

@@ -1,8 +1,9 @@
 using System.Net;
 using CoffeePeek.Moderation.Application.Abstractions;
-using CoffeePeek.Moderation.Application.Common.Models;
+using CoffeePeek.Moderation.Application.Features.Geocoding;
 using CoffeePeek.Moderation.Domain.Aggregates;
 using CoffeePeek.Shared.Kernel;
+using CoffeePeek.Shared.Kernel.Diagnostics;
 using CoffeePeek.Shared.Kernel.Response;
 using Microsoft.Extensions.Logging;
 
@@ -10,33 +11,30 @@ namespace CoffeePeek.Moderation.Application.Features.Roaster.SubmitRoaster;
 
 public static class SubmitRoasterHandler
 {
-    public static async Task<Response<SubmitRoasterResponse>> Handle(
+    public static async Task<(Response<SubmitRoasterResponse>, ModerationGeocodingRequested?)> Handle(
         SubmitRoasterCommand command,
         IModerationRoasterRepository repository,
         IRoasterExistenceLookup roasterExistenceLookup,
-        IYandexGeocodingService geocodingService,
         IUnitOfWork unitOfWork,
         ILogger<SubmitRoasterCommand> logger,
         CancellationToken ct)
     {
-        if (await roasterExistenceLookup.ExistsByNameAsync(command.Name, ct))
+        if (await WriteStageTrace.MeasureAsync("roaster_submit", "duplicate_validation",
+                () => roasterExistenceLookup.ExistsByNameAsync(command.Name, ct)))
         {
             logger.LogWarning("Duplicate roaster submission detected: {Name}", command.Name);
-            return Response<SubmitRoasterResponse>.Error(
-                HttpStatusCode.Conflict, "A roaster with this name already exists.");
+            return (Response<SubmitRoasterResponse>.Error(
+                HttpStatusCode.Conflict, "A roaster with this name already exists."), null);
         }
 
         var roaster = ModerationRoaster.Create(command.Name, command.UserId, command.About);
 
-        var isAddressValidated = false;
+        ModerationGeocodingRequested? geocodingRequest = null;
         if (command.CityId.HasValue && !string.IsNullOrWhiteSpace(command.Address))
         {
-            var geocodingResult = await TryGeocodeAsync(command.Address, geocodingService, logger, ct);
-            var location = geocodingResult is not null
-                ? new ModerationLocation(command.Address, geocodingResult.Latitude, geocodingResult.Longitude)
-                : new ModerationLocation(command.Address);
-            isAddressValidated = geocodingResult is not null;
-            roaster.SetLocation(command.CityId.Value, location);
+            roaster.SetLocation(command.CityId.Value, new ModerationLocation(command.Address));
+            geocodingRequest = new ModerationGeocodingRequested(
+                ModerationGeocodingKind.Roaster, roaster.Id, command.Address);
         }
 
         if (!string.IsNullOrWhiteSpace(command.InstagramLink) || !string.IsNullOrWhiteSpace(command.SiteLink))
@@ -49,33 +47,17 @@ public static class SubmitRoasterHandler
         }
 
         await repository.AddAsync(roaster);
-        await unitOfWork.SaveChangesAsync(ct);
+        await WriteStageTrace.MeasureAsync("roaster_submit", "db_save",
+            () => unitOfWork.SaveChangesAsync(ct));
 
         logger.LogInformation("Roaster {RoasterId} submitted to moderation by user {UserId}", roaster.Id, command.UserId);
 
-        var message = isAddressValidated || roaster.Location is null
+        var message = roaster.Location is null
             ? "The application has been accepted and will be reviewed by the moderator."
-            : "The application has been accepted. Address coordinates could not be verified automatically and will be checked by a moderator.";
+            : "The application has been accepted. Address verification is pending.";
 
-        return Response<SubmitRoasterResponse>.Success(
-            new SubmitRoasterResponse(roaster.Id, "Pending", isAddressValidated),
-            message);
-    }
-
-    private static async Task<GeocodingResult?> TryGeocodeAsync(
-        string address,
-        IYandexGeocodingService geocodingService,
-        ILogger logger,
-        CancellationToken ct)
-    {
-        try
-        {
-            return await geocodingService.GeocodeAsync(address, ct);
-        }
-        catch (Exception ex)
-        {
-            logger.LogWarning(ex, "Geocoding service unavailable for address: {Address}", address);
-            return null;
-        }
+        return (Response<SubmitRoasterResponse>.Success(
+            new SubmitRoasterResponse(roaster.Id, "Pending", false),
+            message), geocodingRequest);
     }
 }

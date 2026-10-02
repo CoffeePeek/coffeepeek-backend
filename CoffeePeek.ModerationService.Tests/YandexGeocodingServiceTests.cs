@@ -41,10 +41,42 @@ public class YandexGeocodingServiceTests
         }
     }
 
-    private sealed class StubHandler(string json) : HttpMessageHandler
+    [Fact]
+    public async Task GeocodeAsync_NoResults_ReturnsNull()
+    {
+        var http = new HttpClient(new StubHandler("""{"response":{"GeoObjectCollection":{"featureMember":[]}}}"""))
+        {
+            BaseAddress = new Uri("https://geocode.test/")
+        };
+        var service = new YandexGeocodingService(http,
+            Options.Create(new YandexApiOptions { ApiKey = "k" }),
+            NullLogger<YandexGeocodingService>.Instance);
+
+        var result = await service.GeocodeAsync("Unknown", TestContext.Current.CancellationToken);
+
+        result.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task GeocodeAsync_HttpFailure_PropagatesForRetry()
+    {
+        var http = new HttpClient(new StubHandler("{}", HttpStatusCode.ServiceUnavailable))
+        {
+            BaseAddress = new Uri("https://geocode.test/")
+        };
+        var service = new YandexGeocodingService(http,
+            Options.Create(new YandexApiOptions { ApiKey = "k" }),
+            NullLogger<YandexGeocodingService>.Instance);
+
+        var act = () => service.GeocodeAsync("Minsk", TestContext.Current.CancellationToken);
+
+        await act.Should().ThrowAsync<HttpRequestException>();
+    }
+
+    private sealed class StubHandler(string json, HttpStatusCode statusCode = HttpStatusCode.OK) : HttpMessageHandler
     {
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct) =>
-            Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+            Task.FromResult(new HttpResponseMessage(statusCode)
             {
                 Content = new StringContent(json, Encoding.UTF8, "application/json")
             });

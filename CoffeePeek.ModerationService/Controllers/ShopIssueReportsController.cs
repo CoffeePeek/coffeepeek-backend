@@ -1,6 +1,7 @@
 using CoffeePeek.Moderation.Application.Features.ShopIssueReports.CreateShopIssueReport;
 using CoffeePeek.Shared.Auth;
 using CoffeePeek.Shared.Kernel.Response;
+using CoffeePeek.Shared.Kernel.Diagnostics;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Wolverine;
@@ -23,10 +24,12 @@ public class ShopIssueReportsController(IMessageBus bus, IUserContext userContex
     public async Task<IActionResult> CreateShopIssueReport(
         [FromBody] PublicCreateShopIssueRequest request, CancellationToken ct)
     {
-        var command = new CreateShopIssueReportCommand(await discovery.ResolveIdAsync("shops", request.Shop, ct), request.Category, request.Description)
+        var command = new CreateShopIssueReportCommand(await WriteStageTrace.MeasureAsync("shop_report", "shop_lookup",
+            () => discovery.ResolveIdAsync("shops", request.Shop, ct)), request.Category, request.Description)
         { UserId = userContext.GetUserIdOrThrow() };
 
-        var response = await bus.InvokeAsync<CreateEntityResponse>(command, ct);
+        var response = await WriteStageTrace.MeasureAsync("shop_report", "commit",
+            () => bus.InvokeAsync<CreateEntityResponse>(command, ct));
 
         return response.IsSuccess
             ? Ok(response)

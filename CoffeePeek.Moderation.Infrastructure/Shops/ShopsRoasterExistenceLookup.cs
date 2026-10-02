@@ -1,13 +1,15 @@
 using System.Net.Http.Json;
-using CoffeePeek.Contract.Dtos.Shop;
 using CoffeePeek.Moderation.Application.Abstractions;
-using CoffeePeek.Shared.Kernel.Response;
+using CoffeePeek.Shared.Auth;
+using CoffeePeek.Shared.Auth.Options;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace CoffeePeek.Moderation.Infrastructure.Shops;
 
 public class ShopsRoasterExistenceLookup(
     IHttpClientFactory httpClientFactory,
+    IOptions<GatewayAuthOptions> gatewayAuthOptions,
     ILogger<ShopsRoasterExistenceLookup> logger) : IRoasterExistenceLookup
 {
     public async Task<bool> ExistsByNameAsync(string name, CancellationToken ct = default)
@@ -19,11 +21,12 @@ public class ShopsRoasterExistenceLookup(
 
         try
         {
-            var response = await client.GetFromJsonAsync<Response<CoffeePeek.Contract.Dtos.PublicAddresses.PublicRoasterSummaryDto[]>>(
-                "/api/catalogs/roasters", ct);
-
-            return response?.Data?.Any(r =>
-                string.Equals(r.Name, name, StringComparison.OrdinalIgnoreCase)) == true;
+            using var request = new HttpRequestMessage(HttpMethod.Get,
+                $"/internal/roasters/exists?name={Uri.EscapeDataString(name.Trim())}");
+            request.AddGatewayAuthHeader(gatewayAuthOptions.Value.SecretKey);
+            using var response = await client.SendAsync(request, ct);
+            response.EnsureSuccessStatusCode();
+            return await response.Content.ReadFromJsonAsync<bool>(cancellationToken: ct);
         }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
         {

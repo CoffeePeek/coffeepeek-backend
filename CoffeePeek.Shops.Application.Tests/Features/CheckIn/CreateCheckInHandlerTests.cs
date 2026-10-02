@@ -6,13 +6,13 @@ using System.Threading;
 using System.Threading.Tasks;
 using CoffeePeek.Contract.Dtos;
 using CoffeePeek.Contract.Events.Shops;
-using CoffeePeek.Shared.Domain.Interfaces.Infrastructure;
 using CoffeePeek.Shared.Kernel;
 using CoffeePeek.Shared.Kernel.Exceptions;
 using CoffeePeek.Shared.Validation;
 using CoffeePeek.Shops.Application.Abstractions;
 using CoffeePeek.Contract.Events;
 using CoffeePeek.Shops.Application.Features.CheckIn.CreateCheckIn;
+using CoffeePeek.Shops.Application.Features.CheckIn;
 using CoffeePeek.Shops.Domain.Aggregates.CheckInAggregate;
 using FluentAssertions;
 using MapsterMapper;
@@ -29,7 +29,6 @@ public class CreateCheckInHandlerTests
     private readonly Mock<IMessageBus> _busMock = new();
     private readonly Mock<IAsyncValidationStrategy<CreateCheckInCommand>> _validationMock = new();
     private readonly Mock<IMapper> _mapperMock = new();
-    private readonly Mock<ICacheService> _cacheMock = new();
     private readonly Mock<IUploadedPhotoLookup> _photoLookupMock = new();
     private readonly CancellationToken _ct = CancellationToken.None;
 
@@ -59,7 +58,6 @@ public class CreateCheckInHandlerTests
             _busMock.Object,
             _validationMock.Object,
             _mapperMock.Object,
-            _cacheMock.Object,
             _photoLookupMock.Object,
             Mock.Of<CoffeePeek.Shared.Kernel.Drinks.IDrinkCatalog>(), _ct);
 
@@ -77,20 +75,15 @@ public class CreateCheckInHandlerTests
             _busMock.Object,
             _validationMock.Object,
             _mapperMock.Object,
-            _cacheMock.Object,
             _photoLookupMock.Object,
             Mock.Of<CoffeePeek.Shared.Kernel.Drinks.IDrinkCatalog>(), _ct);
 
         result.IsSuccess.Should().BeTrue();
-        _busMock.Verify(b => b.PublishAsync(It.IsAny<object>()), Times.Never);
+        _busMock.Verify(b => b.PublishAsync(
+            It.Is<CheckInCacheInvalidationRequested>(m => m.CheckInId == result.Data.CheckInId),
+            It.IsAny<DeliveryOptions?>()), Times.Once);
         _checkInRepoMock.Verify(r => r.Add(It.IsAny<DomainCheckIn>()), Times.Once);
         _unitOfWorkMock.Verify(u => u.SaveChangesAsync(_ct), Times.Once);
-        _cacheMock.Verify(
-            c => c.RemoveAsync(CacheKey.Shop.PublicPlatformStats()),
-            Times.Once);
-        _cacheMock.Verify(
-            c => c.RemoveByPattern(CacheKey.Shop.SearchPattern(), _ct),
-            Times.Once);
     }
 
     [Fact]
@@ -105,7 +98,7 @@ public class CreateCheckInHandlerTests
             .Callback(() => order.Add("validate")).ReturnsAsync(ValidationResult.Valid);
 
         await CreateCheckInHandler.Handle(command, _checkInRepoMock.Object, _unitOfWorkMock.Object, _busMock.Object,
-            _validationMock.Object, _mapperMock.Object, _cacheMock.Object, _photoLookupMock.Object, Mock.Of<CoffeePeek.Shared.Kernel.Drinks.IDrinkCatalog>(), _ct);
+            _validationMock.Object, _mapperMock.Object, _photoLookupMock.Object, Mock.Of<CoffeePeek.Shared.Kernel.Drinks.IDrinkCatalog>(), _ct);
 
         order.Should().Equal("lock", "validate");
     }
@@ -136,7 +129,6 @@ public class CreateCheckInHandlerTests
             _busMock.Object,
             _validationMock.Object,
             _mapperMock.Object,
-            _cacheMock.Object,
             _photoLookupMock.Object,
             Mock.Of<CoffeePeek.Shared.Kernel.Drinks.IDrinkCatalog>(), _ct);
 
@@ -174,7 +166,6 @@ public class CreateCheckInHandlerTests
             _busMock.Object,
             _validationMock.Object,
             _mapperMock.Object,
-            _cacheMock.Object,
             _photoLookupMock.Object,
             Mock.Of<CoffeePeek.Shared.Kernel.Drinks.IDrinkCatalog>(), _ct);
 
@@ -183,7 +174,8 @@ public class CreateCheckInHandlerTests
         saved!.Rating.Place.Should().Be(3);
         saved.Rating.Service.Should().Be(4);
         saved.Rating.Coffee.Should().Be(5);
-        _busMock.Verify(b => b.PublishAsync(It.IsAny<object>()), Times.Once);
+        _busMock.Verify(b => b.PublishAsync(It.IsAny<CheckinCreatedEvent>(), It.IsAny<DeliveryOptions?>()), Times.Once);
+        _busMock.Verify(b => b.PublishAsync(It.IsAny<CheckInCacheInvalidationRequested>(), It.IsAny<DeliveryOptions?>()), Times.Once);
         _unitOfWorkMock.Verify(u => u.SaveChangesAsync(_ct), Times.Once);
     }
 
@@ -206,7 +198,6 @@ public class CreateCheckInHandlerTests
             _busMock.Object,
             _validationMock.Object,
             _mapperMock.Object,
-            _cacheMock.Object,
             _photoLookupMock.Object,
             Mock.Of<CoffeePeek.Shared.Kernel.Drinks.IDrinkCatalog>(), _ct);
 
@@ -229,7 +220,6 @@ public class CreateCheckInHandlerTests
             _busMock.Object,
             _validationMock.Object,
             _mapperMock.Object,
-            _cacheMock.Object,
             _photoLookupMock.Object,
             Mock.Of<CoffeePeek.Shared.Kernel.Drinks.IDrinkCatalog>(), _ct);
 

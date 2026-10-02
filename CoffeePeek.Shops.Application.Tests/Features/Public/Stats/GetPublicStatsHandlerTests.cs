@@ -1,3 +1,4 @@
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using CoffeePeek.Contract.Dtos.Public;
@@ -65,5 +66,7 @@ public class GetPublicStatsHandlerTests
                 It.IsAny<PublicPlatformStatsDto>(),
                 null),
             Times.Once);
+
+        CacheKey.Shop.PublicPlatformStats().DefaultTtl.Should().Be(TimeSpan.FromMinutes(5));
     }
 }

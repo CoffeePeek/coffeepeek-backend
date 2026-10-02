@@ -1,4 +1,5 @@
 using CoffeePeek.Moderation.Domain.Aggregates;
+using CoffeePeek.Moderation.Domain.Common.Enums;
 using CoffeePeek.Shared.Domain.Interfaces.Persistance;
 using CoffeeShop.Moderation.Persistence.Configuration;
 using Microsoft.EntityFrameworkCore;
@@ -41,6 +42,30 @@ public class ModerationShopRepository(ModerationDbContext context) : IModeration
         await ShopRepository.AddAsync(shop);
     }
 
-}
+    public Task<bool> IsAwaitingGeocodingAsync(Guid id, string submittedAddress, CancellationToken ct = default) =>
+        ShopRepository.AsNoTracking().AnyAsync(shop =>
+            shop.Id == id && shop.ModerationStatus == ModerationStatus.Pending &&
+            shop.Location != null && shop.Location.Address == submittedAddress &&
+            !shop.Location.IsAddressValidated, ct);
 
+    public async Task<bool> TryApplyGeocodingAsync(
+        Guid id, string submittedAddress, decimal latitude, decimal longitude, CancellationToken ct = default)
+    {
+        // A single guarded UPDATE is required: a read-then-save could overwrite a moderator's
+        // newer address or decision. PostgreSQL reevaluates this predicate after row locking.
+        var affected = await context.Database.ExecuteSqlInterpolatedAsync($"""
+            UPDATE "ModerationShops"
+            SET "Location_Latitude" = {latitude},
+                "Location_Longitude" = {longitude},
+                "Location_IsAddressValidated" = TRUE,
+                "UpdatedAtUtc" = {DateTime.UtcNow}
+            WHERE "Id" = {id}
+              AND "ModerationStatus" = {(int)ModerationStatus.Pending}
+              AND "Location_Address" = {submittedAddress}
+              AND "Location_IsAddressValidated" IS FALSE
+            """, ct);
+        return affected == 1;
+    }
+
+}
 

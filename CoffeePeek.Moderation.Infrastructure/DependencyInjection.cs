@@ -52,7 +52,8 @@ public static class DependencyInjection
         services.AddHttpClient("shops-roaster-lookup", client =>
         {
             client.BaseAddress = new Uri($"http://{AppResources.ShopsService}");
-            client.Timeout = Timeout.InfiniteTimeSpan;
+            // This client is on interactive submit paths; a slow Shops lookup must fail promptly.
+            client.Timeout = TimeSpan.FromSeconds(5);
         });
         services.AddHttpClient("shops-drink-catalog", client =>
         {

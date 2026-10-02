@@ -5,7 +5,7 @@ using StackExchange.Redis;
 
 namespace CoffeePeek.Shared.Persistence.Cache.Redis;
 
-public class RedisService : ICacheService
+public class RedisService : ICacheService, IStrictCacheInvalidator
 {
     private readonly IDatabase _db;
     private readonly ILogger<RedisService> _logger;
@@ -211,6 +211,26 @@ public class RedisService : ICacheService
             _logger.LogError(ex, "Redis RemoveByPattern failed for pattern {Pattern}", pattern);
             return 0;
         }
+    }
+
+    async Task IStrictCacheInvalidator.RemoveAsync(CacheKey key, CancellationToken ct)
+    {
+        ct.ThrowIfCancellationRequested();
+        await _db.KeyDeleteAsync(key.Key);
+    }
+
+    async Task<int> IStrictCacheInvalidator.RemoveByPatternAsync(string pattern, CancellationToken ct)
+    {
+        ct.ThrowIfCancellationRequested();
+        if (_server is null)
+            throw new RedisConnectionException(ConnectionFailureType.UnableToConnect,
+                "Redis has no endpoint for strict cache invalidation.");
+
+        var keys = await CollectKeysByPatternAsync(pattern, int.MaxValue, ct);
+        if (keys.Count > 0)
+            await _db.KeyDeleteAsync(keys.ToArray());
+
+        return keys.Count;
     }
 
     public async Task<IReadOnlyList<string>> GetKeysByPatternAsync(

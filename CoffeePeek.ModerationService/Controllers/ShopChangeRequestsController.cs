@@ -4,6 +4,7 @@ using CoffeePeek.Moderation.Application.Features.ShopChangeRequests;
 using CoffeePeek.Shared.Auth;
 using CoffeePeek.Shared.Auth.Constants;
 using CoffeePeek.Shared.Kernel.Response;
+using CoffeePeek.Shared.Kernel.Diagnostics;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Wolverine;
@@ -28,11 +29,18 @@ public class ShopChangeRequestsController(IMessageBus bus, IUserContext userCont
         [FromBody] PublicCreateShopChangeRequest request,
         CancellationToken ct)
     {
-        var command = new CreateShopChangeRequestCommand(await discovery.ResolveIdAsync("shops", request.Shop, ct),
-            request.Section, await discovery.PayloadAsync(request.Payload, ct)) { UserId = userContext.GetUserIdOrThrow() };
-        var response = await bus.InvokeAsync<Response<ShopChangeRequestDto>>(command, ct);
+        var shopTask = WriteStageTrace.MeasureAsync("shop_change", "shop_lookup",
+            () => discovery.ResolveIdAsync("shops", request.Shop, ct));
+        var payloadTask = WriteStageTrace.MeasureAsync("shop_change", "payload_lookup",
+            () => discovery.PayloadAsync(request.Payload, ct));
+        await Task.WhenAll(shopTask, payloadTask);
+        var command = new CreateShopChangeRequestCommand(await shopTask,
+            request.Section, await payloadTask) { UserId = userContext.GetUserIdOrThrow() };
+        var response = await WriteStageTrace.MeasureAsync("shop_change", "commit",
+            () => bus.InvokeAsync<Response<ShopChangeRequestDto>>(command, ct));
         return response is { IsSuccess: true, Data: not null }
-            ? StatusCode(StatusCodes.Status201Created, Response<PublicShopChangeRequestDto>.Success((await discovery.ChangesAsync([response.Data], ct))[0]))
+            ? StatusCode(StatusCodes.Status201Created, Response<PublicShopChangeRequestDto>.Success((await WriteStageTrace.MeasureAsync(
+                "shop_change", "response_enrichment", () => discovery.ChangesAsync([response.Data], ct)))[0]))
             : StatusCode(response.StatusCode ?? StatusCodes.Status400BadRequest, response);
     }
 

@@ -2,6 +2,7 @@
 
 public interface IQueryRoasterRepository
 {
+    Task<bool> ExistsByNameAsync(string name, CancellationToken ct = default);
     Task<Roaster[]> GetAll();
     Task<IEnumerable<Roaster>> GetByIds(List<Guid> ids, CancellationToken cancellationToken);
     Task<Roaster?> GetByIdWithShopsAndPhotosAsync(Guid id, CancellationToken ct = default);

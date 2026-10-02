@@ -13,6 +13,37 @@ namespace CoffeePeek.Moderation.Application.Tests;
 public sealed class PublicModerationServiceTests
 {
     [Fact]
+    public async Task PayloadAsync_StartsIndependentCatalogLookupsConcurrently()
+    {
+        var started = 0;
+        var allStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var release = new TaskCompletionSource<Guid[]>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var lookup = new Mock<IPublicAddressLookup>();
+        lookup.Setup(x => x.ResolveIdsAsync(It.IsAny<string>(), It.IsAny<string[]>(), It.IsAny<CancellationToken>()))
+            .Returns(() =>
+            {
+                if (Interlocked.Increment(ref started) == 4) allStarted.TrySetResult();
+                return release.Task;
+            });
+
+        var pending = new PublicModerationService(lookup.Object).PayloadAsync(
+            new(Tags: ["tag"], Roasters: ["roaster"], Equipments: ["equipment"], BrewMethods: ["method"]),
+            TestContext.Current.CancellationToken);
+
+        try
+        {
+            await allStarted.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        }
+        finally
+        {
+            release.TrySetResult([Guid.NewGuid()]);
+        }
+
+        await pending;
+        started.Should().Be(4);
+    }
+
+    [Fact]
     public async Task PublicSubmissions_RoundTripSlugsAndRemoveAggregateIdsIncludingPhotoOwners()
     {
         var ids = new[] { "shops", "cities", "roasters", "beans", "equipments", "brew-methods", "shop-tags" }
