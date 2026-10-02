@@ -111,7 +111,7 @@ public class CreateShopFromModerationServiceTests
     }
 
     [Fact]
-    public async Task CreateShopFromApprovedEventAsync_CopiesCoffeeFocusAndSpecialtyTag()
+    public async Task CreateShopFromApprovedEventAsync_CopiesCoffeeFocusWithoutAssigningTags()
     {
         CoffeeShop? added = null;
         _shopRepoMock
@@ -133,8 +133,7 @@ public class CreateShopFromModerationServiceTests
         result.Should().NotBe(Guid.Empty);
         added.Should().NotBeNull();
         added!.Type.Should().Be(CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate.CoffeeFocusType.Specialty);
-        added.ShopTags.Should().ContainSingle(t =>
-            t.TagId == CoffeePeek.Shops.Domain.Aggregates.ShopTagAggregate.ShopTagIds.Specialty);
+        added.ShopTags.Should().BeEmpty();
     }
 
     [Fact]

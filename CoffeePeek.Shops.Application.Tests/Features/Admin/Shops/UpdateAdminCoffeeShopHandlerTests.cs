@@ -148,6 +148,30 @@ public class UpdateAdminCoffeeShopHandlerTests
             c => c.RemoveByPattern(CacheKey.Shop.SearchPattern(), _ct),
             Times.Once);
     }
+
+    [Theory]
+    [InlineData(CoffeePeek.Contract.Enums.CoffeeShopType.Specialty, false)]
+    [InlineData(CoffeePeek.Contract.Enums.CoffeeShopType.Cafe, true)]
+    public async Task SetFocus_LeavesExplicitTagsUnchanged(CoffeePeek.Contract.Enums.CoffeeShopType type, bool hasSpecialtyTag)
+    {
+        var shop = new DomainCoffeeShop(Guid.NewGuid(), "Shop", null, DomainPriceRange.Cheap, Guid.NewGuid());
+        shop.SetCoffeeFocus(hasSpecialtyTag ? CoffeeFocusType.Specialty : CoffeeFocusType.Cafe);
+        var tagId = hasSpecialtyTag
+            ? CoffeePeek.Shops.Domain.Aggregates.ShopTagAggregate.ShopTagIds.Specialty
+            : Guid.NewGuid();
+        shop.SetTags([tagId], Guid.NewGuid());
+        var originalTag = System.Linq.Enumerable.Single(shop.ShopTags);
+        _shops.Setup(r => r.GetByIdAsync(shop.Id, _ct)).ReturnsAsync(shop);
+
+        var result = await SetAdminCoffeeShopFocusHandler.Handle(
+            new SetAdminCoffeeShopFocusCommand(shop.Id, type, Guid.NewGuid()),
+            _shops.Object, _uow.Object, _cache.Object, _media, _ct);
+
+        result.IsSuccess.Should().BeTrue();
+        shop.Type.Should().Be((CoffeeFocusType)(int)type);
+        shop.ShopTags.Should().ContainSingle().Which.Should().BeSameAs(originalTag);
+        _uow.Verify(u => u.SaveChangesAsync(_ct), Times.Once);
+    }
 }
 
 public class PublishedShopPhotosHandlerTests

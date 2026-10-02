@@ -21,6 +21,20 @@ using DomainReview = CoffeePeek.Shops.Domain.Aggregates.ReviewAggregate.Review;
 
 public class ModerationReviewApprovedHandlerTests
 {
+    [Fact]
+    public async Task Handle_AdminRemovedReviewIsNotRepublishedOrChanged()
+    {
+        var review = DomainReview.Create(Guid.NewGuid(), Guid.NewGuid(), "tester", null, "original comment body", 3, 3, 3, Guid.NewGuid());
+        review.RemoveByAdmin();
+        var incoming = BuildEvent(review.ModerationReviewId!.Value);
+        _reviewRepoMock.Setup(x => x.GetByModerationReviewId(incoming.Review.Id, _ct)).ReturnsAsync(review);
+        var result = await ModerationReviewApprovedHandler.Handle(incoming, _reviewRepoMock.Object, _unitOfWorkMock.Object, _cacheMock.Object, _ct);
+        result.Should().BeNull();
+        review.Comment.Should().Be("original comment body");
+        review.IsSoftDelete.Should().BeTrue();
+        _unitOfWorkMock.Verify(x => x.SaveChangesAsync(_ct), Times.Never);
+    }
+
     private readonly Mock<IReviewRepository> _reviewRepoMock = new();
     private readonly Mock<IUnitOfWork> _unitOfWorkMock = new();
     private readonly Mock<ICacheService> _cacheMock = new();

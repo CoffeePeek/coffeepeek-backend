@@ -9,6 +9,24 @@ namespace CoffeePeek.Gateway.Tests;
 public class ReverseProxyRouteConfigurationTests
 {
     [Fact]
+    public void ReviewReportRoutes_UseShopsWithRequiredAuthAndSubmissionLimiter()
+    {
+        using var document = LoadGatewayAppsettings();
+        var routes = document.RootElement.GetProperty("ReverseProxy").GetProperty("Routes");
+        var admin = routes.GetProperty("shops-admin-review-reports-route");
+        admin.GetProperty("ClusterId").GetString().Should().Be("shops-cluster");
+        admin.GetProperty("AuthorizationPolicy").GetString().Should().Be("Admin");
+        admin.GetProperty("Match").GetProperty("Path").GetString().Should().Be("/api/admin/review-reports/{**remainder}");
+        var submission = routes.GetProperty("shops-review-report-submission-route");
+        submission.GetProperty("ClusterId").GetString().Should().Be("shops-cluster");
+        submission.GetProperty("AuthorizationPolicy").GetString().Should().Be("Authenticated");
+        submission.GetProperty("RateLimiterPolicy").GetString().Should().Be("moderation-submission");
+        submission.GetProperty("Match").GetProperty("Methods").EnumerateArray().Select(x => x.GetString()).Should().Equal("POST");
+        var ids = routes.EnumerateObject().Select(x => x.Name).ToList();
+        ids.IndexOf("shops-admin-review-reports-route").Should().BeLessThan(ids.IndexOf("account-admin-route"));
+    }
+
+    [Fact]
     public void AppReleaseAutomationRoute_IsLimitedToReleaseListAndCreate()
     {
         using var document = LoadGatewayAppsettings();

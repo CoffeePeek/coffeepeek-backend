@@ -137,6 +137,7 @@ progress:
 | 260925-fast | deploy-start-imgproxy-recreate-caddy-on-caddyfile-change | complete | 2026-09-25 |
 | fast-af646f00 | pin-patched-openapi-otel-api | complete | 2026-10-01 |
 | fast-app-version-codegen | app-version-wolverine-codegen-and-guard | complete | 2026-10-01 |
+| 261002-hgr | review-reports-user-text-submission-and-admin-resolution | complete | 2026-10-02 |
 
 ## Milestone Progress
 

@@ -5,7 +5,6 @@ using CoffeePeek.Shared.Domain.Interfaces.Infrastructure;
 using CoffeePeek.Shared.Kernel;
 using CoffeePeek.Shops.Application.Features.Public.Stats;
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
-using CoffeePeek.Shops.Domain.Aggregates.ShopTagAggregate;
 using CoffeePeek.Shops.Domain.Entities;
 using Microsoft.Extensions.Logging;
 using DomainPriceRange = CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate.PriceRange;
@@ -44,11 +43,7 @@ public class CreateShopFromModerationService(
         var shop = new CoffeeShop(creatorId, shopDto.Name, shopDto.Description, priceRange, moderationId);
 
         if (shopDto.Type.HasValue)
-        {
             shop.SetCoffeeFocus((CoffeeFocusType)(int)shopDto.Type.Value);
-            if (shopDto.Type.Value == CoffeePeek.Contract.Enums.CoffeeShopType.Specialty)
-                shop.SetTags([ShopTagIds.Specialty], creatorId);
-        }
 
         if (shopDto.Location != null)
         {

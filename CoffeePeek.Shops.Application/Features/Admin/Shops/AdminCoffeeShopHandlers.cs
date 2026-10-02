@@ -8,7 +8,6 @@ using CoffeePeek.Shared.Domain.Interfaces.Infrastructure;
 using CoffeePeek.Shops.Application.Features.CoffeeShop.ShopProfile;
 using CoffeePeek.Shops.Application.Features.Public.Stats;
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
-using CoffeePeek.Shops.Domain.Aggregates.ShopTagAggregate;
 using CoffeePeek.Shops.Domain.Entities;
 using Microsoft.Extensions.Options;
 using DomainCoffeeShop = CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate.CoffeeShop;
@@ -309,19 +308,6 @@ public static class SetAdminCoffeeShopFocusHandler
             return Response<AdminPublishedShopDto>.Error(HttpStatusCode.NotFound, "Shop not found.");
 
         shop.SetCoffeeFocus((CoffeeFocusType)(int)command.Type);
-
-        var tagIds = shop.ShopTags.Select(t => t.TagId).ToList();
-        if (command.Type == CoffeeShopType.Specialty)
-        {
-            if (!tagIds.Contains(ShopTagIds.Specialty))
-                tagIds.Add(ShopTagIds.Specialty);
-        }
-        else
-        {
-            tagIds.Remove(ShopTagIds.Specialty);
-        }
-
-        shop.SetTags(tagIds, command.AdminUserId);
 
         await unitOfWork.SaveChangesAsync(ct);
         await cacheService.RemoveAsync(CacheKey.Shop.Detail(shop.Id));

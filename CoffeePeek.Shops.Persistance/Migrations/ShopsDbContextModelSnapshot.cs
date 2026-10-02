@@ -1254,6 +1254,9 @@ namespace CoffeePeek.Shops.Persistance.Migrations
                         .HasColumnType("integer")
                         .HasDefaultValue(0);
 
+                    b.Property<bool>("IsRemovedByAdmin")
+                        .HasColumnType("boolean");
+
                     b.Property<bool>("IsSoftDelete")
                         .HasColumnType("boolean");
 
@@ -1270,6 +1273,12 @@ namespace CoffeePeek.Shops.Persistance.Migrations
                         .IsRequired()
                         .HasMaxLength(30)
                         .HasColumnType("character varying(30)");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
 
                     b.HasKey("Id");
 
@@ -1303,6 +1312,60 @@ namespace CoffeePeek.Shops.Persistance.Migrations
                     b.HasIndex("UserId", "ReviewId");
 
                     b.ToTable("ReviewHelpfulVotes");
+                });
+
+            modelBuilder.Entity("CoffeePeek.Shops.Domain.Aggregates.ReviewAggregate.ReviewReport", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("ReportedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("ResolvedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("ResolvedByAdminId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ReviewId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ReportedByUserId");
+
+                    b.HasIndex("ReviewId");
+
+                    b.HasIndex("Status", "CreatedAtUtc", "Id");
+
+                    b.ToTable("ReviewReports", t =>
+                        {
+                            t.HasCheckConstraint("CK_ReviewReports_Resolution", "(\"Status\" = 0 AND \"ResolvedByAdminId\" IS NULL AND \"ResolvedAtUtc\" IS NULL) OR (\"Status\" IN (1, 2) AND \"ResolvedByAdminId\" IS NOT NULL AND \"ResolvedAtUtc\" IS NOT NULL)");
+
+                            t.HasCheckConstraint("CK_ReviewReports_Text", "length(btrim(\"Text\")) BETWEEN 1 AND 2000");
+                        });
                 });
 
             modelBuilder.Entity("CoffeePeek.Shops.Domain.Aggregates.ShopTagAggregate.ShopTag", b =>
@@ -2014,6 +2077,15 @@ namespace CoffeePeek.Shops.Persistance.Migrations
                 });
 
             modelBuilder.Entity("CoffeePeek.Shops.Domain.Aggregates.ReviewAggregate.ReviewHelpfulVote", b =>
+                {
+                    b.HasOne("CoffeePeek.Shops.Domain.Aggregates.ReviewAggregate.Review", null)
+                        .WithMany()
+                        .HasForeignKey("ReviewId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("CoffeePeek.Shops.Domain.Aggregates.ReviewAggregate.ReviewReport", b =>
                 {
                     b.HasOne("CoffeePeek.Shops.Domain.Aggregates.ReviewAggregate.Review", null)
                         .WithMany()

@@ -8,6 +8,8 @@ using Microsoft.AspNetCore.Mvc;
 using Wolverine;
 using CoffeePeek.Contract.Dtos.PublicAddresses;
 using CoffeePeek.Shops.Application.PublicAddresses;
+using CoffeePeek.Shops.Application.Features.Review.Reports;
+using System.ComponentModel.DataAnnotations;
 
 namespace CoffeePeek.ShopsService.Controllers;
 
@@ -18,6 +20,18 @@ namespace CoffeePeek.ShopsService.Controllers;
 [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
 public class CoffeeShopReviewsController(IMessageBus bus, IUserContext userContext, PublicDiscoveryService discovery) : ControllerBase
 {
+    /// <summary>Submit complaint text about a published review.</summary>
+    [HttpPost("{reviewId:guid}/reports")]
+    [ProducesResponseType<Response<ReviewReportDto>>(StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> Report(Guid reviewId, [FromBody] SubmitReviewReportRequest request, CancellationToken ct)
+    {
+        var response = await bus.InvokeAsync<Response<ReviewReportDto>>(
+            new SubmitReviewReportCommand(reviewId, userContext.GetUserIdOrThrow(), request.Text), ct);
+        return StatusCode(StatusCodes.Status201Created, response);
+    }
+
     /// <summary>
     /// Get review by ID
     /// </summary>
@@ -83,4 +97,12 @@ public class CoffeeShopReviewsController(IMessageBus bus, IUserContext userConte
 
         return response.IsSuccess ? Ok(response) : NotFound(response);
     }
+}
+
+/// <summary>Complaint text only; identity comes from authentication and the route.</summary>
+public record SubmitReviewReportRequest
+{
+    /// <summary>Required complaint text, up to 2000 characters.</summary>
+    [Required, MaxLength(2000)]
+    public string Text { get; init; } = null!;
 }

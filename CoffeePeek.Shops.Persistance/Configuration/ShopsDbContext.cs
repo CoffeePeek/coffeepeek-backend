@@ -58,6 +58,7 @@ public class ShopsDbContext(DbContextOptions<ShopsDbContext> options, IOptions<P
     public virtual DbSet<CoffeeBean> CoffeeBeans { get; set; }
     
     public virtual DbSet<Review> Reviews { get; set; }
+    public virtual DbSet<ReviewReport> ReviewReports { get; set; }
     public virtual DbSet<ReviewHelpfulVote> ReviewHelpfulVotes { get; set; }
     public virtual DbSet<CheckIn> CheckIns { get; set; }
     
@@ -108,6 +109,7 @@ public class ShopsDbContext(DbContextOptions<ShopsDbContext> options, IOptions<P
         modelBuilder.ApplyConfiguration(new RoasterConfiguration());
         modelBuilder.ApplyConfiguration(new RoasterPhotoConfiguration());
         modelBuilder.ApplyConfiguration(new ShopTagConfiguration());
+        modelBuilder.ApplyConfiguration(new ReviewReportConfiguration());
         modelBuilder.ApplyConfiguration(new CoffeeShopTagConfiguration());
         modelBuilder.ApplyConfiguration(new CoffeeDrinkDefinitionConfiguration());
         modelBuilder.ApplyConfiguration(new ShopMenuConfiguration());
@@ -120,6 +122,7 @@ public class ShopsDbContext(DbContextOptions<ShopsDbContext> options, IOptions<P
         
         modelBuilder.Entity<Review>(entity =>
         {
+            entity.Property(r => r.Version).IsRowVersion();
             entity.HasKey(r => r.Id);
             entity.HasIndex(r => r.CoffeeShopId);
             entity.HasIndex(r => r.UserId);

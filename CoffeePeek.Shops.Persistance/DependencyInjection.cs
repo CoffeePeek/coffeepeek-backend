@@ -60,6 +60,7 @@ public static class DependencyInjection
         
         // Repositories
         services.AddScoped<IReviewRepository, ReviewRepository>();
+        services.AddScoped<IReviewReportRepository, ReviewReportRepository>();
         services.AddScoped<IAppDistributionRepository, AppDistributionRepository>();
         
         // Query Repository 

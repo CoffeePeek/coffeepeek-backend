@@ -65,7 +65,13 @@ public sealed partial class Review
 
     public void Restore()
     {
-        IsSoftDelete = false;
+        if (!IsRemovedByAdmin) IsSoftDelete = false;
+    }
+
+    public void RemoveByAdmin()
+    {
+        IsRemovedByAdmin = true;
+        IsSoftDelete = true;
     }
 
     /// <summary>

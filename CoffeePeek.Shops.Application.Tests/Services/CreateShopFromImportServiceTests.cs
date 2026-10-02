@@ -46,13 +46,15 @@ public class CreateShopFromImportServiceTests
             .Returns(Task.CompletedTask);
     }
 
-    [Fact]
-    public async Task Create_WhenNew_AddsShopWithFocusAndSpecialtyTag()
+    [Theory]
+    [InlineData("to_go")]
+    [InlineData("specialty")]
+    public async Task Create_WhenNew_AddsShopWithFocusAndOnlyExplicitTags(string slug)
     {
         _shopRepo.Setup(r => r.GetIdByModerationId(It.IsAny<Guid>(), _ct)).ReturnsAsync((Guid?)null);
         _tagRepo
-            .Setup(r => r.GetActiveBySlugsAsync(It.Is<IReadOnlyCollection<string>>(s => s.Contains("specialty")), _ct))
-            .ReturnsAsync([ShopTag.CreateWithId(ShopTagIds.Specialty, "specialty", "Specialty", null, 2)]);
+            .Setup(r => r.GetActiveBySlugsAsync(It.IsAny<IReadOnlyCollection<string>>(), _ct))
+            .ReturnsAsync([ShopTag.CreateWithId(ShopTagIds.Specialty, slug, "Selected tag", null, 2)]);
 
         CoffeeShop? added = null;
         _shopRepo.Setup(r => r.Add(It.IsAny<CoffeeShop>())).Callback<CoffeeShop>(s => added = s);
@@ -71,7 +73,7 @@ public class CreateShopFromImportServiceTests
             null,
             null,
             Contract.Enums.CoffeeShopType.Specialty,
-            ["to_go"],
+            [slug],
             TemporarilyClosed: false);
 
         var shopId = await CreateSut().CreateShopFromImportAsync(item, _ct);
@@ -79,7 +81,9 @@ public class CreateShopFromImportServiceTests
         shopId.Should().NotBe(Guid.Empty);
         added.Should().NotBeNull();
         added!.Type.Should().Be(CoffeeFocusType.Specialty);
-        added.ShopTags.Select(t => t.TagId).Should().Contain(ShopTagIds.Specialty);
+        added.ShopTags.Select(t => t.TagId).Should().Equal(ShopTagIds.Specialty);
+        _tagRepo.Verify(r => r.GetActiveBySlugsAsync(
+            It.Is<IReadOnlyCollection<string>>(s => s.Count == 1 && s.Contains(slug)), _ct), Times.Once);
         added.ModerationId.Should().Be(candidateId);
         added.OwnerUserId.Should().BeNull();
         added.ImportedFromFileAt.Should().BeNull();

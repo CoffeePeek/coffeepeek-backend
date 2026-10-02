@@ -22,6 +22,7 @@ public static class ModerationReviewApprovedHandler
         // Upsert by the source moderation review id. The previous AnyAsync(shopId, userId)
         // skip-if-exists silently dropped EVERY re-approval — that was the core bug.
         var existing = await reviewRepository.GetByModerationReviewId(reviewDto.Id, ct);
+        if (existing?.IsRemovedByAdmin == true) return null;
 
         // Moderation sends SortIndex = 0 for every photo, so the array position is the order
         // (same approach as CreateShopFromModerationService).

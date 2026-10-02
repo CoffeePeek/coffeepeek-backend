@@ -57,11 +57,7 @@ public class CreateShopFromImportService(
         if (item.ImportedFromFile)
             shop.MarkImportedFromFile(DateTime.UtcNow);
 
-        var slugs = item.TagSlugs.ToList();
-        if (item.Type == Contract.Enums.CoffeeShopType.Specialty && !slugs.Contains("specialty"))
-            slugs.Add("specialty");
-
-        var tags = await tagRepository.GetActiveBySlugsAsync(slugs, cancellationToken);
+        var tags = await tagRepository.GetActiveBySlugsAsync(item.TagSlugs, cancellationToken);
         if (tags.Length > 0)
             shop.SetTags(tags.Select(t => t.Id).ToArray(), item.CreatorId);
 
