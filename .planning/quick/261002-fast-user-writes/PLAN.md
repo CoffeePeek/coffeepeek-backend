@@ -1,0 +1,53 @@
+---
+id: 261002-fast-user-writes
+type: execute
+depends_on: []
+---
+
+<objective>
+Reduce the time users wait when creating check-ins, shop and roaster moderation submissions, reviews, change requests, and reports. Keep the existing synchronous success contract: a successful 200/201 contains the ID of a committed record. Background work may enrich that record or invalidate caches after commit. Do not introduce a 202/operation-status API or change public DTO shapes.
+</objective>
+
+<tasks>
+
+<task type="auto">
+  <name>Task 1: Trace write stages and remove avoidable serial lookups</name>
+  <files>CoffePeek.ServiceDefaults/Extensions.cs; CoffeePeek.Shared.Kernel/Diagnostics/WriteStageTrace.cs (new); CoffeePeek.ModerationService/Controllers/ModerationShopsController.cs; CoffeePeek.ModerationService/Controllers/ShopChangeRequestsController.cs; CoffeePeek.Moderation.Application/Services/PublicModerationService.cs; CoffeePeek.Moderation.Infrastructure/Shops/ShopsRoasterExistenceLookup.cs; CoffeePeek.ShopsService/Controllers/InternalRoasterExistenceController.cs (new); CoffeePeek.Shops.Persistance/Repositories/QueryRoasterRepository.cs; CoffeePeek.Shops.Domain/Aggregates/CoffeeShopAggregate/Repositories/IQueryRoasterRepository.cs; targeted tests in CoffeePeek.Moderation.Application.Tests, CoffeePeek.ModerationService.Tests, and CoffeePeek.ShopsService.Tests</files>
+  <action>Register one low-cardinality write-stage ActivitySource in the existing OpenTelemetry pipeline and add child spans for slug/catalog resolution, duplicate validation, photo verification, database commit, and cache/outbox enqueue on the affected write paths. Cover shop/roaster submissions, check-ins, reviews, change requests, and report submissions; use operation/stage tags only, never names, addresses, tokens, or user IDs. Record baseline and post-change request p50/p95 and stage durations using the existing OTLP setup (or a repeatable local trace capture if OTLP is unavailable). Resolve the independent equipment/bean/roaster/brew-method slug arrays in ModerationShopsController concurrently, and similarly parallelize independent lookups in PublicModerationService.PayloadAsync and ChangesAsync; preserve input order, null versus empty arrays, and current failure mapping. Replace ShopsRoasterExistenceLookup's full GET /api/catalogs/roasters download with a dedicated Shops internal exact-name EXISTS endpoint protected like InternalPublicAddressesController by X-Gateway-Auth and excluded from gateway routing. Query with server-side case-insensitive equality (not wildcard matching or a full entity load), keep the current duplicate 409 and the existing explicit lookup-failure policy. Add tests for auth rejection, exact/case-insensitive matches including names with `%`/`_`, no catalog download, and parallel lookup behavior.</action>
+  <verify><automated>dotnet test CoffeePeek.Moderation.Application.Tests/CoffeePeek.Moderation.Application.Tests.csproj -c Debug; dotnet test CoffeePeek.ModerationService.Tests/CoffeePeek.ModerationService.Tests.csproj -c Debug; dotnet test CoffeePeek.ShopsService.Tests/CoffeePeek.ShopsService.Tests.csproj -c Debug</automated></verify>
+  <done>Traces identify the stages of each create request; independent HTTP lookups no longer add their latencies serially; roaster duplicate checking sends a bounded existence request, and 200/201/409 behavior remains the same.</done>
+</task>
+
+<task type="auto">
+  <name>Task 2: Geocode new moderation submissions after commit</name>
+  <files>CoffeePeek.Moderation.Application/Features/Shop/CreateShop/SendCoffeeShopToModerationHandler.cs; CoffeePeek.Moderation.Application/Features/Shop/CreateShop/ModerationShopCreationService.cs; CoffeePeek.Moderation.Application/Features/Shop/CreateShop/IModerationShopCreationService.cs; CoffeePeek.Moderation.Application/Features/Roaster/SubmitRoaster/SubmitRoasterHandler.cs; CoffeePeek.Moderation.Application/Features/Geocoding/ModerationGeocodingRequested.cs (new); CoffeePeek.Moderation.Application/Features/Geocoding/ModerationGeocodingRequestedHandler.cs (new); CoffeePeek.Moderation.Domain/Aggregates/ModerationShopAggregate/Repositories/IModerationShopRepository.cs; CoffeePeek.Moderation.Domain/Aggregates/ModerationRoasterAggregate/Repositories/IModerationRoasterRepository.cs; CoffeePeek.Moderation.Infrastructure/Services/YandexGeocodingService.cs; CoffeeShop.Moderation.Persistence/Repositories/ModerationShopRepository.cs; CoffeeShop.Moderation.Persistence/Repositories/ModerationRoasterRepository.cs; related Moderation application/service tests and pre-generated Wolverine handlers</files>
+  <action>Create shop and roaster moderation rows with the submitted address and IsAddressValidated=false, saving the row and its typed local Wolverine geocoding request in the same Moderation DB/outbox transaction. The request carries kind, entity ID, and exact submitted address; it is dispatched only after commit and requires no new public field. Preserve 201, ShopId/RoasterId, and Pending; return IsAddressValidated=false while processing, and change the response message to say verification is pending rather than already failed. For a roaster without an address, do not queue geocoding. A local durable consumer reads the row, geocodes, then updates coordinates only if the entity is still Pending, its current address exactly matches the event address, and it is still unvalidated. Make this check safe against a concurrent moderator edit or decision (conditional update/concurrency token or equivalent DB-enforced guard), and make redelivery idempotent. Distinguish a true no-result from transient network/timeout failure so Wolverine retries transient errors; after exhausted retries leave the saved row unvalidated for moderator review and log the failure. Keep the existing approval guard: a shop, or a roaster with an address, cannot be approved until validated. Verify the generated Wolverine adapter uses EF transaction/outbox enlistment; regenerate pre-generated handlers required by production Static codegen. Do not block request completion on Yandex.</action>
+  <verify><automated>dotnet test CoffeePeek.Moderation.Application.Tests/CoffeePeek.Moderation.Application.Tests.csproj -c Debug; dotnet test CoffeePeek.ModerationService.Tests/CoffeePeek.ModerationService.Tests.csproj -c Debug</automated></verify>
+  <done>Both endpoints return 201 with a committed ID even when Yandex is slow or down; successful later geocoding enriches the same row; duplicate delivery and stale-address events cannot overwrite moderator changes; rollback leaves no dispatchable geocoding work.</done>
+</task>
+
+<task type="auto">
+  <name>Task 3: Invalidate check-in caches after commit and verify the write contract</name>
+  <files>CoffeePeek.Shops.Application/Features/CheckIn/CreateCheckIn/CreateCheckInHandler.cs; CoffeePeek.Shops.Application/Features/CheckIn/CheckInCacheInvalidationRequested.cs (new); CoffeePeek.Shops.Infrastructure/Consumers/CheckInCacheInvalidationRequestedHandler.cs (new); CoffeePeek.Shared.Persistence/Cache/Redis/RedisService.cs; CoffeePeek.Shops.Application.Tests/Features/CheckIn/CreateCheckInHandlerTests.cs; targeted Shops infrastructure tests and pre-generated Wolverine handlers</files>
+  <action>Publish a typed local durable cache-invalidation message from CreateCheckInHandler in the same Shops EF/outbox transaction as the check-in, and remove both Redis calls from the request path. After commit, consumer deletes shop:public:platform-stats and shop:search:*; repeat delivery is harmless. Because RedisService currently swallows connection errors, give this consumer a strict invalidation path whose failures reach Wolverine retries instead of falsely acknowledging success; retain other callers' current cache API behavior. Preserve photo ownership/single-use verification, check-in cooldown lock, and public-review/photo events before commit. Explicitly document/cache-test the bounded freshness window: search entries already expire at the next UTC minute, while public stats expire after five minutes if Redis remains unavailable; emit a retry/error signal for stalled invalidation. Prove no cache deletion or event processing occurs on transaction rollback, then run affected tests and CI solution build. Compare request p50/p95 to the baseline captured in Task 1.</action>
+  <verify><automated>dotnet test CoffeePeek.Shops.Application.Tests/CoffeePeek.Shops.Application.Tests.csproj -c Debug; dotnet test CoffeePeek.Shops.Infrastructure.Tests/CoffeePeek.Shops.Infrastructure.Tests.csproj -c Debug; dotnet build CoffeePeek.Backend.ci.slnf -c Debug</automated></verify>
+  <done>A successful check-in returns its committed CheckInId without waiting for a Redis key scan; retries eventually invalidate both caches, rollback cannot trigger invalidation, and existing check-in validation/events remain intact.</done>
+</task>
+
+</tasks>
+
+<correctness_risks>
+- Wolverine's generated adapters commit after the handler returns. Enqueue local work inside the enlisted EF/outbox transaction; never use fire-and-forget Task.Run or publish only after a separate SaveChanges.
+- Geocoding events must carry the submitted address and use a DB-enforced compare-and-update guard. A read-then-write check alone can race a moderator edit and overwrite newer coordinates or approval state.
+- Redis pattern invalidation can lag or fail. Do not acknowledge the background message when Redis failed; keep retry visibility and verify the existing TTL bounds. A read racing invalidation can briefly repopulate stale data, so test the stated consistency contract rather than claiming immediate freshness.
+- Keep HTTP response codes and DTO fields, including IsAddressValidated, unchanged. Its value is false at submission until background verification finishes; explain that state truthfully in the message and existing GET responses.
+- Preserve existing user-facing validation and uniqueness checks. Faster requests must not bypass photo checks, rate limits, or the check-in cooldown transaction lock.
+</correctness_risks>
+
+<verification>
+Run the three targeted task gates, then `dotnet test CoffeePeek.Backend.ci.slnf -c Debug`; regenerate/verify pre-generated Wolverine handlers for both services; inspect a trace for each create operation. With slow/failing fake Yandex and Redis, assert responses complete after commit without waiting for those dependencies; with successful workers, assert enrichment/invalidation and replay safety. No package installs or public API version change.
+</verification>
+
+<output>
+On implementation completion, write `.planning/quick/261002-fast-user-writes/SUMMARY.md` and update `.planning/STATE.md` Quick Tasks Completed.
+</output>
