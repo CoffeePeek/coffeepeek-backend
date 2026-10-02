@@ -59,7 +59,7 @@ public class GatewayRequestLoggingMiddleware(RequestDelegate next, ILogger<Gatew
                 "Gateway [{CorrelationId}] {Method} {Path} → {StatusCode} ({Elapsed}ms) | route={RouteId} cluster={ClusterId}",
                 correlationId, method, path, statusCode, elapsed, routeId, clusterId);
         }
-        else if (statusCode >= 400)
+        else if (statusCode >= 400 && statusCode != StatusCodes.Status401Unauthorized)
         {
             logger.LogWarning(
                 "Gateway [{CorrelationId}] {Method} {Path} → {StatusCode} ({Elapsed}ms) | route={RouteId} cluster={ClusterId}",
