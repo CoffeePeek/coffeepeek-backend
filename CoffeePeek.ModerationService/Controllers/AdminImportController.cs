@@ -17,6 +17,7 @@ using CoffeePeek.Moderation.Application.Features.Import.SuggestImportDuplicates;
 using CoffeePeek.Moderation.Application.Features.Import.PatchImportContacts;
 using CoffeePeek.Moderation.Application.Features.Import.RefreshGoogleStatus;
 using CoffeePeek.Moderation.Application.Features.Import.RefreshOsmImport;
+using CoffeeMapVerificationSignals = CoffeePeek.Moderation.Domain.Aggregates.ShopImportCandidateAggregate.CoffeeMapVerificationSignals;
 using CoffeePeek.Shared.Auth;
 using CoffeePeek.Shared.Auth.Constants;
 using CoffeePeek.Shared.Kernel.Response;
@@ -103,10 +104,41 @@ public class AdminImportController(IMessageBus bus, IUserContext userContext) : 
         [FromQuery] int pageSize = 20,
         [FromQuery] ImportSource? source = null,
         CancellationToken ct = default)
+        => await GetCandidatesCore(status, bucket, type, rejectReason, search, name, page, pageSize, source, null, ct);
+
+    // A separate versioned route keeps the existing candidate-list contract unchanged.
+    [HttpGet("v2/candidates/recheck")]
+    [ProducesResponseType<Response<GetImportCandidatesResponse>>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetRecheckCandidates(
+        [FromQuery] ImportQueueStatus? status = null,
+        [FromQuery] ImportCollectorBucket? bucket = null,
+        [FromQuery] CoffeeShopType? type = null,
+        [FromQuery] ImportRejectReason? rejectReason = null,
+        [FromQuery] string? search = null,
+        [FromQuery] string? name = null,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20,
+        [FromQuery] ImportSource? source = null,
+        CancellationToken ct = default)
+        => await GetCandidatesCore(status, bucket, type, rejectReason, search, name, page, pageSize, source,
+            CoffeeMapVerificationSignals.NeedsRecheck, ct);
+
+    private async Task<IActionResult> GetCandidatesCore(
+        ImportQueueStatus? status,
+        ImportCollectorBucket? bucket,
+        CoffeeShopType? type,
+        ImportRejectReason? rejectReason,
+        string? search,
+        string? name,
+        int page,
+        int pageSize,
+        ImportSource? source,
+        string? requiredSignal,
+        CancellationToken ct)
     {
         var term = string.IsNullOrWhiteSpace(search) ? name : search;
         var response = await bus.InvokeAsync<Response<GetImportCandidatesResponse>>(
-            new GetImportCandidatesQuery(status ?? ImportQueueStatus.Pending, bucket, type, rejectReason, term, page, pageSize, source), ct);
+            new GetImportCandidatesQuery(status ?? ImportQueueStatus.Pending, bucket, type, rejectReason, term, page, pageSize, source, requiredSignal), ct);
 
         if (response.IsSuccess && response.Data is not null)
         {

@@ -17,7 +17,8 @@ public record GetImportCandidatesQuery(
     string? Search = null,
     int Page = 1,
     int PageSize = 20,
-    ContractSource? Source = null);
+    ContractSource? Source = null,
+    string? RequiredSignal = null);
 
 public record GetImportCandidatesResponse(
     IReadOnlyList<ShopImportCandidateDto> Items,
@@ -49,7 +50,8 @@ public static class GetImportCandidatesHandler
             ct,
             query.Source is null
                 ? null
-                : (Domain.Aggregates.ShopImportCandidateAggregate.ImportSource)(int)query.Source.Value);
+                : (Domain.Aggregates.ShopImportCandidateAggregate.ImportSource)(int)query.Source.Value,
+            query.RequiredSignal);
 
         var totalPages = total == 0 ? 0 : (int)Math.Ceiling(total / (double)pageSize);
         var dtos = items.Select(c => ShopImportCandidateMapper.ToDto(c)).ToList();
