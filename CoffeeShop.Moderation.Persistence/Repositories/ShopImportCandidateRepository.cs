@@ -57,7 +57,8 @@ public class ShopImportCandidateRepository(ModerationDbContext dbContext) : ISho
         int page,
         int pageSize,
         CancellationToken ct = default,
-        ImportSource? source = null)
+        ImportSource? source = null,
+        string? requiredSignal = null)
     {
         var query = dbContext.ShopImportCandidates.AsNoTracking();
 
@@ -66,6 +67,9 @@ public class ShopImportCandidateRepository(ModerationDbContext dbContext) : ISho
 
         if (source.HasValue)
             query = query.Where(c => c.Source == source.Value);
+
+        if (requiredSignal is not null)
+            query = query.Where(c => c.Signals.Contains(requiredSignal));
 
         if (bucket.HasValue)
             query = query.Where(c => c.CollectorBucket == bucket.Value);

@@ -144,6 +144,21 @@ public static class ShopImportCandidateMapper
 
         foreach (var signal in candidate.Signals)
         {
+            if (signal.StartsWith(CoffeeMapVerificationSignals.RecheckReasonPrefix, StringComparison.Ordinal))
+            {
+                var reason = signal[CoffeeMapVerificationSignals.RecheckReasonPrefix.Length..];
+                facts.Add("Перепроверить: " + (reason switch
+                {
+                    "missing-address" => "уточнить улицу, дом и вход",
+                    "verify-address" => "сверить адрес и корпус",
+                    "verify-name-type" => "сверить название и формат заведения",
+                    "listing-without-address" => "найти карточку с точным адресом",
+                    "insufficient-evidence" => "найти актуальное независимое подтверждение",
+                    _ => "проверить данные кандидата"
+                }));
+                continue;
+            }
+
             if (signal.StartsWith("coffeemap:google-rating=", StringComparison.Ordinal))
             {
                 facts.Add("Google rating " + signal["coffeemap:google-rating=".Length..]);
