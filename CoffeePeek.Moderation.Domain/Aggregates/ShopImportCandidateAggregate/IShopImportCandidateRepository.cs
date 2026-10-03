@@ -29,7 +29,8 @@ public interface IShopImportCandidateRepository
         int page,
         int pageSize,
         CancellationToken ct = default,
-        ImportSource? source = null);
+        ImportSource? source = null,
+        string? requiredSignal = null);
 
     Task<ImportCandidateStats> GetStatsAsync(CancellationToken ct = default);
 

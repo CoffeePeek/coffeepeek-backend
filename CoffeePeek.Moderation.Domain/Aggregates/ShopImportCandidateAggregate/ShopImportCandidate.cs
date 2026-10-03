@@ -499,6 +499,10 @@ public sealed class ShopImportCandidate : Entity<Guid>
     private void ApplyCoffeeMapFields(CoffeeMapCandidateSnapshot snapshot, DateTimeOffset now)
     {
         var (bucket, signals) = CoffeeMapClassifier.Classify(snapshot);
+        var recheckSignals = Signals
+            .Where(signal => signal == CoffeeMapVerificationSignals.NeedsRecheck
+                || signal.StartsWith(CoffeeMapVerificationSignals.RecheckReasonPrefix, StringComparison.Ordinal))
+            .ToArray();
         var instagram = snapshot.Instagram
                         ?? OsmCafeClassifier.InstagramUrl(new Dictionary<string, string>(), snapshot.Website);
 
@@ -512,8 +516,10 @@ public sealed class ShopImportCandidate : Entity<Guid>
         OpeningHours = Clip(snapshot.OpeningHours, MaxOpeningHoursLength);
         OsmUpdatedAt = null;
         OsmAgeDays = null;
-        Signals = signals.ToList();
-        CollectorBucket = bucket;
+        Signals = signals.Concat(recheckSignals).Distinct(StringComparer.Ordinal).ToList();
+        CollectorBucket = recheckSignals.Contains(CoffeeMapVerificationSignals.NeedsRecheck)
+            ? ImportCollectorBucket.Review
+            : bucket;
         GoogleMapsUri = string.IsNullOrWhiteSpace(snapshot.GooglePlaceId)
             ? GoogleMapsUri
             : Clip($"https://www.google.com/maps/place/?q=place_id:{snapshot.GooglePlaceId.Trim()}", MaxGoogleMapsUriLength);

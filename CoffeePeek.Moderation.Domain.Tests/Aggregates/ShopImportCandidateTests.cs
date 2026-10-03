@@ -398,6 +398,24 @@ public class ShopImportCandidateTests
     }
 
     [Fact]
+    public void RefreshFromCoffeeMap_PreservesManualRecheckSignalsAndBucket()
+    {
+        var snapshot = new CoffeeMapCandidateSnapshot(
+            "1", "Varka", "Минск", 53.9m, 27.5m, null, null, null, null, null,
+            true, false, null, null, null, []);
+        var candidate = ShopImportCandidate.FromCoffeeMap(snapshot, Now);
+        candidate.AddSignal(CoffeeMapVerificationSignals.NeedsRecheck);
+        candidate.AddSignal(CoffeeMapVerificationSignals.RecheckReasonPrefix + "missing-address");
+
+        candidate.RefreshFromCoffeeMap(snapshot with { Name = "Varka Coffee" }, Now.AddDays(1));
+
+        candidate.QueueStatus.Should().Be(ImportQueueStatus.Pending);
+        candidate.CollectorBucket.Should().Be(ImportCollectorBucket.Review);
+        candidate.Signals.Should().Contain(CoffeeMapVerificationSignals.NeedsRecheck);
+        candidate.Signals.Should().Contain(CoffeeMapVerificationSignals.RecheckReasonPrefix + "missing-address");
+    }
+
+    [Fact]
     public void EnrichFrom_FillsMissingFieldsWithoutChangingStatus()
     {
         var candidate = ShopImportCandidate.FromOsm(Snapshot("node/1", "Coffe Joy"), Now);
