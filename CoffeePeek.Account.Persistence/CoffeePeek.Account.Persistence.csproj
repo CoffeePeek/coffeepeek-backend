@@ -12,6 +12,10 @@
     </ItemGroup>
 
     <ItemGroup>
+      <InternalsVisibleTo Include="CoffeePeek.Account.Infrastructure.Tests" />
+    </ItemGroup>
+
+    <ItemGroup>
         <PackageReference Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL"  />
         <PackageReference Include="Bogus"  />
         <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />

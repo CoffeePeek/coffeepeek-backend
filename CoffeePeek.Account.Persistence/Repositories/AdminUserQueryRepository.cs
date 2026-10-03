@@ -13,24 +13,7 @@ public class AdminUserQueryRepository(AccountDbContext dbContext) : IAdminUserQu
         string? role,
         CancellationToken ct = default)
     {
-        var query = dbContext.Users
-            .AsNoTracking()
-            .Include(u => u.Roles)
-            .Include(u => u.PhotoMetadata)
-            .AsQueryable();
-
-        if (!string.IsNullOrWhiteSpace(search))
-        {
-            var term = search.Trim().ToLowerInvariant();
-            query = query.Where(u =>
-                u.Username.Value.ToLower().Contains(term) ||
-                u.Credentials.Email.Value.ToLower().Contains(term));
-        }
-
-        if (!string.IsNullOrWhiteSpace(role))
-        {
-            query = query.Where(u => u.Roles.Any(r => r.Name == role));
-        }
+        var query = BuildUsersQuery(search, role);
 
         var totalCount = await query.CountAsync(ct);
 
@@ -41,6 +24,36 @@ public class AdminUserQueryRepository(AccountDbContext dbContext) : IAdminUserQu
             .ToListAsync(ct);
 
         return (items, totalCount);
+    }
+
+    internal IQueryable<User> BuildUsersQuery(string? search, string? role)
+    {
+        IQueryable<User> query = dbContext.Users;
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var term = search.Trim().ToLowerInvariant();
+            // Username and Email are value-converted properties. EF cannot translate their .Value
+            // members in a predicate, so filter their mapped columns before composing the EF query.
+            // strpos keeps % and _ literal, matching the previous Contains semantics.
+            query = dbContext.Users.FromSqlInterpolated($"""
+                SELECT * FROM "Users"
+                WHERE strpos(lower("Username"), {term}) > 0
+                   OR strpos(lower("Email"), {term}) > 0
+                """);
+        }
+
+        query = query
+            .AsNoTracking()
+            .Include(u => u.Roles)
+            .Include(u => u.PhotoMetadata);
+
+        if (!string.IsNullOrWhiteSpace(role))
+        {
+            query = query.Where(u => u.Roles.Any(r => r.Name == role));
+        }
+
+        return query;
     }
 
     public async Task<AdminUserStats> GetStatsAsync(CancellationToken ct = default)

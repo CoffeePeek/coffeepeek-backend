@@ -14,6 +14,11 @@ public class AdminUserQueryRepositoryTests
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
             .Options);
 
+    private static AccountDbContext CreateNpgsqlContext() =>
+        new(new DbContextOptionsBuilder<AccountDbContext>()
+            .UseNpgsql("Host=localhost;Database=unused;Username=unused;Password=unused")
+            .Options);
+
     private readonly Role _userRole = Role.Create("User");
 
     private User NewUser(string name, DateTime? createdAtUtc = null)
@@ -27,6 +32,30 @@ public class AdminUserQueryRepositoryTests
     {
         user.AddSession(Guid.NewGuid().ToString("N"), TimeSpan.FromDays(60), "device", "127.0.0.1");
         user.RefreshTokens.Last().CreatedAtUtc = DateTime.UtcNow - ago;
+    }
+
+    [Fact]
+    public void GetUsersAsync_SearchWithRole_TranslatesOnNpgsql()
+    {
+        using var db = CreateNpgsqlContext();
+        var query = new AdminUserQueryRepository(db)
+            .BuildUsersQuery("  AbC_%  ", "User");
+
+        var countSql = query.GroupBy(_ => 1).Select(group => group.Count()).ToQueryString();
+        var pageSql = query.OrderByDescending(user => user.CreatedAtUtc)
+            .Skip(20).Take(20).ToQueryString();
+
+        foreach (var sql in new[] { countSql, pageSql })
+        {
+            var commandSql = string.Join('\n', sql.Split('\n').Where(line => !line.StartsWith("--")));
+            commandSql.Should().Contain("strpos(lower(\"Username\"), @p0)")
+                .And.Contain("strpos(lower(\"Email\"), @p1)")
+                .And.Contain("EXISTS")
+                .And.Contain("\"Name\"")
+                .And.NotContain("AbC_%")
+                .And.NotContain("abc_%");
+            sql.Should().Contain("abc_%"); // Parameter declaration in ToQueryString diagnostics.
+        }
     }
 
     [Fact]
