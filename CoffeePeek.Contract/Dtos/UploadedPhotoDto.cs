@@ -1,7 +1,7 @@
 namespace CoffeePeek.Contract.Dtos;
 
 /// <param name="FullUrl">
-/// Public URL, filled only on read responses (review / check-in photos). Additive and optional:
+/// Public URL, filled only on responses (review / check-in / shop change request photos). Additive and optional:
 /// ignored on input and absent from older messages.
 /// </param>
 public record UploadedPhotoDto(
