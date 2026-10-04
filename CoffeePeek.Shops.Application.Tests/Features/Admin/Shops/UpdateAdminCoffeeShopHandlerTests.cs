@@ -46,10 +46,60 @@ public class UpdateAdminCoffeeShopHandlerTests
     }
 
     [Fact]
+    public async Task GetById_ReturnsAssignedTagIds()
+    {
+        var shop = new DomainCoffeeShop(Guid.NewGuid(), "Shop", null, DomainPriceRange.Cheap, Guid.NewGuid());
+        var tagIds = new[] { Guid.NewGuid(), Guid.NewGuid() };
+        shop.SetTags(tagIds, Guid.NewGuid());
+        _shops.Setup(r => r.GetByIdWithCatalogsAsync(shop.Id, _ct)).ReturnsAsync(shop);
+
+        var result = await GetAdminCoffeeShopByIdHandler.Handle(
+            new GetAdminCoffeeShopByIdQuery(shop.Id), _shops.Object, _media, _ct);
+
+        result.IsSuccess.Should().BeTrue();
+        result.Data!.TagIds.Should().BeEquivalentTo(tagIds);
+        _shops.Verify(r => r.GetByIdWithCatalogsAsync(shop.Id, _ct), Times.Once);
+    }
+
+    [Fact]
+    public async Task GetById_WithoutAssignedTags_ReturnsEmptyTagIds()
+    {
+        var shop = new DomainCoffeeShop(Guid.NewGuid(), "Shop", null, DomainPriceRange.Cheap, Guid.NewGuid());
+        _shops.Setup(r => r.GetByIdWithCatalogsAsync(shop.Id, _ct)).ReturnsAsync(shop);
+
+        var result = await GetAdminCoffeeShopByIdHandler.Handle(
+            new GetAdminCoffeeShopByIdQuery(shop.Id), _shops.Object, _media, _ct);
+
+        result.IsSuccess.Should().BeTrue();
+        result.Data!.TagIds.Should().NotBeNull().And.BeEmpty();
+        _shops.Verify(r => r.GetByIdWithCatalogsAsync(shop.Id, _ct), Times.Once);
+    }
+
+    [Fact]
+    public async Task GetById_HiddenShop_ReturnsAssignedTagIds()
+    {
+        var shop = new DomainCoffeeShop(Guid.NewGuid(), "Shop", null, DomainPriceRange.Cheap, Guid.NewGuid());
+        var tagId = Guid.NewGuid();
+        shop.SetTags([tagId], Guid.NewGuid());
+        shop.SetHidden(true);
+        _shops.Setup(r => r.GetByIdWithCatalogsAsync(shop.Id, _ct)).ReturnsAsync(shop);
+
+        var result = await GetAdminCoffeeShopByIdHandler.Handle(
+            new GetAdminCoffeeShopByIdQuery(shop.Id), _shops.Object, _media, _ct);
+
+        result.IsSuccess.Should().BeTrue();
+        result.Data!.IsHidden.Should().BeTrue();
+        result.Data.TagIds.Should().ContainSingle().Which.Should().Be(tagId);
+        _shops.Verify(r => r.GetByIdWithCatalogsAsync(shop.Id, _ct), Times.Once);
+    }
+
+    [Fact]
     public async Task Handle_UpdatesLocationContactsScheduleAndCatalogs()
     {
         var shop = new DomainCoffeeShop(Guid.NewGuid(), "Old", null, DomainPriceRange.Cheap, Guid.NewGuid());
         shop.SetLocation(Guid.NewGuid(), "Old address", 53.9m, 27.5m);
+        var tagId = Guid.NewGuid();
+        shop.SetTags([tagId], Guid.NewGuid());
         var cityId = Guid.NewGuid();
         var equipment = new Equipment("La Marzocco", "Linea", new EquipmentCategory());
 
@@ -84,6 +134,7 @@ public class UpdateAdminCoffeeShopHandlerTests
         shop.Equipments.Should().ContainSingle(e => e.Id == equipment.Id);
         result.Data!.Location!.Address.Should().Be("Немига 5");
         result.Data.Contacts!.PhoneNumber.Should().Be("+375291112233");
+        result.Data.TagIds.Should().ContainSingle().Which.Should().Be(tagId);
         _uow.Verify(u => u.SaveChangesAsync(_ct), Times.Once);
         _cache.Verify(c => c.RemoveAsync(It.Is<CacheKey>(k => k.Key == CacheKey.Shop.Detail(shop.Id).Key)), Times.Once);
     }
@@ -170,6 +221,7 @@ public class UpdateAdminCoffeeShopHandlerTests
         result.IsSuccess.Should().BeTrue();
         shop.Type.Should().Be((CoffeeFocusType)(int)type);
         shop.ShopTags.Should().ContainSingle().Which.Should().BeSameAs(originalTag);
+        result.Data!.TagIds.Should().ContainSingle().Which.Should().Be(tagId);
         _uow.Verify(u => u.SaveChangesAsync(_ct), Times.Once);
     }
 }

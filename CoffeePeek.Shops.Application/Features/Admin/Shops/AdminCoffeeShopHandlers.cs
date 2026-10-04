@@ -64,7 +64,8 @@ public record AdminPublishedShopDto(
     IReadOnlyList<Guid>? BeanIds = null,
     IReadOnlyList<Guid>? RoasterIds = null,
     IReadOnlyList<Guid>? BrewMethodIds = null,
-    int DataCompletenessScore = 0);
+    int DataCompletenessScore = 0,
+    IReadOnlyList<Guid>? TagIds = null);
 
 public record GetAdminCoffeeShopsResponse(
     IReadOnlyList<AdminPublishedShopDto> Items,
@@ -128,7 +129,8 @@ public static class AdminPublishedShopMapper
         shop.Roasters.Select(r => r.Id).ToList(),
         shop.BrewMethods.Select(m => m.Id).ToList(),
         // DB trigger owns the value; responses right after a write show the pre-write score.
-        shop.DataCompletenessScore);
+        shop.DataCompletenessScore,
+        shop.ShopTags.Select(t => t.TagId).ToList());
 
     public static IReadOnlyList<AdminShopPhotoDto> MapPhotos(
         IReadOnlyCollection<ShopPhoto> photos,
