@@ -258,6 +258,26 @@ public class ReverseProxyRouteConfigurationTests
         Matches(shopsReviews, shopsUserReviewsPath).Should().BeTrue();
     }
 
+    [Theory]
+    [InlineData("account-user-profile-route", "account-cluster", "/api/admin/users/{id:guid}/profile", "account-admin-route")]
+    [InlineData("shops-admin-public-address-by-id-route", "shops-cluster", "/api/admin/shops/{id:guid}/public-address", "shops-admin-route")]
+    [InlineData("shops-admin-public-address-by-slug-route", "shops-cluster", "/api/admin/shops/by-slug/{slug}/public-address", "shops-admin-route")]
+    public void AuditedIdentityReads_AreSpecificGetOnlyModeratorRoutes(string id, string cluster, string path, string catchAll)
+    {
+        using var doc = LoadGatewayAppsettings();
+        var routes = doc.RootElement.GetProperty("ReverseProxy").GetProperty("Routes");
+        var route = routes.GetProperty(id);
+        route.GetProperty("ClusterId").GetString().Should().Be(cluster);
+        route.GetProperty("AuthorizationPolicy").GetString().Should().Be("Moderator");
+        route.GetProperty("Match").GetProperty("Path").GetString().Should().Be(path);
+        route.GetProperty("Match").GetProperty("Methods").EnumerateArray().Select(m => m.GetString()).Should().Equal("GET");
+        routes.GetProperty(catchAll).GetProperty("AuthorizationPolicy").GetString().Should().Be("Admin");
+        Matches(ParseRouteTemplate(routes, id), path.Replace("{id:guid}", Guid.NewGuid().ToString()).Replace("{slug}", "alias"))
+            .Should().BeTrue();
+        RoutePrecedence.ComputeInbound(ParseRouteTemplate(routes, id)).Should()
+            .BeLessThan(RoutePrecedence.ComputeInbound(ParseRouteTemplate(routes, catchAll)));
+    }
+
     private static RouteTemplate ParseRouteTemplate(JsonElement routes, string routeId)
     {
         var path = routes.GetProperty(routeId).GetProperty("Match").GetProperty("Path").GetString();

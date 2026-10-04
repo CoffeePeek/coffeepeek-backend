@@ -29,6 +29,7 @@ public static class GetRoasterByIdHandler
         Id = roaster.Id,
         Name = roaster.Name,
         About = roaster.About,
+        CityId = roaster.Location?.CityId,
         Location = roaster.Location is null
             ? null
             : new LocationDto

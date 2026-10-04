@@ -49,7 +49,8 @@ public class GetRoasterByIdHandlerTests
             new GetRoasterByIdQuery(roaster.Id), _repo.Object, _media, _ct);
 
         result.IsSuccess.Should().BeTrue();
-        result.Data!.Name.Should().Be("Coffee Circus");
+        result.Data!.GetType().GetProperty("CityId")!.GetValue(result.Data).Should().Be(cityId);
+        result.Data.Name.Should().Be("Coffee Circus");
         result.Data.About.Should().Be("Small-batch roaster.");
         result.Data.Location!.Address.Should().Be("1 Main St");
         result.Data.Contact!.InstagramLink.Should().Be("https://instagram.com/roaster");

@@ -7,6 +7,7 @@ using CoffeePeek.Shops.Application.Features.Admin.Catalogs.Roasters;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using CoffeePeek.Shops.Application.Features.Catalogs.GetAllRoasters;
+using CoffeePeek.Shops.Application.Features.Catalogs.GetRoasterById;
 using Wolverine;
 
 namespace CoffeePeek.ShopsService.Controllers;
@@ -24,6 +25,15 @@ public class AdminRoastersController(IMessageBus bus, IUserContext userContext) 
     [ProducesResponseType<Response<GetAllRoastersResponse>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetAll(CancellationToken ct) =>
         Ok(await bus.InvokeAsync<Response<GetAllRoastersResponse>>(new GetAllRoastersCommand(), ct));
+
+    [HttpGet("{id:guid}")]
+    [ProducesResponseType<Response<RoasterDetailsDto>>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetById(Guid id, CancellationToken ct)
+    {
+        var response = await bus.InvokeAsync<Response<RoasterDetailsDto>>(new GetRoasterByIdQuery(id), ct);
+        return response is { IsSuccess: true, Data: not null } ? Ok(response) : NotFound();
+    }
 
     [HttpPost]
     [ProducesResponseType<Response<RoasterDto>>(StatusCodes.Status200OK)]
