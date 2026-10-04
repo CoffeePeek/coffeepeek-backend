@@ -26,6 +26,7 @@ public class AdminRoastersController(IMessageBus bus, IUserContext userContext) 
     public async Task<IActionResult> GetAll(CancellationToken ct) =>
         Ok(await bus.InvokeAsync<Response<GetAllRoastersResponse>>(new GetAllRoastersCommand(), ct));
 
+    /// <summary>Editable roaster profile by its administrative UUID, including the city identity.</summary>
     [HttpGet("{id:guid}")]
     [ProducesResponseType<Response<RoasterDetailsDto>>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

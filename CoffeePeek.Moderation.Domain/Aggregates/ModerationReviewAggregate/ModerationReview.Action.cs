@@ -90,7 +90,10 @@ public partial class ModerationReview
     public void ReplacePhotos(IEnumerable<PhotoMetadata> photos)
     {
         var replacement = photos.ToList();
-        if (replacement.Count > 20 || replacement.Any(p => p.OwnerId != UserId || p.ModerationShopId is not null) ||
+        // Existing records are authorized by their membership in this source review.
+        // Keep legacy nullable ownership/old shop-link metadata intact; require current
+        // ownership rules only for genuinely new, Media-verified entities.
+        if (replacement.Count > 20 || replacement.Any(p => !_reviewPhotos.Contains(p) && (p.OwnerId != UserId || p.ModerationShopId is not null)) ||
             replacement.Select(p => p.StorageKey).Distinct(StringComparer.Ordinal).Count() != replacement.Count)
             throw new DomainException("Review photos must be unique and belong to its author.");
         _reviewPhotos.Clear();

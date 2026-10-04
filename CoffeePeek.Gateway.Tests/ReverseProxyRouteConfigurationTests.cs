@@ -1,4 +1,12 @@
 using System.Text.Json;
+using CoffeePeek.Gateway.Extensions;
+using CoffeePeek.Shared.Auth.Constants;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization.Infrastructure;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
@@ -276,6 +284,27 @@ public class ReverseProxyRouteConfigurationTests
             .Should().BeTrue();
         RoutePrecedence.ComputeInbound(ParseRouteTemplate(routes, id)).Should()
             .BeLessThan(RoutePrecedence.ComputeInbound(ParseRouteTemplate(routes, catchAll)));
+    }
+
+    [Fact]
+    public void IdentityReadPolicies_AllowModeratorAndAdminWhileMutationsStayAdminOnly()
+    {
+        var builder = WebApplication.CreateBuilder(new WebApplicationOptions { EnvironmentName = "Development" });
+        builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
+        {
+            ["JWTOptions:SecretKey"] = "test-only-secret-at-least-32-characters",
+            ["JWTOptions:Issuer"] = "test",
+            ["JWTOptions:Audience"] = "test",
+            ["JWTOptions:AccessTokenLifetimeMinutes"] = "15",
+            ["JWTOptions:RefreshTokenLifetimeDays"] = "30"
+        });
+        builder.Services.AddGatewayAuth(builder.Environment, builder.Configuration);
+        using var provider = builder.Services.BuildServiceProvider();
+        var policies = provider.GetRequiredService<IOptions<AuthorizationOptions>>().Value;
+        policies.GetPolicy(RoleConsts.Moderator)!.Requirements.OfType<RolesAuthorizationRequirement>().Single()
+            .AllowedRoles.Should().BeEquivalentTo(RoleConsts.Moderator, RoleConsts.Admin);
+        policies.GetPolicy(RoleConsts.Admin)!.Requirements.OfType<RolesAuthorizationRequirement>().Single()
+            .AllowedRoles.Should().Equal(RoleConsts.Admin);
     }
 
     private static RouteTemplate ParseRouteTemplate(JsonElement routes, string routeId)

@@ -92,6 +92,38 @@ public sealed class ReviewPhotoUpdateTests
         _lookup.VerifyNoOtherCalls();
     }
 
+    [Fact]
+    public async Task RetainedLegacyPhoto_PreservesNullOwnerAndOldShopLinkExactly()
+    {
+        var oldShopId = Guid.NewGuid();
+        typeof(PhotoMetadata).GetProperty(nameof(PhotoMetadata.OwnerId))!.SetValue(_retained, null);
+        typeof(PhotoMetadata).GetProperty(nameof(PhotoMetadata.ModerationShopId))!.SetValue(_retained, oldShopId);
+        await Handle(Command([Photo(_retained.StorageKey)]));
+        _review.ReviewPhotos.Should().ContainSingle().Which.Should().BeSameAs(_retained);
+        _retained.OwnerId.Should().BeNull();
+        _retained.ModerationShopId.Should().Be(oldShopId);
+        _retained.FileName.Should().Be("real.jpg");
+        _retained.SizeBytes.Should().Be(987);
+        _lookup.VerifyNoOtherCalls();
+        _bus.VerifyNoOtherCalls();
+    }
+
+    [Fact]
+    public async Task KeyFromAnotherSourceAggregate_CannotBeRetainedEvenForSameAuthor()
+    {
+        var otherPhoto = PhotoMetadata.Create("other.jpg", "image/jpeg", "already-on-other-review", 50, _review.UserId, null);
+        var otherReview = ModerationReview.Create(_review.UserId, Guid.NewGuid(), null, "Author", null,
+            "Another sufficiently long review comment", 5, 5, 5, [otherPhoto]);
+        _lookup.Setup(l => l.ResolveAsync(_review.UserId,
+                It.Is<IReadOnlyCollection<string>>(keys => keys.Count == 1 && keys.Single() == otherPhoto.StorageKey), _ct))
+            .ReturnsAsync(new ReviewPhotoLookupResult(true, []));
+        var act = () => Handle(Command([Photo(otherPhoto.StorageKey)]));
+        await act.Should().ThrowAsync<ValidationException>();
+        _lookup.VerifyAll();
+        otherReview.ReviewPhotos.Should().ContainSingle().Which.Should().BeSameAs(otherPhoto);
+        AssertUnchanged();
+    }
+
     [Theory]
     [InlineData("missing")]
     [InlineData("foreign")]

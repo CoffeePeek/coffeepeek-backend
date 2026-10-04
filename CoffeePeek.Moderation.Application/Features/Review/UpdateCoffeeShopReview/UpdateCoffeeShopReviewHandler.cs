@@ -77,7 +77,8 @@ public static class UpdateCoffeeShopReviewHandler
                 ? existing
                 : PhotoMetadata.Create(resolved[p.StorageKey].FileName, resolved[p.StorageKey].ContentType,
                     p.StorageKey, resolved[p.StorageKey].SizeBytes, review.UserId, moderationShopId: null)).ToList();
-            if (replacement.Any(p => p.OwnerId != review.UserId || p.ModerationShopId is not null))
+            if (replacement.Any(p => newKeys.Contains(p.StorageKey, StringComparer.Ordinal) &&
+                (p.OwnerId != review.UserId || p.ModerationShopId is not null)))
                 throw new ValidationException("Review photos must belong to its author.");
         }
 

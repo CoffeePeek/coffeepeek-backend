@@ -55,7 +55,7 @@ var mediaService = builder
 
 // Check-in photo resolve and user existence lookups call these over HTTP (not the gateway).
 shopsService.WithReference(accountService).WithReference(mediaService);
-moderationService.WithReference(shopsService);
+moderationService.WithReference(shopsService).WithReference(mediaService);
 
 builder.AddProject<Projects.CoffeePeek_Gateway>(AppResources.Gateway)
     .WithReference(redis)

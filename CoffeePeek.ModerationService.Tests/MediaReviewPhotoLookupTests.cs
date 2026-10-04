@@ -13,6 +13,18 @@ namespace CoffeePeek.ModerationService.Tests;
 public sealed class MediaReviewPhotoLookupTests
 {
     [Fact]
+    public void LocalDevelopment_ProvidesMediaDiscoveryForModeration()
+    {
+        var root = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", ".."));
+        var runner = File.ReadAllText(Path.Combine(root, "dev/run-services.sh"));
+        var start = runner.IndexOf("start moderation", StringComparison.Ordinal);
+        var end = runner.IndexOf("start media", start, StringComparison.Ordinal);
+        runner[start..end].Should().Contain("services__coffeepeek-mediaservice__http__0=http://localhost:5025");
+        var appHost = File.ReadAllText(Path.Combine(root, "CoffePeek.AppHost/AppHost.cs"));
+        appHost.Should().Contain("moderationService.WithReference(shopsService).WithReference(mediaService)");
+    }
+
+    [Fact]
     public async Task Resolve_SendsGatewaySecretAndOwnerWithOnlyRequestedKeys()
     {
         var user = Guid.NewGuid();

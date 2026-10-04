@@ -16,6 +16,7 @@ namespace CoffeePeek.ShopsService.Controllers;
 [ProducesErrorResponseType(typeof(ErrorResponse))]
 public sealed class AdminShopPublicAddressesController(IPublicAddressService addresses) : ControllerBase
 {
+    /// <summary>Returns the canonical public identity for a visible published shop UUID.</summary>
     [HttpGet("{id:guid}/public-address")]
     [ProducesResponseType<Response<PublicAddressMetadata>>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -27,6 +28,7 @@ public sealed class AdminShopPublicAddressesController(IPublicAddressService add
         return address is null ? NotFound() : Ok(Response<PublicAddressMetadata>.Success(address));
     }
 
+    /// <summary>Resolves a visible canonical slug or alias to its published shop identity.</summary>
     [HttpGet("by-slug/{slug}/public-address")]
     [ProducesResponseType<Response<PublicAddressMetadata>>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
