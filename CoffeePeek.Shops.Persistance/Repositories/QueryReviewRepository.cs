@@ -8,6 +8,14 @@ public class QueryReviewRepository(ShopsDbContext dbContext) : IQueryReviewRepos
 {
     private readonly DbSet<Review> _repository = dbContext.Reviews;
     
+    public Task<Guid?> GetExistingReviewIdByUserAndShopAsync(Guid userId, Guid shopId, CancellationToken ct) =>
+        _repository.AsNoTracking()
+            .Where(r => r.UserId == userId && r.CoffeeShopId == shopId && !r.IsSoftDelete && !r.IsRemovedByAdmin)
+            .OrderByDescending(r => r.CreatedAtUtc)
+            .ThenByDescending(r => r.Id)
+            .Select(r => (Guid?)r.Id)
+            .FirstOrDefaultAsync(ct);
+
     public async Task<Review?> GetById(Guid reviewId, CancellationToken ct)
     {
         return await _repository.AsNoTracking().Include(x => x.Photos)

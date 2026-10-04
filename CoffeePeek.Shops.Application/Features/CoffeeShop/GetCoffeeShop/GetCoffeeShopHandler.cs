@@ -42,8 +42,11 @@ public static class GetCoffeeShopHandler
         if (query.UserId.HasValue)
         {
             var userId = query.UserId.Value;
+            var existingReviewId = await reviewRepository.GetExistingReviewIdByUserAndShopAsync(userId, query.Id, ct);
             shopDto = shopDto with
             {
+                CanCreateReview = existingReviewId is null,
+                ExistingReviewId = existingReviewId,
                 IsVisited = await checkInRepository.Exists(userId, query.Id, ct),
                 UserCheckIns = mapper.Map<CheckInDto[]>(
                     await checkInRepository.GetByUserAndShopAsync(userId, query.Id, 1, 10, ct)),
