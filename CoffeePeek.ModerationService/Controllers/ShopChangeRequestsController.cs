@@ -10,6 +10,8 @@ using Microsoft.AspNetCore.Mvc;
 using Wolverine;
 using CoffeePeek.Contract.Dtos.PublicAddresses;
 using CoffeePeek.Moderation.Application.Services;
+using CoffeePeek.Shared.Kernel.Options;
+using Microsoft.Extensions.Options;
 
 namespace CoffeePeek.ModerationService.Controllers;
 
@@ -21,7 +23,9 @@ public record DecideShopChangeRequestBody(ModerationStatus Status, string? Comme
 [Route("api/ShopChangeRequests")]
 [Authorize]
 [ProducesErrorResponseType(typeof(ErrorResponse))]
-public class ShopChangeRequestsController(IMessageBus bus, IUserContext userContext, PublicModerationService discovery) : ControllerBase
+public class ShopChangeRequestsController(
+    IMessageBus bus, IUserContext userContext, PublicModerationService discovery,
+    IOptions<MediaPublicUrlOptions> mediaOptions) : ControllerBase
 {
     [HttpPost]
     [ProducesResponseType<Response<PublicShopChangeRequestDto>>(StatusCodes.Status201Created)]
@@ -36,8 +40,8 @@ public class ShopChangeRequestsController(IMessageBus bus, IUserContext userCont
         await Task.WhenAll(shopTask, payloadTask);
         var command = new CreateShopChangeRequestCommand(await shopTask,
             request.Section, await payloadTask) { UserId = userContext.GetUserIdOrThrow() };
-        var response = await WriteStageTrace.MeasureAsync("shop_change", "commit",
-            () => bus.InvokeAsync<Response<ShopChangeRequestDto>>(command, ct));
+        var response = WithPhotoUrls(await WriteStageTrace.MeasureAsync("shop_change", "commit",
+            () => bus.InvokeAsync<Response<ShopChangeRequestDto>>(command, ct)));
         return response is { IsSuccess: true, Data: not null }
             ? StatusCode(StatusCodes.Status201Created, Response<PublicShopChangeRequestDto>.Success((await WriteStageTrace.MeasureAsync(
                 "shop_change", "response_enrichment", () => discovery.ChangesAsync([response.Data], ct)))[0]))
@@ -54,10 +58,10 @@ public class ShopChangeRequestsController(IMessageBus bus, IUserContext userCont
         [FromQuery] ShopChangeSection? section = null,
         CancellationToken ct = default)
     {
-        var response = await bus.InvokeAsync<Response<ShopChangeRequestPageDto>>(
+        var response = WithPhotoUrls(await bus.InvokeAsync<Response<ShopChangeRequestPageDto>>(
             new GetMyShopChangeRequestsQuery(
                 userContext.GetUserIdOrThrow(), page, pageSize, status,
-                shop is null ? null : await discovery.ResolveIdAsync("shops", shop, ct), section), ct);
+                shop is null ? null : await discovery.ResolveIdAsync("shops", shop, ct), section), ct));
         AddPagingHeaders(response.Data);
         if (response is not { IsSuccess: true, Data: not null }) return BadRequest(response);
         var data = response.Data;
@@ -70,7 +74,7 @@ public class ShopChangeRequestsController(IMessageBus bus, IUserContext userCont
     [ProducesResponseType<Response<ShopChangeRequestPageDto>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetAll([FromQuery] GetShopChangeRequestsQuery query, CancellationToken ct)
     {
-        var response = await bus.InvokeAsync<Response<ShopChangeRequestPageDto>>(query, ct);
+        var response = WithPhotoUrls(await bus.InvokeAsync<Response<ShopChangeRequestPageDto>>(query, ct));
         AddPagingHeaders(response.Data);
         return Ok(response);
     }
@@ -80,11 +84,11 @@ public class ShopChangeRequestsController(IMessageBus bus, IUserContext userCont
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetById(Guid id, CancellationToken ct)
     {
-        var response = await bus.InvokeAsync<Response<ShopChangeRequestDto>>(
+        var response = WithPhotoUrls(await bus.InvokeAsync<Response<ShopChangeRequestDto>>(
             new GetShopChangeRequestQuery(
                 id,
                 userContext.GetUserIdOrThrow(),
-                userContext.HasAnyRole(RoleConsts.Moderator, RoleConsts.Admin)), ct);
+                userContext.HasAnyRole(RoleConsts.Moderator, RoleConsts.Admin)), ct));
         if (response is not { IsSuccess: true, Data: not null }) return NotFound(response);
         return userContext.HasAnyRole(RoleConsts.Moderator, RoleConsts.Admin) ? Ok(response)
             : Ok(Response<PublicShopChangeRequestDto>.Success((await discovery.ChangesAsync([response.Data], ct))[0]));
@@ -98,9 +102,9 @@ public class ShopChangeRequestsController(IMessageBus bus, IUserContext userCont
         [FromBody] UpdateShopChangeRequestBody body,
         CancellationToken ct)
     {
-        var response = await bus.InvokeAsync<Response<ShopChangeRequestDto>>(
+        var response = WithPhotoUrls(await bus.InvokeAsync<Response<ShopChangeRequestDto>>(
             new UpdateShopChangeRequestCommand(
-                id, body.Section, body.Payload, userContext.GetUserIdOrThrow()), ct);
+                id, body.Section, body.Payload, userContext.GetUserIdOrThrow()), ct));
         return response.IsSuccess
             ? Ok(response)
             : StatusCode(response.StatusCode ?? StatusCodes.Status400BadRequest, response);
@@ -121,6 +125,20 @@ public class ShopChangeRequestsController(IMessageBus bus, IUserContext userCont
             ? Ok(response)
             : StatusCode(response.StatusCode ?? StatusCodes.Status400BadRequest, response);
     }
+
+    private Response<ShopChangeRequestDto> WithPhotoUrls(Response<ShopChangeRequestDto> response) =>
+        response is { IsSuccess: true, Data: not null }
+            ? Response<ShopChangeRequestDto>.Success(
+                ShopChangeRequestPhotoUrls.Enrich(response.Data, mediaOptions.Value), response.Message)
+            : response;
+
+    private Response<ShopChangeRequestPageDto> WithPhotoUrls(Response<ShopChangeRequestPageDto> response) =>
+        response is { IsSuccess: true, Data: not null }
+            ? Response<ShopChangeRequestPageDto>.Success(response.Data with
+            {
+                Items = response.Data.Items.Select(item => ShopChangeRequestPhotoUrls.Enrich(item, mediaOptions.Value)).ToArray()
+            }, response.Message)
+            : response;
 
     private void AddPagingHeaders(ShopChangeRequestPageDto? page)
     {
