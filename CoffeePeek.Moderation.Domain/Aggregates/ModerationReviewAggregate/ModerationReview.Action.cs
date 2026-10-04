@@ -87,6 +87,16 @@ public partial class ModerationReview
         ModerationStatus = ModerationStatus.Pending;
     }
 
+    public void ReplacePhotos(IEnumerable<PhotoMetadata> photos)
+    {
+        var replacement = photos.ToList();
+        if (replacement.Count > 20 || replacement.Any(p => p.OwnerId != UserId || p.ModerationShopId is not null) ||
+            replacement.Select(p => p.StorageKey).Distinct(StringComparer.Ordinal).Count() != replacement.Count)
+            throw new DomainException("Review photos must be unique and belong to its author.");
+        _reviewPhotos.Clear();
+        _reviewPhotos.AddRange(replacement);
+    }
+
     public void UpdateHeader(string? header)
     {
         var normalizedHeader = string.IsNullOrWhiteSpace(header) ? null : header.Trim();

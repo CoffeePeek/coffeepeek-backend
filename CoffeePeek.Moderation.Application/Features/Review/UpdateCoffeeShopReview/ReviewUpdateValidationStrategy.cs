@@ -16,10 +16,25 @@ public class ReviewUpdateValidationStrategy : BaseReviewValidationStrategy, IVal
         var headerValidation = ValidateHeader(entity.Header);
         if (!headerValidation.IsValid) return headerValidation;
 
-        var commentValidation = ValidateComment(entity.Comment);
+        var commentValidation = ValidateComment(entity.Comment?.Trim()!);
         if (!commentValidation.IsValid)
         {
             return commentValidation;
+        }
+
+        if (entity.Rating is null)
+            return ValidationResult.Invalid("Rating is required.");
+
+        if (entity.Photos is not null)
+        {
+            if (entity.Photos.Count > 20)
+                return ValidationResult.Invalid("At most 20 photos are allowed.");
+            var keys = new HashSet<string>(StringComparer.Ordinal);
+            foreach (var photo in entity.Photos)
+            {
+                if (photo is null || string.IsNullOrWhiteSpace(photo.StorageKey) || !keys.Add(photo.StorageKey))
+                    return ValidationResult.Invalid("Photo storage keys must be nonempty and unique.");
+            }
         }
 
         if (!IsValidRating(entity.Rating.Coffee))

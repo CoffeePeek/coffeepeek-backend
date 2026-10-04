@@ -12,16 +12,22 @@ public class CheckInPhotosAttachedHandler(
     IUnitOfWork unitOfWork,
     IStorageService storageService)
 {
-    public async Task Handle(CheckInPhotosAttachedEvent message, CancellationToken ct)
-    {
-        if (message.StorageKeys is null || message.StorageKeys.Count == 0) return;
+    public Task Handle(CheckInPhotosAttachedEvent message, CancellationToken ct) =>
+        ConfirmPhotos(message.UserId, message.StorageKeys, ct);
 
-        var photos = await photoRepository.GetByStorageKeysAsync(message.UserId, message.StorageKeys, ct);
+    public Task Handle(ReviewPhotosAttachedEvent message, CancellationToken ct) =>
+        ConfirmPhotos(message.UserId, message.StorageKeys, ct);
+
+    private async Task ConfirmPhotos(Guid userId, IReadOnlyCollection<string> storageKeys, CancellationToken ct)
+    {
+        if (storageKeys is null || storageKeys.Count == 0) return;
+
+        var photos = await photoRepository.GetByStorageKeysAsync(userId, storageKeys, ct);
 
         var changed = false;
         foreach (var photo in photos)
         {
-            if (photo.OwnerId != message.UserId || photo.Status != PhotoStatus.Pending) continue;
+            if (photo.OwnerId != userId || photo.Status != PhotoStatus.Pending) continue;
 
             // Tag storage first: if MinIO throws, the photo stays Pending and the retry redoes it.
             // MarkAsPermanent is idempotent.

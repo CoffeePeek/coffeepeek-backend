@@ -10,6 +10,8 @@ public record UpdateCoffeeShopReviewCommand(
     string Comment,
     RatingDto Rating)
 {
+    /// <summary>Null retains current photos; an empty collection clears them.</summary>
+    public List<UploadedPhotoDto>? Photos { get; init; }
     public string? DrinkSlug { get; init; }
     public string? CustomDrinkName { get; init; }
     public bool ClearDrink { get; init; }

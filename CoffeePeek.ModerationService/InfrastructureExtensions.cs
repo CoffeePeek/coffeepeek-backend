@@ -25,7 +25,7 @@ public static class InfrastructureExtensions
         builder.AddWolverine(
             typeof(InfrastructureExtensions).Assembly,
             [applicationAssembly, infrastructureAssembly],
-            [typeof(CoffeePeek.Shared.Kernel.Drinks.IDrinkCatalog), typeof(ModerationDbContext), typeof(IYandexGeocodingService), typeof(IGooglePlacesLookup), typeof(IOverpassClient)]);
+            [typeof(CoffeePeek.Shared.Kernel.Drinks.IDrinkCatalog), typeof(ModerationDbContext), typeof(IReviewPhotoLookup), typeof(IYandexGeocodingService), typeof(IGooglePlacesLookup), typeof(IOverpassClient)]);
         
         builder.Services
             .AddApplication()

@@ -33,6 +33,8 @@ namespace Internal.Generated.WolverineHandlers
             var moderationReviewRepository = new CoffeeShop.Moderation.Persistence.Repositories.ModerationReviewRepository(moderationDbContext);
             var reviewUpdateValidationStrategy = new CoffeePeek.Moderation.Application.Features.Review.UpdateCoffeeShopReview.ReviewUpdateValidationStrategy();
             // This service has been marked as requiring service location independent of Wolverine's ability to use constructor injection of everything else
+            var reviewPhotoLookup = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<CoffeePeek.Moderation.Application.Abstractions.IReviewPhotoLookup>(serviceScope.ServiceProvider);
+            // This service has been marked as requiring service location independent of Wolverine's ability to use constructor injection of everything else
             var drinkCatalog = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<CoffeePeek.Shared.Kernel.Drinks.IDrinkCatalog>(serviceScope.ServiceProvider);
             // The actual message body
             var updateCoffeeShopReviewCommand = (CoffeePeek.Moderation.Application.Features.Review.UpdateCoffeeShopReview.UpdateCoffeeShopReviewCommand)context.Envelope.Message;
@@ -53,7 +55,7 @@ namespace Internal.Generated.WolverineHandlers
                 System.Diagnostics.Activity.Current?.SetTag("handler.type", "CoffeePeek.Moderation.Application.Features.Review.UpdateCoffeeShopReview.UpdateCoffeeShopReviewHandler");
                 
                 // The actual message execution
-                (var outgoing1, var outgoing2) = await CoffeePeek.Moderation.Application.Features.Review.UpdateCoffeeShopReview.UpdateCoffeeShopReviewHandler.Handle(updateCoffeeShopReviewCommand, reviewUpdateValidationStrategy, moderationReviewRepository, _mapper, unitOfWorkOfModerationDbContext, drinkCatalog, cancellation).ConfigureAwait(false);
+                (var outgoing1, var outgoing2) = await CoffeePeek.Moderation.Application.Features.Review.UpdateCoffeeShopReview.UpdateCoffeeShopReviewHandler.Handle(updateCoffeeShopReviewCommand, reviewUpdateValidationStrategy, moderationReviewRepository, _mapper, unitOfWorkOfModerationDbContext, drinkCatalog, reviewPhotoLookup, context, cancellation).ConfigureAwait(false);
 
                 
                 // Outgoing, cascaded message

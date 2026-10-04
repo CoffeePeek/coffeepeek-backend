@@ -60,6 +60,6 @@ public static class SendReviewToModerationHandler
         
         await unitOfWork.SaveChangesAsync(ct);
         
-        return CreateEntityResponse.Success();
+        return CreateEntityResponse.Success(entityId: review.Id);
     }
 }

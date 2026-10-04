@@ -1,4 +1,6 @@
 using CoffeePeek.Contract.Dtos;
+using CoffeePeek.Moderation.Application.Abstractions;
+using Wolverine;
 using CoffeePeek.Contract.Dtos.CoffeeShop;
 using CoffeePeek.Moderation.Application.Features.Review.SendReviewToModeration;
 using CoffeePeek.Moderation.Application.Features.Review.UpdateCoffeeShopReview;
@@ -25,10 +27,11 @@ public class ReviewDrinkTests
         ModerationReview? saved = null;
         repo.Setup(r => r.Add(It.IsAny<ModerationReview>())).Callback<ModerationReview>(r => saved = r);
         var catalog = new Mock<IDrinkCatalog>(MockBehavior.Strict);
-        await SendReviewToModerationHandler.Handle(command, new SendReviewToModerationValidationStrategy(),
+        var response = await SendReviewToModerationHandler.Handle(command, new SendReviewToModerationValidationStrategy(),
             Mock.Of<CoffeePeek.Moderation.Domain.Aggregates.IQueryModerationShopRepository>(), repo.Object,
             Mock.Of<IUnitOfWork>(), catalog.Object, ct);
-        saved!.DrinkSlug.Should().Be("other");
+        response.EntityId.Should().Be(saved!.Id);
+        saved.DrinkSlug.Should().Be("other");
         saved.CustomDrinkName.Should().Be("Эспрессо-тоник");
         saved.DrinkNameEn.Should().Be("Эспрессо-тоник");
     }
@@ -72,7 +75,7 @@ public class ReviewDrinkTests
         { DrinkSlug = sameSelection ? "latte" : null, ClearDrink = clear };
         var (response, outgoing) = await UpdateCoffeeShopReviewHandler.Handle(command,
             new ReviewUpdateValidationStrategy(), repo.Object, mapper.Object, Mock.Of<IUnitOfWork>(),
-            Mock.Of<IDrinkCatalog>(MockBehavior.Strict), ct);
+            Mock.Of<IDrinkCatalog>(MockBehavior.Strict), Mock.Of<IReviewPhotoLookup>(), Mock.Of<IMessageBus>(), ct);
         response.IsSuccess.Should().BeTrue();
         outgoing!.Review.DrinkSlug.Should().Be(clear ? null : "latte");
         review.DrinkNameRu.Should().Be(clear ? null : "Латте");

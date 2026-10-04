@@ -17,6 +17,38 @@ public class CheckInPhotosAttachedHandlerTests
     private readonly Mock<IStorageService> _storageMock = new();
     private readonly Guid _userId = Guid.NewGuid();
 
+    [Fact]
+    public async Task ReviewAttachments_UseOwnerScopedIdempotentConfirmation()
+    {
+        var own = Photo("reviews/new");
+        var foreign = Photo("reviews/foreign", Guid.NewGuid());
+        SetupRepo(own, foreign);
+        var message = new ReviewPhotosAttachedEvent(_userId, Guid.NewGuid(), [own.StorageKey, foreign.StorageKey], DateTime.UtcNow);
+        await CreateHandler().Handle(message, TestContext.Current.CancellationToken);
+        await CreateHandler().Handle(message, TestContext.Current.CancellationToken);
+        own.Status.Should().Be(PhotoStatus.Confirmed);
+        foreign.Status.Should().Be(PhotoStatus.Pending);
+        _storageMock.Verify(s => s.MarkAsPermanent("reviews/new", BucketType.Shop, It.IsAny<CancellationToken>()), Times.Once);
+        _storageMock.Verify(s => s.MarkAsPermanent("reviews/foreign", It.IsAny<BucketType>(), It.IsAny<CancellationToken>()), Times.Never);
+        _uowMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task ReviewAttachments_StorageFailureRetainsPendingAndCanRetry()
+    {
+        var own = Photo("reviews/new");
+        SetupRepo(own);
+        var message = new ReviewPhotosAttachedEvent(_userId, Guid.NewGuid(), [own.StorageKey], DateTime.UtcNow);
+        _storageMock.SetupSequence(s => s.MarkAsPermanent(own.StorageKey, BucketType.Shop, It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("temporary")) .Returns(Task.CompletedTask);
+        var act = () => CreateHandler().Handle(message, TestContext.Current.CancellationToken);
+        await act.Should().ThrowAsync<InvalidOperationException>();
+        own.Status.Should().Be(PhotoStatus.Pending);
+        _uowMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        await act();
+        own.Status.Should().Be(PhotoStatus.Confirmed);
+    }
+
     private PhotoMetadata Photo(string key, Guid? ownerId = null, PhotoStatus status = PhotoStatus.Pending) => new()
     {
         Id = Guid.NewGuid(),

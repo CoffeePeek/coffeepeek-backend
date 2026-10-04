@@ -9,6 +9,13 @@ public class ModerationReviewRepository(ModerationDbContext dbContext) : IModera
 {
     private readonly DbSet<ModerationReview> _reviewRepository = dbContext.ModerationReviews;
     
+    public void AddPhotos(IEnumerable<CoffeePeek.Moderation.Domain.Entities.PhotoMetadata> photos)
+    {
+        // New GUID-keyed children of an already tracked review must be explicitly Added;
+        // detecting them through the navigation alone can mark them Modified.
+        dbContext.ShopPhotos.AddRange(photos);
+    }
+
     public void Add(ModerationReview review)
     {
         _reviewRepository.Add(review);
