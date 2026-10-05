@@ -22,7 +22,7 @@ namespace CoffeePeek.AccountService.Controllers;
 public sealed class PublicUserAddressesController(IProfileAddressService addresses, IMessageBus bus) : ControllerBase
 {
     /// <summary>
-    /// Resolves a profile slug or alias (case-insensitive) to the public profile and its current canonical address.
+    /// Resolves the current profile slug (case-insensitive) to the public profile and its address.
     /// </summary>
     [HttpGet("by-slug/{slug}")]
     [HttpGet("{slug}")]

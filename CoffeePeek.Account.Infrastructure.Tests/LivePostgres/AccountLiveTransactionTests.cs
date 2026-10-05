@@ -93,8 +93,7 @@ public sealed class AccountLiveTransactionTests : IClassFixture<AccountLiveDatab
         }
         await using var check = fixture.Context();
         (await check.Users.AnyAsync(x => x.Id == id, Ct)).Should().BeFalse();
-        (await check.UserPublicAddresses.SingleAsync(x => x.Slug == PublicSlug.Generate(prefix + ".Owner"), Ct))
-            .State.Should().Be(PublicAddressState.Tombstone);
+
         var replacementId = await fixture.RegisterAsync(prefix + ".Replacement", true, Ct, email);
         (await check.Users.CountAsync(x => x.Credentials.Email == email, Ct)).Should().Be(1);
         replacementId.Should().NotBe(id);
@@ -134,17 +133,17 @@ public sealed class AccountLiveTransactionTests : IClassFixture<AccountLiveDatab
             try { await waitingThird; } catch { }
         }
         await using var check = fixture.Context();
-        (await check.UserPublicAddresses.SingleAsync(x => x.OwnerId == a.Id, Ct)).Slug.Should().Be("ivan");
-        (await check.UserPublicAddresses.SingleAsync(x => x.OwnerId == b.Id, Ct)).Slug.Should().Be(PublicSlug.Candidate("ivan", b.Id, 1));
-        (await check.UserPublicAddresses.SingleAsync(x => x.OwnerId == c.Id, Ct)).Slug.Should().Be(PublicSlug.Candidate("Ivan", c.Id, 1));
+        (await check.Users.SingleAsync(x => x.Id == a.Id, Ct)).PublicSlug.Should().Be("ivan");
+        (await check.Users.SingleAsync(x => x.Id == b.Id, Ct)).PublicSlug.Should().Be(PublicSlug.Candidate("ivan", b.Id, 1));
+        (await check.Users.SingleAsync(x => x.Id == c.Id, Ct)).PublicSlug.Should().Be(PublicSlug.Candidate("Ivan", c.Id, 1));
     }
 
     [Fact]
-    public async Task Username_AtoBtoA_RestoresOriginalRowAndRevision()
+    public async Task Username_AtoBtoA_UpdatesOnlyCurrentSlug()
     {
         var id = await fixture.RegisterAsync("Restore.Alpha", true, Ct);
         await using var db = fixture.Context();
-        var original = await db.UserPublicAddresses.AsNoTracking().SingleAsync(x => x.OwnerId == id, Ct);
+        var original = await db.Users.AsNoTracking().SingleAsync(x => x.Id == id, Ct);
         await using var transaction = await db.Database.BeginTransactionAsync(Ct);
         await UpdateUsernameHandler.Handle(new(id, "Restore.Beta"), new UserRepository(db), new UnitOfWork<AccountDbContext>(db), Ct);
         // Model a second change after the cooldown without waiting seven real days.
@@ -153,10 +152,9 @@ public sealed class AccountLiveTransactionTests : IClassFixture<AccountLiveDatab
         db.ChangeTracker.Clear();
         await UpdateUsernameHandler.Handle(new(id, "Restore.Alpha"), new UserRepository(db), new UnitOfWork<AccountDbContext>(db), Ct);
         await transaction.CommitAsync(Ct);
-        var rows = await db.UserPublicAddresses.AsNoTracking().Where(x => x.OwnerId == id).ToArrayAsync(Ct);
-        rows.Should().HaveCount(2);
-        rows.Single(x => x.State == PublicAddressState.Canonical).Id.Should().Be(original.Id);
-        rows.Single(x => x.State == PublicAddressState.Canonical).Revision.Should().Be(3);
+        var saved = await db.Users.AsNoTracking().SingleAsync(x => x.Id == id, Ct);
+        saved.PublicSlug.Should().Be(original.PublicSlug);
+        saved.SlugRevision.Should().Be(3);
     }
 
     [Theory]
@@ -180,7 +178,7 @@ public sealed class AccountLiveTransactionTests : IClassFixture<AccountLiveDatab
         saved.Username.Value.Should().Be(prefix + ".First");
         saved.UsernameChangedAtUtc.Should().NotBeNull();
         Assert.Throws<ConflictException>(() => saved.UpdateUsername(Username.Create(prefix + ".Retry")));
-        (await check.UserPublicAddresses.CountAsync(x => x.OwnerId == id, Ct)).Should().Be(enabled ? 2 : 0);
+        saved.PublicSlug.Should().Be(enabled ? PublicSlug.Generate(prefix + ".First") : null);
     }
 
     [Fact]
@@ -195,52 +193,10 @@ public sealed class AccountLiveTransactionTests : IClassFixture<AccountLiveDatab
         LivePostgresServer.FindPostgres(error)!.SqlState.Should().Be("23505");
         LivePostgresServer.FindPostgres(error)!.ConstraintName.Should().Be("IX_Users_Username");
         (await db.Users.AsNoTracking().SingleAsync(x => x.Id == id, Ct)).Username.Value.Should().Be("Unique.Original");
-        var row = await db.UserPublicAddresses.AsNoTracking().SingleAsync(x => x.OwnerId == id, Ct);
-        row.Slug.Should().Be("unique-original");
-        row.Revision.Should().Be(1);
-        row.State.Should().Be(PublicAddressState.Canonical);
+        var row = await db.Users.AsNoTracking().SingleAsync(x => x.Id == id, Ct);
+        row.PublicSlug.Should().Be("unique-original");
+        row.SlugRevision.Should().Be(1);
         await transaction.CommitAsync(Ct);
-    }
-
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public async Task InFlightUsernameConflict_RollsBackUsernameAndDemotion(bool ambient)
-    {
-        var prefix = ambient ? "Ambient" : "Owned";
-        var id = await fixture.RegisterAsync(prefix + ".Original", true, Ct);
-        await using var db = fixture.Context();
-        await using var transaction = ambient ? await db.Database.BeginTransactionAsync(Ct) : null;
-        await using var blocker = await LivePostgresServer.BeginUncommittedTombstoneAsync(fixture.ConnectionString,
-            "UserPublicAddresses", PublicSlug.Generate(prefix + ".Conflict"), Ct);
-        var waiting = UpdateUsernameHandler.Handle(new(id, prefix + ".Conflict"),
-            new UserRepository(db), new UnitOfWork<AccountDbContext>(db), Ct);
-        try
-        {
-            await LivePostgresServer.WaitForLockWaitsAsync(fixture.ConnectionString, "transactionid", 1, Ct);
-            waiting.IsCompleted.Should().BeFalse();
-            await blocker.CommitAsync(Ct);
-            var error = await Assert.ThrowsAsync<ConflictException>(() => waiting);
-            LivePostgresServer.FindPostgres(error)!.SqlState.Should().Be("23505");
-            LivePostgresServer.FindPostgres(error)!.ConstraintName.Should().Be("IX_UserPublicAddresses_Slug");
-        }
-        finally
-        {
-            await blocker.DisposeAsync();
-            try { await waiting; } catch { }
-        }
-        db.ChangeTracker.Entries().Should().BeEmpty();
-        (await db.Users.AsNoTracking().SingleAsync(x => x.Id == id, Ct)).Username.Value.Should().Be(prefix + ".Original");
-        var row = await db.UserPublicAddresses.AsNoTracking().SingleAsync(x => x.OwnerId == id, Ct);
-        row.State.Should().Be(PublicAddressState.Canonical);
-        row.Revision.Should().Be(1);
-        if (transaction is not null)
-        {
-            var retry = await db.Users.SingleAsync(x => x.Id == id, Ct);
-            retry.UpdateUsername(Username.Create(prefix + ".Retry"));
-            await db.SaveChangesAsync(Ct);
-            await transaction.CommitAsync(Ct);
-        }
     }
 
     [Fact]
@@ -256,16 +212,16 @@ public sealed class AccountLiveTransactionTests : IClassFixture<AccountLiveDatab
         LivePostgresServer.FindPostgres(error)!.SqlState.Should().Be("23505");
         LivePostgresServer.FindPostgres(error)!.ConstraintName.Should().Be("IX_Users_Email");
         db.ChangeTracker.Entries().Should().BeEmpty();
-        (await db.UserPublicAddresses.AnyAsync(x => x.OwnerId == failed.Id, Ct)).Should().BeFalse();
+        (await db.Users.AnyAsync(x => x.Id == failed.Id, Ct)).Should().BeFalse();
         var retry = User.CreateExternal("google-success@example.com", "Google", "live-google-retry", "Google.Retry");
         db.Users.Add(retry);
         await db.SaveChangesAsync(Ct);
         await transaction.CommitAsync(Ct);
         await using var check = fixture.Context();
         (await check.Users.CountAsync(x => x.Credentials.Email == email, Ct)).Should().Be(1);
-        var original = await check.UserPublicAddresses.SingleAsync(x => x.OwnerId == originalId, Ct);
-        original.Slug.Should().Be("email-owner");
-        original.Revision.Should().Be(1);
-        (await check.UserPublicAddresses.SingleAsync(x => x.OwnerId == retry.Id, Ct)).Slug.Should().Be("google-retry");
+        var original = await check.Users.SingleAsync(x => x.Id == originalId, Ct);
+        original.PublicSlug.Should().Be("email-owner");
+        original.SlugRevision.Should().Be(1);
+        (await check.Users.SingleAsync(x => x.Id == retry.Id, Ct)).PublicSlug.Should().Be("google-retry");
     }
 }

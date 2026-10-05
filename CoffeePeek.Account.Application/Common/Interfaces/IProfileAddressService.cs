@@ -10,7 +10,7 @@ namespace CoffeePeek.Account.Application.Common.Interfaces;
 public interface IProfileAddressService
 {
     /// <summary>
-    /// Resolves a canonical or alias slug (case-insensitive) to the owner's current canonical address.
+    /// Resolves the owner's current slug (case-insensitive) to the public address.
     /// Returns null when the slug is unknown or retired, or when the owner is soft-deleted or blocked (D-03).
     /// Throws <c>ValidationException</c> (400) for an invalid, reserved or GUID-shaped slug.
     /// </summary>

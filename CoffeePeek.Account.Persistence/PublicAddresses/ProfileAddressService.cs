@@ -1,5 +1,5 @@
 using CoffeePeek.Account.Application.Common.Interfaces;
-using CoffeePeek.Account.Domain.Entities.PublicAddressAggregate;
+using CoffeePeek.Account.Domain.Entities.UserAggregate;
 using CoffeePeek.Account.Persistence.Configuration;
 using CoffeePeek.Contract.Dtos.PublicAddresses;
 using CoffeePeek.Shared.Domain.PublicAddresses;
@@ -24,13 +24,10 @@ public sealed class ProfileAddressService(AccountDbContext db) : IProfileAddress
         var normalized = slug.ToLowerInvariant();
         if (!PublicSlug.IsValid(normalized)) throw new ValidationException("Invalid public address.");
 
-        var row = await db.UserPublicAddresses.AsNoTracking().SingleOrDefaultAsync(a => a.Slug == normalized, ct);
-        // Unknown slug or tombstone (retired rows keep no owner), or an owner that is not public right now.
-        if (row?.OwnerId is not { } ownerId || !await IsVisibleAsync(ownerId, ct)) return null;
-
-        var current = await db.UserPublicAddresses.AsNoTracking()
-            .SingleOrDefaultAsync(a => a.OwnerId == ownerId && a.State == PublicAddressState.Canonical, ct);
-        return current is null ? null : Metadata(current, normalized != current.Slug);
+        return await db.Users.AsNoTracking().Where(u =>
+            u.PublicSlug == normalized && !u.IsSoftDelete && !u.IsBlocked)
+            .Select(u => new PublicAddressMetadata(u.Id, u.PublicSlug!, CanonicalPrefix + u.PublicSlug, u.SlugRevision, false))
+            .SingleOrDefaultAsync(ct);
     }
 
     public async Task<PublicAddressMetadata[]> GetByIdsAsync(Guid[] ids, CancellationToken ct)
@@ -40,15 +37,11 @@ public sealed class ProfileAddressService(AccountDbContext db) : IProfileAddress
             throw new ValidationException("Supply 1–100 nonempty user IDs.");
 
         var distinct = ids.Distinct().ToArray();
-        // D-03: same visibility rule as IsVisibleAsync, applied to the whole batch in one query.
-        var visible = await db.Users.AsNoTracking()
-            .Where(u => distinct.Contains(u.Id) && !u.IsSoftDelete && !u.IsBlocked)
-            .Select(u => u.Id)
+        var addresses = await db.Users.AsNoTracking().Where(u => distinct.Contains(u.Id) &&
+            !u.IsSoftDelete && !u.IsBlocked && u.PublicSlug != null)
+            .Select(u => new PublicAddressMetadata(u.Id, u.PublicSlug!, CanonicalPrefix + u.PublicSlug, u.SlugRevision, false))
             .ToArrayAsync(ct);
-        var rows = await db.UserPublicAddresses.AsNoTracking()
-            .Where(a => a.OwnerId.HasValue && visible.Contains(a.OwnerId.Value) && a.State == PublicAddressState.Canonical)
-            .ToArrayAsync(ct);
-        return rows.Select(a => Metadata(a)).OrderBy(m => Array.IndexOf(distinct, m.EntityId)).ToArray();
+        return addresses.OrderBy(m => Array.IndexOf(distinct, m.EntityId)).ToArray();
     }
 
     public async Task<PublicAddressBackfillResult> BackfillAsync(Guid? afterId, int limit, bool dryRun, CancellationToken ct)
@@ -60,11 +53,10 @@ public sealed class ProfileAddressService(AccountDbContext db) : IProfileAddress
         {
             // Blocked users are included: they are hidden by visibility, and unblocking must not need a new allocation.
             // The converted Username is projected whole and read client-side (u.Username.Value is not translatable).
-            var owners = await db.Users.AsNoTracking()
+            var owners = await db.Users
                 .Where(u => !u.IsSoftDelete && (!afterId.HasValue || u.Id.CompareTo(afterId.Value) > 0))
                 .OrderBy(u => u.Id)
                 .Take(limit + 1)
-                .Select(u => new { u.Id, u.Username })
                 .ToArrayAsync(ct);
 
             var proposals = new HashSet<string>(StringComparer.Ordinal);
@@ -72,20 +64,16 @@ public sealed class ProfileAddressService(AccountDbContext db) : IProfileAddress
             foreach (var owner in owners.Take(limit))
             {
                 var username = owner.Username.Value;
-                var current = await db.UserPublicAddresses.AsNoTracking()
-                    .SingleOrDefaultAsync(a => a.OwnerId == owner.Id && a.State == PublicAddressState.Canonical, ct);
+                var initialized = owner.PublicSlug is not null;
                 var stem = ProfileAddressWriter.Stem(username);
-                // Replay never renames: an existing canonical is reported as is.
-                var slug = current?.Slug
-                           ?? (await ProfileAddressWriter.FindCandidateAsync(db, username, owner.Id, proposals, ct)).Slug;
+                var slug = owner.PublicSlug ?? await ProfileAddressWriter.FindCandidateAsync(db, username, owner.Id, proposals, ct);
                 proposals.Add(slug);
-                if (!dryRun && current is null)
-                    db.UserPublicAddresses.Add(UserPublicAddress.Create(owner.Id, slug, 1, DateTime.UtcNow));
+                if (!dryRun && !initialized) owner.SetPublicSlug(slug);
                 items.Add(new PublicAddressBackfillItem(owner.Id, slug,
-                    slug != PublicSlug.Candidate(stem.Name, owner.Id, stem.FirstAttempt), current is not null));
+                    slug != PublicSlug.Candidate(stem.Name, owner.Id, stem.FirstAttempt), initialized));
             }
 
-            // No User entry is tracked here, so the SaveChanges hook passes straight through to the base save.
+            // Only slug fields changed; the SaveChanges hook leaves usernames and their slugs as prepared above.
             if (!dryRun) await db.SaveChangesAsync(ct);
             return new PublicAddressBackfillResult(dryRun, items.ToArray(), owners.Length > limit ? owners[limit - 1].Id : null);
         }
@@ -106,8 +94,8 @@ public sealed class ProfileAddressService(AccountDbContext db) : IProfileAddress
     private Task<bool> IsVisibleAsync(Guid id, CancellationToken ct) =>
         db.Users.AsNoTracking().AnyAsync(u => u.Id == id && !u.IsSoftDelete && !u.IsBlocked, ct);
 
-    private static PublicAddressMetadata Metadata(UserPublicAddress row, bool alias = false) =>
-        new(row.OwnerId!.Value, row.Slug, CanonicalPrefix + row.Slug, row.Revision, alias);
+    private static PublicAddressMetadata Metadata(User row) =>
+        new(row.Id, row.PublicSlug!, CanonicalPrefix + row.PublicSlug, row.SlugRevision);
 
     private void RequireEnabled()
     {
@@ -117,5 +105,5 @@ public sealed class ProfileAddressService(AccountDbContext db) : IProfileAddress
     private static bool IsAddressConflict(DbUpdateException ex) => ex.InnerException is PostgresException
     {
         SqlState: PostgresErrorCodes.UniqueViolation, ConstraintName: { } constraint
-    } && constraint.StartsWith("IX_UserPublicAddresses_", StringComparison.Ordinal);
+    } && constraint == "IX_Users_Slug";
 }

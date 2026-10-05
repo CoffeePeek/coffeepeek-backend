@@ -15,7 +15,7 @@ namespace CoffeePeek.ShopsService.Controllers;
 [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
 public sealed class PublicCityAddressesController(IPublicAddressService addresses, IQueryCityRepository cities) : ControllerBase
 {
-    /// <summary>Resolves a city slug or alias to the city and its current canonical address.</summary>
+    /// <summary>Resolves the current city slug to the city and its public address.</summary>
     [HttpGet("by-slug/{slug}")]
     [HttpGet("{slug}")]
     public async Task<IActionResult> GetBySlug(string slug, CancellationToken ct)

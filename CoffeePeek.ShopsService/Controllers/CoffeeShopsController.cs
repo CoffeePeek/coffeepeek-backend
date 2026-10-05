@@ -93,7 +93,7 @@ public class CoffeeShopsController(PublicDiscoveryService discovery, IUserContex
     /// - Top 10 recent reviews
     /// - Personal user interaction status (IsVisited) if authenticated
     /// </remarks>
-    /// <param name="slug">Canonical public slug or an existing alias.</param>
+    /// <param name="slug">The current public slug.</param>
     /// <returns>Returns coffee shop details or an error message</returns>
     [HttpGet("{slug}")]
     [HttpGet("by-slug/{slug}")]

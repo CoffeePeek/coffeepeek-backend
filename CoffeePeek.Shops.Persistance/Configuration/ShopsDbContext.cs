@@ -6,7 +6,7 @@ using CoffeePeek.Shops.Domain.Aggregates.CoffeeZoneAggregate;
 using CoffeePeek.Shops.Domain.Aggregates.MenuAggregate;
 using CoffeePeek.Shops.Domain.Aggregates.ShopTagAggregate;
 using CoffeePeek.Shops.Domain.Entities;
-using CoffeePeek.Shops.Domain.Aggregates.PublicAddressAggregate;
+using CoffeePeek.Shared.Domain.PublicAddresses;
 using CoffeePeek.Shops.Application.PublicAddresses;
 using CoffeePeek.Shops.Persistance.PublicAddresses;
 using Microsoft.Extensions.Options;
@@ -20,15 +20,6 @@ namespace CoffeePeek.Shops.Persistance.Configuration;
 public class ShopsDbContext(DbContextOptions<ShopsDbContext> options, IOptions<PublicAddressOptions>? addressOptions = null) : DbContext(options)
 {
     public bool PublicAddressesEnabled => addressOptions?.Value.Enabled == true;
-    public DbSet<PublicAddressAudit> PublicAddressAudit { get; set; }
-    public virtual DbSet<CoffeeShopPublicAddress> CoffeeShopPublicAddresses { get; set; }
-    public virtual DbSet<RoasterPublicAddress> RoasterPublicAddresses { get; set; }
-    public virtual DbSet<CityPublicAddress> CityPublicAddresses { get; set; }
-    public virtual DbSet<CoffeeZonePublicAddress> CoffeeZonePublicAddresses { get; set; }
-    public virtual DbSet<CoffeeBeanPublicAddress> CoffeeBeanPublicAddresses { get; set; }
-    public virtual DbSet<EquipmentPublicAddress> EquipmentPublicAddresses { get; set; }
-    public virtual DbSet<BrewMethodPublicAddress> BrewMethodPublicAddresses { get; set; }
-    public virtual DbSet<ShopTagPublicAddress> ShopTagPublicAddresses { get; set; }
 
 
     public override int SaveChanges(bool acceptAllChangesOnSuccess) =>
@@ -37,12 +28,9 @@ public class ShopsDbContext(DbContextOptions<ShopsDbContext> options, IOptions<P
     public override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
     {
         ChangeTracker.DetectChanges();
-        // Deletions always retire (even when disabled); allocation only when enabled: creation for shops,
-        // roasters and cities, first publication for coffee zones.
-        var ownerChanges = ChangeTracker.Entries().Any(e =>
-            (e.Entity is CoffeeShop or Roaster or City or CoffeeZone or CoffeeBean or Equipment or BrewMethod or ShopTag && e.State == EntityState.Deleted) ||
-            (PublicAddressesEnabled && e.Entity is CoffeeShop or Roaster or City or CoffeeBean or Equipment or BrewMethod or ShopTag && e.State == EntityState.Added) ||
-            (PublicAddressesEnabled && PublicAddressWriter.IsNewlyPublished(e)));
+        var ownerChanges = PublicAddressesEnabled && ChangeTracker.Entries().Any(e =>
+            (e.Entity is IPublicSlugOwner && e.State == EntityState.Added && e.Entity is not CoffeeZone) ||
+            PublicAddressWriter.IsNewlyPublished(e));
         if (!ownerChanges) return base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
 
         // Intercepts every supported repository/UoW/Wolverine save, including menu imports' early save.
@@ -91,15 +79,14 @@ public class ShopsDbContext(DbContextOptions<ShopsDbContext> options, IOptions<P
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.HasPostgresExtension("pg_trgm");
-        modelBuilder.ApplyConfiguration(new PublicAddressAuditConfiguration());
-        modelBuilder.ApplyConfiguration(new CoffeeShopPublicAddressConfiguration());
-        modelBuilder.ApplyConfiguration(new RoasterPublicAddressConfiguration());
-        modelBuilder.ApplyConfiguration(new CityPublicAddressConfiguration());
-        modelBuilder.ApplyConfiguration(new CoffeeZonePublicAddressConfiguration());
-        modelBuilder.ApplyConfiguration(new CoffeeBeanPublicAddressConfiguration());
-        modelBuilder.ApplyConfiguration(new EquipmentPublicAddressConfiguration());
-        modelBuilder.ApplyConfiguration(new BrewMethodPublicAddressConfiguration());
-        modelBuilder.ApplyConfiguration(new ShopTagPublicAddressConfiguration());
+        PublicSlugConfiguration.Configure(modelBuilder.Entity<ShopTag>(), "ShopTags", "PublicSlug");
+        PublicSlugConfiguration.Configure(modelBuilder.Entity<BrewMethod>(), "BrewMethods");
+        PublicSlugConfiguration.Configure(modelBuilder.Entity<Equipment>(), "Equipments");
+        PublicSlugConfiguration.Configure(modelBuilder.Entity<CoffeeBean>(), "CoffeeBeans");
+        PublicSlugConfiguration.Configure(modelBuilder.Entity<CoffeeZone>(), "CoffeeZones");
+        PublicSlugConfiguration.Configure(modelBuilder.Entity<City>(), "Cities");
+        PublicSlugConfiguration.Configure(modelBuilder.Entity<Roaster>(), "Roasters");
+        PublicSlugConfiguration.Configure(modelBuilder.Entity<CoffeeShop>(), "Shops");
 
         modelBuilder.ApplyConfiguration(new CoffeeShopConfiguration());
         modelBuilder.ApplyConfiguration(new CoffeeZoneConfiguration());

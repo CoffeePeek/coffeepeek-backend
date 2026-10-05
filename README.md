@@ -1,7 +1,7 @@
 # CoffeePeek Backend
 
 CoffeePeek is a platform for discovering specialty coffee shops: search and map, reviews and check-ins, owner
-tools, and a moderation pipeline for user suggestions and bulk imports (OSM, CoffeeMap, files).
+tools, and a moderation pipeline for user suggestions and bulk imports (OSM, files).
 This repository is the **backend only** — a set of .NET 10 microservices behind a YARP gateway.
 
 ## Contents
@@ -23,7 +23,7 @@ This repository is the **backend only** — a set of .NET 10 microservices behin
 | **Gateway** (YARP) | Single entry point: JWT validation, CORS, per-client rate limiting, routing, Scalar API docs |
 | **Account** | Users, email + Google sign-in, JWT issuing, profiles, account deletion, user statistics |
 | **Shops** | Published catalog: shops, search, map/clusters, coffee zones, reviews, check-ins, menus (OpenAI vision parsing), owner and admin tools, app downloads |
-| **Moderation** | Review queue for shop/roaster/review suggestions, shop change requests and issue reports; import pipeline (OSM Overpass, CoffeeMap, files, Google Places status, Yandex geocoding); audit log |
+| **Moderation** | Review queue for shop/roaster/review suggestions, shop change requests and issue reports; import pipeline (OSM Overpass, files, Google Places status, Yandex geocoding); audit log |
 | **Media** | Uploads and photo storage (MinIO / S3) |
 
 Each bounded context is layered DDD: **Domain → Application** (CQRS handlers on Wolverine) **→ Infrastructure →

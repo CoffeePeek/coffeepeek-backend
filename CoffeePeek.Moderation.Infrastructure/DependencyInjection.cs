@@ -30,7 +30,6 @@ public static class DependencyInjection
         // Aspire AddStandardResilienceHandler() defaults to 30s total timeout and overrides HttpClient.Timeout.
         // Overpass QL for Minsk is declared as [timeout:90] — replace the default pipeline for this client only.
         var attemptTimeout = TimeSpan.FromSeconds(120);
-        services.AddSingleton<ICoffeeMapCatalog, EmbeddedCoffeeMapCatalog>();
 
         services.AddHttpClient<IOverpassClient, OverpassClient>(client =>
         {

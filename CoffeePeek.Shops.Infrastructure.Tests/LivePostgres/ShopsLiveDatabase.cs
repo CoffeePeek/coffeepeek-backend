@@ -4,7 +4,6 @@ using CoffeePeek.Shared.Domain.PublicAddresses;
 using CoffeePeek.Shops.Application.PublicAddresses;
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeZoneAggregate;
-using CoffeePeek.Shops.Domain.Aggregates.PublicAddressAggregate;
 using CoffeePeek.Shops.Domain.Entities;
 using CoffeePeek.Shops.Persistance.Configuration;
 using CoffeePeek.Testing;
@@ -66,16 +65,4 @@ public class ShopsLiveDatabase : LiveDatabase<ShopsDbContext>
         }
     }
 
-    public static (string Registry, string Owners, Type AddressType, Type OwnerType) Tables(PublicAddressKind kind) => kind switch
-    {
-        PublicAddressKind.CoffeeShop => ("CoffeeShopPublicAddresses", "Shops", typeof(CoffeeShopPublicAddress), typeof(CoffeeShop)),
-        PublicAddressKind.Roaster => ("RoasterPublicAddresses", "Roasters", typeof(RoasterPublicAddress), typeof(Roaster)),
-        PublicAddressKind.City => ("CityPublicAddresses", "Cities", typeof(CityPublicAddress), typeof(City)),
-        PublicAddressKind.CoffeeZone => ("CoffeeZonePublicAddresses", "CoffeeZones", typeof(CoffeeZonePublicAddress), typeof(CoffeeZone)),
-        PublicAddressKind.CoffeeBean => ("CoffeeBeanPublicAddresses", "CoffeeBeans", typeof(CoffeeBeanPublicAddress), typeof(CoffeeBean)),
-        PublicAddressKind.Equipment => ("EquipmentPublicAddresses", "Equipments", typeof(EquipmentPublicAddress), typeof(Equipment)),
-        PublicAddressKind.BrewMethod => ("BrewMethodPublicAddresses", "BrewMethods", typeof(BrewMethodPublicAddress), typeof(BrewMethod)),
-        PublicAddressKind.ShopTag => ("ShopTagPublicAddresses", "ShopTags", typeof(ShopTagPublicAddress), typeof(ShopTag)),
-        _ => throw new ArgumentOutOfRangeException(nameof(kind))
-    };
 }

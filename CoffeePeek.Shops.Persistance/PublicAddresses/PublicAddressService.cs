@@ -2,7 +2,9 @@ using CoffeePeek.Contract.Dtos.PublicAddresses;
 using CoffeePeek.Shared.Domain.PublicAddresses;
 using CoffeePeek.Shops.Application.PublicAddresses;
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeZoneAggregate;
-using CoffeePeek.Shops.Domain.Aggregates.PublicAddressAggregate;
+using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
+using CoffeePeek.Shops.Domain.Aggregates.BrewMethods;
+using CoffeePeek.Shops.Domain.Aggregates.ShopTagAggregate;
 using CoffeePeek.Shops.Persistance.Configuration;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
@@ -19,26 +21,24 @@ public sealed class PublicAddressService(ShopsDbContext db) : IPublicAddressServ
         if (!PublicSlug.IsValid(normalized)) throw new PublicAddressException("Invalid public address.", 400);
         return kind switch
         {
-            PublicAddressKind.CoffeeShop => ResolveAsync<CoffeeShopPublicAddress>(kind, normalized, ct),
-            PublicAddressKind.Roaster => ResolveAsync<RoasterPublicAddress>(kind, normalized, ct),
-            PublicAddressKind.City => ResolveAsync<CityPublicAddress>(kind, normalized, ct),
-            PublicAddressKind.CoffeeZone => ResolveAsync<CoffeeZonePublicAddress>(kind, normalized, ct),
-            PublicAddressKind.CoffeeBean => ResolveAsync<CoffeeBeanPublicAddress>(kind, normalized, ct),
-            PublicAddressKind.Equipment => ResolveAsync<EquipmentPublicAddress>(kind, normalized, ct),
-            PublicAddressKind.BrewMethod => ResolveAsync<BrewMethodPublicAddress>(kind, normalized, ct),
-            PublicAddressKind.ShopTag => ResolveAsync<ShopTagPublicAddress>(kind, normalized, ct),
+            PublicAddressKind.CoffeeShop => ResolveAsync<CoffeeShop>(kind, normalized, ct),
+            PublicAddressKind.Roaster => ResolveAsync<Roaster>(kind, normalized, ct),
+            PublicAddressKind.City => ResolveAsync<City>(kind, normalized, ct),
+            PublicAddressKind.CoffeeZone => ResolveAsync<CoffeeZone>(kind, normalized, ct),
+            PublicAddressKind.CoffeeBean => ResolveAsync<CoffeeBean>(kind, normalized, ct),
+            PublicAddressKind.Equipment => ResolveAsync<Equipment>(kind, normalized, ct),
+            PublicAddressKind.BrewMethod => ResolveAsync<BrewMethod>(kind, normalized, ct),
+            PublicAddressKind.ShopTag => ResolveAsync<ShopTag>(kind, normalized, ct),
             _ => throw UnknownKind()
         };
     }
 
-    private async Task<PublicAddressMetadata?> ResolveAsync<T>(PublicAddressKind kind, string normalized, CancellationToken ct) where T : PublicAddress
+    private async Task<PublicAddressMetadata?> ResolveAsync<T>(PublicAddressKind kind, string normalized, CancellationToken ct) where T : class, IPublicSlugOwner
     {
-        var address = await db.Set<T>().AsNoTracking().SingleOrDefaultAsync(a => a.Slug == normalized, ct);
-        if (address?.OwnerId is not { } ownerId) return null;
-        // Never trust a cached detail payload to determine current public visibility.
-        if (!await IsVisibleAsync(kind, ownerId, ct)) return null;
-        var current = await db.Set<T>().AsNoTracking().SingleOrDefaultAsync(a => a.OwnerId == ownerId && a.State == PublicAddressState.Canonical, ct);
-        return current is null ? null : Metadata(kind, current, normalized != current.Slug);
+        var owner = await db.Set<T>().AsNoTracking().Where(a => a.PublicSlug == normalized)
+            .Select(a => new SlugData(a.Id, a.PublicSlug!, a.SlugRevision)).SingleOrDefaultAsync(ct);
+        if (owner is null || !await IsVisibleAsync(kind, owner.Id, ct)) return null;
+        return Metadata(kind, owner);
     }
 
     public Task<Guid[]> ResolveIdsAsync(PublicAddressKind kind, string[] slugs, CancellationToken ct)
@@ -49,23 +49,23 @@ public sealed class PublicAddressService(ShopsDbContext db) : IPublicAddressServ
         var normalized = slugs.Select(s => s.ToLowerInvariant()).Distinct().ToArray();
         return kind switch
         {
-            PublicAddressKind.CoffeeShop => ResolveIdsAsync<CoffeeShopPublicAddress>(kind, normalized, ct),
-            PublicAddressKind.Roaster => ResolveIdsAsync<RoasterPublicAddress>(kind, normalized, ct),
-            PublicAddressKind.City => ResolveIdsAsync<CityPublicAddress>(kind, normalized, ct),
-            PublicAddressKind.CoffeeZone => ResolveIdsAsync<CoffeeZonePublicAddress>(kind, normalized, ct),
-            PublicAddressKind.CoffeeBean => ResolveIdsAsync<CoffeeBeanPublicAddress>(kind, normalized, ct),
-            PublicAddressKind.Equipment => ResolveIdsAsync<EquipmentPublicAddress>(kind, normalized, ct),
-            PublicAddressKind.BrewMethod => ResolveIdsAsync<BrewMethodPublicAddress>(kind, normalized, ct),
-            PublicAddressKind.ShopTag => ResolveIdsAsync<ShopTagPublicAddress>(kind, normalized, ct),
+            PublicAddressKind.CoffeeShop => ResolveIdsAsync<CoffeeShop>(kind, normalized, ct),
+            PublicAddressKind.Roaster => ResolveIdsAsync<Roaster>(kind, normalized, ct),
+            PublicAddressKind.City => ResolveIdsAsync<City>(kind, normalized, ct),
+            PublicAddressKind.CoffeeZone => ResolveIdsAsync<CoffeeZone>(kind, normalized, ct),
+            PublicAddressKind.CoffeeBean => ResolveIdsAsync<CoffeeBean>(kind, normalized, ct),
+            PublicAddressKind.Equipment => ResolveIdsAsync<Equipment>(kind, normalized, ct),
+            PublicAddressKind.BrewMethod => ResolveIdsAsync<BrewMethod>(kind, normalized, ct),
+            PublicAddressKind.ShopTag => ResolveIdsAsync<ShopTag>(kind, normalized, ct),
             _ => throw UnknownKind()
         };
     }
 
-    private async Task<Guid[]> ResolveIdsAsync<T>(PublicAddressKind kind, string[] slugs, CancellationToken ct) where T : PublicAddress
+    private async Task<Guid[]> ResolveIdsAsync<T>(PublicAddressKind kind, string[] slugs, CancellationToken ct) where T : class, IPublicSlugOwner
     {
         if (slugs.Length == 0) return [];
-        var rows = await db.Set<T>().AsNoTracking().Where(a => slugs.Contains(a.Slug) && a.OwnerId.HasValue)
-            .Select(a => new { a.Slug, Id = a.OwnerId!.Value }).ToArrayAsync(ct);
+        var rows = await db.Set<T>().AsNoTracking().Where(a => slugs.Contains(a.PublicSlug!))
+            .Select(a => new { Slug = a.PublicSlug!, a.Id }).ToArrayAsync(ct);
         var visible = await GetForReadAsync(kind, rows.Select(x => x.Id).Distinct().ToArray(), ct);
         var ids = visible.Select(x => x.EntityId).ToHashSet();
         if (rows.Length != slugs.Length || rows.Any(x => !ids.Contains(x.Id)))
@@ -90,23 +90,24 @@ public sealed class PublicAddressService(ShopsDbContext db) : IPublicAddressServ
         var distinct = ids.Distinct().ToArray();
         return kind switch
         {
-            PublicAddressKind.CoffeeShop => GetByIdsAsync<CoffeeShopPublicAddress>(kind, distinct, ct),
-            PublicAddressKind.Roaster => GetByIdsAsync<RoasterPublicAddress>(kind, distinct, ct),
-            PublicAddressKind.City => GetByIdsAsync<CityPublicAddress>(kind, distinct, ct),
-            PublicAddressKind.CoffeeZone => GetByIdsAsync<CoffeeZonePublicAddress>(kind, distinct, ct),
-            PublicAddressKind.CoffeeBean => GetByIdsAsync<CoffeeBeanPublicAddress>(kind, distinct, ct),
-            PublicAddressKind.Equipment => GetByIdsAsync<EquipmentPublicAddress>(kind, distinct, ct),
-            PublicAddressKind.BrewMethod => GetByIdsAsync<BrewMethodPublicAddress>(kind, distinct, ct),
-            PublicAddressKind.ShopTag => GetByIdsAsync<ShopTagPublicAddress>(kind, distinct, ct),
+            PublicAddressKind.CoffeeShop => GetByIdsAsync<CoffeeShop>(kind, distinct, ct),
+            PublicAddressKind.Roaster => GetByIdsAsync<Roaster>(kind, distinct, ct),
+            PublicAddressKind.City => GetByIdsAsync<City>(kind, distinct, ct),
+            PublicAddressKind.CoffeeZone => GetByIdsAsync<CoffeeZone>(kind, distinct, ct),
+            PublicAddressKind.CoffeeBean => GetByIdsAsync<CoffeeBean>(kind, distinct, ct),
+            PublicAddressKind.Equipment => GetByIdsAsync<Equipment>(kind, distinct, ct),
+            PublicAddressKind.BrewMethod => GetByIdsAsync<BrewMethod>(kind, distinct, ct),
+            PublicAddressKind.ShopTag => GetByIdsAsync<ShopTag>(kind, distinct, ct),
             _ => throw UnknownKind()
         };
     }
 
-    private async Task<PublicAddressMetadata[]> GetByIdsAsync<T>(PublicAddressKind kind, Guid[] ids, CancellationToken ct) where T : PublicAddress
+    private async Task<PublicAddressMetadata[]> GetByIdsAsync<T>(PublicAddressKind kind, Guid[] ids, CancellationToken ct) where T : class, IPublicSlugOwner
     {
         var visible = await VisibleIdsAsync(kind, ids, ct);
-        var rows = await db.Set<T>().AsNoTracking().Where(a => a.OwnerId.HasValue && visible.Contains(a.OwnerId.Value) && a.State == PublicAddressState.Canonical).ToArrayAsync(ct);
-        var byOwner = rows.ToDictionary(a => a.OwnerId!.Value);
+        var rows = await db.Set<T>().AsNoTracking().Where(a => visible.Contains(a.Id) && a.PublicSlug != null)
+            .Select(a => new SlugData(a.Id, a.PublicSlug!, a.SlugRevision)).ToArrayAsync(ct);
+        var byOwner = rows.ToDictionary(a => a.Id);
         return ids.Where(byOwner.ContainsKey).Select(id => Metadata(kind, byOwner[id])).ToArray();
     }
 
@@ -120,14 +121,14 @@ public sealed class PublicAddressService(ShopsDbContext db) : IPublicAddressServ
         {
             return await PublicAddressTransaction.RunAsync(db, () => kind switch
             {
-                PublicAddressKind.CoffeeShop => ChangeAsync<CoffeeShopPublicAddress>(kind, id, request, actorId, ct),
-                PublicAddressKind.Roaster => ChangeAsync<RoasterPublicAddress>(kind, id, request, actorId, ct),
-                PublicAddressKind.City => ChangeAsync<CityPublicAddress>(kind, id, request, actorId, ct),
-                PublicAddressKind.CoffeeZone => ChangeAsync<CoffeeZonePublicAddress>(kind, id, request, actorId, ct),
-                PublicAddressKind.CoffeeBean => ChangeAsync<CoffeeBeanPublicAddress>(kind, id, request, actorId, ct),
-                PublicAddressKind.Equipment => ChangeAsync<EquipmentPublicAddress>(kind, id, request, actorId, ct),
-                PublicAddressKind.BrewMethod => ChangeAsync<BrewMethodPublicAddress>(kind, id, request, actorId, ct),
-                PublicAddressKind.ShopTag => ChangeAsync<ShopTagPublicAddress>(kind, id, request, actorId, ct),
+                PublicAddressKind.CoffeeShop => ChangeAsync<CoffeeShop>(kind, id, request, actorId, ct),
+                PublicAddressKind.Roaster => ChangeAsync<Roaster>(kind, id, request, actorId, ct),
+                PublicAddressKind.City => ChangeAsync<City>(kind, id, request, actorId, ct),
+                PublicAddressKind.CoffeeZone => ChangeAsync<CoffeeZone>(kind, id, request, actorId, ct),
+                PublicAddressKind.CoffeeBean => ChangeAsync<CoffeeBean>(kind, id, request, actorId, ct),
+                PublicAddressKind.Equipment => ChangeAsync<Equipment>(kind, id, request, actorId, ct),
+                PublicAddressKind.BrewMethod => ChangeAsync<BrewMethod>(kind, id, request, actorId, ct),
+                PublicAddressKind.ShopTag => ChangeAsync<ShopTag>(kind, id, request, actorId, ct),
                 _ => throw UnknownKind()
             }, ct);
         }
@@ -135,48 +136,23 @@ public sealed class PublicAddressService(ShopsDbContext db) : IPublicAddressServ
         catch (DbUpdateException ex) when (IsAddressConflict(ex)) { throw new PublicAddressException("Address is reserved or changed concurrently.", 409); }
     }
 
-    private async Task<PublicAddressMetadata> ChangeAsync<T>(PublicAddressKind kind, Guid id, ChangePublicAddressRequest request, Guid actorId, CancellationToken ct) where T : PublicAddress
+    private async Task<PublicAddressMetadata> ChangeAsync<T>(PublicAddressKind kind, Guid id, ChangePublicAddressRequest request, Guid actorId, CancellationToken ct) where T : class, IPublicSlugOwner
     {
         var stem = await GetStemAsync(kind, id, ct) ?? throw new PublicAddressException("Entity not found.", 404);
-        var current = await db.Set<T>().SingleOrDefaultAsync(a => a.OwnerId == id && a.State == PublicAddressState.Canonical, ct);
-        if (current is not null && request.ExpectedRevision == 0 && (request.Slug is null || request.Slug == current.Slug))
-            return Metadata(kind, current); // Safe retry of initialize: never renames an existing address.
-        if ((current?.Revision ?? 0) != request.ExpectedRevision) throw new PublicAddressException("Expected revision does not match the current address.", 409);
-        if (current is not null && request.Slug is null) throw new PublicAddressException("A slug is required for renaming.", 400);
-        if (current is not null && current.Slug == request.Slug) return Metadata(kind, current);
+        var owner = await db.Set<T>().SingleAsync(a => a.Id == id, ct);
+        if (owner.PublicSlug is not null && request.ExpectedRevision == 0 &&
+            (request.Slug is null || request.Slug == owner.PublicSlug)) return Metadata(kind, owner);
+        if (owner.SlugRevision != request.ExpectedRevision) throw new PublicAddressException("Expected revision does not match the current address.", 409);
+        if (owner.PublicSlug is not null && request.Slug is null) throw new PublicAddressException("A slug is required for renaming.", 400);
         var slug = request.Slug ?? await PublicAddressWriter.FindCandidateAsync<T>(db, stem, id, null, ct);
-        var target = await db.Set<T>().SingleOrDefaultAsync(a => a.Slug == slug, ct);
-        if (target is not null && (target.OwnerId != id || target.State != PublicAddressState.Alias))
-            throw new PublicAddressException("This address is permanently reserved.", 409);
-        var now = DateTime.UtcNow;
-        var revision = checked((current?.Revision ?? 0) + 1);
-        if (current is not null)
-        {
-            current.MakeAlias(revision, now);
-            // Flush demotion before promotion; both writes remain in the enclosing transaction/savepoint.
-            await db.SaveChangesAsync(ct);
-        }
-        if (target is not null) target.Restore(revision, now);
-        else
-        {
-            target = PublicAddressWriter.Create<T>(id, slug, revision, now);
-            db.Set<T>().Add(target);
-        }
-        PublicAddressWriter.Audit(db, kind, id, revision, current?.Slug, target.Slug,
-            current is null ? "initialize" : "rename", actorId, request.Reason.Trim(), now);
+        if (await db.Set<T>().AnyAsync(a => a.Id != id && a.PublicSlug == slug, ct))
+            throw new PublicAddressException("This slug is already in use.", 409);
+        owner.SetPublicSlug(slug);
         await db.SaveChangesAsync(ct);
-        return Metadata(kind, target);
+        return Metadata(kind, owner);
     }
 
-    public async Task<PublicAddressHistoryItem[]> HistoryAsync(PublicAddressKind kind, Guid id, long afterRevision, int limit, CancellationToken ct)
-    {
-        RequireEnabled(kind);
-        if (afterRevision < 0 || limit is < 1 or > 100) throw new PublicAddressException("Invalid history cursor or limit (1–100).", 400);
-        if (await GetStemAsync(kind, id, ct) is null) throw new PublicAddressException("Entity not found.", 404);
-        return await db.PublicAddressAudit.AsNoTracking().Where(a => a.Kind == kind && a.OwnerId == id && a.Revision > afterRevision)
-            .OrderBy(a => a.Revision).Take(limit)
-            .Select(a => new PublicAddressHistoryItem(a.Revision, a.PreviousSlug, a.Slug, a.Action, a.ActorId, a.Reason, a.AtUtc)).ToArrayAsync(ct);
-    }
+
 
     public async Task<PublicAddressBackfillResult> BackfillAsync(PublicAddressKind kind, Guid? afterId, int limit, bool dryRun, Guid actorId, CancellationToken ct)
     {
@@ -184,14 +160,14 @@ public sealed class PublicAddressService(ShopsDbContext db) : IPublicAddressServ
         if (limit is < 1 or > 100 || actorId == Guid.Empty) throw new PublicAddressException("Limit must be 1–100 and actor required.", 400);
         Task<PublicAddressBackfillResult> Execute() => kind switch
         {
-            PublicAddressKind.CoffeeShop => BackfillAsync<CoffeeShopPublicAddress>(kind, afterId, limit, dryRun, actorId, ct),
-            PublicAddressKind.Roaster => BackfillAsync<RoasterPublicAddress>(kind, afterId, limit, dryRun, actorId, ct),
-            PublicAddressKind.City => BackfillAsync<CityPublicAddress>(kind, afterId, limit, dryRun, actorId, ct),
-            PublicAddressKind.CoffeeZone => BackfillAsync<CoffeeZonePublicAddress>(kind, afterId, limit, dryRun, actorId, ct),
-            PublicAddressKind.CoffeeBean => BackfillAsync<CoffeeBeanPublicAddress>(kind, afterId, limit, dryRun, actorId, ct),
-            PublicAddressKind.Equipment => BackfillAsync<EquipmentPublicAddress>(kind, afterId, limit, dryRun, actorId, ct),
-            PublicAddressKind.BrewMethod => BackfillAsync<BrewMethodPublicAddress>(kind, afterId, limit, dryRun, actorId, ct),
-            PublicAddressKind.ShopTag => BackfillAsync<ShopTagPublicAddress>(kind, afterId, limit, dryRun, actorId, ct),
+            PublicAddressKind.CoffeeShop => BackfillAsync<CoffeeShop>(kind, afterId, limit, dryRun, actorId, ct),
+            PublicAddressKind.Roaster => BackfillAsync<Roaster>(kind, afterId, limit, dryRun, actorId, ct),
+            PublicAddressKind.City => BackfillAsync<City>(kind, afterId, limit, dryRun, actorId, ct),
+            PublicAddressKind.CoffeeZone => BackfillAsync<CoffeeZone>(kind, afterId, limit, dryRun, actorId, ct),
+            PublicAddressKind.CoffeeBean => BackfillAsync<CoffeeBean>(kind, afterId, limit, dryRun, actorId, ct),
+            PublicAddressKind.Equipment => BackfillAsync<Equipment>(kind, afterId, limit, dryRun, actorId, ct),
+            PublicAddressKind.BrewMethod => BackfillAsync<BrewMethod>(kind, afterId, limit, dryRun, actorId, ct),
+            PublicAddressKind.ShopTag => BackfillAsync<ShopTag>(kind, afterId, limit, dryRun, actorId, ct),
             _ => throw UnknownKind()
         };
         try
@@ -202,24 +178,20 @@ public sealed class PublicAddressService(ShopsDbContext db) : IPublicAddressServ
         catch (DbUpdateException ex) when (IsAddressConflict(ex)) { throw new PublicAddressException("Address is reserved or changed concurrently.", 409); }
     }
 
-    private async Task<PublicAddressBackfillResult> BackfillAsync<T>(PublicAddressKind kind, Guid? afterId, int limit, bool dryRun, Guid actorId, CancellationToken ct) where T : PublicAddress
+    private async Task<PublicAddressBackfillResult> BackfillAsync<T>(PublicAddressKind kind, Guid? afterId, int limit, bool dryRun, Guid actorId, CancellationToken ct) where T : class, IPublicSlugOwner
     {
         var owners = await ListOwnersAsync(kind, afterId, limit, ct);
         var proposals = new HashSet<string>(StringComparer.Ordinal);
         var items = new List<PublicAddressBackfillItem>();
         foreach (var owner in owners.Take(limit))
         {
-            var current = await db.Set<T>().AsNoTracking().SingleOrDefaultAsync(a => a.OwnerId == owner.Id && a.State == PublicAddressState.Canonical, ct);
+            var current = await db.Set<T>().SingleAsync(a => a.Id == owner.Id, ct);
+            var initialized = current.PublicSlug is not null;
             var stem = string.IsNullOrWhiteSpace(owner.Address) ? owner.Name : $"{owner.Name} {owner.Address}";
-            var slug = current?.Slug ?? await PublicAddressWriter.FindCandidateAsync<T>(db, stem, owner.Id, proposals, ct);
+            var slug = current.PublicSlug ?? await PublicAddressWriter.FindCandidateAsync<T>(db, stem, owner.Id, proposals, ct);
             proposals.Add(slug);
-            if (!dryRun && current is null)
-            {
-                var row = PublicAddressWriter.Create<T>(owner.Id, slug, 1, DateTime.UtcNow);
-                db.Set<T>().Add(row);
-                PublicAddressWriter.Audit(db, kind, owner.Id, 1, null, slug, "initialize", actorId, "Backfill", row.CreatedAtUtc);
-            }
-            items.Add(new PublicAddressBackfillItem(owner.Id, slug, slug != PublicSlug.Generate(stem), current is not null));
+            if (!dryRun && !initialized) current.SetPublicSlug(slug);
+            items.Add(new PublicAddressBackfillItem(owner.Id, slug, slug != PublicSlug.Generate(stem), initialized));
         }
         if (!dryRun) await db.SaveChangesAsync(ct);
         return new PublicAddressBackfillResult(dryRun, items.ToArray(), owners.Length > limit ? owners[limit - 1].Id : null);
@@ -298,8 +270,13 @@ public sealed class PublicAddressService(ShopsDbContext db) : IPublicAddressServ
     };
 
     // Canonical paths are built only from these fixed literals plus the stored, validated slug (never request input).
-    private static PublicAddressMetadata Metadata(PublicAddressKind kind, PublicAddress row, bool alias = false) =>
-        new(row.OwnerId!.Value, row.Slug, $"/{PathSegment(kind)}/{row.Slug}", row.Revision, alias);
+    private static PublicAddressMetadata Metadata(PublicAddressKind kind, IPublicSlugOwner row) =>
+        new(row.Id, row.PublicSlug!, $"/{PathSegment(kind)}/{row.PublicSlug}", row.SlugRevision);
+
+    private sealed record SlugData(Guid Id, string Slug, long Revision);
+
+    private static PublicAddressMetadata Metadata(PublicAddressKind kind, SlugData row) =>
+        new(row.Id, row.Slug, $"/{PathSegment(kind)}/{row.Slug}", row.Revision);
 
     private static string PathSegment(PublicAddressKind kind) => kind switch
     {
@@ -325,13 +302,5 @@ public sealed class PublicAddressService(ShopsDbContext db) : IPublicAddressServ
     private static bool IsAddressConflict(DbUpdateException ex) => ex.InnerException is PostgresException
     {
         SqlState: PostgresErrorCodes.UniqueViolation, ConstraintName: { } constraint
-    } && (constraint.StartsWith("IX_CoffeeShopPublicAddresses_", StringComparison.Ordinal)
-        || constraint.StartsWith("IX_RoasterPublicAddresses_", StringComparison.Ordinal)
-        || constraint.StartsWith("IX_CityPublicAddresses_", StringComparison.Ordinal)
-        || constraint.StartsWith("IX_CoffeeZonePublicAddresses_", StringComparison.Ordinal)
-        || constraint.StartsWith("IX_CoffeeBeanPublicAddresses_", StringComparison.Ordinal)
-        || constraint.StartsWith("IX_EquipmentPublicAddresses_", StringComparison.Ordinal)
-        || constraint.StartsWith("IX_BrewMethodPublicAddresses_", StringComparison.Ordinal)
-        || constraint.StartsWith("IX_ShopTagPublicAddresses_", StringComparison.Ordinal)
-        || constraint == "IX_PublicAddressAudit_Kind_OwnerId_Revision");
+    } && (constraint.EndsWith("_Slug", StringComparison.Ordinal) || constraint == "IX_ShopTags_PublicSlug");
 }

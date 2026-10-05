@@ -34,7 +34,7 @@ public static class ApplyImportDecisionsHandler
 
         var keys = decisions.Keys.ToArray();
         var existing = new Dictionary<string, ShopImportCandidate>(StringComparer.Ordinal);
-        foreach (var source in new[] { ImportSource.Osm, ImportSource.File, ImportSource.CoffeeMap })
+        foreach (var source in new[] { ImportSource.Osm, ImportSource.File })
         {
             foreach (var pair in await repository.GetByExternalIdsAsync(source, keys, ct))
                 existing[pair.Key] = pair.Value;

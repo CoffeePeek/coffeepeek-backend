@@ -1,10 +1,23 @@
+using CoffeePeek.Shared.Domain.PublicAddresses;
 using CoffeePeek.Shared.Domain.Entities;
 using CoffeePeek.Shared.Kernel.Exceptions;
 
 namespace CoffeePeek.Shops.Domain.Aggregates.CoffeeZoneAggregate;
 
-public sealed class CoffeeZone : Entity<Guid>
+public sealed class CoffeeZone : Entity<Guid>, IPublicSlugOwner
 {
+    public string? PublicSlug { get; private set; }
+    public long SlugRevision { get; private set; }
+
+    public void SetPublicSlug(string slug)
+    {
+        CoffeePeek.Shared.Domain.PublicAddresses.PublicSlug.Validate(slug);
+        if (PublicSlug == slug) return;
+        PublicSlug = slug;
+        SlugRevision = checked(SlugRevision + 1);
+    }
+
+
     public const string DefaultColor = "#F59E0B";
 
     public Guid CityId { get; private set; }

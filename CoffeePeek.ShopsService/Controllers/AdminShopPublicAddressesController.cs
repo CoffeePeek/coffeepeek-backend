@@ -28,7 +28,7 @@ public sealed class AdminShopPublicAddressesController(IPublicAddressService add
         return address is null ? NotFound() : Ok(Response<PublicAddressMetadata>.Success(address));
     }
 
-    /// <summary>Resolves a visible canonical slug or alias to its published shop identity.</summary>
+    /// <summary>Resolves the current slug of a visible published shop to its identity.</summary>
     [HttpGet("by-slug/{slug}/public-address")]
     [ProducesResponseType<Response<PublicAddressMetadata>>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

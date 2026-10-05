@@ -1,11 +1,24 @@
-﻿using CoffeePeek.Shared.Domain.Entities;
+using CoffeePeek.Shared.Domain.PublicAddresses;
+using CoffeePeek.Shared.Domain.Entities;
 using CoffeePeek.Shared.Kernel.Exceptions;
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
 
 namespace CoffeePeek.Shops.Domain.Aggregates.BrewMethods;
 
-public class BrewMethod : AggregateRoot<Guid>
+public class BrewMethod : AggregateRoot<Guid>, IPublicSlugOwner
 {
+    public string? PublicSlug { get; private set; }
+    public long SlugRevision { get; private set; }
+
+    public void SetPublicSlug(string slug)
+    {
+        CoffeePeek.Shared.Domain.PublicAddresses.PublicSlug.Validate(slug);
+        if (PublicSlug == slug) return;
+        PublicSlug = slug;
+        SlugRevision = checked(SlugRevision + 1);
+    }
+
+
     public string Name { get; private set; }
     public BrewMethodCategory Category { get; private set; }
 

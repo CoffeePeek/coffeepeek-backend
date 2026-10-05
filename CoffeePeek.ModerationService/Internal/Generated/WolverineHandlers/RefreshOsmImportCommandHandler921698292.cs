@@ -10,13 +10,11 @@ namespace Internal.Generated.WolverineHandlers
     [global::System.CodeDom.Compiler.GeneratedCode("JasperFx", "1.0.0")]
     public sealed class RefreshOsmImportCommandHandler921698292 : Wolverine.Runtime.Handlers.MessageHandler
     {
-        private readonly CoffeePeek.Moderation.Application.Abstractions.ICoffeeMapCatalog _coffeeMapCatalog;
         private readonly Microsoft.Extensions.DependencyInjection.IServiceScopeFactory _serviceScopeFactory;
         private readonly System.Collections.Generic.IEnumerable<Wolverine.EntityFrameworkCore.IDomainEventScraper> _domainEventScraperIEnumerable;
 
-        public RefreshOsmImportCommandHandler921698292(CoffeePeek.Moderation.Application.Abstractions.ICoffeeMapCatalog coffeeMapCatalog, Microsoft.Extensions.DependencyInjection.IServiceScopeFactory serviceScopeFactory, System.Collections.Generic.IEnumerable<Wolverine.EntityFrameworkCore.IDomainEventScraper> domainEventScraperIEnumerable)
+        public RefreshOsmImportCommandHandler921698292(Microsoft.Extensions.DependencyInjection.IServiceScopeFactory serviceScopeFactory, System.Collections.Generic.IEnumerable<Wolverine.EntityFrameworkCore.IDomainEventScraper> domainEventScraperIEnumerable)
         {
-            _coffeeMapCatalog = coffeeMapCatalog;
             _serviceScopeFactory = serviceScopeFactory;
             _domainEventScraperIEnumerable = domainEventScraperIEnumerable;
         }
@@ -52,7 +50,7 @@ namespace Internal.Generated.WolverineHandlers
                 System.Diagnostics.Activity.Current?.SetTag("handler.type", "CoffeePeek.Moderation.Application.Features.Import.RefreshOsmImport.RefreshOsmImportHandler");
                 
                 // The actual message execution
-                var outgoing1 = await CoffeePeek.Moderation.Application.Features.Import.RefreshOsmImport.RefreshOsmImportHandler.Handle(refreshOsmImportCommand, overpassClient, _coffeeMapCatalog, shopImportCandidateRepository, unitOfWorkOfModerationDbContext, cancellation).ConfigureAwait(false);
+                var outgoing1 = await CoffeePeek.Moderation.Application.Features.Import.RefreshOsmImport.RefreshOsmImportHandler.Handle(refreshOsmImportCommand, overpassClient, shopImportCandidateRepository, unitOfWorkOfModerationDbContext, cancellation).ConfigureAwait(false);
 
                 
                 // Outgoing, cascaded message

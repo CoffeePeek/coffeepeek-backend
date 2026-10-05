@@ -1,4 +1,5 @@
-﻿using System.Text.RegularExpressions;
+using CoffeePeek.Shared.Domain.PublicAddresses;
+using System.Text.RegularExpressions;
 using CoffeePeek.Account.Domain.Entities.RoleAggregate;
 using CoffeePeek.Account.Domain.Events;
 using CoffeePeek.Shared.Domain.Entities;
@@ -6,8 +7,26 @@ using CoffeePeek.Shared.Kernel.Exceptions;
 
 namespace CoffeePeek.Account.Domain.Entities.UserAggregate;
 
-public class User : AggregateRoot<Guid>
+public class User : AggregateRoot<Guid>, IPublicSlugOwner
 {
+    public string? PublicSlug { get; private set; }
+    public long SlugRevision { get; private set; }
+
+    public void SetPublicSlug(string slug)
+    {
+        CoffeePeek.Shared.Domain.PublicAddresses.PublicSlug.Validate(slug);
+        if (PublicSlug == slug) return;
+        PublicSlug = slug;
+        SlugRevision = checked(SlugRevision + 1);
+    }
+
+    public void ClearPublicSlug()
+    {
+        PublicSlug = null;
+        SlugRevision = 0;
+    }
+
+
     public Username Username { get; private set; }
     public DateTime? UsernameChangedAtUtc { get; private set; }
     public PhoneNumber? PhoneNumber { get; private set; }

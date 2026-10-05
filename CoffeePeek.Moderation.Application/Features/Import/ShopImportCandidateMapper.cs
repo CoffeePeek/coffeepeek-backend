@@ -126,7 +126,6 @@ public static class ShopImportCandidateMapper
             {
                 DomainSource.Osm => "Source: OpenStreetMap",
                 DomainSource.File => "Source: file",
-                DomainSource.CoffeeMap => "Source: CoffeeMap",
                 _ => $"Source: {candidate.Source}"
             }
         };
@@ -144,9 +143,9 @@ public static class ShopImportCandidateMapper
 
         foreach (var signal in candidate.Signals)
         {
-            if (signal.StartsWith(CoffeeMapVerificationSignals.RecheckReasonPrefix, StringComparison.Ordinal))
+            if (signal.StartsWith(ImportVerificationSignals.RecheckReasonPrefix, StringComparison.Ordinal))
             {
-                var reason = signal[CoffeeMapVerificationSignals.RecheckReasonPrefix.Length..];
+                var reason = signal[ImportVerificationSignals.RecheckReasonPrefix.Length..];
                 facts.Add("Перепроверить: " + (reason switch
                 {
                     "missing-address" => "уточнить улицу, дом и вход",
@@ -156,12 +155,6 @@ public static class ShopImportCandidateMapper
                     "insufficient-evidence" => "найти актуальное независимое подтверждение",
                     _ => "проверить данные кандидата"
                 }));
-                continue;
-            }
-
-            if (signal.StartsWith("coffeemap:google-rating=", StringComparison.Ordinal))
-            {
-                facts.Add("Google rating " + signal["coffeemap:google-rating=".Length..]);
                 continue;
             }
 

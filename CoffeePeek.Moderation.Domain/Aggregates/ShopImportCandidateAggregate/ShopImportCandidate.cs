@@ -77,6 +77,8 @@ public sealed class ShopImportCandidate : Entity<Guid>
     public static ShopImportCandidate FromPlace(ImportSource source, OsmCandidateSnapshot snapshot, DateTimeOffset now)
     {
         ArgumentNullException.ThrowIfNull(snapshot);
+        if (!Enum.IsDefined(source))
+            throw new DomainException("Unknown import source.");
         if (string.IsNullOrWhiteSpace(snapshot.ExternalId))
             throw new DomainException("ExternalId is required.");
 
@@ -90,36 +92,12 @@ public sealed class ShopImportCandidate : Entity<Guid>
         candidate.ApplyOsmFields(snapshot, now);
         if (source == ImportSource.File)
             candidate.AddSignal("import:file");
-        if (source == ImportSource.CoffeeMap)
-            candidate.AddSignal("coffeemap");
         return candidate;
     }
 
-    public static ShopImportCandidate FromCoffeeMap(CoffeeMapCandidateSnapshot snapshot, DateTimeOffset now)
-    {
-        ArgumentNullException.ThrowIfNull(snapshot);
-        if (string.IsNullOrWhiteSpace(snapshot.ExternalId))
-            throw new DomainException("ExternalId is required.");
 
-        var candidate = new ShopImportCandidate
-        {
-            Id = Guid.NewGuid(),
-            Source = ImportSource.CoffeeMap,
-            ExternalId = Clip(snapshot.ExternalId, 64)!,
-            QueueStatus = ImportQueueStatus.Pending
-        };
-        candidate.ApplyCoffeeMapFields(snapshot, now);
-        return candidate;
-    }
 
-    public void RefreshFromCoffeeMap(CoffeeMapCandidateSnapshot snapshot, DateTimeOffset now)
-    {
-        ArgumentNullException.ThrowIfNull(snapshot);
-        if (QueueStatus is ImportQueueStatus.Published or ImportQueueStatus.Skipped)
-            return;
 
-        ApplyCoffeeMapFields(snapshot, now);
-    }
 
     public bool ImportedFromFile =>
         Source == ImportSource.File
@@ -496,34 +474,7 @@ public sealed class ShopImportCandidate : Entity<Guid>
         CollectorBucket = bucket;
     }
 
-    private void ApplyCoffeeMapFields(CoffeeMapCandidateSnapshot snapshot, DateTimeOffset now)
-    {
-        var (bucket, signals) = CoffeeMapClassifier.Classify(snapshot);
-        var recheckSignals = Signals
-            .Where(signal => signal == CoffeeMapVerificationSignals.NeedsRecheck
-                || signal.StartsWith(CoffeeMapVerificationSignals.RecheckReasonPrefix, StringComparison.Ordinal))
-            .ToArray();
-        var instagram = snapshot.Instagram
-                        ?? OsmCafeClassifier.InstagramUrl(new Dictionary<string, string>(), snapshot.Website);
 
-        Name = Clip(snapshot.Name, MaxNameLength);
-        Address = Clip(snapshot.Address, MaxAddressLength);
-        Latitude = snapshot.Latitude;
-        Longitude = snapshot.Longitude;
-        Phone = Clip(snapshot.Phone, MaxPhoneLength);
-        Website = Clip(snapshot.Website, MaxWebsiteLength);
-        Instagram = Clip(instagram, MaxInstagramLength);
-        OpeningHours = Clip(snapshot.OpeningHours, MaxOpeningHoursLength);
-        OsmUpdatedAt = null;
-        OsmAgeDays = null;
-        Signals = signals.Concat(recheckSignals).Distinct(StringComparer.Ordinal).ToList();
-        CollectorBucket = recheckSignals.Contains(CoffeeMapVerificationSignals.NeedsRecheck)
-            ? ImportCollectorBucket.Review
-            : bucket;
-        GoogleMapsUri = string.IsNullOrWhiteSpace(snapshot.GooglePlaceId)
-            ? GoogleMapsUri
-            : Clip($"https://www.google.com/maps/place/?q=place_id:{snapshot.GooglePlaceId.Trim()}", MaxGoogleMapsUriLength);
-    }
 
     private static List<string> NormalizeTagSlugs(IReadOnlyList<string>? tagSlugs, ImportCoffeeFocus? focus)
     {

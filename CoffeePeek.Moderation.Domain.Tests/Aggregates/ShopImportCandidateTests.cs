@@ -345,75 +345,11 @@ public class ShopImportCandidateTests
         gaps.Photo.Should().BeTrue();
     }
 
-    [Fact]
-    public void FromCoffeeMap_SetsSourceAndDoesNotFillOsmAge()
-    {
-        var snapshot = new CoffeeMapCandidateSnapshot(
-            "530",
-            "Lavazza",
-            "Скрыганова 14, Минск",
-            53.9m,
-            27.5m,
-            null,
-            "https://example.com",
-            null,
-            "Mo 10:00-22:00",
-            "ChIJplace",
-            false,
-            true,
-            4.6,
-            40,
-            Now.AddDays(-3),
-            ["coffeemap:wifi"]);
 
-        var candidate = ShopImportCandidate.FromCoffeeMap(snapshot, Now);
 
-        candidate.Source.Should().Be(ImportSource.CoffeeMap);
-        candidate.ExternalId.Should().Be("530");
-        candidate.CollectorBucket.Should().Be(ImportCollectorBucket.Priority);
-        candidate.OsmUpdatedAt.Should().BeNull();
-        candidate.OsmAgeDays.Should().BeNull();
-        candidate.GoogleMapsUri.Should().Contain("place_id:ChIJplace");
-        candidate.GetResearchLinks().OsmHistory.Should().BeEmpty();
-    }
 
-    [Fact]
-    public void RefreshFromCoffeeMap_DoesNotOverwritePublishedName()
-    {
-        var candidate = ShopImportCandidate.FromCoffeeMap(
-            new CoffeeMapCandidateSnapshot(
-                "1", "Varka", "Минск", 53.9m, 27.5m, null, null, null, null, null,
-                false, false, null, null, null, []),
-            Now);
-        candidate.Decide(ImportQueueStatus.Published, ImportCoffeeFocus.Cafe, [], Reviewer, false, Now);
 
-        candidate.RefreshFromCoffeeMap(
-            new CoffeeMapCandidateSnapshot(
-                "1", "Varka Coffee", "Минск", 53.9m, 27.5m, null, null, null, null, null,
-                false, false, null, null, null, []),
-            Now.AddDays(1));
 
-        candidate.Name.Should().Be("Varka");
-        candidate.QueueStatus.Should().Be(ImportQueueStatus.Published);
-    }
-
-    [Fact]
-    public void RefreshFromCoffeeMap_PreservesManualRecheckSignalsAndBucket()
-    {
-        var snapshot = new CoffeeMapCandidateSnapshot(
-            "1", "Varka", "Минск", 53.9m, 27.5m, null, null, null, null, null,
-            true, false, null, null, null, []);
-        var candidate = ShopImportCandidate.FromCoffeeMap(snapshot, Now);
-        candidate.AddSignal(CoffeeMapVerificationSignals.NeedsRecheck);
-        candidate.AddSignal(CoffeeMapVerificationSignals.RecheckReasonPrefix + "missing-address");
-
-        candidate.RefreshFromCoffeeMap(snapshot with { Name = "Varka Coffee" }, Now.AddDays(1));
-
-        candidate.QueueStatus.Should().Be(ImportQueueStatus.Pending);
-        candidate.CollectorBucket.Should().Be(ImportCollectorBucket.Review);
-        candidate.Signals.Should().Contain(CoffeeMapVerificationSignals.NeedsRecheck);
-        candidate.Signals.Should().Contain(CoffeeMapVerificationSignals.RecheckReasonPrefix + "missing-address");
-    }
 
     [Fact]
     public void EnrichFrom_FillsMissingFieldsWithoutChangingStatus()

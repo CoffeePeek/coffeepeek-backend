@@ -1,9 +1,22 @@
-﻿using CoffeePeek.Shared.Domain.Entities;
+using CoffeePeek.Shared.Domain.PublicAddresses;
+using CoffeePeek.Shared.Domain.Entities;
 
 namespace CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
 
-public class Equipment : Entity<Guid>
+public class Equipment : Entity<Guid>, IPublicSlugOwner
 {
+    public string? PublicSlug { get; private set; }
+    public long SlugRevision { get; private set; }
+
+    public void SetPublicSlug(string slug)
+    {
+        CoffeePeek.Shared.Domain.PublicAddresses.PublicSlug.Validate(slug);
+        if (PublicSlug == slug) return;
+        PublicSlug = slug;
+        SlugRevision = checked(SlugRevision + 1);
+    }
+
+
     public string Name { get; private set; }
     public string Brand { get; private set; }
     public string ModelName { get; private set; }

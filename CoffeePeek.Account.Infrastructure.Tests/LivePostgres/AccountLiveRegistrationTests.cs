@@ -74,10 +74,9 @@ public sealed class AccountLiveRegistrationTests : IClassFixture<AccountLiveData
         var users = await check.Users.Include(x => x.RefreshTokens).Where(x => x.Credentials.Email == "gseven@example.com").ToArrayAsync(ct);
         users.Should().ContainSingle();
         users[0].RefreshTokens.Should().HaveCount(2);
-        var address = await check.UserPublicAddresses.SingleAsync(x => x.Slug.StartsWith("gseven"), ct);
-        address.OwnerId.Should().Be(users[0].Id);
-        address.State.Should().Be(PublicAddressState.Canonical);
-        address.Slug.Should().Be("gseven");
-        address.Revision.Should().Be(1);
+        var address = await check.Users.SingleAsync(x => x.PublicSlug!.StartsWith("gseven"), ct);
+        address.Id.Should().Be(users[0].Id);
+        address.PublicSlug.Should().Be("gseven");
+        address.SlugRevision.Should().Be(1);
     }
 }

@@ -1,10 +1,23 @@
-﻿using CoffeePeek.Shared.Domain.Entities;
+using CoffeePeek.Shared.Domain.PublicAddresses;
+using CoffeePeek.Shared.Domain.Entities;
 using CoffeePeek.Shared.Kernel.Exceptions;
 
 namespace CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
 
-public class CoffeeBean : Entity<Guid>
+public class CoffeeBean : Entity<Guid>, IPublicSlugOwner
 {
+    public string? PublicSlug { get; private set; }
+    public long SlugRevision { get; private set; }
+
+    public void SetPublicSlug(string slug)
+    {
+        CoffeePeek.Shared.Domain.PublicAddresses.PublicSlug.Validate(slug);
+        if (PublicSlug == slug) return;
+        PublicSlug = slug;
+        SlugRevision = checked(SlugRevision + 1);
+    }
+
+
     public string Name { get; private set; }
 
     public IReadOnlyCollection<CoffeeShop> CoffeeShops { get; private set; } = new HashSet<CoffeeShop>();

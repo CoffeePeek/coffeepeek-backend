@@ -27,10 +27,6 @@ public sealed class AdminPublicAddressesController(IPublicAddressService address
         return Ok(await addresses.ChangeAsync(Kind(entity), id, request, userContext.GetUserIdOrThrow(), ct));
     }
 
-    [HttpGet("{id:guid}/history")]
-    public async Task<ActionResult<PublicAddressHistoryItem[]>> History(string entity, Guid id, [FromQuery] long afterRevision = 0, [FromQuery] int limit = 50, CancellationToken ct = default) =>
-        Ok(await addresses.HistoryAsync(Kind(entity), id, afterRevision, limit, ct));
-
     [HttpPost("backfill")]
     public async Task<ActionResult<PublicAddressBackfillResult>> Backfill(string entity, [FromQuery] Guid? afterId = null,
         [FromQuery] int limit = 50, [FromQuery] bool dryRun = true, CancellationToken ct = default) =>

@@ -2,7 +2,6 @@ using CoffeePeek.Account.Application.Common.Options;
 using CoffeePeek.Account.Domain;
 using CoffeePeek.Account.Domain.Entities;
 using CoffeePeek.Account.Domain.Entities.AccountDeletionRequestAggregate;
-using CoffeePeek.Account.Domain.Entities.PublicAddressAggregate;
 using CoffeePeek.Account.Domain.Entities.RoleAggregate;
 using CoffeePeek.Account.Domain.Entities.UserAggregate;
 using CoffeePeek.Account.Persistence.PublicAddresses;
@@ -25,9 +24,8 @@ public class AccountDbContext(DbContextOptions<AccountDbContext> options, IOptio
     {
         ChangeTracker.DetectChanges();
         var users = ChangeTracker.Entries<User>().ToArray();
-        // Intercepts every repository/UoW/Wolverine save without handler changes. Retirement always runs
-        // (privacy and the RESTRICT FK, D-03); allocation and username follow only when enabled (D-01).
-        if (!users.Any(e => ProfileAddressWriter.IsRetiring(e) ||
+        // Update the current slug in the same transaction as its user.
+        if (!users.Any(e => ProfileAddressWriter.NeedsClear(e) ||
                             (PublicAddressesEnabled && ProfileAddressWriter.NeedsAddress(e))))
             return base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
 
@@ -45,7 +43,6 @@ public class AccountDbContext(DbContextOptions<AccountDbContext> options, IOptio
     public DbSet<User> Users { get; set; }
     public DbSet<PhotoMetadata> Photos { get; set; }
     public DbSet<AccountDeletionRequest> AccountDeletionRequests { get; set; }
-    public DbSet<UserPublicAddress> UserPublicAddresses { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

@@ -9,7 +9,6 @@ using CoffeePeek.Moderation.Application.Features.Import.GetImportCandidates;
 using CoffeePeek.Moderation.Application.Features.Import.GetImportDossierHints;
 using CoffeePeek.Moderation.Application.Features.Import.GetImportStats;
 using CoffeePeek.Moderation.Application.Features.Import.Menu;
-using CoffeePeek.Moderation.Application.Features.Import.RefreshCoffeeMapImport;
 using CoffeePeek.Moderation.Application.Features.Import.IngestImportFile;
 using CoffeePeek.Moderation.Application.Features.Import.DecideImportDuplicate;
 using CoffeePeek.Moderation.Application.Features.Import.GetImportDuplicates;
@@ -17,7 +16,7 @@ using CoffeePeek.Moderation.Application.Features.Import.SuggestImportDuplicates;
 using CoffeePeek.Moderation.Application.Features.Import.PatchImportContacts;
 using CoffeePeek.Moderation.Application.Features.Import.RefreshGoogleStatus;
 using CoffeePeek.Moderation.Application.Features.Import.RefreshOsmImport;
-using CoffeeMapVerificationSignals = CoffeePeek.Moderation.Domain.Aggregates.ShopImportCandidateAggregate.CoffeeMapVerificationSignals;
+using ImportVerificationSignals = CoffeePeek.Moderation.Domain.Aggregates.ShopImportCandidateAggregate.ImportVerificationSignals;
 using CoffeePeek.Shared.Auth;
 using CoffeePeek.Shared.Auth.Constants;
 using CoffeePeek.Shared.Kernel.Response;
@@ -43,15 +42,6 @@ public class AdminImportController(IMessageBus bus, IUserContext userContext) : 
             return Ok(response);
 
         return StatusCode(response.StatusCode ?? StatusCodes.Status504GatewayTimeout, response);
-    }
-
-    [HttpPost("coffeemap/refresh")]
-    [ProducesResponseType<Response<CoffeeMapRefreshResultDto>>(StatusCodes.Status200OK)]
-    public async Task<IActionResult> RefreshCoffeeMap(CancellationToken ct)
-    {
-        var response = await bus.InvokeAsync<Response<CoffeeMapRefreshResultDto>>(
-            new RefreshCoffeeMapImportCommand(), ct);
-        return response.IsSuccess ? Ok(response) : StatusCode(response.StatusCode ?? StatusCodes.Status500InternalServerError, response);
     }
 
     [HttpPost("decisions")]
@@ -121,7 +111,7 @@ public class AdminImportController(IMessageBus bus, IUserContext userContext) : 
         [FromQuery] ImportSource? source = null,
         CancellationToken ct = default)
         => await GetCandidatesCore(status, bucket, type, rejectReason, search, name, page, pageSize, source,
-            CoffeeMapVerificationSignals.NeedsRecheck, ct);
+            ImportVerificationSignals.NeedsRecheck, ct);
 
     private async Task<IActionResult> GetCandidatesCore(
         ImportQueueStatus? status,

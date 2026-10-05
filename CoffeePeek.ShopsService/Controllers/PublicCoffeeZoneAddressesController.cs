@@ -16,7 +16,7 @@ namespace CoffeePeek.ShopsService.Controllers;
 [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
 public sealed class PublicCoffeeZoneAddressesController(IPublicAddressService addresses, ICoffeeZoneQueries zones) : ControllerBase
 {
-    /// <summary>Resolves a zone slug or alias to the map zone data and its current canonical address.</summary>
+    /// <summary>Resolves the current zone slug to the map zone data and its public address.</summary>
     [HttpGet("by-slug/{slug}")]
     [HttpGet("{slug}")]
     public async Task<IActionResult> GetBySlug(string slug, CancellationToken ct)

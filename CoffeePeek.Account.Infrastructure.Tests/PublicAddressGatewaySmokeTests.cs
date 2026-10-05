@@ -303,17 +303,16 @@ public sealed class PublicAddressGatewaySmokeTests
         }
 
         accountFlags.Enabled = true;
-        var alias = await Get("/api/Users/by-slug/IVAN-PETROV", HttpStatusCode.OK, "account");
-        alias!["address"]!["canonicalPath"]!.GetValue<string>().Should().Be("/users/petr");
-        alias["address"]!["isAlias"]!.GetValue<bool>().Should().BeTrue();
-        alias["address"]!["revision"]!.GetValue<long>().Should().Be(2);
-        alias["data"]!["userName"]!.GetValue<string>().Should().Be("Petr");
-        alias["data"]!.AsObject().ContainsKey("email").Should().BeFalse();
+        await Get("/api/Users/by-slug/IVAN-PETROV", HttpStatusCode.NotFound, "account");
         var canonical = await Get("/api/Users/by-slug/petr", HttpStatusCode.OK, "account");
         canonical!["address"]!["isAlias"]!.GetValue<bool>().Should().BeFalse();
+        canonical["address"]!["canonicalPath"]!.GetValue<string>().Should().Be("/users/petr");
+        canonical["address"]!["revision"]!.GetValue<long>().Should().Be(2);
+        canonical["data"]!["userName"]!.GetValue<string>().Should().Be("Petr");
+        canonical["data"]!.AsObject().ContainsKey("email").Should().BeFalse();
         // Browsing more than 20 profiles must not consume the login/token-refresh bucket.
         for (var i = 0; i < 21; i++) await Get("/api/Users/by-slug/petr", HttpStatusCode.OK, "account");
-        NoInternalIds(alias);
+        NoInternalIds(canonical);
         var shopDetail = await Get("/api/CoffeeShops/by-slug/26-october-16", HttpStatusCode.OK, "shops");
         NoInternalIds(shopDetail);
         shopDetail!["data"]!["reviews"]![0]!["author"]!["slug"]!.GetValue<string>().Should().Be("petr");
