@@ -11,7 +11,7 @@ namespace CoffeePeek.ShopsService.Tests;
 
 public sealed class PublicAddressApiContractTests
 {
-    private const string AdminRoute = "api/admin/{entity:regex(^(shops|roasters|cities|coffee-zones|beans|equipments|brew-methods|shop-tags)$)}/public-addresses";
+    private const string AdminRoute = "api/admin/{entity:regex(^(shops|roasters|cities|coffee-zones|beans|equipments|brew-methods|shop-tags|coffees)$)}/public-addresses";
 
     [Fact]
     public void PublicRoutes_UseSlugsAndHaveNoGuidAddressLookup()
@@ -54,6 +54,7 @@ public sealed class PublicAddressApiContractTests
     [Theory]
     [InlineData("shops", PublicAddressKind.CoffeeShop)]
     [InlineData("roasters", PublicAddressKind.Roaster)]
+    [InlineData("coffees", PublicAddressKind.CoffeeProduct)]
     [InlineData("cities", PublicAddressKind.City)]
     [InlineData("coffee-zones", PublicAddressKind.CoffeeZone)]
     [InlineData("Cities", PublicAddressKind.City)]

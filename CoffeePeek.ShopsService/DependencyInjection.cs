@@ -17,6 +17,9 @@ public static class DependencyInjection
         });
         
         services.AddControllersModule();
+        services.AddOptions<CoffeePeek.Shared.Kernel.Options.CoffeeImportAuthOptions>()
+            .BindConfiguration(nameof(CoffeePeek.Shared.Kernel.Options.CoffeeImportAuthOptions))
+            .Validate(o => o.Token.Length == 0 || o.Token.Length >= 32).ValidateOnStart();
         services.AddResponseCaching();
         services.AddHeaderUserContext(configuration);
 

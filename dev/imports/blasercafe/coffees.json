@@ -1,0 +1,1024 @@
+{
+  "schemaVersion": 1,
+  "adapterVersion": "1.0",
+  "source": "https://www.blasercafe.by/coffeeorder/",
+  "collectedAtUtc": "2026-10-05T10:26:24.615068+00:00",
+  "complete": true,
+  "coverage": [
+    {
+      "productKind": "roasted_beans",
+      "catalogueUrl": "https://www.blasercafe.by/coffeeorder/",
+      "pages": 15,
+      "expectedProducts": null,
+      "discoveredProducts": 15
+    }
+  ],
+  "products": [
+    {
+      "sourceKey": "www.blasercafe.by",
+      "sourceProductId": "url:/coffeeorder/",
+      "sourceUrl": "https://www.blasercafe.by/coffeeorder/",
+      "name": "Marrone",
+      "description": "Marrone представляет собой яркую смесь кофе сортов Арабики и Робсуты, разработанную специально для поклонников классической культуры эспрессо. Интенсивный, с большим количеством оттенков вкус является хорошо сбалансированным. Смесь подхоит как для эспрессо, так и для напитков с молоком",
+      "roasterName": "BlaserCafe",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "blend",
+      "origins": [
+        {
+          "countryCode": "BR",
+          "countryNameRu": "Бразилия",
+          "percentage": null,
+          "evidenceField": "properties.Страна произрастания"
+        },
+        {
+          "countryCode": "HN",
+          "countryNameRu": "Гондурас",
+          "percentage": null,
+          "evidenceField": "properties.Страна произрастания"
+        },
+        {
+          "countryCode": "IN",
+          "countryNameRu": "Индия",
+          "percentage": null,
+          "evidenceField": "properties.Страна произрастания"
+        },
+        {
+          "countryCode": "ID",
+          "countryNameRu": "Индонезия",
+          "percentage": null,
+          "evidenceField": "properties.Страна произрастания"
+        }
+      ],
+      "tasteDescriptors": [
+        "Ярко выраженная сладость",
+        "отсутствие кислинки"
+      ],
+      "processing": null,
+      "roastLevel": "Темная",
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [],
+      "imageUrls": [
+        "https://www.blasercafe.by/images/products/Blasercafe_250g_marrone.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "42",
+          "weightGrams": 1000,
+          "price": "142.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {}
+        },
+        {
+          "externalVariantId": "43",
+          "weightGrams": 250,
+          "price": "36.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {}
+        }
+      ],
+      "sourceProperties": {
+        "Степерь обжарки": "Темная",
+        "Состав": "70 % Арабика / 30 % Робуста",
+        "Происхождение": "Бразилия,Гондурас,Индия,Индонезия",
+        "Упаковка": "Зерна 250 г / 1кг | E.S.E. Pods",
+        "Вкус": "Ярко выраженная сладость,отсутствие кислинки",
+        "Страна произрастания": "Бразилия,Гондурас,Индия,Индонезия"
+      },
+      "reviewWarnings": []
+    },
+    {
+      "sourceKey": "www.blasercafe.by",
+      "sourceProductId": "url:/coffeeorder/lilla-e-rose/",
+      "sourceUrl": "https://www.blasercafe.by/coffeeorder/lilla-e-rose/",
+      "name": "Lilla e Rose",
+      "description": "Lilla e Rose обладает крайне богатым ароматом и идеально сбалансированным вкусом с ощутимой сладостью. Выполненная в средней обжарке с добавлением Робусты, смесь приобретает множество вкусовых оттенков и плотную эспрессо пенку. Lilla e Rose особенно популярна для приготовления кофе со сливками.",
+      "roasterName": "BlaserCafe",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "blend",
+      "origins": [
+        {
+          "countryCode": "ET",
+          "countryNameRu": "Эфиопия",
+          "percentage": null,
+          "evidenceField": "properties.Страна произрастания"
+        },
+        {
+          "countryCode": "BR",
+          "countryNameRu": "Бразилия",
+          "percentage": null,
+          "evidenceField": "properties.Страна произрастания"
+        },
+        {
+          "countryCode": "IN",
+          "countryNameRu": "Индия",
+          "percentage": null,
+          "evidenceField": "properties.Страна произрастания"
+        },
+        {
+          "countryCode": "CO",
+          "countryNameRu": "Колумбия",
+          "percentage": null,
+          "evidenceField": "properties.Страна произрастания"
+        },
+        {
+          "countryCode": "ID",
+          "countryNameRu": "Индонезия",
+          "percentage": null,
+          "evidenceField": "properties.Страна произрастания"
+        }
+      ],
+      "tasteDescriptors": [
+        "Сбалансированные горькие и кислые ноты",
+        "со сладкими и солеными оттенками"
+      ],
+      "processing": null,
+      "roastLevel": "Темная",
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [],
+      "imageUrls": [
+        "https://www.blasercafe.by/Blasercafe_1k_lilla.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "57",
+          "weightGrams": 1000,
+          "price": "140.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {}
+        },
+        {
+          "externalVariantId": "58",
+          "weightGrams": 250,
+          "price": "36.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {}
+        }
+      ],
+      "sourceProperties": {
+        "Степерь обжарки": "Темная",
+        "Состав": "75 % Арабика / 25 % Робуста",
+        "Происхождение": "Эфиопия,Бразилия,Индия,Колумбия,Индонезия",
+        "Упаковка": "Зерна 250 г / 1 кг | E.S.E. Pods",
+        "Вкус": "Сбалансированные горькие и кислые ноты,со сладкими и солеными оттенками",
+        "Страна произрастания": "Эфиопия,Бразилия,Индия,Колумбия,Индонезия"
+      },
+      "reviewWarnings": []
+    },
+    {
+      "sourceKey": "www.blasercafe.by",
+      "sourceProductId": "url:/coffeeorder/dazur/",
+      "sourceUrl": "https://www.blasercafe.by/coffeeorder/dazur/",
+      "name": "Cote d'Azur",
+      "description": "Cote d'Azur - интересная смесь для любителей американо и молочных кофейных напитков. Обладает уникальным ароматом и удивительно необычным вкусом благодаря добавлению кофе с высококачественных плантаций Эфиопии, Индии и Гватемалы.",
+      "roasterName": "BlaserCafe",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "blend",
+      "origins": [
+        {
+          "countryCode": "BR",
+          "countryNameRu": "Бразилия",
+          "percentage": null,
+          "evidenceField": "properties.Страна произрастания"
+        },
+        {
+          "countryCode": "IN",
+          "countryNameRu": "Индия",
+          "percentage": null,
+          "evidenceField": "properties.Страна произрастания"
+        },
+        {
+          "countryCode": "CO",
+          "countryNameRu": "Колумбия",
+          "percentage": null,
+          "evidenceField": "properties.Страна произрастания"
+        },
+        {
+          "countryCode": "GT",
+          "countryNameRu": "Гватемала",
+          "percentage": null,
+          "evidenceField": "properties.Страна произрастания"
+        },
+        {
+          "countryCode": "ID",
+          "countryNameRu": "Индонезия",
+          "percentage": null,
+          "evidenceField": "properties.Страна произрастания"
+        },
+        {
+          "countryCode": "ET",
+          "countryNameRu": "Эфиопия",
+          "percentage": null,
+          "evidenceField": "properties.Страна произрастания"
+        }
+      ],
+      "tasteDescriptors": [
+        "Нотки фруктовой кислинки и мягкой горчинки с хорошо различимой сладостью и легким оттенком солености."
+      ],
+      "processing": null,
+      "roastLevel": "Легкая",
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [],
+      "imageUrls": [
+        "https://www.blasercafe.by/images/products/Cote%20250.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "75",
+          "weightGrams": 250,
+          "price": "35.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {}
+        }
+      ],
+      "sourceProperties": {
+        "Степерь обжарки": "Легкая",
+        "Состав": "100 % Арабика",
+        "Происхождение": "Бразилия,Индия,Колумбия,Гватемала,Индонезия,Эфиопия",
+        "Упаковка": "Зерна 250 г",
+        "Вкус": "Нотки фруктовой кислинки и мягкой горчинки с хорошо различимой сладостью и легким оттенком солености.",
+        "Страна произрастания": "Бразилия,Индия,Колумбия,Гватемала,Индонезия,Эфиопия"
+      },
+      "reviewWarnings": []
+    },
+    {
+      "sourceKey": "www.blasercafe.by",
+      "sourceProductId": "url:/coffeeorder/classico/",
+      "sourceUrl": "https://www.blasercafe.by/coffeeorder/classico/",
+      "name": "Classico",
+      "description": "Classico - это смесь Арабики из разных стран. Этот бленд имеет богатую гамму ароматов и сбалансированный вкус с яркими нотками сладости. Сильный характер этого бленда отлично раскрывается в эспрессо и американо.",
+      "roasterName": "BlaserCafe",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "blend",
+      "origins": [
+        {
+          "countryCode": "BR",
+          "countryNameRu": "Бразилия",
+          "percentage": null,
+          "evidenceField": "properties.Страна произрастания"
+        },
+        {
+          "countryCode": "IN",
+          "countryNameRu": "Индия",
+          "percentage": null,
+          "evidenceField": "properties.Страна произрастания"
+        },
+        {
+          "countryCode": "CO",
+          "countryNameRu": "Колумбия",
+          "percentage": null,
+          "evidenceField": "properties.Страна произрастания"
+        },
+        {
+          "countryCode": "ID",
+          "countryNameRu": "Индонезия",
+          "percentage": null,
+          "evidenceField": "properties.Страна произрастания"
+        },
+        {
+          "countryCode": "ET",
+          "countryNameRu": "Эфиопия",
+          "percentage": null,
+          "evidenceField": "properties.Страна произрастания"
+        }
+      ],
+      "tasteDescriptors": [
+        "Утонченные оттенки кислинки с хорошо различимой горчинкой",
+        "Ярко выраженная сладость"
+      ],
+      "processing": null,
+      "roastLevel": "Темная",
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [],
+      "imageUrls": [
+        "https://www.blasercafe.by/images/products/Blasercafe_250g_classico.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "77",
+          "weightGrams": 1000,
+          "price": "142.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {}
+        },
+        {
+          "externalVariantId": "78",
+          "weightGrams": 250,
+          "price": "37.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {}
+        }
+      ],
+      "sourceProperties": {
+        "Степерь обжарки": "Темная",
+        "Состав": "100 % Арабика",
+        "Происхождение": "Бразилия,Индия,Колумбия,Индонезия,Эфиопия",
+        "Упаковка": "Зерна 250 г / 1 кг",
+        "Вкус": "Утонченные оттенки кислинки с хорошо различимой горчинкой,Ярко выраженная сладость",
+        "Страна произрастания": "Бразилия,Индия,Колумбия,Индонезия,Эфиопия"
+      },
+      "reviewWarnings": []
+    },
+    {
+      "sourceKey": "www.blasercafe.by",
+      "sourceProductId": "url:/coffeeorder/rosso-e-nero/",
+      "sourceUrl": "https://www.blasercafe.by/coffeeorder/rosso-e-nero/",
+      "name": "Rosso & Nero",
+      "description": "В конце 2007 года Blasercafé стала первой швейцарской компанией, принятой в итальянскую организацию Caffè Speciali Certificati, которая выдвигает самые строгие требования для своих участников. Rosso & Nero имеет марку CSC и может похвастаться идеально сбалансированным богатым вкусом.",
+      "roasterName": "BlaserCafe",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "blend",
+      "origins": [
+        {
+          "countryCode": "BR",
+          "countryNameRu": "Бразилия",
+          "percentage": null,
+          "evidenceField": "properties.Страна произрастания"
+        },
+        {
+          "countryCode": "IN",
+          "countryNameRu": "Индия",
+          "percentage": null,
+          "evidenceField": "properties.Страна произрастания"
+        },
+        {
+          "countryCode": "ID",
+          "countryNameRu": "Индонезия",
+          "percentage": null,
+          "evidenceField": "properties.Страна произрастания"
+        }
+      ],
+      "tasteDescriptors": [
+        "Яркий",
+        "с хорошо сбалансированными нотками кислинки и горчинки",
+        "ощутимая сладость с соленоватым оттенком."
+      ],
+      "processing": null,
+      "roastLevel": "Темная",
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [],
+      "imageUrls": [
+        "https://www.blasercafe.by/Blasercafe_250g_rosso.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "46",
+          "weightGrams": 1000,
+          "price": "149.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {}
+        },
+        {
+          "externalVariantId": "47",
+          "weightGrams": 250,
+          "price": "38.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {}
+        }
+      ],
+      "sourceProperties": {
+        "Степерь обжарки": "Темная",
+        "Состав": "80 % Арабика / 20 % Робуста",
+        "Происхождение": "Бразилия,Индия,Индонезия",
+        "Упаковка": "Зерна 250г / 1кг | молотый 250g | E.S.E. Pods",
+        "Вкус": "Яркий,с хорошо сбалансированными нотками кислинки и горчинки,ощутимая сладость с соленоватым оттенком.",
+        "Страна произрастания": "Бразилия,Индия,Индонезия"
+      },
+      "reviewWarnings": []
+    },
+    {
+      "sourceKey": "www.blasercafe.by",
+      "sourceProductId": "url:/coffeeorder/lussuria/",
+      "sourceUrl": "https://www.blasercafe.by/coffeeorder/lussuria/",
+      "name": "Lussuria",
+      "description": "Lussuria - чистая страсть! Бескомпромисная смесь Арабики и Робсуты является идеальным выбором любителей традиционной культуры эспрессо. Однако эта смесь способна удивить не только ценителей эспрессо. Капучино и латте, приготовленные из неё, также обладают ярким характером, сохраняя легкие оттенки шоколада и орехов.",
+      "roasterName": "BlaserCafe",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "blend",
+      "origins": [
+        {
+          "countryCode": "BR",
+          "countryNameRu": "Бразилия",
+          "percentage": null,
+          "evidenceField": "properties.Страна произрастания"
+        },
+        {
+          "countryCode": "IN",
+          "countryNameRu": "Индия",
+          "percentage": null,
+          "evidenceField": "properties.Страна произрастания"
+        },
+        {
+          "countryCode": "ID",
+          "countryNameRu": "Индонезия",
+          "percentage": null,
+          "evidenceField": "properties.Страна произрастания"
+        },
+        {
+          "countryCode": "UG",
+          "countryNameRu": "Уганда",
+          "percentage": null,
+          "evidenceField": "properties.Страна произрастания"
+        }
+      ],
+      "tasteDescriptors": [
+        "Ярко выраженная сладость",
+        "отсутствие кислинки"
+      ],
+      "processing": null,
+      "roastLevel": "Темная",
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [],
+      "imageUrls": [
+        "https://www.blasercafe.by/images/products/Blasercafe_250g_lussuria_2.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "44",
+          "weightGrams": 1000,
+          "price": "140.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {}
+        }
+      ],
+      "sourceProperties": {
+        "Степерь обжарки": "Темная",
+        "Состав": "60% Арабика / 40% Робуста",
+        "Происхождение": "Бразилия,Индия,Индонезия,Уганда",
+        "Упаковка": "Зерна 250г / 1кг | молотый 250g | E.S.E. Pods",
+        "Вкус": "Ярко выраженная сладость,отсутствие кислинки",
+        "Страна произрастания": "Бразилия,Индия,Индонезия,Уганда"
+      },
+      "reviewWarnings": []
+    },
+    {
+      "sourceKey": "www.blasercafe.by",
+      "sourceProductId": "url:/coffeeorder/gourmets-plaisir/",
+      "sourceUrl": "https://www.blasercafe.by/coffeeorder/gourmets-plaisir/",
+      "name": "Gourmets' Plaisir",
+      "description": "Смесь Gourmets' Plaisir состоит из зерен Арабики, выращенных в разных странах. Её богатый аромат и яркий вкус хорошо раскрываются в чашке кофе, сваренного через фильтр. Эта смесь идеально подходит для кофейных напитков, приготовленных со сливками.",
+      "roasterName": "BlaserCafe",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "blend",
+      "origins": [
+        {
+          "countryCode": "BR",
+          "countryNameRu": "Бразилия",
+          "percentage": null,
+          "evidenceField": "properties.Страна произрастания"
+        },
+        {
+          "countryCode": "GT",
+          "countryNameRu": "Гватемала",
+          "percentage": null,
+          "evidenceField": "properties.Страна произрастания"
+        },
+        {
+          "countryCode": "CO",
+          "countryNameRu": "Колумбия",
+          "percentage": null,
+          "evidenceField": "properties.Страна произрастания"
+        },
+        {
+          "countryCode": "IN",
+          "countryNameRu": "Индия",
+          "percentage": null,
+          "evidenceField": "properties.Страна произрастания"
+        },
+        {
+          "countryCode": "ID",
+          "countryNameRu": "Индонезия",
+          "percentage": null,
+          "evidenceField": "properties.Страна произрастания"
+        }
+      ],
+      "tasteDescriptors": [
+        "Хорошо сбалансированные оттенки кислинки и горчинки",
+        "слегка сладковатый"
+      ],
+      "processing": null,
+      "roastLevel": "Легкая",
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [],
+      "imageUrls": [
+        "https://www.blasercafe.by/images/products/Blasercafe_1k_Gourmets.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "48",
+          "weightGrams": 1000,
+          "price": "140.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {}
+        },
+        {
+          "externalVariantId": "49",
+          "weightGrams": 250,
+          "price": "35.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {}
+        }
+      ],
+      "sourceProperties": {
+        "Степерь обжарки": "Легкая",
+        "Состав": "100 % Арабика",
+        "Происхождение": "Бразилия,Гватемала,Колумбия,Индия,Индонезия",
+        "Упаковка": "Зерна 250 г / 1 кг | молотый 80 г / 125 г / 250 г | E.S.E. Pods",
+        "Вкус": "Хорошо сбалансированные оттенки кислинки и горчинки,слегка сладковатый",
+        "Страна произрастания": "Бразилия,Гватемала,Колумбия,Индия,Индонезия"
+      },
+      "reviewWarnings": []
+    },
+    {
+      "sourceKey": "www.blasercafe.by",
+      "sourceProductId": "url:/coffeeorder/pura-vida/",
+      "sourceUrl": "https://www.blasercafe.by/coffeeorder/pura-vida/",
+      "name": "Pura Vida",
+      "description": "Органически чистый кофе, используемый для данной смеси, выращивается ассоциацией La Florida во влажных лесах района Chanchamayo в Перу. Данное объединение было основано в 1965 году и получило сертификат Max Havelaar Fairtrade в 1993. La Florida реализовала мноежество проектов с наградами Fairtrade. Эти проекты касаются поддержки фермеров в различных областях, таких как обрзование, здоровье и экология.",
+      "roasterName": "BlaserCafe",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "PE",
+          "countryNameRu": "Перу",
+          "percentage": null,
+          "evidenceField": "properties.Страна произрастания"
+        }
+      ],
+      "tasteDescriptors": [
+        "Легкая кислинка в сочетании с мягкой горчинкой",
+        "слегка сладковатый"
+      ],
+      "processing": null,
+      "roastLevel": "Средняя",
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [],
+      "imageUrls": [
+        "https://www.blasercafe.by/images/products/Blasercafe_1k_Pura.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "56",
+          "weightGrams": 250,
+          "price": "40.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {}
+        },
+        {
+          "externalVariantId": "99",
+          "weightGrams": 1000,
+          "price": "150.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {}
+        }
+      ],
+      "sourceProperties": {
+        "Степерь обжарки": "Средняя",
+        "Состав": "100 % Арабика",
+        "Происхождение": "Перу",
+        "Упаковка": "Зерна 250 г / 1 кг | молотый 250 г",
+        "Вкус": "Легкая кислинка в сочетании с мягкой горчинкой,слегка сладковатый",
+        "Страна произрастания": "Перу"
+      },
+      "reviewWarnings": []
+    },
+    {
+      "sourceKey": "www.blasercafe.by",
+      "sourceProductId": "url:/coffeeorder/sera/",
+      "sourceUrl": "https://www.blasercafe.by/coffeeorder/sera/",
+      "name": "Sera decaf",
+      "description": "Sera является мягким кофе с типичным для Blasercafé высоким качеством без содержания кофеина. Зерна этой смеси избавляются от кофеина надежными партнерами методом \"швейцарской воды\". Различные зерна сортов Арабики и Робусты создают очень приятный и особенно мягкий вкус .",
+      "roasterName": "BlaserCafe",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [],
+      "tasteDescriptors": [
+        "Хорошо сбалансированные кислиника и горчинка",
+        "легкая сладость"
+      ],
+      "processing": null,
+      "roastLevel": "Средняя",
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [],
+      "imageUrls": [
+        "https://www.blasercafe.by/images/products/Blasercafe_250g_sera.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "59",
+          "weightGrams": 250,
+          "price": "39.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {}
+        }
+      ],
+      "sourceProperties": {
+        "Степерь обжарки": "Средняя",
+        "Состав": "66 % Арабика / 34 % Робуста",
+        "Происхождение": "Различные страны",
+        "Упаковка": "Зерна 250 г / 1 кг | молотый 250 g | E.S.E. Pods",
+        "Вкус": "Хорошо сбалансированные кислиника и горчинка,легкая сладость",
+        "Страна произрастания": "Различные страны"
+      },
+      "reviewWarnings": [
+        "origin_not_specified"
+      ]
+    },
+    {
+      "sourceKey": "www.blasercafe.by",
+      "sourceProductId": "url:/coffeeorder/capriccio/",
+      "sourceUrl": "https://www.blasercafe.by/coffeeorder/capriccio/",
+      "name": "Capriccio",
+      "description": "Capriccio -уникальный бленд с добавлением высокогорных арабик, который создавался для премиум ресторана в Швейцарии. Имеет плотный насыщенный, но в то же время очень аккуратный и сбалансированный вкус. А по плотности отлично подходит для приготовления классических напитков, таких как эспрессо и капучино.",
+      "roasterName": "BlaserCafe",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "blend",
+      "origins": [
+        {
+          "countryCode": "BR",
+          "countryNameRu": "Бразилия",
+          "percentage": null,
+          "evidenceField": "properties.Страна произрастания"
+        },
+        {
+          "countryCode": "ET",
+          "countryNameRu": "Эфиопия",
+          "percentage": null,
+          "evidenceField": "properties.Страна произрастания"
+        }
+      ],
+      "tasteDescriptors": [
+        "Хорошо сбалансированные кислиника и горчинка",
+        "цветочные оттенки",
+        "яркое цитрусовое послевкусие"
+      ],
+      "processing": null,
+      "roastLevel": "Средняя",
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [],
+      "imageUrls": [
+        "https://www.blasercafe.by/images/products/Capriccio%20%282%29.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "96",
+          "weightGrams": 250,
+          "price": "36.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {}
+        }
+      ],
+      "sourceProperties": {
+        "Степерь обжарки": "Средняя",
+        "Состав": "100 % Арабика",
+        "Происхождение": "Бразилия,Галапагос,Доминиканская республика (OCOA),Эфиопия",
+        "Упаковка": "Зерна 250 г",
+        "Вкус": "Хорошо сбалансированные кислиника и горчинка,цветочные оттенки,яркое цитрусовое послевкусие",
+        "Страна произрастания": "Бразилия,Галапагос,Доминиканская республика (OCOA),Эфиопия"
+      },
+      "reviewWarnings": []
+    },
+    {
+      "sourceKey": "www.blasercafe.by",
+      "sourceProductId": "url:/coffeeorder/brasil/",
+      "sourceUrl": "https://www.blasercafe.by/coffeeorder/brasil/",
+      "name": "Brasil Corazon",
+      "description": "Бразилия - мягкий элитный моносорт, один из лучших сортов бразильского кофе, произрастающих в районе Сул де Минас (Бразилия). Вкус Блайзер Бразилия - это тонкая кислинка и деликатная горчинка, незначительная соленость и выраженная сладость.",
+      "roasterName": "BlaserCafe",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "BR",
+          "countryNameRu": "Бразилия",
+          "percentage": null,
+          "evidenceField": "properties.Страна произрастания"
+        }
+      ],
+      "tasteDescriptors": [
+        "легкая кислинка"
+      ],
+      "processing": null,
+      "roastLevel": "Средняя",
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [],
+      "imageUrls": [
+        "https://www.blasercafe.by/images/products/wwwww%20%283%29.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "112",
+          "weightGrams": 250,
+          "price": "41.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {}
+        }
+      ],
+      "sourceProperties": {
+        "Степерь обжарки": "Средняя",
+        "Состав": "100 % Арабика",
+        "Происхождение": "Бразилия",
+        "Упаковка": "Зерна 250 г",
+        "Вкус": "легкая кислинка",
+        "Страна произрастания": "Бразилия"
+      },
+      "reviewWarnings": []
+    },
+    {
+      "sourceKey": "www.blasercafe.by",
+      "sourceProductId": "url:/coffeeorder/ethiopia-sidamo/",
+      "sourceUrl": "https://www.blasercafe.by/coffeeorder/ethiopia-sidamo/",
+      "name": "Ethiopia Sidamo",
+      "description": "Плантация Sidamo находится на исторической родине арабики. Дана арабика растет на высоте 2000 м над уровнем моря, благодаря чему период созревание ягод удлиняется, что дает возможность зерну получить богатый вкусовой спектр. Именно влажная обработка и ферментация дает зерну фруктовые ноты, ароматы мокко. и природную сладость. Сорт имеет уникальный аромат бергамота.",
+      "roasterName": "BlaserCafe",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "ET",
+          "countryNameRu": "Эфиопия",
+          "percentage": null,
+          "evidenceField": "properties.Страна произрастания"
+        }
+      ],
+      "tasteDescriptors": [
+        "легкая кислинка",
+        "терпкое послевкусие"
+      ],
+      "processing": null,
+      "roastLevel": "Средняя",
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [],
+      "imageUrls": [
+        "https://www.blasercafe.by/images/products/Ethiopia-1.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "118",
+          "weightGrams": 250,
+          "price": "41.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {}
+        }
+      ],
+      "sourceProperties": {
+        "Степерь обжарки": "Средняя",
+        "Состав": "100 % Арабика",
+        "Происхождение": "Эфиопия",
+        "Упаковка": "Зерна 250 г",
+        "Вкус": "легкая кислинка,терпкое послевкусие",
+        "Страна произрастания": "Эфиопия"
+      },
+      "reviewWarnings": []
+    },
+    {
+      "sourceKey": "www.blasercafe.by",
+      "sourceProductId": "url:/coffeeorder/columbia/",
+      "sourceUrl": "https://www.blasercafe.by/coffeeorder/columbia/",
+      "name": "Columbia",
+      "description": "Колумбия - насыщенный и богатый, средняя кислотность, заметная сладость, лёгкая благородная горчинка Аромат: шоколадные и винные ноты, с тонкими фруктовыми, цитрусовыми и цветочными оттенками",
+      "roasterName": "BlaserCafe",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "CO",
+          "countryNameRu": "Колумбия",
+          "percentage": null,
+          "evidenceField": "properties.Страна произрастания"
+        }
+      ],
+      "tasteDescriptors": [
+        "легкая кислинка",
+        "цветочные оттенки"
+      ],
+      "processing": null,
+      "roastLevel": "Средняя",
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [],
+      "imageUrls": [
+        "https://www.blasercafe.by/images/products/Columbia%20%282%29.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "115",
+          "weightGrams": 250,
+          "price": "41.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {}
+        }
+      ],
+      "sourceProperties": {
+        "Степерь обжарки": "Средняя",
+        "Состав": "100 % Арабика",
+        "Происхождение": "Колумбия",
+        "Упаковка": "Зерна 250 г",
+        "Вкус": "легкая кислинка,цветочные оттенки",
+        "Страна произрастания": "Колумбия"
+      },
+      "reviewWarnings": []
+    }
+  ],
+  "excluded": [
+    {
+      "sourceProductId": "url:/coffeeorder/leggero/",
+      "sourceUrl": "https://www.blasercafe.by/coffeeorder/leggero/",
+      "name": "Leggero",
+      "reason": "ground_only"
+    },
+    {
+      "sourceProductId": "url:/coffeeorder/forte/",
+      "sourceUrl": "https://www.blasercafe.by/coffeeorder/forte/",
+      "name": "Forte",
+      "reason": "ground_only"
+    }
+  ],
+  "sourceSnapshots": [
+    {
+      "url": "https://www.blasercafe.by/coffeeorder/",
+      "fetchedAtUtc": "2026-10-05T10:02:20.332255+00:00",
+      "sha256": "a264a3224734cdeacdf761b3d635e753d97e975904c0d5865057b1cd9b2cead8"
+    },
+    {
+      "url": "https://www.blasercafe.by/coffeeorder/brasil/",
+      "fetchedAtUtc": "2026-10-05T10:26:18.767896+00:00",
+      "sha256": "6e4448d81500505189589526a7a3b1c95c7b42f2bb877e4da995e739f09fcd69",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://www.blasercafe.by/coffeeorder/capriccio/",
+      "fetchedAtUtc": "2026-10-05T10:26:12.680687+00:00",
+      "sha256": "0ae365550902933d659ec51fb6a18a5dd61af52de5885cdb63b068b528c508fb",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://www.blasercafe.by/coffeeorder/classico/",
+      "fetchedAtUtc": "2026-10-05T10:24:02.237795+00:00",
+      "sha256": "df5cd249d5b5f21da4a9c99421d85153404ea759431e3879b27f7eb0d32fba5c",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://www.blasercafe.by/coffeeorder/columbia/",
+      "fetchedAtUtc": "2026-10-05T10:26:24.615068+00:00",
+      "sha256": "3ae50d174bafd31e95f63ee3d6b69a40e6ee2cc58ca9039a474520edb31c4efd",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://www.blasercafe.by/coffeeorder/dazur/",
+      "fetchedAtUtc": "2026-10-05T10:23:59.244159+00:00",
+      "sha256": "a9fdc245f164b3fc21dac38eb3595dc2e4995544033c28ea95da3d03128bffc4",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://www.blasercafe.by/coffeeorder/ethiopia-sidamo/",
+      "fetchedAtUtc": "2026-10-05T10:26:21.647214+00:00",
+      "sha256": "92924b1350c889e8dcb59beea614dd5565354770fa9a8aaaa194c6713814e35e",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://www.blasercafe.by/coffeeorder/forte/",
+      "fetchedAtUtc": "2026-10-05T10:26:15.755875+00:00",
+      "sha256": "8d606f79afc63027176a9b39b3881ff4f56959e5adce79a83e0be4fe9f5866c5",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://www.blasercafe.by/coffeeorder/gourmets-plaisir/",
+      "fetchedAtUtc": "2026-10-05T10:24:11.255336+00:00",
+      "sha256": "967ec70afa8ff034aeb18aa1d2207dfd0267c663b41560fccd5576a2791db6a3",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://www.blasercafe.by/coffeeorder/leggero/",
+      "fetchedAtUtc": "2026-10-05T10:24:17.238600+00:00",
+      "sha256": "79c44066d8a4b312595aecb502f9fb49c29586398f2209c096342e91a8af4f0a",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://www.blasercafe.by/coffeeorder/lilla-e-rose/",
+      "fetchedAtUtc": "2026-10-05T10:23:56.337864+00:00",
+      "sha256": "8db3a76b3d8cd7aa65442ecf9cc1df27341983c11facc8592fc75c5e8b13e860",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://www.blasercafe.by/coffeeorder/lussuria/",
+      "fetchedAtUtc": "2026-10-05T10:24:08.260372+00:00",
+      "sha256": "c042df96e37c91d5c285b1f36cca2182387ae0ed64ea4ad4961cd1e2ea56728a",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://www.blasercafe.by/coffeeorder/pura-vida/",
+      "fetchedAtUtc": "2026-10-05T10:24:14.296488+00:00",
+      "sha256": "78c7be8919e677bda0c3262d2285d14acbee5c6d2e139a53fe4d6d6b5800125f",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://www.blasercafe.by/coffeeorder/rosso-e-nero/",
+      "fetchedAtUtc": "2026-10-05T10:24:05.266623+00:00",
+      "sha256": "d71eabfd6ab0744dc6d1e82f7117c3dfc849232f77e9360993d20c68230c04a1",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://www.blasercafe.by/coffeeorder/sera/",
+      "fetchedAtUtc": "2026-10-05T10:26:09.684715+00:00",
+      "sha256": "1526c7f13a229671debb71ef0152ab1d502659707bb43a42d1964414df3c8947",
+      "paginationHeaders": {}
+    }
+  ]
+}

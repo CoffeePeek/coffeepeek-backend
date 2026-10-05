@@ -1,0 +1,4436 @@
+{
+  "schemaVersion": 1,
+  "adapterVersion": "1.0",
+  "source": "https://dalonicoffee.by/catalog/",
+  "collectedAtUtc": "2026-10-05T10:36:32.957550+00:00",
+  "complete": true,
+  "coverage": [
+    {
+      "productKind": "roasted_beans",
+      "catalogueUrl": "https://dalonicoffee.by/catalog/monosorta/",
+      "pages": 4,
+      "expectedProducts": null,
+      "discoveredProducts": 57
+    },
+    {
+      "productKind": "roasted_beans",
+      "catalogueUrl": "https://dalonicoffee.by/catalog/kupazhi/",
+      "pages": 1,
+      "expectedProducts": null,
+      "discoveredProducts": 8
+    },
+    {
+      "productKind": "green_beans",
+      "catalogueUrl": "https://dalonicoffee.by/catalog/zelenyy-kofe/",
+      "pages": 1,
+      "expectedProducts": null,
+      "discoveredProducts": 4
+    }
+  ],
+  "products": [
+    {
+      "sourceKey": "dalonicoffee.by",
+      "sourceProductId": "824",
+      "sourceUrl": "https://dalonicoffee.by/catalog/monosorta/kolumbiya-dark-rum-/",
+      "name": "Колумбия Dark Rum (постферментация в бочках из-под рома)",
+      "description": "Уникальный кофе, ферментированный в бочках из-под рома, but driving is allowed",
+      "roasterName": "Daloni Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "CO",
+          "countryNameRu": "Колумбия",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [
+        "Не молоть (в зернах)",
+        "Грубый помол",
+        "Мелкий помол",
+        "Средний помол"
+      ],
+      "imageUrls": [
+        "https://dalonicoffee.by/upload/iblock/e29/l7zmgcr3tp6z95l64to9o743f582huxq.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "870",
+          "weightGrams": 200,
+          "price": "75.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "dalonicoffee.by",
+      "sourceProductId": "627",
+      "sourceUrl": "https://dalonicoffee.by/catalog/monosorta/limitirovannyy-blend-viva-la-vanilla/",
+      "name": "Viva la vanilla (ферментация в ванили)",
+      "description": "Кофе, который влюбил в себя еще до официального старта продаж",
+      "roasterName": "Daloni Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [
+        "Не молоть (в зернах)",
+        "Грубый помол",
+        "Мелкий помол",
+        "Средний помол"
+      ],
+      "imageUrls": [
+        "https://dalonicoffee.by/upload/iblock/453/6x14d0ervsgk400sd71cl4swlg4v2o9g.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "627",
+          "weightGrams": 200,
+          "price": "55.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "weightEvidence": "Объем кофе в жестебанке: 200г"
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_not_specified"
+      ]
+    },
+    {
+      "sourceKey": "dalonicoffee.by",
+      "sourceProductId": "597",
+      "sourceUrl": "https://dalonicoffee.by/catalog/monosorta/kolumbiya-juicy-passion-fruit/",
+      "name": "Колумбия Juicy Passion Fruit (ферментация в маракуйе)",
+      "description": "Благодаря данной ферментации в кофе ярко проявляются нотки маракуйи, пломбира и крыжовника. Удивительно нежный кофе, как первая любовь.",
+      "roasterName": "Daloni Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "CO",
+          "countryNameRu": "Колумбия",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [
+        "Не молоть (в зернах)",
+        "Грубый помол",
+        "Мелкий помол",
+        "Средний помол"
+      ],
+      "imageUrls": [
+        "https://dalonicoffee.by/upload/iblock/583/fx094om24ro62dqrrqs3rg0h9yed5e1k.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "597",
+          "weightGrams": 200,
+          "price": "55.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "weightEvidence": "Объем кофе в жестебанке: 200г"
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "dalonicoffee.by",
+      "sourceProductId": "657",
+      "sourceUrl": "https://dalonicoffee.by/catalog/monosorta/kolumbiya-laurina/",
+      "name": "Колумбия Laurina",
+      "description": "Лаурина - разновидность арабики, потерявшая кофеин в результате естественных мутаций.",
+      "roasterName": "Daloni Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "CO",
+          "countryNameRu": "Колумбия",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [
+        "Не молоть (в зернах)",
+        "Грубый помол",
+        "Мелкий помол",
+        "Средний помол"
+      ],
+      "imageUrls": [
+        "https://dalonicoffee.by/upload/iblock/6d7/qfa4rxkhvvu70qualmayp0dpacw1dpws.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "662",
+          "weightGrams": 1000,
+          "price": "189.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        },
+        {
+          "externalVariantId": "661",
+          "weightGrams": 250,
+          "price": "49.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "dalonicoffee.by",
+      "sourceProductId": "874",
+      "sourceUrl": "https://dalonicoffee.by/catalog/monosorta/q90-extraordinary-coffee-efiopiya-aricha-adorsi-anaerobic-natural-gr1/",
+      "name": "Q90+ Extraordinary Coffee (Эфиопия Aricha Adorsi Anaerobic Natural Gr1)",
+      "description": "Коллекция 90+ - это редкие и премиальные лоты, за которыми охотятся обжарщики со всего мира.",
+      "roasterName": "Daloni Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "ET",
+          "countryNameRu": "Эфиопия",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [
+        "Не молоть (в зернах)",
+        "Грубый помол",
+        "Мелкий помол",
+        "Средний помол",
+        "Дрип-пакет (6 шт)"
+      ],
+      "imageUrls": [
+        "https://dalonicoffee.by/upload/iblock/7f0/v36uq5mujr7ovzn8bdy540cs4t81ezkx.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "889",
+          "weightGrams": 150,
+          "price": "45.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "dalonicoffee.by",
+      "sourceProductId": "876",
+      "sourceUrl": "https://dalonicoffee.by/catalog/monosorta/q90-extraordinary-coffee-nikaragua-los-placeres-ethiosar-funky-natural/",
+      "name": "Q90+ Extraordinary Coffee (Никарагуа Los Placeres Ethiosar Funky Natural)",
+      "description": "Коллекция 90+ - это редкие и премиальные лоты, за которыми охотятся обжарщики со всего мира.",
+      "roasterName": "Daloni Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "NI",
+          "countryNameRu": "Никарагуа",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [
+        "Не молоть (в зернах)",
+        "Грубый помол",
+        "Мелкий помол",
+        "Средний помол",
+        "Дрип-пакет (6 шт)"
+      ],
+      "imageUrls": [
+        "https://dalonicoffee.by/upload/iblock/8e1/prztsofw4nuadooi3h96z3kkjpugpaxe.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "885",
+          "weightGrams": 150,
+          "price": "45.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "dalonicoffee.by",
+      "sourceProductId": "875",
+      "sourceUrl": "https://dalonicoffee.by/catalog/monosorta/q90-extraordinary-coffee-kolumbiya-pink-bourbon-carlos-plaza/",
+      "name": "Q90+ Extraordinary Coffee (Колумбия Pink Bourbon Carlos Plaza)",
+      "description": "Коллекция 90+ - это редкие и премиальные лоты, за которыми охотятся обжарщики со всего мира.",
+      "roasterName": "Daloni Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "CO",
+          "countryNameRu": "Колумбия",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [
+        "Не молоть (в зернах)",
+        "Грубый помол",
+        "Мелкий помол",
+        "Средний помол",
+        "Дрип-пакет (6 шт)"
+      ],
+      "imageUrls": [
+        "https://dalonicoffee.by/upload/iblock/dbc/pdvq9ouy0bhxcm78ndmrkv6fqhgeper3.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "887",
+          "weightGrams": 150,
+          "price": "45.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "dalonicoffee.by",
+      "sourceProductId": "546",
+      "sourceUrl": "https://dalonicoffee.by/catalog/monosorta/bourbon-punch/",
+      "name": "\"Vintage Collection\" Колумбия Bourbon Punch",
+      "description": "Эксклюзивный спорткар Джеймса Бонда и бурбон пунш (почти любимый напиток агента 007). Прекрасная арабика разновидности розовый бурбон, идеально подходящая для знакомства с анаэробной ферментацией, где проявляются дескрипторы алкоголя и парфюма. Во вкусе деликатные ноты вишневого ликера, сливового джема и ванили.",
+      "roasterName": "Daloni Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "CO",
+          "countryNameRu": "Колумбия",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [
+        "Не молоть (в зернах)",
+        "Грубый помол",
+        "Мелкий помол",
+        "Средний помол"
+      ],
+      "imageUrls": [
+        "https://dalonicoffee.by/upload/iblock/517/696sftwv50j31je3e6vdgywhpmt2zh37.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "546",
+          "weightGrams": null,
+          "price": "45.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {}
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name",
+        "variant_weight_not_specified"
+      ]
+    },
+    {
+      "sourceKey": "dalonicoffee.by",
+      "sourceProductId": "545",
+      "sourceUrl": "https://dalonicoffee.by/catalog/monosorta/condor-black/",
+      "name": "\"Vintage Collection\" Колумбия Condor Black",
+      "description": "Знаменитый лондонский кэб, как один из главных символов Великобритании, и бленд благородной арабики разновидностей кастильо и катурра мытой обработки из Колумбии - кондор блэк. Во вкусе темный шоколад, апельсин и бергамот. Придется по вкусу любителям классики.",
+      "roasterName": "Daloni Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "CO",
+          "countryNameRu": "Колумбия",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [
+        "Не молоть (в зернах)",
+        "Грубый помол",
+        "Мелкий помол",
+        "Средний помол"
+      ],
+      "imageUrls": [
+        "https://dalonicoffee.by/upload/iblock/c12/47pbjrar12zkln3pgpoyil2zsekzaxv7.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "545",
+          "weightGrams": null,
+          "price": "45.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {}
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name",
+        "variant_weight_not_specified"
+      ]
+    },
+    {
+      "sourceKey": "dalonicoffee.by",
+      "sourceProductId": "547",
+      "sourceUrl": "https://dalonicoffee.by/catalog/monosorta/vintage-collection-kolumbiya-guava-delux/",
+      "name": "\"Vintage Collection\" Колумбия Guava Delux",
+      "description": "Роскошная красная феррари и такая же богатая по профилю эксклюзивная разновидность арабики красная каттура - гуава де люкс. Данный кофе произведен методом углекислотной мацерации. Производители кофе позаимствовали его у виноделов. Благодаря такой обработке во вкусе ярко проявляется сочная кислотность вина и гуавы, а также ноты карамели и клубники. Идеальный вариант для любителей супер необычного кофе.",
+      "roasterName": "Daloni Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "CO",
+          "countryNameRu": "Колумбия",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [
+        "Не молоть (в зернах)",
+        "Грубый помол",
+        "Мелкий помол",
+        "Средний помол"
+      ],
+      "imageUrls": [
+        "https://dalonicoffee.by/upload/iblock/c46/l2gl4p7lg8c5hgasj3unovem4ag2fcf5.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "547",
+          "weightGrams": null,
+          "price": "45.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {}
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name",
+        "variant_weight_not_specified"
+      ]
+    },
+    {
+      "sourceKey": "dalonicoffee.by",
+      "sourceProductId": "620",
+      "sourceUrl": "https://dalonicoffee.by/catalog/monosorta/kolumbiya-juan-gallego-natural/",
+      "name": "Колумбия Juan Gallego Natural",
+      "description": "Яркая новинка из Колумбии с ароматом тропических фруктов, малины и выпечки",
+      "roasterName": "Daloni Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "CO",
+          "countryNameRu": "Колумбия",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [
+        "Не молоть (в зернах)",
+        "Грубый помол",
+        "Мелкий помол",
+        "Средний помол"
+      ],
+      "imageUrls": [
+        "https://dalonicoffee.by/upload/iblock/a1c/8e02qxjilehqd12912oj9opw9v2y7vde.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "727",
+          "weightGrams": 500,
+          "price": "68.50",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        },
+        {
+          "externalVariantId": "622",
+          "weightGrams": 1000,
+          "price": "133.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        },
+        {
+          "externalVariantId": "621",
+          "weightGrams": 250,
+          "price": "39.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "dalonicoffee.by",
+      "sourceProductId": "859",
+      "sourceUrl": "https://dalonicoffee.by/catalog/monosorta/kosta-rika-roberto-mata/",
+      "name": "Коста-Рика Roberto Mata",
+      "description": "Данный лот мы привезли впервые и он поразил нас яркими нотами сливы, грейпфрута и грецкого ореха.",
+      "roasterName": "Daloni Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "CR",
+          "countryNameRu": "Коста-Рика",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [
+        "Не молоть (в зернах)",
+        "Грубый помол",
+        "Мелкий помол",
+        "Средний помол"
+      ],
+      "imageUrls": [
+        "https://dalonicoffee.by/upload/iblock/e31/14ga7w4tgtcjg9tzyp9zjfq02sn6n2d1.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "863",
+          "weightGrams": 500,
+          "price": "68.50",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        },
+        {
+          "externalVariantId": "862",
+          "weightGrams": 1000,
+          "price": "133.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        },
+        {
+          "externalVariantId": "861",
+          "weightGrams": 250,
+          "price": "39.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "dalonicoffee.by",
+      "sourceProductId": "783",
+      "sourceUrl": "https://dalonicoffee.by/catalog/monosorta/zambiya-munali-aa-/",
+      "name": "Замбия Munali AA",
+      "description": "Арабика из Замбии относительно малоизвестна, но отличается высоким качеством и прекрасным вкусом.",
+      "roasterName": "Daloni Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "ZM",
+          "countryNameRu": "Замбия",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [
+        "Не молоть (в зернах)",
+        "Грубый помол",
+        "Мелкий помол",
+        "Средний помол"
+      ],
+      "imageUrls": [
+        "https://dalonicoffee.by/upload/iblock/976/47hnc5bfn1vxoj65lhr0g0ujpkw2wjo7.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "789",
+          "weightGrams": 500,
+          "price": "68.50",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        },
+        {
+          "externalVariantId": "785",
+          "weightGrams": 1000,
+          "price": "133.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        },
+        {
+          "externalVariantId": "784",
+          "weightGrams": 250,
+          "price": "39.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "dalonicoffee.by",
+      "sourceProductId": "669",
+      "sourceUrl": "https://dalonicoffee.by/catalog/monosorta/nikaragua-maragogype/",
+      "name": "Никарагуа Maragogype",
+      "description": "Разновидность кофе марагоджип, прежде всего, примечательна своими размерами – у неё самые крупные зерна, которые в среднем в 1,5-2 раза больше типичной арабики – до 2 см в длину в обжаренном виде.",
+      "roasterName": "Daloni Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "NI",
+          "countryNameRu": "Никарагуа",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [
+        "Не молоть (в зернах)",
+        "Грубый помол",
+        "Мелкий помол",
+        "Средний помол"
+      ],
+      "imageUrls": [
+        "https://dalonicoffee.by/upload/iblock/64d/wqu9wtxvxf74ez1etvcvpgb7f1u8deo2.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "849",
+          "weightGrams": 500,
+          "price": "67.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        },
+        {
+          "externalVariantId": "671",
+          "weightGrams": 1000,
+          "price": "130.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        },
+        {
+          "externalVariantId": "670",
+          "weightGrams": 250,
+          "price": "38.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "dalonicoffee.by",
+      "sourceProductId": "809",
+      "sourceUrl": "https://dalonicoffee.by/catalog/monosorta/kolumbiya-caturra-syrup/",
+      "name": "Колумбия Caturra Syrup (микролот)",
+      "description": null,
+      "roasterName": "Daloni Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "CO",
+          "countryNameRu": "Колумбия",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [
+        "Не молоть (в зернах)",
+        "Грубый помол",
+        "Мелкий помол",
+        "Средний помол"
+      ],
+      "imageUrls": [
+        "https://dalonicoffee.by/upload/iblock/09c/bzroshzkijudfm66yo8dlzswjgc6xe9s.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "841",
+          "weightGrams": 500,
+          "price": "66.50",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        },
+        {
+          "externalVariantId": "811",
+          "weightGrams": 1000,
+          "price": "129.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        },
+        {
+          "externalVariantId": "810",
+          "weightGrams": 250,
+          "price": "34.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "dalonicoffee.by",
+      "sourceProductId": "782",
+      "sourceUrl": "https://dalonicoffee.by/catalog/monosorta/kongo-kivu-lake-3-/",
+      "name": "Конго Kivu Lake 3",
+      "description": "Регион Киву находится на востоке страны и по праву считается «кофейным Эдемом», благодаря идеальному сочетанию высоты, климата и вулканической почвы - факторов, влияющих на исключительный вкус его кофейных зерен.",
+      "roasterName": "Daloni Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [
+        "Не молоть (в зернах)",
+        "Грубый помол",
+        "Мелкий помол",
+        "Средний помол"
+      ],
+      "imageUrls": [
+        "https://dalonicoffee.by/upload/iblock/d0c/giumzntvx10v72ka3qzf0hcamai7oq4e.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "788",
+          "weightGrams": 500,
+          "price": "59.50",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        },
+        {
+          "externalVariantId": "787",
+          "weightGrams": 1000,
+          "price": "115.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        },
+        {
+          "externalVariantId": "786",
+          "weightGrams": 250,
+          "price": "33.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "ambiguous_congo_country",
+        "detail_properties_not_collected",
+        "origin_not_specified"
+      ]
+    },
+    {
+      "sourceKey": "dalonicoffee.by",
+      "sourceProductId": "48",
+      "sourceUrl": "https://dalonicoffee.by/catalog/monosorta/keniya-aa-baragwi-/",
+      "name": "Кения АА Baragwi",
+      "description": "Кения AA – это отборная арабика, которая запомнится плотным и густым вкусом и обволакивающим ароматом.",
+      "roasterName": "Daloni Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "KE",
+          "countryNameRu": "Кения",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [
+        "Не молоть (в зернах)",
+        "Грубый помол",
+        "Мелкий помол",
+        "Средний помол"
+      ],
+      "imageUrls": [
+        "https://dalonicoffee.by/upload/iblock/66b/3z2cxhsg9y7um8w7tj4nliy0abei5k4g.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "721",
+          "weightGrams": 500,
+          "price": "59.50",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        },
+        {
+          "externalVariantId": "50",
+          "weightGrams": 1000,
+          "price": "115.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        },
+        {
+          "externalVariantId": "49",
+          "weightGrams": 250,
+          "price": "33.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "dalonicoffee.by",
+      "sourceProductId": "864",
+      "sourceUrl": "https://dalonicoffee.by/catalog/monosorta/ruanda-hue-mountain/",
+      "name": "Руанда Huye Mountain",
+      "description": "Кофе полный, округлый, превосходно сбалансированный. Во вкусе вы ощутите медовую сладость и нотки красной сливы и шоколада.",
+      "roasterName": "Daloni Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "RW",
+          "countryNameRu": "Руанда",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [
+        "Не молоть (в зернах)",
+        "Грубый помол",
+        "Мелкий помол",
+        "Средний помол"
+      ],
+      "imageUrls": [
+        "https://dalonicoffee.by/upload/iblock/081/s9oj0wuyt92j085nkkvwuduvhgrl9cvv.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "878",
+          "weightGrams": 500,
+          "price": "59.50",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        },
+        {
+          "externalVariantId": "866",
+          "weightGrams": 1000,
+          "price": "115.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        },
+        {
+          "externalVariantId": "865",
+          "weightGrams": 250,
+          "price": "33.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "dalonicoffee.by",
+      "sourceProductId": "394",
+      "sourceUrl": "https://dalonicoffee.by/catalog/monosorta/efiopiya-guji-naturalnaya-obrabotka/",
+      "name": "Эфиопия Guji (натуральная обработка)",
+      "description": "Благородная и насыщенная арабика, отличительными особенностями которой являются приятная горчинка, невысокая кислотность и плотное тело. А шоколадно-ореховая основа укутает в объятия, словно мягкий плед.",
+      "roasterName": "Daloni Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "ET",
+          "countryNameRu": "Эфиопия",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [
+        "Не молоть (в зернах)",
+        "Грубый помол",
+        "Мелкий помол",
+        "Средний помол"
+      ],
+      "imageUrls": [
+        "https://dalonicoffee.by/upload/iblock/28e/4zruiq4jfpba03uyy9vj5dj9zj3u1pcb.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "754",
+          "weightGrams": 500,
+          "price": "56.50",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        },
+        {
+          "externalVariantId": "720",
+          "weightGrams": 1000,
+          "price": "109.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        },
+        {
+          "externalVariantId": "396",
+          "weightGrams": 250,
+          "price": "31.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "dalonicoffee.by",
+      "sourceProductId": "90",
+      "sourceUrl": "https://dalonicoffee.by/catalog/monosorta/dekaf-peru-organic-swiss-water-arabika-bez-kofeina/",
+      "name": "Декаф Peru Organic Swiss Water (арабика без кофеина)",
+      "description": "Декофеинизированный кофе (от английского decaffeinated, сокращенно decaf) - такой же вкусный кофе, однако в результате специальной обработки кофейных зерен в его составе почти нет кофеина. Мы предпочитаем швейцарский способ (Swiss Water Process), который ещё называют водным или нехимическим – это сложный и дорогой, но максимально экологичный способ декофеинизации кофе.",
+      "roasterName": "Daloni Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "PE",
+          "countryNameRu": "Перу",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [
+        "Не молоть (в зернах)",
+        "Грубый помол",
+        "Мелкий помол",
+        "Средний помол"
+      ],
+      "imageUrls": [
+        "https://dalonicoffee.by/upload/iblock/d19/txzgm8navcjbskwajocsdznndadxcoxe.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "848",
+          "weightGrams": 500,
+          "price": "56.50",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        },
+        {
+          "externalVariantId": "92",
+          "weightGrams": 1000,
+          "price": "109.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        },
+        {
+          "externalVariantId": "91",
+          "weightGrams": 250,
+          "price": "31.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "dalonicoffee.by",
+      "sourceProductId": "616",
+      "sourceUrl": "https://dalonicoffee.by/catalog/monosorta/zimbabve-mount-selinda-estate-/",
+      "name": "Зимбабве Mount Selinda Estate",
+      "description": "Довольно редкая арабика из Зимбабве, которая пользуется большим спросом на международном рынке",
+      "roasterName": "Daloni Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "ZW",
+          "countryNameRu": "Зимбабве",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [
+        "Не молоть (в зернах)",
+        "Грубый помол",
+        "Мелкий помол",
+        "Средний помол"
+      ],
+      "imageUrls": [
+        "https://dalonicoffee.by/upload/iblock/384/knn5xq8iwsop9pufw1v7cet6i09z1ts6.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "733",
+          "weightGrams": 500,
+          "price": "56.50",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        },
+        {
+          "externalVariantId": "629",
+          "weightGrams": 1000,
+          "price": "109.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        },
+        {
+          "externalVariantId": "628",
+          "weightGrams": 250,
+          "price": "31.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "dalonicoffee.by",
+      "sourceProductId": "408",
+      "sourceUrl": "https://dalonicoffee.by/catalog/monosorta/kolumbiya-supremo-castillo/",
+      "name": "Колумбия Supremo Castillo",
+      "description": "Хорошо сбалансированный кофе с клюквенной кислотностью и сладостью желтой сливы. Тело средней плотности. Яркий аромат сливового варенья. Сочный, тягучий вкусовой букет. В послевкусии проявляются ноты жженого сахара.",
+      "roasterName": "Daloni Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "CO",
+          "countryNameRu": "Колумбия",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [
+        "Не молоть (в зернах)",
+        "Грубый помол",
+        "Мелкий помол",
+        "Средний помол"
+      ],
+      "imageUrls": [
+        "https://dalonicoffee.by/upload/iblock/0e1/q7foe6u2694hqe3fjpkc38rntlqema3c.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "747",
+          "weightGrams": 500,
+          "price": "55.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        },
+        {
+          "externalVariantId": "410",
+          "weightGrams": 1000,
+          "price": "106.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        },
+        {
+          "externalVariantId": "409",
+          "weightGrams": 250,
+          "price": "30.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "dalonicoffee.by",
+      "sourceProductId": "538",
+      "sourceUrl": "https://dalonicoffee.by/catalog/monosorta/kolumbiya-juicy-strawberry/",
+      "name": "Колумбия Juicy Strawberry (ферментация в клубнике)",
+      "description": "Мы невероятно гордимся тем, что в 2025 году благодаря этому лоту стали победителями престижной номинации «Самый интересный кофе», выбранной гостями фестиваля GASTROFEST.BY.",
+      "roasterName": "Daloni Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "CO",
+          "countryNameRu": "Колумбия",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [
+        "Не молоть (в зернах)",
+        "Грубый помол",
+        "Мелкий помол",
+        "Средний помол"
+      ],
+      "imageUrls": [
+        "https://dalonicoffee.by/upload/iblock/f25/khyb1prowttzgumm067divftafs7exbw.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "807",
+          "weightGrams": 200,
+          "price": "65.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        },
+        {
+          "externalVariantId": "806",
+          "weightGrams": 100,
+          "price": "30.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "dalonicoffee.by",
+      "sourceProductId": "39",
+      "sourceUrl": "https://dalonicoffee.by/catalog/monosorta/indiya-mussonnyy-malabar-aa/",
+      "name": "Индия Monsooned Malabar ААА",
+      "description": "Благодаря специальной обработке влажным муссонным ветром кофе имеет особый, неповторимый вкус.",
+      "roasterName": "Daloni Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "IN",
+          "countryNameRu": "Индия",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [
+        "Не молоть (в зернах)",
+        "Грубый помол",
+        "Мелкий помол",
+        "Средний помол"
+      ],
+      "imageUrls": [
+        "https://dalonicoffee.by/upload/iblock/93a/jvsvzkqypodcmxa2sio1axq0e14wf74q.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "873",
+          "weightGrams": 500,
+          "price": "53.50",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        },
+        {
+          "externalVariantId": "41",
+          "weightGrams": 1000,
+          "price": "106.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        },
+        {
+          "externalVariantId": "40",
+          "weightGrams": 250,
+          "price": "30.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "dalonicoffee.by",
+      "sourceProductId": "147",
+      "sourceUrl": "https://dalonicoffee.by/catalog/monosorta/papua-novaya-gvineya-a-mile-high/",
+      "name": "Папуа-Новая Гвинея A Mile High",
+      "description": "Тело: плотное, округлое. Аромат: жженый сахар и легкая дымность костра. Насыщенный, терпкий вкус с оттенками абрикосовой косточки, вишни, изюма, миндаля и шоколада.",
+      "roasterName": "Daloni Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "PG",
+          "countryNameRu": "Папуа-Новая Гвинея",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [
+        "Не молоть (в зернах)",
+        "Грубый помол",
+        "Мелкий помол",
+        "Средний помол"
+      ],
+      "imageUrls": [
+        "https://dalonicoffee.by/upload/iblock/770/kg926v08i71ixk15p64e9ty9q6itnmt5.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "741",
+          "weightGrams": 500,
+          "price": "54.50",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        },
+        {
+          "externalVariantId": "149",
+          "weightGrams": 1000,
+          "price": "105.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        },
+        {
+          "externalVariantId": "148",
+          "weightGrams": 250,
+          "price": "29.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "dalonicoffee.by",
+      "sourceProductId": "793",
+      "sourceUrl": "https://dalonicoffee.by/catalog/monosorta/kosta-rika-la-pastorra-coop-tarrazu-/",
+      "name": "Коста-Рика La Pastorra Coop Tarrazu",
+      "description": "Разновидности катурра и желтый катуаи из кооператива Tarazzu сочетают во вкусе сладость нуги и тамаринда с терпкостью грецкого ореха. Спелые ягоды моют и ферментируют в течение 48 часов. Затем мякоть депульпируют на 25% и снова запускают процесс ферментации в закрытых емкостях на 96 часов. Далее кофе высушивают 21 день в тени и хранят в grain-pro мешках для стабилизации вкуса.",
+      "roasterName": "Daloni Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "CR",
+          "countryNameRu": "Коста-Рика",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [
+        "Не молоть (в зернах)",
+        "Грубый помол",
+        "Мелкий помол",
+        "Средний помол"
+      ],
+      "imageUrls": [
+        "https://dalonicoffee.by/upload/iblock/e92/jjc4jh9muwyqy3lk0nlf69deqbw6do35.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "852",
+          "weightGrams": 500,
+          "price": "54.50",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        },
+        {
+          "externalVariantId": "796",
+          "weightGrams": 1000,
+          "price": "105.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        },
+        {
+          "externalVariantId": "795",
+          "weightGrams": 250,
+          "price": "29.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "dalonicoffee.by",
+      "sourceProductId": "30",
+      "sourceUrl": "https://dalonicoffee.by/catalog/monosorta/braziliya-yellow-bourbon/",
+      "name": "Бразилия Yellow Bourbon",
+      "description": "Желтый бурбон - естественная мутация бурбона с более тонкой кожурой на ягодах кофе, благодаря которой, созревая на солнце, они и приобретают необычный для ягод кофе желтый цвет.",
+      "roasterName": "Daloni Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "BR",
+          "countryNameRu": "Бразилия",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [
+        "Не молоть (в зернах)",
+        "Грубый помол",
+        "Мелкий помол",
+        "Средний помол"
+      ],
+      "imageUrls": [
+        "https://dalonicoffee.by/upload/iblock/48c/i7eu5h4k8waidaqstbhhsxfbc4trrhn8.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "728",
+          "weightGrams": 500,
+          "price": "53.50",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        },
+        {
+          "externalVariantId": "32",
+          "weightGrams": 1000,
+          "price": "103.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        },
+        {
+          "externalVariantId": "31",
+          "weightGrams": 250,
+          "price": "29.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "dalonicoffee.by",
+      "sourceProductId": "501",
+      "sourceUrl": "https://dalonicoffee.by/catalog/monosorta/burundi-kayanza/",
+      "name": "Бурунди Kayanza",
+      "description": "Насыщенный и обволакивающий вкус с деликатной ягодной кислотностью и сладостью молочного шоколада.",
+      "roasterName": "Daloni Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "BI",
+          "countryNameRu": "Бурунди",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [
+        "Не молоть (в зернах)",
+        "Грубый помол",
+        "Мелкий помол",
+        "Средний помол"
+      ],
+      "imageUrls": [
+        "https://dalonicoffee.by/upload/iblock/545/px6ccghmxqcldq1s3r9kof0gtxil71d1.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "790",
+          "weightGrams": 500,
+          "price": "53.50",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        },
+        {
+          "externalVariantId": "503",
+          "weightGrams": 1000,
+          "price": "103.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        },
+        {
+          "externalVariantId": "502",
+          "weightGrams": 250,
+          "price": "29.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "dalonicoffee.by",
+      "sourceProductId": "93",
+      "sourceUrl": "https://dalonicoffee.by/catalog/monosorta/indiya-plantation-a/",
+      "name": "Индия Plantation AA",
+      "description": "Индийский кофе на вкус очень мягкий, бархатистый и практически без кислинки.",
+      "roasterName": "Daloni Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "IN",
+          "countryNameRu": "Индия",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [
+        "Не молоть (в зернах)",
+        "Грубый помол",
+        "Мелкий помол",
+        "Средний помол"
+      ],
+      "imageUrls": [
+        "https://dalonicoffee.by/upload/iblock/af1/q7s6psgyvvbf2m477v2vlw1gwewgjg45.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "853",
+          "weightGrams": 500,
+          "price": "53.50",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        },
+        {
+          "externalVariantId": "624",
+          "weightGrams": 1000,
+          "price": "103.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        },
+        {
+          "externalVariantId": "95",
+          "weightGrams": 250,
+          "price": "29.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "dalonicoffee.by",
+      "sourceProductId": "732",
+      "sourceUrl": "https://dalonicoffee.by/catalog/monosorta/kolumbiya-pink-bourbon-cake/",
+      "name": "Колумбия Pink Bourbon Cake (ферментация в банане)",
+      "description": "Это кофе хани обработки с дополнительной ферментацией в банане.Такой подход подчеркивает искусство сочетания традиционных методов переработки кофе с экспериментальными техниками, позволяя создавать незабываемые впечатления для истинных гурманов.",
+      "roasterName": "Daloni Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "CO",
+          "countryNameRu": "Колумбия",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [
+        "Не молоть (в зернах)",
+        "Грубый помол",
+        "Мелкий помол",
+        "Средний помол"
+      ],
+      "imageUrls": [
+        "https://dalonicoffee.by/upload/iblock/210/4ezj1yzep15ibxhej42hw8pm0u5ybigj.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "941",
+          "weightGrams": 500,
+          "price": "131.50",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        },
+        {
+          "externalVariantId": "860",
+          "weightGrams": 200,
+          "price": "50.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        },
+        {
+          "externalVariantId": "760",
+          "weightGrams": 100,
+          "price": "28.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "dalonicoffee.by",
+      "sourceProductId": "141",
+      "sourceUrl": "https://dalonicoffee.by/catalog/monosorta/nikaragua-shg-jinotega-matagalpa/",
+      "name": "Никарагуа SHG Jinotega Matagalpa",
+      "description": "Аромат: ноты выпечки, корицы, молочного шоколада и темных ягод. Вкус: умеренная кислотность, выраженная нотами вишни и темного винограда на остывании и яркая горчинка с нотами шоколадными нотами.",
+      "roasterName": "Daloni Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "NI",
+          "countryNameRu": "Никарагуа",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [
+        "Не молоть (в зернах)",
+        "Грубый помол",
+        "Мелкий помол",
+        "Средний помол"
+      ],
+      "imageUrls": [
+        "https://dalonicoffee.by/upload/iblock/74a/xebmwpcq7zttg062f51xrsrg41w70uvm.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "749",
+          "weightGrams": 500,
+          "price": "50.50",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        },
+        {
+          "externalVariantId": "143",
+          "weightGrams": 1000,
+          "price": "97.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        },
+        {
+          "externalVariantId": "142",
+          "weightGrams": 250,
+          "price": "27.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "dalonicoffee.by",
+      "sourceProductId": "171",
+      "sourceUrl": "https://dalonicoffee.by/catalog/monosorta/efiopiya-yirgacheffe/",
+      "name": "Эфиопия Yirgacheffe",
+      "description": "Тело (плотность) напитка получается легкое, чайное. Высокогорье служит гарантией почти полного отсутствия горчинки. Тем не менее, небольшая терпкость присутствует, в её основе черный чай и бергамот. Также преобладает цитрус – лимон, лайм, грейпфрут. Послевкусие долгое, пряное, в основе лимонная цедра.",
+      "roasterName": "Daloni Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "ET",
+          "countryNameRu": "Эфиопия",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [
+        "Не молоть (в зернах)",
+        "Грубый помол",
+        "Мелкий помол",
+        "Средний помол"
+      ],
+      "imageUrls": [
+        "https://dalonicoffee.by/upload/iblock/466/kpji2z7uebhla5jepvxlyiexru0xjlcn.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "779",
+          "weightGrams": 500,
+          "price": "50.50",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        },
+        {
+          "externalVariantId": "717",
+          "weightGrams": 1000,
+          "price": "97.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        },
+        {
+          "externalVariantId": "173",
+          "weightGrams": 250,
+          "price": "27.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "dalonicoffee.by",
+      "sourceProductId": "472",
+      "sourceUrl": "https://dalonicoffee.by/catalog/monosorta/meksika-cafe-de-mujeres/",
+      "name": "Мексика Cafe de Mujeres",
+      "description": "Café de Mujeres – это особый кофе, который выращивает кооператив из 212 женщин.",
+      "roasterName": "Daloni Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "MX",
+          "countryNameRu": "Мексика",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [
+        "Не молоть (в зернах)",
+        "Грубый помол",
+        "Мелкий помол",
+        "Средний помол"
+      ],
+      "imageUrls": [
+        "https://dalonicoffee.by/upload/iblock/f11/r5s6uydergj3k188vzayeb9ovyjy2mum.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "823",
+          "weightGrams": 500,
+          "price": "50.50",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        },
+        {
+          "externalVariantId": "716",
+          "weightGrams": 1000,
+          "price": "97.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        },
+        {
+          "externalVariantId": "474",
+          "weightGrams": 250,
+          "price": "27.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "dalonicoffee.by",
+      "sourceProductId": "195",
+      "sourceUrl": "https://dalonicoffee.by/catalog/monosorta/gvatemala-antigua-san-sebastian/",
+      "name": "Гватемала Antigua San Sebastian",
+      "description": "Сбалансированный вкус с отчетливыми нотами малинового штруделя, карамели и цветов.",
+      "roasterName": "Daloni Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "GT",
+          "countryNameRu": "Гватемала",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [
+        "Не молоть (в зернах)",
+        "Грубый помол",
+        "Мелкий помол",
+        "Средний помол"
+      ],
+      "imageUrls": [
+        "https://dalonicoffee.by/upload/iblock/1a8/8ih90mactan237znyvd76nmqy7scoka3.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "750",
+          "weightGrams": 500,
+          "price": "50.50",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        },
+        {
+          "externalVariantId": "623",
+          "weightGrams": 1000,
+          "price": "97.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        },
+        {
+          "externalVariantId": "197",
+          "weightGrams": 250,
+          "price": "27.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "dalonicoffee.by",
+      "sourceProductId": "168",
+      "sourceUrl": "https://dalonicoffee.by/catalog/monosorta/efiopiya-sidamo-2/",
+      "name": "Эфиопия Sidamo 2",
+      "description": "Эфиопия Сидамо 2 – отличный кофе для ценителей яркого вкуса.",
+      "roasterName": "Daloni Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "ET",
+          "countryNameRu": "Эфиопия",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [
+        "Не молоть (в зернах)",
+        "Грубый помол",
+        "Мелкий помол",
+        "Средний помол"
+      ],
+      "imageUrls": [
+        "https://dalonicoffee.by/upload/iblock/cb6/14vv4r91cmv7krrqb1px0nryosr5wxg4.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "798",
+          "weightGrams": 500,
+          "price": "50.50",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        },
+        {
+          "externalVariantId": "170",
+          "weightGrams": 1000,
+          "price": "97.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        },
+        {
+          "externalVariantId": "169",
+          "weightGrams": 250,
+          "price": "27.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "dalonicoffee.by",
+      "sourceProductId": "555",
+      "sourceUrl": "https://dalonicoffee.by/catalog/monosorta/peru-amazonas/",
+      "name": "Перу Amazonas",
+      "description": "Насыщенный и обволакивающий вкус с шоколадной горчинкой и кислотностью гибискуса. Прекрасно раскрывается во всех способах заваривания, как в чистом виде, так и с добавлением молока.",
+      "roasterName": "Daloni Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "PE",
+          "countryNameRu": "Перу",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [
+        "Не молоть (в зернах)",
+        "Грубый помол",
+        "Мелкий помол",
+        "Средний помол"
+      ],
+      "imageUrls": [
+        "https://dalonicoffee.by/upload/iblock/6d4/faz03qnen0gn64oo39t954mwv9d3oqzu.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "744",
+          "weightGrams": 500,
+          "price": "50.50",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        },
+        {
+          "externalVariantId": "557",
+          "weightGrams": 1000,
+          "price": "97.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        },
+        {
+          "externalVariantId": "556",
+          "weightGrams": 250,
+          "price": "27.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "dalonicoffee.by",
+      "sourceProductId": "84",
+      "sourceUrl": "https://dalonicoffee.by/catalog/monosorta/gonduras-shg-la-cordillera/",
+      "name": "Гондурас SHG El Paraiso",
+      "description": "Обладает достаточно горьким вкусом с чистой сладкой кислотностью и округлым бархатистым телом.",
+      "roasterName": "Daloni Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "HN",
+          "countryNameRu": "Гондурас",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [
+        "Не молоть (в зернах)",
+        "Грубый помол",
+        "Мелкий помол",
+        "Средний помол"
+      ],
+      "imageUrls": [
+        "https://dalonicoffee.by/upload/iblock/2d1/uyyjhcauwih5cp5sqn8p3if7dsk5yjbw.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "820",
+          "weightGrams": 500,
+          "price": "49.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        },
+        {
+          "externalVariantId": "252",
+          "weightGrams": 1000,
+          "price": "94.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        },
+        {
+          "externalVariantId": "85",
+          "weightGrams": 250,
+          "price": "26.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "dalonicoffee.by",
+      "sourceProductId": "802",
+      "sourceUrl": "https://dalonicoffee.by/catalog/monosorta/kolumbiya-rocket-flower/",
+      "name": "Колумбия Rocket Flower",
+      "description": "Экспериментальная ферментация, в значительной степени основанная на методе мытой обработки, с добавлением элементов молочнокислого и анаэробного брожения, а также энзимов. Уникальный вкусовой профиль Rocket Flower цветочный, с нотами сладких белых цветов, бергамота и монпансье. Этот кофе невероятно сложен, с многослойными оттенками сладости и кислотности, которые заставляют вас открывать для себя все больше с каждым глотком.",
+      "roasterName": "Daloni Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "CO",
+          "countryNameRu": "Колумбия",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [
+        "Не молоть (в зернах)",
+        "Грубый помол",
+        "Мелкий помол",
+        "Средний помол"
+      ],
+      "imageUrls": [
+        "https://dalonicoffee.by/upload/iblock/354/i424kd3h3vttagiavrc66e0grm55tt3c.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "891",
+          "weightGrams": 200,
+          "price": "48.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        },
+        {
+          "externalVariantId": "890",
+          "weightGrams": 100,
+          "price": "25.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "dalonicoffee.by",
+      "sourceProductId": "251",
+      "sourceUrl": "https://dalonicoffee.by/catalog/monosorta/kamerun1/",
+      "name": "Камерун",
+      "description": "Камерунская арабика отличается полным телом, мягким вкусом и глубоким ароматом.",
+      "roasterName": "Daloni Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "CM",
+          "countryNameRu": "Камерун",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [
+        "Не молоть (в зернах)",
+        "Грубый помол",
+        "Мелкий помол",
+        "Средний помол"
+      ],
+      "imageUrls": [
+        "https://dalonicoffee.by/upload/iblock/454/c51ypx7unx04g4pye4p23whfw9em1t69.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "771",
+          "weightGrams": 500,
+          "price": "47.50",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        },
+        {
+          "externalVariantId": "254",
+          "weightGrams": 1000,
+          "price": "91.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        },
+        {
+          "externalVariantId": "253",
+          "weightGrams": 250,
+          "price": "25.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "dalonicoffee.by",
+      "sourceProductId": "826",
+      "sourceUrl": "https://dalonicoffee.by/catalog/monosorta/kolumbiya-genious-bourbon/",
+      "name": "Колумбия Genious Bourbon (микролот)",
+      "description": "Один из самых необычных лотов 2026 года!",
+      "roasterName": "Daloni Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "CO",
+          "countryNameRu": "Колумбия",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [
+        "Не молоть (в зернах)",
+        "Грубый помол",
+        "Мелкий помол",
+        "Средний помол"
+      ],
+      "imageUrls": [
+        "https://dalonicoffee.by/upload/iblock/65c/6y0tf8d0en2bmaijw610jhrsdi27cr0y.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "835",
+          "weightGrams": 200,
+          "price": "48.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        },
+        {
+          "externalVariantId": "834",
+          "weightGrams": 100,
+          "price": "25.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "dalonicoffee.by",
+      "sourceProductId": "674",
+      "sourceUrl": "https://dalonicoffee.by/catalog/monosorta/kolumbiya-galactic-crumble/",
+      "name": "Колумбия Galactic Crumble (ферментация в вишне)",
+      "description": "Благодаря данной ферментации кофейные зерна приобрели сладкий вкус амаретто, коктейльной вишни, марципана и выпечки с корицей.",
+      "roasterName": "Daloni Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "CO",
+          "countryNameRu": "Колумбия",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [
+        "Не молоть (в зернах)",
+        "Грубый помол",
+        "Мелкий помол",
+        "Средний помол"
+      ],
+      "imageUrls": [
+        "https://dalonicoffee.by/upload/iblock/313/ztax3irnsqgz6mp2de20qmhrnyfl35tf.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "683",
+          "weightGrams": 200,
+          "price": "48.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        },
+        {
+          "externalVariantId": "682",
+          "weightGrams": 100,
+          "price": "25.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "dalonicoffee.by",
+      "sourceProductId": "72",
+      "sourceUrl": "https://dalonicoffee.by/catalog/monosorta/braziliya-mogiana/",
+      "name": "Бразилия Mogiana",
+      "description": "Сбалансированный кофе с приятной сладостью и бархатистым телом. Во вкусе традиционные для региона лесной орех, молочный шоколад и малина.",
+      "roasterName": "Daloni Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "BR",
+          "countryNameRu": "Бразилия",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [
+        "Не молоть (в зернах)",
+        "Грубый помол",
+        "Мелкий помол",
+        "Средний помол"
+      ],
+      "imageUrls": [
+        "https://dalonicoffee.by/upload/iblock/40c/t2bzm129kfzyj7sq7mw9igz5jsskxahj.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "738",
+          "weightGrams": 500,
+          "price": "47.50",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        },
+        {
+          "externalVariantId": "74",
+          "weightGrams": 1000,
+          "price": "91.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        },
+        {
+          "externalVariantId": "73",
+          "weightGrams": 250,
+          "price": "25.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "dalonicoffee.by",
+      "sourceProductId": "585",
+      "sourceUrl": "https://dalonicoffee.by/catalog/monosorta/kolumbiya-el-vergel-pink-bourbon-koji-/",
+      "name": "Колумбия El Vergel Pink Bourbon Koji (ферментация в коджи)",
+      "description": "Коджи в Японии называют субстрат, на котором выросла белая плесень Aspergillus oryzae. Это микроскопический нитевидный гриб, который размножается спорами. Коджи широко используют в кулинарии Юго-Восточной Азии на протяжении веков, это обязательный компонент саке, соевого соуса, мисо и других традиционных японских продуктов.",
+      "roasterName": "Daloni Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "CO",
+          "countryNameRu": "Колумбия",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [
+        "Не молоть (в зернах)",
+        "Грубый помол",
+        "Мелкий помол",
+        "Средний помол"
+      ],
+      "imageUrls": [
+        "https://dalonicoffee.by/upload/iblock/ff3/iumhcc5sg1sm1yjh30b6k5pz8sj0cszs.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "587",
+          "weightGrams": 200,
+          "price": "48.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        },
+        {
+          "externalVariantId": "586",
+          "weightGrams": 100,
+          "price": "25.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "dalonicoffee.by",
+      "sourceProductId": "684",
+      "sourceUrl": "https://dalonicoffee.by/catalog/monosorta/kolumbiya-tropical-splash/",
+      "name": "Колумбия Tropical Splash (ферментация в кокосе)",
+      "description": "Представьте море, пляж и белый песок. В ваших руках освежающая пина-колада и никаких проблем.",
+      "roasterName": "Daloni Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "CO",
+          "countryNameRu": "Колумбия",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [
+        "Не молоть (в зернах)",
+        "Грубый помол",
+        "Мелкий помол",
+        "Средний помол"
+      ],
+      "imageUrls": [
+        "https://dalonicoffee.by/upload/iblock/519/gv16h8cw5v05f35w82rffyeb9ul0bz3e.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "686",
+          "weightGrams": 200,
+          "price": "48.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        },
+        {
+          "externalVariantId": "685",
+          "weightGrams": 100,
+          "price": "25.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "dalonicoffee.by",
+      "sourceProductId": "690",
+      "sourceUrl": "https://dalonicoffee.by/catalog/monosorta/kolumbiya-candy-blast/",
+      "name": "Колумбия Candy Blast (ферментация в арбузе)",
+      "description": "Настоящее лето в чашке или ферментация в арбузе",
+      "roasterName": "Daloni Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "CO",
+          "countryNameRu": "Колумбия",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [
+        "Не молоть (в зернах)",
+        "Грубый помол",
+        "Мелкий помол",
+        "Средний помол"
+      ],
+      "imageUrls": [
+        "https://dalonicoffee.by/upload/iblock/b5f/c8lj2fiva3hxn0t2qa6o9ib51319wybm.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "692",
+          "weightGrams": 200,
+          "price": "48.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        },
+        {
+          "externalVariantId": "691",
+          "weightGrams": 100,
+          "price": "25.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "dalonicoffee.by",
+      "sourceProductId": "574",
+      "sourceUrl": "https://dalonicoffee.by/catalog/monosorta/kolumbiya-caturron-wild-anaerobic-/",
+      "name": "Колумбия Caturron Wild Anaerobic",
+      "description": "Кофе редкой разновидности катуррон, которая произрастает только в Колумбии",
+      "roasterName": "Daloni Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "CO",
+          "countryNameRu": "Колумбия",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [
+        "Не молоть (в зернах)",
+        "Грубый помол",
+        "Мелкий помол",
+        "Средний помол"
+      ],
+      "imageUrls": [
+        "https://dalonicoffee.by/upload/iblock/0ac/sb7g4lq1iuir8tde4o2yyc1nicu6ehgq.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "581",
+          "weightGrams": 200,
+          "price": "48.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        },
+        {
+          "externalVariantId": "580",
+          "weightGrams": 100,
+          "price": "25.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "dalonicoffee.by",
+      "sourceProductId": "831",
+      "sourceUrl": "https://dalonicoffee.by/catalog/monosorta/uganda-drugar/",
+      "name": "Уганда Drugar",
+      "description": "Уганда Другар - это отличный классический кофе с округлым телом, приятной горечью и едва заметной кислотностью.",
+      "roasterName": "Daloni Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "UG",
+          "countryNameRu": "Уганда",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [
+        "Не молоть (в зернах)",
+        "Грубый помол",
+        "Мелкий помол",
+        "Средний помол"
+      ],
+      "imageUrls": [
+        "https://dalonicoffee.by/upload/iblock/eff/qi529ufa9dybipki5ws2bjy4zfi28mck.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "842",
+          "weightGrams": 500,
+          "price": "46.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        },
+        {
+          "externalVariantId": "833",
+          "weightGrams": 1000,
+          "price": "88.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        },
+        {
+          "externalVariantId": "832",
+          "weightGrams": 250,
+          "price": "24.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "dalonicoffee.by",
+      "sourceProductId": "812",
+      "sourceUrl": "https://dalonicoffee.by/catalog/monosorta/efiopiya-sidamo-4-/",
+      "name": "Эфиопия Sidamo 4",
+      "description": "Насыщенный кофе с ярким ароматом из Родины кофе – Эфиопии. По профилю и темпераменту данный сорт отличается от других эфиопских сортов, благодаря натуральной обработке в данном кофе не будет яркой кислотности, наоборот, приятная горчинка и насыщенный вкус.",
+      "roasterName": "Daloni Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "ET",
+          "countryNameRu": "Эфиопия",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [
+        "Не молоть (в зернах)",
+        "Грубый помол",
+        "Мелкий помол",
+        "Средний помол"
+      ],
+      "imageUrls": [
+        "https://dalonicoffee.by/upload/iblock/7e2/f60m70fon1m6fldcoombqbmih7cp7gxi.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "822",
+          "weightGrams": 500,
+          "price": "46.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        },
+        {
+          "externalVariantId": "814",
+          "weightGrams": 1000,
+          "price": "88.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        },
+        {
+          "externalVariantId": "813",
+          "weightGrams": 250,
+          "price": "24.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "dalonicoffee.by",
+      "sourceProductId": "248",
+      "sourceUrl": "https://dalonicoffee.by/catalog/monosorta/vetnam-scr-18/",
+      "name": "Вьетнам scr 18",
+      "description": "Несмотря на то, что Вьетнам славится производством робусты и занимает лидирующую позицию по объемам мирового экспорта, страна также культивирует и арабику. Эта разновидность, составляющая лишь около 5% общего объема урожая, становится особенной благодаря своей редкости и уникальной палитре ароматов.",
+      "roasterName": "Daloni Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "VN",
+          "countryNameRu": "Вьетнам",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [
+        "Не молоть (в зернах)",
+        "Грубый помол",
+        "Мелкий помол",
+        "Средний помол"
+      ],
+      "imageUrls": [
+        "https://dalonicoffee.by/upload/iblock/d70/7som8ajrrmcjnalhzqmr9xu2s6s5idyt.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "736",
+          "weightGrams": 500,
+          "price": "46.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        },
+        {
+          "externalVariantId": "730",
+          "weightGrams": 1000,
+          "price": "88.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        },
+        {
+          "externalVariantId": "729",
+          "weightGrams": 250,
+          "price": "24.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "dalonicoffee.by",
+      "sourceProductId": "60",
+      "sourceUrl": "https://dalonicoffee.by/catalog/monosorta/braziliya-cerrado/",
+      "name": "Бразилия Cerrado",
+      "description": "Это насыщенная арабика, отличительными особенностями которой является приятная горчинка, невысокая кислотность и плотное тело.",
+      "roasterName": "Daloni Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "BR",
+          "countryNameRu": "Бразилия",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [
+        "Не молоть (в зернах)",
+        "Грубый помол",
+        "Мелкий помол",
+        "Средний помол"
+      ],
+      "imageUrls": [
+        "https://dalonicoffee.by/upload/iblock/c2a/kuzr6j4wnjcqk2guvrjelmt98pezuq1t.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "710",
+          "weightGrams": 500,
+          "price": "46.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        },
+        {
+          "externalVariantId": "62",
+          "weightGrams": 1000,
+          "price": "88.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        },
+        {
+          "externalVariantId": "61",
+          "weightGrams": 250,
+          "price": "24.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "dalonicoffee.by",
+      "sourceProductId": "377",
+      "sourceUrl": "https://dalonicoffee.by/catalog/monosorta/100-robusta-uganda/",
+      "name": "100% робуста Уганда",
+      "description": "Большинство итальянцев пьют ее в чистом виде. И это они еще не пробовали нашу робусту с нотами горького шоколада и вишни, уверены, что процент стал бы выше :)",
+      "roasterName": "Daloni Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "UG",
+          "countryNameRu": "Уганда",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [
+        "Не молоть (в зернах)",
+        "Грубый помол",
+        "Мелкий помол",
+        "Средний помол"
+      ],
+      "imageUrls": [
+        "https://dalonicoffee.by/upload/iblock/a34/wejcvxpltr21inl6pfk8s4vz9i6aix74.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "854",
+          "weightGrams": 500,
+          "price": "41.50",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        },
+        {
+          "externalVariantId": "379",
+          "weightGrams": 1000,
+          "price": "79.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        },
+        {
+          "externalVariantId": "378",
+          "weightGrams": 250,
+          "price": "21.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "dalonicoffee.by",
+      "sourceProductId": "489",
+      "sourceUrl": "https://dalonicoffee.by/catalog/monosorta/kolumbiya-guava-banana/",
+      "name": "Колумбия Guava Banana",
+      "description": "Флагманский лот от Forest Coffee, производится на собственной ферме El Vergel",
+      "roasterName": "Daloni Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "CO",
+          "countryNameRu": "Колумбия",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [
+        "Не молоть (в зернах)",
+        "Грубый помол",
+        "Мелкий помол",
+        "Средний помол"
+      ],
+      "imageUrls": [
+        "https://dalonicoffee.by/upload/iblock/91d/7di1jhpv8ipwqjzqhzy7mz70qg8acra8.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "492",
+          "weightGrams": 400,
+          "price": "75.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        },
+        {
+          "externalVariantId": "491",
+          "weightGrams": 200,
+          "price": "39.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        },
+        {
+          "externalVariantId": "490",
+          "weightGrams": 100,
+          "price": "20.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "dalonicoffee.by",
+      "sourceProductId": "527",
+      "sourceUrl": "https://dalonicoffee.by/catalog/kupazhi/punch-blend-/",
+      "name": "Punch Blend",
+      "description": "Особый сезонный бленд с яркими нотами вишневого ликера, корицы и апельсина.",
+      "roasterName": "Daloni Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "blend",
+      "origins": [],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [
+        "Не молоть (в зернах)",
+        "Грубый помол",
+        "Мелкий помол",
+        "Средний помол"
+      ],
+      "imageUrls": [
+        "https://dalonicoffee.by/upload/iblock/27e/gc2glrt5z9g2jdgonefre60h6dqxpkp6.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "751",
+          "weightGrams": 500,
+          "price": "48.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        },
+        {
+          "externalVariantId": "529",
+          "weightGrams": 1000,
+          "price": "93.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        },
+        {
+          "externalVariantId": "528",
+          "weightGrams": 250,
+          "price": "26.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "blend_composition_may_be_incomplete",
+        "detail_properties_not_collected",
+        "origin_not_specified"
+      ]
+    },
+    {
+      "sourceKey": "dalonicoffee.by",
+      "sourceProductId": "54",
+      "sourceUrl": "https://dalonicoffee.by/catalog/kupazhi/chetverg-thursday/",
+      "name": "Четверг (Thursday)",
+      "description": "Сбалансированный, гармоничный купаж с ярким цветочным ароматом и фруктовой, цитрусовой кислинкой.",
+      "roasterName": "Daloni Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "blend",
+      "origins": [],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [
+        "Не молоть (в зернах)",
+        "Грубый помол",
+        "Мелкий помол",
+        "Средний помол"
+      ],
+      "imageUrls": [
+        "https://dalonicoffee.by/upload/iblock/a66/a66716e358ef50bca66d8b385203ce8f.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "846",
+          "weightGrams": 500,
+          "price": "55.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        },
+        {
+          "externalVariantId": "56",
+          "weightGrams": 1000,
+          "price": "106.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        },
+        {
+          "externalVariantId": "55",
+          "weightGrams": 250,
+          "price": "30.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "blend_composition_may_be_incomplete",
+        "detail_properties_not_collected",
+        "origin_not_specified"
+      ]
+    },
+    {
+      "sourceKey": "dalonicoffee.by",
+      "sourceProductId": "66",
+      "sourceUrl": "https://dalonicoffee.by/catalog/kupazhi/vtornik-tuesday/",
+      "name": "Вторник (Tuesday)",
+      "description": "Смесь 100% Арабики Центральной Америки и Африки мытой обработки.",
+      "roasterName": "Daloni Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "blend",
+      "origins": [],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [
+        "Не молоть (в зернах)",
+        "Грубый помол",
+        "Мелкий помол",
+        "Средний помол"
+      ],
+      "imageUrls": [
+        "https://dalonicoffee.by/upload/iblock/52e/52eab391f7bb2a43257e00d42949bb1a.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "844",
+          "weightGrams": 500,
+          "price": "50.50",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        },
+        {
+          "externalVariantId": "625",
+          "weightGrams": 1000,
+          "price": "97.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        },
+        {
+          "externalVariantId": "68",
+          "weightGrams": 250,
+          "price": "27.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "blend_composition_may_be_incomplete",
+        "detail_properties_not_collected",
+        "origin_not_specified"
+      ]
+    },
+    {
+      "sourceKey": "dalonicoffee.by",
+      "sourceProductId": "244",
+      "sourceUrl": "https://dalonicoffee.by/catalog/kupazhi/mo-lo-ko-fe/",
+      "name": "Мо-ло-ко-фе",
+      "description": "Мо-ло-ко-фе - это фирменный бленд 100% арабики для тех, кто предпочитает пить кофе с молоком",
+      "roasterName": "Daloni Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "blend",
+      "origins": [],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [
+        "Не молоть (в зернах)",
+        "Грубый помол",
+        "Мелкий помол",
+        "Средний помол"
+      ],
+      "imageUrls": [
+        "https://dalonicoffee.by/upload/iblock/a80/0k9wwju3ozn55somjystz54818ttl17c.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "838",
+          "weightGrams": 500,
+          "price": "46.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        },
+        {
+          "externalVariantId": "246",
+          "weightGrams": 1000,
+          "price": "88.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        },
+        {
+          "externalVariantId": "245",
+          "weightGrams": 250,
+          "price": "24.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "blend_composition_may_be_incomplete",
+        "detail_properties_not_collected",
+        "origin_not_specified"
+      ]
+    },
+    {
+      "sourceKey": "dalonicoffee.by",
+      "sourceProductId": "479",
+      "sourceUrl": "https://dalonicoffee.by/catalog/kupazhi/la-dolce-vita/",
+      "name": "La Dolce Vita",
+      "description": "La Dolce Vita переводится с итальянского как \"сладкая жизнь\"",
+      "roasterName": "Daloni Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "blend",
+      "origins": [],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [
+        "Не молоть (в зернах)",
+        "Грубый помол",
+        "Мелкий помол",
+        "Средний помол"
+      ],
+      "imageUrls": [
+        "https://dalonicoffee.by/upload/iblock/a8a/kjlt8b8oujapxkn4xdwqwe28fg5pp87o.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "800",
+          "weightGrams": 500,
+          "price": "46.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        },
+        {
+          "externalVariantId": "481",
+          "weightGrams": 1000,
+          "price": "88.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        },
+        {
+          "externalVariantId": "480",
+          "weightGrams": 250,
+          "price": "24.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "blend_composition_may_be_incomplete",
+        "detail_properties_not_collected",
+        "origin_not_specified"
+      ]
+    },
+    {
+      "sourceKey": "dalonicoffee.by",
+      "sourceProductId": "180",
+      "sourceUrl": "https://dalonicoffee.by/catalog/kupazhi/pyatnitsa-friday/",
+      "name": "Пятница (Friday)",
+      "description": "Смесь 100% Арабики Центральной̆ и Южной Америки мытой обработки.",
+      "roasterName": "Daloni Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "blend",
+      "origins": [],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [
+        "Не молоть (в зернах)",
+        "Грубый помол",
+        "Мелкий помол",
+        "Средний помол"
+      ],
+      "imageUrls": [
+        "https://dalonicoffee.by/upload/iblock/f95/f95316ea713f6cd2a019c304d6667ebb.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "768",
+          "weightGrams": 500,
+          "price": "46.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        },
+        {
+          "externalVariantId": "182",
+          "weightGrams": 1000,
+          "price": "88.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        },
+        {
+          "externalVariantId": "181",
+          "weightGrams": 250,
+          "price": "24.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "blend_composition_may_be_incomplete",
+        "detail_properties_not_collected",
+        "origin_not_specified"
+      ]
+    },
+    {
+      "sourceKey": "dalonicoffee.by",
+      "sourceProductId": "51",
+      "sourceUrl": "https://dalonicoffee.by/catalog/kupazhi/ponedelnik-monday/",
+      "name": "Понедельник (Monday)",
+      "description": "Смесь 100% Арабики Центральной̆ Америки и Африки натуральной обработки.",
+      "roasterName": "Daloni Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "blend",
+      "origins": [],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [
+        "Не молоть (в зернах)",
+        "Грубый помол",
+        "Мелкий помол",
+        "Средний помол"
+      ],
+      "imageUrls": [
+        "https://dalonicoffee.by/upload/iblock/586/586ea92c8a002f4032d12762529fd9a4.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "843",
+          "weightGrams": 500,
+          "price": "46.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        },
+        {
+          "externalVariantId": "53",
+          "weightGrams": 1000,
+          "price": "88.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        },
+        {
+          "externalVariantId": "52",
+          "weightGrams": 250,
+          "price": "24.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "blend_composition_may_be_incomplete",
+        "detail_properties_not_collected",
+        "origin_not_specified"
+      ]
+    },
+    {
+      "sourceKey": "dalonicoffee.by",
+      "sourceProductId": "177",
+      "sourceUrl": "https://dalonicoffee.by/catalog/kupazhi/sreda-wednesday/",
+      "name": "Среда (Wednesday)",
+      "description": "Смесь 82% Арабика и 18% Робуста. Золотая середина. Сбалансированный, гармоничный купаж, плотный округлый вкус, насыщенный аромат с оттенками горького шоколада, трюфеля и карамели.",
+      "roasterName": "Daloni Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "blend",
+      "origins": [],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [
+        "Не молоть (в зернах)",
+        "Грубый помол",
+        "Мелкий помол",
+        "Средний помол"
+      ],
+      "imageUrls": [
+        "https://dalonicoffee.by/upload/iblock/bf3/bf3e0d20eed463c446645e3c0585dc08.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "845",
+          "weightGrams": 500,
+          "price": "43.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        },
+        {
+          "externalVariantId": "626",
+          "weightGrams": 1000,
+          "price": "82.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        },
+        {
+          "externalVariantId": "179",
+          "weightGrams": 250,
+          "price": "22.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "blend_composition_may_be_incomplete",
+        "detail_properties_not_collected",
+        "origin_not_specified"
+      ]
+    },
+    {
+      "sourceKey": "dalonicoffee.by",
+      "sourceProductId": "425",
+      "sourceUrl": "https://dalonicoffee.by/catalog/zelenyy-kofe/efiopiya-yirgacheffe-zelenoe-zerno/",
+      "name": "Эфиопия Yirgacheffe (зеленое зерно)",
+      "description": "Тело (плотность) напитка получается легкое, чайное. Высокогорье служит гарантией почти полного отсутствия горчинки. Тем не менее, небольшая терпкость присутствует, в её основе черный чай и бергамот. Также преобладает цитрус – лимон, лайм, грейпфрут. Послевкусие долгое, пряное, в основе лимонная цедра.",
+      "roasterName": "Daloni Coffee",
+      "productKind": "green_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "ET",
+          "countryNameRu": "Эфиопия",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [],
+      "imageUrls": [
+        "https://dalonicoffee.by/upload/iblock/508/17iy1v243ymao42mcazzltm5tp11dtnc.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "426",
+          "weightGrams": 1000,
+          "price": "58.20",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "dalonicoffee.by",
+      "sourceProductId": "421",
+      "sourceUrl": "https://dalonicoffee.by/catalog/zelenyy-kofe/gonduras-shg-el-paraiso-zelenoe-zerno/",
+      "name": "Гондурас SHG El Paraiso (зеленое зерно)",
+      "description": "Обладает достаточно горьким вкусом с чистой сладкой кислотностью и округлым бархатистым телом.",
+      "roasterName": "Daloni Coffee",
+      "productKind": "green_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "HN",
+          "countryNameRu": "Гондурас",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [],
+      "imageUrls": [
+        "https://dalonicoffee.by/upload/iblock/508/17iy1v243ymao42mcazzltm5tp11dtnc.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "422",
+          "weightGrams": 1000,
+          "price": "56.40",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "dalonicoffee.by",
+      "sourceProductId": "423",
+      "sourceUrl": "https://dalonicoffee.by/catalog/zelenyy-kofe/kamerun-zelenoe-zerno/",
+      "name": "Камерун (зеленое зерно)",
+      "description": "Камерунская арабика отличается полным телом, мягким вкусом и глубоким ароматом.",
+      "roasterName": "Daloni Coffee",
+      "productKind": "green_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "CM",
+          "countryNameRu": "Камерун",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [],
+      "imageUrls": [
+        "https://dalonicoffee.by/upload/iblock/508/17iy1v243ymao42mcazzltm5tp11dtnc.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "424",
+          "weightGrams": 1000,
+          "price": "54.60",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "dalonicoffee.by",
+      "sourceProductId": "357",
+      "sourceUrl": "https://dalonicoffee.by/catalog/zelenyy-kofe/braziliya-santos-17-18-fc-zelenoe-zerno/",
+      "name": "Бразилия Santos 17/18 FC (зеленое зерно)",
+      "description": "Бразилия Сантос – один из самых известных и распространенных сортов бразильского кофе в мире.",
+      "roasterName": "Daloni Coffee",
+      "productKind": "green_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "BR",
+          "countryNameRu": "Бразилия",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [],
+      "imageUrls": [
+        "https://dalonicoffee.by/upload/iblock/508/17iy1v243ymao42mcazzltm5tp11dtnc.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "358",
+          "weightGrams": 1000,
+          "price": "52.80",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "isDrip": false
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    }
+  ],
+  "excluded": [
+    {
+      "sourceProductId": "877",
+      "sourceUrl": "https://dalonicoffee.by/catalog/monosorta/q90-extraordinary-coffee-set-iz-3-vidov-/",
+      "name": "Q90+ Extraordinary Coffee сет из 3 видов",
+      "reason": "not_whole_beans"
+    },
+    {
+      "sourceProductId": "548",
+      "sourceUrl": "https://dalonicoffee.by/catalog/monosorta/nabor-vintage-collection/",
+      "name": "Набор \"Vintage Collection\"",
+      "reason": "not_whole_beans"
+    },
+    {
+      "sourceProductId": "927",
+      "sourceUrl": "https://dalonicoffee.by/catalog/monosorta/set-iz-5-fermentatsiy-/",
+      "name": "Сет из 5 ферментаций",
+      "reason": "not_whole_beans"
+    },
+    {
+      "sourceProductId": "381",
+      "sourceUrl": "https://dalonicoffee.by/catalog/monosorta/indoneziya-sumatra-mena-gold/",
+      "name": "Индонезия Sumatra Mena Gold",
+      "reason": "not_purchasable"
+    },
+    {
+      "sourceProductId": "542",
+      "sourceUrl": "https://dalonicoffee.by/catalog/monosorta/tanzaniya-edelweiss-estate/",
+      "name": "Танзания Edelweiss Estate",
+      "reason": "not_purchasable"
+    }
+  ],
+  "sourceSnapshots": [
+    {
+      "url": "https://dalonicoffee.by/catalog/kupazhi/",
+      "fetchedAtUtc": "2026-10-05T10:36:29.938612+00:00",
+      "sha256": "de48f8109614fe53b8e5d87618bc8c6c70a4ba89caa5e1ffafda83cc9fcdb1bb",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://dalonicoffee.by/catalog/monosorta/",
+      "fetchedAtUtc": "2026-10-05T10:02:19.960140+00:00",
+      "sha256": "acd14a43946216a8245a5400234fbe7674e1fcbe439f2fe3e69a5a38eeb6769f"
+    },
+    {
+      "url": "https://dalonicoffee.by/catalog/monosorta/?PAGEN_1=2",
+      "fetchedAtUtc": "2026-10-05T10:31:37.859821+00:00",
+      "sha256": "44d4e0dae7943fc3856640b65a5c73b0131f35adcf463d909da2b9af3b513d32",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://dalonicoffee.by/catalog/monosorta/?PAGEN_1=3",
+      "fetchedAtUtc": "2026-10-05T10:31:40.775586+00:00",
+      "sha256": "12ca4ffd270e8895ad07a52f8de31274d641919e22b49b3f19c8281a78fc7431",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://dalonicoffee.by/catalog/monosorta/?PAGEN_1=4",
+      "fetchedAtUtc": "2026-10-05T10:31:43.657137+00:00",
+      "sha256": "baec48462155f0299a439d05bbb457992022287ddf8ada39205de8a343901252",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://dalonicoffee.by/catalog/monosorta/bourbon-punch/",
+      "fetchedAtUtc": "2026-10-05T10:34:43.126397+00:00",
+      "sha256": "aefd66f93d077aaed7412d7ecf47bde5024d710d20ea7121b53f51b8be08fb34",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://dalonicoffee.by/catalog/monosorta/condor-black/",
+      "fetchedAtUtc": "2026-10-05T10:34:46.132464+00:00",
+      "sha256": "a6a8dca952b5a20e6cf344c850edf5d1f88c6eb5454f72ad30db04cef1c91184",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://dalonicoffee.by/catalog/monosorta/kolumbiya-juicy-passion-fruit/",
+      "fetchedAtUtc": "2026-10-05T10:34:40.077588+00:00",
+      "sha256": "d021a8616743fc7ba844afcb5cc0787e653eedfdf7b3566955ab9e23bebe8465",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://dalonicoffee.by/catalog/monosorta/limitirovannyy-blend-viva-la-vanilla/",
+      "fetchedAtUtc": "2026-10-05T10:33:48.582473+00:00",
+      "sha256": "40cff53c1a62ff7e0870486a5df78c425e56cfdbd28f17c12ffc37c2585e20a1",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://dalonicoffee.by/catalog/monosorta/vintage-collection-kolumbiya-guava-delux/",
+      "fetchedAtUtc": "2026-10-05T10:34:49.084298+00:00",
+      "sha256": "4ce61a3dbb4ce41c4fbbf48ed9e73861813d905627164d682eb6b10a6e158208",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://dalonicoffee.by/catalog/zelenyy-kofe/",
+      "fetchedAtUtc": "2026-10-05T10:36:32.957550+00:00",
+      "sha256": "be7b974de71c0d31451b02045824442dfcc9b1efa8a8ebe344aca57f2900f8d1",
+      "paginationHeaders": {}
+    }
+  ]
+}

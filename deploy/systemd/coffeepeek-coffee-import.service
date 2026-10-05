@@ -1,0 +1,16 @@
+[Unit]
+Description=Collect CoffeePeek coffee catalogues
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+DynamicUser=yes
+StateDirectory=coffeepeek-coffee-import
+WorkingDirectory=/opt/coffeepeek
+EnvironmentFile=/etc/coffeepeek/coffee-import.env
+ExecStart=/opt/coffeepeek/dev/coffee-import/.venv/bin/python -X utf8 /opt/coffeepeek/dev/coffee-import/import_coffees.py --output /var/lib/coffeepeek-coffee-import --push
+TimeoutStartSec=3h
+Environment=PYTHONUNBUFFERED=1
+Environment=PYTHONDONTWRITEBYTECODE=1
+UMask=0027

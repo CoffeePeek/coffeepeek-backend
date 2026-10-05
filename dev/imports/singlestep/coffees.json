@@ -1,0 +1,1334 @@
+{
+  "schemaVersion": 1,
+  "adapterVersion": "1.0",
+  "source": "https://singlestep.by/coffeeshop",
+  "collectedAtUtc": "2026-10-05T10:26:09.512963+00:00",
+  "complete": true,
+  "coverage": [
+    {
+      "productKind": "roasted_beans",
+      "catalogueUrl": "https://singlestep.by/coffeeshop",
+      "pages": 2,
+      "expectedProducts": 45,
+      "discoveredProducts": 45,
+      "countUnit": "source_cards_including_non_beans"
+    }
+  ],
+  "products": [
+    {
+      "sourceKey": "singlestep.by",
+      "sourceProductId": "746935849802",
+      "sourceUrl": "https://singlestep.by/tproduct/3205537601-746935849802-braziliya-modzhiana",
+      "name": "БРАЗИЛИЯ МОДЖИАНА",
+      "description": "Подходит для эспрессо и приготовления в чашке. Классический профиль вкуса с низкой кислотностью, сбалансированной горчинкой и выразительной сладостью. Ноты ореха макадамия, какао и сухофруктов. Идеален для бытовых эспрессо-машин и напитков с молоком. Обработка: натуральная Классическая Бразилия натуральной обработки родом из региона Моджиана. Моджиана - один из трех ключевых кофейных терруаров Бразилии наряду с Серрадо и Суль де Минас. Кофе относится к категории «Файн кап», что подразумевает чистый сбалансированный кофе с интенсивной сладостью, без ощутимых дефектов вкуса. Отличная база для сбалансированного, насыщенного эспрессо. Производитель: ООО «Сингл Степ» Сухофрукты, орех макадамия, какао, хорош с молоком",
+      "roasterName": "Single Step Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "BR",
+          "countryNameRu": "Бразилия",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": "натуральная",
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [
+        "Не молоть",
+        "Фильтр",
+        "Френч пресс/ Гейзерная/ Чашка",
+        "Эспрессо/ Турка"
+      ],
+      "imageUrls": [
+        "https://static.tildacdn.biz/stor3439-6464-4465-a261-373030336337/1d41d76110d09b82a3f0160cb869a4bf.jpg",
+        "https://static.tildacdn.biz/stor3236-3665-4463-a434-313737626131/834aae8743451865159466d1afc0eb24.jpg",
+        "https://static.tildacdn.biz/stor3030-3163-4532-a635-663364393638/4fb542a741897a2ab975df5f0dbd66f8.jpg",
+        "https://static.tildacdn.biz/stor6436-3365-4833-a139-383338346431/9c2aac23c9911a7729c191ca271e6237.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "746935849802:weight:250",
+          "weightGrams": 250,
+          "price": "27.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "identityKind": "option_combination",
+            "weightOption": "0,25 кг=27",
+            "editionUid": "746935849802"
+          }
+        },
+        {
+          "externalVariantId": "746935849802:weight:1000",
+          "weightGrams": 1000,
+          "price": "85.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "identityKind": "option_combination",
+            "weightOption": "1 кг=85",
+            "editionUid": "746935849802"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Обработка": "натуральная",
+        "partuids": [
+          688675940832,
+          403132620812
+        ]
+      },
+      "reviewWarnings": [
+        "origin_extracted_from_name"
+      ],
+      "sellerName": "Single Step Coffee"
+    },
+    {
+      "sourceKey": "singlestep.by",
+      "sourceProductId": "360329801222",
+      "sourceUrl": "https://singlestep.by/coffeeshop/tproduct/3208056501-360329801222-kolumbiya-antiokiya",
+      "name": "КОЛУМБИЯ АНТИОКИЯ",
+      "description": "Подходит для эспрессо и приготовления в чашке. Округлый и гармоничный. Во вкусе этот кофе раскрывается карамельной сладостью, оттенками какао, миндаля и апельсина, с деликатной цитрусовой кислинкой. Обработка: традиционная мытая Этот кофе родом из Колумбии, а точнее - из региона Антиокия, расположенного в северной части страны, на высоких склонах знаменитых Анд. Здесь, на высоте более 1500 метров над уровнем моря, формируется уникальный микроклимат - прохладный и влажный, с плотным покровом облаков, который служит защитой от прямых солнечных лучей. В таких условиях кофейные ягоды созревают долго, поэтому характеризуются высокой плотностью и концентрацией сахаров. Производитель: ООО «Сингл Степ» Гармоничный, миндаль, карамель, апельсин",
+      "roasterName": "Single Step Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "CO",
+          "countryNameRu": "Колумбия",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": "традиционная мытая",
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [
+        "Не молоть",
+        "Фильтр",
+        "Френч пресс/ Гейзерная/ Чашка",
+        "Эспрессо/ Турка"
+      ],
+      "imageUrls": [
+        "https://static.tildacdn.biz/stor3163-6464-4339-b532-616466336139/81ab1327f3e02f75c03f4dd34630b665.jpg",
+        "https://static.tildacdn.biz/stor3765-3937-4362-a162-356436383965/033001e861875cb6b01b9d165ffa431c.jpg",
+        "https://static.tildacdn.biz/stor6633-3366-4266-a437-633436663939/5387224cf766f6fa27b27f2e7028ec66.jpg",
+        "https://static.tildacdn.biz/stor3530-6538-4937-b535-643132646637/c3ec5b79fb7558e12e9d35446404d7b5.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "360329801222:weight:250",
+          "weightGrams": 250,
+          "price": "28.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "identityKind": "option_combination",
+            "weightOption": "0,25 кг=28",
+            "editionUid": "360329801222"
+          }
+        },
+        {
+          "externalVariantId": "360329801222:weight:1000",
+          "weightGrams": 1000,
+          "price": "90.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "identityKind": "option_combination",
+            "weightOption": "1 кг=90",
+            "editionUid": "360329801222"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Обработка": "традиционная мытая",
+        "partuids": [
+          688675940832
+        ]
+      },
+      "reviewWarnings": [
+        "origin_extracted_from_name"
+      ],
+      "sellerName": "Single Step Coffee"
+    },
+    {
+      "sourceKey": "singlestep.by",
+      "sourceProductId": "663140798502",
+      "sourceUrl": "https://singlestep.by/coffeeshop/tproduct/3208056501-663140798502-ruanda-nyakibanda",
+      "name": "РУАНДА НЬЯКИБАНДА",
+      "description": "Подходит для эспрессо и приготовления в чашке. В чашке вас ждет сладкий букет с оттенками малины, красного яблока и сливочной карамели, дополненный сочной ягодной кислинкой. Обработка: мытая Станция Ньякибанда объединяет около 600 мелких фермеров. Расположена в регионе Уйе на высоте 1900 метров. Высокогорное расположение создаёт идеальные климатические условия для медленного созревания ягод и формирования сложного вкусового профиля. Все фермеры приносят ягоды на одну станцию обработки, где они сортируются вручную, депульпируются, проходят короткую ферментацию в воде и сушатся здесь же, на «африканских кроватях», в течение нескольких недель. Производитель: ООО «Сингл Степ» Малина, красное яблоко, сливочная карамель",
+      "roasterName": "Single Step Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "RW",
+          "countryNameRu": "Руанда",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": "мытая",
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [
+        "Не молоть",
+        "Фильтр",
+        "Френч пресс/ Гейзерная/ Чашка",
+        "Эспрессо/ Турка"
+      ],
+      "imageUrls": [
+        "https://static.tildacdn.biz/stor3365-6332-4662-b638-313830323732/5d4d4c68f0114ffccc37e60cc157cef7.jpg",
+        "https://static.tildacdn.biz/stor6263-3665-4035-a230-366132663331/e91b774e6aa28894b2b2b53ad0333d46.jpg",
+        "https://static.tildacdn.biz/stor3165-3732-4638-a637-376434313933/044b0d010712641e11c4b2e3a88536c8.jpg",
+        "https://static.tildacdn.biz/stor3062-6136-4338-b530-613463643166/f1a94d288c2f9b2c9db578135758ae0d.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "663140798502:weight:250",
+          "weightGrams": 250,
+          "price": "31.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "identityKind": "option_combination",
+            "weightOption": "0,25 кг=31",
+            "editionUid": "663140798502"
+          }
+        },
+        {
+          "externalVariantId": "663140798502:weight:1000",
+          "weightGrams": 1000,
+          "price": "94.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "identityKind": "option_combination",
+            "weightOption": "1 кг=94",
+            "editionUid": "663140798502"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Обработка": "мытая",
+        "partuids": [
+          688675940832
+        ]
+      },
+      "reviewWarnings": [
+        "origin_extracted_from_name"
+      ],
+      "sellerName": "Single Step Coffee"
+    },
+    {
+      "sourceKey": "singlestep.by",
+      "sourceProductId": "370232790802",
+      "sourceUrl": "https://singlestep.by/coffeeshop/tproduct/3208056501-370232790802-gonduras-san-markos",
+      "name": "ГОНДУРАС САН МАРКОС",
+      "description": "Подходит для эспрессо и приготовления в чашке. Букет - сбалансированный, с оттенками шоколада, карамели и красного яблока. Обработка: традиционная мытая Лот Сан-Маркос назван в честь города Сан Маркос в регионе Окотепеке, в Гондурасе. Всего в Окотепеке около 12,5 тысяч гектаров кофейных посадок и более 5 тысяч производителей кофе. В основном это небольшие фермеры со средней площадью кофейных посадок в 2,5 гектара. Примечательно, что фермеры практически не продают ягоды, предпочитая самостоятельно заниматься депульпацией, ферментацией и сушкой, и уже высушенное зерно продают кооперативу. Это позволяет аккумулировать больший доход в руках непосредственного производителя. А кооператив уже занимается вопросами поиска международных партнеров-трейдеров и экспорта продукции. Кофе растет на высоте до полутора тысяч метров. Обработка - традиционная мытая, с 16 часами водной ферментации. Производитель: ООО «Сингл Степ» Сбалансированный, шоколад, карамель и красное яблоко",
+      "roasterName": "Single Step Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "HN",
+          "countryNameRu": "Гондурас",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": "традиционная мытая",
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [
+        "Не молоть",
+        "Фильтр",
+        "Френч пресс/ Гейзерная/ Чашка",
+        "Эспрессо/ Турка"
+      ],
+      "imageUrls": [
+        "https://static.tildacdn.biz/stor3537-6566-4665-b131-373432356239/57278aa7f242d966f3a9d4a331768469.jpg",
+        "https://static.tildacdn.biz/stor3232-3136-4633-b033-633035616265/5419e9fe5b082e9716b3f6df6e339169.jpg",
+        "https://static.tildacdn.biz/stor3237-3336-4639-a361-313237646535/3c94ca01367d5a51034974e29e616701.jpg",
+        "https://static.tildacdn.biz/stor6231-3364-4138-a562-393836623164/b7301f8076f0ef2a83e342ad7d751292.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "370232790802:weight:250",
+          "weightGrams": 250,
+          "price": "28.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "identityKind": "option_combination",
+            "weightOption": "0,25 кг=28",
+            "editionUid": "370232790802"
+          }
+        },
+        {
+          "externalVariantId": "370232790802:weight:1000",
+          "weightGrams": 1000,
+          "price": "90.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "identityKind": "option_combination",
+            "weightOption": "1 кг=90",
+            "editionUid": "370232790802"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Обработка": "традиционная мытая",
+        "partuids": [
+          688675940832
+        ]
+      },
+      "reviewWarnings": [
+        "origin_extracted_from_name"
+      ],
+      "sellerName": "Single Step Coffee"
+    },
+    {
+      "sourceKey": "singlestep.by",
+      "sourceProductId": "334540958312",
+      "sourceUrl": "https://singlestep.by/coffeeshop/tproduct/3208056501-334540958312-burundi-kayanza",
+      "name": "БУРУНДИ КАЯНЗА",
+      "description": "Подходит для эспрессо и приготовления в чашке. Яркий вкусовой профиль с оттенками косточковых фруктов и сладких цитрусов и послевкусием темного шоколада. Обработка: мытая Регион Каянза расположен на севере Бурунди, на границе с Руандой. Кофе растет на маленьких фермах, собирается вручную и проходит традиционную мытую обработку. Богатые вулканические почвы, кооперативное земледелие и обилие теневых деревьев, которые защищают кофе от прямых солнечных лучей, способствовали формированию яркого букета с выразительной кислотностью и гладкой текстурой. Производитель: ООО «Сингл Степ» Косточковые фрукты, сладкие цитрусы, тёмный шоколад",
+      "roasterName": "Single Step Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "BI",
+          "countryNameRu": "Бурунди",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": "мытая",
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [
+        "Не молоть",
+        "Фильтр",
+        "Френч пресс/ Гейзерная/ Чашка",
+        "Эспрессо/ Турка"
+      ],
+      "imageUrls": [
+        "https://static.tildacdn.biz/stor6631-6363-4664-b830-313061303637/f81099aa406fc4effcde533e9673724e.jpg",
+        "https://static.tildacdn.biz/stor3837-6435-4535-b137-376435336334/3cb767cb1bfbf60cede39e9c5d25845d.jpg",
+        "https://static.tildacdn.biz/stor3230-3665-4661-a130-336365663066/90368f048cbd3579baaa57f94d4b3ab6.jpg",
+        "https://static.tildacdn.biz/stor3133-3733-4733-a231-396264366633/5668950bb6c831b9d72fc05653549673.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "334540958312:weight:250",
+          "weightGrams": 250,
+          "price": "30.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "identityKind": "option_combination",
+            "weightOption": "0,25 кг=30",
+            "editionUid": "334540958312"
+          }
+        },
+        {
+          "externalVariantId": "334540958312:weight:1000",
+          "weightGrams": 1000,
+          "price": "94.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "identityKind": "option_combination",
+            "weightOption": "1 кг=94",
+            "editionUid": "334540958312"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Обработка": "мытая",
+        "partuids": [
+          688675940832
+        ]
+      },
+      "reviewWarnings": [
+        "origin_extracted_from_name"
+      ],
+      "sellerName": "Single Step Coffee"
+    },
+    {
+      "sourceKey": "singlestep.by",
+      "sourceProductId": "551096029712",
+      "sourceUrl": "https://singlestep.by/coffeeshop/tproduct/3208056501-551096029712-dekaf-kolumbiya",
+      "name": "ДЕКАФ: КОЛУМБИЯ",
+      "description": "Подходит для тех, кому не подходит кофеин. Мягкий вкус с оттенками какао, орехов и оттенками сладких цитрусов. Обработка: мытая Этот кофе из Колумбии прошел декофеинизацию экологичным методом Swiss Water Decaf. Изобретенный в 1979 году Швейцарской компанией Swiss Water Coffee Company «Водный» способ декофеинизации кофе Swiss Water, этот способ производства кофе без кофеина позволяет сохранить отличные вкусовые характеристики и вкус премиальных кофейных зерен. В этом способе зёрна зеленого кофе пропариваются и помещаются в так называемый экстракт зеленого кофе (Green Coffee Extract, GCE). Попадая в такие условия, кофеин стремится покинуть кофейное зерно. Процесс декофеинизации повторяется, пока концентрация кофеина в зерне не падает до 0,01%. Производитель: ООО «Сингл Степ» Какао, орехи, оттенки цитрусов",
+      "roasterName": "Single Step Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "CO",
+          "countryNameRu": "Колумбия",
+          "percentage": null,
+          "evidenceField": "description.composition"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": "мытая",
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [
+        "Не молоть",
+        "Фильтр",
+        "Френч пресс/ Гейзерная/ Чашка",
+        "Эспрессо/ Турка"
+      ],
+      "imageUrls": [
+        "https://static.tildacdn.biz/stor3565-6239-4764-b263-343831346165/94e896bd1176ce5fdb74f2bf1fcd4d5e.jpg",
+        "https://static.tildacdn.biz/stor3565-3965-4235-a566-663430633330/7238315d4fb57efb2c92cf914d042fcf.jpg",
+        "https://static.tildacdn.biz/stor6663-3464-4532-b731-613536363939/52de3b2a1278bc3811a037f207f29c6a.jpg",
+        "https://static.tildacdn.biz/stor3361-3765-4563-b961-393663613732/47d7cc002e792d00820e9d341bcb78ae.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "551096029712:weight:250",
+          "weightGrams": 250,
+          "price": "33.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "identityKind": "option_combination",
+            "weightOption": "0,25 кг=33",
+            "editionUid": "551096029712"
+          }
+        },
+        {
+          "externalVariantId": "551096029712:weight:1000",
+          "weightGrams": 1000,
+          "price": "108.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "identityKind": "option_combination",
+            "weightOption": "1 кг=108",
+            "editionUid": "551096029712"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Обработка": "мытая",
+        "partuids": [
+          688675940832,
+          229942044012
+        ]
+      },
+      "reviewWarnings": [
+        "origin_extracted_from_description.composition"
+      ],
+      "sellerName": "Single Step Coffee"
+    },
+    {
+      "sourceKey": "singlestep.by",
+      "sourceProductId": "809575773822",
+      "sourceUrl": "https://singlestep.by/coffeeshop/tproduct/3208056501-809575773822-common-coffee-3",
+      "name": "COMMON COFFEE №3",
+      "description": "Подходит для приготовления в чашке, турки, бытовых и профессиональных эспрессо-машин. Линейка кофейных блендов Common Coffee была разработана нами специально для тех, кто пока не подружился с кислотным кофе и предпочитает мягкий, сбалансированный вкус и более глубокую, тёмную обжарку. Common Coffee #3 - мягкий плотный кофе с оттенками шоколада и сухофруктов и лёгкой горчинкой. В составе этой смеси премиум-арабика из Гондураса и Бразилии и робуста из Вьетнама. Этот кофе - редкий для нашей компании пример работы с робустой. И нам кажется, что он удался на славу! Мягкий шоколадный вкус и насыщенная текстура робусты замечательно взаимодействует с двумя яркими представителями Латинской Америки. Производитель: ООО «Сингл Степ» Тёмный шоколад, сухофрукты, орехи, идеален для автоматов",
+      "roasterName": "Single Step Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "HN",
+          "countryNameRu": "Гондурас",
+          "percentage": null,
+          "evidenceField": "description.composition"
+        },
+        {
+          "countryCode": "BR",
+          "countryNameRu": "Бразилия",
+          "percentage": null,
+          "evidenceField": "description.composition"
+        },
+        {
+          "countryCode": "VN",
+          "countryNameRu": "Вьетнам",
+          "percentage": null,
+          "evidenceField": "description.composition"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [
+        "Не молоть",
+        "Фильтр",
+        "Френч пресс/ Гейзерная/ Чашка",
+        "Эспрессо/ Турка"
+      ],
+      "imageUrls": [
+        "https://static.tildacdn.biz/stor3866-3731-4162-b833-366232383962/2750f930d2f339ac2bf1bd5577eaa3e9.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "809575773822:weight:1000",
+          "weightGrams": 1000,
+          "price": "85.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "identityKind": "option_combination",
+            "weightOption": "1 кг=85",
+            "editionUid": "809575773822"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "partuids": [
+          688675940832
+        ]
+      },
+      "reviewWarnings": [
+        "origin_extracted_from_description.composition"
+      ],
+      "sellerName": "Single Step Coffee"
+    },
+    {
+      "sourceKey": "singlestep.by",
+      "sourceProductId": "709670738432",
+      "sourceUrl": "https://singlestep.by/coffeeshop/tproduct/3208056501-709670738432-common-coffee-4",
+      "name": "COMMON COFFEE №4",
+      "description": "Линейка кофейных блендов Common Coffee была разработана нами специально для тех, кто пока не подружился с кислотным кофе и предпочитает мягкий, сбалансированный вкус и более глубокую, тёмную обжарку. Common Coffee #4 - это кофе, в котором вы найдете оттенки шоколада, сладкой ореховой нуги и тёмных ягод, низкую кислотность и округлую текстуру! В составе этой смеси премиум-арабика из Гондураса и Бразилии, а также Уганда натуральной обработки. Производитель: ООО «Сингл Степ» Шоколад, нуга, тёмные ягоды, идеален для автоматов",
+      "roasterName": "Single Step Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "HN",
+          "countryNameRu": "Гондурас",
+          "percentage": null,
+          "evidenceField": "description.composition"
+        },
+        {
+          "countryCode": "BR",
+          "countryNameRu": "Бразилия",
+          "percentage": null,
+          "evidenceField": "description.composition"
+        },
+        {
+          "countryCode": "UG",
+          "countryNameRu": "Уганда",
+          "percentage": null,
+          "evidenceField": "description.composition"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [
+        "Не молоть",
+        "Фильтр",
+        "Френч пресс/ Гейзерная/ Чашка",
+        "Эспрессо/ Турка"
+      ],
+      "imageUrls": [
+        "https://static.tildacdn.biz/stor3937-3536-4331-b663-386432386561/7e8ffd138b2078d703bb7b127406592d.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "709670738432:weight:1000",
+          "weightGrams": 1000,
+          "price": "90.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "identityKind": "option_combination",
+            "weightOption": "1 кг=90",
+            "editionUid": "709670738432"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "partuids": [
+          688675940832
+        ]
+      },
+      "reviewWarnings": [
+        "origin_extracted_from_description.composition"
+      ],
+      "sellerName": "Single Step Coffee"
+    },
+    {
+      "sourceKey": "singlestep.by",
+      "sourceProductId": "184489565392",
+      "sourceUrl": "https://singlestep.by/coffeeshop/tproduct/3208056501-184489565392-efiopiya-balese-dinigu",
+      "name": "ЭФИОПИЯ БАЛЕСЕ ДИНИГУ",
+      "description": "Букет из лесных ягод и персика, с ароматом белых цветов и сладостью трюфельных конфет. Обработка: натуральная Ферма, принадлежащая Балесе Динигу, расположена в микрорегионе Ададо, Йиргачеффе. Кофейная история семьи Динигу насчитывает несколько поколений. Сегодня Балезе Динигу и его семья обрабатывают 12 гектаров земли. Кофе для семьи — не профессия, а образ жизни, практикуемый в соответствии с верой народа Гедео, согласно которой земля находится под опекой Магганно, Бога Неба. С 2017 года семья работает в формате Direct Trade, фокусируясь на микролотах высокого качества. Таких, как этот кофе перед вами - обработанный натуральным способом и медленно высушенный на африканских кроватях. Мы разработали базовые рецепты, которые позволят вам познакомиться с этим кофе и увидеть так, как видим его мы. Пробуйте, дополняйте, экспериментируйте! Профиль заваривания: ВOРОНКА ELF кофе: 15г вода: 250мл температура: 94° помол: средний (25 на КОФЕМОЛКЕ RACE M1) 1 вливание - в 0:00 - 50мл 2 вливание - в 0:30 - 80мл 3 вливание - в 1:00 - 60мл 4 вливание - в 1:20 - 60мл общее время заваривания: 2:45 Производитель: ООО «Сингл Степ» Лесные ягоды, персик, белые цветы и трюфельные конфеты",
+      "roasterName": "Single Step Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "ET",
+          "countryNameRu": "Эфиопия",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": "натуральная",
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [
+        "Не молоть",
+        "Фильтр",
+        "Френч пресс/ Гейзерная/ Чашка",
+        "Эспрессо/ Турка"
+      ],
+      "imageUrls": [
+        "https://static.tildacdn.biz/stor6435-3765-4436-a439-323533326330/03ec9fe1b1ed03c8fd236b8f90d20d5f.jpg",
+        "https://static.tildacdn.biz/stor6133-6138-4639-a336-383266376632/46d48d0bafc221105baa78622df4a944.jpg",
+        "https://static.tildacdn.biz/stor6437-3237-4864-b763-313663653261/0a136d37416d79e463a040194347db4f.jpg",
+        "https://static.tildacdn.biz/stor6337-3839-4436-b461-373963343737/0aae0d3d33e19dc39617a515aa3b348f.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "184489565392:weight:250",
+          "weightGrams": 250,
+          "price": "34.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "identityKind": "option_combination",
+            "weightOption": "0,25 кг=34",
+            "editionUid": "184489565392"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Обработка": "натуральная",
+        "partuids": [
+          229942044012
+        ]
+      },
+      "reviewWarnings": [
+        "origin_extracted_from_name"
+      ],
+      "sellerName": "Single Step Coffee"
+    },
+    {
+      "sourceKey": "singlestep.by",
+      "sourceProductId": "196328640812",
+      "sourceUrl": "https://singlestep.by/coffeeshop/tproduct/3208056501-196328640812-ruanda-gisanga",
+      "name": "РУАНДА ГИСАНГА",
+      "description": "Во вкусе - сладкая груша и оттенки манго, яблочный сидр, темный шоколад Обработка: натуральная анаэробная Гисанга — один из лучших регионов Руанды для выращивания кофе на центральном плато. Регион расположен на высоте от 1650 до 1850 метров над уровнем моря. Как и большая часть Руанды — «страны тысячи холмов» — местность здесь гористая, пересеченная и исключительно красивая. Богатые вулканические почвы, обилие солнечного света и тропические дожди создают исключительные условия для выращивания арабики, а сорт Бурбон особенно хорошо себя чувствует на больших высотах в горах Руанды. Этот лот прошел особую обработку - длительную ферментацию в бескислородной среде. Именно этому процессу кофе обязан своим уникальным вкусовым профилем. Мы разработали базовые рецепты, которые позволят вам познакомиться с этим кофе и увидеть так, как видим его мы. Пробуйте, дополняйте, экспериментируйте! Профиль заваривания: ВOРОНКА ELF кофе: 15г вода: 250мл температура: 93° помол: средний (25 на КОФЕМОЛКЕ RACE M1) 1 вливание - в 0:00 - 50мл 2 вливание - в 0:30 - 80мл 3 вливание - в 1:00 - 60мл 4 вливание - в 1:20 - 60мл общее время заваривания: 2:35 Производитель: ООО «Сингл Степ» Груша и оттенки манго, яблочный сидр, темный шоколад",
+      "roasterName": "Single Step Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "RW",
+          "countryNameRu": "Руанда",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": "натуральная анаэробная",
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [
+        "Не молоть",
+        "Фильтр",
+        "Френч пресс/ Гейзерная/ Чашка",
+        "Эспрессо/ Турка"
+      ],
+      "imageUrls": [
+        "https://static.tildacdn.biz/stor3736-6530-4634-b234-626135656134/1a4a0180d826c0d4a6d1baed0abe14ea.jpg",
+        "https://static.tildacdn.biz/stor3130-6230-4531-a665-666563663638/1d3831ae23d552e98b830e5b32a973fd.jpg",
+        "https://static.tildacdn.biz/stor3036-6464-4638-b038-396434396135/c38e589011d2faf9c93d2efcefa07f61.jpg",
+        "https://static.tildacdn.biz/stor3734-3139-4461-b964-363032336430/656788e00bb764b00316a57384f6c739.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "196328640812:weight:250",
+          "weightGrams": 250,
+          "price": "37.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "identityKind": "option_combination",
+            "weightOption": "0,25 кг=37",
+            "editionUid": "196328640812"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Обработка": "натуральная анаэробная",
+        "partuids": [
+          229942044012
+        ]
+      },
+      "reviewWarnings": [
+        "origin_extracted_from_name"
+      ],
+      "sellerName": "Single Step Coffee"
+    },
+    {
+      "sourceKey": "singlestep.by",
+      "sourceProductId": "364259457102",
+      "sourceUrl": "https://singlestep.by/coffeeshop/tproduct/3208056501-364259457102-keniya-mugaiya",
+      "name": "КЕНИЯ МУГАЙЯ",
+      "description": "Яркий ягодный компот из смородины и клубники, дополненный оттенками косточковых фруктов и медовой сладостью. Обработка: мытая Станция обработки Мугайя была основана в 1975 году в рамках фермерского кооператива Мутира в округе Кириньяга. Ягоды на станцию поставляют 924 фермера, каждый из которых владеет в среднем 200 кофейными деревьями. Кофе прошел традиционную для Кении двойную мытую обработку, что отразилось в ярком и сочном вкусовом профиле. Мы разработали базовые рецепты, которые позволят вам познакомиться с этим кофе и увидеть так, как видим его мы. Пробуйте, дополняйте, экспериментируйте! Профиль заваривания: ВOРОНКА ELF кофе: 15г вода: 250мл температура: 94° помол: средний (25 на КОФЕМОЛКЕ RACE M1) 1 вливание - в 0:00 - 50мл 2 вливание - в 0:30 - 50мл 3 вливание - в 0:50 - 50мл 4 вливание - в 1:10 - 50мл 5 вливание - в 1:30 - 50мл общее время заваривания: 2:30 Производитель: ООО «Сингл Степ» Ягодный компот из смородины и клубники, косточковые фрукты и медовая сладость",
+      "roasterName": "Single Step Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "KE",
+          "countryNameRu": "Кения",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": "мытая",
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [
+        "Не молоть",
+        "Фильтр",
+        "Френч пресс/ Гейзерная/ Чашка",
+        "Эспрессо/ Турка"
+      ],
+      "imageUrls": [
+        "https://static.tildacdn.biz/stor6263-3063-4435-b263-383135343732/24541f5ab79532286eae44012dc874e2.jpg",
+        "https://static.tildacdn.biz/stor3034-3464-4330-b463-663038313638/6a4d3874835fa731b291fcb264bdfd89.jpg",
+        "https://static.tildacdn.biz/stor6432-6266-4234-b938-616439316161/2bb68721d135bde60de45e904d4599ae.jpg",
+        "https://static.tildacdn.biz/stor6366-6635-4030-b431-376438666333/a66342c80e0a29ccc510b6f33add4260.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "364259457102:weight:250",
+          "weightGrams": 250,
+          "price": "34.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "identityKind": "option_combination",
+            "weightOption": "0,25 кг=34",
+            "editionUid": "364259457102"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Обработка": "мытая",
+        "partuids": [
+          229942044012
+        ]
+      },
+      "reviewWarnings": [
+        "origin_extracted_from_name"
+      ],
+      "sellerName": "Single Step Coffee"
+    },
+    {
+      "sourceKey": "singlestep.by",
+      "sourceProductId": "766923401872",
+      "sourceUrl": "https://singlestep.by/coffeeshop/tproduct/3208056501-766923401872-gvatemala-katalan-pakamara",
+      "name": "ГВАТЕМАЛА КАТАЛАН ПАКАМАРА",
+      "description": "Во вкусе - выраженная, но не доминирующая кислотность, персик, красное яблоко, миндаль, карамельная сладость, бархатная выразительная текстура. Обработка: мытая Финка Каталан де Лас Мерседес - одно из первых фермерских хозяйств в регионе Чимальтенанго. Основанная ещё в 1851 году, эта финка передаётся из поколения в поколение семьёй Хаммонд-Мартинез. Пройдя через годы упадка и забвения, Каталан де Лас Мерседес переживает второе рождение и новый расцвет, что подтверждается множеством отличных микролотов и победами в Cup of Excellence. Этот лот относится к редкой разновидности Пакамара. «Родители» Пакамары - Пакас (мелкие ягоды, высокая продуктивность, устойчивость к болезням) и марагоджип (крупные ягоды, низкая продуктивность, подвержен болезням, выдающийся вкус). При скрещивании учёные хотели, чтобы «ребёнок» взял лучшее от обоих родителей. Получилось наполовину: пакамара характеризуется выдающимся вкусом и красивыми крупными зёрнами, но при этом осталась капризной и подверженной многим заболеваниям кофейного дерева, поэтому лишь немногие фермеры рискуют культивировать её. Этот лот прошел традиционную мытую обработку, что подразумевает депульпирование ягод, ферментацию и последующее промывание зерна. Обработанное зерно сушилось на африканских кроватях. Мы разработали базовые рецепты, которые позволят вам познакомиться с этим кофе и увидеть так, как видим его мы. Пробуйте, дополняйте, экспериментируйте! Профиль заваривания: ВOРОНКА ELF кофе: 15г вода: 250мл температура: 94° помол: средний (25 на КОФЕМОЛКЕ RACE M1) 1 вливание - в 0:00 - 50мл 2 вливание - в 0:30 - 50мл 3 вливание - в 0:50 - 50мл 4 вливание - в 1:10 - 50мл 5 вливание - в 1:30 - 50мл общее время заваривания: 2:35 Производитель: ООО «Сингл Степ» Красное яблоко, персик, миндаль, карамель",
+      "roasterName": "Single Step Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "GT",
+          "countryNameRu": "Гватемала",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": "мытая",
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [
+        "Не молоть",
+        "Фильтр",
+        "Френч пресс/ Гейзерная/ Чашка",
+        "Эспрессо/ Турка"
+      ],
+      "imageUrls": [
+        "https://static.tildacdn.biz/stor6336-3062-4533-b564-653134313636/20ed73842e24c65e0db158852af6126a.jpg",
+        "https://static.tildacdn.biz/stor3030-6130-4736-b862-316634386239/b271bfac5931359f633b755292ee425e.jpg",
+        "https://static.tildacdn.biz/stor3562-3931-4133-b064-396635343936/fb964f9da36fed255f577d3fb73ace31.jpg",
+        "https://static.tildacdn.biz/stor3539-6237-4135-a630-326430626631/b0602a28740fc7fd9fc319f83098be4c.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "766923401872:weight:250",
+          "weightGrams": 250,
+          "price": "37.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "identityKind": "option_combination",
+            "weightOption": "0,25 кг=37",
+            "editionUid": "766923401872"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Обработка": "мытая",
+        "partuids": [
+          229942044012
+        ]
+      },
+      "reviewWarnings": [
+        "origin_extracted_from_name"
+      ],
+      "sellerName": "Single Step Coffee"
+    },
+    {
+      "sourceKey": "singlestep.by",
+      "sourceProductId": "510611834802",
+      "sourceUrl": "https://singlestep.by/tproduct/3272528801-510611834802-ruanda-gitsumbi",
+      "name": "РУАНДА ГИЦУМБИ",
+      "description": "Темный виноград, сливовое варенье, молочный шоколад и оттенки рома Обработка: натуральная Гицумби - регион Руанды, расположенный в труднодоступной гористой местности возле границы с Угандой. Благодаря благоприятным для кофе высотам - 1800-2000 метров - ягоды здесь, в влажном и прохладном климате, созревают и сушатся медленно, что привело к формированию насыщенного, сладкого вкусового профиля с обилием косточковых фруктов, темного винограда и оттенками шоколада и рома. Мы разработали базовые рецепты, которые позволят вам познакомиться с этим кофе и увидеть так, как видим его мы. Пробуйте, дополняйте, экспериментируйте! Профиль заваривания: ВOРОНКА ELF кофе: 15г вода: 250мл температура: 94° помол: средний (25 на КОФЕМОЛКЕ RACE M1) 1 вливание - в 0:00 - 50мл 2 вливание - в 0:30 - 80мл 3 вливание - в 1:00 - 60мл 4 вливание - в 1:20 - 60мл общее время заваривания: 2:40 Производитель: ООО «Сингл Степ» Темный виноград, сливовое варенье, молочный шоколад и оттенки рома",
+      "roasterName": "Single Step Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "RW",
+          "countryNameRu": "Руанда",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": "натуральная",
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [
+        "Не молоть",
+        "Фильтр",
+        "Френч пресс/ Гейзерная/ Чашка",
+        "Эспрессо/ Турка"
+      ],
+      "imageUrls": [
+        "https://static.tildacdn.biz/stor3762-3739-4732-a636-626338306565/b4f5b4a32ad2ccd7389d6bf24933b858.jpg",
+        "https://static.tildacdn.biz/stor3763-3961-4162-b939-353762643062/8749ddef1768f577667709e10301c1bf.jpg",
+        "https://static.tildacdn.biz/stor3630-3134-4138-b966-653036376362/554620961907b600416fb51ddd39677e.jpg",
+        "https://static.tildacdn.biz/stor6466-3161-4165-b635-346166376530/fb0fca618975602cae4ed4159c3801cf.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "510611834802:weight:250",
+          "weightGrams": 250,
+          "price": "36.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "identityKind": "option_combination",
+            "weightOption": "0,25 кг=36",
+            "editionUid": "510611834802"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Обработка": "натуральная",
+        "partuids": [
+          229942044012,
+          757532346086
+        ]
+      },
+      "reviewWarnings": [
+        "origin_extracted_from_name"
+      ],
+      "sellerName": "Single Step Coffee"
+    },
+    {
+      "sourceKey": "singlestep.by",
+      "sourceProductId": "246378997062",
+      "sourceUrl": "https://singlestep.by/tproduct/3272528801-246378997062-kolumbiya-rozovaya-pantera",
+      "name": "КОЛУМБИЯ РОЗОВАЯ ПАНТЕРА",
+      "description": "Новая звезда на смену полюбившемуся Розовому Единорогу! Яркий, неповторимый букет с тропическими оттенками манго и маракуйи, искристыми нотами комбучи и послевкусием черного чая и спелого граната Обработка: натуральная анаэробная У нас появилась прекрасная традиция - раз в полгода привозить обалденный Розовый Бурбон и создавать маленькую кофейную сенсацию. Этот кофе не стал исключением… Уникальный вкусовой профиль редкой кофейной разновидности в авторской анаэробной обработке от Хосве Валенсия! Тщательная селекция ягод, 240 часов ферментации и медленная сушка в несколько этапов - всё это сформировало вкус, который невозможно забыть! Мы разработали базовые рецепты, которые позволят вам познакомиться с этим кофе и увидеть так, как видим его мы. Пробуйте, дополняйте, экспериментируйте! Профиль заваривания: ВOРОНКА ELF кофе: 15г вода: 250мл температура: 93° помол: средний (25 на КОФЕМОЛКЕ RACE M1) 1 вливание - в 0:00 - 50мл 2 вливание - в 0:30 - 80мл 3 вливание - в 1:00 - 60мл 4 вливание - в 1:20 - 60мл общее время заваривания: 2:35 Производитель: ООО «Сингл Степ» Тропические фрукты, комбуча, гранат, черный чай",
+      "roasterName": "Single Step Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "CO",
+          "countryNameRu": "Колумбия",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": "натуральная анаэробная",
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [
+        "Не молоть",
+        "Фильтр",
+        "Френч пресс/ Гейзерная/ Чашка",
+        "Эспрессо/ Турка"
+      ],
+      "imageUrls": [
+        "https://static.tildacdn.biz/stor3065-3330-4734-b639-643939366537/8a5679011b603f7cf968f7577805592e.jpg",
+        "https://static.tildacdn.biz/stor6339-3235-4939-b662-316135646235/3574488a1fbd36a8ce2235ebb857c251.jpg",
+        "https://static.tildacdn.biz/stor6564-6237-4764-a139-653735353465/2e64743595d0642eea55cab908873455.jpg",
+        "https://static.tildacdn.biz/stor6532-6631-4636-b232-613266373361/c2df445700adac0884c1045d870e7aa6.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "246378997062:weight:250",
+          "weightGrams": 250,
+          "price": "46.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "identityKind": "option_combination",
+            "weightOption": "0,25 кг=46",
+            "editionUid": "246378997062"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Обработка": "натуральная анаэробная",
+        "partuids": [
+          229942044012,
+          757532346086
+        ]
+      },
+      "reviewWarnings": [
+        "origin_extracted_from_name"
+      ],
+      "sellerName": "Single Step Coffee"
+    },
+    {
+      "sourceKey": "singlestep.by",
+      "sourceProductId": "280105937832",
+      "sourceUrl": "https://singlestep.by/coffeeshop/tproduct/3208056501-280105937832-burundi-muiinga",
+      "name": "БУРУНДИ МУЙИНГА",
+      "description": "Во вкусе - оттенки абрикоса, сливы, красной смородины, запеченного яблока и лугового мёда. Обработка: мытая Муйинга - один из главных кофейных регионов Бурунди. Кофе выращивает смолхолдерами - мелкими фермерами, а затем обрабатывается на большой кооперативной станции. Практически весь кофе Бурунди относится к разновидности Бурбон. Этот лот прошел традиционную мытую обработку, а значит вас ждет фруктовый букет с выразительной сочной кислотностью и гладкой текстурой. Мы разработали базовые рецепты, которые позволят вам познакомиться с этим кофе и увидеть так, как видим его мы. Пробуйте, дополняйте, экспериментируйте! Профиль заваривания: ВOРОНКА ELF кофе: 15г вода: 250мл температура: 94° помол: средний (25 на КОФЕМОЛКЕ RACE M1) 1 вливание - в 0:00 - 50мл 2 вливание - в 0:30 - 50мл 3 вливание - в 0:50 - 50мл 4 вливание - в 1:10 - 50мл 5 вливание - в 1:30 - 50мл общее время заваривания: 2:35 Производитель: ООО «Сингл Степ» Косточковые фрукты, красная смородина, мёд",
+      "roasterName": "Single Step Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "BI",
+          "countryNameRu": "Бурунди",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": "мытая",
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [
+        "Не молоть",
+        "Фильтр",
+        "Френч пресс/ Гейзерная/ Чашка",
+        "Эспрессо/ Турка"
+      ],
+      "imageUrls": [
+        "https://static.tildacdn.biz/stor6266-6332-4437-a638-383562323364/268225a1e8009dc2aaf0e989fbb0f62d.jpg",
+        "https://static.tildacdn.biz/stor3730-6434-4734-b039-623864663138/c4bec622a4801f624e7c304fe5419c8c.jpg",
+        "https://static.tildacdn.biz/stor3633-3566-4061-a362-396562653837/ccc2d5e1dce05d148afc2686aace57af.jpg",
+        "https://static.tildacdn.biz/stor3964-6436-4432-b461-323837316261/dbf45a5f8af4893fd5fd456151424646.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "280105937832:weight:250",
+          "weightGrams": 250,
+          "price": "34.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "identityKind": "option_combination",
+            "weightOption": "0,25 кг=34",
+            "editionUid": "280105937832"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Обработка": "мытая",
+        "partuids": [
+          229942044012
+        ]
+      },
+      "reviewWarnings": [
+        "origin_extracted_from_name"
+      ],
+      "sellerName": "Single Step Coffee"
+    },
+    {
+      "sourceKey": "singlestep.by",
+      "sourceProductId": "136529391486",
+      "sourceUrl": "https://singlestep.by/coffeeshop/tproduct/3208056501-136529391486-kolumbiya-papaio",
+      "name": "КОЛУМБИЯ ПАПАЙО",
+      "description": "Сладкий букет с оттенками клубники со сливками, ароматной спелой дыни, тропических фруктов и свежей яркой нотой карамельки “Взлётная” Обработка: натуральная анаэробная Папайо - новая и очень редкая разновидность кофе с выдающимся вкусовым профилем, которая встречается в Колумбии, преимущественно в регионе Уила. Ягоды этого сорта отличаются продолговатой формой и сочным оранжевым цветом, что делает их похожими на плоды папайи, от которой этот кофе и получил своё название. Этот сорт - восходящая звезда мировых Чемпионатов, и благодаря Single Step вы можете попробовать его в Беларуси одними из первых! Этот кофе вырастил и обработал Анджело Соза, наш старый знакомый с фермы Альто Сиело, чей выдающийся кофе регулярно появляется в линейке Single Step. Мы разработали базовые рецепты, которые позволят вам познакомиться с этим кофе и увидеть так, как видим его мы. Пробуйте, дополняйте, экспериментируйте! Профиль заваривания: ВOРОНКА ELF кофе: 15г вода: 250мл температура: 94° помол: средний (25 на КОФЕМОЛКЕ RACE M1) 1 вливание - в 0:00 - 50мл 2 вливание - в 0:30 - 50мл 3 вливание - в 0:50 - 50мл 4 вливание - в 1:10 - 50мл 5 вливание - в 1:30 - 50мл общее время заваривания: 2:40 Производитель: ООО «Сингл Степ» Тропические фрукты, клубника со сливками, карамель “Взлётная”",
+      "roasterName": "Single Step Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "CO",
+          "countryNameRu": "Колумбия",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": "натуральная анаэробная",
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [
+        "Не молоть",
+        "Фильтр",
+        "Френч пресс/ Гейзерная/ Чашка",
+        "Эспрессо/ Турка"
+      ],
+      "imageUrls": [
+        "https://static.tildacdn.biz/stor6134-6239-4962-b937-656133306439/60f09d7dbe94698b7f3bb668db374691.jpg",
+        "https://static.tildacdn.biz/stor3666-3339-4864-b162-393637383231/442450bfbf0ea251c6bb038f5b4d4e91.jpg",
+        "https://static.tildacdn.biz/stor6235-6666-4633-a238-366565633439/6350e0caabbfe34c0f7781699772d90f.jpg",
+        "https://static.tildacdn.biz/stor3330-3565-4137-b739-626339346335/ca86c9938379d2f71e54a1c53ee41d39.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "136529391486:weight:250",
+          "weightGrams": 250,
+          "price": "41.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "identityKind": "option_combination",
+            "weightOption": "0,25 кг=41",
+            "editionUid": "136529391486"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Обработка": "натуральная анаэробная",
+        "partuids": [
+          229942044012
+        ]
+      },
+      "reviewWarnings": [
+        "origin_extracted_from_name"
+      ],
+      "sellerName": "Single Step Coffee"
+    }
+  ],
+  "excluded": [
+    {
+      "sourceUrl": "https://singlestep.by/tproduct/3205537601-100942493112-miks-drip-kofe-8sht",
+      "name": "МИКС (дрип-кофе 8шт)",
+      "reason": "not_whole_beans",
+      "sourceProductId": "100942493112"
+    },
+    {
+      "sourceUrl": "https://singlestep.by/coffeeshop/tproduct/3208056501-114307918992-mega-miks-drip-kofe-30sht",
+      "name": "МЕГА МИКС (дрип-кофе 30шт)",
+      "reason": "not_whole_beans",
+      "sourceProductId": "114307918992"
+    },
+    {
+      "sourceUrl": "https://singlestep.by/coffeeshop/tproduct/3208056501-745024419642-dekaf-kolumbiya-drip-kofe",
+      "name": "ДЕКАФ: КОЛУМБИЯ (дрип-кофе)",
+      "reason": "not_whole_beans",
+      "sourceProductId": "745024419642"
+    },
+    {
+      "sourceUrl": "https://singlestep.by/coffeeshop/tproduct/3208056501-634161552942-ruanda-nyakibanda-drip-kofe",
+      "name": "РУАНДА НЬЯКИБАНДА (дрип-кофе)",
+      "reason": "not_whole_beans",
+      "sourceProductId": "634161552942"
+    },
+    {
+      "sourceUrl": "https://singlestep.by/coffeeshop/tproduct/3208056501-981981035472-kolumbiya-rozovaya-pantera-drip-kofe",
+      "name": "КОЛУМБИЯ РОЗОВАЯ ПАНТЕРА (дрип-кофе)",
+      "reason": "not_whole_beans",
+      "sourceProductId": "981981035472"
+    },
+    {
+      "sourceUrl": "https://singlestep.by/coffeeshop/tproduct/3208056501-943293184342-gvatemala-pakamara-drip-kofe",
+      "name": "ГВАТЕМАЛА ПАКАМАРА (дрип-кофе)",
+      "reason": "not_whole_beans",
+      "sourceProductId": "943293184342"
+    },
+    {
+      "sourceUrl": "https://singlestep.by/coffeeshop/tproduct/3208056501-935156509292-kolumbiya-papaio-drip-kofe",
+      "name": "КОЛУМБИЯ ПАПАЙО (дрип-кофе)",
+      "reason": "not_whole_beans",
+      "sourceProductId": "935156509292"
+    },
+    {
+      "sourceUrl": "https://singlestep.by/coffeeshop/tproduct/3208056501-708864342312-goryachii-shokolad-tyomnii-tryufel",
+      "name": "ГОРЯЧИЙ ШОКОЛАД \"Тёмный трюфель\"",
+      "reason": "not_whole_beans",
+      "sourceProductId": "708864342312"
+    },
+    {
+      "sourceUrl": "https://singlestep.by/coffeeshop/tproduct/3208056501-445249593842-goryachii-shokolad-peruanskaya-vishnya",
+      "name": "ГОРЯЧИЙ ШОКОЛАД \"Перуанская вишня\"",
+      "reason": "not_whole_beans",
+      "sourceProductId": "445249593842"
+    },
+    {
+      "sourceUrl": "https://singlestep.by/coffeeshop/tproduct/3208056501-186951937992-goryachii-shokolad-pryanaya-klubnika",
+      "name": "ГОРЯЧИЙ ШОКОЛАД \"Пряная клубника\"",
+      "reason": "not_whole_beans",
+      "sourceProductId": "186951937992"
+    },
+    {
+      "sourceUrl": "https://singlestep.by/coffeeshop/tproduct/3208056501-733679231243-goryachii-shokolad-shokoladnii-kvas",
+      "name": "ГОРЯЧИЙ ШОКОЛАД \"Шоколадный квас\"",
+      "reason": "not_whole_beans",
+      "sourceProductId": "733679231243"
+    },
+    {
+      "sourceUrl": "https://singlestep.by/coffeeshop/tproduct/3208056501-211734142903-goryachii-shokolad-chernika",
+      "name": "ГОРЯЧИЙ ШОКОЛАД \"Черника\"",
+      "reason": "not_whole_beans",
+      "sourceProductId": "211734142903"
+    },
+    {
+      "sourceUrl": "https://singlestep.by/coffeeshop/tproduct/3208056501-416856619103-goryachii-shokolad-limonnii-bazilik",
+      "name": "ГОРЯЧИЙ ШОКОЛАД \"Лимонный базилик\"",
+      "reason": "not_whole_beans",
+      "sourceProductId": "416856619103"
+    },
+    {
+      "sourceUrl": "https://singlestep.by/coffeeshop/tproduct/3208056501-252983487422-indoneziya-bali-jembrana-tyortoe-kakao",
+      "name": "ИНДОНЕЗИЯ BALI JEMBRANA (тёртое какао)",
+      "reason": "not_whole_beans",
+      "sourceProductId": "252983487422"
+    },
+    {
+      "sourceUrl": "https://singlestep.by/coffeeshop/tproduct/3208056501-342446340192-kolumbiya-anei-tyortoe-kakao",
+      "name": "КОЛУМБИЯ ANEI (тёртое какао)",
+      "reason": "not_whole_beans",
+      "sourceProductId": "342446340192"
+    },
+    {
+      "sourceUrl": "https://singlestep.by/coffeeshop/tproduct/3208056501-259776035452-dominikana-ko-caribe-tyortoe-kakao",
+      "name": "ДОМИНИКАНА ÖKO-CARIBE (тёртое какао)",
+      "reason": "not_whole_beans",
+      "sourceProductId": "259776035452"
+    },
+    {
+      "sourceUrl": "https://singlestep.by/coffeeshop/tproduct/3208056501-931117309042-peru-amazonas-tyortoe-kakao",
+      "name": "ПЕРУ AMAZONAS (тёртое какао)",
+      "reason": "not_whole_beans",
+      "sourceProductId": "931117309042"
+    },
+    {
+      "sourceUrl": "https://singlestep.by/coffeeshop/tproduct/3208056501-313602074832-filtri-bumazhnie-mhw-3bomber-100sht",
+      "name": "ФИЛЬТРЫ БУМАЖНЫЕ MHW-3BOMBER, 100шт",
+      "reason": "not_whole_beans",
+      "sourceProductId": "313602074832"
+    },
+    {
+      "sourceUrl": "https://singlestep.by/coffeeshop/tproduct/3208056501-582681521642-filtri-bumazhnie-cake-50-sht",
+      "name": "ФИЛЬТРЫ БУМАЖНЫЕ CAKE, 50 шт",
+      "reason": "not_whole_beans",
+      "sourceProductId": "582681521642"
+    },
+    {
+      "sourceUrl": "https://singlestep.by/coffeeshop/tproduct/3208056501-695474345042-voronka-elf",
+      "name": "ВOРОНКА ELF",
+      "reason": "not_whole_beans",
+      "sourceProductId": "695474345042"
+    },
+    {
+      "sourceUrl": "https://singlestep.by/coffeeshop/tproduct/3208056501-531689486852-voronka-meteor",
+      "name": "ВОРОНКА METEOR",
+      "reason": "not_whole_beans",
+      "sourceProductId": "531689486852"
+    },
+    {
+      "sourceUrl": "https://singlestep.by/coffeeshop/tproduct/3208056501-743572191202-kofeinii-server-elf",
+      "name": "КОФЕЙНЫЙ СЕРВЕР ELF",
+      "reason": "not_whole_beans",
+      "sourceProductId": "743572191202"
+    },
+    {
+      "sourceUrl": "https://singlestep.by/coffeeshop/tproduct/3208056501-388184473722-kofemolka-race-m1",
+      "name": "КОФЕМОЛКА RACE M1",
+      "reason": "not_whole_beans",
+      "sourceProductId": "388184473722"
+    },
+    {
+      "sourceUrl": "https://singlestep.by/coffeeshop/tproduct/3208056501-215000037482-vesi-mhw-3bomber",
+      "name": "ВЕСЫ MHW-3BOMBER",
+      "reason": "not_whole_beans",
+      "sourceProductId": "215000037482"
+    },
+    {
+      "sourceUrl": "https://singlestep.by/coffeeshop/tproduct/3208056501-797867889062-sertifikat-na-kofe",
+      "name": "СЕРТИФИКАТ НА КОФЕ",
+      "reason": "not_whole_beans",
+      "sourceProductId": "797867889062"
+    },
+    {
+      "sourceUrl": "https://singlestep.by/coffeeshop/tproduct/3208056501-571938643992-sertifikat-na-kurs",
+      "name": "СЕРТИФИКАТ НА КУРС",
+      "reason": "not_whole_beans",
+      "sourceProductId": "571938643992"
+    },
+    {
+      "sourceUrl": "https://singlestep.by/tproduct/3205537601-628893990506-stikerpak-single-step",
+      "name": "СТИКЕРПАК SINGLE STEP",
+      "reason": "not_whole_beans",
+      "sourceProductId": "628893990506"
+    },
+    {
+      "sourceUrl": "https://singlestep.by/coffeeshop/tproduct/3208056501-273142144266-burundi-muiinga-drip-kofe",
+      "name": "БУРУНДИ МУЙИНГА (дрип-кофе)",
+      "reason": "not_whole_beans",
+      "sourceProductId": "273142144266"
+    },
+    {
+      "sourceUrl": "https://singlestep.by/tproduct/3272528801-563280530066-termos-single-step",
+      "name": "ТЕРМОС SINGLE STEP",
+      "reason": "not_whole_beans",
+      "sourceProductId": "563280530066"
+    }
+  ],
+  "sourceSnapshots": [
+    {
+      "url": "https://singlestep.by/coffeeshop",
+      "fetchedAtUtc": "2026-10-05T10:02:18.404740+00:00",
+      "sha256": "4032e18635a4561c87a434665d0bf3d55fe21a2ee77a8816aefff57690129fde"
+    },
+    {
+      "url": "https://store.tildaapi.biz/api/getproductslist/?storepartuid=524990197497&recid=3208056501&getparts=true&getoptions=true&size=36&flag_root=withroot",
+      "fetchedAtUtc": "2026-10-05T10:03:24.062322+00:00",
+      "sha256": "7112041cc5f02cd6ee6d79d2c47faaf9f2de5203a59eba95721366df8e1fc33e"
+    },
+    {
+      "url": "https://store.tildaapi.biz/api/getproductslist/?storepartuid=524990197497&recid=3208056501&getparts=true&getoptions=true&size=36&flag_root=withroot&slice=2",
+      "fetchedAtUtc": "2026-10-05T10:26:09.512963+00:00",
+      "sha256": "d44616b59e2d61939e40d32cb490921f3c6cae9150f7132d3e64567a70a3b5f3",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://store.tildaapi.com/api/getproductslist/?storepartuid=524990197497&recid=3208056501&getparts=true&getoptions=true&size=36&flag_root=withroot",
+      "fetchedAtUtc": "2026-10-05T10:03:20.702068+00:00",
+      "sha256": "12bd750d344efb21f319eea7f2264e77522c96b3da025a0cf6f1791b1b607ef0"
+    }
+  ]
+}

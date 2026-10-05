@@ -1,0 +1,2201 @@
+{
+  "schemaVersion": 1,
+  "adapterVersion": "1.0",
+  "source": "https://spiritus.by/catalog",
+  "collectedAtUtc": "2026-10-05T09:43:21.077086+00:00",
+  "complete": true,
+  "coverage": [
+    {
+      "productKind": "roasted_beans",
+      "catalogueUrl": "https://spiritus.by/catalog",
+      "pages": 1,
+      "expectedProducts": 34,
+      "discoveredProducts": 34,
+      "countUnit": "source_cards_including_non_beans"
+    }
+  ],
+  "products": [
+    {
+      "sourceKey": "spiritus.by",
+      "sourceProductId": "353788147571",
+      "sourceUrl": "https://spiritus.by/catalog/tproduct/597023404-353788147571-braziliya-san-rafael",
+      "name": "Бразилия Сан Рафаэль",
+      "roasterName": "Spiritus Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "BR",
+          "countryNameRu": "Бразилия",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [
+        "Ферреро Роше",
+        "мармелад"
+      ],
+      "processing": "натуральная",
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [
+        "espresso"
+      ],
+      "brewRecommendations": [
+        "Эспрессо"
+      ],
+      "grindOptions": [
+        "Под фильтр",
+        "Под чашку",
+        "Под эспрессо"
+      ],
+      "imageUrls": [
+        "https://static.tildacdn.biz/stor6537-3738-4531-b835-313635373634/2ca04d35f1839a6e0bc0a998e770a446.png",
+        "https://static.tildacdn.biz/stor3765-6539-4862-a531-356465366434/70495582.jpg",
+        "https://static.tildacdn.biz/stor3166-6165-4566-b039-663461396138/dc0f46358d930f51a117ad7050cdd072.png",
+        "https://static.tildacdn.biz/stor6230-6436-4532-b835-363063373765/430604992eaa6f56fe77082939285a79.png",
+        "https://static.tildacdn.biz/stor6165-3033-4731-b262-333662636636/aebc9f07c18c5c0f4f5f0301143ced56.png",
+        "https://static.tildacdn.biz/stor6265-3234-4138-b536-346363646664/a86841412d221d486a72dec77917e5fa.png",
+        "https://static.tildacdn.biz/stor3936-3430-4230-a534-333939323730/62352619.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "244739526321",
+          "weightGrams": 250,
+          "price": "29.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "Вес": "250 гр",
+            "Тип": "Зерно",
+            "Помол": "-",
+            "sku": "BSDV11",
+            "externalid": "T25Lemp6LDrTxvSSiYc9",
+            "quantity": ""
+          }
+        },
+        {
+          "externalVariantId": "608353373591",
+          "weightGrams": 1000,
+          "price": "86.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "Вес": "1кг",
+            "Тип": "Зерно",
+            "Помол": "-",
+            "sku": "BSDV21",
+            "externalid": "XkuDBjOMMfAG9E1X3PPC",
+            "quantity": ""
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Во вкусе": "Ферреро Роше, мармелад",
+        "Обработка": "натуральная",
+        "mark": "espresso",
+        "partuids": [
+          367136887771
+        ],
+        "externalid": "nJGvSz9rb1AF73EYSBxZ"
+      },
+      "reviewWarnings": [
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "spiritus.by",
+      "sourceProductId": "919515975972",
+      "sourceUrl": "https://spiritus.by/catalog/tproduct/597023404-919515975972-smes-pod-molochko",
+      "name": "Смесь под молочко",
+      "roasterName": "Spiritus Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "blend",
+      "origins": [],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [
+        "espresso"
+      ],
+      "brewRecommendations": [
+        "Эспрессо"
+      ],
+      "grindOptions": [
+        "Под фильтр",
+        "Под чашку",
+        "Под эспрессо"
+      ],
+      "imageUrls": [
+        "https://static.tildacdn.biz/stor6632-6431-4664-a635-656338313235/e84832484aac3caafa6b4581c6aef4a1.png",
+        "https://static.tildacdn.biz/stor6439-3839-4737-a633-373062663632/43660024.jpg",
+        "https://static.tildacdn.biz/stor3166-6165-4566-b039-663461396138/dc0f46358d930f51a117ad7050cdd072.png",
+        "https://static.tildacdn.biz/stor6230-6436-4532-b835-363063373765/430604992eaa6f56fe77082939285a79.png",
+        "https://static.tildacdn.biz/stor6165-3033-4731-b262-333662636636/aebc9f07c18c5c0f4f5f0301143ced56.png",
+        "https://static.tildacdn.biz/stor6265-3234-4138-b536-346363646664/a86841412d221d486a72dec77917e5fa.png",
+        "https://static.tildacdn.biz/stor3936-3430-4230-a534-333939323730/62352619.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "672038948742",
+          "weightGrams": 250,
+          "price": "27.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "Вес": "250 гр",
+            "Тип": "Зерно",
+            "Помол": "-",
+            "sku": "SMS11",
+            "externalid": "agcOdFFEMn6LlZI8GkED",
+            "quantity": ""
+          }
+        },
+        {
+          "externalVariantId": "867106521002",
+          "weightGrams": 1000,
+          "price": "83.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "Вес": "1кг",
+            "Тип": "Зерно",
+            "Помол": "-",
+            "sku": "SMS21",
+            "externalid": "xffup9DXu0XL6mUgVNlg",
+            "quantity": ""
+          }
+        }
+      ],
+      "sourceProperties": {
+        "mark": "espresso",
+        "partuids": [
+          367136887771
+        ],
+        "externalid": "DukPrxGCtvp9tpHkpteM"
+      },
+      "reviewWarnings": [
+        "origin_not_specified",
+        "blend_composition_may_be_incomplete"
+      ]
+    },
+    {
+      "sourceKey": "spiritus.by",
+      "sourceProductId": "779334567512",
+      "sourceUrl": "https://spiritus.by/catalog/tproduct/597023404-779334567512-smes-spiritus",
+      "name": "Смесь Spiritus",
+      "roasterName": "Spiritus Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "blend",
+      "origins": [],
+      "tasteDescriptors": [
+        "апельсин в шоколаде."
+      ],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [
+        "espresso"
+      ],
+      "brewRecommendations": [
+        "Эспрессо"
+      ],
+      "grindOptions": [
+        "Под фильтр",
+        "Под чашку",
+        "Под эспрессо"
+      ],
+      "imageUrls": [
+        "https://static.tildacdn.biz/stor6137-3339-4132-b133-333733363337/463f665836a16de882a46c1451ebaafa.png",
+        "https://static.tildacdn.biz/stor3935-6265-4636-b162-313231383461/65681034.jpg",
+        "https://static.tildacdn.biz/stor3166-6165-4566-b039-663461396138/dc0f46358d930f51a117ad7050cdd072.png",
+        "https://static.tildacdn.biz/stor6230-6436-4532-b835-363063373765/430604992eaa6f56fe77082939285a79.png",
+        "https://static.tildacdn.biz/stor6165-3033-4731-b262-333662636636/aebc9f07c18c5c0f4f5f0301143ced56.png",
+        "https://static.tildacdn.biz/stor6265-3234-4138-b536-346363646664/a86841412d221d486a72dec77917e5fa.png",
+        "https://static.tildacdn.biz/stor3936-3430-4230-a534-333939323730/62352619.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "146697549392",
+          "weightGrams": 250,
+          "price": "29.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "Вес": "250 гр",
+            "Тип": "Зерно",
+            "Помол": "-",
+            "sku": "SMS111",
+            "externalid": "JcTNGEklEYsGLu6OXbom",
+            "quantity": ""
+          }
+        },
+        {
+          "externalVariantId": "928918517472",
+          "weightGrams": 1000,
+          "price": "88.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "Вес": "1кг",
+            "Тип": "Зерно",
+            "Помол": "-",
+            "sku": "SMS221",
+            "externalid": "nNVd4N0oj1PgprNzu5OO",
+            "quantity": ""
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Во вкусе": "апельсин в шоколаде.",
+        "mark": "espresso",
+        "partuids": [
+          367136887771
+        ],
+        "externalid": "okUmNSmok7fHVMF7ZBCk"
+      },
+      "reviewWarnings": [
+        "origin_not_specified",
+        "blend_composition_may_be_incomplete"
+      ]
+    },
+    {
+      "sourceKey": "spiritus.by",
+      "sourceProductId": "565197056461",
+      "sourceUrl": "https://spiritus.by/catalog/tproduct/597023404-565197056461-keniya-neri-amp-kiriniyaga",
+      "name": "Кения Ньери & Киринияга",
+      "roasterName": "Spiritus Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "KE",
+          "countryNameRu": "Кения",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [
+        "темный шоколад",
+        "красные ягоды"
+      ],
+      "processing": "мытая",
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [
+        "espresso"
+      ],
+      "brewRecommendations": [
+        "Эспрессо"
+      ],
+      "grindOptions": [
+        "Под фильтр",
+        "Под чашку",
+        "Под эспрессо"
+      ],
+      "imageUrls": [
+        "https://static.tildacdn.biz/stor6431-3266-4636-b633-653562663530/070cce1089b710bb0ad2b2cdbe2367cc.png",
+        "https://static.tildacdn.biz/stor3162-3563-4630-a432-346431343533/18eeab9bbf47fdabe942025e427695e6.jpg",
+        "https://static.tildacdn.biz/stor3166-6165-4566-b039-663461396138/dc0f46358d930f51a117ad7050cdd072.png",
+        "https://static.tildacdn.biz/stor6230-6436-4532-b835-363063373765/430604992eaa6f56fe77082939285a79.png",
+        "https://static.tildacdn.biz/stor6165-3033-4731-b262-333662636636/aebc9f07c18c5c0f4f5f0301143ced56.png",
+        "https://static.tildacdn.biz/stor6265-3234-4138-b536-346363646664/a86841412d221d486a72dec77917e5fa.png",
+        "https://static.tildacdn.biz/stor3936-3430-4230-a534-333939323730/62352619.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "420635008311",
+          "weightGrams": 250,
+          "price": "33.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "Вес": "250 гр",
+            "Тип": "Зерно",
+            "Помол": "-",
+            "sku": "EKM11",
+            "externalid": "nmKTXseICpJjtRlHS63a",
+            "quantity": ""
+          }
+        },
+        {
+          "externalVariantId": "542218770771",
+          "weightGrams": 1000,
+          "price": "105.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "Вес": "1кг",
+            "Тип": "Зерно",
+            "Помол": "-",
+            "sku": "EKM21",
+            "externalid": "fr12IGbtvYJZmj3oBoUn",
+            "quantity": ""
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Во вкусе": "темный шоколад, красные ягоды",
+        "Обработка": "мытая",
+        "mark": "espresso",
+        "partuids": [
+          367136887771,
+          986735757781
+        ],
+        "externalid": "bejmHnBEGi3Xz2hd2MfK"
+      },
+      "reviewWarnings": [
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "spiritus.by",
+      "sourceProductId": "960667111191",
+      "sourceUrl": "https://spiritus.by/catalog/tproduct/597023479-960667111191-keniya-neri-amp-kiriniyaga",
+      "name": "Кения Ньери & Киринияга",
+      "roasterName": "Spiritus Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "KE",
+          "countryNameRu": "Кения",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [
+        "красные ягоды",
+        "черный чай"
+      ],
+      "processing": "мытая",
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [
+        "filter"
+      ],
+      "brewRecommendations": [
+        "Фильтр"
+      ],
+      "grindOptions": [
+        "Под фильтр",
+        "Под чашку",
+        "Под эспрессо"
+      ],
+      "imageUrls": [
+        "https://static.tildacdn.biz/stor6332-3264-4931-a564-316566343835/bbc498acdffc94acdd8edd5a67c54a0a.png",
+        "https://static.tildacdn.biz/stor3830-3463-4031-b933-383864623936/5a1f2e2d4bd1ce2a001391c396da5c14.jpg",
+        "https://static.tildacdn.biz/stor3166-6165-4566-b039-663461396138/dc0f46358d930f51a117ad7050cdd072.png",
+        "https://static.tildacdn.biz/stor6230-6436-4532-b835-363063373765/430604992eaa6f56fe77082939285a79.png",
+        "https://static.tildacdn.biz/stor6165-3033-4731-b262-333662636636/aebc9f07c18c5c0f4f5f0301143ced56.png",
+        "https://static.tildacdn.biz/stor6265-3234-4138-b536-346363646664/a86841412d221d486a72dec77917e5fa.png",
+        "https://static.tildacdn.biz/stor3936-3430-4230-a534-333939323730/62352619.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "474614115221",
+          "weightGrams": 250,
+          "price": "33.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "Вес": "250 гр",
+            "Тип": "Зерно",
+            "Помол": "-",
+            "sku": "FKM11",
+            "externalid": "4FPktuHJyT6vLsnfmTLY",
+            "quantity": ""
+          }
+        },
+        {
+          "externalVariantId": "301175697881",
+          "weightGrams": 1000,
+          "price": "105.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "Вес": "1кг",
+            "Тип": "Зерно",
+            "Помол": "-",
+            "sku": "FKM21",
+            "externalid": "ANgBffNL9r0y7DTr1sJU",
+            "quantity": ""
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Во вкусе": "красные ягоды, черный чай",
+        "Обработка": "мытая",
+        "mark": "filter",
+        "partuids": [
+          574371763681
+        ],
+        "externalid": "3J9LH2SHu5btE4yKShik"
+      },
+      "reviewWarnings": [
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "spiritus.by",
+      "sourceProductId": "545361520691",
+      "sourceUrl": "https://spiritus.by/catalog/tproduct/597023404-545361520691-efiopiya-sidamo",
+      "name": "Эфиопия Сидамо",
+      "roasterName": "Spiritus Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "ET",
+          "countryNameRu": "Эфиопия",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [
+        "абрикос",
+        "бергамот",
+        "цитрусовый микс"
+      ],
+      "processing": "мытая",
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [
+        "espresso"
+      ],
+      "brewRecommendations": [
+        "Эспрессо"
+      ],
+      "grindOptions": [
+        "Под чашку",
+        "Под эспрессо"
+      ],
+      "imageUrls": [
+        "https://static.tildacdn.biz/stor6637-6334-4833-b264-323939346533/9cbf3eb021e8230655a186bd96587dc3.png",
+        "https://static.tildacdn.biz/stor3734-3238-4832-a538-306130373734/c58797a4550abce7bc8872fab5693416.jpg",
+        "https://static.tildacdn.biz/stor3166-6165-4566-b039-663461396138/dc0f46358d930f51a117ad7050cdd072.png",
+        "https://static.tildacdn.biz/stor6230-6436-4532-b835-363063373765/430604992eaa6f56fe77082939285a79.png",
+        "https://static.tildacdn.biz/stor6636-3964-4538-b630-666463363432/764b50228310594d7f871c12330d2aad.png",
+        "https://static.tildacdn.biz/stor3461-6231-4765-b831-323464663831/1ad34572d87a00ef2141cfbe1bfd69da.png",
+        "https://static.tildacdn.biz/stor3933-3564-4637-a635-363461626162/2c05e30eaca4e056aa261c7f3e05060e.png",
+        "https://static.tildacdn.biz/stor3936-3430-4230-a534-333939323730/62352619.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "439239818841",
+          "weightGrams": 250,
+          "price": "30.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "Вес": "250 гр",
+            "Тип": "Зерно",
+            "Помол": "-",
+            "sku": "EES11",
+            "externalid": "sgzzxpjfgFfPOaoiYNGa",
+            "quantity": ""
+          }
+        },
+        {
+          "externalVariantId": "732687848891",
+          "weightGrams": 1000,
+          "price": "95.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "Вес": "1кг",
+            "Тип": "Зерно",
+            "Помол": "-",
+            "sku": "EES21",
+            "externalid": "8soBv9nK9CFsRm9N01f3",
+            "quantity": ""
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Во вкусе": "абрикос, бергамот, цитрусовый микс",
+        "Обработка": "мытая",
+        "mark": "espresso",
+        "partuids": [
+          367136887771
+        ],
+        "externalid": "IezFeJvcM1BNLlaHzfcU"
+      },
+      "reviewWarnings": [
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "spiritus.by",
+      "sourceProductId": "852302696561",
+      "sourceUrl": "https://spiritus.by/catalog/tproduct/597023479-852302696561-efiopiya-sidamo",
+      "name": "Эфиопия Сидамо",
+      "roasterName": "Spiritus Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "ET",
+          "countryNameRu": "Эфиопия",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [
+        "абрикос",
+        "бергамот",
+        "цитрусовый микс"
+      ],
+      "processing": "мытая",
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [
+        "filter"
+      ],
+      "brewRecommendations": [
+        "Фильтр"
+      ],
+      "grindOptions": [
+        "Под фильтр",
+        "Под чашку"
+      ],
+      "imageUrls": [
+        "https://static.tildacdn.biz/stor3337-6365-4139-b036-653932373733/2944817637571062447f57d5f6dae1e9.png",
+        "https://static.tildacdn.biz/stor3562-3934-4635-a635-343965313233/094f55546e6eb9e81d6c4a451c1e9190.jpg",
+        "https://static.tildacdn.biz/stor3166-6165-4566-b039-663461396138/dc0f46358d930f51a117ad7050cdd072.png",
+        "https://static.tildacdn.biz/stor6230-6436-4532-b835-363063373765/430604992eaa6f56fe77082939285a79.png",
+        "https://static.tildacdn.biz/stor6636-3964-4538-b630-666463363432/764b50228310594d7f871c12330d2aad.png",
+        "https://static.tildacdn.biz/stor3461-6231-4765-b831-323464663831/1ad34572d87a00ef2141cfbe1bfd69da.png",
+        "https://static.tildacdn.biz/stor3933-3564-4637-a635-363461626162/2c05e30eaca4e056aa261c7f3e05060e.png",
+        "https://static.tildacdn.biz/stor3936-3430-4230-a534-333939323730/62352619.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "399488206671",
+          "weightGrams": 250,
+          "price": "30.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "Вес": "250 гр",
+            "Тип": "Зерно",
+            "Помол": "-",
+            "sku": "FES11",
+            "externalid": "dMN4bTAztDjkfbr5ynMM",
+            "quantity": ""
+          }
+        },
+        {
+          "externalVariantId": "786312228391",
+          "weightGrams": 1000,
+          "price": "95.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "Вес": "1кг",
+            "Тип": "Зерно",
+            "Помол": "-",
+            "sku": "FES21",
+            "externalid": "0EbcNpclHFproP81Bh3E",
+            "quantity": ""
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Во вкусе": "абрикос, бергамот, цитрусовый микс",
+        "Обработка": "мытая",
+        "mark": "filter",
+        "partuids": [
+          574371763681,
+          986735757781
+        ],
+        "externalid": "9F83ze81MLBszSa4ph14"
+      },
+      "reviewWarnings": [
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "spiritus.by",
+      "sourceProductId": "396552135191",
+      "sourceUrl": "https://spiritus.by/catalog/tproduct/597023404-396552135191-gonduras-san-pedro",
+      "name": "Гондурас Сан Педро",
+      "roasterName": "Spiritus Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "HN",
+          "countryNameRu": "Гондурас",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [
+        "молочный шоколад",
+        "миндаль",
+        "красный апельсин"
+      ],
+      "processing": "мытая",
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [
+        "espresso"
+      ],
+      "brewRecommendations": [
+        "Эспрессо"
+      ],
+      "grindOptions": [
+        "Под чашку",
+        "Под эспрессо"
+      ],
+      "imageUrls": [
+        "https://static.tildacdn.biz/stor3365-3734-4833-b965-636339653762/a47362441c4c1a2e0a26f3db68332b62.png",
+        "https://static.tildacdn.biz/stor3733-3632-4932-b462-653262393864/79641432.jpg",
+        "https://static.tildacdn.biz/stor3166-6165-4566-b039-663461396138/dc0f46358d930f51a117ad7050cdd072.png",
+        "https://static.tildacdn.biz/stor6230-6436-4532-b835-363063373765/430604992eaa6f56fe77082939285a79.png",
+        "https://static.tildacdn.biz/stor6165-3033-4731-b262-333662636636/aebc9f07c18c5c0f4f5f0301143ced56.png",
+        "https://static.tildacdn.biz/stor6265-3234-4138-b536-346363646664/a86841412d221d486a72dec77917e5fa.png",
+        "https://static.tildacdn.biz/stor3936-3430-4230-a534-333939323730/62352619.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "902270206071",
+          "weightGrams": 250,
+          "price": "30.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "Вес": "250 гр",
+            "Тип": "Зерно",
+            "Помол": "-",
+            "sku": "GES41",
+            "externalid": "MTJYjkPEujPVnV4UCxfI",
+            "quantity": ""
+          }
+        },
+        {
+          "externalVariantId": "309513246121",
+          "weightGrams": 1000,
+          "price": "90.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "Вес": "1кг",
+            "Тип": "Зерно",
+            "Помол": "-",
+            "sku": "GES51",
+            "externalid": "2Hr06V13xbY5msxeGuHZ",
+            "quantity": ""
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Во вкусе": "молочный шоколад, миндаль, красный апельсин",
+        "Обработка": "мытая",
+        "mark": "espresso",
+        "partuids": [
+          367136887771
+        ],
+        "externalid": "mIdJjE48RhEMzg5G8xIl"
+      },
+      "reviewWarnings": [
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "spiritus.by",
+      "sourceProductId": "619562996586",
+      "sourceUrl": "https://spiritus.by/catalog/tproduct/597023404-619562996586-ruanda-novo",
+      "name": "Руанда Ново",
+      "roasterName": "Spiritus Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "RW",
+          "countryNameRu": "Руанда",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [
+        "зеленое яблоко",
+        "карамель"
+      ],
+      "processing": "мытая",
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [
+        "espresso",
+        "new"
+      ],
+      "brewRecommendations": [
+        "Эспрессо"
+      ],
+      "grindOptions": [
+        "Под чашку",
+        "Под эспрессо"
+      ],
+      "imageUrls": [
+        "https://static.tildacdn.biz/stor6363-3032-4338-b837-633235366131/16d45299c13bf302776caa74ed7154f9.png",
+        "https://static.tildacdn.biz/stor3166-6165-4566-b039-663461396138/dc0f46358d930f51a117ad7050cdd072.png",
+        "https://static.tildacdn.biz/stor6230-6436-4532-b835-363063373765/430604992eaa6f56fe77082939285a79.png",
+        "https://static.tildacdn.biz/stor6165-3033-4731-b262-333662636636/aebc9f07c18c5c0f4f5f0301143ced56.png",
+        "https://static.tildacdn.biz/stor6265-3234-4138-b536-346363646664/a86841412d221d486a72dec77917e5fa.png",
+        "https://static.tildacdn.biz/stor3936-3430-4230-a534-333939323730/62352619.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "767056264866",
+          "weightGrams": 250,
+          "price": "32.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "Вес": "250 гр",
+            "Тип": "Зерно",
+            "Помол": "-",
+            "sku": "ERN11",
+            "externalid": "vZcJT5Mhs8Rgr4DTB1X3",
+            "quantity": ""
+          }
+        },
+        {
+          "externalVariantId": "750053205936",
+          "weightGrams": 1000,
+          "price": "98.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "Вес": "1кг",
+            "Тип": "Зерно",
+            "Помол": "-",
+            "sku": "ERN21",
+            "externalid": "MrYl9rP96cb1u8gMab9v",
+            "quantity": ""
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Во вкусе": "зеленое яблоко, карамель",
+        "Обработка": "мытая",
+        "mark": "espresso, new",
+        "partuids": [
+          367136887771,
+          849265710081,
+          986735757781
+        ],
+        "externalid": "XMoNv1hmUoNl1FnR4eab"
+      },
+      "reviewWarnings": [
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "spiritus.by",
+      "sourceProductId": "608565234261",
+      "sourceUrl": "https://spiritus.by/catalog/tproduct/597023404-608565234261-uganda-drugar",
+      "name": "Уганда Другар",
+      "roasterName": "Spiritus Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "UG",
+          "countryNameRu": "Уганда",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [
+        "молочный шоколад",
+        "виноград",
+        "абрикос"
+      ],
+      "processing": "натуральная",
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [
+        "espresso"
+      ],
+      "brewRecommendations": [
+        "Эспрессо"
+      ],
+      "grindOptions": [
+        "Под чашку",
+        "Под эспрессо"
+      ],
+      "imageUrls": [
+        "https://static.tildacdn.biz/stor6362-3938-4761-b432-353262633139/fa36bd4be9446836832bd6ff1a2ad8d6.png",
+        "https://static.tildacdn.biz/stor3061-3738-4638-a166-366666616337/29597859.jpg",
+        "https://static.tildacdn.biz/stor3166-6165-4566-b039-663461396138/dc0f46358d930f51a117ad7050cdd072.png",
+        "https://static.tildacdn.biz/stor6230-6436-4532-b835-363063373765/430604992eaa6f56fe77082939285a79.png",
+        "https://static.tildacdn.biz/stor6265-3234-4138-b536-346363646664/a86841412d221d486a72dec77917e5fa.png",
+        "https://static.tildacdn.biz/stor6165-3033-4731-b262-333662636636/aebc9f07c18c5c0f4f5f0301143ced56.png",
+        "https://static.tildacdn.biz/stor3936-3430-4230-a534-333939323730/62352619.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "361261943061",
+          "weightGrams": 250,
+          "price": "27.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "Вес": "250 гр",
+            "Тип": "Зерно",
+            "Помол": "-",
+            "sku": "UD11",
+            "externalid": "JlPKHxZ8BPTaxAfTJU4E",
+            "quantity": ""
+          }
+        },
+        {
+          "externalVariantId": "343539081971",
+          "weightGrams": 1000,
+          "price": "84.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "Вес": "1кг",
+            "Тип": "Зерно",
+            "Помол": "-",
+            "sku": "UD21",
+            "externalid": "99RdZjMvTpjBnU9EOvmH",
+            "quantity": ""
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Во вкусе": "молочный шоколад, виноград, абрикос",
+        "Обработка": "натуральная",
+        "mark": "espresso",
+        "partuids": [
+          367136887771
+        ],
+        "externalid": "hsftSkx2A3xjkBZZ2HiY"
+      },
+      "reviewWarnings": [
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "spiritus.by",
+      "sourceProductId": "416359801581",
+      "sourceUrl": "https://spiritus.by/catalog/tproduct/597023404-416359801581-kolumbiya-kauka",
+      "name": "Колумбия Каука",
+      "roasterName": "Spiritus Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "CO",
+          "countryNameRu": "Колумбия",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [
+        "молочный шоколад",
+        "вишня"
+      ],
+      "processing": "мытая",
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [
+        "espresso"
+      ],
+      "brewRecommendations": [
+        "Эспрессо"
+      ],
+      "grindOptions": [
+        "Под чашку",
+        "Под эспрессо"
+      ],
+      "imageUrls": [
+        "https://static.tildacdn.biz/stor3639-6537-4463-a235-353038623637/31102771118478d5089b836ea76abba9.png",
+        "https://static.tildacdn.biz/stor3034-6366-4138-b261-373662653265/c32e95d43fbb9a5aa4fa454e48becd94.jpg",
+        "https://static.tildacdn.biz/stor3166-6165-4566-b039-663461396138/dc0f46358d930f51a117ad7050cdd072.png",
+        "https://static.tildacdn.biz/stor6230-6436-4532-b835-363063373765/430604992eaa6f56fe77082939285a79.png",
+        "https://static.tildacdn.biz/stor6265-3234-4138-b536-346363646664/a86841412d221d486a72dec77917e5fa.png",
+        "https://static.tildacdn.biz/stor6165-3033-4731-b262-333662636636/aebc9f07c18c5c0f4f5f0301143ced56.png",
+        "https://static.tildacdn.biz/stor3936-3430-4230-a534-333939323730/62352619.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "508747372951",
+          "weightGrams": 250,
+          "price": "30.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "Вес": "250 гр",
+            "Тип": "Зерно",
+            "Помол": "-",
+            "sku": "EKS31",
+            "externalid": "4h9bDB0VXOkjAOO2g5Ma",
+            "quantity": ""
+          }
+        },
+        {
+          "externalVariantId": "641255396731",
+          "weightGrams": 1000,
+          "price": "93.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "Вес": "1кг",
+            "Тип": "Зерно",
+            "Помол": "-",
+            "sku": "EKS41",
+            "externalid": "8yHLYlT8lUOLv1iCZfU6",
+            "quantity": ""
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Во вкусе": "молочный шоколад, вишня",
+        "Обработка": "мытая",
+        "mark": "espresso",
+        "partuids": [
+          367136887771,
+          986735757781
+        ],
+        "externalid": "duohUoi2tOXNjU0IgfZ1"
+      },
+      "reviewWarnings": [
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "spiritus.by",
+      "sourceProductId": "318759856511",
+      "sourceUrl": "https://spiritus.by/catalog/tproduct/597023479-318759856511-kolumbiya-kauka",
+      "name": "Колумбия Каука",
+      "roasterName": "Spiritus Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "CO",
+          "countryNameRu": "Колумбия",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [
+        "вишня",
+        "шоколад"
+      ],
+      "processing": "мытая",
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [
+        "filter"
+      ],
+      "brewRecommendations": [
+        "Фильтр"
+      ],
+      "grindOptions": [
+        "Под фильтр",
+        "Под чашку"
+      ],
+      "imageUrls": [
+        "https://static.tildacdn.biz/stor3932-3439-4737-b033-373632353131/3b24874dba9abcb5c5ac5ce5d9b14eb1.png",
+        "https://static.tildacdn.biz/stor3564-6131-4765-b338-636133636537/75c2fec9cbe1675d42d7b674d0e6f34a.jpg",
+        "https://static.tildacdn.biz/stor3166-6165-4566-b039-663461396138/dc0f46358d930f51a117ad7050cdd072.png",
+        "https://static.tildacdn.biz/stor6230-6436-4532-b835-363063373765/430604992eaa6f56fe77082939285a79.png",
+        "https://static.tildacdn.biz/stor6265-3234-4138-b536-346363646664/a86841412d221d486a72dec77917e5fa.png",
+        "https://static.tildacdn.biz/stor6165-3033-4731-b262-333662636636/aebc9f07c18c5c0f4f5f0301143ced56.png",
+        "https://static.tildacdn.biz/stor3936-3430-4230-a534-333939323730/62352619.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "132718109351",
+          "weightGrams": 250,
+          "price": "30.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "Вес": "250 гр",
+            "Тип": "Зерно",
+            "Помол": "-",
+            "sku": "FKS31",
+            "externalid": "zBkcDO3396laPkkrHSI8",
+            "quantity": ""
+          }
+        },
+        {
+          "externalVariantId": "138241750071",
+          "weightGrams": 1000,
+          "price": "93.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "Вес": "1кг",
+            "Тип": "Зерно",
+            "Помол": "-",
+            "sku": "FKS41",
+            "externalid": "ikidKfHEOfvhfCVo0SHS",
+            "quantity": ""
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Во вкусе": "вишня, шоколад",
+        "Обработка": "мытая",
+        "mark": "filter",
+        "partuids": [
+          574371763681
+        ],
+        "externalid": "Vu7ifeh14GrLAZcYj6mo"
+      },
+      "reviewWarnings": [
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "spiritus.by",
+      "sourceProductId": "580995197126",
+      "sourceUrl": "https://spiritus.by/catalog/tproduct/597023479-580995197126-uganda-ruvenzori",
+      "name": "Уганда Рувензори",
+      "roasterName": "Spiritus Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "UG",
+          "countryNameRu": "Уганда",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [
+        "компот из сухофруктов",
+        "апельсин",
+        "черный чай"
+      ],
+      "processing": "натуральная",
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [
+        "filter",
+        "new"
+      ],
+      "brewRecommendations": [
+        "Фильтр"
+      ],
+      "grindOptions": [
+        "Под фильтр",
+        "Под чашку"
+      ],
+      "imageUrls": [
+        "https://static.tildacdn.biz/stor3530-3634-4236-b238-333633326130/943ea468e0e00d35580507df8aa074ac.png",
+        "https://static.tildacdn.biz/stor3166-6165-4566-b039-663461396138/dc0f46358d930f51a117ad7050cdd072.png",
+        "https://static.tildacdn.biz/stor6230-6436-4532-b835-363063373765/430604992eaa6f56fe77082939285a79.png",
+        "https://static.tildacdn.biz/stor6265-3234-4138-b536-346363646664/a86841412d221d486a72dec77917e5fa.png",
+        "https://static.tildacdn.biz/stor6165-3033-4731-b262-333662636636/aebc9f07c18c5c0f4f5f0301143ced56.png",
+        "https://static.tildacdn.biz/stor3936-3430-4230-a534-333939323730/62352619.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "747616702756",
+          "weightGrams": 250,
+          "price": "30.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "Вес": "250 гр",
+            "Тип": "Зерно",
+            "Помол": "-",
+            "sku": "FUR31",
+            "externalid": "7gPYETMyPdaLd3kI9JPK",
+            "quantity": ""
+          }
+        },
+        {
+          "externalVariantId": "711884660856",
+          "weightGrams": 1000,
+          "price": "93.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "Вес": "1кг",
+            "Тип": "Зерно",
+            "Помол": "-",
+            "sku": "FUR41",
+            "externalid": "mKvnheaRFbM9s36TDSDu",
+            "quantity": ""
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Во вкусе": "компот из сухофруктов, апельсин, черный чай",
+        "Обработка": "натуральная",
+        "mark": "filter, new",
+        "partuids": [
+          574371763681,
+          849265710081
+        ],
+        "externalid": "N5tMXIXXHeIDNNs9ze9L"
+      },
+      "reviewWarnings": [
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "spiritus.by",
+      "sourceProductId": "728559449832",
+      "sourceUrl": "https://spiritus.by/catalog/tproduct/597023492-728559449832-kitai-simao",
+      "name": "Китай Симао",
+      "roasterName": "Spiritus Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "CN",
+          "countryNameRu": "Китай",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [
+        "сухофрукты",
+        "черный чай"
+      ],
+      "processing": "мытая",
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [
+        "filter"
+      ],
+      "brewRecommendations": [
+        "Фильтр"
+      ],
+      "grindOptions": [
+        "Под фильтр",
+        "Под чашку"
+      ],
+      "imageUrls": [
+        "https://static.tildacdn.biz/stor3961-6435-4963-a436-663335393637/ed9d5d4ab5d9275a2745a0c02f15129e.png",
+        "https://static.tildacdn.biz/stor6164-3934-4235-b264-323934396532/ffb3e317b44e80551183156429d24032.jpg",
+        "https://static.tildacdn.biz/stor3166-6165-4566-b039-663461396138/dc0f46358d930f51a117ad7050cdd072.png",
+        "https://static.tildacdn.biz/stor6230-6436-4532-b835-363063373765/430604992eaa6f56fe77082939285a79.png",
+        "https://static.tildacdn.biz/stor6165-3033-4731-b262-333662636636/aebc9f07c18c5c0f4f5f0301143ced56.png",
+        "https://static.tildacdn.biz/stor6265-3234-4138-b536-346363646664/a86841412d221d486a72dec77917e5fa.png",
+        "https://static.tildacdn.biz/stor3936-3430-4230-a534-333939323730/62352619.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "850487564042",
+          "weightGrams": 250,
+          "price": "30.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "Вес": "250 гр",
+            "Тип": "Зерно",
+            "Помол": "-",
+            "sku": "FKS11",
+            "externalid": "zV9UkRDzpLsxvZItkHrU",
+            "quantity": ""
+          }
+        },
+        {
+          "externalVariantId": "471265963692",
+          "weightGrams": 1000,
+          "price": "93.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "Вес": "1кг",
+            "Тип": "Зерно",
+            "Помол": "-",
+            "sku": "FKS21",
+            "externalid": "XxSPMetJvnks239hHyvF",
+            "quantity": ""
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Во вкусе": "сухофрукты, черный чай",
+        "Обработка": "мытая",
+        "mark": "filter",
+        "partuids": [
+          849265710081,
+          574371763681
+        ],
+        "externalid": "FPDXJb4P54PyCuG69nfM"
+      },
+      "reviewWarnings": [
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "spiritus.by",
+      "sourceProductId": "245190946682",
+      "sourceUrl": "https://spiritus.by/catalog/tproduct/597023404-245190946682-venesuela",
+      "name": "Венесуэла",
+      "roasterName": "Spiritus Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "VE",
+          "countryNameRu": "Венесуэла",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": "мытая",
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": "2/5",
+      "body": null,
+      "features": [
+        "espresso"
+      ],
+      "brewRecommendations": [
+        "Эспрессо"
+      ],
+      "grindOptions": [
+        "Под чашку",
+        "Под эспрессо"
+      ],
+      "imageUrls": [
+        "https://static.tildacdn.biz/stor3334-3666-4233-b337-343335616638/e53683a859b4b077ded52e5135e87fcc.png",
+        "https://static.tildacdn.biz/stor3236-3062-4539-b534-353335653531/c1acae0e5ac5c5c34d4080560389435d.jpg",
+        "https://static.tildacdn.biz/stor3166-6165-4566-b039-663461396138/dc0f46358d930f51a117ad7050cdd072.png",
+        "https://static.tildacdn.biz/stor6230-6436-4532-b835-363063373765/430604992eaa6f56fe77082939285a79.png",
+        "https://static.tildacdn.biz/stor6265-3234-4138-b536-346363646664/a86841412d221d486a72dec77917e5fa.png",
+        "https://static.tildacdn.biz/stor6165-3033-4731-b262-333662636636/aebc9f07c18c5c0f4f5f0301143ced56.png",
+        "https://static.tildacdn.biz/stor3936-3430-4230-a534-333939323730/62352619.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "811593164652",
+          "weightGrams": 250,
+          "price": "30.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "Вес": "250 гр",
+            "Тип": "Зерно",
+            "Помол": "-",
+            "sku": "VE125",
+            "externalid": "keLXpDtBIlmylKYV409C",
+            "quantity": ""
+          }
+        },
+        {
+          "externalVariantId": "273883453702",
+          "weightGrams": 1000,
+          "price": "105.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "Вес": "1кг",
+            "Тип": "Зерно",
+            "Помол": "-",
+            "sku": "VE225",
+            "externalid": "mcu07lrXSlI8ZnX16ayM",
+            "quantity": ""
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Обработка": "мытая",
+        "Кислотность": "2/5",
+        "mark": "espresso",
+        "partuids": [
+          367136887771,
+          849265710081
+        ],
+        "externalid": "9FEYFC68FNSCfIhlsrml"
+      },
+      "reviewWarnings": [
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "spiritus.by",
+      "sourceProductId": "788287534842",
+      "sourceUrl": "https://spiritus.by/catalog/tproduct/597023479-788287534842-venesuela",
+      "name": "Венесуэла",
+      "roasterName": "Spiritus Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "VE",
+          "countryNameRu": "Венесуэла",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": "мытая",
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": "2/5",
+      "body": null,
+      "features": [
+        "filter"
+      ],
+      "brewRecommendations": [
+        "Фильтр"
+      ],
+      "grindOptions": [
+        "Под фильтр",
+        "Под чашку"
+      ],
+      "imageUrls": [
+        "https://static.tildacdn.biz/stor6166-3037-4238-a363-303033303061/36210fa75924f8140abc7438d631b302.png",
+        "https://static.tildacdn.biz/stor3635-6634-4365-b066-333236316361/4e35f7b0ac91b4b7913aa0736044020c.jpg",
+        "https://static.tildacdn.biz/stor3166-6165-4566-b039-663461396138/dc0f46358d930f51a117ad7050cdd072.png",
+        "https://static.tildacdn.biz/stor6230-6436-4532-b835-363063373765/430604992eaa6f56fe77082939285a79.png",
+        "https://static.tildacdn.biz/stor6265-3234-4138-b536-346363646664/a86841412d221d486a72dec77917e5fa.png",
+        "https://static.tildacdn.biz/stor6165-3033-4731-b262-333662636636/aebc9f07c18c5c0f4f5f0301143ced56.png",
+        "https://static.tildacdn.biz/stor3936-3430-4230-a534-333939323730/62352619.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "439297210552",
+          "weightGrams": 250,
+          "price": "30.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "Вес": "250 гр",
+            "Тип": "Зерно",
+            "Помол": "-",
+            "sku": "VF125",
+            "externalid": "zYYsyVirP2SnOLhZxoOa",
+            "quantity": ""
+          }
+        },
+        {
+          "externalVariantId": "924209547792",
+          "weightGrams": 1000,
+          "price": "105.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "Вес": "1кг",
+            "Тип": "Зерно",
+            "Помол": "-",
+            "sku": "VF225",
+            "externalid": "zZZIKyoVOmDlZJdzAhE8",
+            "quantity": ""
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Обработка": "мытая",
+        "Кислотность": "2/5",
+        "mark": "filter",
+        "partuids": [
+          574371763681,
+          849265710081
+        ],
+        "externalid": "uzNstctfIRiCLVZNAlPl"
+      },
+      "reviewWarnings": [
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "spiritus.by",
+      "sourceProductId": "737202611931",
+      "sourceUrl": "https://spiritus.by/catalog/tproduct/597023404-737202611931-gvatemala-dekaf",
+      "name": "Гватемала, декаф",
+      "roasterName": "Spiritus Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "GT",
+          "countryNameRu": "Гватемала",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [
+        "чернослив",
+        "красные ягоды",
+        "шоколад"
+      ],
+      "processing": "swiss water",
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [
+        "espresso"
+      ],
+      "brewRecommendations": [
+        "Эспрессо"
+      ],
+      "grindOptions": [
+        "Под фильтр",
+        "Под чашку",
+        "Под эспрессо"
+      ],
+      "imageUrls": [
+        "https://static.tildacdn.biz/stor3862-6263-4734-b230-623161623763/cbf464ed2a9867eb94f651955baf8ce4.png",
+        "https://static.tildacdn.biz/stor3166-6165-4566-b039-663461396138/dc0f46358d930f51a117ad7050cdd072.png",
+        "https://static.tildacdn.biz/stor6230-6436-4532-b835-363063373765/430604992eaa6f56fe77082939285a79.png",
+        "https://static.tildacdn.biz/stor3933-3564-4637-a635-363461626162/2c05e30eaca4e056aa261c7f3e05060e.png",
+        "https://static.tildacdn.biz/stor3461-6231-4765-b831-323464663831/1ad34572d87a00ef2141cfbe1bfd69da.png",
+        "https://static.tildacdn.biz/stor3936-3430-4230-a534-333939323730/62352619.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "155615008201",
+          "weightGrams": 250,
+          "price": "35.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "Вес": "250 гр",
+            "Тип": "Зерно",
+            "Помол": "-",
+            "sku": "KD11",
+            "externalid": "N6MLpjPGCCGV9UyBIIAX",
+            "quantity": ""
+          }
+        },
+        {
+          "externalVariantId": "194504454421",
+          "weightGrams": 1000,
+          "price": "110.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "Вес": "1кг",
+            "Тип": "Зерно",
+            "Помол": "-",
+            "sku": "KD21",
+            "externalid": "DiSeXhjiM31HjxDVkFFp",
+            "quantity": ""
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Во вкусе": "чернослив, красные ягоды, шоколад",
+        "Обработка": "swiss water",
+        "mark": "espresso",
+        "partuids": [
+          367136887771,
+          849265710081,
+          986735757781
+        ],
+        "externalid": "1s0Z9no0eo0D64D7PliP"
+      },
+      "reviewWarnings": [
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "spiritus.by",
+      "sourceProductId": "650751034131",
+      "sourceUrl": "https://spiritus.by/catalog/tproduct/597023492-650751034131-efiopiya-limu",
+      "name": "Эфиопия Лиму",
+      "roasterName": "Spiritus Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "ET",
+          "countryNameRu": "Эфиопия",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [
+        "красное вино",
+        "цитрусы",
+        "красные ягоды"
+      ],
+      "processing": "анаэробная ферментация в винной бочке",
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [
+        "filter"
+      ],
+      "brewRecommendations": [
+        "Фильтр"
+      ],
+      "grindOptions": [
+        "Под фильтр",
+        "Под чашку",
+        "Под эспрессо"
+      ],
+      "imageUrls": [
+        "https://static.tildacdn.biz/stor3538-3231-4631-b536-643362366663/5ab277595cc822b43dc09e0010e09c27.png",
+        "https://static.tildacdn.biz/stor3333-3231-4338-a665-323162666662/42355485.jpg",
+        "https://static.tildacdn.biz/stor3166-6165-4566-b039-663461396138/dc0f46358d930f51a117ad7050cdd072.png",
+        "https://static.tildacdn.biz/stor6230-6436-4532-b835-363063373765/430604992eaa6f56fe77082939285a79.png",
+        "https://static.tildacdn.biz/stor6636-3964-4538-b630-666463363432/764b50228310594d7f871c12330d2aad.png",
+        "https://static.tildacdn.biz/stor3461-6231-4765-b831-323464663831/1ad34572d87a00ef2141cfbe1bfd69da.png",
+        "https://static.tildacdn.biz/stor3933-3564-4637-a635-363461626162/2c05e30eaca4e056aa261c7f3e05060e.png",
+        "https://static.tildacdn.biz/stor3936-3430-4230-a534-333939323730/62352619.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "875477701491",
+          "weightGrams": 250,
+          "price": "42.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "Вес": "250 гр",
+            "Тип": "Зерно",
+            "Помол": "-",
+            "sku": "FEL11",
+            "externalid": "szuDElv1jMl34xE3lDYt",
+            "quantity": ""
+          }
+        },
+        {
+          "externalVariantId": "719680434181",
+          "weightGrams": 1000,
+          "price": "135.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "Вес": "1кг",
+            "Тип": "Зерно",
+            "Помол": "-",
+            "sku": "FEL21",
+            "externalid": "xeC5OD0hmM3l9Ai3ZtCf",
+            "quantity": ""
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Во вкусе": "красное вино, цитрусы, красные ягоды",
+        "Обработка": "анаэробная ферментация в винной бочке",
+        "mark": "filter",
+        "partuids": [
+          849265710081,
+          574371763681
+        ],
+        "externalid": "VYyl56YOcSXaj5z6RFRN"
+      },
+      "reviewWarnings": [
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "spiritus.by",
+      "sourceProductId": "726492996801",
+      "sourceUrl": "https://spiritus.by/catalog/tproduct/597023404-726492996801-gonduras-los-geranes",
+      "name": "Гондурас Лос Гераньес",
+      "roasterName": "Spiritus Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "HN",
+          "countryNameRu": "Гондурас",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [
+        "молочная кислотность",
+        "портвейн",
+        "темный шоколад"
+      ],
+      "processing": "анаэробная ферментация в винной бочке",
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [
+        "espresso"
+      ],
+      "brewRecommendations": [
+        "Эспрессо"
+      ],
+      "grindOptions": [
+        "Под фильтр",
+        "Под чашку",
+        "Под эспрессо"
+      ],
+      "imageUrls": [
+        "https://static.tildacdn.biz/stor6630-3664-4966-a339-343835353266/1de4b0052da44966a144fdcc03d44200.png",
+        "https://static.tildacdn.biz/stor6332-3264-4566-a536-396231333365/14516572.jpg",
+        "https://static.tildacdn.biz/stor3166-6165-4566-b039-663461396138/dc0f46358d930f51a117ad7050cdd072.png",
+        "https://static.tildacdn.biz/stor6230-6436-4532-b835-363063373765/430604992eaa6f56fe77082939285a79.png",
+        "https://static.tildacdn.biz/stor6636-3964-4538-b630-666463363432/764b50228310594d7f871c12330d2aad.png",
+        "https://static.tildacdn.biz/stor3461-6231-4765-b831-323464663831/1ad34572d87a00ef2141cfbe1bfd69da.png",
+        "https://static.tildacdn.biz/stor3933-3564-4637-a635-363461626162/2c05e30eaca4e056aa261c7f3e05060e.png",
+        "https://static.tildacdn.biz/stor3936-3430-4230-a534-333939323730/62352619.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "142374859201",
+          "weightGrams": 250,
+          "price": "42.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "Вес": "250 гр",
+            "Тип": "Зерно",
+            "Помол": "-",
+            "sku": "GLG11",
+            "externalid": "6Or5UAoTCs1hxL2luJ5B",
+            "quantity": ""
+          }
+        },
+        {
+          "externalVariantId": "916755451051",
+          "weightGrams": 1000,
+          "price": "135.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "Вес": "1кг",
+            "Тип": "Зерно",
+            "Помол": "-",
+            "sku": "GLG21",
+            "externalid": "eUaynoaV9LUlFc0xeUGt",
+            "quantity": ""
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Во вкусе": "молочная кислотность, портвейн, темный шоколад",
+        "Обработка": "анаэробная ферментация в винной бочке",
+        "mark": "espresso",
+        "partuids": [
+          367136887771,
+          849265710081
+        ],
+        "externalid": "0NFXNV5T5az4BcpX4966"
+      },
+      "reviewWarnings": [
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "spiritus.by",
+      "sourceProductId": "989802275673",
+      "sourceUrl": "https://spiritus.by/catalog/tproduct/597023479-989802275673-ruanda-gizanga-hill",
+      "name": "Руанда Гизанга Хилл",
+      "roasterName": "Spiritus Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "RW",
+          "countryNameRu": "Руанда",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [
+        "зеленое вино",
+        "карамель",
+        "цитрусовые корки"
+      ],
+      "processing": "натуральная, анаэробная",
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [
+        "filter",
+        "new"
+      ],
+      "brewRecommendations": [
+        "Фильтр"
+      ],
+      "grindOptions": [
+        "Под фильтр",
+        "Под чашку"
+      ],
+      "imageUrls": [
+        "https://static.tildacdn.biz/stor3561-3963-4439-b563-323261653366/2c92e41fd553d0b905928dd3f4cab759.png",
+        "https://static.tildacdn.biz/stor3639-3266-4537-b133-313735353964/6d78c9c02d17df0476d6b55ab6cce9b1.jpg",
+        "https://static.tildacdn.biz/stor3166-6165-4566-b039-663461396138/dc0f46358d930f51a117ad7050cdd072.png",
+        "https://static.tildacdn.biz/stor6230-6436-4532-b835-363063373765/430604992eaa6f56fe77082939285a79.png",
+        "https://static.tildacdn.biz/stor6165-3033-4731-b262-333662636636/aebc9f07c18c5c0f4f5f0301143ced56.png",
+        "https://static.tildacdn.biz/stor6265-3234-4138-b536-346363646664/a86841412d221d486a72dec77917e5fa.png",
+        "https://static.tildacdn.biz/stor3936-3430-4230-a534-333939323730/62352619.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "404749015783",
+          "weightGrams": 250,
+          "price": "48.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "Вес": "250 гр",
+            "Тип": "Зерно",
+            "Помол": "-",
+            "sku": "FRGH11",
+            "externalid": "FZuMTc7GFxbfY2ecSoVY",
+            "quantity": ""
+          }
+        },
+        {
+          "externalVariantId": "207069658343",
+          "weightGrams": 1000,
+          "price": "150.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "Вес": "1кг",
+            "Тип": "Зерно",
+            "Помол": "-",
+            "sku": "FRGH21",
+            "externalid": "3B0j2ShKM9dkMvCSFrNF",
+            "quantity": ""
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Во вкусе": "зеленое вино, карамель, цитрусовые корки",
+        "Обработка": "натуральная, анаэробная",
+        "mark": "filter, new",
+        "partuids": [
+          986735757781,
+          574371763681,
+          849265710081
+        ],
+        "externalid": "dnH30zl3JYck8MbdNpVz"
+      },
+      "reviewWarnings": [
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "spiritus.by",
+      "sourceProductId": "535844752113",
+      "sourceUrl": "https://spiritus.by/catalog/tproduct/597023479-535844752113-laos-plato-bolaven",
+      "name": "Лаос Плато Болавен",
+      "roasterName": "Spiritus Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "LA",
+          "countryNameRu": "Лаос",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [
+        "желтая слива",
+        "крыжовник",
+        "патока"
+      ],
+      "processing": "мытая",
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [
+        "filter",
+        "new"
+      ],
+      "brewRecommendations": [
+        "Фильтр"
+      ],
+      "grindOptions": [
+        "Под фильтр",
+        "Под чашку"
+      ],
+      "imageUrls": [
+        "https://static.tildacdn.biz/stor3434-6261-4734-b231-393563643464/ab03d5875aba8ac5f9e1e12ddfb0a0bc.png",
+        "https://static.tildacdn.biz/stor3166-6165-4566-b039-663461396138/dc0f46358d930f51a117ad7050cdd072.png",
+        "https://static.tildacdn.biz/stor6230-6436-4532-b835-363063373765/430604992eaa6f56fe77082939285a79.png",
+        "https://static.tildacdn.biz/stor6265-3234-4138-b536-346363646664/a86841412d221d486a72dec77917e5fa.png",
+        "https://static.tildacdn.biz/stor6165-3033-4731-b262-333662636636/aebc9f07c18c5c0f4f5f0301143ced56.png",
+        "https://static.tildacdn.biz/stor3936-3430-4230-a534-333939323730/62352619.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "532438339283",
+          "weightGrams": 250,
+          "price": "32.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "Вес": "250 гр",
+            "Тип": "Зерно",
+            "Помол": "-",
+            "sku": "FKS31",
+            "externalid": "U1x8V2960xMDPo0tAStS",
+            "quantity": ""
+          }
+        },
+        {
+          "externalVariantId": "385435213593",
+          "weightGrams": 1000,
+          "price": "98.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "Вес": "1кг",
+            "Тип": "Зерно",
+            "Помол": "-",
+            "sku": "FKS41",
+            "externalid": "OsLOoK5OMGfVhdcASp1H",
+            "quantity": ""
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Во вкусе": "желтая слива, крыжовник, патока",
+        "Обработка": "мытая",
+        "mark": "filter, new",
+        "partuids": [
+          574371763681
+        ],
+        "externalid": "LEyxbsNDP2YoUjviCrRu"
+      },
+      "reviewWarnings": [
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "spiritus.by",
+      "sourceProductId": "669094172691",
+      "sourceUrl": "https://spiritus.by/catalog/tproduct/597023404-669094172691-kosta-rika-tarrazu",
+      "name": "Коста-Рика Тарразу",
+      "roasterName": "Spiritus Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "CR",
+          "countryNameRu": "Коста-Рика",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [
+        "красный апельсин",
+        "карамель",
+        "миндаль"
+      ],
+      "processing": "мытая",
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [
+        "espresso",
+        "new"
+      ],
+      "brewRecommendations": [
+        "Эспрессо"
+      ],
+      "grindOptions": [
+        "Под фильтр",
+        "Под чашку",
+        "Под эспрессо"
+      ],
+      "imageUrls": [
+        "https://static.tildacdn.biz/stor3937-6361-4231-b462-643130616366/4696ba59f8a01f54f072e4e913de1c43.png",
+        "https://static.tildacdn.biz/stor3939-3036-4438-b939-373536386630/f97a45a5810b5f838ee8c9e9496666a5.jpg",
+        "https://static.tildacdn.biz/stor3166-6165-4566-b039-663461396138/dc0f46358d930f51a117ad7050cdd072.png",
+        "https://static.tildacdn.biz/stor6230-6436-4532-b835-363063373765/430604992eaa6f56fe77082939285a79.png",
+        "https://static.tildacdn.biz/stor6636-3964-4538-b630-666463363432/764b50228310594d7f871c12330d2aad.png",
+        "https://static.tildacdn.biz/stor3461-6231-4765-b831-323464663831/1ad34572d87a00ef2141cfbe1bfd69da.png",
+        "https://static.tildacdn.biz/stor3933-3564-4637-a635-363461626162/2c05e30eaca4e056aa261c7f3e05060e.png",
+        "https://static.tildacdn.biz/stor3936-3430-4230-a534-333939323730/62352619.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "420790934271",
+          "weightGrams": 250,
+          "price": "30.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "Вес": "250 гр",
+            "Тип": "Зерно",
+            "Помол": "-",
+            "sku": "EKRT11",
+            "externalid": "oRj2zxch2ElRgyzScxjo",
+            "quantity": ""
+          }
+        },
+        {
+          "externalVariantId": "421824642881",
+          "weightGrams": 1000,
+          "price": "95.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "Вес": "1кг",
+            "Тип": "Зерно",
+            "Помол": "-",
+            "sku": "EKRT21",
+            "externalid": "Oogns2bl1udnJ2dftY6x",
+            "quantity": ""
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Во вкусе": "красный апельсин, карамель, миндаль",
+        "Обработка": "мытая",
+        "mark": "espresso, new",
+        "partuids": [
+          367136887771
+        ],
+        "externalid": "dVOSC2Yfi3yboUJLsz03"
+      },
+      "reviewWarnings": [
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "spiritus.by",
+      "sourceProductId": "284170303752",
+      "sourceUrl": "https://spiritus.by/catalog/tproduct/597023479-284170303752-kolumbiya-uila-betuliya",
+      "name": "Колумбия Уила Бетулия",
+      "roasterName": "Spiritus Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "CO",
+          "countryNameRu": "Колумбия",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [
+        "клубника",
+        "вишня",
+        "винные ноты",
+        "шоколад"
+      ],
+      "processing": "натуральная анаэробная",
+      "roastLevel": null,
+      "qGraderScoreRaw": "88",
+      "acidity": null,
+      "body": null,
+      "features": [
+        "filter",
+        "new"
+      ],
+      "brewRecommendations": [
+        "Фильтр"
+      ],
+      "grindOptions": [
+        "Под фильтр",
+        "Под чашку"
+      ],
+      "imageUrls": [
+        "https://static.tildacdn.biz/stor6333-3066-4566-a138-383038653034/ffe170170c6563843b30f8f9cd5adc18.png",
+        "https://static.tildacdn.biz/stor3064-3365-4538-b762-643739356437/6ae7fe40e0d92d1dc9d13e97ad7bc441.jpg",
+        "https://static.tildacdn.biz/stor3936-3430-4230-a534-333939323730/62352619.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "508953713042",
+          "weightGrams": 200,
+          "price": "80.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "Вес": "200 гр",
+            "Тип": "Зерно",
+            "Помол": "-",
+            "sku": "FKU125",
+            "externalid": "cZzS8omy0S1O6L9DsIdy",
+            "quantity": ""
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Во вкусе": "клубника, вишня, винные ноты, шоколад",
+        "Обработка": "натуральная анаэробная",
+        "Разновидность": "кастильо тамбо",
+        "Q": "88",
+        "mark": "filter, new",
+        "partuids": [
+          574371763681,
+          849265710081,
+          986735757781
+        ],
+        "externalid": "rrJsI1798oHpGIvD9VOH"
+      },
+      "reviewWarnings": [
+        "origin_extracted_from_name"
+      ]
+    }
+  ],
+  "excluded": [
+    {
+      "sourceUrl": "https://spiritus.by/catalog/tproduct/1711677391-282376224432-braziliya-san-rafael",
+      "name": "Бразилия Сан Рафаэль",
+      "reason": "not_whole_beans",
+      "sourceProductId": "282376224432"
+    },
+    {
+      "sourceUrl": "https://spiritus.by/catalog/tproduct/1711677391-631943528082-efiopiya-sidamo",
+      "name": "Эфиопия Сидамо",
+      "reason": "not_whole_beans",
+      "sourceProductId": "631943528082"
+    },
+    {
+      "sourceUrl": "https://spiritus.by/catalog/tproduct/1711677391-558828701532-keniya-neri-i-kiriniyaga",
+      "name": "Кения Ньери и Киринияга",
+      "reason": "not_whole_beans",
+      "sourceProductId": "558828701532"
+    },
+    {
+      "sourceUrl": "https://spiritus.by/catalog/tproduct/1711677391-428837787536-ruanda-ruhando-special",
+      "name": "Руанда Рухандо // special",
+      "reason": "not_whole_beans",
+      "sourceProductId": "428837787536"
+    },
+    {
+      "sourceUrl": "https://spiritus.by/catalog/tproduct/1711677391-617837498742-kolumbiya-dekaf",
+      "name": "Колумбия, Декаф",
+      "reason": "not_whole_beans",
+      "sourceProductId": "617837498742"
+    },
+    {
+      "sourceUrl": "https://spiritus.by/catalog/tproduct/1711677391-911587695942-miks",
+      "name": "Микс",
+      "reason": "not_whole_beans",
+      "sourceProductId": "911587695942"
+    },
+    {
+      "sourceUrl": "https://spiritus.by/merch/tproduct/1711708111-633692780442-dnevnik-espresso",
+      "name": "Дневник Эспрессо",
+      "reason": "not_whole_beans",
+      "sourceProductId": "633692780442"
+    },
+    {
+      "sourceUrl": "https://spiritus.by/merch/tproduct/1711708111-108541437462-remuvka",
+      "name": "Ремувка",
+      "reason": "not_whole_beans",
+      "sourceProductId": "108541437462"
+    },
+    {
+      "sourceUrl": "https://spiritus.by/merch/tproduct/1711708111-841602926986-oversaiz-futbolka",
+      "name": "Оверсайз футболка",
+      "reason": "not_whole_beans",
+      "sourceProductId": "841602926986"
+    },
+    {
+      "sourceUrl": "https://spiritus.by/merch/tproduct/1711708111-821870430706-oversaiz-futbolka",
+      "name": "Оверсайз футболка",
+      "reason": "not_whole_beans",
+      "sourceProductId": "821870430706"
+    },
+    {
+      "sourceUrl": "https://spiritus.by/merch/tproduct/1711708111-678286983283-matcha",
+      "name": "Матча",
+      "reason": "not_whole_beans",
+      "sourceProductId": "678286983283"
+    }
+  ],
+  "sourceSnapshots": [
+    {
+      "url": "https://spiritus.by/catalog",
+      "fetchedAtUtc": "2026-10-05T09:43:15.217530+00:00",
+      "sha256": "d2c8d7742784e39602bab38ba9f680768c76636298e75ea183eb22dd9249e04a"
+    },
+    {
+      "url": "https://store.tildaapi.biz/api/getproductslist/?storepartuid=795606979811&recid=580909852&getparts=true&getoptions=true&size=36&flag_root=withroot",
+      "fetchedAtUtc": "2026-10-05T09:43:21.077086+00:00",
+      "sha256": "38a7d97a80fc00ab75c26abfdcb094cfe4048a672752c4355301553e8d055fed"
+    },
+    {
+      "url": "https://store.tildaapi.com/api/getproductslist/?storepartuid=795606979811&recid=580909852&getparts=true&getoptions=true&size=36&flag_root=withroot",
+      "fetchedAtUtc": "2026-10-05T09:43:18.029031+00:00",
+      "sha256": "12bd750d344efb21f319eea7f2264e77522c96b3da025a0cf6f1791b1b607ef0"
+    }
+  ]
+}

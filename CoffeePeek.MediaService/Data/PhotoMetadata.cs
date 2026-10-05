@@ -54,5 +54,6 @@ public class PhotoMetadata
 public enum OwnerType
 {
     User,
-    Shop
+    Shop,
+    Coffee
 }

@@ -9,6 +9,8 @@ using ShopAggregate = CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate.Cof
 using PriceRange = CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate.PriceRange;
 using CoffeePeek.Shops.Application.Abstractions;
 using CoffeePeek.Shops.Application.PublicAddresses;
+using CoffeePeek.Shops.Application.Features.CoffeeCatalog;
+using CoffeePeek.Shops.Persistance.CoffeeCatalog;
 using CoffeePeek.Shops.Application.Features.CoffeeShop.GetCoffeeShop;
 using CoffeePeek.Shops.Application.Features.CoffeeShop.SearchCoffeeShops;
 using CoffeePeek.Shops.Application.Features.Catalogs.GetAllCities;
@@ -48,6 +50,7 @@ using CoffeePeek.Shared.Kernel.Response;
 using CoffeePeek.Shared.Web.Extensions;
 using CoffeePeek.Shared.Web.Handlers;
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
+using CoffeePeek.Shops.Domain.Aggregates.CoffeeProductAggregate;
 using CoffeePeek.Shops.Persistance.Configuration;
 using CoffeePeek.Shops.Persistance.PublicAddresses;
 using CoffeePeek.Shops.Persistance.Repositories;
@@ -110,13 +113,21 @@ public sealed class PublicAddressGatewaySmokeTests
         var method = new BrewMethod("V60", BrewMethodCategory.Gravity);
         var tag = ShopTag.Create("dog-friendly", "Dogs welcome");
         var roaster = new Roaster("Beans Roastery");
+        var coffee = new CoffeeProduct(roaster.Id, new("Colombia test", null, "roasted_beans", "whole_beans", "unknown",
+            null, null, null, null, null, [], [], [], []));
+        coffee.SetStatus(CoffeePublicationStatus.Published);
+        var coffeeSource = new CoffeeProductSource { CoffeeProductId = coffee.Id, SourceKey = "roast.by", ExternalProductId = "coffee",
+            SourceUrl = "https://roast.by/coffee/", SellerName = "Test seller", LastSeenAtUtc = DateTime.UtcNow };
+        coffeeSource.Variants.Add(new CoffeeVariant { SourceKey = "roast.by", ExternalVariantId = "bag-250", WeightGrams = 250,
+            Price = 30, Currency = "BYN", Availability = CoffeeAvailability.InStock, CheckedAtUtc = DateTime.UtcNow });
+        coffee.Sources.Add(coffeeSource);
         await using (var db = Shops())
         {
-            db.AddRange(shop, bean, equipment, method, tag, roaster);
+            db.AddRange(shop, bean, equipment, method, tag, roaster, coffee);
             db.Entry(equipment.Category).Property(nameof(EquipmentCategory.Name)).CurrentValue = "Espresso machines";
             await db.SaveChangesAsync(Ct);
         }
-        var internalIds = new[] { shop.Id, city.Id, bean.Id, equipment.Id, method.Id, tag.Id, roaster.Id, user.Id };
+        var internalIds = new[] { shop.Id, city.Id, bean.Id, equipment.Id, method.Id, tag.Id, roaster.Id, user.Id, coffee.Id };
         var summary = new ShortShopDto
         {
             Id = shop.Id, CityId = city.Id, Name = shop.Name, Photos = [],
@@ -215,6 +226,8 @@ public sealed class PublicAddressGatewaySmokeTests
         shopsBuilder.Services.AddScoped<PublicAddressHttpClient>();
         shopsBuilder.Services.AddHttpClient("account-user-lookup", c => c.BaseAddress = new Uri(Address(account)));
         shopsBuilder.Services.AddScoped<PublicDiscoveryService>();
+        shopsBuilder.Services.AddScoped<ICoffeeCatalogStore, CoffeeCatalogStore>();
+        shopsBuilder.Services.AddOptions<CoffeeImportOptions>();
         await using var shops = shopsBuilder.Build();
         MapControllers(shops, "shops");
         await shops.StartAsync(Ct);
@@ -286,6 +299,14 @@ public sealed class PublicAddressGatewaySmokeTests
             catalogJson!["data"]!.AsArray().Should().HaveCount(1);
         }
         NoInternalIds(await Get("/api/Roasters/beans-roastery", HttpStatusCode.OK, "shops"));
+        NoInternalIds(await Get("/api/roasters", HttpStatusCode.OK, "shops"));
+        NoInternalIds(await Get("/api/roasters/beans-roastery/coffees", HttpStatusCode.OK, "shops"));
+        var coffees = await Get("/api/coffees?weightGrams=250&currency=BYN&maxPrice=30", HttpStatusCode.OK, "shops");
+        NoInternalIds(coffees);
+        coffees!["data"]!["items"]!.AsArray().Should().HaveCount(1);
+        NoInternalIds(await Get("/api/coffees/colombia-test", HttpStatusCode.OK, "shops"));
+        NoInternalIds(await Get("/api/Catalogs/coffee-origin-countries", HttpStatusCode.OK, "shops"));
+        NoInternalIds(await Get("/api/Catalogs/roaster-tags", HttpStatusCode.OK, "shops"));
         var map = await Get("/api/Map?minLat=53&minLon=27&maxLat=54&maxLon=28", HttpStatusCode.OK, "shops");
         NoInternalIds(map);
         map!["data"]!["shops"]![0]!["address"]!["slug"]!.GetValue<string>().Should().Be("26-october-16");

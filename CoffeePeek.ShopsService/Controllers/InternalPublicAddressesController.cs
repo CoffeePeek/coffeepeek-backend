@@ -9,7 +9,7 @@ namespace CoffeePeek.ShopsService.Controllers;
 
 [ApiController]
 [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
-[Route("internal/public-addresses/{kind:regex(^(shops|roasters|cities|coffee-zones|beans|equipments|brew-methods|shop-tags)$)}")]
+[Route("internal/public-addresses/{kind:regex(^(shops|roasters|cities|coffee-zones|beans|equipments|brew-methods|shop-tags|coffees)$)}")]
 [ApiExplorerSettings(IgnoreApi = true)]
 public sealed class InternalPublicAddressesController(IPublicAddressService addresses, IOptions<GatewayAuthOptions> options) : ControllerBase
 {
@@ -35,6 +35,7 @@ public sealed class InternalPublicAddressesController(IPublicAddressService addr
         "shops" => PublicAddressKind.CoffeeShop, "roasters" => PublicAddressKind.Roaster,
         "cities" => PublicAddressKind.City, "coffee-zones" => PublicAddressKind.CoffeeZone,
         "beans" => PublicAddressKind.CoffeeBean,
+        "coffees" => PublicAddressKind.CoffeeProduct,
         "equipments" => PublicAddressKind.Equipment,
         "brew-methods" => PublicAddressKind.BrewMethod,
         "shop-tags" => PublicAddressKind.ShopTag,

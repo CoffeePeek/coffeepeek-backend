@@ -67,6 +67,10 @@ public class MinIOStorageService : IStorageService, IDisposable
         await _internalClient.SetObjectTagsAsync(args, ct);
     }
 
+    public Task Put(string storageKey, string contentType, Stream stream, long sizeBytes, BucketType bucketType, CancellationToken ct = default) =>
+        _internalClient.PutObjectAsync(new PutObjectArgs().WithBucket(GetBucketName(bucketType)).WithObject(storageKey)
+            .WithStreamData(stream).WithObjectSize(sizeBytes).WithContentType(contentType), ct);
+
     public async Task<bool> Exists(string storageKey, BucketType bucketType, CancellationToken ct = default)
     {
         try

@@ -1,0 +1,1178 @@
+{
+  "schemaVersion": 1,
+  "adapterVersion": "1.0",
+  "source": "https://mcoffee.by/catalog/coffee/kofe-v-zernah",
+  "collectedAtUtc": "2026-10-05T10:59:31.316805+00:00",
+  "complete": true,
+  "coverage": [
+    {
+      "productKind": "roasted_beans",
+      "catalogueUrl": "https://mcoffee.by/catalog/coffee/kofe-v-zernah",
+      "pages": 4,
+      "expectedProducts": null,
+      "discoveredProducts": 30,
+      "countUnit": "source_cards_including_non_beans",
+      "uniqueProducts": 26
+    }
+  ],
+  "products": [
+    {
+      "sourceKey": "mcoffee.by",
+      "sourceProductId": "25",
+      "sourceUrl": "https://mcoffee.by/products/tanzania-kilimanjaro-250",
+      "name": "Tanzania Kilimanjaro",
+      "description": null,
+      "roasterName": "Manufactura",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "TZ",
+          "countryNameRu": "Танзания",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [
+        "Плотный",
+        "сочный кофе с нотами грейпфрута",
+        "нектарина",
+        "клюквы",
+        "миндаля и молочного шоколада"
+      ],
+      "processing": "мытый",
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [],
+      "imageUrls": [
+        "https://mcoffee.by/imager/resized/175x175-01KK8Z3NDR395C1JXR7Q73KZRF.webp"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "55",
+          "weightGrams": 1000,
+          "price": "93.20",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "weightOptionId": "103"
+          }
+        },
+        {
+          "externalVariantId": "54",
+          "weightGrams": 250,
+          "price": "27.50",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "weightOptionId": "111"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Обработка": "мытый",
+        "Во вкусе": "Плотный, сочный кофе с нотами грейпфрута, нектарина, клюквы, миндаля и молочного шоколада"
+      },
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "mcoffee.by",
+      "sourceProductId": "79",
+      "sourceUrl": "https://mcoffee.by/products/kenya-nyeri-kamba-250",
+      "name": "Kenya Nyeri Kamba",
+      "description": null,
+      "roasterName": "Manufactura",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "KE",
+          "countryNameRu": "Кения",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [
+        "Сочный кофе для фильтра с нотами чёрной смородины",
+        "грейпфрута и малины"
+      ],
+      "processing": "мытый",
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [],
+      "imageUrls": [
+        "https://mcoffee.by/imager/resized/175x175-01KDNEP3EKKMCJ4R8A5YPPWM3R.webp"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "346",
+          "weightGrams": 1000,
+          "price": "97.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "weightOptionId": "103"
+          }
+        },
+        {
+          "externalVariantId": "130",
+          "weightGrams": 250,
+          "price": "31.80",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "weightOptionId": "111"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Обработка": "мытый",
+        "Во вкусе": "Сочный кофе для фильтра с нотами чёрной смородины, грейпфрута и малины"
+      },
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "mcoffee.by",
+      "sourceProductId": "74",
+      "sourceUrl": "https://mcoffee.by/products/night-70",
+      "name": "Night 70",
+      "description": null,
+      "roasterName": "Manufactura",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [],
+      "tasteDescriptors": [
+        "Классическая смесь бразильской арабики и индийской робусты. Темно",
+        "плотно и насыщено",
+        "во вкусе шоколад",
+        "фундук и немного карамели"
+      ],
+      "processing": "натуральный",
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [],
+      "imageUrls": [
+        "https://mcoffee.by/imager/resized/175x175-01KDNBQXSGT29E39M4BA74DR8J.webp"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "123",
+          "weightGrams": 1000,
+          "price": "66.20",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "weightOptionId": "103"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Обработка": "натуральный",
+        "Во вкусе": "Классическая смесь бразильской арабики и индийской робусты. Темно, плотно и насыщено, во вкусе шоколад, фундук и немного карамели"
+      },
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_not_specified"
+      ]
+    },
+    {
+      "sourceKey": "mcoffee.by",
+      "sourceProductId": "319",
+      "sourceUrl": "https://mcoffee.by/products/cezve-1",
+      "name": "Ethiopia Chelchele",
+      "description": null,
+      "roasterName": "Manufactura",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "ET",
+          "countryNameRu": "Эфиопия",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [
+        "Кофе для фильтра с нотами персика",
+        "грейпфрута",
+        "сливы",
+        "черного чая",
+        "бергамота",
+        "цветов"
+      ],
+      "processing": "мытый",
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [],
+      "imageUrls": [
+        "https://mcoffee.by/imager/resized/175x175-01M1XX88250ETHVY0F6121GZB5.webp"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "389",
+          "weightGrams": 250,
+          "price": "28.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "weightOptionId": "111"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Обработка": "мытый",
+        "Во вкусе": "Кофе для фильтра с нотами персика, грейпфрута, сливы, черного чая, бергамота, цветов"
+      },
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "mcoffee.by",
+      "sourceProductId": "75",
+      "sourceUrl": "https://mcoffee.by/products/night-50",
+      "name": "Night 50",
+      "description": null,
+      "roasterName": "Manufactura",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [],
+      "tasteDescriptors": [
+        "Классическая смесь арабики из Бразилии и робусты из Индии. Во вкусе горький шоколад",
+        "сухофрукты",
+        "немного пряных специй и ореховых нот"
+      ],
+      "processing": "натуральный",
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [],
+      "imageUrls": [
+        "https://mcoffee.by/imager/resized/175x175-01KDNCEG6YBQJ7Q7VMK358B9EQ.webp"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "124",
+          "weightGrams": 1000,
+          "price": "76.30",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "weightOptionId": "103"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Обработка": "натуральный",
+        "Во вкусе": "Классическая смесь арабики из Бразилии и робусты из Индии. Во вкусе горький шоколад, сухофрукты, немного пряных специй и ореховых нот"
+      },
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_not_specified"
+      ]
+    },
+    {
+      "sourceKey": "mcoffee.by",
+      "sourceProductId": "77",
+      "sourceUrl": "https://mcoffee.by/products/brazil-sul-de-minas-250gr",
+      "name": "Brazil Sul de Minas",
+      "description": null,
+      "roasterName": "Manufactura",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "BR",
+          "countryNameRu": "Бразилия",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [
+        "Мягкий",
+        "чистый",
+        "сладкий кофе с нотами какао",
+        "миндаля",
+        "молочного шоколада для приготовления в рожковой кофемашине",
+        "гейзерной кофеварке и чашке"
+      ],
+      "processing": "натуральный",
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [],
+      "imageUrls": [
+        "https://mcoffee.by/imager/resized/175x175-01KK90D4BGA3WYDR9ZD37E1KBC.webp"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "127",
+          "weightGrams": 1000,
+          "price": "81.70",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "weightOptionId": "103"
+          }
+        },
+        {
+          "externalVariantId": "126",
+          "weightGrams": 250,
+          "price": "24.10",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "weightOptionId": "111"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Обработка": "натуральный",
+        "Во вкусе": "Мягкий, чистый, сладкий кофе с нотами какао, миндаля, молочного шоколада для приготовления в рожковой кофемашине, гейзерной кофеварке и чашке"
+      },
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "mcoffee.by",
+      "sourceProductId": "265",
+      "sourceUrl": "https://mcoffee.by/products/brazil-for-milk",
+      "name": "Brazil for milk",
+      "description": null,
+      "roasterName": "Manufactura",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "BR",
+          "countryNameRu": "Бразилия",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [
+        "Мягкий",
+        "чистый",
+        "сладкий кофе с нотами какао",
+        "миндаля",
+        "молочного шоколада для приготовления в рожковой кофемашине",
+        "гейзерной кофеварке и чашке"
+      ],
+      "processing": "натуральный",
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [],
+      "imageUrls": [
+        "https://mcoffee.by/imager/resized/175x175-01KK90M5C245EK15EQ23Q2HJ4A.webp"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "327",
+          "weightGrams": 1000,
+          "price": "81.70",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "weightOptionId": "103"
+          }
+        },
+        {
+          "externalVariantId": "379",
+          "weightGrams": 250,
+          "price": "24.10",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "weightOptionId": "111"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Обработка": "натуральный",
+        "Во вкусе": "Мягкий, чистый, сладкий кофе с нотами какао, миндаля, молочного шоколада для приготовления в рожковой кофемашине, гейзерной кофеварке и чашке"
+      },
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "mcoffee.by",
+      "sourceProductId": "310",
+      "sourceUrl": "https://mcoffee.by/products/colombia-finca-potosi-1",
+      "name": "Colombia Finca Potosi",
+      "description": null,
+      "roasterName": "Manufactura",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "CO",
+          "countryNameRu": "Колумбия",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [
+        "Кофе для фильтра с нотами вишни",
+        "красного яблока",
+        "юдзу",
+        "сливы и какао"
+      ],
+      "processing": "натуральный",
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [],
+      "imageUrls": [
+        "https://mcoffee.by/imager/resized/175x175-01KXFQ5PGP2QZD2W924CRGAE4B.webp"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "381",
+          "weightGrams": 250,
+          "price": "46.80",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "weightOptionId": "111"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Обработка": "натуральный",
+        "Во вкусе": "Кофе для фильтра с нотами вишни, красного яблока, юдзу, сливы и какао"
+      },
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "mcoffee.by",
+      "sourceProductId": "1",
+      "sourceUrl": "https://mcoffee.by/products/honduras-guara-verde-1-kg",
+      "name": "Honduras Guara Verde",
+      "description": null,
+      "roasterName": "Manufactura",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "HN",
+          "countryNameRu": "Гондурас",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [
+        "Яркий",
+        "кислотный кофе с нотами клубники",
+        "карамели",
+        "персика и лайма"
+      ],
+      "processing": "None",
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [],
+      "imageUrls": [
+        "https://mcoffee.by/imager/resized/175x175-01KK8ZSQ8AZZKGGJB6ZKW6RG20.webp"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "1",
+          "weightGrams": 1000,
+          "price": "93.20",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "weightOptionId": "103"
+          }
+        },
+        {
+          "externalVariantId": "2",
+          "weightGrams": 250,
+          "price": "27.50",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "weightOptionId": "111"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Обработка": "None",
+        "Во вкусе": "Яркий, кислотный кофе с нотами клубники, карамели, персика и лайма"
+      },
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "mcoffee.by",
+      "sourceProductId": "72",
+      "sourceUrl": "https://mcoffee.by/products/night-80",
+      "name": "Night 80",
+      "description": null,
+      "roasterName": "Manufactura",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [],
+      "tasteDescriptors": [
+        "Классическая смесь Бразилии",
+        "Эфиопии и робусты из Индии. Во вкусе ореховая паста",
+        "цитрусы",
+        "шоколадный пирог"
+      ],
+      "processing": "мытый",
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [],
+      "imageUrls": [
+        "https://mcoffee.by/imager/resized/175x175-01KDNAY9DD1R4T7NYVA7Y6AE5S.webp"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "121",
+          "weightGrams": 1000,
+          "price": "81.90",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "weightOptionId": "103"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Обработка": "мытый",
+        "Во вкусе": "Классическая смесь Бразилии, Эфиопии и робусты из Индии. Во вкусе ореховая паста, цитрусы, шоколадный пирог"
+      },
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_not_specified"
+      ]
+    },
+    {
+      "sourceKey": "mcoffee.by",
+      "sourceProductId": "51",
+      "sourceUrl": "https://mcoffee.by/products/espresso-blend",
+      "name": "Espresso Blend",
+      "description": null,
+      "roasterName": "Manufactura",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "blend",
+      "origins": [],
+      "tasteDescriptors": [
+        "Насыщенный и плотный бленд с шоколадно-ореховыми нотами Бразилии и нотами цитруса",
+        "бергамота и сочного абрикоса Эфиопии"
+      ],
+      "processing": "None",
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [],
+      "imageUrls": [
+        "https://mcoffee.by/imager/resized/175x175-01KDN3YACRYDV9DTS1DNZ8J4NT.webp"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "86",
+          "weightGrams": 1000,
+          "price": "87.70",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "weightOptionId": "103"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Обработка": "None",
+        "Во вкусе": "Насыщенный и плотный бленд с шоколадно-ореховыми нотами Бразилии и нотами цитруса, бергамота и сочного абрикоса Эфиопии"
+      },
+      "reviewWarnings": [
+        "blend_composition_may_be_incomplete",
+        "detail_properties_not_collected",
+        "origin_not_specified"
+      ]
+    },
+    {
+      "sourceKey": "mcoffee.by",
+      "sourceProductId": "54",
+      "sourceUrl": "https://mcoffee.by/products/peru-negrisa",
+      "name": "Peru Negrisa",
+      "description": null,
+      "roasterName": "Manufactura",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "PE",
+          "countryNameRu": "Перу",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [
+        "Мягкий",
+        "чистый кофе с нотами айвы",
+        "лесного ореха",
+        "молочного шоколада"
+      ],
+      "processing": "мытый",
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [],
+      "imageUrls": [
+        "https://mcoffee.by/imager/resized/175x175-01KK8ZHJBV2XEXTQRQXDQ8EDS1.webp"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "91",
+          "weightGrams": 1000,
+          "price": "93.20",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "weightOptionId": "103"
+          }
+        },
+        {
+          "externalVariantId": "90",
+          "weightGrams": 250,
+          "price": "27.50",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "weightOptionId": "111"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Обработка": "мытый",
+        "Во вкусе": "Мягкий, чистый кофе с нотами айвы, лесного ореха, молочного шоколада"
+      },
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "mcoffee.by",
+      "sourceProductId": "67",
+      "sourceUrl": "https://mcoffee.by/products/colombia-excelso-decaf-250gr",
+      "name": "Colombia Excelso Decaf",
+      "description": null,
+      "roasterName": "Manufactura",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "CO",
+          "countryNameRu": "Колумбия",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [
+        "Сочный декаф без кофеина с нотами тёмного шоколада",
+        "лимона",
+        "красного яблока и миндаля. Обжарен под любой способ приготовления."
+      ],
+      "processing": "мытый",
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [],
+      "imageUrls": [
+        "https://mcoffee.by/imager/resized/175x175-01KDMYARZ89KEW3ZHAG8VE5DK9.webp"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "110",
+          "weightGrams": 250,
+          "price": "30.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "weightOptionId": "111"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Обработка": "мытый",
+        "Во вкусе": "Сочный декаф без кофеина с нотами тёмного шоколада, лимона, красного яблока и миндаля. Обжарен под любой способ приготовления."
+      },
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "mcoffee.by",
+      "sourceProductId": "69",
+      "sourceUrl": "https://mcoffee.by/products/ethiopia-sidamo-gr4-1kg",
+      "name": "Ethiopia Sidamo Gr.4",
+      "description": null,
+      "roasterName": "Manufactura",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "ET",
+          "countryNameRu": "Эфиопия",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [
+        "Кофе для эспрессо с нотами лимона",
+        "тёмных ягод",
+        "какао и специй"
+      ],
+      "processing": "натуральный",
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [],
+      "imageUrls": [
+        "https://mcoffee.by/imager/resized/175x175-01KDN1MJK9V2HXN7VQK51AN1KT.webp"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "115",
+          "weightGrams": 1000,
+          "price": "86.70",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "weightOptionId": "103"
+          }
+        },
+        {
+          "externalVariantId": "114",
+          "weightGrams": 250,
+          "price": "25.60",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "weightOptionId": "111"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Обработка": "натуральный",
+        "Во вкусе": "Кофе для эспрессо с нотами лимона, тёмных ягод, какао и специй"
+      },
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "mcoffee.by",
+      "sourceProductId": "73",
+      "sourceUrl": "https://mcoffee.by/products/night-100",
+      "name": "Night 100",
+      "description": null,
+      "roasterName": "Manufactura",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [],
+      "tasteDescriptors": [
+        "Классическая смесь Бразилии",
+        "Перу и Эфиопии тёмной обжарки. Во вкусе шоколад",
+        "орехи",
+        "красные ягоды и чернослив"
+      ],
+      "processing": "мытый",
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [],
+      "imageUrls": [
+        "https://mcoffee.by/imager/resized/175x175-01KDNBNNEXGQCZAW1AHEGD1NH1.webp"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "122",
+          "weightGrams": 1000,
+          "price": "91.10",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "weightOptionId": "103"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Обработка": "мытый",
+        "Во вкусе": "Классическая смесь Бразилии, Перу и Эфиопии тёмной обжарки. Во вкусе шоколад, орехи, красные ягоды и чернослив"
+      },
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_not_specified"
+      ]
+    }
+  ],
+  "excluded": [
+    {
+      "sourceProductId": "65",
+      "sourceUrl": "https://mcoffee.by/products/costa-rica-la-chumeca",
+      "name": "Costa Rica La Chumeca",
+      "reason": "not_purchasable",
+      "sourceVariantId": "106"
+    },
+    {
+      "sourceProductId": "62",
+      "sourceUrl": "https://mcoffee.by/products/costa-rica-tarrazu-250",
+      "name": "Costa Rica Tarrazu",
+      "reason": "not_purchasable",
+      "sourceVariantId": "103"
+    },
+    {
+      "sourceProductId": "233",
+      "sourceUrl": "https://mcoffee.by/products/indonesia-gayo-belangi",
+      "name": "Indonesia Gayo Belangi",
+      "reason": "not_purchasable",
+      "sourceVariantId": "293"
+    },
+    {
+      "sourceProductId": "242",
+      "sourceUrl": "https://mcoffee.by/products/rwanda-kinini",
+      "name": "Rwanda Kinini",
+      "reason": "not_purchasable",
+      "sourceVariantId": "302"
+    },
+    {
+      "sourceProductId": "290",
+      "sourceUrl": "https://mcoffee.by/products/rwanda-muteteli",
+      "name": "Rwanda Muteteli",
+      "reason": "not_purchasable",
+      "sourceVariantId": "356"
+    },
+    {
+      "sourceProductId": "59",
+      "sourceUrl": "https://mcoffee.by/products/peru-serafin-tocto",
+      "name": "Peru Serafin Tocto",
+      "reason": "not_purchasable",
+      "sourceVariantId": "99"
+    },
+    {
+      "sourceProductId": "250",
+      "sourceUrl": "https://mcoffee.by/products/ethiopia-yirgacheffe",
+      "name": "Ethiopia Yirgacheffe Gr.2",
+      "reason": "not_purchasable",
+      "sourceVariantId": "310"
+    },
+    {
+      "sourceProductId": "70",
+      "sourceUrl": "https://mcoffee.by/products/nicaragua-las-mimosas-250gr",
+      "name": "Nicaragua Las Mimosas",
+      "reason": "not_purchasable",
+      "sourceVariantId": "116"
+    },
+    {
+      "sourceProductId": "278",
+      "sourceUrl": "https://mcoffee.by/products/colombia-danilo-perez-250gr",
+      "name": "Colombia Danilo Perez",
+      "reason": "not_purchasable",
+      "sourceVariantId": "340"
+    },
+    {
+      "sourceProductId": "71",
+      "sourceUrl": "https://mcoffee.by/products/ethiopia-limu-250gr",
+      "name": "Ethiopia Limu",
+      "reason": "not_purchasable",
+      "sourceVariantId": "118"
+    },
+    {
+      "sourceProductId": "45",
+      "sourceUrl": "https://mcoffee.by/products/kenya-kirinyaga",
+      "name": "Kenya Kirinyaga",
+      "reason": "not_purchasable",
+      "sourceVariantId": "74"
+    }
+  ],
+  "sourceSnapshots": [
+    {
+      "url": "https://mcoffee.by/catalog/coffee/kofe-v-zernah",
+      "fetchedAtUtc": "2026-10-05T10:58:25.066232+00:00",
+      "sha256": "15eb833425000b3a5bd9707099088f09ca7c048d649d91a722447487ef794d69",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://mcoffee.by/catalog/coffee/kofe-v-zernah?page=2",
+      "fetchedAtUtc": "2026-10-05T10:58:16.353560+00:00",
+      "sha256": "4e54a98ad79f6484dac3be561533534c800fca8608f2990447b794efc830ef1d",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://mcoffee.by/catalog/coffee/kofe-v-zernah?page=3",
+      "fetchedAtUtc": "2026-10-05T10:58:19.190369+00:00",
+      "sha256": "6ea9da452a1a9f4f8a60ca5beba33c7a0b4ee820d9238bb74cd5195c2fe3e172",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://mcoffee.by/catalog/coffee/kofe-v-zernah?page=4",
+      "fetchedAtUtc": "2026-10-05T10:58:21.881402+00:00",
+      "sha256": "d5d588fb940f4a2ff902c7f83072720978d6f50188eae080eb63e0de974681cb",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://mcoffee.by/products/colombia-danilo-perez-250gr",
+      "fetchedAtUtc": "2026-10-05T10:59:25.427642+00:00",
+      "sha256": "4488ce66f318d1e3eaabbb99fc73927f8b922dc82ccd9d19fb042ef1868751d3",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://mcoffee.by/products/costa-rica-la-chumeca",
+      "fetchedAtUtc": "2026-10-05T10:59:01.674167+00:00",
+      "sha256": "9108593e76300c04f7f16ae81ab843e3344b78bd6f802a16fe70f65cb1c7e047",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://mcoffee.by/products/costa-rica-tarrazu-250",
+      "fetchedAtUtc": "2026-10-05T10:59:04.854601+00:00",
+      "sha256": "2302b68eb1181824e5b99babaddc7477b27bbb1739cf036d9d47af2b193c7d3e",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://mcoffee.by/products/ethiopia-limu-250gr",
+      "fetchedAtUtc": "2026-10-05T10:59:28.376380+00:00",
+      "sha256": "b35b85e6cfeaf1c195e15dcf0216fd6ce872547b9a15c2dbd5b1fce16c306acc",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://mcoffee.by/products/ethiopia-yirgacheffe",
+      "fetchedAtUtc": "2026-10-05T10:59:19.643582+00:00",
+      "sha256": "92c721f4656da9f0bfdf64cd3c222482526a0c6bb0ae0ae4533430382c5fb1e6",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://mcoffee.by/products/get-variant",
+      "fetchedAtUtc": "2026-10-05T10:58:26.763581+00:00",
+      "sha256": "dbc59fdf434aaf4c0561e10cf3b0e78a3efff35296209d07d41e1683da65f5e3",
+      "paginationHeaders": {},
+      "method": "POST",
+      "query": {
+        "product_id": 25,
+        "product_variant_id": 54,
+        "attr_value_id": 103,
+        "view": "card"
+      }
+    },
+    {
+      "url": "https://mcoffee.by/products/get-variant",
+      "fetchedAtUtc": "2026-10-05T10:58:29.727689+00:00",
+      "sha256": "62d0b89331e1d41ef9089c158e92fb7ab5d2f5363dfbbd8eb4f92acbe0824d09",
+      "paginationHeaders": {},
+      "method": "POST",
+      "query": {
+        "product_id": 79,
+        "product_variant_id": 130,
+        "attr_value_id": 103,
+        "view": "card"
+      }
+    },
+    {
+      "url": "https://mcoffee.by/products/get-variant",
+      "fetchedAtUtc": "2026-10-05T10:58:33.306277+00:00",
+      "sha256": "d81ee7c592203c27b8d8afed8b1c42e36adcda0ae9e069916792808a23fdd0aa",
+      "paginationHeaders": {},
+      "method": "POST",
+      "query": {
+        "product_id": 77,
+        "product_variant_id": 126,
+        "attr_value_id": 103,
+        "view": "card"
+      }
+    },
+    {
+      "url": "https://mcoffee.by/products/get-variant",
+      "fetchedAtUtc": "2026-10-05T10:58:35.774804+00:00",
+      "sha256": "ceaa1171b1fbc11e8b44314605928551231d8362f54567727df127e3133d4aab",
+      "paginationHeaders": {},
+      "method": "POST",
+      "query": {
+        "product_id": 265,
+        "product_variant_id": 327,
+        "attr_value_id": 111,
+        "view": "card"
+      }
+    },
+    {
+      "url": "https://mcoffee.by/products/get-variant",
+      "fetchedAtUtc": "2026-10-05T10:58:38.955013+00:00",
+      "sha256": "d66332ea27a81de7b00cbd93d1eb2ad690cb0831dd52f56ee90310efe051252d",
+      "paginationHeaders": {},
+      "method": "POST",
+      "query": {
+        "product_id": 1,
+        "product_variant_id": 1,
+        "attr_value_id": 111,
+        "view": "card"
+      }
+    },
+    {
+      "url": "https://mcoffee.by/products/get-variant",
+      "fetchedAtUtc": "2026-10-05T10:58:41.850003+00:00",
+      "sha256": "dd16b77fd85630c7763c9fd9566b5b1cfbbc33488bf6dc7845ab4238785de7f6",
+      "paginationHeaders": {},
+      "method": "POST",
+      "query": {
+        "product_id": 54,
+        "product_variant_id": 90,
+        "attr_value_id": 103,
+        "view": "card"
+      }
+    },
+    {
+      "url": "https://mcoffee.by/products/get-variant",
+      "fetchedAtUtc": "2026-10-05T10:58:44.792908+00:00",
+      "sha256": "7680e7d036b4832b67caaac5675a8c8be659c177a249d7233e6ce2e5491885fd",
+      "paginationHeaders": {},
+      "method": "POST",
+      "query": {
+        "product_id": 69,
+        "product_variant_id": 114,
+        "attr_value_id": 103,
+        "view": "card"
+      }
+    },
+    {
+      "url": "https://mcoffee.by/products/indonesia-gayo-belangi",
+      "fetchedAtUtc": "2026-10-05T10:59:07.566001+00:00",
+      "sha256": "4966fd29eff3a065f2d193fbd63c2f2d310b5c4ec061a02e0251721ce332e77c",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://mcoffee.by/products/kenya-kirinyaga",
+      "fetchedAtUtc": "2026-10-05T10:59:31.316805+00:00",
+      "sha256": "a343a964d3b1d29905f9c28b663bb2b376d790adde1f6470499d2c4f6d8637c5",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://mcoffee.by/products/nicaragua-las-mimosas-250gr",
+      "fetchedAtUtc": "2026-10-05T10:59:22.500330+00:00",
+      "sha256": "2522b4bb555d31d3b74e54037ff0e16356a55d8f17683f731b9e2136190aab0f",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://mcoffee.by/products/peru-serafin-tocto",
+      "fetchedAtUtc": "2026-10-05T10:59:17.545431+00:00",
+      "sha256": "d3b4450820b19e99326c529df1f9073e002708c1089563572f38fa76e4cc2ce5",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://mcoffee.by/products/rwanda-kinini",
+      "fetchedAtUtc": "2026-10-05T10:59:11.895430+00:00",
+      "sha256": "ce7c4b2be6e07bdcfc4220872b6ebe14db84c4396e49363d2a9ea75dc883c435",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://mcoffee.by/products/rwanda-muteteli",
+      "fetchedAtUtc": "2026-10-05T10:59:13.739862+00:00",
+      "sha256": "f45864620c469ce87386332269ed4186850b8a90acf00378d33ee64fc4e62a0e",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://mcoffee.by/products/tanzania-kilimanjaro-250",
+      "fetchedAtUtc": "2026-10-05T10:06:17.588062+00:00",
+      "sha256": "4c9d074c9078ffaff0a3bf54b26aa008b92c55f7b1e7fc5464135bf45dcfd2c9"
+    }
+  ]
+}

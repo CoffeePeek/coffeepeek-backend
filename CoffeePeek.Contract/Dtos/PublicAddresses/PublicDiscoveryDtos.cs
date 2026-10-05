@@ -100,7 +100,12 @@ public sealed record PublicCheckInDto
 }
 
 public sealed record PublicRoasterDetailsDto(PublicAddressDto Address, string Name, string? About,
-    LocationDto? Location, RoasterContactDto? Contact, ShortPhotoMetadataDto[] Photos, PublicLinkedShopDto[] Shops);
+    LocationDto? Location, RoasterContactDto? Contact, ShortPhotoMetadataDto[] Photos, PublicLinkedShopDto[] Shops)
+{
+    public PublicTagDto[] Tags { get; init; } = [];
+    public int AvailableCoffeeProducts { get; init; }
+    public DateTime? CoffeeCatalogUpdatedAtUtc { get; init; }
+}
 public sealed record PublicMapShopDto(PublicAddressDto Address, decimal Latitude, decimal Longitude, string Title,
     CoffeeShopType? Type, PublicAddressDto? PrimaryZone);
 public sealed record PublicZoneDto(PublicAddressDto Address, string Name, string? Description,
