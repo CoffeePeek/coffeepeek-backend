@@ -10,6 +10,40 @@ namespace CoffeePeek.Shops.Infrastructure.Tests.Persistence;
 public sealed class QueryRoasterRepositoryTests
 {
     [Fact]
+    public async Task GetAll_OrdersByVisibleShopCountDescendingThenName()
+    {
+        var options = new DbContextOptionsBuilder<ShopsDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .Options;
+        await using var dbContext = new ShopsDbContext(options);
+        var popular = new Roaster("Zulu");
+        var alpha = new Roaster("Alpha");
+        var beta = new Roaster("Beta");
+        var unused = new Roaster("A Unused");
+        var hiddenOnly = new Roaster("B Hidden");
+        dbContext.Roasters.AddRange(beta, hiddenOnly, unused, popular, alpha);
+
+        var first = new CoffeeShop(null, "First", null, PriceRange.Moderate, Guid.NewGuid());
+        first.SetRoasters([popular, alpha]);
+        var second = new CoffeeShop(null, "Second", null, PriceRange.Moderate, Guid.NewGuid());
+        second.SetRoasters([popular, beta]);
+        dbContext.Shops.AddRange(first, second);
+        for (var i = 0; i < 3; i++)
+        {
+            var hidden = new CoffeeShop(null, $"Hidden {i}", null, PriceRange.Moderate, Guid.NewGuid());
+            hidden.SetRoasters([alpha, hiddenOnly]);
+            hidden.SetHidden(true);
+            dbContext.Shops.Add(hidden);
+        }
+        await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+        dbContext.ChangeTracker.Clear();
+
+        var result = await new QueryRoasterRepository(dbContext).GetAll();
+
+        result.Select(r => r.Id).Should().Equal(popular.Id, alpha.Id, beta.Id, unused.Id, hiddenOnly.Id);
+    }
+
+    [Fact]
     public async Task ExistsByNameAsync_IsCaseInsensitiveAndTreatsWildcardsLiterally()
     {
         var options = new DbContextOptionsBuilder<ShopsDbContext>()

@@ -19,6 +19,8 @@ public class QueryRoasterRepository(ShopsDbContext dbContext) : IQueryRoasterRep
         return _repository
             .AsNoTracking()
             .Include(r => r.Photos)
+            .OrderByDescending(r => r.CoffeeShops.Count(s => !s.IsHidden))
+            .ThenBy(r => r.Name)
             .ToArrayAsync();
     }
 
