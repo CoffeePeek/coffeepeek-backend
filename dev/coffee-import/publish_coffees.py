@@ -169,7 +169,15 @@ class Publisher:
         for product in snapshot["products"]:
             urls = list(dict.fromkeys(normalize_image(url, product["sourceUrl"]) for url in product["imageUrls"]))
             product["imageUrls"] = urls
-            product["storedPhotos"] = [self.photo(url) for url in urls]
+            try:
+                product["storedPhotos"] = [self.photo(url) for url in urls]
+            except HTTPError as exc:
+                if exc.code not in (404, 410):
+                    raise
+                exc.close()
+                # ponytail: preserve the whole gallery; add partial gallery merging if needed.
+                product["storedPhotos"] = []
+                product["reviewWarnings"] = sorted(set(product.get("reviewWarnings", []) + [f"photo_unavailable:{exc.code}"]))
         payload = json.dumps(snapshot, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode()
         identity = hashlib.sha256(payload).hexdigest()
         request = {"sourceKey": source, "snapshotId": identity, "snapshot": snapshot}

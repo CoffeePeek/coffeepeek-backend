@@ -4,6 +4,7 @@ import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, patch
+from urllib.error import HTTPError
 
 from bs4 import BeautifulSoup
 from catalogues import card_images
@@ -12,6 +13,29 @@ from roast_by import ParseError
 
 
 class PublisherCheck(unittest.TestCase):
+    def test_missing_photo_preserves_gallery_and_does_not_block_other_products(self):
+        good, missing, other = ("https://roast.by/" + name + ".png" for name in ("good", "missing", "other"))
+        for code in (404, 410, 500):
+            with self.subTest(code=code), tempfile.TemporaryDirectory(dir=Path(__file__).parent) as folder:
+                publisher = Publisher(folder, "http://localhost:5243", "http://localhost:5025", "a" * 32)
+                snapshot = {"source": "https://roast.by/", "products": [
+                    {"sourceUrl": "https://roast.by/one/", "imageUrls": [good, missing]},
+                    {"sourceUrl": "https://roast.by/two/", "imageUrls": [other]}]}
+                photos = [{"sourceUrl": good}, HTTPError(missing, code, "Unavailable", None, None), {"sourceUrl": other}]
+                self.addCleanup(photos[1].close)
+                with patch.object(publisher, "photo", side_effect=photos), patch.object(publisher, "api", return_value={"status": "Applied"}) as api:
+                    if code == 500:
+                        with self.assertRaises(HTTPError):
+                            publisher.publish(snapshot)
+                        api.assert_not_called()
+                        continue
+                    self.assertEqual("Applied", publisher.publish(snapshot)["status"])
+                    products = json.loads(api.call_args.args[2])["snapshot"]["products"]
+                    self.assertEqual([], products[0]["storedPhotos"])
+                    self.assertEqual([good, missing], products[0]["imageUrls"])
+                    self.assertIn(f"photo_unavailable:{code}", products[0]["reviewWarnings"])
+                    self.assertEqual([{"sourceUrl": other}], products[1]["storedPhotos"])
+
     def test_photos_are_uploaded_before_catalogue_and_keep_source_provenance(self):
         data = b"\x89PNG\r\n\x1a\nphoto"
         url = "https://roast.by/photo.png"
