@@ -117,7 +117,8 @@ public sealed class PublicDiscoveryService(IPublicAddressService addresses, IPro
         var response = await bus.InvokeAsync<Response<GetAllRoastersResponse>>(new GetAllRoastersCommand(), ct);
         var roasters = response.Data?.Roasters ?? throw new ServiceUnavailableException("Roasters unavailable.");
         var lookup = await ReadAsync(PublicAddressKind.Roaster, roasters.Select(x => x.Id), ct);
-        return roasters.Select(x => new PublicRoasterSummaryDto(Required(lookup, x.Id), x.Name, x.PhotoUrl, x.CoverPhoto)).ToArray();
+        return roasters.Select(x => new PublicRoasterSummaryDto(Required(lookup, x.Id), x.Name, x.PhotoUrl, x.CoverPhoto)
+        { CoffeeShopsCount = x.CoffeeShopsCount, CoffeeProductsCount = x.CoffeeProductsCount }).ToArray();
     }
 
     public async Task<PublicRoasterDetailsDto?> GetRoasterAsync(string slug, CancellationToken ct)
@@ -129,7 +130,8 @@ public sealed class PublicDiscoveryService(IPublicAddressService addresses, IPro
         var x = response.Data;
         var shops = await ReadAsync(PublicAddressKind.CoffeeShop, x.Shops.Select(s => s.Id), ct);
         return new(PublicAddressDto.From(address), x.Name, x.About, x.Location, x.Contact, x.Photos,
-            x.Shops.Where(s => shops.ContainsKey(s.Id)).Select(s => new PublicLinkedShopDto(Find(shops, s.Id), s.Name, s.CoverPhoto)).ToArray());
+            x.Shops.Where(s => shops.ContainsKey(s.Id)).Select(s => new PublicLinkedShopDto(Find(shops, s.Id), s.Name, s.CoverPhoto)).ToArray())
+        { CoffeeShopsCount = x.CoffeeShopsCount, CoffeeProductsCount = x.CoffeeProductsCount };
     }
 
     public async Task<PublicReviewDto[]> ReviewsAsync(ReviewDto[] items, CancellationToken ct)
@@ -203,7 +205,8 @@ public sealed class PublicDiscoveryService(IPublicAddressService addresses, IPro
         items.Where(x => addresses.ContainsKey(x.Id)).Select(x => new PublicTagDto(addresses[x.Id].Slug, x.Name, x.Description, x.SortOrder)).ToArray();
 
     private static PublicRoasterSummaryDto[] Roasters(RoasterDto[]? items, Dictionary<Guid, PublicAddressDto> addresses) =>
-        (items ?? []).Select(x => new PublicRoasterSummaryDto(Find(addresses, x.Id), x.Name, x.PhotoUrl, x.CoverPhoto)).ToArray();
+        (items ?? []).Select(x => new PublicRoasterSummaryDto(Find(addresses, x.Id), x.Name, x.PhotoUrl, x.CoverPhoto)
+        { CoffeeShopsCount = x.CoffeeShopsCount, CoffeeProductsCount = x.CoffeeProductsCount }).ToArray();
 
     private static PublicAddressDto? Find(Dictionary<Guid, PublicAddressDto> addresses, Guid id) => addresses.GetValueOrDefault(id);
     private static PublicAddressDto Required(Dictionary<Guid, PublicAddressDto> addresses, Guid id) =>

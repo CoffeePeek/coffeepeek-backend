@@ -2,6 +2,8 @@ namespace CoffeePeek.Contract.Dtos.Shop;
 
 public record RoasterDetailsDto
 {
+    public int CoffeeShopsCount { get; init; }
+    public int CoffeeProductsCount { get; init; }
     public Guid Id { get; init; }
     public required string Name { get; init; }
     public Guid? CityId { get; init; }

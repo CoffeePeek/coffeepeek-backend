@@ -6,6 +6,7 @@ using CoffeePeek.Shared.Kernel.Options;
 using CoffeePeek.Shared.Kernel.Response;
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
 using Microsoft.Extensions.Options;
+using CoffeePeek.Shops.Application.Features.CoffeeCatalog;
 
 namespace CoffeePeek.Shops.Application.Features.Catalogs.GetRoasterById;
 
@@ -15,13 +16,19 @@ public static class GetRoasterByIdHandler
         GetRoasterByIdQuery query,
         IQueryRoasterRepository repository,
         IOptions<MediaPublicUrlOptions> mediaOptions,
+        ICoffeeCatalogStore coffees,
         CancellationToken ct)
     {
         var roaster = await repository.GetByIdWithShopsAndPhotosAsync(query.Id, ct);
         if (roaster is null)
             return Response<RoasterDetailsDto>.Error(HttpStatusCode.NotFound, "Roaster not found.");
 
-        return Response<RoasterDetailsDto>.Success(ToDto(roaster, mediaOptions.Value));
+        var counts = (await coffees.RoasterCountsAsync([roaster.Id], ct)).GetValueOrDefault(roaster.Id);
+        return Response<RoasterDetailsDto>.Success(ToDto(roaster, mediaOptions.Value) with
+        {
+            CoffeeShopsCount = counts.CoffeeShopsCount,
+            CoffeeProductsCount = counts.CoffeeProductsCount
+        });
     }
 
     internal static RoasterDetailsDto ToDto(Roaster roaster, MediaPublicUrlOptions mediaOptions) => new()

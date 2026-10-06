@@ -50,6 +50,8 @@
 | `GET /api/coffees` | Общий опубликованный каталог |
 | `GET /api/coffees/{slug}` | Карточка кофе и варианты покупки |
 
+В списках и профиле обжарщика `coffeeShopsCount` считает видимые кофейни, а `coffeeProductsCount` — разные опубликованные позиции кофе, независимо от фасовки и наличия. Draft/Archived исключены. `availableCoffeeProducts` сохраняет отдельный смысл: опубликованные позиции с вариантом InStock. Счётчики вычисляются из БД при чтении, без отдельной таблицы и без запроса на каждого обжарщика. В сокращённых ссылках на обжарщика внутри ответов кофеен счётчики могут быть `null`, если статистика не запрашивалась.
+
 Фильтры каталога: `roasterSlug`, `search`, повторяемый `countries=ET&countries=CO`, `productKind=roasted_beans|green_beans`, `processing`, `brew`, `weightGrams`, `currency=BYN|RUB`, `minPrice`, `maxPrice`, `availableOnly` (по умолчанию `true`), `page`, `pageSize` (1–100). Несколько стран — OR, несколько тегов обжарщика — AND. Фильтры веса, цены, валюты и наличия проверяются у одного варианта. Для диапазона цен обязательно указать валюту.
 
 Карточка содержит `address`, `roaster`, `content`, `countries`, `photos`, `variants`, `updatedAtUtc`. `photos[]` имеет `fullUrl`, `urls` (размеры существующего `PhotoUrlsDto`), `isPrimary`, `sortIndex`. Это ссылки на сохранённые файлы Media, доступные независимо от исходного сайта. `photos=[]` означает отсутствие фотографии; клиент показывает заглушку.
