@@ -2,14 +2,6 @@ using CoffeePeek.Contract.Dtos.Coffee;
 
 namespace CoffeePeek.Shops.Application.Features.CoffeeCatalog;
 
-public sealed record CreateCoffeeCommand(CreateCoffeeRequest Request);
-public sealed record EditCoffeeCommand(Guid Id, CoffeeEditRequest Request);
-public sealed record ImportCoffeeSnapshotCommand(CoffeeSnapshotImportRequest Request);
-public sealed record CreateRoasterTagCommand(CreateRoasterTagRequest Request);
-public sealed record EditRoasterTagCommand(Guid Id, RoasterTagEdit Request);
-public sealed record SetRoasterTagsCommand(Guid RoasterId, Guid[] TagIds, Guid ActorId);
-public sealed record ArchiveCoffeeCommand(Guid Id);
-
 public static class CoffeeCatalogHandler
 {
     public static Task<AdminCoffeeDto> Handle(CreateCoffeeCommand command, ICoffeeCatalogStore store, CancellationToken ct)

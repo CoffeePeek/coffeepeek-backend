@@ -50,10 +50,3 @@ public class PhotoMetadata
         ScheduledDeletionAt.HasValue &&
         ScheduledDeletionAt.Value <= utcNow;
 }
-
-public enum OwnerType
-{
-    User,
-    Shop,
-    Coffee
-}

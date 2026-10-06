@@ -25,9 +25,3 @@ public interface ICoffeeCatalogStore
     Task<CoffeeImportResult> ImportAsync(CoffeeSnapshotImportRequest request, CancellationToken ct);
     Task RecordFailureAsync(CoffeeImportFailureDto failure, CancellationToken ct);
 }
-
-public sealed class CoffeeImportOptions
-{
-    // Key is an exact source hostname; value maps an exact source brand to a pre-existing RoasterId.
-    public Dictionary<string, Dictionary<string, Guid>> Roasters { get; set; } = new(StringComparer.Ordinal);
-}

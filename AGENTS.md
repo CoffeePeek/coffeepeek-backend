@@ -3,6 +3,8 @@
 General architecture, conventions, and build/test/migration commands live in `CLAUDE.md`
 (read it first). This file only adds cloud-agent operating notes.
 
+Follow the C# file-layout rule in `CLAUDE.md`: one top-level type per file, including DTOs, records, events, and commands.
+
 ## Cursor Cloud specific instructions
 
 CoffeePeek is a backend-only .NET 10 microservices platform. Five ASP.NET Core services run

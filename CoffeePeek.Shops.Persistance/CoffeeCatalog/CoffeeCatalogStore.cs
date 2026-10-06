@@ -17,9 +17,6 @@ using Microsoft.Extensions.Options;
 
 namespace CoffeePeek.Shops.Persistance.CoffeeCatalog;
 
-public sealed class CoffeeCatalogException(string message, int statusCode = 400)
-    : BaseException(message, "coffee_catalog_error", statusCode);
-
 public sealed partial class CoffeeCatalogStore(ShopsDbContext db, IOptions<MediaPublicUrlOptions> media,
     IOptions<CoffeeImportOptions> importOptions, IPublicAddressService addresses,
     ILogger<CoffeeCatalogStore> logger) : ICoffeeCatalogStore

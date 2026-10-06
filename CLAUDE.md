@@ -54,6 +54,13 @@ Each service follows **layered DDD**:
 
 Central package management via `Directory.Packages.props` (`ManagePackageVersionsCentrally=true`).
 
+## C# File Layout
+
+- One top-level C# type per file: class, record, struct, interface, or enum. Each event and command also has its own file.
+- Name the file after its type. Partial implementations may use `TypeName.Purpose.cs`.
+- Do not bundle DTOs, contracts, commands, handlers, or domain entities into aggregate files.
+- Apply this rule to new and modified files, including DTOs produced by repository-owned generators. Split an existing bundle when changing it; preserve namespaces and wire contracts.
+
 ## Building and Running
 
 ### Prerequisites
