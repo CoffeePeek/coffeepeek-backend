@@ -103,4 +103,41 @@ public sealed class RoasterCountsTests
         var changed = Assert.Single(await store.RoastersAsync(["training"], ct));
         Assert.Equal((1, 1, 0), (changed.CoffeeShopsCount, changed.CoffeeProductsCount, changed.AvailableCoffeeProducts));
     }
+
+    [Fact]
+    public async Task ListOrder_UsesVisibleShopsThenPublishedCatalogThenName()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        await using var db = new ShopsDbContext(new DbContextOptionsBuilder<ShopsDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString()).Options);
+        var cases = new[] { ("Z most shops", 2, 0), ("Z large catalog", 1, 3), ("A small catalog", 1, 1),
+            ("B same catalog", 1, 1), ("A unused catalog", 0, 5), ("C empty", 0, 0) };
+        foreach (var (name, shops, coffees) in cases)
+        {
+            var r = new Roaster(name); r.SetPublicSlug(name.ToLowerInvariant().Replace(' ', '-')); db.Roasters.Add(r);
+            for (var i = 0; i < shops; i++)
+            {
+                var shop = new CoffeeShop(null, $"{name} {i}", null,
+                    CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate.PriceRange.Moderate, Guid.NewGuid());
+                shop.SetRoasters([r]); db.Shops.Add(shop);
+            }
+            var statuses = Enumerable.Repeat(CoffeePublicationStatus.Published, coffees);
+            if (name == "A small catalog") statuses = statuses.Concat(Enumerable.Repeat(CoffeePublicationStatus.Draft, 5))
+                .Concat(Enumerable.Repeat(CoffeePublicationStatus.Archived, 5));
+            foreach (var status in statuses)
+            {
+                var product = new CoffeeProduct(r.Id, new("Coffee", null, "roasted_beans", "whole_beans", "unknown",
+                    null, null, null, null, null, [], [], [], []));
+                product.SetStatus(status); db.CoffeeProducts.Add(product);
+            }
+        }
+        await db.SaveChangesAsync(ct);
+        var store = new CoffeeCatalogStore(db, Options.Create(new MediaPublicUrlOptions { PublicEndpoint = "https://media.example" }),
+            Options.Create(new CoffeeImportOptions()), Mock.Of<IPublicAddressService>(), NullLogger<CoffeeCatalogStore>.Instance);
+        var rows = await store.RoastersAsync([], ct);
+        Assert.Equal(cases.Select(c => c.Item1), rows.Select(r => r.Name));
+        Assert.Equal(cases.Select(c => c.Item3), rows.Select(r => r.CoffeeProductsCount));
+        Assert.All(rows, r => Assert.Equal(0, r.AvailableCoffeeProducts));
+    }
+
 }

@@ -154,9 +154,11 @@ public sealed class DiscoveryQueryLiveTests : IClassFixture<ShopsLiveDatabase>
     public async Task FullRoasterList_TagsPhotosCountsAndStock_ExecuteInPostgres()
     {
         await using var db = fixture.Context(false);
-        var other = AddRoaster(db, Key()); var popular = AddRoaster(db, Key());
+        var other = AddRoaster(db, Key()); var popular = AddRoaster(db, Key()); var larger = AddRoaster(db, Key());
+        other.Update("A catalog", null); larger.Update("Z catalog", null);
+        AddProduct(db, larger, "Unavailable one"); AddProduct(db, larger, "Unavailable two");
         var tag = new RoasterTag(Key(), "List live", null, 0); db.RoasterTags.Add(tag);
-        foreach (var r in new[] { other, popular }) db.RoasterTagAssignments.Add(new(r.Id, tag.Id, Guid.NewGuid()));
+        foreach (var r in new[] { other, popular, larger }) db.RoasterTagAssignments.Add(new(r.Id, tag.Id, Guid.NewGuid()));
         AddOffer(AddProduct(db, other, "Unavailable"), 250, 20, availability: CoffeeAvailability.OutOfStock);
         var p = AddProduct(db, popular, "Available"); AddOffer(p, 250, 20); AddOffer(p, 1000, 60);
         var draft = AddProduct(db, popular, "Draft"); draft.SetStatus(CoffeePublicationStatus.Draft); AddOffer(draft, 250, 10);
@@ -165,9 +167,11 @@ public sealed class DiscoveryQueryLiveTests : IClassFixture<ShopsLiveDatabase>
         var store = new CoffeeCatalogStore(db, Options.Create(new MediaPublicUrlOptions { PublicEndpoint = "https://media.example" }),
             Options.Create(new CoffeeImportOptions()), Mock.Of<IPublicAddressService>(), NullLogger<CoffeeCatalogStore>.Instance);
         var result = await store.RoastersAsync([tag.Slug], Ct);
-        Assert.Equal(2, result.Length); Assert.Equal(popular.PublicSlug, result[0].Address!.Slug);
+        Assert.Equal(3, result.Length); Assert.Equal(popular.PublicSlug, result[0].Address!.Slug);
+        Assert.Equal(larger.PublicSlug, result[1].Address!.Slug); Assert.Equal(other.PublicSlug, result[2].Address!.Slug);
         Assert.Equal((1, 1, 1), (result[0].CoffeeShopsCount, result[0].CoffeeProductsCount, result[0].AvailableCoffeeProducts));
-        Assert.Equal((0, 1, 0), (result[1].CoffeeShopsCount, result[1].CoffeeProductsCount, result[1].AvailableCoffeeProducts));
+        Assert.Equal((0, 2, 0), (result[1].CoffeeShopsCount, result[1].CoffeeProductsCount, result[1].AvailableCoffeeProducts));
+        Assert.Equal((0, 1, 0), (result[2].CoffeeShopsCount, result[2].CoffeeProductsCount, result[2].AvailableCoffeeProducts));
         Assert.All(result, r => Assert.Equal(tag.Slug, Assert.Single(r.Tags).Slug));
     }
 
