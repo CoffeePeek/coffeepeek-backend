@@ -6,9 +6,13 @@ using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
 using CoffeePeek.Shops.Domain.Aggregates.MenuAggregate;
 using CoffeePeek.Shops.Persistance.Configuration;
 using CoffeePeek.Shops.Persistance.Discovery;
+using CoffeePeek.Shops.Persistance.CoffeeCatalog;
+using CoffeePeek.Shops.Application.Features.CoffeeCatalog;
+using CoffeePeek.Shops.Infrastructure.Tests.Persistence;
 using CoffeePeek.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 
 namespace CoffeePeek.Shops.Infrastructure.Tests.LivePostgres;
@@ -51,6 +55,56 @@ public sealed class DiscoveryQueryLiveTests : IClassFixture<ShopsLiveDatabase>
         var v = new CoffeeVariant { Source = source, CoffeeProductSourceId = source.Id, SourceKey = source.SourceKey,
             ExternalVariantId = Guid.NewGuid().ToString(), WeightGrams = weight, Price = price, Currency = "BYN", Availability = availability, CheckedAtUtc = DateTime.UtcNow };
         v.SetBrewPurpose(brew, false); source.Variants.Add(v);
+    }
+
+    [Fact]
+    public async Task AllUnavailableImport_RetiresExplicitOffersWithoutChangingPublication_ExecuteInPostgres()
+    {
+        await using var db = fixture.Context(false);
+        var roaster = AddRoaster(db, Key()); await db.SaveChangesAsync(Ct);
+        var store = new CoffeeCatalogStore(db, Options.Create(new MediaPublicUrlOptions { PublicEndpoint = "https://media.example" }),
+            Options.Create(new CoffeeImportOptions { Roasters = new() { ["roast.by"] = new() { ["ROAST"] = roaster.Id } } }),
+            Mock.Of<IPublicAddressService>(), NullLogger<CoffeeCatalogStore>.Instance);
+        var request = CoffeeCatalogTests.Snapshot('a', DateTimeOffset.UtcNow.AddMinutes(-2));
+        request.SourceKey = "roast.by";
+        // Keep this independent from other tests importing the same fixture identities.
+        request.Snapshot.Products[0].SourceProductId = Key();
+        foreach (var variant in request.Snapshot.Products[0].Variants) variant.ExternalVariantId = Key();
+        request.Snapshot.Products[0].ImageUrls = []; request.Snapshot.Products[0].StoredPhotos = [];
+        request.SnapshotId = Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(Guid.NewGuid().ToByteArray()));
+        await store.ImportAsync(request, Ct);
+        var source = await db.CoffeeProductSources.Include(s => s.Product).SingleAsync(s => s.Product.RoasterId == roaster.Id, Ct);
+        source.Product.SetStatus(CoffeePublicationStatus.Published); await db.SaveChangesAsync(Ct);
+        request.SnapshotId = Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(Guid.NewGuid().ToByteArray()));
+        request.Snapshot.CollectedAtUtc = request.Snapshot.CollectedAtUtc.AddMinutes(1);
+        request.Snapshot.Products = [];
+        await Assert.ThrowsAsync<CoffeeCatalogException>(() => store.ImportAsync(request, Ct));
+        request.Snapshot.Excluded = [new() { SourceProductId = source.ExternalProductId, Reason = "not_purchasable" }];
+        var result = await store.ImportAsync(request, Ct);
+        Assert.Equal(result.RunId, (await store.ImportAsync(request, Ct)).RunId);
+        db.ChangeTracker.Clear();
+        Assert.Equal(CoffeePublicationStatus.Published, (await db.CoffeeProducts.SingleAsync(p => p.RoasterId == roaster.Id, Ct)).Status);
+        Assert.All(await db.Set<CoffeeVariant>().Where(v => v.Source.CoffeeProductId == source.CoffeeProductId).ToArrayAsync(Ct),
+            v => Assert.Equal(CoffeeAvailability.OutOfStock, v.Availability));
+    }
+
+    [Fact]
+    public async Task ConcurrentFavoriteDeletes_AreIdempotent_ExecuteInPostgres()
+    {
+        await using var first = fixture.Context(false);
+        await using var second = fixture.Context(false);
+        var roaster = AddRoaster(first, Key()); await first.SaveChangesAsync(Ct);
+        var user = Guid.NewGuid();
+        var firstStore = new DiscoveryFavoritesStore(first, Mock.Of<IPublicAddressService>());
+        var secondStore = new DiscoveryFavoritesStore(second, Mock.Of<IPublicAddressService>());
+        await firstStore.SetAsync(user, "roaster", roaster.PublicSlug!, true, Ct);
+        first.ChangeTracker.Clear();
+        await first.DiscoveryFavorites.FindAsync([user, "roaster", roaster.Id], Ct);
+        await secondStore.SetAsync(user, "roaster", roaster.PublicSlug!, false, Ct);
+        await firstStore.SetAsync(user, "roaster", roaster.PublicSlug!, false, Ct);
+        Assert.Empty(await firstStore.ListAsync(user, Ct));
+        await firstStore.SetAsync(user, "roaster", roaster.PublicSlug!, true, Ct);
+        Assert.Single(await firstStore.ListAsync(user, Ct));
     }
 
     [Fact]

@@ -119,6 +119,35 @@ public class CoffeeCatalogTests
         Assert.Equal(30m, price!.Price);
     }
 
+    [Fact]
+    public async Task AllUnavailableSnapshot_UpdatesStock_WhileUnexplainedEmptySnapshotIsRejected()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        await using var db = new ShopsDbContext(new DbContextOptionsBuilder<ShopsDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString()).Options);
+        await db.Database.EnsureCreatedAsync(ct);
+        var roaster = new Roaster("ROAST"); db.Roasters.Add(roaster); await db.SaveChangesAsync(ct);
+        var store = Store(db, roaster.Id);
+        await store.ImportAsync(Snapshot('a', DateTimeOffset.UtcNow.AddMinutes(-2)), ct);
+        var product = await db.CoffeeProducts.SingleAsync(ct);
+        product.SetStatus(CoffeePublicationStatus.Published); await db.SaveChangesAsync(ct);
+        var next = Snapshot('b', DateTimeOffset.UtcNow.AddMinutes(-1));
+        next.Snapshot.Products = [];
+        await Assert.ThrowsAsync<CoffeeCatalogException>(() => store.ImportAsync(next, ct));
+        Assert.All(await db.Set<CoffeeVariant>().ToArrayAsync(ct), v => Assert.Equal(CoffeeAvailability.InStock, v.Availability));
+        next.Snapshot.Excluded = [new() { SourceProductId = "p1", Reason = "not_purchasable" }];
+        var result = await store.ImportAsync(next, ct);
+        Assert.Equal("Applied", result.Status); Assert.Equal(0, result.Products);
+        Assert.Equal(result.RunId, (await store.ImportAsync(next, ct)).RunId);
+        Assert.All(await db.Set<CoffeeVariant>().ToArrayAsync(ct), v =>
+        {
+            Assert.Equal(CoffeeAvailability.OutOfStock, v.Availability);
+            Assert.Equal(next.Snapshot.CollectedAtUtc.UtcDateTime, v.CheckedAtUtc);
+        });
+        Assert.Equal(CoffeePublicationStatus.Published, product.Status);
+        Assert.Empty((await store.ListAsync(new(), ct)).Items);
+    }
+
     private static CoffeeCatalogStore Store(ShopsDbContext db, Guid roasterId) => new(db,
         Options.Create(new MediaPublicUrlOptions { PublicEndpoint = "https://media.example", ImageProxyEndpoint = "https://images.example" }),
         Options.Create(new CoffeeImportOptions { Roasters = new() { ["roast.by"] = new() { ["ROAST"] = roasterId } } }),

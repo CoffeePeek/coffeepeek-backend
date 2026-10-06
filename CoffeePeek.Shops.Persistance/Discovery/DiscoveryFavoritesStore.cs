@@ -49,6 +49,11 @@ public sealed class DiscoveryFavoritesStore(ShopsDbContext db, IPublicAddressSer
         if (favorite && row is null) db.DiscoveryFavorites.Add(new DiscoveryFavorite(userId, kind, id));
         if (!favorite && row is not null) db.DiscoveryFavorites.Remove(row);
         try { await db.SaveChangesAsync(ct); }
+        catch (DbUpdateConcurrencyException ex) when (!favorite && ex.Entries.Count == 1 && ex.Entries[0].Entity == row)
+        {
+            // A concurrent DELETE already removed this user's favorite.
+            ex.Entries[0].State = EntityState.Detached;
+        }
         catch (DbUpdateException ex) when (favorite && ex.InnerException is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation })
         {
             // A concurrent idempotent PUT has already inserted the same user's favorite.

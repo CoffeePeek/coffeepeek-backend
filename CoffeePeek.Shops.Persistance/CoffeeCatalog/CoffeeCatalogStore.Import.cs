@@ -37,11 +37,6 @@ public sealed partial class CoffeeCatalogStore
         {
             Func<Task<CoffeeImportResult>> operation = () => PublicAddressTransaction.RunAsync(db, async () =>
             {
-                if (db.Database.IsRelational())
-                {
-                    var key = BitConverter.ToInt64(SHA256.HashData(Encoding.UTF8.GetBytes(request.SourceKey)), 0);
-                    await db.Database.ExecuteSqlInterpolatedAsync($"SELECT pg_advisory_xact_lock({key})", ct);
-                }
                 var previous = await db.CoffeeImportRuns.SingleOrDefaultAsync(r => r.SourceKey == request.SourceKey && r.SnapshotId == request.SnapshotId, ct);
                 if (previous is not null && previous.PayloadHash != payloadHash)
                     throw new CoffeeCatalogException("Snapshot identity was reused for different content.", 409);
@@ -201,14 +196,16 @@ public sealed partial class CoffeeCatalogStore
             throw new CoffeeCatalogException("Snapshot ID must be a SHA-256 identifier.");
         var snapshot = request.Snapshot;
         if (snapshot is null || snapshot.SchemaVersion != 1 || !snapshot.Complete || snapshot.Products is null ||
-            snapshot.Products.Length is < 1 or > 2000 || snapshot.Coverage is null || snapshot.Excluded is null ||
+            snapshot.Products.Length > 2000 || snapshot.Coverage is null || snapshot.Excluded is null ||
             snapshot.CollectedAtUtc == default || snapshot.CollectedAtUtc > DateTimeOffset.UtcNow.AddMinutes(10))
-            throw new CoffeeCatalogException("Incomplete, empty, future-dated or unsupported snapshot.");
+            throw new CoffeeCatalogException("Incomplete, future-dated or unsupported snapshot.");
         ValidateSourceUrl(snapshot.Source, request.SourceKey);
         if (snapshot.Coverage.Any(c => c is null || c.DiscoveredProducts < 0 || c.ExpectedProducts < 0) ||
             snapshot.Excluded.Any(e => e is null || e.SourceProductId?.Length > 300 ||
                 (e.Reason == "not_purchasable" && string.IsNullOrWhiteSpace(e.SourceProductId))))
             throw new CoffeeCatalogException("Invalid coverage or excluded product identity.");
+        if (snapshot.Products.Length == 0 && !snapshot.Excluded.Any(e => e.Reason == "not_purchasable"))
+            throw new CoffeeCatalogException("Empty snapshot must explicitly identify unavailable products.");
         var products = new HashSet<string>(StringComparer.Ordinal);
         var variants = new HashSet<string>(StringComparer.Ordinal);
         foreach (var p in snapshot.Products)

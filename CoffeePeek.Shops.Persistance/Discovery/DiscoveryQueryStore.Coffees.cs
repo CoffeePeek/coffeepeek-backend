@@ -113,18 +113,13 @@ public sealed partial class DiscoveryQueryStore
 
     private static string NormalizeQuery(string? q) => string.Join(" ", (q ?? "").Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries)).ToLowerInvariant().Replace('ё', 'е');
 
-    // Expand a small OR selection into column.Contains(code) predicates. Npgsql translates these
-    // into indexable array containment; EF InMemory can execute the same query for regression tests.
+    // EF inlines Invoke before translation. Constant Contains predicates work in both PostgreSQL and InMemory.
     private static IQueryable<T> WhereAnyCode<T>(IQueryable<T> query, string[] codes, Expression<Func<T, string, bool>> condition)
     {
-        Expression result = Expression.Constant(false);
-        foreach (var code in codes.Distinct())
-            result = Expression.OrElse(result, new ReplaceExpression(condition.Parameters[1], Expression.Constant(code)).Visit(condition.Body)!);
-        return query.Where(Expression.Lambda<Func<T, bool>>(result, condition.Parameters[0]));
+        var parameter = Expression.Parameter(typeof(T), "entity");
+        var predicates = codes.Distinct().Select(code => (Expression)Expression.Invoke(condition, parameter, Expression.Constant(code)));
+        var body = predicates.Aggregate(Expression.OrElse);
+        return query.Where(Expression.Lambda<Func<T, bool>>(body, parameter));
     }
 
-    private sealed class ReplaceExpression(Expression target, Expression replacement) : ExpressionVisitor
-    {
-        public override Expression? Visit(Expression? node) => node == target ? replacement : base.Visit(node);
-    }
 }

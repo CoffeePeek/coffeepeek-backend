@@ -35,6 +35,31 @@ public sealed class DiscoveryFavoritesTests
     }
 
     [Fact]
+    public async Task ConcurrentDeletes_SucceedAndDetachTheAlreadyDeletedFavorite()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var options = new DbContextOptionsBuilder<ShopsDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString()).Options;
+        await using var first = new ShopsDbContext(options);
+        await using var second = new ShopsDbContext(options);
+        await first.Database.EnsureCreatedAsync(ct);
+        var roaster = new Roaster("Concurrent"); roaster.SetPublicSlug("concurrent");
+        first.Roasters.Add(roaster); await first.SaveChangesAsync(ct);
+        var user = Guid.NewGuid();
+        var firstStore = new DiscoveryFavoritesStore(first, Mock.Of<IPublicAddressService>());
+        var secondStore = new DiscoveryFavoritesStore(second, Mock.Of<IPublicAddressService>());
+        await firstStore.SetAsync(user, "roaster", "concurrent", true, ct);
+        first.ChangeTracker.Clear();
+        // Both requests read the same favorite before either deletes it.
+        await first.DiscoveryFavorites.FindAsync([user, "roaster", roaster.Id], ct);
+        await secondStore.SetAsync(user, "roaster", "concurrent", false, ct);
+        await firstStore.SetAsync(user, "roaster", "concurrent", false, ct);
+        Assert.Empty(await firstStore.ListAsync(user, ct));
+        await firstStore.SetAsync(user, "roaster", "concurrent", true, ct);
+        Assert.Single(await firstStore.ListAsync(user, ct));
+    }
+
+    [Fact]
     public async Task UnknownEntitiesAndKindsCannotBeFavorited()
     {
         var ct = TestContext.Current.CancellationToken;
