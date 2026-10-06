@@ -85,7 +85,7 @@ public static class MapsterConfiguration
         // Roaster carries its cover photo (lowest SortIndex) so shop-detail can show it inline
         // without a follow-up GET /api/roasters/{id}. Roaster photos live in the shop bucket.
         config.NewConfig<Roaster, RoasterDto>()
-            .Ignore(dest => dest.CoffeeShopsCount, dest => dest.CoffeeProductsCount)
+            .Ignore(nameof(RoasterDto.CoffeeShopsCount), nameof(RoasterDto.CoffeeProductsCount))
             .Map(dest => dest.PhotoUrl, src =>
                 MediaStorageUrlBuilder.BuildPublicUrl(
                     mediaOptions.PublicEndpoint,
