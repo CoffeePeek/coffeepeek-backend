@@ -29,6 +29,9 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddPersistence(this IServiceCollection services, WebApplicationBuilder builder)
     {
+        services.AddScoped<CoffeePeek.Shops.Application.Features.Discovery.IDiscoveryQueryStore, CoffeePeek.Shops.Persistance.Discovery.DiscoveryQueryStore>();
+        services.AddScoped<CoffeePeek.Shops.Application.Features.Discovery.IDiscoveryClassificationStore, CoffeePeek.Shops.Persistance.CoffeeCatalog.DiscoveryClassificationStore>();
+        services.AddScoped<CoffeePeek.Shops.Application.Features.Discovery.IDiscoveryFavoritesStore, CoffeePeek.Shops.Persistance.Discovery.DiscoveryFavoritesStore>();
         services.Configure<PublicAddressOptions>(builder.Configuration.GetSection("PublicAddresses"));
         services.Configure<CoffeePeek.Shops.Application.Features.CoffeeCatalog.CoffeeImportOptions>(builder.Configuration.GetSection("CoffeeImportOptions"));
         services.AddScoped<CoffeePeek.Shops.Application.Features.CoffeeCatalog.ICoffeeCatalogStore, CoffeePeek.Shops.Persistance.CoffeeCatalog.CoffeeCatalogStore>();

@@ -17,6 +17,21 @@ public static class DependencyInjection
         });
         
         services.AddControllersModule();
+        services.Configure<Microsoft.AspNetCore.Mvc.MvcOptions>(options =>
+            options.Filters.Add<CoffeePeek.ShopsService.Discovery.DiscoveryExceptionFilter>());
+        services.Configure<Microsoft.AspNetCore.Mvc.ApiBehaviorOptions>(options =>
+        {
+            var previous = options.InvalidModelStateResponseFactory;
+            options.InvalidModelStateResponseFactory = context =>
+            {
+                if (!CoffeePeek.ShopsService.Discovery.DiscoveryExceptionFilter.IsDiscoveryAction(context.ActionDescriptor))
+                    return previous(context);
+                var errors = context.ModelState.Where(e => e.Value?.Errors.Count > 0).ToDictionary(e => e.Key,
+                    e => e.Value!.Errors.Select(error => string.IsNullOrWhiteSpace(error.ErrorMessage) ? "Invalid value." : error.ErrorMessage).ToArray());
+                return new Microsoft.AspNetCore.Mvc.BadRequestObjectResult(new CoffeePeek.Shared.Kernel.Response.ErrorResponse(
+                    "Invalid request.", "INVALID_FILTER", errors) { StatusCode = 400 });
+            };
+        });
         services.AddOptions<CoffeePeek.Shared.Kernel.Options.CoffeeImportAuthOptions>()
             .BindConfiguration(nameof(CoffeePeek.Shared.Kernel.Options.CoffeeImportAuthOptions))
             .Validate(o => o.Token.Length == 0 || o.Token.Length >= 32).ValidateOnStart();
@@ -46,4 +61,3 @@ public static class DependencyInjection
         return builder;
     }
 }
-

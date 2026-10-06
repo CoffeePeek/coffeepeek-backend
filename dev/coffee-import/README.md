@@ -42,23 +42,27 @@ River Roasters использует публичный JSON, ссылка на �
 
 В `deploy/systemd/coffeepeek-coffee-import.service` и `.timer` подготовлен запуск каждый день в **03:00 UTC**, с интервалом 24 часа между плановыми запусками. `Persistent=yes` догоняет пропущенный запуск после простоя сервера; дополнительный ручной запуск может произойти раньше. Один systemd service не запускает второй экземпляр, пока первый работает. Результаты лежат в `/var/lib/coffeepeek-coffee-import`, логи — в journal. Таймер нужно установить и включить на Linux-сервере; в этом рабочем окружении он не активирован.
 
-Для текущего VPS с checkout в `/opt/coffeepeek` (при другом пути исправить service), из корня репозитория:
+Установка и обновление описаны в [coffee-import-deployment.md](../../docs/coffee-import-deployment.md).
+`setup-coffee-import.sh` создаёт постоянное Python-окружение в `/opt/coffeepeek-coffee-import/.venv`,
+за пределами checkout, и устанавливает systemd units без включения таймера. GUID mapping и приватный
+файл окружения хранятся в `/etc/coffeepeek`; Shops загружает mapping из read-only Production JSON.
+Shops и Media доступны джобе через loopback-порты `5243` и `5025`, с единым служебным токеном.
+
+Из корня `/opt/coffeepeek`, после заполнения реальных GUID обжарщиков:
 
 ```bash
-sudo apt-get install -y python3-venv
-python3 -m venv dev/coffee-import/.venv
-dev/coffee-import/.venv/bin/python -m pip install -r dev/coffee-import/requirements.txt
-sudo install -m 0644 deploy/systemd/coffeepeek-coffee-import.service deploy/systemd/coffeepeek-coffee-import.timer /etc/systemd/system/
-sudo systemctl daemon-reload
-sudo systemctl enable --now coffeepeek-coffee-import.timer
-sudo systemctl start coffeepeek-coffee-import.service
-systemctl list-timers coffeepeek-coffee-import.timer
-journalctl -u coffeepeek-coffee-import.service -n 100 --no-pager
+sudo bash deploy/scripts/setup-coffee-import.sh --mapping /path/to/reviewed-roaster-mapping.json
+# Выполнить обычный деплой: миграции + новые env и mapping для Shops/Media.
+sudo bash deploy/scripts/smoke-coffee-import.sh --source roast.by
+# Проверить черновики и фотографии в админке; затем явно включить таймер.
+sudo bash deploy/scripts/enable-coffee-import.sh
 ```
 
-Сервис использует динамического непривилегированного пользователя; checkout и venv должны быть доступны для чтения/запуска. Для ручного обновления на VPS использовать `systemctl start` этого же service, чтобы сохранить защиту от одновременных запусков.
-
-Перед включением таймера выполнить настройку из [coffee-catalog-api.md](../../docs/coffee-catalog-api.md): миграция Shops, соответствия брендов существующим обжарщикам и общий служебный токен Shops/Media/джобы. Создать `/etc/coffeepeek/coffee-import.env` из [примера](coffee-import.env.example); ограничить чтение файла администратором (`0600`). Таймер выполняет `--push`, поэтому эти параметры обязательны.
+Smoke проверяет сохранённые PostgreSQL товары/варианты/статусы, повторную отправку снимка и байты
+фотографий в MinIO. Новые товары остаются `Draft`. Источники выбираются только из явного mapping;
+нулевые GUID из примера запрещены. Для ручного обновления использовать `systemctl start
+coffeepeek-coffee-import.service`, чтобы сохранить защиту от параллельных запусков. Конфигурацию
+и зависимости обновлять при остановленном таймере, после чего повторить single-source smoke.
 
 ## Сохранение в каталог и фотографии
 
@@ -115,7 +119,7 @@ JSON в HTML-атрибутах читается через JSON decoder, JavaSc
 
 `compositionKind` становится `blend`, когда это прямо следует из названия/характеристик. Для остальных товаров значение `unknown`: единственная страна не доказывает единый лот. `sourceProperties` сохраняет исходные характеристики, `evidenceField` — основание определения страны. Для смеси с неуказанными странами других компонентов есть отдельное замечание. Наличие замечаний не мешает сбору, но такие поля следует проверить до публикации в CoffeePeek.
 
-Дрип-пакеты, капсулы, наборы из других категорий, чай и оборудование не входят в эту выгрузку зерна. Скрипт создаёт файлы и не пишет в базы CoffeePeek. Добавление `Country`, `CoffeeProduct`, DTO/API и публикации кандидатов описано в `docs/coffee-catalog-plan.md` и остаётся отдельной частью реализации каталога.
+Дрип-пакеты, капсулы, наборы из других категорий, чай и оборудование не входят в эту выгрузку зерна. Скрипт создаёт файлы и не пишет в базы CoffeePeek. Модель `Country`/`CoffeeProduct`, DTO/API и публикация кандидатов реализованы в сервисе каталога и описаны в `docs/coffee-catalog-api.md`.
 
 ## Проверки
 
@@ -123,4 +127,4 @@ JSON в HTML-атрибутах читается через JSON decoder, JavaSc
 python -X utf8 -m unittest discover -s dev/coffee-import -p 'test_*.py' -v
 ```
 
-18 тестов проверяют варианты упаковки, цены, доступность, одиночный товар зелёного кофе, помол, смеси со списками состава, приоритет характеристик, неоднозначное происхождение, дубли внешних ID, границы пагинации и отказ от неполной выгрузки. Проверка новых платформ подтверждает разделение продавца/бренда, ценовые опции Tilda, Nuxt-данные и скидки Tasty Coffee, нормализацию ссылок пагинации и запрет POST к корзине. Проверка джобы подтверждает сохранность прежнего JSON при сбое одного источника. Все 15 источников повторно разбираются без сети из локального HTTP-кеша.
+27 тестов проверяют конфигурацию деплоя, проверку PostgreSQL/Media-ссылок и статусов модерации, варианты упаковки, цены, доступность, одиночный товар зелёного кофе, помол, смеси со списками состава, приоритет характеристик, неоднозначное происхождение, дубли внешних ID, границы пагинации и отказ от неполной выгрузки. Проверка новых платформ подтверждает разделение продавца/бренда, ценовые опции Tilda, Nuxt-данные и скидки Tasty Coffee, нормализацию ссылок пагинации и запрет POST к корзине. Проверка джобы подтверждает сохранность прежнего JSON при сбое одного источника. Все 15 источников повторно разбираются без сети из локального HTTP-кеша.

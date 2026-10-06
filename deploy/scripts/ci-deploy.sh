@@ -12,6 +12,8 @@ set -a
 source .env
 set +a
 
+bash "${SCRIPT_DIR}/check-coffee-import.sh"
+
 echo "==> Ensuring infrastructure is up..."
 docker compose up -d postgres redis rabbitmq minio
 until docker compose exec -T postgres pg_isready -U "${POSTGRES_USER}" >/dev/null 2>&1; do

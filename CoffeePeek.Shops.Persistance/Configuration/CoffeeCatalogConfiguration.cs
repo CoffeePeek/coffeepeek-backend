@@ -16,6 +16,21 @@ internal static class CoffeeCatalogConfiguration
         country.Property(c => c.NameEn).HasMaxLength(100);
         country.HasData(InitialCountries());
 
+        var filterValue = model.Entity<CoffeeFilterValue>();
+        filterValue.ToTable("CoffeeFilterValues"); filterValue.HasKey(v => v.Id);
+        filterValue.Property(v => v.GroupCode).HasMaxLength(30);
+        filterValue.Property(v => v.Code).HasMaxLength(100);
+        filterValue.Property(v => v.Name).HasMaxLength(100);
+        filterValue.Property(v => v.Description).HasMaxLength(2000);
+        filterValue.HasIndex(v => new { v.GroupCode, v.Code }).IsUnique();
+        filterValue.HasData(CoffeeClassificationSeed.Values());
+
+        var favorite = model.Entity<CoffeePeek.Shops.Domain.Aggregates.DiscoveryAggregate.DiscoveryFavorite>();
+        favorite.ToTable("DiscoveryFavorites");
+        favorite.HasKey(f => new { f.UserId, f.Kind, f.EntityId });
+        favorite.Property(f => f.Kind).HasMaxLength(30);
+        favorite.HasIndex(f => new { f.Kind, f.EntityId });
+
         var product = model.Entity<CoffeeProduct>();
         PublicSlugConfiguration.Configure(product, "CoffeeProducts");
         product.HasKey(p => p.Id);
@@ -26,6 +41,15 @@ internal static class CoffeeCatalogConfiguration
         product.Property(p => p.CompositionKind).HasMaxLength(30);
         product.Property(p => p.Status).HasConversion<string>().HasMaxLength(20);
         product.Property(p => p.Version).IsConcurrencyToken();
+        product.Property(p => p.DefaultBrewPurposes).HasColumnType("text[]").HasDefaultValueSql("'{}'::text[]");
+        product.Property(p => p.ProcessingCodes).HasColumnType("text[]").HasDefaultValueSql("'{}'::text[]");
+        product.Property(p => p.FermentationCodes).HasColumnType("text[]").HasDefaultValueSql("'{}'::text[]");
+        product.Property(p => p.TasteGroupCodes).HasColumnType("text[]").HasDefaultValueSql("'{}'::text[]");
+        product.Property(p => p.ClassificationProtectedFields).HasColumnType("text[]").HasDefaultValueSql("'{}'::text[]");
+        product.Property(p => p.CaffeineCode).HasMaxLength(100);
+        product.Property(p => p.RoastLevelCode).HasMaxLength(100);
+        product.Property(p => p.AcidityCode).HasMaxLength(100);
+        product.Property(p => p.CompositionCode).HasMaxLength(100);
         product.HasOne<Roaster>().WithMany().HasForeignKey(p => p.RoasterId).OnDelete(DeleteBehavior.Restrict);
         product.HasIndex(p => new { p.RoasterId, p.Status });
         product.HasMany(p => p.Countries).WithOne().HasForeignKey(c => c.CoffeeProductId).OnDelete(DeleteBehavior.Cascade);
@@ -61,6 +85,8 @@ internal static class CoffeeCatalogConfiguration
         variant.Property(v => v.Availability).HasConversion<string>().HasMaxLength(20);
         variant.Property(v => v.AvailabilityScope).HasMaxLength(30);
         variant.Property(v => v.SourceAttributesJson).HasColumnType("jsonb");
+        variant.Property(v => v.BrewPurposeCode).HasMaxLength(100);
+        variant.Property(v => v.BrewPurposeProtected).HasDefaultValue(false);
         variant.HasIndex(v => new { v.SourceKey, v.ExternalVariantId }).IsUnique();
 
         var photo = model.Entity<CoffeeProductPhoto>();
@@ -87,6 +113,7 @@ internal static class CoffeeCatalogConfiguration
         tag.Property(t => t.Name).HasMaxLength(100);
         tag.Property(t => t.Description).HasMaxLength(2000);
         tag.HasIndex(t => t.Slug).IsUnique();
+        tag.HasData(CoffeeClassificationSeed.RoasterTags());
         var assignment = model.Entity<RoasterTagAssignment>();
         assignment.ToTable("RoasterTagAssignments"); assignment.HasKey(t => new { t.RoasterId, t.TagId });
         assignment.HasOne(t => t.Tag).WithMany().HasForeignKey(t => t.TagId).OnDelete(DeleteBehavior.Restrict);

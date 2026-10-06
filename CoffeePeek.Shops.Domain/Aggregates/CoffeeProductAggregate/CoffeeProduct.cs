@@ -12,6 +12,10 @@ public sealed record CoffeeContent(
     string? Processing, string? RoastLevel, string? Acidity, string? Body, string? QGraderScoreRaw,
     string[] TasteDescriptors, string[] BrewRecommendations, string[] GrindOptions, string[] Features);
 
+public sealed record CoffeeClassificationData(
+    string[] DefaultBrewPurposes, string? Caffeine, string? RoastLevel, string? Acidity,
+    string[] Processing, string[] Fermentation, string[] TasteGroups, string? Composition);
+
 public sealed class CoffeeProduct : Entity<Guid>, IPublicSlugOwner
 {
     public Guid RoasterId { get; private set; }
@@ -33,6 +37,15 @@ public sealed class CoffeeProduct : Entity<Guid>, IPublicSlugOwner
     public string[] GrindOptions { get; private set; } = [];
     public string[] Features { get; private set; } = [];
     public string[] ProtectedFields { get; private set; } = [];
+    public string[] DefaultBrewPurposes { get; private set; } = [];
+    public string? CaffeineCode { get; private set; }
+    public string? RoastLevelCode { get; private set; }
+    public string? AcidityCode { get; private set; }
+    public string[] ProcessingCodes { get; private set; } = [];
+    public string[] FermentationCodes { get; private set; } = [];
+    public string[] TasteGroupCodes { get; private set; } = [];
+    public string? CompositionCode { get; private set; }
+    public string[] ClassificationProtectedFields { get; private set; } = [];
     public CoffeePublicationStatus Status { get; private set; }
     public List<CoffeeProductCountry> Countries { get; private set; } = [];
     public List<CoffeeProductSource> Sources { get; private set; } = [];
@@ -55,6 +68,38 @@ public sealed class CoffeeProduct : Entity<Guid>, IPublicSlugOwner
     }
 
     public bool IsProtected(string field) => ProtectedFields.Contains(field, StringComparer.Ordinal);
+
+    public void ApplyClassification(CoffeeClassificationData data, bool fromImport = false)
+    {
+        ArgumentNullException.ThrowIfNull(data);
+        foreach (var values in new[] { data.DefaultBrewPurposes, data.Processing, data.Fermentation, data.TasteGroups })
+            if (values is null || values.Length > 30 || values.Any(v => !CoffeeFilterValue.IsValidCode(v)) ||
+                values.Distinct(StringComparer.Ordinal).Count() != values.Length)
+                throw new DomainException("Invalid coffee classification selection.");
+        if (new[] { data.Caffeine, data.RoastLevel, data.Acidity, data.Composition }.Any(v => v is not null && !CoffeeFilterValue.IsValidCode(v)))
+            throw new DomainException("Invalid coffee classification code.");
+        bool Write(string field) => !fromImport || !ClassificationProtectedFields.Contains(field, StringComparer.Ordinal);
+        if (Write("defaultBrewPurposes") && (!fromImport || data.DefaultBrewPurposes.Length > 0)) DefaultBrewPurposes = data.DefaultBrewPurposes.ToArray();
+        if (Write("caffeine") && (!fromImport || data.Caffeine is not null)) CaffeineCode = data.Caffeine;
+        if (Write("roastLevel") && (!fromImport || data.RoastLevel is not null)) RoastLevelCode = data.RoastLevel;
+        if (Write("acidity") && (!fromImport || data.Acidity is not null)) AcidityCode = data.Acidity;
+        if (Write("processing") && (!fromImport || data.Processing.Length > 0)) ProcessingCodes = data.Processing.ToArray();
+        if (Write("fermentation") && (!fromImport || data.Fermentation.Length > 0)) FermentationCodes = data.Fermentation.ToArray();
+        if (Write("tasteGroups") && (!fromImport || data.TasteGroups.Length > 0)) TasteGroupCodes = data.TasteGroups.ToArray();
+        if (Write("composition") && (!fromImport || data.Composition is not null)) CompositionCode = data.Composition;
+        AdvanceVersion();
+    }
+
+    public void ProtectClassificationFields(string[] fields)
+    {
+        string[] allowed = ["defaultBrewPurposes", "caffeine", "roastLevel", "acidity", "processing", "fermentation", "tasteGroups", "composition"];
+        if (fields is null || fields.Any(f => !allowed.Contains(f, StringComparer.Ordinal)) || fields.Distinct(StringComparer.Ordinal).Count() != fields.Length)
+            throw new DomainException("Unknown or duplicate protected classification field.");
+        ClassificationProtectedFields = fields.ToArray();
+        AdvanceVersion();
+    }
+
+    public void AdvanceVersion() => Version = checked(Version + 1);
     public void ProtectFields(string[] fields)
     {
         var allowed = new[] { nameof(Name), nameof(Description), nameof(ProductKind), nameof(ProductForm),
@@ -160,6 +205,19 @@ public sealed class CoffeeVariant : Entity<Guid>
     public string Currency { get; set; } = null!;
     public string? Grind { get; set; }
     public string? RoastPurpose { get; set; }
+    public string? BrewPurposeCode { get; private set; }
+    public bool BrewPurposeProtected { get; private set; }
+    public void SetBrewPurpose(string? code, bool protectFromImport, bool fromImport = false)
+    {
+        if (code is not null && !CoffeeFilterValue.IsValidCode(code)) throw new DomainException("Invalid brew purpose code.");
+        if (fromImport)
+        {
+            if (!BrewPurposeProtected && code is not null) BrewPurposeCode = code;
+            return;
+        }
+        BrewPurposeCode = code;
+        BrewPurposeProtected = protectFromImport;
+    }
     public string SourceAttributesJson { get; set; } = "{}";
     public CoffeeAvailability Availability { get; set; }
     public string AvailabilityScope { get; set; } = "online";

@@ -56,6 +56,7 @@ public sealed partial class CoffeeCatalogStore
                 if (await db.Roasters.CountAsync(r => roasterIds.Contains(r.Id), ct) != roasterIds.Length)
                     throw new CoffeeCatalogException("Source mapping references a missing roaster.");
                 var knownCountries = await db.Countries.Select(c => c.Code).ToArrayAsync(ct);
+                var activeClassification = await db.CoffeeFilterValues.AsNoTracking().Where(v => v.IsActive).ToArrayAsync(ct);
                 var sources = await db.CoffeeProductSources.Where(s => s.SourceKey == request.SourceKey)
                     .Include(s => s.Product).ThenInclude(p => p.Countries)
                     .Include(s => s.Variants).Include(s => s.Photos).AsSplitQuery().ToListAsync(ct);
@@ -91,6 +92,8 @@ public sealed partial class CoffeeCatalogStore
                     source.RawJson = JsonSerializer.Serialize(item, WireJson);
                     var warnings = item.ReviewWarnings.ToList();
                     source.Product.ApplyContent(data, fromImport: true);
+                    source.Product.ApplyClassification(CoffeeClassificationNormalizer.ActiveOnly(
+                        CoffeeClassificationNormalizer.Normalize(item), activeClassification), fromImport: true);
                     var countryCodes = new List<string>();
                     foreach (var origin in item.Origins)
                     {
@@ -117,6 +120,9 @@ public sealed partial class CoffeeCatalogStore
                         row.SourceAttributesJson = offer.SourceAttributes.ValueKind == JsonValueKind.Undefined ? "{}" : offer.SourceAttributes.GetRawText();
                         row.Grind = Attribute(offer.SourceAttributes, "grind");
                         row.RoastPurpose = Attribute(offer.SourceAttributes, "roastPurpose");
+                        var brewCode = CoffeeClassificationNormalizer.NormalizeBrewPurpose(row.RoastPurpose);
+                        if (brewCode is not null && activeClassification.Any(v => v.GroupCode == "brew" && v.Code == brewCode))
+                            row.SetBrewPurpose(brewCode, false, fromImport: true);
                     }
                     foreach (var missing in source.Variants.Where(v => !seenVariants.Contains(v.ExternalVariantId)))
                         missing.Availability = CoffeeAvailability.Unknown;
