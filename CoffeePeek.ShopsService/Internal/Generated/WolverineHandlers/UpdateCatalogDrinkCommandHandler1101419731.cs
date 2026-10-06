@@ -2,6 +2,7 @@
 #pragma warning disable
 using CoffeePeek.Shared.Domain.Interfaces.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
+using System.Collections.Generic;
 
 namespace Internal.Generated.WolverineHandlers
 {
@@ -11,11 +12,13 @@ namespace Internal.Generated.WolverineHandlers
     {
         private readonly CoffeePeek.Shared.Domain.Interfaces.Infrastructure.ICacheService _cacheService;
         private readonly Microsoft.Extensions.DependencyInjection.IServiceScopeFactory _serviceScopeFactory;
+        private readonly System.Collections.Generic.IEnumerable<Wolverine.EntityFrameworkCore.IDomainEventScraper> _domainEventScraperIEnumerable;
 
-        public UpdateCatalogDrinkCommandHandler1101419731(CoffeePeek.Shared.Domain.Interfaces.Infrastructure.ICacheService cacheService, Microsoft.Extensions.DependencyInjection.IServiceScopeFactory serviceScopeFactory)
+        public UpdateCatalogDrinkCommandHandler1101419731(CoffeePeek.Shared.Domain.Interfaces.Infrastructure.ICacheService cacheService, Microsoft.Extensions.DependencyInjection.IServiceScopeFactory serviceScopeFactory, System.Collections.Generic.IEnumerable<Wolverine.EntityFrameworkCore.IDomainEventScraper> domainEventScraperIEnumerable)
         {
             _cacheService = cacheService;
             _serviceScopeFactory = serviceScopeFactory;
+            _domainEventScraperIEnumerable = domainEventScraperIEnumerable;
         }
 
 
@@ -24,30 +27,54 @@ namespace Internal.Generated.WolverineHandlers
         {
             await using var serviceScope = _serviceScopeFactory.CreateAsyncScope();
             Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<Wolverine.Runtime.ScopedMessageContextHolder>(serviceScope.ServiceProvider).Context = context;
-            
-            /*
-            * The service registration for CoffeePeek.Shops.Domain.Aggregates.MenuAggregate.ICoffeeDrinkRepository is an 'opaque' lambda factory with the Scoped lifetime and requires service location
-            */
+            // This service has been marked as requiring service location independent of Wolverine's ability to use constructor injection of everything else
+            var shopsDbContext = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<CoffeePeek.Shops.Persistance.Configuration.ShopsDbContext>(serviceScope.ServiceProvider);
+            // This service has been marked as requiring service location independent of Wolverine's ability to use constructor injection of everything else
             var coffeeDrinkRepository = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<CoffeePeek.Shops.Domain.Aggregates.MenuAggregate.ICoffeeDrinkRepository>(serviceScope.ServiceProvider);
             // The actual message body
             var updateCatalogDrinkCommand = (CoffeePeek.Shops.Application.Features.Catalogs.Drinks.UpdateCatalogDrinkCommand)context.Envelope.Message;
 
-            System.Diagnostics.Activity.Current?.SetTag("message.handler", "CoffeePeek.Shops.Application.Features.Catalogs.Drinks.UpdateCatalogDrinkHandler");
-            System.Diagnostics.Activity.Current?.SetTag("handler.type", "CoffeePeek.Shops.Application.Features.Catalogs.Drinks.UpdateCatalogDrinkHandler");
-            
-            // The actual message execution
-            var outgoing1 = await CoffeePeek.Shops.Application.Features.Catalogs.Drinks.UpdateCatalogDrinkHandler.Handle(updateCatalogDrinkCommand, coffeeDrinkRepository, _cacheService, cancellation).ConfigureAwait(false);
 
-            
-            // Outgoing, cascaded message
-            await context.EnqueueCascadingAsync(outgoing1).ConfigureAwait(false);
+            // Enroll the DbContext & IMessagingContext in the outgoing Wolverine outbox transaction
+            var efCoreEnvelopeTransaction = new Wolverine.EntityFrameworkCore.Internals.EfCoreEnvelopeTransaction(shopsDbContext, context, _domainEventScraperIEnumerable);
+            await context.EnlistInOutboxAsync(efCoreEnvelopeTransaction).ConfigureAwait(false);
+            // Start the actual database transaction if one does not already exist
+            if (shopsDbContext.Database.CurrentTransaction == null)
+            {
+                await shopsDbContext.Database.BeginTransactionAsync(cancellation).ConfigureAwait(false);
+            }
+
+            try
+            {
+                System.Diagnostics.Activity.Current?.SetTag("message.handler", "CoffeePeek.Shops.Application.Features.Catalogs.Drinks.UpdateCatalogDrinkHandler");
+                System.Diagnostics.Activity.Current?.SetTag("handler.type", "CoffeePeek.Shops.Application.Features.Catalogs.Drinks.UpdateCatalogDrinkHandler");
+
+                // The actual message execution
+                var outgoing1 = await CoffeePeek.Shops.Application.Features.Catalogs.Drinks.UpdateCatalogDrinkHandler.Handle(updateCatalogDrinkCommand, coffeeDrinkRepository, _cacheService, cancellation).ConfigureAwait(false);
+
+
+                // Outgoing, cascaded message
+                await context.EnqueueCascadingAsync(outgoing1).ConfigureAwait(false);
+
+
+                // Added by EF Core Transaction Middleware
+                var result_of_SaveChangesAsync = await shopsDbContext.SaveChangesAsync(cancellation).ConfigureAwait(false);
+
+                // Commit the EF Core transaction and flush outgoing messages before writing the response (GH-2917)
+                await efCoreEnvelopeTransaction.CommitAsync(cancellation).ConfigureAwait(false);
+            }
+
+            catch (System.Exception)
+            {
+                await efCoreEnvelopeTransaction.RollbackAsync().ConfigureAwait(false);
+                throw;
+            }
 
         }
 
     }
 
     // END: UpdateCatalogDrinkCommandHandler1101419731
-    
-    
-}
 
+
+}

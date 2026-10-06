@@ -1,0 +1,201 @@
+using CoffeePeek.Contract.Dtos.Discovery;
+using CoffeePeek.Shared.Kernel.Options;
+using CoffeePeek.Shops.Application.PublicAddresses;
+using CoffeePeek.Shops.Domain.Aggregates.CoffeeProductAggregate;
+using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
+using CoffeePeek.Shops.Domain.Aggregates.MenuAggregate;
+using CoffeePeek.Shops.Persistance.Configuration;
+using CoffeePeek.Shops.Persistance.Discovery;
+using CoffeePeek.Shops.Persistance.CoffeeCatalog;
+using CoffeePeek.Shops.Application.Features.CoffeeCatalog;
+using CoffeePeek.Shops.Infrastructure.Tests.Persistence;
+using CoffeePeek.Testing;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Logging.Abstractions;
+using Moq;
+
+namespace CoffeePeek.Shops.Infrastructure.Tests.LivePostgres;
+
+[Trait("Category", LivePostgresServer.Category)]
+public sealed class DiscoveryQueryLiveTests : IClassFixture<ShopsLiveDatabase>
+{
+    private readonly ShopsLiveDatabase fixture;
+    private static CancellationToken Ct => TestContext.Current.CancellationToken;
+    public DiscoveryQueryLiveTests(ShopsLiveDatabase fixture)
+    {
+        Assert.SkipUnless(LivePostgresServer.IsConfigured, LivePostgresServer.SkipReason);
+        this.fixture = fixture;
+    }
+
+    private static string Key() => "live-" + Guid.NewGuid().ToString("N")[..12];
+    private static DiscoveryQueryStore Store(ShopsDbContext db) => new(db, Mock.Of<IPublicAddressService>(),
+        Options.Create(new MediaPublicUrlOptions { PublicEndpoint = "https://media.example" }));
+    private static Roaster AddRoaster(ShopsDbContext db, string slug)
+    {
+        var r = new Roaster(slug); r.SetPublicSlug(slug); db.Roasters.Add(r); return r;
+    }
+    private static CoffeeProduct AddProduct(ShopsDbContext db, Roaster r, string name, string? caffeine = null, string? roast = null,
+        string[]? taste = null, string[]? brew = null)
+    {
+        var p = new CoffeeProduct(r.Id, new(name, null, "roasted_beans", "whole_beans", "unknown", null, null, null, null, null, [], [], [], []));
+        p.SetPublicSlug(Key()); p.CreatedAtUtc = DateTime.UtcNow;
+        p.ApplyClassification(new(brew ?? [], caffeine, roast, null, [], [], taste ?? [], null));
+        p.SetStatus(CoffeePublicationStatus.Published); db.CoffeeProducts.Add(p); return p;
+    }
+    private static void AddOffer(CoffeeProduct p, int weight, decimal price, string? brew = null, CoffeeAvailability availability = CoffeeAvailability.InStock)
+    {
+        var source = p.Sources.FirstOrDefault();
+        if (source is null)
+        {
+            source = new CoffeeProductSource { Product = p, CoffeeProductId = p.Id, SourceKey = "live.example", ExternalProductId = p.Id.ToString(),
+                SourceUrl = "https://live.example/coffee", LastSeenAtUtc = DateTime.UtcNow };
+            p.Sources.Add(source);
+        }
+        var v = new CoffeeVariant { Source = source, CoffeeProductSourceId = source.Id, SourceKey = source.SourceKey,
+            ExternalVariantId = Guid.NewGuid().ToString(), WeightGrams = weight, Price = price, Currency = "BYN", Availability = availability, CheckedAtUtc = DateTime.UtcNow };
+        v.SetBrewPurpose(brew, false); source.Variants.Add(v);
+    }
+
+    [Fact]
+    public async Task AllUnavailableImport_RetiresExplicitOffersWithoutChangingPublication_ExecuteInPostgres()
+    {
+        await using var db = fixture.Context(false);
+        var roaster = AddRoaster(db, Key()); await db.SaveChangesAsync(Ct);
+        var store = new CoffeeCatalogStore(db, Options.Create(new MediaPublicUrlOptions { PublicEndpoint = "https://media.example" }),
+            Options.Create(new CoffeeImportOptions { Roasters = new() { ["roast.by"] = new() { ["ROAST"] = roaster.Id } } }),
+            Mock.Of<IPublicAddressService>(), NullLogger<CoffeeCatalogStore>.Instance);
+        var request = CoffeeCatalogTests.Snapshot('a', DateTimeOffset.UtcNow.AddMinutes(-2));
+        request.SourceKey = "roast.by";
+        // Keep this independent from other tests importing the same fixture identities.
+        request.Snapshot.Products[0].SourceProductId = Key();
+        foreach (var variant in request.Snapshot.Products[0].Variants) variant.ExternalVariantId = Key();
+        request.Snapshot.Products[0].ImageUrls = []; request.Snapshot.Products[0].StoredPhotos = [];
+        request.SnapshotId = Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(Guid.NewGuid().ToByteArray()));
+        await store.ImportAsync(request, Ct);
+        var source = await db.CoffeeProductSources.Include(s => s.Product).SingleAsync(s => s.Product.RoasterId == roaster.Id, Ct);
+        source.Product.SetStatus(CoffeePublicationStatus.Published); await db.SaveChangesAsync(Ct);
+        request.SnapshotId = Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(Guid.NewGuid().ToByteArray()));
+        request.Snapshot.CollectedAtUtc = request.Snapshot.CollectedAtUtc.AddMinutes(1);
+        request.Snapshot.Products = [];
+        await Assert.ThrowsAsync<CoffeeCatalogException>(() => store.ImportAsync(request, Ct));
+        request.Snapshot.Excluded = [new() { SourceProductId = source.ExternalProductId, Reason = "not_purchasable" }];
+        var result = await store.ImportAsync(request, Ct);
+        Assert.Equal(result.RunId, (await store.ImportAsync(request, Ct)).RunId);
+        db.ChangeTracker.Clear();
+        Assert.Equal(CoffeePublicationStatus.Published, (await db.CoffeeProducts.SingleAsync(p => p.RoasterId == roaster.Id, Ct)).Status);
+        Assert.All(await db.Set<CoffeeVariant>().Where(v => v.Source.CoffeeProductId == source.CoffeeProductId).ToArrayAsync(Ct),
+            v => Assert.Equal(CoffeeAvailability.OutOfStock, v.Availability));
+    }
+
+    [Fact]
+    public async Task ConcurrentFavoriteDeletes_AreIdempotent_ExecuteInPostgres()
+    {
+        await using var first = fixture.Context(false);
+        await using var second = fixture.Context(false);
+        var roaster = AddRoaster(first, Key()); await first.SaveChangesAsync(Ct);
+        var user = Guid.NewGuid();
+        var firstStore = new DiscoveryFavoritesStore(first, Mock.Of<IPublicAddressService>());
+        var secondStore = new DiscoveryFavoritesStore(second, Mock.Of<IPublicAddressService>());
+        await firstStore.SetAsync(user, "roaster", roaster.PublicSlug!, true, Ct);
+        first.ChangeTracker.Clear();
+        await first.DiscoveryFavorites.FindAsync([user, "roaster", roaster.Id], Ct);
+        await secondStore.SetAsync(user, "roaster", roaster.PublicSlug!, false, Ct);
+        await firstStore.SetAsync(user, "roaster", roaster.PublicSlug!, false, Ct);
+        Assert.Empty(await firstStore.ListAsync(user, Ct));
+        await firstStore.SetAsync(user, "roaster", roaster.PublicSlug!, true, Ct);
+        Assert.Single(await firstStore.ListAsync(user, Ct));
+    }
+
+    [Fact]
+    public async Task MatchingOffers_PriceMinSortAndPagination_ExecuteInPostgres()
+    {
+        await using var db = fixture.Context(false);
+        var r = AddRoaster(db, Key());
+        var a = AddProduct(db, r, "A", "decaf", "light", brew: ["omni"]);
+        AddOffer(a, 1000, 1); AddOffer(a, 250, 50); AddOffer(a, 250, 30, "filter"); AddOffer(a, 250, 2, "filter", CoffeeAvailability.OutOfStock);
+        var b = AddProduct(db, r, "B", "decaf", "light", brew: ["filter"]); AddOffer(b, 250, 20);
+        var draft = AddProduct(db, r, "Draft", "decaf", "light", brew: ["filter"]); draft.SetStatus(CoffeePublicationStatus.Draft); AddOffer(draft, 250, 5);
+        await db.SaveChangesAsync(Ct);
+        a.CreatedAtUtc = DateTime.UtcNow.AddDays(-2); b.CreatedAtUtc = DateTime.UtcNow.AddDays(-1);
+        a.Sources[0].LastSeenAtUtc = DateTime.UtcNow; b.Sources[0].LastSeenAtUtc = DateTime.UtcNow.AddHours(-1);
+        await db.SaveChangesAsync(Ct); db.ChangeTracker.Clear();
+        var filter = new CoffeeFilters { Roasters = [r.PublicSlug!], Caffeine = ["decaf"], Roast = ["light"], Brew = ["filter"], Currency = "BYN", WeightGrams = 250, MaxPrice = 40 };
+        var store = Store(db);
+        var first = await store.SearchCoffeesAsync(new() { Filters = filter, Sort = "price_asc", PageSize = 1 }, Ct);
+        Assert.Equal(2, first.TotalItems); Assert.Equal("B", Assert.Single(first.Items).Name); Assert.Equal(20m, first.Items[0].SortPrice);
+        var second = await store.SearchCoffeesAsync(new() { Filters = filter, Sort = "price_asc", Page = 2, PageSize = 1 }, Ct);
+        Assert.Equal("A", Assert.Single(second.Items).Name); Assert.Equal(30m, second.Items[0].SortPrice);
+        Assert.Equal(30m, Assert.Single(second.Items[0].MatchingOffers).Price);
+        Assert.Equal(4, (await store.CoffeeDetailsAsync(a.PublicSlug!, Ct))!.Offers.Length);
+        var newest = await store.SearchCoffeesAsync(new() { Filters = filter, Sort = "newest" }, Ct);
+        Assert.Equal("B", newest.Items[0].Name);
+    }
+
+    [Fact]
+    public async Task FacetSelfExclusionAndPriceRange_ExecuteInPostgres()
+    {
+        await using var db = fixture.Context(false);
+        var r = AddRoaster(db, Key());
+        AddOffer(AddProduct(db, r, "Chocolate light", roast: "light", taste: ["chocolate"]), 250, 30);
+        AddOffer(AddProduct(db, r, "Berry light", roast: "light", taste: ["berry"]), 250, 60);
+        AddOffer(AddProduct(db, r, "Chocolate dark", roast: "dark", taste: ["chocolate"]), 250, 70);
+        await db.SaveChangesAsync(Ct); db.ChangeTracker.Clear();
+        var facets = await Store(db).CoffeeFacetsAsync(new() { Filters = new() { Roasters = [r.PublicSlug!], Roast = ["light"], Taste = ["chocolate"], Currency = "BYN", WeightGrams = 250 } }, Ct);
+        Assert.Equal(1, facets.TotalItems);
+        Assert.Equal(1, facets.Groups.Single(g => g.Code == "taste").Options.Single(v => v.Code == "berry").Count);
+        Assert.Equal(1, facets.Groups.Single(g => g.Code == "roast").Options.Single(v => v.Code == "dark").Count);
+        var price = await Store(db).CoffeeFacetsAsync(new() { Filters = new() { Roasters = [r.PublicSlug!], Roast = ["light"], Currency = "BYN", WeightGrams = 250, MaxPrice = 40 } }, Ct);
+        Assert.Equal(1, price.TotalItems); Assert.Equal(30m, price.PriceRange!.Min); Assert.Equal(60m, price.PriceRange.Max);
+    }
+
+    [Fact]
+    public async Task RoasterCriteriaAndFacets_RequireOneMatchingCoffee_ExecuteInPostgres()
+    {
+        await using var db = fixture.Context(false);
+        var prefix = Key(); var split = AddRoaster(db, prefix + "-split"); var match = AddRoaster(db, prefix + "-match");
+        AddOffer(AddProduct(db, split, "Decaf light", "decaf", "light"), 250, 20);
+        AddOffer(AddProduct(db, split, "Regular dark", "regular", "dark"), 250, 20);
+        var p = AddProduct(db, match, "Decaf dark", "decaf", "dark"); AddOffer(p, 250, 20); AddOffer(p, 1000, 60);
+        await db.SaveChangesAsync(Ct); db.ChangeTracker.Clear();
+        var filters = new RoasterFilters { Coffee = new() { Caffeine = ["decaf"], Roast = ["dark"] } };
+        var result = await Store(db).SearchRoastersAsync(new() { Q = prefix, Filters = filters, Sort = "available_coffees_desc" }, null, Ct);
+        var r = Assert.Single(result.Items); Assert.Equal(match.PublicSlug, r.Address.Slug); Assert.Equal(1, r.MatchingCoffeeProducts);
+        Assert.Equal("Decaf dark", r.MatchingCoffee!.Name); Assert.Equal(2, r.MatchingCoffee.MatchingOffers.Length);
+        var facets = await Store(db).RoasterFacetsAsync(new() { Q = prefix, Filters = filters }, null, Ct);
+        Assert.Equal(1, facets.TotalItems);
+        Assert.Equal(1, facets.Groups.Single(g => g.Code == "coffee.roast").Options.Single(v => v.Code == "light").Count);
+        Assert.Equal(1, facets.Groups.Single(g => g.Code == "coffee.caffeine").Options.Single(v => v.Code == "regular").Count);
+    }
+
+    [Fact]
+    public async Task MenuBrewPriceVolumeAndGeographicOpeningFilters_ExecuteInPostgres()
+    {
+        await using var db = fixture.Context(false);
+        var city = new City(Key()); city.SetPublicSlug(Key()); db.Cities.Add(city);
+        var near = ShopsLiveDatabase.NewShop("Near", city.Id); near.SetPublicSlug(Key()); near.SetLocation(city.Id, "Near", 53.9m, 27.56m);
+        var far = ShopsLiveDatabase.NewShop("Far", city.Id); far.SetPublicSlug(Key()); far.SetLocation(city.Id, "Far", 53.92m, 27.56m);
+        near.AddSchedule([ShopSchedule.Create(DateTime.UtcNow.DayOfWeek, false, [new(TimeSpan.Zero, TimeSpan.FromDays(1) - TimeSpan.FromTicks(10))])]);
+        db.Shops.AddRange(near, far);
+        var espresso = CoffeeDrinkDefinition.CreateWithId(Guid.NewGuid(), Key(), "Эспрессо live", "Espresso live", CoffeeDrinkCategory.Espresso, "", 10);
+        var filter = CoffeeDrinkDefinition.CreateWithId(Guid.NewGuid(), Key(), "Фильтр live", "Filter live", CoffeeDrinkCategory.Filter, "", 20);
+        db.CoffeeDrinkDefinitions.AddRange(espresso, filter);
+        var menu = ShopMenu.Create(near.Id); menu.MarkManuallyCaptured(DateTime.UtcNow);
+        menu.ApplyManualItem(espresso.Id, MenuItemAvailability.Present, 3, 30, null);
+        menu.ApplyManualItem(filter.Id, MenuItemAvailability.Present, 10, 250, null); db.ShopMenus.Add(menu);
+        await db.SaveChangesAsync(Ct); db.ChangeTracker.Clear();
+        var store = Store(db);
+        var geo = await store.SearchShopsAsync(new() { Filters = new() { City = city.PublicSlug, Origin = new() { Latitude = 53.9m, Longitude = 27.56m }, RadiusKm = 3 }, Sort = "distance_asc" }, null, Ct);
+        Assert.Equal(2, geo.TotalItems); Assert.Equal("Near", geo.Items[0].Name); Assert.InRange(geo.Items[0].DistanceMeters!.Value, 0, 1);
+        Assert.InRange(geo.Items[1].DistanceMeters!.Value, 2000, 2500);
+        var menuFilter = new ShopFilters { City = city.PublicSlug, Menu = new() { Brew = ["filter"], Currency = "BYN", MaxPrice = 5, VolumeMl = 250 } };
+        Assert.Empty((await store.SearchShopsAsync(new() { Filters = menuFilter }, null, Ct)).Items);
+        menuFilter.Menu.MaxPrice = 12;
+        var menuResult = await store.SearchShopsAsync(new() { Filters = menuFilter }, null, Ct);
+        Assert.Equal(10m, Assert.Single(Assert.Single(menuResult.Items).MatchingMenuItems).Price);
+        var open = await store.SearchShopsAsync(new() { Filters = new() { City = city.PublicSlug, IsOpen = true } }, null, Ct);
+        Assert.Equal("Near", Assert.Single(open.Items).Name);
+        var rating = await store.SearchShopsAsync(new() { Filters = new() { City = city.PublicSlug, MinRating = 0 }, Sort = "rating_desc" }, null, Ct);
+        Assert.Equal(2, rating.TotalItems);
+    }
+}

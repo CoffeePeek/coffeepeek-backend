@@ -10,7 +10,7 @@ fi
 export DEBIAN_FRONTEND=noninteractive
 
 apt-get update
-apt-get install -y ca-certificates curl git ufw
+apt-get install -y ca-certificates curl git ufw python3 python3-venv openssl
 
 if ! command -v docker >/dev/null 2>&1; then
   curl -fsSL https://get.docker.com | sh

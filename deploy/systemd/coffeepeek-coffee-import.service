@@ -1,0 +1,19 @@
+[Unit]
+Description=Collect CoffeePeek coffee catalogues
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+DynamicUser=yes
+StateDirectory=coffeepeek-coffee-import
+WorkingDirectory=/opt/coffeepeek
+EnvironmentFile=/etc/coffeepeek/coffee-import.env
+# A single-source smoke run uses this transient override and the SAME service.
+EnvironmentFile=-/run/coffeepeek/coffee-import-override.env
+ExecStart=/bin/bash /opt/coffeepeek/deploy/scripts/run-coffee-import.sh
+TimeoutStartSec=3h
+Environment=PYTHONUNBUFFERED=1
+Environment=PYTHONDONTWRITEBYTECODE=1
+UMask=0027
+NoNewPrivileges=yes

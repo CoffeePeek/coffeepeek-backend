@@ -5,6 +5,7 @@ namespace CoffeePeek.MediaService.Services;
 
 public interface IStorageService
 {
+    Task Put(string storageKey, string contentType, Stream stream, long sizeBytes, BucketType bucketType, CancellationToken ct = default);
     Task<PresignedPhotoMetaData> GetPresignedUploadUrl(
         string fileName,
         string contentType,

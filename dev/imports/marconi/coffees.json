@@ -1,0 +1,762 @@
+{
+  "schemaVersion": 1,
+  "adapterVersion": "1.0",
+  "source": "https://marconi.by/coffee/",
+  "collectedAtUtc": "2026-10-05T10:35:11.667978+00:00",
+  "complete": true,
+  "coverage": [
+    {
+      "productKind": "roasted_beans",
+      "catalogueUrl": "https://marconi.by/coffee/",
+      "pages": 1,
+      "expectedProducts": null,
+      "discoveredProducts": 9
+    }
+  ],
+  "products": [
+    {
+      "sourceKey": "marconi.by",
+      "sourceProductId": "439",
+      "sourceUrl": "https://marconi.by/coffee/braziliya_serrado/",
+      "name": "Бразилия Серрадо Светлая Обжарка (Молотый) - 1 кг",
+      "description": null,
+      "roasterName": "Marconi",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "BR",
+          "countryNameRu": "Бразилия",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [],
+      "imageUrls": [
+        "https://marconi.by/upload/iblock/016/016a27565d140f5b77021231ac2758ab.png",
+        "https://marconi.by/upload/resize_cache/iblock/2e6/600_600_240cd750bba9870f18aada2478b24840a/2e698d2de5ed197cb6cfa6bcf3971b43.png",
+        "https://marconi.by/upload/resize_cache/iblock/2e6/315_450_240cd750bba9870f18aada2478b24840a/2e698d2de5ed197cb6cfa6bcf3971b43.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "440",
+          "weightGrams": 250,
+          "price": "25.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "PROP_606": "Зерна",
+            "PROP_471": "0.25 кг"
+          }
+        },
+        {
+          "externalVariantId": "441",
+          "weightGrams": 500,
+          "price": "25.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "PROP_606": "Зерна",
+            "PROP_471": "0.5 кг"
+          }
+        },
+        {
+          "externalVariantId": "442",
+          "weightGrams": 1000,
+          "price": "25.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "PROP_606": "Зерна",
+            "PROP_471": "1 кг"
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "marconi.by",
+      "sourceProductId": "510",
+      "sourceUrl": "https://marconi.by/coffee/braziliya_serrado_srednyaya_obzharka/",
+      "name": "Бразилия Серрадо Средняя Обжарка (Молотый) - 1 кг",
+      "description": null,
+      "roasterName": "Marconi",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "BR",
+          "countryNameRu": "Бразилия",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [],
+      "imageUrls": [
+        "https://marconi.by/upload/iblock/ec3/ec32fed2e3000cafc58a86d9bd14d84e.png",
+        "https://marconi.by/upload/resize_cache/iblock/f33/315_450_240cd750bba9870f18aada2478b24840a/f33ce0134d4e458b38aa396043e97830.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "511",
+          "weightGrams": 250,
+          "price": "25.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "PROP_606": "Зерна",
+            "PROP_471": "0.25 кг"
+          }
+        },
+        {
+          "externalVariantId": "512",
+          "weightGrams": 500,
+          "price": "25.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "PROP_606": "Зерна",
+            "PROP_471": "0.5 кг"
+          }
+        },
+        {
+          "externalVariantId": "513",
+          "weightGrams": 1000,
+          "price": "25.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "PROP_606": "Зерна",
+            "PROP_471": "1 кг"
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "marconi.by",
+      "sourceProductId": "408",
+      "sourceUrl": "https://marconi.by/coffee/Kolumbia/",
+      "name": "Колумбия Декаф (Молотый) - 0.5 кг",
+      "description": null,
+      "roasterName": "Marconi",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "CO",
+          "countryNameRu": "Колумбия",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [],
+      "imageUrls": [
+        "https://marconi.by/upload/iblock/241/241132ed1daf79dd36e98c62aff14b0c.png",
+        "https://marconi.by/upload/resize_cache/iblock/729/315_450_240cd750bba9870f18aada2478b24840a/729faa5020fa431142b0e418e0718d7f.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "431",
+          "weightGrams": 250,
+          "price": "32.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "PROP_606": "Зерна",
+            "PROP_471": "0.25 кг"
+          }
+        },
+        {
+          "externalVariantId": "432",
+          "weightGrams": 500,
+          "price": "32.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "PROP_606": "Зерна",
+            "PROP_471": "0.5 кг"
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "marconi.by",
+      "sourceProductId": "506",
+      "sourceUrl": "https://marconi.by/coffee/Uganda_Drugar/",
+      "name": "Уганда Другар (Молотый) - 1 кг",
+      "description": null,
+      "roasterName": "Marconi",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "UG",
+          "countryNameRu": "Уганда",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [],
+      "imageUrls": [
+        "https://marconi.by/upload/iblock/66a/66af5c34447619c3cc538b9ffa2fca81.png",
+        "https://marconi.by/upload/resize_cache/iblock/f76/315_450_240cd750bba9870f18aada2478b24840a/f76aa3b130adff488774731479ab1d7d.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "500",
+          "weightGrams": 250,
+          "price": "25.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "PROP_606": "Зерна",
+            "PROP_471": "0.25 кг"
+          }
+        },
+        {
+          "externalVariantId": "502",
+          "weightGrams": 500,
+          "price": "25.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "PROP_606": "Зерна",
+            "PROP_471": "0.5 кг"
+          }
+        },
+        {
+          "externalVariantId": "504",
+          "weightGrams": 1000,
+          "price": "25.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "PROP_606": "Зерна",
+            "PROP_471": "1 кг"
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "marconi.by",
+      "sourceProductId": "452",
+      "sourceUrl": "https://marconi.by/coffee/Ethiopia_4gr/",
+      "name": "Эфиопия 4_гр (Молотый) - 1 кг",
+      "description": null,
+      "roasterName": "Marconi",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "ET",
+          "countryNameRu": "Эфиопия",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [],
+      "imageUrls": [
+        "https://marconi.by/upload/iblock/26d/26d68fa6cbe6e6b7d0db4101fe150a4f.png",
+        "https://marconi.by/upload/resize_cache/iblock/52d/315_450_240cd750bba9870f18aada2478b24840a/52dc45a56fc9d519c756a8d674e40a89.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "446",
+          "weightGrams": 250,
+          "price": "26.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "PROP_606": "Зерна",
+            "PROP_471": "0.25 кг"
+          }
+        },
+        {
+          "externalVariantId": "447",
+          "weightGrams": 500,
+          "price": "26.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "PROP_606": "Зерна",
+            "PROP_471": "0.5 кг"
+          }
+        },
+        {
+          "externalVariantId": "448",
+          "weightGrams": 1000,
+          "price": "26.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "PROP_606": "Зерна",
+            "PROP_471": "1 кг"
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "marconi.by",
+      "sourceProductId": "459",
+      "sourceUrl": "https://marconi.by/coffee/efiopiya_yorgachif/",
+      "name": "Эфиопия Иргачифф (Молотый) - 1 кг",
+      "description": null,
+      "roasterName": "Marconi",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "ET",
+          "countryNameRu": "Эфиопия",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [],
+      "imageUrls": [
+        "https://marconi.by/upload/iblock/26b/26b0e5395865d8929c4be4b784b1369b.png",
+        "https://marconi.by/upload/resize_cache/iblock/e7a/315_450_240cd750bba9870f18aada2478b24840a/e7ad50bdf92589294b1e2d0496d069bb.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "453",
+          "weightGrams": 250,
+          "price": "27.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "PROP_606": "Зерна",
+            "PROP_471": "0.25 кг"
+          }
+        },
+        {
+          "externalVariantId": "454",
+          "weightGrams": 500,
+          "price": "27.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "PROP_606": "Зерна",
+            "PROP_471": "0.5 кг"
+          }
+        },
+        {
+          "externalVariantId": "455",
+          "weightGrams": 1000,
+          "price": "27.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "PROP_606": "Зерна",
+            "PROP_471": "1 кг"
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "marconi.by",
+      "sourceProductId": "462",
+      "sourceUrl": "https://marconi.by/coffee/blend_1/",
+      "name": "Бленд 1 (Молотый) - 1 кг",
+      "description": null,
+      "roasterName": "Marconi",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "blend",
+      "origins": [],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [],
+      "imageUrls": [
+        "https://marconi.by/upload/iblock/0dc/0dc60b62f5f005f223079ba9ec0f2732.png",
+        "https://marconi.by/upload/resize_cache/iblock/aca/315_450_240cd750bba9870f18aada2478b24840a/acad3c0992df07d7e152fe6d22cdc9b1.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "460",
+          "weightGrams": 1000,
+          "price": "78.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "PROP_606": "Зерна",
+            "PROP_471": "1 кг"
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "blend_composition_may_be_incomplete",
+        "detail_properties_not_collected",
+        "origin_not_specified"
+      ]
+    },
+    {
+      "sourceKey": "marconi.by",
+      "sourceProductId": "465",
+      "sourceUrl": "https://marconi.by/coffee/blend_2/",
+      "name": "Бленд 2 (Молотый) - 1 кг",
+      "description": null,
+      "roasterName": "Marconi",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "blend",
+      "origins": [],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [],
+      "imageUrls": [
+        "https://marconi.by/upload/iblock/7f3/7f3b2344e5737a21a5b6c2aa461e588d.png",
+        "https://marconi.by/upload/resize_cache/iblock/822/315_450_240cd750bba9870f18aada2478b24840a/82209183acb24731d8674a1c8372782b.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "463",
+          "weightGrams": 1000,
+          "price": "77.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "PROP_606": "Зерна",
+            "PROP_471": "1 кг"
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "blend_composition_may_be_incomplete",
+        "detail_properties_not_collected",
+        "origin_not_specified"
+      ]
+    },
+    {
+      "sourceKey": "marconi.by",
+      "sourceProductId": "468",
+      "sourceUrl": "https://marconi.by/coffee/blend_3/",
+      "name": "Бленд 3 (Молотый) - 1 кг",
+      "description": null,
+      "roasterName": "Marconi",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "blend",
+      "origins": [],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [],
+      "imageUrls": [
+        "https://marconi.by/upload/iblock/67d/67d0c0fc5d7a30b5137f4ead4d075d5f.png",
+        "https://marconi.by/upload/resize_cache/iblock/f0c/315_450_240cd750bba9870f18aada2478b24840a/f0cc538a652b3924080c18d1e8907f4a.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "466",
+          "weightGrams": 1000,
+          "price": "76.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "PROP_606": "Зерна",
+            "PROP_471": "1 кг"
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "blend_composition_may_be_incomplete",
+        "detail_properties_not_collected",
+        "origin_not_specified"
+      ]
+    }
+  ],
+  "excluded": [],
+  "sourceSnapshots": [
+    {
+      "url": "https://marconi.by/coffee/",
+      "fetchedAtUtc": "2026-10-05T10:03:21.651650+00:00",
+      "sha256": "8eb8f7bc31a5a519cb6c3bda9bd65d8150f6b2027b6d55ec9321b917c370224f"
+    },
+    {
+      "url": "https://marconi.by/coffee/Ethiopia_4gr/",
+      "fetchedAtUtc": "2026-10-05T10:34:32.635777+00:00",
+      "sha256": "297f3574a9014d0e28d0fb34cc182fba156476609f82d72d2206f83b8a1a53ee",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://marconi.by/coffee/Ethiopia_4gr/?t=446",
+      "fetchedAtUtc": "2026-10-05T10:34:35.618947+00:00",
+      "sha256": "17218d56c19cbb44e4633de396f2c344ad829dcb6abd31df9d60af9e9359f01a",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://marconi.by/coffee/Ethiopia_4gr/?t=447",
+      "fetchedAtUtc": "2026-10-05T10:34:38.569599+00:00",
+      "sha256": "f47e0a3ce43b0841bf6d0f7abe2746018e2254beaafdf581b4798cd7b1e0c7ff",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://marconi.by/coffee/Ethiopia_4gr/?t=448",
+      "fetchedAtUtc": "2026-10-05T10:34:41.563875+00:00",
+      "sha256": "23f822d49430625f7a35752678ed9369ac2dcafeeddbd8a7131e8dd31a14cced",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://marconi.by/coffee/Kolumbia/",
+      "fetchedAtUtc": "2026-10-05T10:34:11.703672+00:00",
+      "sha256": "7525609f1cbb9c19fd51208c0e9641c2522e6def0e6891dc36e2d23490e402e7",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://marconi.by/coffee/Kolumbia/?t=431",
+      "fetchedAtUtc": "2026-10-05T10:34:14.674419+00:00",
+      "sha256": "5a02ed666a79623b49f7c22d248a5951080a4aaf422bdd96b44fbab00656d39c",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://marconi.by/coffee/Kolumbia/?t=432",
+      "fetchedAtUtc": "2026-10-05T10:34:17.633457+00:00",
+      "sha256": "7ef0413ec8d87d430b237f6b343b06f703f5dce1fae34706aaeaacd7e4537d3d",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://marconi.by/coffee/Uganda_Drugar/",
+      "fetchedAtUtc": "2026-10-05T10:34:20.717121+00:00",
+      "sha256": "a85c4ac59ba224b5ff6aafaf36e0eb2bff6e7705201323dd511b0d886c26c784",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://marconi.by/coffee/Uganda_Drugar/?t=500",
+      "fetchedAtUtc": "2026-10-05T10:34:23.594723+00:00",
+      "sha256": "a2a43f903e05841d35fc6d1296f80a7b14d211650f0bbf0ad440fb027487f85f",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://marconi.by/coffee/Uganda_Drugar/?t=502",
+      "fetchedAtUtc": "2026-10-05T10:34:26.608424+00:00",
+      "sha256": "40111425a158d77c61695ca6b27ce0f88cddc295fb0c2843c6206e2d2e6f6350",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://marconi.by/coffee/Uganda_Drugar/?t=504",
+      "fetchedAtUtc": "2026-10-05T10:34:29.647269+00:00",
+      "sha256": "2dfc87e56c7182fb4b1cf5c1794cf04b6d920efccfc316ca7de5f75e4cc122a0",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://marconi.by/coffee/blend_1/",
+      "fetchedAtUtc": "2026-10-05T10:34:56.778201+00:00",
+      "sha256": "448a38e706132852701018e3209ab535dca7d5a3228250949af3e3c8a29a673a",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://marconi.by/coffee/blend_1/?t=460",
+      "fetchedAtUtc": "2026-10-05T10:34:59.609911+00:00",
+      "sha256": "150466ac0217e4a679fe85b644b4ba8ccb7d566961bd42f7b774e45dd4a9dfb9",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://marconi.by/coffee/blend_2/",
+      "fetchedAtUtc": "2026-10-05T10:35:02.789490+00:00",
+      "sha256": "778058e458cc3b6acbe80448870a2711248828e04eeef4bbecb6824152c441e8",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://marconi.by/coffee/blend_2/?t=463",
+      "fetchedAtUtc": "2026-10-05T10:35:05.665191+00:00",
+      "sha256": "90b25915c425329eb0f0d65c2c9f6ccc70fad0844fec3240540316c9738f4431",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://marconi.by/coffee/blend_3/",
+      "fetchedAtUtc": "2026-10-05T10:35:08.634049+00:00",
+      "sha256": "2f809f2156218365b75cd7ee2f7c19ce0778e87162011409fea8418e0da5ac48",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://marconi.by/coffee/blend_3/?t=466",
+      "fetchedAtUtc": "2026-10-05T10:35:11.667978+00:00",
+      "sha256": "7b33f827dbf01b80d212a0115a9cd4683cc4f12636a40ef0408ae3039a4ca692",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://marconi.by/coffee/braziliya_serrado/",
+      "fetchedAtUtc": "2026-10-05T10:29:27.168984+00:00",
+      "sha256": "a87c9b489716f805f351a573340b8e2cd19e749e04b22119f55f53c4492c3ddd",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://marconi.by/coffee/braziliya_serrado/?t=440",
+      "fetchedAtUtc": "2026-10-05T10:06:17.461006+00:00",
+      "sha256": "58ccf7bbfe42b26a3d2543e62eea8734c022155e5b7bfcc0e7d15b50247e3d16"
+    },
+    {
+      "url": "https://marconi.by/coffee/braziliya_serrado/?t=441",
+      "fetchedAtUtc": "2026-10-05T10:33:54.604111+00:00",
+      "sha256": "f9559d0b070225b6eb4f7667a6025a9dd6e8923209c1068b34debaeb7537a0c4",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://marconi.by/coffee/braziliya_serrado/?t=442",
+      "fetchedAtUtc": "2026-10-05T10:33:56.566539+00:00",
+      "sha256": "c451462e9f5253a97cbbefb92483145ae6d8214ad474cc85d5ab86e42f710f4e",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://marconi.by/coffee/braziliya_serrado_srednyaya_obzharka/",
+      "fetchedAtUtc": "2026-10-05T10:33:59.580075+00:00",
+      "sha256": "86af40c541f2639d8a9e8eee11600beb9dd1f5b62eceb3942f06e7c93b93f040",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://marconi.by/coffee/braziliya_serrado_srednyaya_obzharka/?t=511",
+      "fetchedAtUtc": "2026-10-05T10:34:03.050504+00:00",
+      "sha256": "328407795948546f3ad060a271f76f0814e5e93f580dfb0ada40165b682254b5",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://marconi.by/coffee/braziliya_serrado_srednyaya_obzharka/?t=512",
+      "fetchedAtUtc": "2026-10-05T10:34:05.619777+00:00",
+      "sha256": "200469de7a18f772df6008d6e168dc6af51b99ecc47651543ebc6840bffd8789",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://marconi.by/coffee/braziliya_serrado_srednyaya_obzharka/?t=513",
+      "fetchedAtUtc": "2026-10-05T10:34:08.585545+00:00",
+      "sha256": "aa636802a3d67df4252c65565218da2222ac90c1ad8376552131300ee579eeb8",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://marconi.by/coffee/efiopiya_yorgachif/",
+      "fetchedAtUtc": "2026-10-05T10:34:44.591787+00:00",
+      "sha256": "154d0e4bcf3a16dac629424fbd81ef5cb9429ec637eb2999835c231ccee920ab",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://marconi.by/coffee/efiopiya_yorgachif/?t=453",
+      "fetchedAtUtc": "2026-10-05T10:34:47.629444+00:00",
+      "sha256": "9c7d5a4d1311f361641887e3837222460322f0216627c1e8549b659831087798",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://marconi.by/coffee/efiopiya_yorgachif/?t=454",
+      "fetchedAtUtc": "2026-10-05T10:34:50.598431+00:00",
+      "sha256": "9d5f9264e5b55a1c8da149db09df6f14a7d645d7feae8b34acc1c0aa3b37ac60",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://marconi.by/coffee/efiopiya_yorgachif/?t=455",
+      "fetchedAtUtc": "2026-10-05T10:34:53.575620+00:00",
+      "sha256": "1c3ae2d604419d13ff1b8173552154fce9e6fae28fb9d023ad421f100a82d322",
+      "paginationHeaders": {}
+    }
+  ]
+}

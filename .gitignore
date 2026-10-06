@@ -258,6 +258,9 @@ paket-files/
 .fake/
 
 # JetBrains Rider
+dev/coffee-import/.cache-*
+dev/imports/.images/
+dev/imports/history/
 .idea/
 *.sln.iml
 

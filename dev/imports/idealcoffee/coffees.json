@@ -1,0 +1,501 @@
+{
+  "schemaVersion": 1,
+  "adapterVersion": "1.0",
+  "source": "https://idealcoffee.by",
+  "collectedAtUtc": "2026-10-05T10:24:00.794587+00:00",
+  "complete": true,
+  "coverage": [
+    {
+      "productKind": "roasted_beans",
+      "catalogueUrl": "https://idealcoffee.by/wp-json/wc/store/v1/products?category=905",
+      "pages": 1,
+      "expectedProducts": 8,
+      "discoveredProducts": 8,
+      "countUnit": "source_cards_including_non_beans"
+    }
+  ],
+  "products": [
+    {
+      "sourceKey": "idealcoffee.by",
+      "sourceProductId": "4800",
+      "sourceUrl": "https://idealcoffee.by/kofe/svezheobzharennyy_kofe/gonduras-shg/",
+      "name": "Гондурас SHG",
+      "description": "Состав этого кофе включает 100% арабику из Гондураса, что гарантирует высокое качество и богатство вкуса. Арабика из этого региона известна своей сладостью и мягкостью, что делает кофе особенно приятным и ароматным. Гондурас SHG — станет отличным выбором как для утреннего пробуждения, так и для расслабляющего вечера, когда вы хотите насладиться чем-то особенным. Позвольте себе погрузиться в мир этого великолепного напитка, который подарит вам моменты истинного кофейного наслаждения! Гондурас — это насыщенный кофе, который порадует вас своим сладким шоколадным оттенком. Он обладает сбалансированным и ярким вкусом, который раскрывается в каждом глотке, оставляя долгий и легкий послевкусие, что делает его идеальным для наслаждения в любое время дня.",
+      "roasterName": "Ideal Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "HN",
+          "countryNameRu": "Гондурас",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [],
+      "imageUrls": [
+        "https://idealcoffee.by/wp-content/uploads/gonduras-shg.webp",
+        "https://idealcoffee.by/wp-content/uploads/mokap_s_beloj_pachkoj_na_serom_fone_200_gramm_copy_set_1-1-scaled.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "4801",
+          "weightGrams": 1000,
+          "price": "96.90",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "Вес": "1-kg"
+          }
+        },
+        {
+          "externalVariantId": "4802",
+          "weightGrams": 200,
+          "price": "20.23",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "Вес": "200-gr"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Вес": "1000 g, 200 g"
+      },
+      "reviewWarnings": [
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "idealcoffee.by",
+      "sourceProductId": "1158",
+      "sourceUrl": "https://idealcoffee.by/kofe/svezheobzharennyy_kofe/efiopiya-sidamo-gr-2/",
+      "name": "Эфиопия Сидамо",
+      "description": "Состав этого кофе включает 100% арабику, что гарантирует высокое качество и насыщенность вкуса. Эфиопская арабика известна своими яркими фруктовыми и цветочными оттенками, что делает этот кофе особенно привлекательным для тех, кто ищет что-то необычное и запоминающееся. Эфиопия Сидамо станет отличным выбором для тех, кто хочет насладиться утренним кофе с яркими акцентами или для вечернего расслабления. Позвольте себе погрузиться в мир этого великолепного напитка, который подарит вам моменты истинного наслаждения и удовольствия! Эфиопия Сидамо — это кофе с ярким и стойким цветочным ароматом, который сразу же привлекает внимание. В его вкусе гармонично сочетаются ноты шоколада, бергамота и лимонной кислинки, создавая уникальный и многослойный профиль, который радует гурманов.",
+      "roasterName": "Ideal Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "ET",
+          "countryNameRu": "Эфиопия",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [],
+      "imageUrls": [
+        "https://idealcoffee.by/wp-content/uploads/efiopiya-si.webp",
+        "https://idealcoffee.by/wp-content/uploads/mokap_s_beloj_pachkoj_na_serom_fone_200_gramm_copy_set_2-scaled.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "3243",
+          "weightGrams": 1000,
+          "price": "99.45",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "Вес": "1-kg"
+          }
+        },
+        {
+          "externalVariantId": "3244",
+          "weightGrams": 200,
+          "price": "20.74",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "Вес": "200-gr"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Вес": "1000 g, 200 g"
+      },
+      "reviewWarnings": [
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "idealcoffee.by",
+      "sourceProductId": "4126",
+      "sourceUrl": "https://idealcoffee.by/kofe/svezheobzharennyy_kofe/braziliya-serrrado/",
+      "name": "Бразилия Серрадо",
+      "description": "Серрадо – это не просто регион, это колыбель некоторых из лучших сортов кофе в мире. Высота, солнечное свечение и особая земля дарят зернам уникальные вкусовые особенности, которые невозможно спутать с чем-либо другим. Этот кофе выращивается с любовью, и его выращивают под присмотром опытных рук, которые знают, как извлечь максимум из каждого зернышка. Открыв упаковку, вы будете захвачены богатым и теплым ароматом. Представьте себе свежесваренный шоколад, обсыпанный жареными орехами и легким привкусом карамели, создающим атмосферу уюта в каждом глотке. Когда вы наслаждаетесь кофе Бразилия Серрадо, у вас есть возможность погрузиться в магию его теплого, бархатистого вкуса, где сладость орехов переплетается с мягкой шоколадной основой, а слегка кислинка добавляет загадки. Этот кофе не просто наполняет вас энергией, он создает настрой на радость и вдохновение. Послевкусие оставляет приятное послевкусие, как теплое воспоминание о летнем дне на бразильских плантациях. И снова и снова вы чувствуете, как нежные шоколадные ноты обнимают ваш ум, заставляя вас жаждать еще одного глотка. Этот кофе великолепно проявит себя как в классическом эспрессо, так и в изысканных фильтр-напитках. Будь то утренний ритуал или вечерний релакс, Бразилия Серрадо всегда добавит яркие краски в ваш день. Бразилия Серрадо – это не просто кофе, это путешествие в мир радости и наслаждения, где каждый глоток напоминает о лучах солнца и мягком ветре, приглашая вас снова и снова. Этот кофе – настоящая находка, создающая атмосферу праздника в каждой чашке! Кофе Бразилия Серрадо – это настоящий тропический праздник для ваших вкусовых рецепторов, расцветающий в сердцевине одной из самых живописных кофейных зон Бразилии. Как только вы наливаете его в чашку, вы словно переноситесь в предстартовую точку полета на крыльях бразильского лета!",
+      "roasterName": "Ideal Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "BR",
+          "countryNameRu": "Бразилия",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [],
+      "imageUrls": [
+        "https://idealcoffee.by/wp-content/uploads/mokap_s_beloj_pachkoj_i_kartonkoj_braziliya-1-scaled.png",
+        "https://idealcoffee.by/wp-content/uploads/mokap_s_beloj_pachkoj_na_serom_fone_200_gramm_copy_set_3-scaled.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "4127",
+          "weightGrams": 1000,
+          "price": "83.13",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "Вес": "1-kg"
+          }
+        },
+        {
+          "externalVariantId": "4128",
+          "weightGrams": 200,
+          "price": "17.51",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "Вес": "200-gr"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Вес": "1000 g, 200 g"
+      },
+      "reviewWarnings": [
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "idealcoffee.by",
+      "sourceProductId": "4129",
+      "sourceUrl": "https://idealcoffee.by/kofe/svezheobzharennyy_kofe/peru-mitsui/",
+      "name": "Перу Мицуи",
+      "description": "Этот кофе выращивается на плодородных склонах Перу, в районе, известном своими неравнодушными фермерами, которые бережно ухаживают за каждым растением. Они используют традиционные методы обработки зерен, что добавляет дополнительный шарм и глубину этому напитку. При открытии упаковки вас встречает тонкий, но выразительный аромат, в котором гармонично сочетаются нотки шоколада и спелых фруктов. Легкое прикосновение карамели обволакивает ваши чувства, погружая в атмосферу уюта. Вкус Перу Мицуи – это волшебный танец контрастов. Он удивляет своей сбалансированной мягкостью, в которой сладость шоколада переплетается с легкими цитрусовыми оттенками. Нежная кислинка придаёт напитку свежесть, а легкий ореховый послевкусие оставляет приятное впечатление. Завершение каждой чашки нежно уносит вас в мир шоколадных и фруктовых нот, заставляя вас жаждать ещё одной порции этого великолепия. Этот кофе прекрасно подходит для различных методов заваривания – от эспрессо до фильтр-кофе. Он раскроется по-новому в каждой интерпретации, даря разные грани своего характера. Перу Мицуи – это не просто кофе, это настоящее искусство, которое пробуждает чувства и вдохновляет на новые открытия. Позвольте себе насладиться этим удивительным напитком и откройте для себя волшебство перуанских кофейных плантаций! Кофе Перу Мицуи – это настоящее путешествие в мир ароматов и вкусов, созданное природой высокогорья Анд. Каждая чашка этого кофе рассказывает свою уникальную историю, пронизанную солнечными лучами и свежим воздухом горных вершин.",
+      "roasterName": "Ideal Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "PE",
+          "countryNameRu": "Перу",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [],
+      "imageUrls": [
+        "https://idealcoffee.by/wp-content/uploads/peru.webp",
+        "https://idealcoffee.by/wp-content/uploads/mokap_s_beloj_pachkoj_na_serom_fone_200_gramm_copy_set_5-scaled.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "4130",
+          "weightGrams": 1000,
+          "price": "91.80",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "Вес": "1-kg"
+          }
+        },
+        {
+          "externalVariantId": "4131",
+          "weightGrams": 200,
+          "price": "19.21",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "Вес": "200-gr"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Вес": "1000 g, 200 g"
+      },
+      "reviewWarnings": [
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "idealcoffee.by",
+      "sourceProductId": "4097",
+      "sourceUrl": "https://idealcoffee.by/kofe/svezheobzharennyy_kofe/rich/",
+      "name": "Rich",
+      "description": "Вкус насыщен глубиной и плотностью, словно тёплый объятие, которое наполняет сердце и душу. Умеренная горчинка добавляет характер и структуру, в то время как легкая кислинка сверкает, как яркие акценты на холсте, придавая напитку изысканную свежесть. Этот кофе не просто напиток, а настоящая симфония вкусов, где каждая нота звучит ярко и уверенно. Состав, включающий арабику из Бразилии, Индии и Гондураса, создает удивительный баланс между сладкими, ореховыми и пряными оттенками. Бразильская арабика приносит с собой нежную мягкость, индийская — немного экзотической специи, а гондурасская — свежесть и чистоту. Эти три страны объединяются, чтобы подарить вам незабываемое кофейное наслаждение. Rich — это не просто кофе, это яркое путешествие по континентам, где каждый глоток раскрывает новые грани и оттенки, оставляя после себя приятное послевкусие и желание вернуться к этому чудесному напитку снова и снова. Погрузитесь в магию кофейной чашки и позвольте себе открыть новые горизонты вкуса! Rich — это истинный король кофе, который погружает вас в атмосферу настоящего гастрономического праздника! Эта сбалансированная смесь трёх великолепных сортов арабики раскрывает свои богатые нюансы с каждым глотком, как живопись, где каждая деталь играет свою неповторимую роль.",
+      "roasterName": "Ideal Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [],
+      "imageUrls": [
+        "https://idealcoffee.by/wp-content/uploads/mokap_s_beloj_pachkoj_na_serom_fone_copy-scaled.jpg",
+        "https://idealcoffee.by/wp-content/uploads/mokap_s_beloj_pachkoj_na_serom_fone_200_gramm_copy_4-scaled.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "4098",
+          "weightGrams": 1000,
+          "price": "99.45",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "Вес": "1-kg"
+          }
+        },
+        {
+          "externalVariantId": "4099",
+          "weightGrams": 200,
+          "price": "20.74",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "Вес": "200-gr"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Вес": "1000 g, 200 g"
+      },
+      "reviewWarnings": [
+        "origin_not_specified"
+      ]
+    },
+    {
+      "sourceKey": "idealcoffee.by",
+      "sourceProductId": "4093",
+      "sourceUrl": "https://idealcoffee.by/kofe/svezheobzharennyy_kofe/sweet/",
+      "name": "Sweet",
+      "description": "Секрет этого восхищения кроется в уникальной смеси двух сортов арабики: изысканной Эфиопии и насыщенной Бразилии. Каждая страна приносит свои уникальные ноты в этот симфонический ансамбль, создавая идеальную гармонию между глубиной шоколадного вкуса и легкостью цветочно-фруктовой свежести. Уникальный экземпляр кофе «Sweet» будто обнимает вас, даря удовлетворение и радость, пробуждая все чувства. Это кофе, который не просто утоляет жажду, но и превращает каждое утро в прекрасный ритуал! Наслаждайтесь каждым глотком и позвольте себе погрузиться в настоящее экспериментальное волшебство! Кофе Sweet — это восхитительное путешествие в мир кофе, где каждый глоток дарит неповторимые ощущения! Этот прекрасно сбалансированный напиток сочетает в себе насыщенные какао-нотки, которые изысканно переплетаются с яркой фруктово-цветочной кислинкой. Открывающиеся ароматы напоминают о солнечных садах, наполненных цветами, где сладкий запах кофе танцует с прохладой свежих фруктов.",
+      "roasterName": "Ideal Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [],
+      "imageUrls": [
+        "https://idealcoffee.by/wp-content/uploads/mokap_s_beloj_pachkoj_na_serom_fone_copy_3-scaled.jpg",
+        "https://idealcoffee.by/wp-content/uploads/mokap_s_beloj_pachkoj_na_serom_fone_200_gramm_copy_3-scaled.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "4094",
+          "weightGrams": 1000,
+          "price": "84.15",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "Вес": "1-kg"
+          }
+        },
+        {
+          "externalVariantId": "4095",
+          "weightGrams": 200,
+          "price": "17.68",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "Вес": "200-gr"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Вес": "1000 g, 200 g"
+      },
+      "reviewWarnings": [
+        "origin_not_specified"
+      ]
+    },
+    {
+      "sourceKey": "idealcoffee.by",
+      "sourceProductId": "1001",
+      "sourceUrl": "https://idealcoffee.by/kofe/svezheobzharennyy_kofe/experience/",
+      "name": "Experience",
+      "description": "Состав Experience— это синергия двух выдающихся арабик: бразильской, приносящей мягкость, и кенийской, добавляющей яркость. Казалось бы, необычное сочетание для эспрессо, но именно оно идеально отвечает на вопрос, ставший вызовом для нашего главного обжарщика: может ли кофе быть одновременно простым и аристократичным? Может ли утренний напиток преобразиться в яркое и интересное удивление? Ответ — да! И этот ответ теперь именуется Experience. Данный лот сочетает в себе будничность и стиль, суету и умиротворение. Каждая чашка этого кофе — словно прогулка по улочкам, увитым историей и красотой, где современные архитектурные формы органично переплетаются с древней мавританской эстетикой. А вишенка на этом бургундском торте — это Королевский дворец, что так удачно отражает статус и харизму нашего кофе. Плотный и понятный, Experience — идеальный выбор для любого времени суток. Его профиль впитывает в себя шоколад и какао, а сладковатая вишня с ягодными нотками придаёт свежесть и лёгкость. Этот кофе — ваш незаменимый спутник в открытии многообразия вкусов Ideal coffee, способный удивить даже самых искушенных гурманов. Experience — это алкогольное путешествие, запечатленное в каждой чашке! Представьте себе: насыщенный шоколадный профиль, будто обнятый теплом солнечного дня, и сладкие вишневые акценты, раскрашивающие каждую порцию кофе яркими оттенками. Этот удивительный эспрессо подхватывает вас на мгновение, погружая в атмосферу города, где жизнь никогда не стоит на месте.",
+      "roasterName": "Ideal Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [],
+      "imageUrls": [
+        "https://idealcoffee.by/wp-content/uploads/mokap_s_beloj_pachkoj_na_serom_fone_copy_2-scaled.jpg",
+        "https://idealcoffee.by/wp-content/uploads/mokap_s_beloj_pachkoj_na_serom_fone_200_gramm_copy_1-1-scaled.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "4091",
+          "weightGrams": 1000,
+          "price": "89.16",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "Вес": "1-kg"
+          }
+        },
+        {
+          "externalVariantId": "4092",
+          "weightGrams": 200,
+          "price": "18.70",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "Вес": "200-gr"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Вес": "1000 g, 200 g"
+      },
+      "reviewWarnings": [
+        "origin_not_specified"
+      ]
+    },
+    {
+      "sourceKey": "idealcoffee.by",
+      "sourceProductId": "4102",
+      "sourceUrl": "https://idealcoffee.by/kofe/svezheobzharennyy_kofe/blend/",
+      "name": "Blend",
+      "description": "Вдохновение для этого божественного напитка приходит из прекрасной Коста-Рики, где природа дарит нам богатство вкусов и аромата. Кофе Blend собрал в себе удивительный тандем трёх изысканных сортов арабики, каждая из которых принесла свою уникальную нотку в это изумительное произведение. Первым актёром в нашем кофейном спектакле становится Коста-Рика Три сестры — сорт, который уже завоевал сердца наших покупателей своей сладостью и нежностью, с текстурой, столь гармоничной и сбалансированной, что вы ни разу не задумываетесь о горечи. Затем на сцену выходит Коста-Рика Халапа Эстейт, сложный и многообразный лот, собранный на высокогорных плантациях, где каждый зерно впитало в себя дыхание природы и уникальность терруара. И, наконец, завершающая нота — благородная Эфиопия, которая придаёт творению особую изысканность и яркость. На выходе мы получаем не просто эспрессо, а настоящий шедевр — Ideal Coffee Blend. Насыщенный, тельный, сладкий, он открывает двери в мир, где тёмный кофе может быть невероятно мягким и уютным. Приготовьтесь удивиться: горечь — не обязательный атрибут тёмного обжаренного кофе. Достаточно лишь сделать первый глоток, чтобы увериться в этом! Погрузитесь в плотную текстуру и сладость кофе Blend, и пусть этот кофе станет вашим спутником в бесконечном путешествии по миру классики! Blend — это искренний любовный роман с кофе, написанный для тех, кто жаждет классики, но стремится избежать горечи. Этот эспрессо изыскан и тёплый, словно объятие любимого человека, наполняющее вас насыщенностью и сладостью, которую так приятно наслаждаться.",
+      "roasterName": "Ideal Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "blend",
+      "origins": [],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [],
+      "imageUrls": [
+        "https://idealcoffee.by/wp-content/uploads/mokap_s_beloj_pachkoj_na_serom_fone_copy_1-scaled.jpg",
+        "https://idealcoffee.by/wp-content/uploads/mokap_s_beloj_pachkoj_na_serom_fone_200_gramm_copy_7-scaled.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "4103",
+          "weightGrams": 1000,
+          "price": "82.45",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "Вес": "1-kg"
+          }
+        },
+        {
+          "externalVariantId": "4104",
+          "weightGrams": 200,
+          "price": "17.34",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "Вес": "200-gr"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Вес": "1000 g, 200 g"
+      },
+      "reviewWarnings": [
+        "blend_composition_may_be_incomplete",
+        "origin_not_specified"
+      ]
+    }
+  ],
+  "excluded": [],
+  "sourceSnapshots": [
+    {
+      "url": "https://idealcoffee.by/wp-json/wc/store/v1/products?category=905&per_page=100&page=1",
+      "fetchedAtUtc": "2026-10-05T10:23:56.092219+00:00",
+      "sha256": "95397b7afcd3c5c757fafdfbdfd1f85edbefabaa404f53e299f14c463148ca6e",
+      "paginationHeaders": {
+        "X-WP-Total": "8",
+        "X-WP-TotalPages": "1"
+      }
+    },
+    {
+      "url": "https://idealcoffee.by/wp-json/wc/store/v1/products?type=variation&include=4801%2C4802%2C3243%2C3244%2C4127%2C4128%2C4130%2C4131%2C4098%2C4099%2C4094%2C4095%2C4091%2C4092%2C4103%2C4104&per_page=100&page=1",
+      "fetchedAtUtc": "2026-10-05T10:24:00.794587+00:00",
+      "sha256": "038ce984a292d7f80658e2283fd556888a2bcb64d4f765e6fc91b0a57cccb7ef",
+      "paginationHeaders": {
+        "X-WP-Total": "16",
+        "X-WP-TotalPages": "1"
+      }
+    }
+  ]
+}

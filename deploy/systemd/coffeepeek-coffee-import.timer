@@ -1,0 +1,10 @@
+[Unit]
+Description=Refresh CoffeePeek coffee catalogues every 24 hours
+
+[Timer]
+OnCalendar=*-*-* 03:00:00 UTC
+Persistent=yes
+Unit=coffeepeek-coffee-import.service
+
+[Install]
+WantedBy=timers.target

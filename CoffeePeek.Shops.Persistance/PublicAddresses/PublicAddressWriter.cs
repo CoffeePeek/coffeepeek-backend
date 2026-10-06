@@ -1,3 +1,4 @@
+using CoffeePeek.Shops.Domain.Aggregates.CoffeeProductAggregate;
 using CoffeePeek.Shared.Domain.PublicAddresses;
 using CoffeePeek.Shops.Application.PublicAddresses;
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
@@ -16,6 +17,8 @@ internal static class PublicAddressWriter
     {
         if (!db.PublicAddressesEnabled) return;
         foreach (var entry in db.ChangeTracker.Entries<CoffeeShop>().Where(e => e.State == EntityState.Added).ToArray())
+            await InitializeAsync(db, entry.Entity, Stem(entry.Entity), ct);
+        foreach (var entry in db.ChangeTracker.Entries<CoffeeProduct>().Where(e => e.State == EntityState.Added).ToArray())
             await InitializeAsync(db, entry.Entity, Stem(entry.Entity), ct);
         foreach (var entry in db.ChangeTracker.Entries<Roaster>().Where(e => e.State == EntityState.Added).ToArray())
             await InitializeAsync(db, entry.Entity, Stem(entry.Entity), ct);
@@ -44,7 +47,7 @@ internal static class PublicAddressWriter
     public static string Stem(IPublicSlugOwner owner) => owner switch
     {
         CoffeeShop s => ShopStem(s), Roaster s => s.Name, City s => s.Name, CoffeeZone s => s.Name,
-        CoffeeBean s => s.Name, Equipment s => s.Name, BrewMethod s => s.Name, ShopTag s => s.Slug,
+        CoffeeProduct s => s.Name, CoffeeBean s => s.Name, Equipment s => s.Name, BrewMethod s => s.Name, ShopTag s => s.Slug,
         _ => throw new InvalidOperationException("Unknown public slug owner.")
     };
 

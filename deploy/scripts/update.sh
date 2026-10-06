@@ -13,6 +13,8 @@ set -a
 source .env
 set +a
 
+bash "${SCRIPT_DIR}/check-coffee-import.sh"
+
 COMPOSE=(docker compose)
 if [[ "${USE_HTTPS:-1}" == "1" ]]; then
   COMPOSE+=(--profile https)
@@ -65,8 +67,14 @@ else
 fi
 
 # Start one backend at a time to avoid simultaneous initialization spikes.
-for service in account shops moderation media; do
-  "${COMPOSE[@]}" up -d --no-build "$service"
+for service in account media shops moderation; do
+  if [[ -n "${COFFEE_IMPORT_TOKEN:-}" && ( "${service}" == "media" || "${service}" == "shops" ) ]]; then
+    # A single-file bind mount can retain the old inode after an atomic mapping update.
+    # Recreate the import hosts even when their image tag and mount path did not change.
+    "${COMPOSE[@]}" up -d --no-deps --no-build --force-recreate "$service"
+  else
+    "${COMPOSE[@]}" up -d --no-build "$service"
+  fi
   wait_for_backend "$service" /health
 done
 wait_for_backend shops /api/Catalogs/cities

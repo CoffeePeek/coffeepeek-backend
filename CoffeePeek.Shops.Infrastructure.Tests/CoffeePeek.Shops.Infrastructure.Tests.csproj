@@ -29,6 +29,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\CoffeePeek.Shops.Infrastructure\CoffeePeek.Shops.Infrastructure.csproj" />
+      <Content Include="../dev/imports/**/coffees.json" Link="CoffeeSnapshots/%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     </ItemGroup>
 
 </Project>

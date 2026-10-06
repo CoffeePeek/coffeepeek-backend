@@ -19,6 +19,14 @@ namespace CoffeePeek.Shops.Persistance.Configuration;
 
 public class ShopsDbContext(DbContextOptions<ShopsDbContext> options, IOptions<PublicAddressOptions>? addressOptions = null) : DbContext(options)
 {
+    public DbSet<CoffeePeek.Shops.Domain.Aggregates.CoffeeProductAggregate.CoffeeProduct> CoffeeProducts => Set<CoffeePeek.Shops.Domain.Aggregates.CoffeeProductAggregate.CoffeeProduct>();
+    public DbSet<CoffeePeek.Shops.Domain.Aggregates.CoffeeProductAggregate.CoffeeFilterValue> CoffeeFilterValues => Set<CoffeePeek.Shops.Domain.Aggregates.CoffeeProductAggregate.CoffeeFilterValue>();
+    public DbSet<CoffeePeek.Shops.Domain.Aggregates.DiscoveryAggregate.DiscoveryFavorite> DiscoveryFavorites => Set<CoffeePeek.Shops.Domain.Aggregates.DiscoveryAggregate.DiscoveryFavorite>();
+    public DbSet<CoffeePeek.Shops.Domain.Aggregates.CoffeeProductAggregate.Country> Countries => Set<CoffeePeek.Shops.Domain.Aggregates.CoffeeProductAggregate.Country>();
+    public DbSet<CoffeePeek.Shops.Domain.Aggregates.CoffeeProductAggregate.CoffeeProductSource> CoffeeProductSources => Set<CoffeePeek.Shops.Domain.Aggregates.CoffeeProductAggregate.CoffeeProductSource>();
+    public DbSet<CoffeePeek.Shops.Domain.Aggregates.CoffeeProductAggregate.CoffeeImportRun> CoffeeImportRuns => Set<CoffeePeek.Shops.Domain.Aggregates.CoffeeProductAggregate.CoffeeImportRun>();
+    public DbSet<CoffeePeek.Shops.Domain.Aggregates.RoasterTagAggregate.RoasterTag> RoasterTags => Set<CoffeePeek.Shops.Domain.Aggregates.RoasterTagAggregate.RoasterTag>();
+    public DbSet<CoffeePeek.Shops.Domain.Aggregates.RoasterTagAggregate.RoasterTagAssignment> RoasterTagAssignments => Set<CoffeePeek.Shops.Domain.Aggregates.RoasterTagAggregate.RoasterTagAssignment>();
     public bool PublicAddressesEnabled => addressOptions?.Value.Enabled == true;
 
 
@@ -78,6 +86,7 @@ public class ShopsDbContext(DbContextOptions<ShopsDbContext> options, IOptions<P
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        CoffeeCatalogConfiguration.Configure(modelBuilder);
         modelBuilder.HasPostgresExtension("pg_trgm");
         PublicSlugConfiguration.Configure(modelBuilder.Entity<ShopTag>(), "ShopTags", "PublicSlug");
         PublicSlugConfiguration.Configure(modelBuilder.Entity<BrewMethod>(), "BrewMethods");
