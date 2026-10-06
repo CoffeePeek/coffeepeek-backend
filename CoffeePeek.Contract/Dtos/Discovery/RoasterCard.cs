@@ -22,6 +22,10 @@ public class RoasterCard
     public PublicTag[] Tags { get; set; } = [];
     [JsonRequired]
     public bool? IsFavorite { get; set; }
+    [Range(0, 2147483647)]
+    public int? CoffeeShopsCount { get; set; }
+    [Range(0, 2147483647)]
+    public int? CoffeeProductsCount { get; set; }
     [JsonRequired]
     [Required]
     [Range(0, 2147483647)]

@@ -1,4 +1,3 @@
-using System.ComponentModel.DataAnnotations;
 using CoffeePeek.Shared.Auth;
 using CoffeePeek.Shared.Auth.Constants;
 using CoffeePeek.Shared.Kernel.Response;
@@ -23,9 +22,9 @@ public class AdminReviewReportsController(IMessageBus bus, IUserContext userCont
     [HttpGet]
     [ProducesResponseType<Response<ReviewReportPage>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetAll(CancellationToken ct,
-        [FromQuery] ReviewReportStatus? status = ReviewReportStatus.Pending,
+        [FromQuery] ReviewReportStatus? status = null,
         [FromQuery] int page = 1, [FromQuery] int pageSize = 20) =>
-        Ok(await bus.InvokeAsync<Response<ReviewReportPage>>(new GetReviewReportsQuery(status, page, pageSize), ct));
+        Ok(await bus.InvokeAsync<Response<ReviewReportPage>>(new GetReviewReportsQuery(status ?? ReviewReportStatus.Pending, page, pageSize), ct));
 
     /// <summary>Read complaint details and the current reported review.</summary>
     [HttpGet("{reportId:guid}")]
@@ -46,12 +45,4 @@ public class AdminReviewReportsController(IMessageBus bus, IUserContext userCont
         return Ok(await bus.InvokeAsync<Response<ReviewReportDto>>(
             new ResolveReviewReportCommand(reportId, userContext.GetUserIdOrThrow(), request.DeleteReview.Value), ct));
     }
-}
-
-/// <summary>Explicit admin decision; omitted or null values are invalid.</summary>
-public record ResolveReviewReportRequest
-{
-    /// <summary>True to remove the review, false to dismiss the complaint.</summary>
-    [Required]
-    public bool? DeleteReview { get; init; }
 }

@@ -9,6 +9,8 @@ using CoffeePeek.Shops.Domain.Entities;
 using FluentAssertions;
 using Microsoft.Extensions.Options;
 using Moq;
+using System.Collections.Generic;
+using CoffeePeek.Shops.Application.Features.CoffeeCatalog;
 
 namespace CoffeePeek.Shops.Application.Tests.Features.Catalogs.GetRoasterById;
 
@@ -21,6 +23,14 @@ public class GetRoasterByIdHandlerTests
         ShopBucketName = "coffeepeek.shops"
     });
     private readonly CancellationToken _ct = CancellationToken.None;
+    private readonly Mock<ICoffeeCatalogStore> _coffees = new();
+
+    public GetRoasterByIdHandlerTests()
+    {
+        _coffees.Setup(c => c.RoasterCountsAsync(It.IsAny<Guid[]>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Guid[] ids, CancellationToken _) =>
+                new Dictionary<Guid, (int CoffeeShopsCount, int CoffeeProductsCount)> { [ids[0]] = (0, 3) });
+    }
 
     [Fact]
     public async Task Handle_MissingRoaster_ReturnsNotFound()
@@ -28,7 +38,7 @@ public class GetRoasterByIdHandlerTests
         _repo.Setup(r => r.GetByIdWithShopsAndPhotosAsync(It.IsAny<Guid>(), _ct)).ReturnsAsync((Roaster)null);
 
         var result = await GetRoasterByIdHandler.Handle(
-            new GetRoasterByIdQuery(Guid.NewGuid()), _repo.Object, _media, _ct);
+            new GetRoasterByIdQuery(Guid.NewGuid()), _repo.Object, _media, _coffees.Object, _ct);
 
         result.IsSuccess.Should().BeFalse();
         result.StatusCode.Should().Be((int)HttpStatusCode.NotFound);
@@ -46,7 +56,7 @@ public class GetRoasterByIdHandlerTests
         _repo.Setup(r => r.GetByIdWithShopsAndPhotosAsync(roaster.Id, _ct)).ReturnsAsync(roaster);
 
         var result = await GetRoasterByIdHandler.Handle(
-            new GetRoasterByIdQuery(roaster.Id), _repo.Object, _media, _ct);
+            new GetRoasterByIdQuery(roaster.Id), _repo.Object, _media, _coffees.Object, _ct);
 
         result.IsSuccess.Should().BeTrue();
         result.Data!.GetType().GetProperty("CityId")!.GetValue(result.Data).Should().Be(cityId);
@@ -55,6 +65,8 @@ public class GetRoasterByIdHandlerTests
         result.Data.Location!.Address.Should().Be("1 Main St");
         result.Data.Contact!.InstagramLink.Should().Be("https://instagram.com/roaster");
         result.Data.Shops.Should().BeEmpty();
+        result.Data.CoffeeShopsCount.Should().Be(0);
+        result.Data.CoffeeProductsCount.Should().Be(3);
     }
 
     [Fact]
@@ -66,7 +78,7 @@ public class GetRoasterByIdHandlerTests
         _repo.Setup(r => r.GetByIdWithShopsAndPhotosAsync(roaster.Id, _ct)).ReturnsAsync(roaster);
 
         var result = await GetRoasterByIdHandler.Handle(
-            new GetRoasterByIdQuery(roaster.Id), _repo.Object, _media, _ct);
+            new GetRoasterByIdQuery(roaster.Id), _repo.Object, _media, _coffees.Object, _ct);
 
         result.IsSuccess.Should().BeTrue();
         var photo = result.Data!.Photos.Should().ContainSingle().Subject;

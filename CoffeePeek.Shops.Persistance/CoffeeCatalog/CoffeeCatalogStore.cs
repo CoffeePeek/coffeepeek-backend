@@ -93,6 +93,7 @@ public sealed partial class CoffeeCatalogStore(ShopsDbContext db, IOptions<Media
             q = q.Where(r => db.RoasterTagAssignments.Any(a => a.RoasterId == r.Id && a.Tag.Slug == slug && a.Tag.IsActive));
         var count = await q.CountAsync(ct);
         var rows = await q.Include(r => r.Photos).OrderBy(r => r.Name).ThenBy(r => r.Id).Skip((page - 1) * pageSize).Take(pageSize).ToArrayAsync(ct);
+        var counts = await RoasterCountsAsync(rows.Select(r => r.Id).ToArray(), ct);
         var results = new List<CoffeeRoasterPageDto>();
         // ponytail: bounded page (100 roasters), batch these overview queries if catalogue traffic warrants it.
         foreach (var r in rows)
@@ -101,7 +102,7 @@ public sealed partial class CoffeeCatalogStore(ShopsDbContext db, IOptions<Media
                 p.Sources.Any(s => s.Variants.Any(v => v.Availability == CoffeeAvailability.InStock)), ct);
             var updated = await db.CoffeeProductSources.Where(s => s.Product.RoasterId == r.Id)
                 .Select(s => (DateTime?)s.LastSeenAtUtc).MaxAsync(ct);
-            results.Add(new(Roaster(r), await RoasterTagsAsync(r.Id, ct), available, updated));
+            results.Add(new(Roaster(r, counts.GetValueOrDefault(r.Id)), await RoasterTagsAsync(r.Id, ct), available, updated));
         }
         return Page(results.ToArray(), count, page, pageSize);
     }
@@ -268,17 +269,19 @@ public sealed partial class CoffeeCatalogStore(ShopsDbContext db, IOptions<Media
     {
         var ids = products.Select(p => p.RoasterId).Distinct().ToArray();
         var roasters = await db.Roasters.AsNoTracking().Include(r => r.Photos).Where(r => ids.Contains(r.Id)).ToDictionaryAsync(r => r.Id, ct);
+        var counts = await RoasterCountsAsync(ids, ct);
         return products.Select(p => new CoffeeProductDto(new(p.PublicSlug!, $"/coffees/{p.PublicSlug}", p.SlugRevision),
-            Roaster(roasters[p.RoasterId]), Content(p), CountryDtos(p), Photos(p), Variants(p),
+            Roaster(roasters[p.RoasterId], counts.GetValueOrDefault(p.RoasterId)), Content(p), CountryDtos(p), Photos(p), Variants(p),
             p.Sources.Select(s => (DateTime?)s.LastSeenAtUtc).DefaultIfEmpty().Max())).ToArray();
     }
-    private PublicRoasterSummaryDto Roaster(Roaster r)
+    private PublicRoasterSummaryDto Roaster(Roaster r, (int CoffeeShopsCount, int CoffeeProductsCount) counts)
     {
         var p = r.Photos.OrderBy(p => p.SortIndex).FirstOrDefault();
         var url = MediaStorageUrlBuilder.BuildPublicUrl(media.Value.PublicEndpoint, media.Value.ShopBucketName, p?.StorageKey);
         var photo = p is null ? null : new ShortPhotoMetadataDto
         { Id = p.Id, FileName = p.FileName, StorageKey = p.StorageKey, FullUrl = url ?? string.Empty, IsPrimary = true,
             Urls = PhotoUrlsDto.Create(media.Value.PublicEndpoint, media.Value.ImageProxyEndpoint, media.Value.ShopBucketName, p.StorageKey) };
-        return new(r.PublicSlug is null ? null : new(r.PublicSlug, $"/roasters/{r.PublicSlug}", r.SlugRevision), r.Name, url, photo);
+        return new(r.PublicSlug is null ? null : new(r.PublicSlug, $"/roasters/{r.PublicSlug}", r.SlugRevision), r.Name, url, photo)
+        { CoffeeShopsCount = counts.CoffeeShopsCount, CoffeeProductsCount = counts.CoffeeProductsCount };
     }
 }

@@ -30,6 +30,8 @@ namespace Internal.Generated.WolverineHandlers
             // This service has been marked as requiring service location independent of Wolverine's ability to use constructor injection of everything else
             var shopsDbContext = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<CoffeePeek.Shops.Persistance.Configuration.ShopsDbContext>(serviceScope.ServiceProvider);
             var queryRoasterRepository = new CoffeePeek.Shops.Persistance.Repositories.QueryRoasterRepository(shopsDbContext);
+            // This service has been marked as requiring service location independent of Wolverine's ability to use constructor injection of everything else
+            var coffeeCatalogStore = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<CoffeePeek.Shops.Application.Features.CoffeeCatalog.ICoffeeCatalogStore>(serviceScope.ServiceProvider);
             // The actual message body
             var getAllRoastersCommand = (CoffeePeek.Shops.Application.Features.Catalogs.GetAllRoasters.GetAllRoastersCommand)context.Envelope.Message;
 
@@ -50,7 +52,7 @@ namespace Internal.Generated.WolverineHandlers
                 var getAllRoastersHandler = new CoffeePeek.Shops.Application.Features.Catalogs.GetAllRoasters.GetAllRoastersHandler();
                 
                 // The actual message execution
-                var outgoing1 = await getAllRoastersHandler.Handle(getAllRoastersCommand, queryRoasterRepository, _mapper, cancellation).ConfigureAwait(false);
+                var outgoing1 = await getAllRoastersHandler.Handle(getAllRoastersCommand, queryRoasterRepository, _mapper, coffeeCatalogStore, cancellation).ConfigureAwait(false);
 
                 
                 // Outgoing, cascaded message

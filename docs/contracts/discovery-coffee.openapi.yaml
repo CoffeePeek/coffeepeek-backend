@@ -3088,6 +3088,14 @@ components:
           anyOf:
           - type: boolean
           - type: 'null'
+        coffeeShopsCount:
+          type: integer
+          minimum: 0
+          description: Число видимых кофеен, использующих этого обжарщика.
+        coffeeProductsCount:
+          type: integer
+          minimum: 0
+          description: Число разных Published-продуктов независимо от наличия и фасовки; Draft и Archived исключены.
         availableCoffeeProducts:
           type: integer
           minimum: 0

@@ -42,5 +42,7 @@ public class RoasterMappingTests
         var dto = mapper.Map<RoasterDto>(roaster);
 
         dto.PhotoUrl.Should().BeNull();
+        dto.CoffeeShopsCount.Should().BeNull();
+        dto.CoffeeProductsCount.Should().BeNull();
     }
 }

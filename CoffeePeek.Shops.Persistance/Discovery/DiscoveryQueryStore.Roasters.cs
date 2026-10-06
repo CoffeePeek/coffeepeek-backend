@@ -59,6 +59,8 @@ public sealed partial class DiscoveryQueryStore
         var stats = await db.Roasters.AsNoTracking().Where(r => ids.Contains(r.Id)).Select(r => new
         {
             r.Id,
+            CoffeeShopsCount = r.CoffeeShops.Count(s => !s.IsHidden),
+            CoffeeProductsCount = db.CoffeeProducts.Count(p => p.RoasterId == r.Id && p.Status == CoffeePublicationStatus.Published),
             Available = available.Count(p => p.RoasterId == r.Id),
             Matching = products.Count(p => p.RoasterId == r.Id),
             FirstProductId = products.Where(p => p.RoasterId == r.Id).OrderBy(p => p.Name).ThenBy(p => p.PublicSlug).Select(p => (Guid?)p.Id).FirstOrDefault(),
@@ -75,6 +77,7 @@ public sealed partial class DiscoveryQueryStore
                 CoverPhoto = Photo(r.Photos.OrderBy(p => p.SortIndex).FirstOrDefault()?.StorageKey),
                 Tags = tags.Where(t => t.RoasterId == r.Id).Select(t => new PublicTag { Slug = t.Slug, Name = t.Name, Description = t.Description, SortOrder = t.SortOrder }).ToArray(),
                 IsFavorite = userId.HasValue ? favorites.Contains(r.Id) : null, AvailableCoffeeProducts = stats[r.Id].Available,
+                CoffeeShopsCount = stats[r.Id].CoffeeShopsCount, CoffeeProductsCount = stats[r.Id].CoffeeProductsCount,
                 MatchingCoffeeProducts = f.Coffee is null ? null : stats[r.Id].Matching,
                 CoffeeCatalogUpdatedAtUtc = stats[r.Id].Checked,
                 MatchingCoffee = f.Coffee is not null && cards.TryGetValue(r.PublicSlug!, out var card) ? card : null
