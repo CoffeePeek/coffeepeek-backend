@@ -17,7 +17,6 @@ using CoffeePeek.Shops.Application.Features.Catalogs.GetAllCities;
 using CoffeePeek.Shops.Application.Features.Catalogs.GetAllBeans;
 using CoffeePeek.Shops.Application.Features.Catalogs.GetAllEquipment;
 using CoffeePeek.Shops.Application.Features.Catalogs.GetAllBrewMethods;
-using CoffeePeek.Shops.Application.Features.Catalogs.GetAllRoasters;
 using CoffeePeek.Shops.Application.Features.Catalogs.GetRoasterById;
 using CoffeePeek.Shops.Application.Features.CoffeeShop.GetShopsInBounds;
 using CoffeePeek.Moderation.Application.Services;
@@ -171,8 +170,6 @@ public sealed class PublicAddressGatewaySmokeTests
             .ReturnsAsync(Response<GetAllEquipmentResponse>.Success(new(summary.Equipments)));
         bus.Setup(x => x.InvokeAsync<Response<GetAllBrewMethodsResponse>>(It.IsAny<object>(), It.IsAny<CancellationToken>(), It.IsAny<TimeSpan?>()))
             .ReturnsAsync(Response<GetAllBrewMethodsResponse>.Success(new(summary.BrewMethods)));
-        bus.Setup(x => x.InvokeAsync<Response<GetAllRoastersResponse>>(It.IsAny<object>(), It.IsAny<CancellationToken>(), It.IsAny<TimeSpan?>()))
-            .ReturnsAsync(Response<GetAllRoastersResponse>.Success(new(summary.Roasters)));
         bus.Setup(x => x.InvokeAsync<Response<RoasterDetailsDto>>(It.IsAny<object>(), It.IsAny<CancellationToken>(), It.IsAny<TimeSpan?>()))
             .ReturnsAsync(Response<RoasterDetailsDto>.Success(new() { Id = roaster.Id, Name = roaster.Name,
                 Shops = [new() { Id = shop.Id, Name = shop.Name }] }));
@@ -292,14 +289,25 @@ public sealed class PublicAddressGatewaySmokeTests
         capturedSearch.Equipments.Should().Equal(equipment.Id);
         capturedSearch.BrewMethods.Should().Equal(method.Id);
         capturedSearch.Tags.Should().Equal(tag.Id);
-        foreach (var catalog in new[] { "cities", "beans", "equipments", "brew-methods", "roasters" })
+        foreach (var catalog in new[] { "cities", "beans", "equipments", "brew-methods" })
         {
             var catalogJson = await Get("/api/Catalogs/" + catalog, HttpStatusCode.OK, "shops");
             NoInternalIds(catalogJson);
             catalogJson!["data"]!.AsArray().Should().HaveCount(1);
         }
         NoInternalIds(await Get("/api/Roasters/beans-roastery", HttpStatusCode.OK, "shops"));
-        NoInternalIds(await Get("/api/roasters", HttpStatusCode.OK, "shops"));
+        var roasters = await Get("/api/roasters", HttpStatusCode.OK, "shops");
+        NoInternalIds(roasters);
+        var publicRoaster = roasters!["data"]!.AsArray().Should().ContainSingle().Which!;
+        publicRoaster["address"]!["slug"]!.GetValue<string>().Should().Be("beans-roastery");
+        publicRoaster["coffeeProductsCount"]!.GetValue<int>().Should().Be(1);
+        publicRoaster["availableCoffeeProducts"]!.GetValue<int>().Should().Be(1);
+        foreach (var route in new[] { "/api/Catalogs/roasters", "/api/v1/roasters/search", "/api/v1/roasters/facets" })
+        {
+            using var removed = route.StartsWith("/api/v1/")
+                ? await http.PostAsJsonAsync(route, new { }, Ct) : await http.GetAsync(route, Ct);
+            removed.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        }
         NoInternalIds(await Get("/api/roasters/beans-roastery/coffees", HttpStatusCode.OK, "shops"));
         var coffees = await Get("/api/coffees?weightGrams=250&currency=BYN&maxPrice=30", HttpStatusCode.OK, "shops");
         NoInternalIds(coffees);

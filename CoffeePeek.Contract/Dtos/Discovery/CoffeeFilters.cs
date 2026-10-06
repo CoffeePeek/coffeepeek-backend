@@ -8,10 +8,8 @@ namespace CoffeePeek.Contract.Dtos.Discovery;
 [JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public class CoffeeFilters
 {
-    private string[] _roasters = [];
     [DiscoveryItems(30, 0, true)]
-    public string[] Roasters { get => _roasters; set { _roasters = value; RoastersSpecified = true; } }
-    [JsonIgnore] public bool RoastersSpecified { get; private set; }
+    public string[] Roasters { get; set; } = [];
     [DiscoveryItems(30, 0, true)]
     public string[] Countries { get; set; } = [];
     [DiscoveryChoices("roasted_beans", "green_beans")]

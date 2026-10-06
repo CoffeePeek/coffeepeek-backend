@@ -19,18 +19,12 @@ public sealed class DiscoveryController(IDiscoveryQueryStore queries, IDiscovery
     [HttpPost("api/v1/coffee-shops/search")]
     public Task<IActionResult> Shops(CoffeeShopSearchRequest request, CancellationToken ct) =>
         Search(request, () => queries.SearchShopsAsync(request, user.GetUserId(), ct));
-    [HttpPost("api/v1/roasters/search")]
-    public Task<IActionResult> Roasters(RoasterSearchRequest request, CancellationToken ct) =>
-        Search(request, () => queries.SearchRoastersAsync(request, user.GetUserId(), ct));
     [HttpPost("api/v1/coffees/search")]
     public Task<IActionResult> Coffees(CoffeeSearchRequest request, CancellationToken ct) =>
         Search(request, () => queries.SearchCoffeesAsync(request, ct));
     [HttpPost("api/v1/coffees/facets")]
     public Task<IActionResult> CoffeeFacets(CoffeeFacetsRequest request, CancellationToken ct) =>
         Search(request, () => queries.CoffeeFacetsAsync(request, ct));
-    [HttpPost("api/v1/roasters/facets")]
-    public Task<IActionResult> RoasterFacets(RoasterFacetsRequest request, CancellationToken ct) =>
-        Search(request, () => queries.RoasterFacetsAsync(request, user.GetUserId(), ct));
     [HttpGet("api/v1/catalogs/coffee-filter-values")]
     public async Task<IActionResult> Values(CancellationToken ct) =>
         Ok(Response<FilterGroup[]>.Success(await classification.PublicValuesAsync(ct)));
@@ -52,8 +46,6 @@ public sealed class DiscoveryController(IDiscoveryQueryStore queries, IDiscovery
         var personal = request switch
         {
             CoffeeShopSearchRequest r => r.Filters?.FavoritesOnly == true || r.Filters?.VisitedOnly == true,
-            RoasterSearchRequest r => r.Filters?.FavoritesOnly == true,
-            RoasterFacetsRequest r => r.Filters?.FavoritesOnly == true,
             _ => false
         };
         if (personal && user.GetUserId() is null)

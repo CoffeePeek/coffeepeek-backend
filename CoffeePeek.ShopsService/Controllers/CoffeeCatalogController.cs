@@ -16,8 +16,9 @@ public sealed class CoffeeCatalogController(ICoffeeCatalogStore store) : Control
     public async Task<IActionResult> Tags(CancellationToken ct) => Ok(Response<PublicTagDto[]>.Success(
         (await store.TagsAsync(false, ct)).Select(t => new PublicTagDto(t.Slug, t.Name, t.Description, t.SortOrder)).ToArray()));
     [HttpGet("api/roasters")]
-    public async Task<IActionResult> Roasters([FromQuery] string[] tags, CancellationToken ct, int page = 1, int pageSize = 20) =>
-        Ok(Response<PublicPage<CoffeeRoasterPageDto>>.Success(await store.RoastersAsync(tags, page, pageSize, ct)));
+    [ProducesResponseType<Response<PublicRoasterDto[]>>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> Roasters(CancellationToken ct, [FromQuery] string[]? tags = null) =>
+        Ok(Response<PublicRoasterDto[]>.Success(await store.RoastersAsync(tags ?? [], ct)));
     [HttpGet("api/coffees")]
     public async Task<IActionResult> List([FromQuery] CoffeeCatalogFilter filter, CancellationToken ct) =>
         Ok(Response<PublicPage<CoffeeProductDto>>.Success(await store.ListAsync(filter, ct)));

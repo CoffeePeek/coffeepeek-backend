@@ -18,10 +18,4 @@ public class DiscoveryBudget
     public decimal? MaxDrinkPrice { get; set; }
     [Range(1, 5000)]
     public int? DrinkVolumeMl { get; set; }
-    [Range(typeof(decimal), "0", "2147483647")]
-    public decimal? MinCoffeePrice { get; set; }
-    [Range(typeof(decimal), "0", "2147483647")]
-    public decimal? MaxCoffeePrice { get; set; }
-    [Range(1, 100000)]
-    public int? CoffeeWeightGrams { get; set; }
 }

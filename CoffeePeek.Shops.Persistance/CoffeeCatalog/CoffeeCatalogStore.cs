@@ -72,8 +72,7 @@ public sealed partial class CoffeeCatalogStore(ShopsDbContext db, IOptions<Media
         var id = await ResolveRoasterAsync(slug, ct);
         var count = await db.CoffeeProducts.CountAsync(p => p.RoasterId == id && p.Status == CoffeePublicationStatus.Published &&
             p.Sources.Any(s => s.Variants.Any(v => v.Availability == CoffeeAvailability.InStock)), ct);
-        var updated = await db.CoffeeProductSources.Where(s => s.Product.RoasterId == id).Select(s => (DateTime?)s.LastSeenAtUtc).MaxAsync(ct);
-        return new(await RoasterTagsAsync(id, ct), count, updated);
+        return new(await RoasterTagsAsync(id, ct), count);
     }
     public async Task<bool> ArchiveAsync(Guid id, CancellationToken ct)
     {
@@ -84,27 +83,36 @@ public sealed partial class CoffeeCatalogStore(ShopsDbContext db, IOptions<Media
         return true;
     }
 
-    public async Task<PublicPage<CoffeeRoasterPageDto>> RoastersAsync(string[] tags, int page, int pageSize, CancellationToken ct)
+    public async Task<PublicRoasterDto[]> RoastersAsync(string[] tags, CancellationToken ct)
     {
-        ValidatePage(page, pageSize);
-        if (tags is null || tags.Length > 100) throw new CoffeeCatalogException("Invalid tag filter.");
+        if (tags is null || tags.Length > 100 || tags.Any(string.IsNullOrWhiteSpace))
+            throw new CoffeeCatalogException("Invalid tag filter.");
         var q = db.Roasters.AsNoTracking();
         foreach (var slug in tags.Distinct())
             q = q.Where(r => db.RoasterTagAssignments.Any(a => a.RoasterId == r.Id && a.Tag.Slug == slug && a.Tag.IsActive));
-        var count = await q.CountAsync(ct);
-        var rows = await q.Include(r => r.Photos).OrderBy(r => r.Name).ThenBy(r => r.Id).Skip((page - 1) * pageSize).Take(pageSize).ToArrayAsync(ct);
-        var counts = await RoasterCountsAsync(rows.Select(r => r.Id).ToArray(), ct);
-        var results = new List<CoffeeRoasterPageDto>();
-        // ponytail: bounded page (100 roasters), batch these overview queries if catalogue traffic warrants it.
-        foreach (var r in rows)
+        var rows = await q.Include(r => r.Photos).OrderByDescending(r => r.CoffeeShops.Count(s => !s.IsHidden))
+            .ThenBy(r => r.Name).ThenBy(r => r.Id).ToArrayAsync(ct);
+        if (rows.Length == 0) return [];
+        var ids = rows.Select(r => r.Id).ToArray();
+        var counts = await RoasterCountsAsync(ids, ct);
+        var available = await db.CoffeeProducts.AsNoTracking()
+            .Where(p => ids.Contains(p.RoasterId) && p.Status == CoffeePublicationStatus.Published &&
+                p.Sources.Any(s => s.Variants.Any(v => v.Availability == CoffeeAvailability.InStock)))
+            .GroupBy(p => p.RoasterId).Select(g => new { Id = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(g => g.Id, g => g.Count, ct);
+        var assignments = await db.RoasterTagAssignments.AsNoTracking()
+            .Where(a => ids.Contains(a.RoasterId) && a.Tag.IsActive)
+            .OrderBy(a => a.Tag.SortOrder).ThenBy(a => a.Tag.Name)
+            .Select(a => new { a.RoasterId, Tag = new PublicTagDto(a.Tag.Slug, a.Tag.Name, a.Tag.Description, a.Tag.SortOrder) })
+            .ToArrayAsync(ct);
+        var byRoaster = assignments.ToLookup(a => a.RoasterId, a => a.Tag);
+        return rows.Select(r =>
         {
-            var available = await db.CoffeeProducts.CountAsync(p => p.RoasterId == r.Id && p.Status == CoffeePublicationStatus.Published &&
-                p.Sources.Any(s => s.Variants.Any(v => v.Availability == CoffeeAvailability.InStock)), ct);
-            var updated = await db.CoffeeProductSources.Where(s => s.Product.RoasterId == r.Id)
-                .Select(s => (DateTime?)s.LastSeenAtUtc).MaxAsync(ct);
-            results.Add(new(Roaster(r, counts.GetValueOrDefault(r.Id)), await RoasterTagsAsync(r.Id, ct), available, updated));
-        }
-        return Page(results.ToArray(), count, page, pageSize);
+            var stats = counts.GetValueOrDefault(r.Id);
+            var summary = Roaster(r, stats);
+            return new PublicRoasterDto(summary.Address, summary.Name, summary.PhotoUrl, summary.CoverPhoto,
+                byRoaster[r.Id].ToArray(), stats.CoffeeShopsCount, stats.CoffeeProductsCount, available.GetValueOrDefault(r.Id));
+        }).ToArray();
     }
 
     public async Task<PublicPage<CoffeeProductDto>> ListAsync(CoffeeCatalogFilter filter, CancellationToken ct)

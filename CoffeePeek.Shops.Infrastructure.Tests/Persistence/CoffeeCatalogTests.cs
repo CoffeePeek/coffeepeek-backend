@@ -84,7 +84,7 @@ public class CoffeeCatalogTests
         Assert.Single(published.Photos);
         Assert.Equal(31m, published.Variants.First(v => v.WeightGrams == 250).Price);
         Assert.Single(await store.RoasterTagsAsync(r.Id, TestContext.Current.CancellationToken));
-        Assert.Single((await store.RoastersAsync(["decaf"], 1, 20, TestContext.Current.CancellationToken)).Items);
+        Assert.Single(await store.RoastersAsync(["decaf"], TestContext.Current.CancellationToken));
         // A cheap 1 kg bag cannot satisfy a 250 g price filter.
         Assert.Empty((await store.ListAsync(new() { WeightGrams = 250, Currency = "BYN", MaxPrice = 25 }, TestContext.Current.CancellationToken)).Items);
         var stale = Snapshot('c', snapshot.Snapshot.CollectedAtUtc.AddMinutes(-1));

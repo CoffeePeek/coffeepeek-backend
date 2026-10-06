@@ -5,7 +5,6 @@ using CoffeePeek.Shops.Application.Features.Discovery;
 using CoffeePeek.Shops.Application.PublicAddresses;
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeProductAggregate;
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
-using CoffeePeek.Shops.Domain.Aggregates.DiscoveryAggregate;
 using CoffeePeek.Shops.Domain.Aggregates.MenuAggregate;
 using CoffeePeek.Shops.Persistance.Configuration;
 using CoffeePeek.Shops.Persistance.Discovery;
@@ -70,22 +69,6 @@ public class DiscoveryQueryStoreTests
     }
 
     [Fact]
-    public async Task RoasterCoffeeFilters_RequireOneProduct_AndCountProductsRatherThanVariants()
-    {
-        await using var db = Database(); await db.Database.EnsureCreatedAsync(Ct);
-        var split = Roaster(db, "split"); var match = Roaster(db, "match");
-        Offer(Product(db, split, "Decaf Light", caffeine: "decaf", roast: "light"), 250, 20);
-        Offer(Product(db, split, "Regular Dark", caffeine: "regular", roast: "dark"), 250, 20);
-        var p = Product(db, match, "Decaf Dark", caffeine: "decaf", roast: "dark"); Offer(p, 250, 30); Offer(p, 1000, 80);
-        Offer(Product(db, match, "Draft Decaf Dark", caffeine: "decaf", roast: "dark", published: false), 250, 10);
-        await db.SaveChangesAsync(Ct);
-        var result = await Store(db).SearchRoastersAsync(new() { Filters = new() { Coffee = new() { Caffeine = ["decaf"], Roast = ["dark"] } } }, null, Ct);
-        var r = Assert.Single(result.Items); Assert.Equal("match", r.Address.Slug);
-        Assert.Equal(1, r.MatchingCoffeeProducts); Assert.Equal(1, r.AvailableCoffeeProducts);
-        Assert.Equal("Decaf Dark", r.MatchingCoffee!.Name); Assert.Null(r.IsFavorite);
-    }
-
-    [Fact]
     public async Task PriceSorting_UsesCheapestMatchingWeight_AndPaginationRunsAfterFilters()
     {
         await using var db = Database(); await db.Database.EnsureCreatedAsync(Ct);
@@ -120,19 +103,6 @@ public class DiscoveryQueryStoreTests
     }
 
     [Fact]
-    public async Task Favorites_ArePerUser_AndGuestsCannotUsePersonalFilters()
-    {
-        await using var db = Database(); await db.Database.EnsureCreatedAsync(Ct);
-        var r = Roaster(db, "roast"); var me = Guid.NewGuid();
-        db.DiscoveryFavorites.Add(new(me, "roaster", r.Id)); await db.SaveChangesAsync(Ct);
-        var request = new RoasterSearchRequest { Filters = new() { FavoritesOnly = true } };
-        Assert.True(Assert.Single((await Store(db).SearchRoastersAsync(request, me, Ct)).Items).IsFavorite);
-        Assert.Empty((await Store(db).SearchRoastersAsync(request, Guid.NewGuid(), Ct)).Items);
-        var error = await Assert.ThrowsAsync<DiscoveryException>(() => Store(db).SearchRoastersAsync(request, null, Ct));
-        Assert.Equal(401, error.StatusCode);
-    }
-
-    [Fact]
     public async Task UnknownAndInactiveClassification_AreRejected_AndHiddenPublicly()
     {
         await using var db = Database(); await db.Database.EnsureCreatedAsync(Ct);
@@ -160,17 +130,16 @@ public class DiscoveryQueryStoreTests
         var menu = ShopMenu.Create(shop.Id); menu.MarkManuallyCaptured(DateTime.UtcNow);
         menu.ApplyManualItem(espresso.Id, MenuItemAvailability.Present, 3, 30, null);
         menu.ApplyManualItem(filter.Id, MenuItemAvailability.Present, 10, 250, null); db.ShopMenus.Add(menu);
-        var r = Roaster(db, "roast"); Offer(Product(db, r, "Filter", brew: ["filter"]), 250, 25);
         await db.SaveChangesAsync(Ct);
-        var response = await Store(db).SearchDiscoveryAsync(new() { Filters = new() { Brew = ["filter"], Budget = new() { Currency = "BYN", MaxDrinkPrice = 5, MaxCoffeePrice = 30, CoffeeWeightGrams = 250 } } }, null, Ct);
-        Assert.Empty(response.CoffeeShops!.Items); Assert.Single(response.Roasters!.Items);
+        var response = await Store(db).SearchDiscoveryAsync(new() { Filters = new() { Brew = ["filter"], Budget = new() { Currency = "BYN", MaxDrinkPrice = 5 } } }, null, Ct);
+        Assert.Empty(response.CoffeeShops!.Items);
         var shops = await Store(db).SearchShopsAsync(new() { Filters = new() { Menu = new() { Brew = ["espresso"], Currency = "BYN", MaxPrice = 5 } } }, null, Ct);
         var card = Assert.Single(shops.Items); Assert.Equal("espresso", Assert.Single(card.MatchingMenuItems).BrewMethod);
         Assert.Null(card.IsOpen); Assert.Null(card.IsFavorite); Assert.Null(card.IsVisited);
     }
 
     [Fact]
-    public void CoffeeAndRoasterFilters_TranslateIntoPostgresSql()
+    public void CoffeeFilters_TranslateIntoPostgresSql()
     {
         using var db = new ShopsDbContext(new DbContextOptionsBuilder<ShopsDbContext>().UseNpgsql("Host=localhost;Database=unused;Username=x").Options);
         var store = Store(db);
@@ -181,8 +150,5 @@ public class DiscoveryQueryStoreTests
         var products = (IQueryable<CoffeeProduct>)typeof(DiscoveryQueryStore).GetMethod("MatchingProducts", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(store, [filters, catalog, Array.Empty<Guid>(), "кофе"])!;
         var sql = products.OrderBy(p => p.Name).Skip(20).Take(20).ToQueryString();
         Assert.Contains("EXISTS", sql); Assert.Contains("CoffeeVariants", sql); Assert.Contains("LIMIT", sql);
-        var roasters = (IQueryable<Roaster>)typeof(DiscoveryQueryStore).GetMethod("MatchingRoasters", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(store,
-            [new RoasterFilters { Coffee = new() { Brew = ["filter"], Roast = ["light"] }, FavoritesOnly = true }, catalog, Guid.NewGuid(), "roast"])!;
-        Assert.Contains("DiscoveryFavorites", roasters.OrderBy(r => r.Name).Take(10).ToQueryString());
     }
 }

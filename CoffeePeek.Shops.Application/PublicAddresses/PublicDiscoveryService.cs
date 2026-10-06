@@ -5,7 +5,6 @@ using CoffeePeek.Shared.Kernel.Exceptions;
 using CoffeePeek.Shared.Kernel.Response;
 using CoffeePeek.Shops.Application.Abstractions;
 using CoffeePeek.Shops.Application.Features.Catalogs.GetAllCities;
-using CoffeePeek.Shops.Application.Features.Catalogs.GetAllRoasters;
 using CoffeePeek.Shops.Application.Features.Catalogs.GetRoasterById;
 using CoffeePeek.Shops.Application.Features.Catalogs.GetAllBeans;
 using CoffeePeek.Shops.Application.Features.Catalogs.GetAllEquipment;
@@ -110,15 +109,6 @@ public sealed class PublicDiscoveryService(IPublicAddressService addresses, IPro
         var cities = response.Data?.Cities ?? throw new ServiceUnavailableException("Cities unavailable.");
         var lookup = await ReadAsync(PublicAddressKind.City, cities.Select(x => x.Id), ct);
         return cities.Select(x => new PublicCityDto(Required(lookup, x.Id), x.Name)).ToArray();
-    }
-
-    public async Task<PublicRoasterSummaryDto[]> RoastersAsync(CancellationToken ct)
-    {
-        var response = await bus.InvokeAsync<Response<GetAllRoastersResponse>>(new GetAllRoastersCommand(), ct);
-        var roasters = response.Data?.Roasters ?? throw new ServiceUnavailableException("Roasters unavailable.");
-        var lookup = await ReadAsync(PublicAddressKind.Roaster, roasters.Select(x => x.Id), ct);
-        return roasters.Select(x => new PublicRoasterSummaryDto(Required(lookup, x.Id), x.Name, x.PhotoUrl, x.CoverPhoto)
-        { CoffeeShopsCount = x.CoffeeShopsCount, CoffeeProductsCount = x.CoffeeProductsCount }).ToArray();
     }
 
     public async Task<PublicRoasterDetailsDto?> GetRoasterAsync(string slug, CancellationToken ct)

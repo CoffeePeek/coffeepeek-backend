@@ -3,11 +3,8 @@ jsonSchemaDialect: https://json-schema.org/draft/2020-12/schema
 info:
   title: CoffeePeek — discovery and coffee API
   version: 1.0.0
-  description: 'Контракт backend-реализации от 2026-10-06 на основе PR #334. Общий поиск кофеен и обжарщиков принимает
-    приготовление и независимые бюджеты напитка/пачки. Полные фильтры и сортировка доступны в отдельных v1 endpoints.
-    Избранное сохраняется для текущего пользователя. Существующие GET /api/CoffeeShops, /api/roasters, /api/coffees
-    и модерация сохраняются. POST search/facets — чтение без побочных эффектов. Примеры синтетические; доступность
-    новых маршрутов в развёрнутом API зависит от деплоя ветки.'
+  description: Контракт backend-реализации от 2026-10-06. Поиск кофеен и кофе; полный список обжарщиков GET /api/roasters
+    без пагинации. Избранное, классификация кофе и теги услуг управляются существующими маршрутами.
 servers:
 - url: /
 tags:
@@ -205,18 +202,14 @@ x-contract-rules:
     для модерации.
   price: Нет конвертации валют и сравнения цены разных фасовок. price_asc/price_desc требуют currency+weightGrams.
     Ценовой ключ — самая дешёвая подходящая фасовка указанного веса, а не самое дешёвое предложение продукта вообще.
-  discovery-price: В общем поиске min/maxDrinkPrice относятся к напиткам, min/maxCoffeePrice — к пачкам указанного
-    coffeeWeightGrams. Позиция меню/вариант должны совпасть со всеми условиями. Нет общего ранжирования цен напитков
-    и зерна. Связь кофейни с обжарщиком не используется как доказательство наличия конкретного зерна.
-  filter-scopes: Общий endpoint принимает только q, приготовление, бюджет и пагинацию. География, расписание и посещения
-    — в coffee-shops/search; услуги, excludeTags и характеристики ассортимента — в roasters/search; точные характеристики
-    и price/newest сортировки — в coffees/search.
-  negative-filters: excludeTags исключает назначенный тег, но отсутствие тега не подтверждает отсутствие услуги.
-    Для неяркой кислотности выбираются low+balanced; unknown не включается. Полностью противоположные tags/excludeTags
-    не допускаются.
-  pagination: Фильтры и сортировка выполняются до пагинации. Страницы независимы между группами. Изменение фильтра
-    сбрасывает page=1. Детерминированный tie-break name+slug; page-пагинация отражает текущие данные и не обещает
-    снимок между запросами.
+  discovery-price: В общем поиске min/maxDrinkPrice относятся к напиткам. Приготовление, цена и объём должны совпасть
+    у одной позиции меню.
+  filter-scopes: 'Общий endpoint принимает q, приготовление, бюджет напитка и пагинацию кофеен. География, расписание
+    и посещения — в coffee-shops/search; характеристики кофе и price/newest сортировки — в coffees/search. Обжарщики:
+    полный список GET /api/roasters с необязательными тегами.'
+  negative-filters: Для неяркой кислотности выбираются low+balanced; unknown не включается.
+  pagination: В поиске кофе/кофеен фильтры и сортировка выполняются до пагинации. Изменение фильтра сбрасывает page=1.
+    Список обжарщиков возвращается целиком без пагинации.
   validation: 'Неизвестные поля и несовместимые фильтры: 400 INVALID_FILTER с errors по пути поля. Непустой q для
     relevance. Price sort без currency/weight: 400. Персональный фильтр без JWT: 401. Несвежая admin version: 409
     VERSION_CONFLICT. Невалидный/неопубликованный slug карточки: 404.'
@@ -224,10 +217,9 @@ paths:
   /api/v1/discovery/search:
     post:
       operationId: searchDiscovery
-      summary: Общий поиск кофеен и обжарщиков
-      description: Read-only JSON search. Общие фильтры только по стоимости и приготовлению. Специфические настройки
-        доступны в отдельных search endpoints. matchingMenuItems/matchingCoffee объясняют совпадение. Если одна
-        группа не может быть прочитана, весь ответ 503; пустая группа не заменяет ошибку.
+      summary: Поиск кофеен
+      description: Read-only JSON search кофеен по стоимости и приготовлению. matchingMenuItems объясняет совпадение.
+        Ошибка чтения возвращает 503.
       tags:
       - Discovery
       security:
@@ -290,76 +282,6 @@ paths:
                     totalPages: 1
                     currentPage: 1
                     pageSize: 10
-                  roasters:
-                    items:
-                    - address:
-                        slug: sample-roaster
-                        canonicalPath: /roasters/sample-roaster
-                        revision: 1
-                      name: Пример обжарщика
-                      coverPhoto: null
-                      tags:
-                      - slug: online-order
-                        name: Онлайн-заказ
-                        description: Подтверждён онлайн-заказ непосредственно у обжарщика; ссылка стороннего продавца
-                          сама по себе не подтверждает этот тег.
-                        sortOrder: 10
-                      isFavorite: null
-                      availableCoffeeProducts: 14
-                      matchingCoffeeProducts: 2
-                      coffeeCatalogUpdatedAtUtc: '2026-10-05T03:30:00Z'
-                      matchingCoffee:
-                        address:
-                          slug: example-decaf
-                          canonicalPath: /coffees/example-decaf
-                          revision: 1
-                        name: Пример декафа
-                        roaster:
-                          address:
-                            slug: sample-roaster
-                            canonicalPath: /roasters/sample-roaster
-                            revision: 1
-                          name: Пример обжарщика
-                          coverPhoto: null
-                        productKind: roasted_beans
-                        productForm: whole_beans
-                        classification:
-                          defaultBrewPurposes:
-                          - filter
-                          caffeine: decaf
-                          roastLevel: light
-                          acidity: balanced
-                          processing:
-                          - washed
-                          fermentation: []
-                          tasteGroups:
-                          - chocolate
-                          - nut
-                          composition: single-origin
-                        countries:
-                        - code: CO
-                          nameRu: Колумбия
-                          nameEn: Colombia
-                        coverPhoto: null
-                        matchingOffers:
-                        - offerKey: offer-example-250
-                          weightGrams: 250
-                          price: 32
-                          currency: BYN
-                          brewPurpose: filter
-                          grind: null
-                          availability: InStock
-                          availabilityScope: online
-                          sellerName: Пример обжарщика
-                          sourceUrl: https://example.com/coffees/example
-                          checkedAtUtc: '2026-10-05T03:30:00Z'
-                        sortPrice: null
-                        createdAtUtc: '2026-10-04T12:00:00Z'
-                        catalogCheckedAtUtc: '2026-10-05T03:30:00Z'
-                    totalItems: 1
-                    totalPages: 1
-                    currentPage: 1
-                    pageSize: 10
         '400':
           description: Некорректный фильтр, несовместимые параметры или неизвестный/неактивный код.
           content:
@@ -388,19 +310,13 @@ paths:
               q: пример
               sections:
               - coffee_shops
-              - roasters
               filters:
                 brew:
                 - filter
                 budget:
                   currency: BYN
                   maxDrinkPrice: 10
-                  maxCoffeePrice: 50
-                  coffeeWeightGrams: 250
               coffeeShops:
-                page: 1
-                pageSize: 10
-              roasters:
                 page: 1
                 pageSize: 10
   /api/v1/coffee-shops/search:
@@ -505,154 +421,6 @@ paths:
                   currency: BYN
                   maxPrice: 10
               sort: name_asc
-              page: 1
-              pageSize: 20
-  /api/v1/roasters/search:
-    post:
-      operationId: searchRoasters
-      summary: Каталог обжарщиков с фильтром ассортимента
-      description: ''
-      tags:
-      - Discovery
-      security:
-      - {}
-      - bearerAuth: []
-      responses:
-        '200':
-          description: Успешный ответ в стандартном Response<T> проекта.
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties: false
-                properties:
-                  isSuccess:
-                    type: boolean
-                    const: true
-                  message:
-                    type: string
-                  data:
-                    $ref: '#/components/schemas/RoasterPage'
-                required:
-                - isSuccess
-                - message
-                - data
-              example:
-                isSuccess: true
-                message: Operation successful
-                data:
-                  items:
-                  - address:
-                      slug: sample-roaster
-                      canonicalPath: /roasters/sample-roaster
-                      revision: 1
-                    name: Пример обжарщика
-                    coverPhoto: null
-                    tags:
-                    - slug: online-order
-                      name: Онлайн-заказ
-                      description: Подтверждён онлайн-заказ непосредственно у обжарщика; ссылка стороннего продавца
-                        сама по себе не подтверждает этот тег.
-                      sortOrder: 10
-                    isFavorite: null
-                    availableCoffeeProducts: 14
-                    matchingCoffeeProducts: 2
-                    coffeeCatalogUpdatedAtUtc: '2026-10-05T03:30:00Z'
-                    matchingCoffee:
-                      address:
-                        slug: example-decaf
-                        canonicalPath: /coffees/example-decaf
-                        revision: 1
-                      name: Пример декафа
-                      roaster:
-                        address:
-                          slug: sample-roaster
-                          canonicalPath: /roasters/sample-roaster
-                          revision: 1
-                        name: Пример обжарщика
-                        coverPhoto: null
-                      productKind: roasted_beans
-                      productForm: whole_beans
-                      classification:
-                        defaultBrewPurposes:
-                        - filter
-                        caffeine: decaf
-                        roastLevel: light
-                        acidity: balanced
-                        processing:
-                        - washed
-                        fermentation: []
-                        tasteGroups:
-                        - chocolate
-                        - nut
-                        composition: single-origin
-                      countries:
-                      - code: CO
-                        nameRu: Колумбия
-                        nameEn: Colombia
-                      coverPhoto: null
-                      matchingOffers:
-                      - offerKey: offer-example-250
-                        weightGrams: 250
-                        price: 32
-                        currency: BYN
-                        brewPurpose: filter
-                        grind: null
-                        availability: InStock
-                        availabilityScope: online
-                        sellerName: Пример обжарщика
-                        sourceUrl: https://example.com/coffees/example
-                        checkedAtUtc: '2026-10-05T03:30:00Z'
-                      sortPrice: null
-                      createdAtUtc: '2026-10-04T12:00:00Z'
-                      catalogCheckedAtUtc: '2026-10-05T03:30:00Z'
-                  totalItems: 1
-                  totalPages: 1
-                  currentPage: 1
-                  pageSize: 20
-        '400':
-          description: Некорректный фильтр, несовместимые параметры или неизвестный/неактивный код.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '401':
-          description: Необходим JWT для административной операции или персонального фильтра.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '503':
-          description: Сервис данных временно недоступен.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/RoasterSearchRequest'
-            example:
-              filters:
-                tags:
-                - online-order
-                excludeTags:
-                - wholesale
-                coffee:
-                  caffeine:
-                  - decaf
-                  brew:
-                  - filter
-                  roast:
-                  - light
-                  acidity:
-                  - balanced
-                  weightGrams: 250
-                  currency: BYN
-                  maxPrice: 50
-              sort: available_coffees_desc
               page: 1
               pageSize: 20
   /api/v1/coffees/search:
@@ -879,80 +647,6 @@ paths:
                 currency: BYN
                 maxPrice: 50
                 availableOnly: true
-  /api/v1/roasters/facets:
-    post:
-      operationId: getRoasterFacets
-      summary: Фильтры обжарщиков со счётчиками
-      description: Ассортиментные группы имеют коды coffee.brew, coffee.caffeine и остальные coffee.*. UI выбирает
-        3–4 быстрых фильтра, прочие показывает в панели.
-      tags:
-      - Discovery
-      security:
-      - {}
-      - bearerAuth: []
-      responses:
-        '200':
-          description: Успешный ответ в стандартном Response<T> проекта.
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties: false
-                properties:
-                  isSuccess:
-                    type: boolean
-                    const: true
-                  message:
-                    type: string
-                  data:
-                    $ref: '#/components/schemas/RoasterFacetsResult'
-                required:
-                - isSuccess
-                - message
-                - data
-              example:
-                isSuccess: true
-                message: Operation successful
-                data:
-                  totalItems: 1
-                  groups:
-                  - code: roasterTags
-                    name: Возможности обжарщика
-                    selection: and
-                    options:
-                    - code: online-order
-                      name: Онлайн-заказ
-                      count: 1
-                      selected: false
-        '400':
-          description: Некорректный фильтр, несовместимые параметры или неизвестный/неактивный код.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '401':
-          description: Необходим JWT для административной операции или персонального фильтра.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '503':
-          description: Сервис данных временно недоступен.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/RoasterFacetsRequest'
-            example:
-              filters:
-                coffee:
-                  caffeine:
-                  - decaf
   /api/v1/catalogs/roaster-tags:
     get:
       operationId: getPublicRoasterTags
@@ -2714,40 +2408,6 @@ components:
         then:
           required:
           - origin
-    RoasterFilters:
-      type: object
-      additionalProperties: false
-      properties:
-        tags:
-          type: array
-          items:
-            $ref: '#/components/schemas/PublicSlug'
-          uniqueItems: true
-          maxItems: 30
-          description: Постоянные ручные теги обжарщика; AND.
-        excludeTags:
-          type: array
-          items:
-            $ref: '#/components/schemas/PublicSlug'
-          uniqueItems: true
-          maxItems: 30
-          description: Исключить обжарщиков с любым из этих назначенных тегов. Отсутствие тега не подтверждает отсутствие
-            услуги. Пересечение с tags запрещено (400).
-        favoritesOnly:
-          type: boolean
-          default: false
-        coffee:
-          $ref: '#/components/schemas/RoasterCoffeeFilters'
-      description: 'coffee задаёт требование к опубликованному ассортименту: обжарщик проходит, только если существует
-        ОДИН кофе с подходящим вариантом, удовлетворяющий всему объекту. Если coffee отсутствует, наличие кофе не
-        ограничивает список. roasters внутри coffee здесь запрещён. favoritesOnly=true требует JWT.'
-    RoasterCoffeeFilters:
-      allOf:
-      - $ref: '#/components/schemas/CoffeeFilters'
-      - not:
-          required:
-          - roasters
-      description: Критерии кофе в ассортименте обжарщика; вложенный roasters запрещён.
     ShopSection:
       type: object
       additionalProperties: false
@@ -2787,30 +2447,6 @@ components:
             filters:
               required:
               - origin
-    RoasterSection:
-      type: object
-      additionalProperties: false
-      properties:
-        filters:
-          $ref: '#/components/schemas/RoasterFilters'
-        sort:
-          type: string
-          enum:
-          - relevance
-          - name_asc
-          - available_coffees_desc
-        page:
-          type: integer
-          minimum: 1
-          maximum: 100000
-          default: 1
-        pageSize:
-          type: integer
-          minimum: 1
-          maximum: 100
-          default: 20
-      description: 'При q: relevance, без q: name_asc. relevance требует непустой q. available_coffees_desc использует
-        matchingCoffeeProducts при coffee-фильтре, иначе availableCoffeeProducts. При равенстве — name, затем slug.'
     DiscoverySearchRequest:
       type: object
       additionalProperties: false
@@ -2819,8 +2455,8 @@ components:
           type: string
           maxLength: 100
           default: ''
-          description: Trim, схлопывание пробелов, регистронезависимый поиск с ё=е. Точное название выше префикса,
-            затем совпадения слова и подстроки. Нечёткий поиск по опечаткам не входит в v1.
+          description: Trim, схлопывание пробелов, регистронезависимый поиск с ё=е. Точное название выше префикса, затем
+            совпадения слова и подстроки. Нечёткий поиск по опечаткам не входит в v1.
         filters:
           $ref: '#/components/schemas/DiscoveryFilters'
         sections:
@@ -2829,13 +2465,11 @@ components:
             type: string
             enum:
             - coffee_shops
-            - roasters
           minItems: 1
-          maxItems: 2
+          maxItems: 1
           uniqueItems: true
           default:
           - coffee_shops
-          - roasters
         sort:
           type: string
           enum:
@@ -2843,12 +2477,8 @@ components:
           - name_asc
         coffeeShops:
           $ref: '#/components/schemas/DiscoveryPaging'
-        roasters:
-          $ref: '#/components/schemas/DiscoveryPaging'
-      description: 'Общий поиск с общей строкой q и двумя общими критериями: приготовление, стоимость. Для q default
-        sort=relevance, без q=name_asc. Специфические фильтры кофеен/обжарщиков запрещены здесь. Каждая выбранная
-        группа имеет независимую пагинацию. Цены напитков и пачек не участвуют в одном ранжировании. Невыбранная
-        группа возвращается null.'
+      description: Поиск кофеен по строке q, приготовлению и стоимости напитка. Для q default sort=relevance, без q=name_asc.
+        Обжарщики доступны полным списком GET /api/roasters.
       allOf:
       - if:
           required:
@@ -2874,61 +2504,6 @@ components:
           not:
             required:
             - coffeeShops
-      - if:
-          required:
-          - sections
-          properties:
-            sections:
-              not:
-                contains:
-                  const: roasters
-        then:
-          not:
-            required:
-            - roasters
-    RoasterSearchRequest:
-      type: object
-      additionalProperties: false
-      properties:
-        q:
-          type: string
-          maxLength: 100
-          default: ''
-          description: Trim, схлопывание пробелов, регистронезависимый поиск с ё=е. Точное название выше префикса,
-            затем совпадения слова и подстроки. Нечёткий поиск по опечаткам не входит в v1.
-        filters:
-          $ref: '#/components/schemas/RoasterFilters'
-        sort:
-          type: string
-          enum:
-          - relevance
-          - name_asc
-          - available_coffees_desc
-        page:
-          type: integer
-          minimum: 1
-          maximum: 100000
-          default: 1
-        pageSize:
-          type: integer
-          minimum: 1
-          maximum: 100
-          default: 20
-      description: 'При q: relevance, без q: name_asc. relevance требует непустой q. available_coffees_desc использует
-        matchingCoffeeProducts при coffee-фильтре, иначе availableCoffeeProducts. При равенстве — name, затем slug.'
-      allOf:
-      - if:
-          required:
-          - sort
-          properties:
-            sort:
-              const: relevance
-        then:
-          required:
-          - q
-          properties:
-            q:
-              pattern: \S
     CoffeeSearchRequest:
       type: object
       additionalProperties: false
@@ -3068,63 +2643,6 @@ components:
       - address
       - name
       - coverPhoto
-    RoasterCard:
-      type: object
-      additionalProperties: false
-      properties:
-        address:
-          $ref: '#/components/schemas/PublicAddress'
-        name:
-          type: string
-        coverPhoto:
-          anyOf:
-          - $ref: '#/components/schemas/Photo'
-          - type: 'null'
-        tags:
-          type: array
-          items:
-            $ref: '#/components/schemas/PublicTag'
-        isFavorite:
-          anyOf:
-          - type: boolean
-          - type: 'null'
-        coffeeShopsCount:
-          type: integer
-          minimum: 0
-          description: Число видимых кофеен, использующих этого обжарщика.
-        coffeeProductsCount:
-          type: integer
-          minimum: 0
-          description: Число разных Published-продуктов независимо от наличия и фасовки; Draft и Archived исключены.
-        availableCoffeeProducts:
-          type: integer
-          minimum: 0
-        matchingCoffeeProducts:
-          anyOf:
-          - type: integer
-            minimum: 0
-          - type: 'null'
-        coffeeCatalogUpdatedAtUtc:
-          anyOf:
-          - type: string
-            format: date-time
-          - type: 'null'
-        matchingCoffee:
-          anyOf:
-          - $ref: '#/components/schemas/CoffeeCard'
-          - type: 'null'
-      required:
-      - address
-      - name
-      - coverPhoto
-      - tags
-      - isFavorite
-      - availableCoffeeProducts
-      - matchingCoffeeProducts
-      - coffeeCatalogUpdatedAtUtc
-      - matchingCoffee
-      description: availableCoffeeProducts считает разные Published-продукты с InStock, а не SKU. matchingCoffeeProducts
-        — число продуктов по coffee-фильтру, либо null без этого фильтра. isFavorite=null у гостя.
     CoffeeShopCard:
       type: object
       additionalProperties: false
@@ -3408,33 +2926,6 @@ components:
       - totalPages
       - currentPage
       - pageSize
-    RoasterPage:
-      type: object
-      additionalProperties: false
-      properties:
-        items:
-          type: array
-          items:
-            $ref: '#/components/schemas/RoasterCard'
-        totalItems:
-          type: integer
-          minimum: 0
-        totalPages:
-          type: integer
-          minimum: 0
-        currentPage:
-          type: integer
-          minimum: 1
-        pageSize:
-          type: integer
-          minimum: 1
-          maximum: 100
-      required:
-      - items
-      - totalItems
-      - totalPages
-      - currentPage
-      - pageSize
     CoffeeShopPage:
       type: object
       additionalProperties: false
@@ -3472,16 +2963,10 @@ components:
           anyOf:
           - $ref: '#/components/schemas/CoffeeShopPage'
           - type: 'null'
-        roasters:
-          anyOf:
-          - $ref: '#/components/schemas/RoasterPage'
-          - type: 'null'
       required:
       - q
       - coffeeShops
-      - roasters
-      description: 'Пустая выбранная группа: items=[] и totalItems=totalPages=0. Невыбранная группа: null. Общей
-        пагинации и общего totalItems нет.'
+      description: 'Результаты поиска кофеен. Пустая выбранная секция: items=[] и totalItems=totalPages=0.'
     SharedBrewMethod:
       type: string
       enum:
@@ -3604,31 +3089,10 @@ components:
           type: integer
           minimum: 1
           maximum: 5000
-        minCoffeePrice:
-          type: number
-          minimum: 0
-        maxCoffeePrice:
-          type: number
-          minimum: 0
-        coffeeWeightGrams:
-          type: integer
-          minimum: 1
-          maximum: 100000
       required:
       - currency
-      description: 'Независимые бюджеты: Drink — напиток в кофейне; Coffee — пачка кофе у обжарщика. Ценовой диапазон
-        действует только на свою группу. Ценовой фильтр пачки требует coffeeWeightGrams. min <= max внутри каждой
-        пары. drinkVolumeMl и coffeeWeightGrams уточняют подходящую позицию/вариант. Валюты не конвертируются.'
-      allOf:
-      - if:
-          anyOf:
-          - required:
-            - minCoffeePrice
-          - required:
-            - maxCoffeePrice
-        then:
-          required:
-          - coffeeWeightGrams
+      description: 'Стоимость напитка в кофейне: валюта, минимальная/максимальная цена и объём. min <= max. Конвертации
+        валют нет.'
     DiscoveryFilters:
       type: object
       additionalProperties: false
@@ -3828,18 +3292,6 @@ components:
             затем совпадения слова и подстроки. Нечёткий поиск по опечаткам не входит в v1.
         filters:
           $ref: '#/components/schemas/CoffeeFilters'
-    RoasterFacetsRequest:
-      type: object
-      additionalProperties: false
-      properties:
-        q:
-          type: string
-          maxLength: 100
-          default: ''
-          description: Trim, схлопывание пробелов, регистронезависимый поиск с ё=е. Точное название выше префикса,
-            затем совпадения слова и подстроки. Нечёткий поиск по опечаткам не входит в v1.
-        filters:
-          $ref: '#/components/schemas/RoasterFilters'
     CoffeeFacetsResult:
       type: object
       additionalProperties: false
@@ -3864,23 +3316,6 @@ components:
         конкретного значения, а не прирост и не сумма с другими значениями группы. Для мультизначных групп счётчики
         пересекаются. Нулевые опции остаются с count=0. priceRange игнорирует minPrice/maxPrice, но сохраняет другие
         фильтры; null без currency+weightGrams или без подходящих цен.
-    RoasterFacetsResult:
-      type: object
-      additionalProperties: false
-      properties:
-        totalItems:
-          type: integer
-          minimum: 0
-        groups:
-          type: array
-          items:
-            $ref: '#/components/schemas/FacetGroup'
-      required:
-      - totalItems
-      - groups
-      description: Возвращает постоянные roasterTags (selection=and) и группы coffee.*. Счётчики — разные обжарщики,
-        не продукты. Для roasterTags.count текущий набор тегов сохраняется и добавляется проверяемый тег. Для OR-групп
-        coffee.* исключается только текущая группа; остальные условия coffee должны совпасть у одного продукта/варианта.
     CreateRoasterTagRequest:
       type: object
       additionalProperties: false

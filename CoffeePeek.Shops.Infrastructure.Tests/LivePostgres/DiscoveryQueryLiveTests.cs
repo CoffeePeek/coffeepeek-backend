@@ -4,6 +4,7 @@ using CoffeePeek.Shops.Application.PublicAddresses;
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeProductAggregate;
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
 using CoffeePeek.Shops.Domain.Aggregates.MenuAggregate;
+using CoffeePeek.Shops.Domain.Aggregates.RoasterTagAggregate;
 using CoffeePeek.Shops.Persistance.Configuration;
 using CoffeePeek.Shops.Persistance.Discovery;
 using CoffeePeek.Shops.Persistance.CoffeeCatalog;
@@ -150,22 +151,24 @@ public sealed class DiscoveryQueryLiveTests : IClassFixture<ShopsLiveDatabase>
     }
 
     [Fact]
-    public async Task RoasterCriteriaAndFacets_RequireOneMatchingCoffee_ExecuteInPostgres()
+    public async Task FullRoasterList_TagsPhotosCountsAndStock_ExecuteInPostgres()
     {
         await using var db = fixture.Context(false);
-        var prefix = Key(); var split = AddRoaster(db, prefix + "-split"); var match = AddRoaster(db, prefix + "-match");
-        AddOffer(AddProduct(db, split, "Decaf light", "decaf", "light"), 250, 20);
-        AddOffer(AddProduct(db, split, "Regular dark", "regular", "dark"), 250, 20);
-        var p = AddProduct(db, match, "Decaf dark", "decaf", "dark"); AddOffer(p, 250, 20); AddOffer(p, 1000, 60);
+        var other = AddRoaster(db, Key()); var popular = AddRoaster(db, Key());
+        var tag = new RoasterTag(Key(), "List live", null, 0); db.RoasterTags.Add(tag);
+        foreach (var r in new[] { other, popular }) db.RoasterTagAssignments.Add(new(r.Id, tag.Id, Guid.NewGuid()));
+        AddOffer(AddProduct(db, other, "Unavailable"), 250, 20, availability: CoffeeAvailability.OutOfStock);
+        var p = AddProduct(db, popular, "Available"); AddOffer(p, 250, 20); AddOffer(p, 1000, 60);
+        var draft = AddProduct(db, popular, "Draft"); draft.SetStatus(CoffeePublicationStatus.Draft); AddOffer(draft, 250, 10);
+        var shop = ShopsLiveDatabase.NewShop("List live", Guid.NewGuid()); shop.SetRoasters([popular]); db.Shops.Add(shop);
         await db.SaveChangesAsync(Ct); db.ChangeTracker.Clear();
-        var filters = new RoasterFilters { Coffee = new() { Caffeine = ["decaf"], Roast = ["dark"] } };
-        var result = await Store(db).SearchRoastersAsync(new() { Q = prefix, Filters = filters, Sort = "available_coffees_desc" }, null, Ct);
-        var r = Assert.Single(result.Items); Assert.Equal(match.PublicSlug, r.Address.Slug); Assert.Equal(1, r.MatchingCoffeeProducts);
-        Assert.Equal("Decaf dark", r.MatchingCoffee!.Name); Assert.Equal(2, r.MatchingCoffee.MatchingOffers.Length);
-        var facets = await Store(db).RoasterFacetsAsync(new() { Q = prefix, Filters = filters }, null, Ct);
-        Assert.Equal(1, facets.TotalItems);
-        Assert.Equal(1, facets.Groups.Single(g => g.Code == "coffee.roast").Options.Single(v => v.Code == "light").Count);
-        Assert.Equal(1, facets.Groups.Single(g => g.Code == "coffee.caffeine").Options.Single(v => v.Code == "regular").Count);
+        var store = new CoffeeCatalogStore(db, Options.Create(new MediaPublicUrlOptions { PublicEndpoint = "https://media.example" }),
+            Options.Create(new CoffeeImportOptions()), Mock.Of<IPublicAddressService>(), NullLogger<CoffeeCatalogStore>.Instance);
+        var result = await store.RoastersAsync([tag.Slug], Ct);
+        Assert.Equal(2, result.Length); Assert.Equal(popular.PublicSlug, result[0].Address!.Slug);
+        Assert.Equal((1, 1, 1), (result[0].CoffeeShopsCount, result[0].CoffeeProductsCount, result[0].AvailableCoffeeProducts));
+        Assert.Equal((0, 1, 0), (result[1].CoffeeShopsCount, result[1].CoffeeProductsCount, result[1].AvailableCoffeeProducts));
+        Assert.All(result, r => Assert.Equal(tag.Slug, Assert.Single(r.Tags).Slug));
     }
 
     [Fact]

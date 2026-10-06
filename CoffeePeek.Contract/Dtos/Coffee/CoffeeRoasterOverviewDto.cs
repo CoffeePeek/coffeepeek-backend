@@ -4,4 +4,4 @@ using CoffeePeek.Contract.Dtos.PublicAddresses;
 
 namespace CoffeePeek.Contract.Dtos.Coffee;
 
-public sealed record CoffeeRoasterOverviewDto(PublicTagDto[] Tags, int AvailableProducts, DateTime? CatalogUpdatedAtUtc);
+public sealed record CoffeeRoasterOverviewDto(PublicTagDto[] Tags, int AvailableProducts);

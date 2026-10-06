@@ -25,14 +25,6 @@ public static class DiscoveryRequestValidation
             Price(path, f.Currency, f.MinPrice, f.MaxPrice);
             if (sort is "price_asc" or "price_desc" && (f.Currency is null || f.WeightGrams is null))
                 Error("sort", "Price sorting requires currency and weightGrams.");
-            if (f is RoasterCoffeeFilters && f.RoastersSpecified)
-                Error(path + ".roasters", "Roaster selection is not supported inside assortment filters.");
-        }
-        void Roaster(RoasterFilters? f)
-        {
-            if (f is null) return;
-            if (f.Tags.Intersect(f.ExcludeTags).Any()) Error("filters.excludeTags", "Included and excluded tags must not overlap.");
-            Coffee(f.Coffee, "filters.coffee");
         }
         switch (request)
         {
@@ -40,10 +32,6 @@ public static class DiscoveryRequestValidation
                 Query(r.Q, r.Sort); Coffee(r.Filters, "filters", r.Sort); break;
             case CoffeeFacetsRequest r:
                 Query(r.Q, null); Coffee(r.Filters, "filters"); break;
-            case RoasterSearchRequest r:
-                Query(r.Q, r.Sort); Roaster(r.Filters); break;
-            case RoasterFacetsRequest r:
-                Query(r.Q, null); Roaster(r.Filters); break;
             case CoffeeShopSearchRequest r:
                 Query(r.Q, r.Sort);
                 if (r.Filters?.RadiusKm.HasValue == true && r.Filters.Origin is null)
@@ -56,13 +44,9 @@ public static class DiscoveryRequestValidation
             case DiscoverySearchRequest r:
                 Query(r.Q, r.Sort);
                 if (r.CoffeeShops is not null && !r.Sections.Contains("coffee_shops")) Error("coffeeShops", "The section is not selected.");
-                if (r.Roasters is not null && !r.Sections.Contains("roasters")) Error("roasters", "The section is not selected.");
                 if (r.Filters?.Budget is { } budget)
                 {
                     Price("filters.budget.drink", budget.Currency, budget.MinDrinkPrice, budget.MaxDrinkPrice);
-                    Price("filters.budget.coffee", budget.Currency, budget.MinCoffeePrice, budget.MaxCoffeePrice);
-                    if ((budget.MinCoffeePrice.HasValue || budget.MaxCoffeePrice.HasValue) && !budget.CoffeeWeightGrams.HasValue)
-                        Error("filters.budget.coffeeWeightGrams", "Coffee price filters require a bag weight.");
                 }
                 break;
         }
