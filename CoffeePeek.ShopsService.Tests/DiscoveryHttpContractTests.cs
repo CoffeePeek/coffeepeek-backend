@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
 using CoffeePeek.Contract.Dtos.Discovery;
+using CoffeePeek.Contract.Dtos.PublicAddresses;
 using CoffeePeek.Shared.Auth.Constants;
 using CoffeePeek.Shops.Application.Features.CoffeeCatalog;
 using CoffeePeek.Shops.Application.Features.Discovery;
@@ -20,6 +21,7 @@ public sealed class DiscoveryHttpContractTests : IAsyncLifetime
     private HttpClient client = null!;
     private const string Secret = "discovery-http-tests-private-gateway-secret-123456789";
     private readonly Mock<IDiscoveryQueryStore> queries = new();
+    private readonly Mock<ICoffeeCatalogStore> catalog = new();
     private readonly Mock<IDiscoveryClassificationStore> classification = new();
     private readonly Mock<IDiscoveryFavoritesStore> favorites = new();
 
@@ -34,11 +36,9 @@ public sealed class DiscoveryHttpContractTests : IAsyncLifetime
         builder.Services.AddSingleton(queries.Object);
         builder.Services.AddSingleton(classification.Object);
         builder.Services.AddSingleton(favorites.Object);
-        builder.Services.AddSingleton(new Mock<ICoffeeCatalogStore>().Object);
+        builder.Services.AddSingleton(catalog.Object);
         queries.Setup(q => q.SearchCoffeesAsync(It.IsAny<CoffeeSearchRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new CoffeePage { CurrentPage = 1, PageSize = 20 });
-        queries.Setup(q => q.SearchRoastersAsync(It.IsAny<RoasterSearchRequest>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new RoasterPage { CurrentPage = 1, PageSize = 20 });
         classification.Setup(c => c.EditClassificationAsync(It.IsAny<Guid>(), It.IsAny<CoffeeClassificationEditRequest>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new DiscoveryException("Coffee changed; reload.", 409, "VERSION_CONFLICT"));
         app = builder.Build();
@@ -57,8 +57,6 @@ public sealed class DiscoveryHttpContractTests : IAsyncLifetime
     [InlineData("/api/v1/coffees/search", "{\"sort\":\"price_asc\"}")]
     [InlineData("/api/v1/coffees/search", "{\"sort\":\"relevance\",\"q\":\"  \"}")]
     [InlineData("/api/v1/coffees/search", "{\"pageSize\":101}")]
-    [InlineData("/api/v1/roasters/search", "{\"filters\":{\"coffee\":{\"roasters\":[]}}}")]
-    [InlineData("/api/v1/roasters/search", "{\"filters\":{\"tags\":[\"wholesale\"],\"excludeTags\":[\"wholesale\"]}}")]
     public async Task InvalidRequests_ReturnDocumentedErrorBeforeExecutingSearch(string route, string json)
     {
         using var response = await Post(route, json);
@@ -68,7 +66,46 @@ public sealed class DiscoveryHttpContractTests : IAsyncLifetime
         Assert.False(body.RootElement.GetProperty("isSuccess").GetBoolean());
         Assert.Equal(JsonValueKind.Object, body.RootElement.GetProperty("errors").ValueKind);
         queries.Verify(q => q.SearchCoffeesAsync(It.IsAny<CoffeeSearchRequest>(), It.IsAny<CancellationToken>()), Times.Never);
-        queries.Verify(q => q.SearchRoastersAsync(It.IsAny<RoasterSearchRequest>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task FullRoasterList_HasMergedFieldsAndNoPaging_AndOldSearchRoutesAreRemoved()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var tag = new PublicTagDto("wholesale", "Wholesale", null, 0);
+        var rows = Enumerable.Range(0, 105).Select(i => new PublicRoasterDto(
+            new($"roast-{i}", $"/roasters/roast-{i}", 1), $"Roast {i}", "https://media.example/roast.jpg",
+            null, [tag], 2, 3, 1)).ToArray();
+        catalog.Setup(c => c.RoastersAsync(It.IsAny<string[]>(), It.IsAny<CancellationToken>())).ReturnsAsync(rows);
+        foreach (var route in new[] { "/api/roasters", "/api/roasters?tags=wholesale&page=2&pageSize=1" })
+        {
+            using var response = await client.GetAsync(route, ct);
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync(ct));
+            var data = body.RootElement.GetProperty("data");
+            Assert.Equal(JsonValueKind.Array, data.ValueKind); Assert.Equal(105, data.GetArrayLength());
+            var item = data[0];
+            Assert.Equal("roast-0", item.GetProperty("address").GetProperty("slug").GetString());
+            Assert.Equal("Roast 0", item.GetProperty("name").GetString());
+            Assert.Equal("https://media.example/roast.jpg", item.GetProperty("photoUrl").GetString());
+            Assert.True(item.TryGetProperty("coverPhoto", out _));
+            Assert.Equal("wholesale", item.GetProperty("tags")[0].GetProperty("slug").GetString());
+            Assert.Equal(2, item.GetProperty("coffeeShopsCount").GetInt32());
+            Assert.Equal(3, item.GetProperty("coffeeProductsCount").GetInt32());
+            Assert.Equal(1, item.GetProperty("availableCoffeeProducts").GetInt32());
+            Assert.False(item.TryGetProperty("catalogUpdatedAtUtc", out _));
+            Assert.False(item.TryGetProperty("coffeeCatalogUpdatedAtUtc", out _));
+        }
+        catalog.Verify(c => c.RoastersAsync(It.Is<string[]>(t => t.Length == 0), It.IsAny<CancellationToken>()), Times.Once);
+        catalog.Verify(c => c.RoastersAsync(It.Is<string[]>(t => t.SequenceEqual(new[] { "wholesale" })), It.IsAny<CancellationToken>()), Times.Once);
+        using var legacy = await client.GetAsync("/api/Catalogs/roasters", ct);
+        Assert.Equal(HttpStatusCode.NotFound, legacy.StatusCode);
+        foreach (var route in new[] { "/api/v1/roasters/search", "/api/v1/roasters/facets" })
+        {
+            using var response = await Post(route, "{}"); Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        }
+        using var shared = await Post("/api/v1/discovery/search", "{\"sections\":[\"roasters\"]}");
+        Assert.Equal(HttpStatusCode.BadRequest, shared.StatusCode);
     }
 
     [Fact]
@@ -76,7 +113,7 @@ public sealed class DiscoveryHttpContractTests : IAsyncLifetime
     {
         using var search = await Post("/api/v1/coffees/search", "{}");
         Assert.True(search.StatusCode == HttpStatusCode.OK, await search.Content.ReadAsStringAsync());
-        using var personal = await Post("/api/v1/roasters/search", "{\"filters\":{\"favoritesOnly\":true}}");
+        using var personal = await Post("/api/v1/coffee-shops/search", "{\"filters\":{\"favoritesOnly\":true}}");
         Assert.Equal(HttpStatusCode.Unauthorized, personal.StatusCode);
         using var favorite = await client.PutAsync("/api/v1/favorites/roaster/sample-roaster", null);
         Assert.Equal(HttpStatusCode.Unauthorized, favorite.StatusCode);

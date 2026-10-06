@@ -14,5 +14,4 @@ public sealed record PublicRoasterDetailsDto(PublicAddressDto Address, string Na
     public int CoffeeProductsCount { get; init; }
     public PublicTagDto[] Tags { get; init; } = [];
     public int AvailableCoffeeProducts { get; init; }
-    public DateTime? CoffeeCatalogUpdatedAtUtc { get; init; }
 }

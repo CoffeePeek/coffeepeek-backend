@@ -13,6 +13,4 @@ public class DiscoverySearchResult
     public string Q { get; set; } = string.Empty;
     [JsonRequired]
     public CoffeeShopPage? CoffeeShops { get; set; }
-    [JsonRequired]
-    public RoasterPage? Roasters { get; set; }
 }

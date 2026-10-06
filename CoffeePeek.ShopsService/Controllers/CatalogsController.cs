@@ -38,15 +38,6 @@ public class CatalogsController(PublicDiscoveryService discovery) : ControllerBa
         return Ok(Response<PublicEquipmentDto[]>.Success(await discovery.EquipmentsAsync(ct)));
     }
 
-    [HttpGet("roasters")]
-    [ProducesResponseType(typeof(Response<PublicRoasterSummaryDto[]>), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType( StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> GetRoasters(CancellationToken ct)
-    {
-        return Ok(Response<PublicRoasterSummaryDto[]>.Success(await discovery.RoastersAsync(ct)));
-    }
-
     [HttpGet("brew-methods")]
     [ProducesResponseType(typeof(Response<PublicBrewMethodDto[]>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]

@@ -61,40 +61,4 @@ public sealed partial class DiscoveryQueryStore
         }
         return result;
     }
-
-    public async Task<RoasterFacetsResult> RoasterFacetsAsync(RoasterFacetsRequest request, Guid? userId, CancellationToken ct)
-    {
-        var c = await CatalogAsync(ct);
-        var f = request.Filters ?? new();
-        await ValidateTagsAsync(f, ct);
-        if (f.Coffee is not null) await ValidateCoffeeAsync(f.Coffee, c, "filters.coffee", ct);
-        var q = NormalizeQuery(request.Q);
-        var result = new RoasterFacetsResult { TotalItems = await MatchingRoasters(f, c, userId, q).CountAsync(ct) };
-        var groups = new List<FacetGroup>();
-        var tags = await db.RoasterTags.AsNoTracking().Where(t => t.IsActive).OrderBy(t => t.SortOrder).ThenBy(t => t.Slug).ToArrayAsync(ct);
-        var tagOptions = new List<FacetOption>();
-        foreach (var tag in tags)
-        {
-            var expanded = new RoasterFilters { Tags = f.Tags.Append(tag.Slug).Distinct().ToArray(), ExcludeTags = f.ExcludeTags, FavoritesOnly = f.FavoritesOnly, Coffee = f.Coffee };
-            tagOptions.Add(new() { Code = tag.Slug, Name = tag.Name, Selected = f.Tags.Contains(tag.Slug),
-                Count = await MatchingRoasters(expanded, c, userId, q).CountAsync(ct) });
-        }
-        groups.Add(new() { Code = "roasterTags", Name = "Услуги обжарщика", Selection = "and", Options = tagOptions.ToArray() });
-        var coffee = f.Coffee ?? new CoffeeFilters();
-        foreach (var group in Groups)
-        {
-            var options = new List<FacetOption>();
-            foreach (var v in c.Values.Where(v => v.GroupCode == group))
-            {
-                var cf = WithGroup(coffee, group, [v.Code]);
-                var products = MatchingProducts(cf, c, []);
-                var baseRoasters = MatchingRoasters(new RoasterFilters { Tags = f.Tags, ExcludeTags = f.ExcludeTags, FavoritesOnly = f.FavoritesOnly }, c, userId, q);
-                options.Add(new() { Code = v.Code, Name = v.Name, Selected = Selection(coffee, group).Contains(v.Code),
-                    Count = await baseRoasters.CountAsync(r => products.Any(p => p.RoasterId == r.Id), ct) });
-            }
-            groups.Add(new() { Code = $"coffee.{group}", Name = GroupNames[group], Selection = "or", Options = options.ToArray() });
-        }
-        result.Groups = groups.ToArray();
-        return result;
-    }
 }

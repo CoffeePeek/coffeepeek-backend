@@ -81,13 +81,6 @@ public sealed partial class DiscoveryQueryStore(ShopsDbContext db, IPublicAddres
         return await ResolveFiltersAsync(PublicAddressKind.Roaster, f.Roasters, $"{prefix}.roasters", ct);
     }
 
-    private async Task ValidateTagsAsync(RoasterFilters f, CancellationToken ct)
-    {
-        var requested = f.Tags.Concat(f.ExcludeTags).Distinct().ToArray();
-        if (requested.Length > 0 && await db.RoasterTags.CountAsync(t => t.IsActive && requested.Contains(t.Slug), ct) != requested.Length)
-            throw Invalid("filters.tags", "Unknown or inactive roaster tag.");
-    }
-
     private static string[] Selection(CoffeeFilters f, string group) => group switch
     {
         "brew" => f.Brew, "caffeine" => f.Caffeine, "roast" => f.Roast, "acidity" => f.Acidity,

@@ -62,8 +62,13 @@ public class OpenApiDocumentGenerationTests
             documentResponse.StatusCode.Should().Be(HttpStatusCode.OK,
                 "the real Shops OpenAPI document must generate successfully; body: {0}", body);
             using var document = JsonDocument.Parse(body);
-            document.RootElement.GetProperty("paths").TryGetProperty("/api/admin/review-reports", out _)
-                .Should().BeTrue();
+            var paths = document.RootElement.GetProperty("paths");
+            paths.TryGetProperty("/api/admin/review-reports", out _).Should().BeTrue();
+            foreach (var route in new[] { "/api/Catalogs/roasters", "/api/v1/roasters/search", "/api/v1/roasters/facets" })
+                paths.TryGetProperty(route, out _).Should().BeFalse();
+            var parameters = paths.GetProperty("/api/roasters").GetProperty("get").GetProperty("parameters");
+            parameters.EnumerateArray().Select(p => p.GetProperty("name").GetString()).Should().Equal("tags");
+            body.Should().NotContain("coffeeCatalogUpdatedAtUtc");
         }
         finally
         {

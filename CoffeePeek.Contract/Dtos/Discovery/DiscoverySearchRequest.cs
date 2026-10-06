@@ -11,11 +11,10 @@ public class DiscoverySearchRequest
     [StringLength(100, MinimumLength = 0)]
     public string Q { get; set; } = "";
     public DiscoveryFilters? Filters { get; set; }
-    [DiscoveryItems(2, 1, true)]
-    [DiscoveryChoices("coffee_shops", "roasters")]
-    public string[] Sections { get; set; } = ["coffee_shops", "roasters"];
+    [DiscoveryItems(1, 1, true)]
+    [DiscoveryChoices("coffee_shops")]
+    public string[] Sections { get; set; } = ["coffee_shops"];
     [DiscoveryChoices("relevance", "name_asc")]
     public string? Sort { get; set; }
     public DiscoveryPaging? CoffeeShops { get; set; }
-    public DiscoveryPaging? Roasters { get; set; }
 }

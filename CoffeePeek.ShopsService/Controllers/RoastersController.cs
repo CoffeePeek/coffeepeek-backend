@@ -25,8 +25,7 @@ public class RoastersController(PublicDiscoveryService discovery, CoffeePeek.Sho
         if (data is not null)
         {
             var catalog = await coffees.RoasterOverviewAsync(slug, ct);
-            data = data with { Tags = catalog.Tags, AvailableCoffeeProducts = catalog.AvailableProducts,
-                CoffeeCatalogUpdatedAtUtc = catalog.CatalogUpdatedAtUtc };
+            data = data with { Tags = catalog.Tags, AvailableCoffeeProducts = catalog.AvailableProducts };
         }
         return data is null ? NotFound() : Ok(Response<PublicRoasterDetailsDto>.Success(data));
     }

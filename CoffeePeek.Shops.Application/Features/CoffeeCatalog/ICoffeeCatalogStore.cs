@@ -15,7 +15,7 @@ public interface ICoffeeCatalogStore
     Task<RoasterTagDto[]> AdminRoasterTagsAsync(Guid roasterId, CancellationToken ct);
     Task<CoffeeRoasterOverviewDto> RoasterOverviewAsync(string slug, CancellationToken ct);
     Task<bool> ArchiveAsync(Guid id, CancellationToken ct);
-    Task<PublicPage<CoffeeRoasterPageDto>> RoastersAsync(string[] tags, int page, int pageSize, CancellationToken ct);
+    Task<PublicRoasterDto[]> RoastersAsync(string[] tags, CancellationToken ct);
     Task<PublicPage<CoffeeProductDto>> ListAsync(CoffeeCatalogFilter filter, CancellationToken ct);
     Task<CoffeeProductDto?> GetAsync(string slug, CancellationToken ct);
     Task<PublicPage<AdminCoffeeDto>> AdminListAsync(int page, int pageSize, string? status, CancellationToken ct);
