@@ -1,7 +1,9 @@
 using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 using System.Text.Json.Nodes;
+using CoffeePeek.Shared.Kernel.Drinks;
 using Npgsql;
 using NpgsqlTypes;
 
@@ -122,9 +124,18 @@ public static partial class LegacyReviewBackfill
         if (!DateTimeOffset.TryParse(Text(r, "CreatedAtUtc"), out _) || (note == "Note" && !DateTimeOffset.TryParse(Text(r, "VisitedAt"), out _))) return "invalid visit timestamp";
         var username = Text(r, "UserName") ?? Text(Rows(inventory, "Users").Single(u => Text(u,"Id") == Text(r,"UserId")), "Username");
         if (string.IsNullOrWhiteSpace(username) || username.Length > 30) return "missing/oversized author name";
-        if (Text(r, "DrinkSlug") is { } slug && (!Rows(inventory, "Drinks").Any(d => Text(d, "Slug") == slug) || slug.Length > 50)) return "unknown drink slug";
-        if (new[] { "CustomDrinkName", "DrinkNameRu", "DrinkNameEn" }.Any(k => Text(r,k)?.Length > 100)) return "oversized drink metadata";
-        if (Text(r,"DrinkSlug") != null && Text(r,"CustomDrinkName") != null) return "conflicting drink selections";
+        var slug = Text(r, "DrinkSlug");
+        var custom = Text(r, "CustomDrinkName");
+        if (new[] { "CustomDrinkName", "DrinkNameRu", "DrinkNameEn" }.Any(k => Text(r,k)?.Length > DrinkSelection.MaxNameLength)) return "oversized drink metadata";
+        if (slug == DrinkSelection.OtherSlug)
+        {
+            if (string.IsNullOrWhiteSpace(custom)) return "incomplete Other drink name";
+        }
+        else
+        {
+            if (custom != null) return "conflicting drink selections";
+            if (slug != null && (slug.Length > DrinkSelection.MaxSlugLength || !Rows(inventory, "Drinks").Any(d => Text(d, "Slug") == slug))) return "unknown drink slug";
+        }
         return null;
     }
     private static JsonObject Visit(JsonObject content, string id, JsonObject source, JsonNode visited, JsonNode created,
@@ -181,26 +192,43 @@ public static partial class LegacyReviewBackfill
         row["Visibility"] = 0; row["ModerationState"] = 0; row["ApprovedRevision"] = null; row["FirstPublishedAtUtc"] = null;
         return row;
     }
-    public static string Hash(JsonNode node) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(Normalize(node).ToJsonString())));
-    private static JsonNode Normalize(JsonNode node)
+    public static string Hash(JsonNode? node) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(Normalize(node)?.ToJsonString() ?? "null")));
+    private static JsonNode? Normalize(JsonNode? node)
     {
         if (node is JsonObject o)
         {
             var r = new JsonObject();
-            foreach (var (key,value) in o.OrderBy(x => x.Key, StringComparer.Ordinal)) r[key] = value == null ? null : Normalize(value);
+            foreach (var (key,value) in o.OrderBy(x => x.Key, StringComparer.Ordinal)) r[key] = Normalize(value);
             return r;
         }
-        if (node is JsonArray a) return new JsonArray(a.Select(n => n == null ? null : Normalize(n)).ToArray());
-        var text = node.ToString();
-        if (Guid.TryParse(text, out var uuid)) return JsonValue.Create(uuid.ToString())!;
-        if (text.Contains('T') && DateTimeOffset.TryParse(text, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var date))
-            return JsonValue.Create(date.UtcDateTime.ToString("O"))!;
-        if (decimal.TryParse(text, NumberStyles.Number, CultureInfo.InvariantCulture, out var number)) return JsonValue.Create(number)!;
-        return node.DeepClone();
+        if (node is JsonArray a) return new JsonArray(a.Select(Normalize).ToArray());
+        // Authored strings are provenance, even when their text resembles a number, UUID or date.
+        if (node?.GetValueKind() == JsonValueKind.Number
+            && decimal.TryParse(node.ToJsonString(), NumberStyles.Float, CultureInfo.InvariantCulture, out var number))
+            return JsonNode.Parse(number.ToString("G29", CultureInfo.InvariantCulture));
+        return node?.DeepClone();
     }
     public static bool Matches(JsonObject expected, JsonObject actual) =>
-        expected.All(kv => Hash(kv.Value ?? JsonValue.Create("NULL")!) == Hash(actual[kv.Key] ?? JsonValue.Create("NULL")!));
-
+        expected.All(kv => actual.TryGetPropertyValue(kv.Key, out var value) && MatchesColumn(kv.Key, kv.Value, value));
+    private static bool MatchesColumn(string column, JsonNode? expected, JsonNode? actual)
+    {
+        if (expected == null || actual == null) return expected == null && actual == null;
+        if (expected.GetValueKind() == JsonValueKind.String && actual.GetValueKind() == JsonValueKind.String)
+        {
+            if (column is "Id" or "UserId" or "ShopId" or "OwnerId" or "CheckInId" or "ModeratedBy"
+                or "ModerationSubmissionId" or "RowVersion" or "CanonicalCheckInId" or "ModerationCheckInId"
+                or "CheckInPhotoId" or "ModerationReviewId" or "ReviewId" or "CoffeeShopId" or "ModerationShopId")
+                return Guid.TryParse(expected.ToString(), out var expectedId) && Guid.TryParse(actual.ToString(), out var actualId)
+                    && expectedId == actualId;
+            if (column is "CreatedAtUtc" or "UpdatedAtUtc" or "VisitedAt" or "VisitedAtUtc" or "DeletedAtUtc"
+                or "FirstPublishedAtUtc" or "ModeratedAt" or "ClaimedAtUtc" or "UploadedAt" or "PermalinkExpiresAt"
+                or "ScheduledDeletionAt" or "DeletedAt" or "ResolvedAtUtc")
+                return DateTimeOffset.TryParse(expected.ToString(), CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var expectedDate)
+                    && DateTimeOffset.TryParse(actual.ToString(), CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var actualDate)
+                    && expectedDate == actualDate;
+        }
+        return Hash(expected) == Hash(actual);
+    }
     public static NpgsqlCommand InsertCommand(string table, JsonObject row, NpgsqlConnection? connection = null, NpgsqlTransaction? transaction = null)
     {
         if (!new[] { "CanonicalCheckIns", "ModerationCheckIns", "CheckInHelpfulVotes", "ShopPhotos" }.Contains(table))
