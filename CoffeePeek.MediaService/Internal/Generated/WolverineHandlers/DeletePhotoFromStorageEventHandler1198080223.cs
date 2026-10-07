@@ -27,17 +27,17 @@ namespace Internal.Generated.WolverineHandlers
 
         public override async System.Threading.Tasks.Task HandleAsync(Wolverine.Runtime.MessageContext context, System.Threading.CancellationToken cancellation)
         {
+            using var minIOStorageService = new CoffeePeek.MediaService.Services.MinIOStorageService(_optionsOfMinIOOptions, _optionsOfMediaPublicUrlOptions);
             await using var serviceScope = _serviceScopeFactory.CreateAsyncScope();
             Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<Wolverine.Runtime.ScopedMessageContextHolder>(serviceScope.ServiceProvider).Context = context;
             // This service has been marked as requiring service location independent of Wolverine's ability to use constructor injection of everything else
             var mediaDbContext = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<CoffeePeek.MediaService.Data.MediaDbContext>(serviceScope.ServiceProvider);
-            using var minIOStorageService = new CoffeePeek.MediaService.Services.MinIOStorageService(_optionsOfMinIOOptions, _optionsOfMediaPublicUrlOptions);
             var unitOfWorkOfMediaDbContext = new CoffeePeek.Shared.Persistence.Data.UnitOfWork<CoffeePeek.MediaService.Data.MediaDbContext>(mediaDbContext);
             var photoRepository = new CoffeePeek.MediaService.Repositories.PhotoRepository(mediaDbContext);
             // The actual message body
             var deletePhotoFromStorageEvent = (CoffeePeek.MediaService.Events.DeletePhotoFromStorageEvent)context.Envelope.Message;
 
-            
+
             // Enroll the DbContext & IMessagingContext in the outgoing Wolverine outbox transaction
             var efCoreEnvelopeTransaction = new Wolverine.EntityFrameworkCore.Internals.EfCoreEnvelopeTransaction(mediaDbContext, context, _domainEventScraperIEnumerable);
             await context.EnlistInOutboxAsync(efCoreEnvelopeTransaction).ConfigureAwait(false);
@@ -52,11 +52,11 @@ namespace Internal.Generated.WolverineHandlers
                 System.Diagnostics.Activity.Current?.SetTag("message.handler", "CoffeePeek.MediaService.Consumers.DeletePhotoHandler");
                 System.Diagnostics.Activity.Current?.SetTag("handler.type", "CoffeePeek.MediaService.Consumers.DeletePhotoHandler");
                 var deletePhotoHandler = new CoffeePeek.MediaService.Consumers.DeletePhotoHandler(photoRepository, unitOfWorkOfMediaDbContext, minIOStorageService);
-                
+
                 // The actual message execution
                 await deletePhotoHandler.Handle(deletePhotoFromStorageEvent).ConfigureAwait(false);
 
-                
+
                 // Added by EF Core Transaction Middleware
                 var result_of_SaveChangesAsync = await mediaDbContext.SaveChangesAsync(cancellation).ConfigureAwait(false);
 
@@ -75,7 +75,6 @@ namespace Internal.Generated.WolverineHandlers
     }
 
     // END: DeletePhotoFromStorageEventHandler1198080223
-    
-    
-}
 
+
+}

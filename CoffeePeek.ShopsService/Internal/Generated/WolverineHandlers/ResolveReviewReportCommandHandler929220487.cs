@@ -30,12 +30,12 @@ namespace Internal.Generated.WolverineHandlers
             // This service has been marked as requiring service location independent of Wolverine's ability to use constructor injection of everything else
             var shopsDbContext = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<CoffeePeek.Shops.Persistance.Configuration.ShopsDbContext>(serviceScope.ServiceProvider);
             var unitOfWorkOfShopsDbContext = new CoffeePeek.Shared.Persistence.Data.UnitOfWork<CoffeePeek.Shops.Persistance.Configuration.ShopsDbContext>(shopsDbContext);
-            var reviewRepository = new CoffeePeek.Shops.Persistance.Repositories.ReviewRepository(shopsDbContext);
+            var queryCheckInRepository = new CoffeePeek.Shops.Persistance.Repositories.QueryCheckInRepository(shopsDbContext);
             var reviewReportRepository = new CoffeePeek.Shops.Persistance.Repositories.ReviewReportRepository(shopsDbContext);
             // The actual message body
             var resolveReviewReportCommand = (CoffeePeek.Shops.Application.Features.Review.Reports.ResolveReviewReportCommand)context.Envelope.Message;
 
-            
+
             // Enroll the DbContext & IMessagingContext in the outgoing Wolverine outbox transaction
             var efCoreEnvelopeTransaction = new Wolverine.EntityFrameworkCore.Internals.EfCoreEnvelopeTransaction(shopsDbContext, context, _domainEventScraperIEnumerable);
             await context.EnlistInOutboxAsync(efCoreEnvelopeTransaction).ConfigureAwait(false);
@@ -49,15 +49,15 @@ namespace Internal.Generated.WolverineHandlers
             {
                 System.Diagnostics.Activity.Current?.SetTag("message.handler", "CoffeePeek.Shops.Application.Features.Review.Reports.ResolveReviewReportHandler");
                 System.Diagnostics.Activity.Current?.SetTag("handler.type", "CoffeePeek.Shops.Application.Features.Review.Reports.ResolveReviewReportHandler");
-                
-                // The actual message execution
-                var outgoing1 = await CoffeePeek.Shops.Application.Features.Review.Reports.ResolveReviewReportHandler.Handle(resolveReviewReportCommand, reviewReportRepository, reviewRepository, unitOfWorkOfShopsDbContext, _cacheService, cancellation).ConfigureAwait(false);
 
-                
+                // The actual message execution
+                var outgoing1 = await CoffeePeek.Shops.Application.Features.Review.Reports.ResolveReviewReportHandler.Handle(resolveReviewReportCommand, reviewReportRepository, queryCheckInRepository, unitOfWorkOfShopsDbContext, _cacheService, cancellation).ConfigureAwait(false);
+
+
                 // Outgoing, cascaded message
                 await context.EnqueueCascadingAsync(outgoing1).ConfigureAwait(false);
 
-                
+
                 // Added by EF Core Transaction Middleware
                 var result_of_SaveChangesAsync = await shopsDbContext.SaveChangesAsync(cancellation).ConfigureAwait(false);
 
@@ -76,7 +76,6 @@ namespace Internal.Generated.WolverineHandlers
     }
 
     // END: ResolveReviewReportCommandHandler929220487
-    
-    
-}
 
+
+}

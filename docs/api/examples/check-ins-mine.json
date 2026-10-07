@@ -1,0 +1,128 @@
+{
+  "data": {
+    "items": [
+      {
+        "id": "33333333-3333-4333-8333-333333333333",
+        "shop": {
+          "slug": "example-coffee",
+          "canonicalPath": "/coffee-shops/example-coffee",
+          "revision": 1,
+          "isAlias": false
+        },
+        "author": {
+          "slug": "example-author",
+          "canonicalPath": "/users/example-author",
+          "revision": 1,
+          "isAlias": false
+        },
+        "username": "example_author",
+        "shopName": "Example Coffee",
+        "text": "A balanced cappuccino and friendly service.",
+        "rating": {
+          "place": 4,
+          "service": 4,
+          "coffee": 5
+        },
+        "visitedAt": "2026-10-07T09:00:00Z",
+        "createdAtUtc": "2026-10-07T09:00:00Z",
+        "visibility": "Public",
+        "moderationState": "Pending",
+        "contentRevision": 1,
+        "rejectionReason": null,
+        "drinkSlug": "cappuccino",
+        "customDrinkName": null,
+        "drinkNameRu": "\u041A\u0430\u043F\u0443\u0447\u0438\u043D\u043E",
+        "drinkNameEn": "Cappuccino",
+        "photos": [
+          {
+            "id": "66666666-6666-4666-8666-666666666666",
+            "fileName": "cappuccino.jpg",
+            "contentType": "image/jpeg",
+            "storageKey": "check-ins/example-cappuccino.jpg",
+            "sizeBytes": 1200000,
+            "sortIndex": 0,
+            "url": "/api/v1/check-ins/33333333-3333-4333-8333-333333333333/photos/66666666-6666-4666-8666-666666666666"
+          }
+        ],
+        "helpfulCount": 0,
+        "isHelpfulByCurrentUser": false
+      },
+      {
+        "id": "55555555-5555-4555-8555-555555555555",
+        "shop": {
+          "slug": "example-coffee",
+          "canonicalPath": "/coffee-shops/example-coffee",
+          "revision": 1,
+          "isAlias": false
+        },
+        "author": {
+          "slug": "example-author",
+          "canonicalPath": "/users/example-author",
+          "revision": 1,
+          "isAlias": false
+        },
+        "username": "example_author",
+        "shopName": "Example Coffee",
+        "text": "A quiet early visit.",
+        "rating": {
+          "place": 5,
+          "service": 4,
+          "coffee": 4
+        },
+        "visitedAt": "2026-10-07T06:00:00Z",
+        "createdAtUtc": "2026-10-07T06:00:00Z",
+        "visibility": "Private",
+        "moderationState": "NotSubmitted",
+        "contentRevision": 1,
+        "rejectionReason": null,
+        "drinkSlug": null,
+        "customDrinkName": null,
+        "drinkNameRu": null,
+        "drinkNameEn": null,
+        "photos": [],
+        "helpfulCount": 0,
+        "isHelpfulByCurrentUser": false
+      },
+      {
+        "id": "44444444-4444-4444-8444-444444444444",
+        "shop": {
+          "slug": "example-coffee",
+          "canonicalPath": "/coffee-shops/example-coffee",
+          "revision": 1,
+          "isAlias": false
+        },
+        "author": {
+          "slug": "example-author",
+          "canonicalPath": "/users/example-author",
+          "revision": 1,
+          "isAlias": false
+        },
+        "username": "example_author",
+        "shopName": "Example Coffee",
+        "text": "Good coffee during yesterday\u0027s visit.",
+        "rating": {
+          "place": 3,
+          "service": 5,
+          "coffee": 4
+        },
+        "visitedAt": "2026-10-06T21:00:00Z",
+        "createdAtUtc": "2026-10-06T21:00:00Z",
+        "visibility": "Public",
+        "moderationState": "Approved",
+        "contentRevision": 1,
+        "rejectionReason": null,
+        "drinkSlug": null,
+        "customDrinkName": null,
+        "drinkNameRu": null,
+        "drinkNameEn": null,
+        "photos": [],
+        "helpfulCount": 2,
+        "isHelpfulByCurrentUser": false
+      }
+    ],
+    "totalCount": 3
+  },
+  "isSuccess": true,
+  "message": "Operation successful",
+  "statusCode": null
+}

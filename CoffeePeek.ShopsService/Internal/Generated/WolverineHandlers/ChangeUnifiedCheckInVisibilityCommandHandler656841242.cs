@@ -2,23 +2,32 @@
 #pragma warning disable
 using CoffeePeek.Shared.Domain.Interfaces.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using System.Collections.Generic;
+using System.Net.Http;
 
 namespace Internal.Generated.WolverineHandlers
 {
-    // START: ModerationReviewEditedEventHandler162027057
+    // START: ChangeUnifiedCheckInVisibilityCommandHandler656841242
     [global::System.CodeDom.Compiler.GeneratedCode("JasperFx", "1.0.0")]
-    public sealed class ModerationReviewEditedEventHandler162027057 : Wolverine.Runtime.Handlers.MessageHandler
+    public sealed class ChangeUnifiedCheckInVisibilityCommandHandler656841242 : Wolverine.Runtime.Handlers.MessageHandler
     {
         private readonly CoffeePeek.Shared.Domain.Interfaces.Infrastructure.ICacheService _cacheService;
         private readonly Microsoft.Extensions.DependencyInjection.IServiceScopeFactory _serviceScopeFactory;
+        private readonly Microsoft.Extensions.Logging.ILogger<CoffeePeek.Shops.Infrastructure.Media.MediaUploadedPhotoLookup> _loggerOfMediaUploadedPhotoLookup;
+        private readonly Microsoft.Extensions.Options.IOptions<CoffeePeek.Shared.Auth.Options.GatewayAuthOptions> _optionsOfGatewayAuthOptions;
         private readonly System.Collections.Generic.IEnumerable<Wolverine.EntityFrameworkCore.IDomainEventScraper> _domainEventScraperIEnumerable;
+        private readonly System.Net.Http.IHttpClientFactory _httpClientFactory;
 
-        public ModerationReviewEditedEventHandler162027057(CoffeePeek.Shared.Domain.Interfaces.Infrastructure.ICacheService cacheService, Microsoft.Extensions.DependencyInjection.IServiceScopeFactory serviceScopeFactory, System.Collections.Generic.IEnumerable<Wolverine.EntityFrameworkCore.IDomainEventScraper> domainEventScraperIEnumerable)
+        public ChangeUnifiedCheckInVisibilityCommandHandler656841242(CoffeePeek.Shared.Domain.Interfaces.Infrastructure.ICacheService cacheService, Microsoft.Extensions.DependencyInjection.IServiceScopeFactory serviceScopeFactory, Microsoft.Extensions.Logging.ILogger<CoffeePeek.Shops.Infrastructure.Media.MediaUploadedPhotoLookup> loggerOfMediaUploadedPhotoLookup, Microsoft.Extensions.Options.IOptions<CoffeePeek.Shared.Auth.Options.GatewayAuthOptions> optionsOfGatewayAuthOptions, System.Collections.Generic.IEnumerable<Wolverine.EntityFrameworkCore.IDomainEventScraper> domainEventScraperIEnumerable, System.Net.Http.IHttpClientFactory httpClientFactory)
         {
             _cacheService = cacheService;
             _serviceScopeFactory = serviceScopeFactory;
+            _loggerOfMediaUploadedPhotoLookup = loggerOfMediaUploadedPhotoLookup;
+            _optionsOfGatewayAuthOptions = optionsOfGatewayAuthOptions;
             _domainEventScraperIEnumerable = domainEventScraperIEnumerable;
+            _httpClientFactory = httpClientFactory;
         }
 
 
@@ -30,11 +39,14 @@ namespace Internal.Generated.WolverineHandlers
             // This service has been marked as requiring service location independent of Wolverine's ability to use constructor injection of everything else
             var shopsDbContext = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<CoffeePeek.Shops.Persistance.Configuration.ShopsDbContext>(serviceScope.ServiceProvider);
             var unitOfWorkOfShopsDbContext = new CoffeePeek.Shared.Persistence.Data.UnitOfWork<CoffeePeek.Shops.Persistance.Configuration.ShopsDbContext>(shopsDbContext);
-            var reviewRepository = new CoffeePeek.Shops.Persistance.Repositories.ReviewRepository(shopsDbContext);
+            var mediaUploadedPhotoLookup = new CoffeePeek.Shops.Infrastructure.Media.MediaUploadedPhotoLookup(_httpClientFactory, _optionsOfGatewayAuthOptions, _loggerOfMediaUploadedPhotoLookup);
+            var queryCheckInRepository = new CoffeePeek.Shops.Persistance.Repositories.QueryCheckInRepository(shopsDbContext);
+            // This service has been marked as requiring service location independent of Wolverine's ability to use constructor injection of everything else
+            var drinkCatalog = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<CoffeePeek.Shared.Kernel.Drinks.IDrinkCatalog>(serviceScope.ServiceProvider);
             // The actual message body
-            var moderationReviewEditedEvent = (CoffeePeek.Contract.Events.Moderation.ModerationReviewEditedEvent)context.Envelope.Message;
+            var changeUnifiedCheckInVisibilityCommand = (CoffeePeek.Shops.Application.Features.CheckIn.ChangeUnifiedCheckInVisibilityCommand)context.Envelope.Message;
 
-            
+
             // Enroll the DbContext & IMessagingContext in the outgoing Wolverine outbox transaction
             var efCoreEnvelopeTransaction = new Wolverine.EntityFrameworkCore.Internals.EfCoreEnvelopeTransaction(shopsDbContext, context, _domainEventScraperIEnumerable);
             await context.EnlistInOutboxAsync(efCoreEnvelopeTransaction).ConfigureAwait(false);
@@ -46,13 +58,17 @@ namespace Internal.Generated.WolverineHandlers
 
             try
             {
-                System.Diagnostics.Activity.Current?.SetTag("message.handler", "CoffeePeek.Shops.Infrastructure.Consumers.ModerationReviewEditedHandler");
-                System.Diagnostics.Activity.Current?.SetTag("handler.type", "CoffeePeek.Shops.Infrastructure.Consumers.ModerationReviewEditedHandler");
-                
-                // The actual message execution
-                await CoffeePeek.Shops.Infrastructure.Consumers.ModerationReviewEditedHandler.Handle(moderationReviewEditedEvent, reviewRepository, unitOfWorkOfShopsDbContext, _cacheService, cancellation).ConfigureAwait(false);
+                System.Diagnostics.Activity.Current?.SetTag("message.handler", "CoffeePeek.Shops.Application.Features.CheckIn.UpdateUnifiedCheckInHandler");
+                System.Diagnostics.Activity.Current?.SetTag("handler.type", "CoffeePeek.Shops.Application.Features.CheckIn.UpdateUnifiedCheckInHandler");
 
-                
+                // The actual message execution
+                var outgoing1 = await CoffeePeek.Shops.Application.Features.CheckIn.UpdateUnifiedCheckInHandler.Handle(changeUnifiedCheckInVisibilityCommand, queryCheckInRepository, drinkCatalog, mediaUploadedPhotoLookup, unitOfWorkOfShopsDbContext, context, _cacheService, cancellation).ConfigureAwait(false);
+
+
+                // Outgoing, cascaded message
+                await context.EnqueueCascadingAsync(outgoing1).ConfigureAwait(false);
+
+
                 // Added by EF Core Transaction Middleware
                 var result_of_SaveChangesAsync = await shopsDbContext.SaveChangesAsync(cancellation).ConfigureAwait(false);
 
@@ -70,8 +86,7 @@ namespace Internal.Generated.WolverineHandlers
 
     }
 
-    // END: ModerationReviewEditedEventHandler162027057
-    
-    
-}
+    // END: ChangeUnifiedCheckInVisibilityCommandHandler656841242
 
+
+}

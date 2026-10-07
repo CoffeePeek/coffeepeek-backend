@@ -77,11 +77,11 @@ Query params: none.
     "activeUsers": 1198,
     "blockedUsers": 12,
     "totalCoffeeShops": 312,
-    "totalReviews": 2045,
+    "totalCheckIns": 2045,
     "pendingModerationShops": 4,
-    "pendingModerationReviews": 18,
+    "pendingModerationCheckIns": 18,
     "newCoffeeShopsToday": 1,
-    "newReviewsToday": 23,
+    "newCheckInsToday": 23,
     "import": { "pending": 120, "published": 80, "rejected": 40, "skipped": 6, "inFeed": 75 },
     "shopsAvailable": true,
     "moderationAvailable": true,
@@ -108,9 +108,10 @@ Query params: none.
 | `monthlyActiveUsers` | Same, last **30 days** (rolling) |
 | `emailConfirmedUsers` | Users with a confirmed email (Google sign-ups count as confirmed) |
 | `googleUsers` | Users registered through Google (external OAuth provider) |
-| `totalCoffeeShops`, `totalReviews` | Published shops / reviews in the Shops service |
-| `newCoffeeShopsToday`, `newReviewsToday` | Created since 00:00 UTC today |
-| `pendingModerationShops`, `pendingModerationReviews` | Items waiting in moderation |
+| `totalCoffeeShops` | Shop rows in the Shops service |
+| `totalCheckIns` | All currently approved public visits in visible shops; repeated visits count individually |
+| `newCoffeeShopsToday`, `newCheckInsToday` | Created since 00:00 UTC today; check-ins must also be currently approved/public in a visible shop |
+| `pendingModerationShops`, `pendingModerationCheckIns` | Shop items / canonical check-in submission snapshots waiting in moderation |
 | `import.*` | Shop import candidate counts by state |
 | `shopsAvailable`, `moderationAvailable` | `false` when that service did not answer — its numbers are `0`, not real zeros |
 
@@ -154,7 +155,7 @@ New user registrations per UTC day.
 
 ## GET /api/admin/stats/shops/timeseries
 
-New shops, reviews and check-ins per UTC day.
+New shops and check-ins per UTC day.
 
 | Query param | Type | Default | Notes |
 |-------------|------|---------|-------|
@@ -171,11 +172,6 @@ New shops, reviews and check-ins per UTC day.
       { "date": "2026-09-24", "count": 1 },
       { "date": "2026-09-25", "count": 0 }
     ],
-    "newReviews": [
-      { "date": "2026-09-23", "count": 12 },
-      { "date": "2026-09-24", "count": 9 },
-      { "date": "2026-09-25", "count": 4 }
-    ],
     "newCheckIns": [
       { "date": "2026-09-23", "count": 30 },
       { "date": "2026-09-24", "count": 27 },
@@ -189,10 +185,9 @@ New shops, reviews and check-ins per UTC day.
 | Field | Meaning |
 |-------|---------|
 | `newShops` | Published shops created per day |
-| `newReviews` | Reviews created per day, **soft-deleted reviews excluded** |
-| `newCheckIns` | Check-ins created per day (by creation time, not the visit date) |
+| `newCheckIns` | All non-deleted check-ins created per day, including private/pending visits (by creation time, not the visit date) |
 
-All three series have exactly `days` zero-filled entries with identical dates, ascending, ending today (UTC).
+Both series have exactly `days` zero-filled entries with identical dates, ascending, ending today (UTC).
 
 ---
 
@@ -206,7 +201,7 @@ Ratings, top shops and app download statistics. Query params: none.
   "message": "Operation successful",
   "data": {
     "ratings": {
-      "totalReviews": 3,
+      "totalCheckIns": 3,
       "averageRating": 2.89,
       "averagePlace": 3.0,
       "averageService": 3.0,
@@ -222,9 +217,6 @@ Ratings, top shops and app download statistics. Query params: none.
     "topShopsByCheckIns30Days": [
       { "shopId": "0b7f5d0e-7c56-4f5c-9a0e-6f3c1f0f7d11", "name": "Alpha Coffee", "count": 3 },
       { "shopId": "5d3c3a9e-1f5e-4e0e-8a53-1c1f2b0f9e22", "name": "Beta Roasters", "count": 1 }
-    ],
-    "topShopsByReviews": [
-      { "shopId": "5d3c3a9e-1f5e-4e0e-8a53-1c1f2b0f9e22", "name": "Beta Roasters", "count": 2 }
     ],
     "downloads": {
       "total": 3,
@@ -245,12 +237,11 @@ Ratings, top shops and app download statistics. Query params: none.
 
 | Field | Meaning |
 |-------|---------|
-| `ratings.totalReviews` | Non-deleted reviews |
-| `ratings.averageRating` | Mean of per-review average `(place + service + coffee) / 3`, 2 decimals; `0` when there are no reviews |
-| `ratings.averagePlace` / `averageService` / `averageCoffee` | Mean of each dimension (1..5), 2 decimals; `0` when there are no reviews |
-| `ratings.distribution` | **Always 5 buckets**, `stars` 1..5. A review lands in the bucket of its average rating rounded to the nearest integer (4.67 → 5) |
-| `topShopsByCheckIns30Days` | Up to 10 shops by check-ins created in the last **30 days (rolling)**, descending |
-| `topShopsByReviews` | Up to 10 shops by **all-time** non-deleted review count, descending |
+| `ratings.totalCheckIns` | Selected eligible scores: one latest approved public check-in per author/shop in a visible shop |
+| `ratings.averageRating` | Mean of selected `(place + service + coffee) / 3` scores, 2 decimals; `0` when none are eligible |
+| `ratings.averagePlace` / `averageService` / `averageCoffee` | Mean of each selected dimension (1..5), 2 decimals; `0` when none are eligible |
+| `ratings.distribution` | **Always 5 buckets**, `stars` 1..5. Each selected score lands in the bucket of its average rounded to the nearest integer (4.67 → 5) |
+| `topShopsByCheckIns30Days` | Up to 10 shops by all non-deleted check-ins created in the last **30 days (rolling)**, including private/pending visits, descending |
 | `downloads.total` | All-time app download redirect events |
 | `downloads.last30Days` | Redirect events in the last 30 days (rolling) |
 | `downloads.byChannel` | Per channel (e.g. `android`, `ios`): all-time and last-30-days counts, ordered by `total` desc |
@@ -260,7 +251,8 @@ Edge cases:
 
 - Shops that no longer exist are dropped from the top lists (so a list may have fewer than 10 entries).
 - Events without a country are grouped as `"unknown"`.
-- Soft-deleted reviews are ignored everywhere in this endpoint.
+- Rating statistics use the latest current approved public visit per author/shop, ordered by visit time, creation time and ID descending. Hiding, deleting or withdrawing approval falls back to the previous eligible visit.
+- Overview/public/feed counts include every eligible visit; `ratings.totalCheckIns` counts only the selected scores, so these totals can differ.
 
 ---
 
@@ -274,12 +266,12 @@ Moderation SLA, pending queues and moderator workload. Query params: none.
   "message": "Operation successful",
   "data": {
     "sla": {
-      "reviewsModerated30Days": 42,
-      "avgReviewModerationHours": 3.0
+      "checkInsModerated30Days": 42,
+      "avgCheckInModerationHours": 3.0
     },
     "queues": [
       { "queue": "shops", "pending": 1, "oldestPendingHours": 10.0 },
-      { "queue": "reviews", "pending": 1, "oldestPendingHours": 30.0 },
+      { "queue": "checkIns", "pending": 1, "oldestPendingHours": 30.0 },
       { "queue": "roasters", "pending": 0, "oldestPendingHours": null },
       { "queue": "changeRequests", "pending": 1, "oldestPendingHours": 5.0 },
       { "queue": "issueReports", "pending": 1, "oldestPendingHours": 2.0 }
@@ -296,9 +288,9 @@ Moderation SLA, pending queues and moderator workload. Query params: none.
 
 | Field | Meaning |
 |-------|---------|
-| `sla.reviewsModerated30Days` | Reviews approved or rejected in the last 30 days (rolling) |
-| `sla.avgReviewModerationHours` | Mean hours from review submission to the moderation decision, 1 decimal; `null` when nothing was moderated in the window |
-| `queues` | **Always 5 entries in this order:** `shops`, `reviews`, `roasters`, `changeRequests`, `issueReports` |
+| `sla.checkInsModerated30Days` | Canonical submission snapshots currently approved/rejected with a decision in the last 30 days (rolling) |
+| `sla.avgCheckInModerationHours` | Mean hours from snapshot creation to the moderation decision, 1 decimal; `null` when nothing was moderated in the window |
+| `queues` | **Always 5 entries in this order:** `shops`, `checkIns`, `roasters`, `changeRequests`, `issueReports` |
 | `queues[].pending` | Items currently waiting (issue reports: status `Submitted`) |
 | `queues[].oldestPendingHours` | Age in hours of the oldest pending item, 1 decimal; `null` when the queue is empty |
 | `oldestPendingHours` | Maximum `oldestPendingHours` across queues; `null` when all queues are empty |
@@ -307,7 +299,7 @@ Moderation SLA, pending queues and moderator workload. Query params: none.
 Notes:
 
 - Only moderator user IDs are returned (no names/emails). Resolve display names via the admin users API if needed.
-- `queues[reviews].pending` uses the same definition as `pendingModerationReviews` in the overview.
+- `queues[checkIns].pending` uses the same definition as `pendingModerationCheckIns` in the overview.
 
 ---
 
@@ -336,11 +328,11 @@ export interface AdminOverviewStatsDto {
   activeUsers: number;
   blockedUsers: number;
   totalCoffeeShops: number;
-  totalReviews: number;
+  totalCheckIns: number;
   pendingModerationShops: number;
-  pendingModerationReviews: number;
+  pendingModerationCheckIns: number;
   newCoffeeShopsToday: number;
-  newReviewsToday: number;
+  newCheckInsToday: number;
   import: AdminImportOverviewStatsDto;
   shopsAvailable: boolean;
   moderationAvailable: boolean;
@@ -366,7 +358,6 @@ export interface AdminUsersTimeseriesDto {
 export interface AdminShopsTimeseriesDto {
   days: number;
   newShops: AdminDailyCountDto[];
-  newReviews: AdminDailyCountDto[];
   newCheckIns: AdminDailyCountDto[];
 }
 
@@ -377,7 +368,7 @@ export interface AdminRatingBucketDto {
 }
 
 export interface AdminRatingStatsDto {
-  totalReviews: number;
+  totalCheckIns: number;
   averageRating: number;
   averagePlace: number;
   averageService: number;
@@ -412,21 +403,20 @@ export interface AdminAppDownloadStatsDto {
 export interface AdminShopsInsightsDto {
   ratings: AdminRatingStatsDto;
   topShopsByCheckIns30Days: AdminTopShopDto[];
-  topShopsByReviews: AdminTopShopDto[];
   downloads: AdminAppDownloadStatsDto;
 }
 
 // GET /api/admin/stats/moderation/insights
 export type AdminModerationQueueName =
   | "shops"
-  | "reviews"
+  | "checkIns"
   | "roasters"
   | "changeRequests"
   | "issueReports";
 
 export interface AdminModerationSlaDto {
-  reviewsModerated30Days: number;
-  avgReviewModerationHours: number | null;
+  checkInsModerated30Days: number;
+  avgCheckInModerationHours: number | null;
 }
 
 export interface AdminModerationQueueDto {
@@ -464,7 +454,6 @@ const rows = users.data.newUsers.map((u, i) => ({
   date: u.date,
   newUsers: u.count,
   newShops: shops.data.newShops[i]?.count ?? 0,
-  newReviews: shops.data.newReviews[i]?.count ?? 0,
   newCheckIns: shops.data.newCheckIns[i]?.count ?? 0,
 }));
 ```

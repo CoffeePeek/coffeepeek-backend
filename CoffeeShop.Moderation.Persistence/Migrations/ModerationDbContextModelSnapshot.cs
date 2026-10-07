@@ -55,10 +55,16 @@ namespace CoffeeShop.Moderation.Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<Guid>("CheckInId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("Comment")
                         .IsRequired()
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
+
+                    b.Property<int>("ContentRevision")
+                        .HasColumnType("integer");
 
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("timestamp with time zone");
@@ -66,6 +72,9 @@ namespace CoffeeShop.Moderation.Persistence.Migrations
                     b.Property<string>("CustomDrinkName")
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
+
+                    b.Property<long>("DecisionSequence")
+                        .HasColumnType("bigint");
 
                     b.Property<string>("DrinkNameEn")
                         .HasMaxLength(100)
@@ -79,10 +88,6 @@ namespace CoffeeShop.Moderation.Persistence.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
-                    b.Property<string>("Header")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
                     b.Property<bool>("IsSoftDelete")
                         .HasColumnType("boolean");
 
@@ -90,9 +95,6 @@ namespace CoffeeShop.Moderation.Persistence.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<Guid?>("ModeratedBy")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid?>("ModerationShopId")
                         .HasColumnType("uuid");
 
                     b.Property<int>("ModerationStatus")
@@ -122,19 +124,26 @@ namespace CoffeeShop.Moderation.Persistence.Migrations
                         .HasColumnType("xid")
                         .HasColumnName("xmin");
 
+                    b.Property<DateTime>("VisitedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
                     b.HasKey("Id");
 
                     b.HasIndex("ModeratedBy");
-
-                    b.HasIndex("ModerationShopId");
 
                     b.HasIndex("ShopId");
 
                     b.HasIndex("UserId");
 
+                    b.HasIndex("CheckInId", "ContentRevision")
+                        .IsUnique();
+
                     b.HasIndex("ModerationStatus", "CreatedAtUtc");
 
-                    b.ToTable("ModerationReviews");
+                    b.ToTable("ModerationCheckIns", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_ModerationCheckIns_CanonicalSnapshot", "\"CheckInId\" <> '00000000-0000-0000-0000-000000000000'::uuid AND \"ContentRevision\" > 0 AND length(btrim(\"Comment\")) > 0 AND \"Rating_Place\" BETWEEN 1 AND 5 AND \"Rating_Service\" BETWEEN 1 AND 5 AND \"Rating_Coffee\" BETWEEN 1 AND 5");
+                        });
                 });
 
             modelBuilder.Entity("CoffeePeek.Moderation.Domain.Aggregates.ModerationRoaster", b =>
@@ -704,6 +713,9 @@ namespace CoffeeShop.Moderation.Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("CheckInPhotoId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("ContentType")
                         .IsRequired()
                         .HasColumnType("text");
@@ -715,7 +727,7 @@ namespace CoffeeShop.Moderation.Persistence.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<Guid?>("ModerationReviewId")
+                    b.Property<Guid?>("ModerationCheckInId")
                         .HasColumnType("uuid");
 
                     b.Property<Guid?>("ModerationShopId")
@@ -727,6 +739,9 @@ namespace CoffeeShop.Moderation.Persistence.Migrations
                     b.Property<long>("SizeBytes")
                         .HasColumnType("bigint");
 
+                    b.Property<int>("SortIndex")
+                        .HasColumnType("integer");
+
                     b.Property<string>("StorageKey")
                         .IsRequired()
                         .HasColumnType("text");
@@ -736,7 +751,7 @@ namespace CoffeeShop.Moderation.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ModerationReviewId");
+                    b.HasIndex("ModerationCheckInId");
 
                     b.HasIndex("ModerationShopId");
 
@@ -756,11 +771,6 @@ namespace CoffeeShop.Moderation.Persistence.Migrations
 
             modelBuilder.Entity("CoffeePeek.Moderation.Domain.Aggregates.ModerationReviewAggregate.ModerationReview", b =>
                 {
-                    b.HasOne("CoffeePeek.Moderation.Domain.Aggregates.ModerationShop", "ModerationShop")
-                        .WithMany()
-                        .HasForeignKey("ModerationShopId")
-                        .OnDelete(DeleteBehavior.Cascade);
-
                     b.OwnsOne("CoffeePeek.Moderation.Domain.Aggregates.ModerationReviewAggregate.Rating", "Rating", b1 =>
                         {
                             b1.Property<Guid>("ModerationReviewId")
@@ -780,13 +790,11 @@ namespace CoffeeShop.Moderation.Persistence.Migrations
 
                             b1.HasKey("ModerationReviewId");
 
-                            b1.ToTable("ModerationReviews");
+                            b1.ToTable("ModerationCheckIns");
 
                             b1.WithOwner()
                                 .HasForeignKey("ModerationReviewId");
                         });
-
-                    b.Navigation("ModerationShop");
 
                     b.Navigation("Rating")
                         .IsRequired();
@@ -1263,7 +1271,7 @@ namespace CoffeeShop.Moderation.Persistence.Migrations
                 {
                     b.HasOne("CoffeePeek.Moderation.Domain.Aggregates.ModerationReviewAggregate.ModerationReview", null)
                         .WithMany("ReviewPhotos")
-                        .HasForeignKey("ModerationReviewId");
+                        .HasForeignKey("ModerationCheckInId");
 
                     b.HasOne("CoffeePeek.Moderation.Domain.Aggregates.ModerationShop", null)
                         .WithMany("ShopPhotos")

@@ -1,6 +1,6 @@
 # CoffeePeek Backend
 
-CoffeePeek is a platform for discovering specialty coffee shops: search and map, reviews and check-ins, owner
+CoffeePeek is a platform for discovering specialty coffee shops: search and map, check-ins, owner
 tools, and a moderation pipeline for user suggestions and bulk imports (OSM, files).
 This repository is the **backend only** — a set of .NET 10 microservices behind a YARP gateway.
 
@@ -22,7 +22,7 @@ This repository is the **backend only** — a set of .NET 10 microservices behin
 |---|---|
 | **Gateway** (YARP) | Single entry point: JWT validation, CORS, per-client rate limiting, routing, Scalar API docs |
 | **Account** | Users, email + Google sign-in, JWT issuing, profiles, account deletion, user statistics |
-| **Shops** | Published catalog: shops, search, map/clusters, coffee zones, reviews, check-ins, menus (OpenAI vision parsing), owner and admin tools, app downloads |
+| **Shops** | Published catalog: shops, search, map/clusters, coffee zones, check-ins, menus (OpenAI vision parsing), owner and admin tools, app downloads |
 | **Moderation** | Review queue for shop/roaster/review suggestions, shop change requests and issue reports; import pipeline (OSM Overpass, files, Google Places status, Yandex geocoding); audit log |
 | **Media** | Uploads and photo storage (MinIO / S3) |
 
@@ -216,8 +216,8 @@ Main route groups through the gateway:
 | Routes | Service |
 |---|---|
 | `/api/Users/*`, `/api/Tokens/*` | Account |
-| `/api/CoffeeShops/*`, `/api/Map/*`, `/api/Catalogs/*`, `/api/CheckIns/*`, `/api/CoffeeShopReviews/*`, `/api/menu/*`, `/api/roasters/*`, `/api/owner/*`, `/api/public/stats` | Shops |
-| `/api/ModerationShops/*`, `/api/ModerationReviews/*`, `/api/ModerationRoasters/*`, `/api/ShopChangeRequests/*`, `/api/ShopIssueReports/*` | Moderation |
+| `/api/CoffeeShops/*`, `/api/Map/*`, `/api/Catalogs/*`, `/api/v1/check-ins/*`, `/api/menu/*`, `/api/roasters/*`, `/api/owner/*`, `/api/public/stats` | Shops |
+| `/api/ModerationShops/*`, `/api/v1/moderation/check-ins/*`, `/api/ModerationRoasters/*`, `/api/ShopChangeRequests/*`, `/api/ShopIssueReports/*` | Moderation |
 | `/api/Photos/*` | Media |
 | `/api/admin/*` | Admin tools (Moderator/Admin roles) |
 | `/download/*`, `/api/v1/app-downloads`, `/api/v1/app-version` | App download links, update policy |

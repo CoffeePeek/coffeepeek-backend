@@ -27,16 +27,16 @@ namespace Internal.Generated.WolverineHandlers
 
         public override async System.Threading.Tasks.Task HandleAsync(Wolverine.Runtime.MessageContext context, System.Threading.CancellationToken cancellation)
         {
-            using var minIOStorageService = new CoffeePeek.MediaService.Services.MinIOStorageService(_optionsOfMinIOOptions, _optionsOfMediaPublicUrlOptions);
             await using var serviceScope = _serviceScopeFactory.CreateAsyncScope();
             Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<Wolverine.Runtime.ScopedMessageContextHolder>(serviceScope.ServiceProvider).Context = context;
             // This service has been marked as requiring service location independent of Wolverine's ability to use constructor injection of everything else
             var mediaDbContext = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<CoffeePeek.MediaService.Data.MediaDbContext>(serviceScope.ServiceProvider);
+            using var minIOStorageService = new CoffeePeek.MediaService.Services.MinIOStorageService(_optionsOfMinIOOptions, _optionsOfMediaPublicUrlOptions);
             var photoRepository = new CoffeePeek.MediaService.Repositories.PhotoRepository(mediaDbContext);
             // The actual message body
             var resolveUploadedPhotosQuery = (CoffeePeek.MediaService.Commands.ResolveUploadedPhotosQuery)context.Envelope.Message;
 
-            
+
             // Enroll the DbContext & IMessagingContext in the outgoing Wolverine outbox transaction
             var efCoreEnvelopeTransaction = new Wolverine.EntityFrameworkCore.Internals.EfCoreEnvelopeTransaction(mediaDbContext, context, _domainEventScraperIEnumerable);
             await context.EnlistInOutboxAsync(efCoreEnvelopeTransaction).ConfigureAwait(false);
@@ -50,15 +50,15 @@ namespace Internal.Generated.WolverineHandlers
             {
                 System.Diagnostics.Activity.Current?.SetTag("message.handler", "CoffeePeek.MediaService.Handlers.ResolveUploadedPhotosHandler");
                 System.Diagnostics.Activity.Current?.SetTag("handler.type", "CoffeePeek.MediaService.Handlers.ResolveUploadedPhotosHandler");
-                
+
                 // The actual message execution
                 var outgoing1 = await CoffeePeek.MediaService.Handlers.ResolveUploadedPhotosHandler.Handle(resolveUploadedPhotosQuery, photoRepository, minIOStorageService, cancellation).ConfigureAwait(false);
 
-                
+
                 // Outgoing, cascaded message
                 await context.EnqueueCascadingAsync(outgoing1).ConfigureAwait(false);
 
-                
+
                 // Added by EF Core Transaction Middleware
                 var result_of_SaveChangesAsync = await mediaDbContext.SaveChangesAsync(cancellation).ConfigureAwait(false);
 
@@ -77,7 +77,6 @@ namespace Internal.Generated.WolverineHandlers
     }
 
     // END: ResolveUploadedPhotosQueryHandler1073871653
-    
-    
-}
 
+
+}
