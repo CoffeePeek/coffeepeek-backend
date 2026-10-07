@@ -16,29 +16,12 @@ public class SearchCoffeeShopsHandler
         ICacheService redisService,
         CancellationToken ct)
     {
-        var searchHash = CreateSearchHash(queryRequest);
-        var cacheKey = CacheKey.Shop.Search(searchHash);
-        var cacheTtl = ShopScheduleCachePolicy.UntilNextUtcMinute(DateTime.UtcNow);
-
-        var cachedResponse = await redisService.GetAsync(cacheKey, async token =>
+        var (items, totalCount) = await coffeeShopQueries.Search(queryRequest, ct);
+        var cachedResponse = new GetCoffeeShopsResponse
         {
-            var (items, totalCount) = await coffeeShopQueries.Search(queryRequest, token);
-            
-            return new GetCoffeeShopsResponse
-            {
-                CoffeeShops = items,
-                TotalItems = totalCount,
-                CurrentPage = queryRequest.PageNumber,
-                PageSize = queryRequest.PageSize,
-                TotalPages = (int)Math.Ceiling(totalCount / (double)queryRequest.PageSize)
-            };
-        }, expiration: cacheTtl, cancellationToken: ct);
-        
-        if (cachedResponse == null) return Response<GetCoffeeShopsResponse>.Error("Failed to retrieve coffee shop search results");
-
-        // Old cache entries omitted PageSize (defaulted to 0). Echo the requested size so
-        // clients never paginate with pageSize=0.
-        cachedResponse.PageSize = queryRequest.PageSize;
+            CoffeeShops = items, TotalItems = totalCount, CurrentPage = queryRequest.PageNumber,
+            PageSize = queryRequest.PageSize, TotalPages = (int)Math.Ceiling(totalCount / (double)queryRequest.PageSize)
+        };
 
         if (queryRequest.UserId.HasValue)
         {

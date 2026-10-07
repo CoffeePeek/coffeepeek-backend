@@ -10,10 +10,8 @@ namespace CoffeePeek.Contract.Dtos.PublicAddresses;
 public sealed record PublicShopDetailsDto : PublicShopSummaryDto
 {
     public string? Description { get; init; }
-    public PublicReviewDto[] Reviews { get; init; } = [];
+    public PublicCheckInDto[] CheckIns { get; init; } = [];
     public PublicCheckInDto[] UserCheckIns { get; init; } = [];
-    public bool? CanCreateReview { get; init; }
-    public Guid? ExistingReviewId { get; init; }
     public List<ScheduleDto>? Schedules { get; init; }
     public PublicTagDto[] Tags { get; init; } = [];
     public ShopMenuDto? Menu { get; init; }

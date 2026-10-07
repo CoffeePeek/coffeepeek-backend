@@ -18,11 +18,11 @@ public record AdminOverviewStatsDto(
     int ActiveUsers,
     int BlockedUsers,
     int TotalCoffeeShops,
-    int TotalReviews,
+    int TotalCheckIns,
     int PendingModerationShops,
-    int PendingModerationReviews,
+    int PendingModerationCheckIns,
     int NewCoffeeShopsToday,
-    int NewReviewsToday,
+    int NewCheckInsToday,
     AdminImportOverviewStatsDto Import,
     bool ShopsAvailable = true,
     bool ModerationAvailable = true,
@@ -32,10 +32,3 @@ public record AdminOverviewStatsDto(
     int DeletedUsers = 0,
     int EmailConfirmedUsers = 0,
     int GoogleUsers = 0);
-
-public record AdminImportOverviewStatsDto(
-    int Pending,
-    int Published,
-    int Rejected,
-    int Skipped,
-    int InFeed);

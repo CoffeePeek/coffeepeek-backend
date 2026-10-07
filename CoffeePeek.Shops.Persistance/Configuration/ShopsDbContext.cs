@@ -11,8 +11,6 @@ using CoffeePeek.Shops.Application.PublicAddresses;
 using CoffeePeek.Shops.Persistance.PublicAddresses;
 using Microsoft.Extensions.Options;
 using Microsoft.EntityFrameworkCore;
-using CoffeePeek.Shops.Domain.Aggregates.ReviewAggregate;
-using Review = CoffeePeek.Shops.Domain.Aggregates.ReviewAggregate.Review;
 using CheckIn = CoffeePeek.Shops.Domain.Aggregates.CheckInAggregate.CheckIn;
 
 namespace CoffeePeek.Shops.Persistance.Configuration;
@@ -50,23 +48,22 @@ public class ShopsDbContext(DbContextOptions<ShopsDbContext> options, IOptions<P
     }
     //category
     public virtual DbSet<BrewMethod> BrewMethods { get; set; }
-    
+
     public virtual DbSet<CoffeeBean> CoffeeBeans { get; set; }
-    
-    public virtual DbSet<Review> Reviews { get; set; }
-    public virtual DbSet<ReviewReport> ReviewReports { get; set; }
-    public virtual DbSet<ReviewHelpfulVote> ReviewHelpfulVotes { get; set; }
+
+    public virtual DbSet<CoffeePeek.Shops.Domain.Aggregates.ReviewAggregate.ReviewReport> ReviewReports { get; set; }
     public virtual DbSet<CheckIn> CheckIns { get; set; }
-    
+    public virtual DbSet<Domain.Aggregates.CheckInAggregate.CheckInHelpfulVote> CheckInHelpfulVotes { get; set; }
+
     public virtual DbSet<Roaster> Roasters { get; set; }
-    
+
     public virtual DbSet<CoffeeShop> Shops { get; set; }
-    
+
     public virtual DbSet<ShopPhoto> ShopPhotos { get; set; }
     public virtual DbSet<AppliedShopChangeRequest> AppliedShopChangeRequests { get; set; }
 
     public virtual DbSet<RoasterPhoto> RoasterPhotos { get; set; }
-    
+
     public virtual DbSet<City> Cities { get; set; }
     public virtual DbSet<CoffeeZone> CoffeeZones { get; set; }
     public virtual DbSet<CoffeeZoneMembershipOverride> CoffeeZoneMembershipOverrides { get; set; }
@@ -115,90 +112,48 @@ public class ShopsDbContext(DbContextOptions<ShopsDbContext> options, IOptions<P
         modelBuilder.ApplyConfiguration(new AndroidReleaseConfiguration());
         modelBuilder.ApplyConfiguration(new AppDistributionAuditLogConfiguration());
         modelBuilder.ApplyConfiguration(new AppDownloadRedirectEventConfiguration());
-        
-        modelBuilder.Entity<Review>(entity =>
+        modelBuilder.Entity<Domain.Aggregates.CheckInAggregate.CheckInHelpfulVote>(entity =>
         {
-            entity.Property(r => r.Version).IsRowVersion();
-            entity.HasKey(r => r.Id);
-            entity.HasIndex(r => r.CoffeeShopId);
-            entity.HasIndex(r => r.UserId);
-            // Backstop for the read-then-insert upsert in ModerationReviewApprovedHandler.
-            entity.HasIndex(r => r.ModerationReviewId)
-                .IsUnique()
-                .HasFilter("\"ModerationReviewId\" IS NOT NULL");
-            entity.Property(r => r.CoffeeShopId).IsRequired();
-            entity.Property(r => r.ModerationReviewId);
-
-            entity.Property(r => r.Header)
-                .IsRequired(false)
-                .HasMaxLength(BusinessConstants.MaxReviewHeaderLength);
-            entity.Property(r => r.DrinkSlug).HasMaxLength(50);
-            entity.Property(r => r.CustomDrinkName).HasMaxLength(100);
-            entity.Property(r => r.DrinkNameRu).HasMaxLength(100);
-            entity.Property(r => r.DrinkNameEn).HasMaxLength(100);
-            entity.Property(r => r.Comment).HasMaxLength(BusinessConstants.MaxReviewCommentLength);
-            entity.Property(r => r.UserName).IsRequired().HasMaxLength(30);
-            entity.Property(r => r.HelpfulCount).HasDefaultValue(0);
-            entity.ToTable(t => t.HasCheckConstraint(
-                "CK_Reviews_HelpfulCount_NonNegative",
-                "\"HelpfulCount\" >= 0"));
-
-            // Foreign key without navigation property (DDD aggregate separation)
-            entity.HasOne<CoffeeShop>()
-                .WithMany()
-                .HasForeignKey(r => r.CoffeeShopId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            entity.OwnsOne<Rating>(r => r.Rating);
-
-            // The backing field name (_shopPhotos) doesn't match EF's convention for "Photos";
-            // without this, Include/materialization would try to write into a ReadOnlyCollection.
-            // Access mode/backing field are not part of the snapshot -> no migration.
-            entity.Navigation(r => r.Photos)
-                .HasField("_shopPhotos")
-                .UsePropertyAccessMode(PropertyAccessMode.Field);
+            entity.HasKey(x => new { x.CheckInId, x.UserId });
+            entity.HasIndex(x => new { x.UserId, x.CheckInId });
+            entity.HasOne<CheckIn>().WithMany().HasForeignKey(x => x.CheckInId).OnDelete(DeleteBehavior.Restrict);
         });
 
-        modelBuilder.Entity<ReviewHelpfulVote>(entity =>
-        {
-            entity.HasKey(v => new { v.ReviewId, v.UserId });
-            entity.HasIndex(v => new { v.UserId, v.ReviewId });
-            entity.Property(v => v.CreatedAtUtc).IsRequired();
-
-            entity.HasOne<Review>()
-                .WithMany()
-                .HasForeignKey(v => v.ReviewId)
-                .OnDelete(DeleteBehavior.Cascade);
-        });
-        
         modelBuilder.Entity<CheckIn>(entity =>
         {
             entity.HasKey(c => c.Id);
             entity.HasIndex(c => c.UserId);
             entity.HasIndex(c => c.ShopId);
-            entity.HasIndex(c => c.ReviewId);
             entity.HasIndex(c => new { c.UserId, c.ShopId });
-            
+
             entity.Property(c => c.ShopId).IsRequired();
-            entity.Property(c => c.ReviewId).IsRequired(false);
-                
+
+            entity.Property(c => c.Note).IsRequired().HasMaxLength(BusinessConstants.MaxCheckInNoteLength);
+            entity.Property(c => c.Username).HasMaxLength(30).HasDefaultValue("");
+            entity.Property(c => c.Visibility).HasDefaultValue(Domain.Aggregates.CheckInAggregate.CheckInVisibility.Private);
+            entity.Property(c => c.ContentRevision).HasDefaultValue(1);
+            entity.Property(c => c.ModerationState).HasDefaultValue(Domain.Aggregates.CheckInAggregate.CheckInModerationState.NotSubmitted);
+            entity.Property(c => c.RowVersion).IsConcurrencyToken();
+            entity.Ignore(c => c.IsPubliclyVisible);
+            entity.HasIndex(c => new { c.Visibility, c.ModerationState, c.CreatedAtUtc, c.Id });
+            entity.HasIndex(c => new { c.UserId, c.ShopId, c.VisitedAt, c.CreatedAtUtc, c.Id });
             entity.Property(c => c.DrinkSlug).HasMaxLength(50);
             entity.Property(c => c.CustomDrinkName).HasMaxLength(100);
             entity.Property(c => c.DrinkNameRu).HasMaxLength(100);
             entity.Property(c => c.DrinkNameEn).HasMaxLength(100);
-            entity.Property(c => c.Note).HasMaxLength(BusinessConstants.MaxCheckInNoteLength);
-            
+            entity.HasMany(c => c.ShopPhotos).WithOne().HasForeignKey("CanonicalCheckInId");
+            entity.Navigation(c => c.ShopPhotos).HasField("_shopPhotos")
+                .UsePropertyAccessMode(PropertyAccessMode.Field);
+            entity.ToTable("CanonicalCheckIns", t => t.HasCheckConstraint("CK_CanonicalCheckIns_CompleteContent",
+                "(\"Note\" IS NOT NULL AND length(btrim(\"Note\")) BETWEEN 1 AND 1000 AND \"Rating_Place\" BETWEEN 1 AND 5 AND \"Rating_Service\" BETWEEN 1 AND 5 AND \"Rating_Coffee\" BETWEEN 1 AND 5)"));
+            entity.ToTable("CanonicalCheckIns", t => t.HasCheckConstraint("CK_CanonicalCheckIns_Visibility", "\"Visibility\" IN (0, 1)"));
+
             // Foreign keys without navigation properties (DDD aggregate separation)
             entity.HasOne<CoffeeShop>()
                 .WithMany()
                 .HasForeignKey(c => c.ShopId)
                 .OnDelete(DeleteBehavior.Cascade);
-                
-            entity.HasOne<Review>()
-                .WithMany()
-                .HasForeignKey(c => c.ReviewId)
-                .OnDelete(DeleteBehavior.SetNull);
-            
+
             entity.OwnsOne<Rating>(r => r.Rating);
         });
 
@@ -212,7 +167,7 @@ public class ShopsDbContext(DbContextOptions<ShopsDbContext> options, IOptions<P
                 .HasForeignKey(e => e.CategoryId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
-        
+
         modelBuilder.Entity<EquipmentCategory>(entity =>
         {
             entity.HasKey(e => e.Id);

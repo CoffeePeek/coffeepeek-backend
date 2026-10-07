@@ -8,199 +8,153 @@ namespace CoffeePeek.Moderation.Domain.Tests;
 
 public class ModerationReviewTests
 {
-    private static readonly Guid ValidShopId = Guid.NewGuid();
-    private static readonly Guid ValidUserId = Guid.NewGuid();
-    private static readonly Guid ValidModerationShopId = Guid.NewGuid();
-    private const string ValidUserName = "user";
-    private const string ValidHeader = "Valid Header";
-    private const string ValidComment = "Valid comment text here";
-    private const int ValidRating = 3;
+    private static ModerationReview Snapshot(string text = "A complete check-in") =>
+        ModerationReview.CreateCheckInSnapshot(Guid.NewGuid(), 1, Guid.NewGuid(), Guid.NewGuid(),
+            "user", text, 3, 3, 3, null, DateTime.UtcNow, []);
 
     [Fact]
-    public void Create_WithNullModerationShopId_Succeeds()
+    public void Snapshot_PreservesIdentityRevisionAndVisitTime()
     {
-        var review = CreateReview(ValidShopId, moderationShopId: null);
+        var id = Guid.NewGuid();
+        var drink = new CoffeePeek.Shared.Kernel.Drinks.DrinkSelection("latte", null, "Латте", "Latte");
+        var visitedAt = DateTime.UtcNow.AddDays(-1);
+        var snapshot = ModerationReview.CreateCheckInSnapshot(id, 4, Guid.NewGuid(), Guid.NewGuid(),
+            "user", " Y ", 5, 4, 3, drink, visitedAt, []);
 
-        review.ShopId.Should().Be(ValidShopId);
-        review.ModerationShopId.Should().BeNull();
-        review.Header.Should().Be(ValidHeader);
-        review.Comment.Should().Be(ValidComment);
+        snapshot.CheckInId.Should().Be(id);
+        snapshot.ContentRevision.Should().Be(4);
+        snapshot.VisitedAtUtc.Should().Be(visitedAt);
+        snapshot.DrinkSlug.Should().Be(drink.Slug);
+        snapshot.DrinkNameRu.Should().Be(drink.NameRu);
+        snapshot.DrinkNameEn.Should().Be(drink.NameEn);
+        snapshot.Comment.Should().Be("Y");
+        snapshot.ModerationStatus.Should().Be(ModerationStatus.Pending);
     }
 
-    [Fact]
-    public void Create_WithEmptyModerationShopId_StoresNull()
+    [Theory]
+    [InlineData(0)]
+    [InlineData(1)]
+    [InlineData(2)]
+    [InlineData(3)]
+    public void Snapshot_InvalidIdentityOrRevision_ThrowsDomainException(int invalidField)
     {
-        var review = CreateReview(ValidShopId, Guid.Empty);
-
-        review.ModerationShopId.Should().BeNull();
-    }
-
-    [Fact]
-    public void Create_WithEmptyShopId_ThrowsDomainException()
-    {
-        var act = () => CreateReview(Guid.Empty, ValidModerationShopId);
-
-        act.Should().Throw<DomainException>().WithMessage("*shopId*");
-    }
-
-    [Fact]
-    public void Create_WithBlankHeader_StoresNullHeader()
-    {
-        var review = CreateReview(ValidShopId, ValidModerationShopId, header: " ");
-
-        review.Header.Should().BeNull();
-    }
-
-    [Fact]
-    public void Create_WithHeaderTooShort_ThrowsDomainException()
-    {
-        var act = () => CreateReview(ValidShopId, ValidModerationShopId, header: "ab");
-
-        act.Should().Throw<DomainException>().WithMessage("*header*");
-    }
-
-    [Fact]
-    public void Create_WithBlankComment_ThrowsDomainException()
-    {
-        var act = () => CreateReview(ValidShopId, ValidModerationShopId, comment: "   ");
-
-        act.Should().Throw<DomainException>().WithMessage("*comment*");
-    }
-
-    [Fact]
-    public void Create_WithCommentTooShort_ThrowsDomainException()
-    {
-        var act = () => CreateReview(ValidShopId, ValidModerationShopId, comment: "Short");
-
-        act.Should().Throw<DomainException>().WithMessage("*comment*");
-    }
-
-    [Fact]
-    public void Approve_WhenPending_ReturnsTrueAndSetsApproved()
-    {
-        var review = CreateReview(ValidShopId, ValidModerationShopId);
-        var moderatorId = Guid.NewGuid();
-
-        var changed = review.Approve(moderatorId);
-
-        changed.Should().BeTrue();
-        review.ModerationStatus.Should().Be(ModerationStatus.Approved);
-        review.ModeratedBy.Should().Be(moderatorId);
-    }
-
-    [Fact]
-    public void Approve_WhenAlreadyApproved_ReturnsFalseWithoutThrowing()
-    {
-        var review = CreateReview(ValidShopId, ValidModerationShopId);
-        var moderatorId = Guid.NewGuid();
-        review.Approve(moderatorId);
-        var moderatedAtAfterFirstApprove = review.ModeratedAt;
-
-        var changed = false;
-        var act = () => changed = review.Approve(moderatorId);
-
-        act.Should().NotThrow();
-        changed.Should().BeFalse();
-        review.ModerationStatus.Should().Be(ModerationStatus.Approved);
-        review.ModeratedAt.Should().Be(moderatedAtAfterFirstApprove);
-    }
-
-    [Fact]
-    public void Reject_WithValidReasonAndModerator_SetsRejectedStatusReasonAndModerator()
-    {
-        var review = CreateReview(ValidShopId, ValidModerationShopId);
-        var moderatorId = Guid.NewGuid();
-
-        review.Reject("Inappropriate content", moderatorId);
-
-        review.ModerationStatus.Should().Be(ModerationStatus.Rejected);
-        review.RejectedReason.Should().Be("Inappropriate content");
-        review.ModeratedBy.Should().Be(moderatorId);
-        review.ModeratedAt.Should().NotBeNull();
-    }
-
-    [Fact]
-    public void Reject_WithEmptyModeratorId_ThrowsDomainException()
-    {
-        var review = CreateReview(ValidShopId, ValidModerationShopId);
-
-        var act = () => review.Reject("Inappropriate content", Guid.Empty);
-
-        act.Should().Throw<DomainException>().WithMessage("*moderatorId*");
-        review.ModerationStatus.Should().Be(ModerationStatus.Pending);
+        Action create = () => ModerationReview.CreateCheckInSnapshot(
+            invalidField == 0 ? Guid.Empty : Guid.NewGuid(), invalidField == 1 ? 0 : 1,
+            invalidField == 2 ? Guid.Empty : Guid.NewGuid(), invalidField == 3 ? Guid.Empty : Guid.NewGuid(),
+            "user", "Y", 3, 3, 3, null, DateTime.UtcNow, []);
+        create.Should().Throw<DomainException>();
     }
 
     [Theory]
     [InlineData(null)]
     [InlineData("")]
     [InlineData("   ")]
-    public void Reject_WithNullOrWhitespaceReason_ThrowsDomainException(string? reason)
+    public void Snapshot_BlankText_ThrowsDomainException(string? text)
     {
-        var review = CreateReview(ValidShopId, ValidModerationShopId);
-        var moderatorId = Guid.NewGuid();
-
-        var act = () => review.Reject(reason!, moderatorId);
-
-        act.Should().Throw<DomainException>().WithMessage("Reject reason is required.");
-        review.ModerationStatus.Should().Be(ModerationStatus.Pending);
+        Action create = () => Snapshot(text!);
+        create.Should().Throw<DomainException>();
     }
 
     [Fact]
-    public void Reject_WithReasonExceedingMaxLength_ThrowsDomainException()
+    public void Snapshot_MissingVisitTime_ThrowsDomainException()
     {
-        var review = CreateReview(ValidShopId, ValidModerationShopId);
-        var moderatorId = Guid.NewGuid();
-        var tooLongReason = new string('a', BusinessConstants.MaxRejectReasonCommentLength + 1);
-
-        var act = () => review.Reject(tooLongReason, moderatorId);
-
-        act.Should().Throw<DomainException>()
-            .WithMessage($"reason must be between {BusinessConstants.MinRejectReasonCommentLength} and {BusinessConstants.MaxRejectReasonCommentLength} characters.");
-        review.ModerationStatus.Should().Be(ModerationStatus.Pending);
+        Action create = () => ModerationReview.CreateCheckInSnapshot(Guid.NewGuid(), 1, Guid.NewGuid(), Guid.NewGuid(),
+            "user", "Y", 3, 3, 3, null, default, []);
+        create.Should().Throw<DomainException>();
     }
 
     [Fact]
-    public void MoveToPending_WithValidModerator_ResetsStatusAndClearsRejectedReason()
+    public void Snapshot_UnlinkedOrForeignPhoto_ThrowsDomainException()
     {
-        var review = CreateReview(ValidShopId, ValidModerationShopId);
-        var rejectingModeratorId = Guid.NewGuid();
-        review.Reject("Inappropriate content", rejectingModeratorId);
-
-        var movingModeratorId = Guid.NewGuid();
-        review.MoveToPending(movingModeratorId);
-
-        review.ModerationStatus.Should().Be(ModerationStatus.Pending);
-        review.RejectedReason.Should().BeNull();
-        review.ModeratedBy.Should().Be(movingModeratorId);
-        review.ModeratedAt.Should().NotBeNull();
+        var author = Guid.NewGuid();
+        Action unlinked = () => ModerationReview.CreateCheckInSnapshot(Guid.NewGuid(), 1, author, Guid.NewGuid(),
+            "user", "Y", 3, 3, 3, null, DateTime.UtcNow,
+            [PhotoMetadata.Create("a.jpg", "image/jpeg", "a", 10, author, null)]);
+        Action foreign = () => ModerationReview.CreateCheckInSnapshot(Guid.NewGuid(), 1, author, Guid.NewGuid(),
+            "user", "Y", 3, 3, 3, null, DateTime.UtcNow,
+            [PhotoMetadata.CreateCheckInPhoto(Guid.NewGuid(), 0, "a.jpg", "image/jpeg", "a", 10, Guid.NewGuid())]);
+        unlinked.Should().Throw<DomainException>();
+        foreign.Should().Throw<DomainException>();
     }
 
     [Fact]
-    public void MoveToPending_WithEmptyModeratorId_ThrowsDomainException()
+    public void Approve_WhenPending_RecordsModeratorAndIncrementsSequence()
     {
-        var review = CreateReview(ValidShopId, ValidModerationShopId);
-
-        var act = () => review.MoveToPending(Guid.Empty);
-
-        act.Should().Throw<DomainException>().WithMessage("*moderatorId*");
+        var snapshot = Snapshot();
+        var moderator = Guid.NewGuid();
+        snapshot.Approve(moderator).Should().BeTrue();
+        snapshot.ModerationStatus.Should().Be(ModerationStatus.Approved);
+        snapshot.ModeratedBy.Should().Be(moderator);
+        snapshot.ModeratedAt.Should().NotBeNull();
+        snapshot.DecisionSequence.Should().Be(1);
     }
 
-    private static ModerationReview CreateReview(
-        Guid shopId,
-        Guid? moderationShopId,
-        string header = ValidHeader,
-        string comment = ValidComment)
+    [Fact]
+    public void Approve_WhenAlreadyApproved_HasNoEffects()
     {
-        return ModerationReview.Create(
-            ValidUserId,
-            shopId,
-            moderationShopId,
-            ValidUserName,
-            header,
-            comment,
-            ValidRating,
-            ValidRating,
-            ValidRating,
-            new List<PhotoMetadata>());
+        var snapshot = Snapshot();
+        var moderator = Guid.NewGuid();
+        snapshot.Approve(moderator);
+        var decidedAt = snapshot.ModeratedAt;
+        snapshot.Approve(Guid.NewGuid()).Should().BeFalse();
+        snapshot.ModeratedAt.Should().Be(decidedAt);
+        snapshot.ModeratedBy.Should().Be(moderator);
+        snapshot.DecisionSequence.Should().Be(1);
+    }
+
+    [Fact]
+    public void Reject_RecordsTrimmedReasonAndModerator()
+    {
+        var snapshot = Snapshot();
+        var moderator = Guid.NewGuid();
+        snapshot.Reject(" Inappropriate content ", moderator).Should().BeTrue();
+        snapshot.ModerationStatus.Should().Be(ModerationStatus.Rejected);
+        snapshot.RejectedReason.Should().Be("Inappropriate content");
+        snapshot.ModeratedBy.Should().Be(moderator);
+        snapshot.DecisionSequence.Should().Be(1);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void Reject_BlankReason_ThrowsDomainException(string? reason)
+    {
+        var snapshot = Snapshot();
+        Action reject = () => snapshot.Reject(reason!, Guid.NewGuid());
+        reject.Should().Throw<DomainException>();
+        snapshot.ModerationStatus.Should().Be(ModerationStatus.Pending);
+    }
+
+    [Fact]
+    public void Reject_TooLongReason_ThrowsDomainException()
+    {
+        Action reject = () => Snapshot().Reject(new string('x', BusinessConstants.MaxRejectReasonCommentLength + 1), Guid.NewGuid());
+        reject.Should().Throw<DomainException>();
+    }
+
+    [Fact]
+    public void MoveToPending_ClearsReasonAndRecordsModerator()
+    {
+        var snapshot = Snapshot();
+        snapshot.Reject("Inappropriate content", Guid.NewGuid());
+        var moderator = Guid.NewGuid();
+        snapshot.MoveToPending(moderator).Should().BeTrue();
+        snapshot.ModerationStatus.Should().Be(ModerationStatus.Pending);
+        snapshot.RejectedReason.Should().BeNull();
+        snapshot.ModeratedBy.Should().Be(moderator);
+        snapshot.DecisionSequence.Should().Be(2);
+    }
+
+    [Fact]
+    public void Decisions_RequireModeratorIdentity()
+    {
+        var snapshot = Snapshot();
+        Action approve = () => snapshot.Approve(Guid.Empty);
+        Action reject = () => snapshot.Reject("Reason", Guid.Empty);
+        Action pending = () => snapshot.MoveToPending(Guid.Empty);
+        approve.Should().Throw<DomainException>();
+        reject.Should().Throw<DomainException>();
+        pending.Should().Throw<DomainException>();
     }
 }

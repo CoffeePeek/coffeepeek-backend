@@ -13,12 +13,20 @@ namespace CoffeePeek.MediaService.Handlers;
 
 public static class GenerateShopPhotoHandler
 {
+    public static bool IsSafePhotoContentType(string? contentType) => contentType?.ToLowerInvariant() is
+        "image/jpeg" or "image/png" or "image/gif" or "image/webp" or "image/bmp" or "image/avif";
+
     public static async Task<(Response<List<GenerateUploadUrlResponse>>, PhotosUploadedEvent)> Handle(
         GenerateShopPhotosCommand command,
         IStorageService storageService,
         IPhotoRepository repository,
         CancellationToken ct)
     {
+        if (command.Requests is null || command.Requests.Any(request => request is null
+                || !IsSafePhotoContentType(request.ContentType)))
+            return (Response<List<GenerateUploadUrlResponse>>.Error("Only JPEG, PNG, GIF, WebP, BMP and AVIF photos are supported."),
+                new PhotosUploadedEvent([]));
+
         var metadataList = new List<PhotoMetadata>();
         var results = new List<GenerateUploadUrlResponse>();
 
@@ -27,14 +35,14 @@ public static class GenerateShopPhotoHandler
             var presigned = await storageService
                 .GetPresignedUploadUrl(
                     request.FileName,
-                    request.ContentType,
-                    BucketType.Shop,
+                    request.ContentType.ToLowerInvariant(),
+                    command.Bucket,
                     ct,
                     command.StorageKeyPrefix);
 
             var metadata = PhotoMetadataFactory.Create(
-                request.FileName, request.ContentType, presigned.StorageKey,
-                request.SizeBytes, BucketType.Shop, OwnerType.Shop, command.OwnerId);
+                request.FileName, request.ContentType.ToLowerInvariant(), presigned.StorageKey,
+                request.SizeBytes, command.Bucket, OwnerType.Shop, command.OwnerId);
 
             metadataList.Add(metadata);
             results.Add(new GenerateUploadUrlResponse(metadata.Id, presigned.Url, metadata.StorageKey));

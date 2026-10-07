@@ -12,11 +12,12 @@ using CoffeePeek.Shops.Application.PublicAddresses;
 namespace CoffeePeek.ShopsService.Controllers;
 
 [ApiController]
+[ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
 [Route("api/[controller]")]
 [Tags("Coffee Shops Management")]
 [Produces("application/json")]
 [ProducesErrorResponseType(typeof(ErrorResponse))]
-[ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
+
 public class CoffeeShopsController(PublicDiscoveryService discovery, IUserContext userContext) : ControllerBase
 {
     /// <summary>

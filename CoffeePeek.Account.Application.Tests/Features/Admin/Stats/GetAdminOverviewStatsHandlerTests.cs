@@ -27,11 +27,11 @@ public class GetAdminOverviewStatsHandlerTests
 
         _client.Setup(c => c.GetPlatformStatsAsync(_ct)).ReturnsAsync(new AdminPlatformStatsSnapshot(
             TotalCoffeeShops: 0,
-            TotalReviews: 0,
+            TotalCheckIns: 0,
             NewCoffeeShopsToday: 0,
-            NewReviewsToday: 0,
+            NewCheckInsToday: 0,
             PendingModerationShops: 0,
-            PendingModerationReviews: 0,
+            PendingModerationCheckIns: 0,
             ImportPending: 0,
             ImportPublished: 0,
             ImportRejected: 0,
@@ -64,11 +64,11 @@ public class GetAdminOverviewStatsHandlerTests
 
         _client.Setup(c => c.GetPlatformStatsAsync(_ct)).ReturnsAsync(new AdminPlatformStatsSnapshot(
             TotalCoffeeShops: 40,
-            TotalReviews: 9,
+            TotalCheckIns: 9,
             NewCoffeeShopsToday: 2,
-            NewReviewsToday: 1,
+            NewCheckInsToday: 1,
             PendingModerationShops: 3,
-            PendingModerationReviews: 5,
+            PendingModerationCheckIns: 5,
             ImportPending: 120,
             ImportPublished: 8,
             ImportRejected: 4,
@@ -85,7 +85,9 @@ public class GetAdminOverviewStatsHandlerTests
 
         response.IsSuccess.Should().BeTrue();
         response.Data.TotalCoffeeShops.Should().Be(40);
-        response.Data.PendingModerationReviews.Should().Be(5);
+        response.Data.TotalCheckIns.Should().Be(9);
+        response.Data.NewCheckInsToday.Should().Be(1);
+        response.Data.PendingModerationCheckIns.Should().Be(5);
         response.Data.Import.Pending.Should().Be(120);
         response.Data.Import.Published.Should().Be(8);
         response.Data.Import.InFeed.Should().Be(5);

@@ -20,7 +20,7 @@ public sealed class AdminUserProfileControllerTests
         var id = Guid.NewGuid();
         var ct = TestContext.Current.CancellationToken;
         var bus = new Mock<IMessageBus>();
-        var profile = new PublicUserProfileResponse("Author", DateTime.UtcNow, "About", null, 1, 2, 3);
+        var profile = new PublicUserProfileResponse("Author", DateTime.UtcNow, "About", null, 2, 3);
         bus.Setup(b => b.InvokeAsync<Response<PublicUserProfileResponse>>(
             It.Is<object>(m => m is GetPublicUserProfileCommand && ((GetPublicUserProfileCommand)m).UserId == id), ct, null))
             .ReturnsAsync(Response<PublicUserProfileResponse>.Success(profile));

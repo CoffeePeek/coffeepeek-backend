@@ -27,7 +27,6 @@ public class ModerationStatusHandlersTests
     public ModerationStatusHandlersTests()
     {
         _mapper.Setup(m => m.Map<ShopDto>(It.IsAny<object>())).Returns(new ShopDto { Name = "Test Cafe" });
-        _mapper.Setup(m => m.Map<ModerationReviewDto>(It.IsAny<object>())).Returns(() => null!);
         _mapper.Setup(m => m.Map<ModerationShopDto>(It.IsAny<object>())).Returns(new ModerationShopDto());
     }
 
@@ -74,19 +73,21 @@ public class ModerationStatusHandlersTests
     [Theory]
     [InlineData(ModerationStatus.Rejected)]
     [InlineData(ModerationStatus.Pending)]
-    public async Task ReviewUnapprove_EmitsHideEvent(ModerationStatus target)
+    public async Task CheckInUnapprove_EmitsCanonicalDecision(ModerationStatus target)
     {
-        var review = ModerationReview.Create(Guid.NewGuid(), Guid.NewGuid(), null, "alice", null,
-            "Great coffee and service", 5, 5, 5, new List<PhotoMetadata>());
+        var review = ModerationReview.CreateCheckInSnapshot(Guid.NewGuid(), 1, Guid.NewGuid(), Guid.NewGuid(),
+            "alice", "Great coffee and service", 5, 5, 5, null, DateTime.UtcNow, []);
         review.Approve(Guid.NewGuid());
         var repo = new Mock<IModerationReviewRepository>();
         repo.Setup(r => r.GetById(review.Id, It.IsAny<CancellationToken>())).ReturnsAsync(review);
 
         var (_, outbound) = await ChangeStatusModerationReviewHandler.Handle(
             new ChangeStatusModerationReviewCommand(Guid.NewGuid(), review.Id, target, "Abusive content", null),
-            repo.Object, _audit.Object, _mapper.Object, _uow.Object, _ct);
+            repo.Object, _audit.Object, _uow.Object, _ct);
 
-        outbound.Should().BeOfType<ModerationReviewEditedEvent>("the published copy must be hidden in Shops");
+        outbound.Should().BeOfType<CheckInModerationDecidedEvent>();
+        outbound!.CheckInId.Should().Be(review.CheckInId);
+        outbound.Status.Should().Be(target);
     }
 
     [Fact]

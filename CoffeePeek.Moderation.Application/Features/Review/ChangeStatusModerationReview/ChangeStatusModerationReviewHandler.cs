@@ -8,49 +8,35 @@ using CoffeePeek.Moderation.Domain.Entities;
 using CoffeePeek.Shared.Kernel;
 using CoffeePeek.Shared.Kernel.Exceptions;
 using CoffeePeek.Shared.Kernel.Response;
-using MapsterMapper;
-using DomainModerationStatus = CoffeePeek.Moderation.Domain.Common.Enums.ModerationStatus;
 
 namespace CoffeePeek.Moderation.Application.Features.Review.ChangeStatusModerationReview;
 
 public static class ChangeStatusModerationReviewHandler
 {
-    public static async Task<(UpdateEntityResponse<ModerationStatus>, object?)> Handle(
+    public static async Task<(UpdateEntityResponse<ModerationStatus>, CheckInModerationDecidedEvent?)> Handle(
         ChangeStatusModerationReviewCommand command,
         IModerationReviewRepository repository,
         IModerationAuditLogRepository auditLogRepository,
-        IMapper mapper,
         IUnitOfWork unitOfWork,
         CancellationToken ct)
     {
-        var review = await repository.GetById(command.ModerationReviewId, ct);
+        var review = await repository.GetById(command.SubmissionId, ct);
 
         if (review == null)
-            throw new NotFoundException("Moderation review not found");
+            throw new NotFoundException("Check-in moderation submission not found");
 
-        object? outboundEvent = null;
+        CheckInModerationDecidedEvent? outboundEvent = null;
 
         var oldStatus = review.ModerationStatus;
         string? auditComment = null;
+        ModerationAuditAction auditAction;
+        bool changed;
 
         switch (command.ModerationStatus)
         {
             case ModerationStatus.Approved:
-                // Re-approve is a no-op: skip event + audit so consumers stay idempotent.
-                if (review.Approve(command.UserId))
-                {
-                    var dto = mapper.Map<ModerationReviewDto>(review);
-                    outboundEvent = new ModerationReviewApprovedEvent(dto);
-                    await ModerationAuditWriter.WriteAsync(
-                        auditLogRepository,
-                        ModerationAuditEntityType.Review,
-                        review.Id,
-                        review.Header ?? review.Id.ToString(),
-                        ModerationAuditAction.Approved,
-                        command.UserId,
-                        null,
-                        ct);
-                }
+                changed = review.Approve(command.UserId);
+                auditAction = ModerationAuditAction.Approved;
                 break;
 
             case ModerationStatus.Rejected:
@@ -58,42 +44,36 @@ public static class ChangeStatusModerationReviewHandler
                 var reason = !string.IsNullOrWhiteSpace(command.Comment)
                     ? command.Comment.Trim()
                     : command.RejectReason;
-                review.Reject(reason!, command.UserId);
+                changed = review.Reject(reason!, command.UserId);
                 auditComment = reason;
-                await ModerationAuditWriter.WriteAsync(
-                    auditLogRepository,
-                    ModerationAuditEntityType.Review,
-                    review.Id,
-                    review.Header ?? review.Id.ToString(),
-                    ModerationAuditAction.Rejected,
-                    command.UserId,
-                    auditComment,
-                    ct);
+                auditAction = ModerationAuditAction.Rejected;
                 break;
             }
 
             case ModerationStatus.Pending:
-                review.MoveToPending(command.UserId);
-                await ModerationAuditWriter.WriteAsync(
-                    auditLogRepository,
-                    ModerationAuditEntityType.Review,
-                    review.Id,
-                    review.Header ?? review.Id.ToString(),
-                    ModerationAuditAction.Pending,
-                    command.UserId,
-                    null,
-                    ct);
+                changed = review.MoveToPending(command.UserId);
+                auditAction = ModerationAuditAction.Pending;
                 break;
+
+            default:
+                throw new DomainException("Unknown moderation status.");
         }
 
-        // Un-approving must hide the published copy in Shops, otherwise a rejected review stays public.
-        if (oldStatus == DomainModerationStatus.Approved && review.ModerationStatus != DomainModerationStatus.Approved)
-            outboundEvent = new ModerationReviewEditedEvent(mapper.Map<ModerationReviewDto>(review));
+        if (changed)
+        {
+            await ModerationAuditWriter.WriteAsync(auditLogRepository, ModerationAuditEntityType.Review,
+                review.Id, review.CheckInId.ToString(), auditAction, command.UserId, auditComment, ct);
+            outboundEvent = new CheckInModerationDecidedEvent(review.CheckInId,
+                review.ContentRevision, review.Id, review.DecisionSequence, (ModerationStatus)review.ModerationStatus,
+                review.RejectedReason, review.ModeratedAt ?? DateTime.UtcNow);
 
-        await unitOfWork.SaveChangesAsync(ct);
-        
+            // xmin rejects competing status writes; Wolverine retries in a fresh context.
+            // The returned decision and this audit/status update share the durable EF outbox transaction.
+            await unitOfWork.SaveChangesAsync(ct);
+        }
+
         var response = UpdateEntityResponse<ModerationStatus>.Success((ModerationStatus)review.ModerationStatus, oldEntity: (ModerationStatus)oldStatus);
-        
+
         return (response, outboundEvent);
     }
 }

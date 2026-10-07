@@ -12,8 +12,10 @@ public record ModerationReviewDto
 
     public Guid Id { get; init; }
 
-    public string? Header { get; init; }
-    public string Comment { get;init; }
+    public Guid CheckInId { get; init; }
+    public int ContentRevision { get; init; }
+    public DateTime VisitedAtUtc { get; init; }
+    public string Text { get; init; }
     public Guid UserId { get; init; }
     public string UserName { get; init; }
     public Guid ShopId { get;init; }

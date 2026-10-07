@@ -13,15 +13,15 @@ public class AdminModerationStatsQueryRepository(ModerationDbContext dbContext) 
     private const int WindowDays = 30;
     private const int TopModerators = 10;
 
-    public async Task<(int PendingShops, int PendingReviews)> GetStatsAsync(CancellationToken ct = default)
+    public async Task<(int PendingShops, int PendingCheckIns)> GetStatsAsync(CancellationToken ct = default)
     {
         var pendingShops = await dbContext.ModerationShops
             .CountAsync(s => s.ModerationStatus == ModerationStatus.Pending, ct);
 
-        var pendingReviews = await dbContext.ModerationReviews
+        var pendingCheckIns = await dbContext.ModerationReviews
             .CountAsync(r => r.ModerationStatus == ModerationStatus.Pending, ct);
 
-        return (pendingShops, pendingReviews);
+        return (pendingShops, pendingCheckIns);
     }
 
     public async Task<AdminModerationInsights> GetInsightsAsync(DateTime nowUtc, CancellationToken ct = default)
@@ -46,7 +46,7 @@ public class AdminModerationStatsQueryRepository(ModerationDbContext dbContext) 
             await QueueAsync("shops",
                 dbContext.ModerationShops.Where(s => s.ModerationStatus == ModerationStatus.Pending)
                     .Select(s => (DateTime?)s.CreatedAtUtc), ct),
-            await QueueAsync("reviews",
+            await QueueAsync("checkIns",
                 dbContext.ModerationReviews.Where(r => r.ModerationStatus == ModerationStatus.Pending)
                     .Select(r => (DateTime?)r.CreatedAtUtc), ct),
             await QueueAsync("roasters",

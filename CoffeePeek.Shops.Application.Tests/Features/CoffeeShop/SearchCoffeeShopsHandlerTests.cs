@@ -24,170 +24,18 @@ public class SearchCoffeeShopsHandlerTests
     private static SearchCoffeeShopsQuery BuildQuery(Guid? userId = null)
         => new SearchCoffeeShopsQuery(UserId: userId);
 
-    [Fact]
-    public async Task Handle_AnonymousRequest_ReturnsCachedResponse()
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task SearchUsesCurrentRatingAndOnlyPersonalizesAuthenticatedVisits(bool authenticated)
     {
-        var shopId = Guid.NewGuid();
-        var shop = new ShortShopDto { Id = shopId, Name = "Test Shop" };
-        var expectedResponse = new GetCoffeeShopsResponse
-        {
-            CoffeeShops = [shop],
-            TotalItems = 1,
-            CurrentPage = 1,
-            PageSize = 10,
-            TotalPages = 1
-        };
-
-        _cacheMock
-            .Setup(c => c.GetAsync(
-                It.IsAny<CacheKey>(),
-                It.IsAny<Func<CancellationToken, Task<GetCoffeeShopsResponse>>>(),
-                It.IsAny<TimeSpan?>(),
-                It.IsAny<CancellationToken>()))
-            .ReturnsAsync(expectedResponse);
-
-        var query = BuildQuery(userId: null);
-        var result = await SearchCoffeeShopsHandler.Handle(
-            query,
-            _shopQueriesMock.Object,
-            _visitRepoMock.Object,
-            _cacheMock.Object,
-            _ct);
-
-        result.IsSuccess.Should().BeTrue();
-        result.Data.CoffeeShops.Should().HaveCount(1);
-        _visitRepoMock.Verify(
-            r => r.GetVisitedShopIdsAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
-            Times.Never);
-        _cacheMock.Verify(c => c.GetAsync(
-            It.IsAny<CacheKey>(),
-            It.IsAny<Func<CancellationToken, Task<GetCoffeeShopsResponse>>>(),
-            It.Is<TimeSpan?>(ttl => ttl > TimeSpan.Zero && ttl <= TimeSpan.FromMinutes(1)),
-            It.IsAny<CancellationToken>()), Times.Once);
-    }
-
-    [Fact]
-    public async Task Handle_AuthenticatedRequest_EnrichesWithVisitedFlags()
-    {
-        var userId = Guid.NewGuid();
-        var shopId = Guid.NewGuid();
-        var shop = new ShortShopDto { Id = shopId, Name = "Test Shop" };
-        var response = new GetCoffeeShopsResponse
-        {
-            CoffeeShops = [shop],
-            TotalItems = 1,
-            CurrentPage = 1,
-            TotalPages = 1
-        };
-
-        _cacheMock
-            .Setup(c => c.GetAsync(
-                It.IsAny<CacheKey>(),
-                It.IsAny<Func<CancellationToken, Task<GetCoffeeShopsResponse>>>(),
-                It.IsAny<TimeSpan?>(),
-                It.IsAny<CancellationToken>()))
-            .ReturnsAsync(response);
-
-        _visitRepoMock
-            .Setup(r => r.GetVisitedShopIdsAsync(userId, _ct))
-            .ReturnsAsync(new List<Guid>());
-
-        var query = BuildQuery(userId: userId);
-        var result = await SearchCoffeeShopsHandler.Handle(
-            query,
-            _shopQueriesMock.Object,
-            _visitRepoMock.Object,
-            _cacheMock.Object,
-            _ct);
-
-        result.IsSuccess.Should().BeTrue();
-        result.Data.CoffeeShops[0].IsVisited.Should().BeFalse();
-    }
-
-    [Fact]
-    public async Task Handle_WhenCacheReturnsNull_ReturnsError()
-    {
-        _cacheMock
-            .Setup(c => c.GetAsync(
-                It.IsAny<CacheKey>(),
-                It.IsAny<Func<CancellationToken, Task<GetCoffeeShopsResponse>>>(),
-                It.IsAny<TimeSpan?>(),
-                It.IsAny<CancellationToken>()))
-            .ReturnsAsync((GetCoffeeShopsResponse?)null);
-
-        var query = BuildQuery(userId: null);
-        var result = await SearchCoffeeShopsHandler.Handle(
-            query,
-            _shopQueriesMock.Object,
-            _visitRepoMock.Object,
-            _cacheMock.Object,
-            _ct);
-
-        result.IsSuccess.Should().BeFalse();
-        result.Message.Should().Contain("Failed to retrieve");
-    }
-
-    [Fact]
-    public async Task Handle_WhenCacheMiss_SetsPageSizeOnResponse()
-    {
-        var shop = new ShortShopDto { Id = Guid.NewGuid(), Name = "Test Shop" };
-        _shopQueriesMock
-            .Setup(q => q.Search(It.IsAny<SearchCoffeeShopsQuery>(), _ct))
-            .ReturnsAsync(([shop], 1));
-
-        _cacheMock
-            .Setup(c => c.GetAsync(
-                It.IsAny<CacheKey>(),
-                It.IsAny<Func<CancellationToken, Task<GetCoffeeShopsResponse>>>(),
-                It.IsAny<TimeSpan?>(),
-                It.IsAny<CancellationToken>()))
-            .Returns((CacheKey _, Func<CancellationToken, Task<GetCoffeeShopsResponse>> factory, TimeSpan? _, CancellationToken ct) => factory(ct));
-
-        var query = new SearchCoffeeShopsQuery(PageNumber: 1, PageSize: 10);
-        var result = await SearchCoffeeShopsHandler.Handle(
-            query,
-            _shopQueriesMock.Object,
-            _visitRepoMock.Object,
-            _cacheMock.Object,
-            _ct);
-
-        result.IsSuccess.Should().BeTrue();
-        result.Data.PageSize.Should().Be(10);
-        result.Data.CurrentPage.Should().Be(1);
-        result.Data.TotalItems.Should().Be(1);
-    }
-
-    [Fact]
-    public async Task Handle_WhenCachedResponseOmitsPageSize_CopiesItFromQuery()
-    {
-        var shop = new ShortShopDto { Id = Guid.NewGuid(), Name = "Test Shop" };
-        var staleCache = new GetCoffeeShopsResponse
-        {
-            CoffeeShops = [shop],
-            TotalItems = 1,
-            CurrentPage = 1,
-            PageSize = 0,
-            TotalPages = 1
-        };
-
-        _cacheMock
-            .Setup(c => c.GetAsync(
-                It.IsAny<CacheKey>(),
-                It.IsAny<Func<CancellationToken, Task<GetCoffeeShopsResponse>>>(),
-                It.IsAny<TimeSpan?>(),
-                It.IsAny<CancellationToken>()))
-            .ReturnsAsync(staleCache);
-
-        var query = new SearchCoffeeShopsQuery(PageNumber: 1, PageSize: 10);
-        var result = await SearchCoffeeShopsHandler.Handle(
-            query,
-            _shopQueriesMock.Object,
-            _visitRepoMock.Object,
-            _cacheMock.Object,
-            _ct);
-
-        result.IsSuccess.Should().BeTrue();
-        result.Data.PageSize.Should().Be(10);
+        var user=Guid.NewGuid();var id=Guid.NewGuid();
+        _shopQueriesMock.Setup(q=>q.Search(It.IsAny<SearchCoffeeShopsQuery>(),_ct)).ReturnsAsync(([new ShortShopDto {Id=id,Name="shop"}],1));
+        _visitRepoMock.Setup(r=>r.GetVisitedShopIdsAsync(user,_ct)).ReturnsAsync(new List<Guid>{id});
+        var result=await SearchCoffeeShopsHandler.Handle(new SearchCoffeeShopsQuery(UserId:authenticated?user:null,PageNumber:1,PageSize:10),_shopQueriesMock.Object,_visitRepoMock.Object,_cacheMock.Object,_ct);
+        Assert.Equal(1,result.Data.TotalItems);Assert.Equal(10,result.Data.PageSize);Assert.Equal(authenticated,result.Data.CoffeeShops[0].IsVisited);
+        _cacheMock.VerifyNoOtherCalls();
+        _visitRepoMock.Verify(r=>r.GetVisitedShopIdsAsync(user,_ct),authenticated?Times.Once():Times.Never());
     }
 
     [Fact]

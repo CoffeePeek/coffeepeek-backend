@@ -6,12 +6,10 @@ using CoffeePeek.Shared.Persistence.Extensions;
 using CoffeePeek.Shops.Application.Features.CheckIn;
 using CoffeePeek.Shops.Application.Features.CoffeeShop.GetCoffeeShop;
 using CoffeePeek.Shops.Application.Features.CoffeeZones;
-using CoffeePeek.Shops.Application.Features.Review;
 using CoffeePeek.Shops.Domain.Aggregates.AppDistributionAggregate;
 using CoffeePeek.Shops.Domain.Aggregates.CheckInAggregate;
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeZoneAggregate;
-using CoffeePeek.Shops.Domain.Aggregates.ReviewAggregate;
 using CoffeePeek.Shops.Domain.Aggregates.ShopTagAggregate;
 using CoffeePeek.Shops.Domain.Aggregates.MenuAggregate;
 using CoffeePeek.Shops.Persistance.Configuration;
@@ -40,7 +38,7 @@ public static class DependencyInjection
         {
             builder.AddNpgsqlDbContext<ShopsDbContext>(
                 connectionName: AppResources.ShopsDb,
-                configureDbContextOptions: opt => opt.AddInterceptors(new AuditInterceptor()),
+                configureDbContextOptions: opt => opt.AddInterceptors(new CheckInAuditInterceptor()),
                 configureSettings: settings => { settings.DisableRetry = true; }
             );
         }
@@ -50,30 +48,27 @@ public static class DependencyInjection
 
             services.AddDatabase<ShopsDbContext>(
                 connectionString,
-                opt => opt.AddInterceptors(new AuditInterceptor())
+                opt => opt.AddInterceptors(new CheckInAuditInterceptor())
             );
         }
 
         services.AddScoped<IUnitOfWork, UnitOfWork<ShopsDbContext>>();
-        
-        
+
+
         // Queries
         services.AddScoped<ICheckInQueries, CheckInQueries>();
         services.AddScoped<ICoffeeShopQueries, CoffeeShopQueries>();
         services.AddScoped<ICoffeeZoneQueries, CoffeeZoneQueries>();
-        services.AddScoped<IReviewQueries, ReviewQueries>();
-        
+
+        services.AddScoped<CoffeePeek.Shops.Domain.Aggregates.ReviewAggregate.IReviewReportRepository, ReviewReportRepository>();
         // Repositories
-        services.AddScoped<IReviewRepository, ReviewRepository>();
-        services.AddScoped<IReviewReportRepository, ReviewReportRepository>();
         services.AddScoped<IAppDistributionRepository, AppDistributionRepository>();
-        
-        // Query Repository 
+
+        // Query Repository
         services.AddScoped<IQueryCoffeeShopRepository, QueryCoffeeShopRepository>();
         services.AddScoped<ICoffeeShopRepository, CoffeeShopRepository>();
         services.AddScoped<ICoffeeZoneRepository, CoffeeZoneRepository>();
         services.AddScoped<IAdminCoffeeShopQueryRepository, AdminCoffeeShopQueryRepository>();
-        services.AddScoped<IQueryReviewRepository, QueryReviewRepository>();
         services.AddScoped<IQueryCheckInRepository, QueryCheckInRepository>();
         services.AddScoped<IQueryCityRepository, QueryCityRepository>();
         services.AddScoped<IQueryEquipmentRepository, QueryEquipmentRepository>();

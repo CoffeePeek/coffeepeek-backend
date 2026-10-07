@@ -21,7 +21,6 @@ public static class GetAdminShopsTimeseriesHandler
         return Response<AdminShopsTimeseriesDto>.Success(new AdminShopsTimeseriesDto(
             Days: days,
             NewShops: Fill(today, days, counts.Shops),
-            NewReviews: Fill(today, days, counts.Reviews),
             NewCheckIns: Fill(today, days, counts.CheckIns)));
     }
 

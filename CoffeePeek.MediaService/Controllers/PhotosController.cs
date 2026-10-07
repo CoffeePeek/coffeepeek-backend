@@ -1,7 +1,8 @@
-﻿using System.ComponentModel;
+using System.ComponentModel;
 using CoffeePeek.Contract.Dtos;
 using CoffeePeek.MediaService.Commands;
 using CoffeePeek.MediaService.Commands.Base;
+using CoffeePeek.MediaService.Configuration;
 using CoffeePeek.MediaService.Responses;
 using CoffeePeek.Shared.Auth;
 using CoffeePeek.Shared.Kernel.Response;
@@ -32,7 +33,7 @@ public class PhotosController(IMessageBus bus, IUserContext userContext) : Contr
         var response = await bus.InvokeAsync<Response<GenerateUploadUrlResponse>>(command, ct);
         return Ok(response);
     }
-    
+
     /// <summary>
     /// Generate presigned upload urls for shop photos
     /// </summary>
@@ -85,17 +86,17 @@ public class PhotosController(IMessageBus bus, IUserContext userContext) : Contr
     }
 
     /// <summary>
-    /// Generate presigned upload urls for check-in/review photos (shop bucket, prefix reviews/).
+    /// Generate presigned upload urls for check-in photos in the private check-in bucket.
     /// </summary>
-    [HttpPost("review")]
-    [Description("Get urls for presigned upload review photos")]
+    [HttpPost("check-in")]
+    [Description("Get urls for presigned upload check-in photos")]
     [ProducesResponseType<Response<List<GenerateUploadUrlResponse>>>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> GenerateReviewUploadUrls([FromBody] List<PhotoRequest> requests, CancellationToken ct)
+    public async Task<IActionResult> GenerateCheckInUploadUrls([FromBody] List<PhotoRequest> requests, CancellationToken ct)
     {
         var ownerId = userContext.GetUserIdOrThrow();
-        var command = new GenerateShopPhotosCommand(requests, ownerId, "reviews");
+        var command = new GenerateShopPhotosCommand(requests, ownerId, "check-ins", BucketType.CheckIn);
         var response = await bus.InvokeAsync<Response<List<GenerateUploadUrlResponse>>>(command, ct);
         return Ok(response);
     }

@@ -46,7 +46,7 @@ public class ResponseGenericJsonTests
     public void RoundTrip_SuccessFactory_KeepsTypedData()
     {
         var original = Response<AdminServiceStatsDto>.Success(
-            new AdminServiceStatsDto(TotalCoffeeShops: 42, TotalReviews: 7));
+            new AdminServiceStatsDto(TotalCoffeeShops: 42, TotalCheckIns: 7));
 
         var json = JsonSerializer.Serialize(original, WebOptions);
         var restored = JsonSerializer.Deserialize<Response<AdminServiceStatsDto>>(json, WebOptions);
@@ -55,6 +55,6 @@ public class ResponseGenericJsonTests
         restored!.IsSuccess.Should().BeTrue();
         restored.Data.Should().NotBeNull();
         restored.Data.TotalCoffeeShops.Should().Be(42);
-        restored.Data.TotalReviews.Should().Be(7);
+        restored.Data.TotalCheckIns.Should().Be(7);
     }
 }

@@ -1,6 +1,5 @@
 using CoffeePeek.Moderation.Application.Abstractions;
 using CoffeePeek.Moderation.Infrastructure.Services;
-using CoffeePeek.Moderation.Infrastructure.Media;
 using CoffeePeek.Moderation.Infrastructure.Shops;
 using CoffeePeek.Shared.Kernel;
 using CoffeePeek.Shared.Kernel.Extentions;
@@ -55,22 +54,10 @@ public static class DependencyInjection
             // This client is on interactive submit paths; a slow Shops lookup must fail promptly.
             client.Timeout = TimeSpan.FromSeconds(5);
         });
-        services.AddHttpClient("shops-drink-catalog", client =>
-        {
-            client.BaseAddress = new Uri($"http://{AppResources.ShopsService}");
-            client.Timeout = TimeSpan.FromSeconds(35);
-        });
-        services.AddScoped<CoffeePeek.Shared.Kernel.Drinks.IDrinkCatalog, ShopsDrinkCatalog>();
         services.AddScoped<IRoasterExistenceLookup, ShopsRoasterExistenceLookup>();
         services.AddScoped<CoffeePeek.Shared.Auth.PublicAddressHttpClient>();
         services.AddScoped<IPublicAddressLookup, ShopsPublicAddressLookup>();
 
-        services.AddHttpClient(MediaReviewPhotoLookup.HttpClientName, client =>
-        {
-            client.BaseAddress = new Uri($"http://{AppResources.MediaService}");
-            client.Timeout = TimeSpan.FromSeconds(5);
-        }).RemoveAllResilienceHandlers();
-        services.AddScoped<IReviewPhotoLookup, MediaReviewPhotoLookup>();
 
         return services;
     }

@@ -46,12 +46,6 @@ public sealed class PublicModerationService(IPublicAddressLookup addresses)
             x.Status, x.ReviewedAtUtc, x.RejectionReason, x.CreatedAtUtc, x.UpdatedAtUtc)).ToArray();
     }
 
-    public async Task<PublicModerationReviewDto[]> ReviewsAsync(ModerationReviewDto[] items, CancellationToken ct)
-    {
-        var shops = await ReadAsync("shops", items.Select(x => x.ShopId), ct);
-        return items.Select(x => x.Adapt<PublicModerationReviewDto>() with { Shop = shops.GetValueOrDefault(x.ShopId) }).ToArray();
-    }
-
     public async Task<PublicModerationShopDto[]> ShopsAsync(ModerationShopDto[] items, CancellationToken ct)
     {
         var cities = await ReadAsync("cities", items.Where(x => x.CityId.HasValue).Select(x => x.CityId!.Value), ct);

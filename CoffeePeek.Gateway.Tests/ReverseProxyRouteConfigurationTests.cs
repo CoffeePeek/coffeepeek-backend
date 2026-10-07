@@ -17,21 +17,22 @@ namespace CoffeePeek.Gateway.Tests;
 public class ReverseProxyRouteConfigurationTests
 {
     [Fact]
-    public void ReviewReportRoutes_UseShopsWithRequiredAuthAndSubmissionLimiter()
+    public void CheckInReportRoutes_UseShopsWithRequiredAuthAndSubmissionLimiter()
     {
         using var document = LoadGatewayAppsettings();
         var routes = document.RootElement.GetProperty("ReverseProxy").GetProperty("Routes");
-        var admin = routes.GetProperty("shops-admin-review-reports-route");
+        var admin = routes.GetProperty("shops-admin-check-in-reports-route");
         admin.GetProperty("ClusterId").GetString().Should().Be("shops-cluster");
         admin.GetProperty("AuthorizationPolicy").GetString().Should().Be("Admin");
-        admin.GetProperty("Match").GetProperty("Path").GetString().Should().Be("/api/admin/review-reports/{**remainder}");
-        var submission = routes.GetProperty("shops-review-report-submission-route");
+        admin.GetProperty("Match").GetProperty("Path").GetString().Should().Be("/api/admin/check-in-reports/{**remainder}");
+        var submission = routes.GetProperty("shops-check-in-report-submission-route");
         submission.GetProperty("ClusterId").GetString().Should().Be("shops-cluster");
+        submission.GetProperty("Match").GetProperty("Path").GetString().Should().Be("/api/v1/check-ins/{id:guid}/reports");
         submission.GetProperty("AuthorizationPolicy").GetString().Should().Be("Authenticated");
         submission.GetProperty("RateLimiterPolicy").GetString().Should().Be("moderation-submission");
         submission.GetProperty("Match").GetProperty("Methods").EnumerateArray().Select(x => x.GetString()).Should().Equal("POST");
         var ids = routes.EnumerateObject().Select(x => x.Name).ToList();
-        ids.IndexOf("shops-admin-review-reports-route").Should().BeLessThan(ids.IndexOf("account-admin-route"));
+        ids.IndexOf("shops-admin-check-in-reports-route").Should().BeLessThan(ids.IndexOf("account-admin-route"));
     }
 
     [Fact]
@@ -238,32 +239,19 @@ public class ReverseProxyRouteConfigurationTests
     }
 
     [Fact]
-    public void UserBySlugRoute_OutranksShopsUserReviewsForEverySlug()
+    public void UserBySlugRoute_RemainsSpecificAndLegacyReviewRouteIsRemoved()
     {
         using var document = LoadGatewayAppsettings();
         var routes = document.RootElement.GetProperty("ReverseProxy").GetProperty("Routes");
-
-        routes.TryGetProperty("account-Users-by-slug-route", out _).Should().BeTrue();
+        routes.TryGetProperty("shops-users-reviews-route", out _).Should().BeFalse();
         var bySlug = ParseRouteTemplate(routes, "account-Users-by-slug-route");
-        var shopsReviews = ParseRouteTemplate(routes, "shops-users-reviews-route");
         var usersCatchAll = ParseRouteTemplate(routes, "account-Users-route");
-
-        // Non-vacuous: the "reviews" slug really is matched by all three templates (Pitfall 4).
         const string reviewsSlugPath = "/api/Users/by-slug/reviews";
         Matches(bySlug, reviewsSlugPath).Should().BeTrue();
-        Matches(shopsReviews, reviewsSlugPath).Should().BeTrue();
         Matches(usersCatchAll, reviewsSlugPath).Should().BeTrue();
-
-        // Lower inbound precedence is more specific, so the by-slug route wins for every slug.
-        RoutePrecedence.ComputeInbound(bySlug).Should().BeLessThan(RoutePrecedence.ComputeInbound(shopsReviews));
         RoutePrecedence.ComputeInbound(bySlug).Should().BeLessThan(RoutePrecedence.ComputeInbound(usersCatchAll));
-
         Matches(bySlug, "/api/Users/by-slug/ivan-petrov").Should().BeTrue();
-
-        // Real Shops user-review paths are not captured by the by-slug route.
-        const string shopsUserReviewsPath = "/api/users/ivan-petrov/reviews";
-        Matches(bySlug, shopsUserReviewsPath).Should().BeFalse();
-        Matches(shopsReviews, shopsUserReviewsPath).Should().BeTrue();
+        Matches(bySlug, "/api/v1/check-ins/mine").Should().BeFalse();
     }
 
     [Theory]

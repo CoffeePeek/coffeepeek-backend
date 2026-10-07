@@ -16,14 +16,14 @@ public class MapsterConfigurationCheckInTests
     {
         var config = MapsterConfiguration.CreateConfig(new MediaPublicUrlOptions());
 
-        var checkIn = CheckIn.Create(Guid.NewGuid(), Guid.NewGuid(), DateTime.UtcNow.AddHours(-1));
+        var checkIn = CheckIn.CreateUnified(Guid.NewGuid(), Guid.NewGuid(), "author", "visit", Rating.Create(5,4,3), DateTime.UtcNow.AddHours(-1));
 
-        var dto = checkIn.Adapt<CheckInDto>(config);
+        var dto = CoffeePeek.Shops.Application.Features.CheckIn.CheckInMapping.ToDto(checkIn);
 
         dto.VisitedAt.Should().Be(checkIn.VisitedAt);
         dto.VisitedAt.Should().NotBe(checkIn.CreatedAtUtc);
-        dto.CreatedAt.Should().Be(checkIn.CreatedAtUtc);
-        dto.CreatedAt.Should().NotBe(default(DateTime));
+        dto.CreatedAtUtc.Should().Be(checkIn.CreatedAtUtc);
+        dto.CreatedAtUtc.Should().NotBe(default(DateTime));
     }
 
     [Fact]
@@ -32,15 +32,14 @@ public class MapsterConfigurationCheckInTests
         var mediaOptions = new MediaPublicUrlOptions { PublicEndpoint = "https://media.coffeepeek.by" };
         var config = MapsterConfiguration.CreateConfig(mediaOptions);
 
-        var checkIn = CheckIn.Create(Guid.NewGuid(), Guid.NewGuid(), DateTime.UtcNow.AddHours(-1));
+        var checkIn = CheckIn.CreateUnified(Guid.NewGuid(), Guid.NewGuid(), "author", "visit", Rating.Create(5,4,3), DateTime.UtcNow.AddHours(-1));
         checkIn.AddPhotos([new ShopPhoto("photo.jpg", "image/jpeg", "checkins/photo.jpg", 1024, checkIn.UserId)]);
 
-        var dto = checkIn.Adapt<CheckInDto>(config);
+        var dto = CoffeePeek.Shops.Application.Features.CheckIn.CheckInMapping.ToDto(checkIn);
 
         dto.Photos.Should().HaveCount(1);
         dto.Photos[0].StorageKey.Should().Be("checkins/photo.jpg");
-        dto.Photos[0].FullUrl.Should().Be(
-            $"https://media.coffeepeek.by/{mediaOptions.ShopBucketName}/checkins/photo.jpg");
+        dto.Photos[0].Url.Should().Be($"/api/v1/check-ins/{checkIn.Id}/photos/{dto.Photos[0].Id}");
     }
 
     [Fact]
@@ -48,10 +47,9 @@ public class MapsterConfigurationCheckInTests
     {
         var config = MapsterConfiguration.CreateConfig(new MediaPublicUrlOptions());
 
-        var checkIn = CheckIn.Create(Guid.NewGuid(), Guid.NewGuid(), DateTime.UtcNow.AddHours(-1));
-        checkIn.AssignRating(place: 5, service: 4, coffee: 3);
+        var checkIn = CheckIn.CreateUnified(Guid.NewGuid(), Guid.NewGuid(), "author", "visit", Rating.Create(5,4,3), DateTime.UtcNow.AddHours(-1));
 
-        var dto = checkIn.Adapt<CheckInDto>(config);
+        var dto = CoffeePeek.Shops.Application.Features.CheckIn.CheckInMapping.ToDto(checkIn);
 
         dto.Rating.Place.Should().Be(5);
         dto.Rating.Service.Should().Be(4);

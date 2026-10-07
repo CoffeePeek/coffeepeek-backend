@@ -21,9 +21,9 @@ public class AdminModerationStatsQueryRepositoryTests
 
     private static ModerationReview Review(DateTime createdAtUtc)
     {
-        var review = ModerationReview.Create(
-            Guid.NewGuid(), Guid.NewGuid(), null, "user", "Nice header", "A long enough review comment",
-            4, 4, 4, []);
+        var review = ModerationReview.CreateCheckInSnapshot(Guid.NewGuid(), 1,
+            Guid.NewGuid(), Guid.NewGuid(), "user", "A complete check-in comment",
+            4, 4, 4, null, createdAtUtc, []);
         review.CreatedAtUtc = createdAtUtc;
         return review;
     }
@@ -32,7 +32,7 @@ public class AdminModerationStatsQueryRepositoryTests
         ModerationAuditLog.Create(ModerationAuditEntityType.Review, Guid.NewGuid(), "entity", action, moderatorId, null);
 
     [Fact]
-    public async Task GetInsightsAsync_Sla_AveragesModeratedReviewsInLast30Days()
+    public async Task GetInsightsAsync_Sla_AveragesModeratedCheckInsInLast30Days()
     {
         await using var db = CreateContext();
         var now = DateTime.UtcNow;
@@ -49,13 +49,13 @@ public class AdminModerationStatsQueryRepositoryTests
 
         var insights = await new AdminModerationStatsQueryRepository(db).GetInsightsAsync(DateTime.UtcNow, _ct);
 
-        insights.ReviewsModerated.Should().Be(2);
-        insights.AvgReviewModerationHours.Should().BeApproximately(3.0, 0.01);
+        insights.CheckInsModerated.Should().Be(2);
+        insights.AvgCheckInModerationHours.Should().BeApproximately(3.0, 0.01);
 
         var response = await GetAdminModerationInsightsHandler.Handle(
             new GetAdminModerationInsightsQuery(), new AdminModerationStatsQueryRepository(db), _ct);
-        response.Data.Sla.ReviewsModerated30Days.Should().Be(2);
-        response.Data.Sla.AvgReviewModerationHours.Should().Be(3.0);
+        response.Data.Sla.CheckInsModerated30Days.Should().Be(2);
+        response.Data.Sla.AvgCheckInModerationHours.Should().Be(3.0);
     }
 
     [Fact]
@@ -66,11 +66,11 @@ public class AdminModerationStatsQueryRepositoryTests
         var response = await GetAdminModerationInsightsHandler.Handle(
             new GetAdminModerationInsightsQuery(), new AdminModerationStatsQueryRepository(db), _ct);
 
-        response.Data.Sla.ReviewsModerated30Days.Should().Be(0);
-        response.Data.Sla.AvgReviewModerationHours.Should().BeNull();
+        response.Data.Sla.CheckInsModerated30Days.Should().Be(0);
+        response.Data.Sla.AvgCheckInModerationHours.Should().BeNull();
         response.Data.OldestPendingHours.Should().BeNull();
         response.Data.Queues.Select(q => q.Queue).Should()
-            .Equal("shops", "reviews", "roasters", "changeRequests", "issueReports");
+            .Equal("shops", "checkIns", "roasters", "changeRequests", "issueReports");
         response.Data.Queues.Should().OnlyContain(q => q.Pending == 0 && q.OldestPendingHours == null);
         response.Data.TopModerators30Days.Should().BeEmpty();
     }
@@ -105,8 +105,8 @@ public class AdminModerationStatsQueryRepositoryTests
         var queues = response.Data.Queues.ToDictionary(q => q.Queue);
         queues["shops"].Pending.Should().Be(1);
         queues["shops"].OldestPendingHours.Should().Be(10.0);
-        queues["reviews"].Pending.Should().Be(1);
-        queues["reviews"].OldestPendingHours.Should().Be(30.0);
+        queues["checkIns"].Pending.Should().Be(1);
+        queues["checkIns"].OldestPendingHours.Should().Be(30.0);
         queues["roasters"].Pending.Should().Be(0);
         queues["roasters"].OldestPendingHours.Should().BeNull();
         queues["changeRequests"].Pending.Should().Be(1);

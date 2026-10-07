@@ -14,8 +14,7 @@ using DomainModerationStatus = CoffeePeek.Moderation.Domain.Common.Enums.Moderat
 namespace CoffeePeek.Moderation.Application.Tests.Features;
 
 /// <summary>
-/// GET */mine reuses the GetAll handlers; these tests prove the submitter id reaches the repository
-/// (so a user only sees their own items) and that the default query keeps the unfiltered moderator view.
+/// Shop/roaster mine and moderator check-in queue filters forward the selected author to the repository.
 /// </summary>
 public class MyModerationSubmissionsHandlersTests
 {
@@ -98,7 +97,7 @@ public class MyModerationSubmissionsHandlersTests
     }
 
     [Fact]
-    public async Task Reviews_UserIdIsForwardedToRepository()
+    public async Task CheckIns_ModeratorAuthorFilter_IsForwardedToRepository()
     {
         var userId = Guid.NewGuid();
         var repo = new Mock<IQueryModerationReviewRepository>();

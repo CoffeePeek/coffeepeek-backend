@@ -21,7 +21,7 @@ public static class DependencyInjection
         services.AddValidateOptions<MinIOOptions>();
 
         services.AddScoped<IMediaUrlProvider, MediaUrlProvider>();
-            
+
         // 1. Domain Services (реализации интерфейсов из Domain)
         services.AddScoped<IPasswordHasherService, PasswordHasherService>();
         services.AddScoped<IJWTTokenService, JWTTokenService>();
@@ -29,7 +29,6 @@ public static class DependencyInjection
 
         // 2. Event Handlers
         services.AddScoped<CheckinCreatedHandler>();
-        services.AddScoped<ReviewAddedHandler>();
         services.AddScoped<ModerationShopApprovedAccountHandler>();
         services.AddScoped<UserPhotoUploadedHandler>();
         services.AddScoped<UserRegisteredEventHandler>();

@@ -23,6 +23,9 @@ public class MediaDbContext(DbContextOptions<MediaDbContext> options) : DbContex
             entity.Property(p => p.Status).IsRequired().HasConversion<string>().HasMaxLength(20);
             entity.Property(p => p.OwnerType).IsRequired().HasConversion<string>().HasMaxLength(20);
             entity.Property(p => p.OwnerId).IsRequired();
+            entity.Property(p => p.CheckInId);
+            entity.Property(p => p.ClaimedAtUtc);
+            entity.Property(p => p.OriginalStorageKey).HasMaxLength(255);
             entity.Property(p => p.UploadedAt).IsRequired();
             entity.Property(p => p.PermalinkExpiresAt);
             entity.Property(p => p.ScheduledDeletionAt);
@@ -30,6 +33,7 @@ public class MediaDbContext(DbContextOptions<MediaDbContext> options) : DbContex
 
             entity.HasIndex(p => new { p.OwnerType, p.OwnerId });
             entity.HasIndex(p => p.Status);
+            entity.HasIndex(p => p.CheckInId);
             entity.HasIndex(p => new { p.Status, p.ScheduledDeletionAt });
         });
 

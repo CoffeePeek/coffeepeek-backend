@@ -1,11 +1,16 @@
-﻿using CoffeePeek.MediaService.Configuration;
+using CoffeePeek.MediaService.Configuration;
 using CoffeePeek.MediaService.Data;
+using System.Security.Cryptography;
+using System.Text.Json.Nodes;
 using CoffeePeek.Shared.Kernel.Options;
 using Microsoft.Extensions.Options;
 using Minio;
 using Minio.DataModel.Args;
 using Minio.DataModel.Tags;
 using Minio.Exceptions;
+using System.Runtime.CompilerServices;
+
+[assembly: InternalsVisibleTo("CoffeePeek.MediaService.Tests")]
 
 namespace CoffeePeek.MediaService.Services;
 
@@ -13,10 +18,19 @@ public class MinIOStorageService : IStorageService, IDisposable
 {
     private const string IsPermanentTag = "is_permanent";
     private const int PresignedUrlExpirySeconds = 600;
+    // ponytail: deployment has one Media replica; use a DB advisory lock when scaling policy writers.
+    private static readonly SemaphoreSlim PolicyLock = new(1, 1);
 
     private readonly IMinioClient _internalClient;
     private readonly IMinioClient _presignClient;
     private readonly MinIOOptions _options;
+
+    internal MinIOStorageService(MinIOOptions options, IMinioClient client)
+    {
+        _options = options;
+        _internalClient = client;
+        _presignClient = client;
+    }
 
     public MinIOStorageService(
         IOptions<MinIOOptions> options,
@@ -33,6 +47,8 @@ public class MinIOStorageService : IStorageService, IDisposable
     public async Task<PresignedPhotoMetaData> GetPresignedUploadUrl(string fileName,
         string contentType, BucketType bucketType, CancellationToken ct = default, string? keyPrefix = null)
     {
+        if (bucketType == BucketType.CheckIn)
+            await EnsureCheckInBucketPrivateAsync(ct);
         var ext = Path.GetExtension(fileName);
         var storageKey = string.IsNullOrWhiteSpace(keyPrefix)
             ? $"{Guid.NewGuid()}{ext}"
@@ -82,7 +98,7 @@ public class MinIOStorageService : IStorageService, IDisposable
             await _internalClient.StatObjectAsync(args, ct);
             return true;
         }
-        catch (MinioException)
+        catch (ObjectNotFoundException)
         {
             return false;
         }
@@ -99,7 +115,7 @@ public class MinIOStorageService : IStorageService, IDisposable
             var stat = await _internalClient.StatObjectAsync(args, ct);
             return stat.Size;
         }
-        catch (MinioException)
+        catch (ObjectNotFoundException)
         {
             return null;
         }
@@ -118,6 +134,87 @@ public class MinIOStorageService : IStorageService, IDisposable
     {
         _internalClient.Dispose();
         _presignClient.Dispose();
+    }
+
+    public async Task EnsureCheckInBucketPrivateAsync(CancellationToken ct = default)
+    {
+        var bucket = GetBucketName(BucketType.CheckIn);
+        if (string.IsNullOrWhiteSpace(bucket) || bucket == _options.ShopBucketName || bucket == _options.UserBucketName)
+            throw new InvalidOperationException("Check-in storage must use a separate private bucket.");
+        if (!await _internalClient.BucketExistsAsync(new BucketExistsArgs().WithBucket(bucket), ct))
+            await _internalClient.MakeBucketAsync(new MakeBucketArgs().WithBucket(bucket), ct);
+        await _internalClient.RemovePolicyAsync(new RemovePolicyArgs().WithBucket(bucket), ct);
+    }
+
+    public async Task CopyToAsync(string key, BucketType bucket, Stream destination, CancellationToken ct = default)
+    {
+        if (bucket == BucketType.CheckIn) await EnsureCheckInBucketPrivateAsync(ct);
+        await _internalClient.GetObjectAsync(new GetObjectArgs().WithBucket(GetBucketName(bucket)).WithObject(key)
+            .WithCallbackStream((stream, token) => stream.CopyToAsync(destination, token)), ct);
+    }
+
+    public async Task<string> MoveToCheckInStorageAsync(string key, Guid photoId, Guid checkInId, CancellationToken ct = default,
+        BucketType sourceBucket = BucketType.Shop)
+    {
+        await EnsureCheckInBucketPrivateAsync(ct);
+        // A photo-owned destination also survives a failed DB save and a retry with a new visit ID.
+        var target = $"check-ins/{photoId:N}{Path.GetExtension(key)}";
+        // A still-live PUT may have changed the source after another successful/ambiguous attempt.
+        // Freeze the first private copy; never overwrite it from a retry's upload source.
+        if (await GetObjectSize(target, BucketType.CheckIn, ct) == null)
+        {
+            var sourceSize = await GetObjectSize(key, sourceBucket, ct)
+                ?? throw new InvalidOperationException("Photo object was not found.");
+            var sourceHash = await HashAsync(key, sourceBucket, ct);
+            await _internalClient.CopyObjectAsync(new CopyObjectArgs().WithBucket(GetBucketName(BucketType.CheckIn))
+                .WithObject(target).WithCopyObjectSource(new CopySourceObjectArgs()
+                    .WithBucket(GetBucketName(sourceBucket)).WithObject(key)), ct);
+            var targetHash = await HashAsync(target, BucketType.CheckIn, ct);
+            if (await GetObjectSize(target, BucketType.CheckIn, ct) != sourceSize
+                || !CryptographicOperations.FixedTimeEquals(sourceHash, targetHash))
+                throw new InvalidOperationException("Private photo copy could not be verified.");
+        }
+        await MarkAsPermanent(target, BucketType.CheckIn, ct);
+        if (sourceBucket == BucketType.CheckIn && key == target) return target;
+        if (sourceBucket == BucketType.Shop) await DenyOldObjectAsync(key, ct);
+        await Delete(key, sourceBucket, ct);
+        if (await Exists(key, sourceBucket, ct))
+            throw new InvalidOperationException("Public photo object could not be removed.");
+        return target;
+    }
+
+    public static string BuildObjectDenyPolicy(string existingPolicy, string bucket, string key)
+    {
+        if (key.IndexOfAny(['*', '?']) >= 0)
+            throw new InvalidOperationException("Wildcard object keys require an explicit historical storage policy.");
+        var policy = JsonNode.Parse(existingPolicy)?.AsObject() ?? throw new InvalidOperationException("Invalid bucket policy.");
+        var statements = policy["Statement"]?.AsArray() ?? throw new InvalidOperationException("Invalid bucket policy statements.");
+        var sid = "CheckInPrivate" + Convert.ToHexString(SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(key)))[..24];
+        if (!statements.Any(statement => statement?["Sid"]?.GetValue<string>() == sid))
+            statements.Add(new JsonObject { ["Sid"] = sid, ["Effect"] = "Deny", ["Principal"] = "*",
+                ["Action"] = new JsonArray("s3:GetObject", "s3:GetObjectVersion"), ["Resource"] = new JsonArray($"arn:aws:s3:::{bucket}/{key}") });
+        return policy.ToJsonString();
+    }
+
+    private async Task DenyOldObjectAsync(string key, CancellationToken ct)
+    {
+        await PolicyLock.WaitAsync(ct);
+        try
+        {
+            var bucket = GetBucketName(BucketType.Shop);
+            var policy = await _internalClient.GetPolicyAsync(new GetPolicyArgs().WithBucket(bucket), ct);
+            await _internalClient.SetPolicyAsync(new SetPolicyArgs().WithBucket(bucket)
+                .WithPolicy(BuildObjectDenyPolicy(policy, bucket, key)), ct);
+        }
+        finally { PolicyLock.Release(); }
+    }
+
+    private async Task<byte[]> HashAsync(string key, BucketType bucket, CancellationToken ct)
+    {
+        byte[] hash = [];
+        await _internalClient.GetObjectAsync(new GetObjectArgs().WithBucket(GetBucketName(bucket)).WithObject(key)
+            .WithCallbackStream(async (stream, token) => { hash = await SHA256.HashDataAsync(stream, token); }), ct);
+        return hash;
     }
 
     private IMinioClient BuildClient(string endpoint)
@@ -141,6 +238,7 @@ public class MinIOStorageService : IStorageService, IDisposable
         {
             BucketType.User => _options.UserBucketName,
             BucketType.Shop => _options.ShopBucketName,
+            BucketType.CheckIn => _options.CheckInBucketName,
             _ => throw new ArgumentOutOfRangeException(nameof(type), type, "Unsupported bucket type")
         };
     }

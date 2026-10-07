@@ -29,7 +29,7 @@ public class CoffeeShopQueries(
     {
         var query = context.Shops.AsNoTracking()
             .Where(s => s.Status == CoffeeShopStatus.Active && !s.IsHidden);
-        
+
         if (!string.IsNullOrWhiteSpace(request.Query))
         {
             var term = $"%{request.Query.Trim()}%";
@@ -75,13 +75,12 @@ public class CoffeeShopQueries(
             var typeValue = (CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate.CoffeeFocusType)(int)request.Type.Value;
             query = query.Where(s => s.Type == typeValue);
         }
-        
+
         if (request.MinRating.HasValue)
         {
             var minRating = request.MinRating.Value;
-            var ratingSubquery = context.Reviews
-                .Where(r => !r.IsSoftDelete)
-                .GroupBy(r => r.CoffeeShopId)
+            var ratingSubquery = CheckInEligibility.LatestRatings(context)
+                .GroupBy(r => r.ShopId)
                 .Select(g => new { CoffeeShopId = g.Key, Avg = g.Average(r => r.Rating.AverageRating) });
             // INNER JOIN: shops with no reviews are excluded when MinRating filter is active — consistent with previous behavior
             query = query
@@ -111,8 +110,8 @@ public class CoffeeShopQueries(
         {
             var userId = request.UserId.Value;
             query = request.IsVisited.Value
-                ? query.Where(s => context.CheckIns.Any(c => c.ShopId == s.Id && c.UserId == userId))
-                : query.Where(s => !context.CheckIns.Any(c => c.ShopId == s.Id && c.UserId == userId));
+                ? query.Where(s => context.CheckIns.Any(c => c.ShopId == s.Id && c.UserId == userId && c.DeletedAtUtc == null))
+                : query.Where(s => !context.CheckIns.Any(c => c.ShopId == s.Id && c.UserId == userId && c.DeletedAtUtc == null));
         }
 
         // IsOpen evaluated in UTC (same convention as CoffeeShop.IsOpen domain property).
@@ -156,9 +155,9 @@ public class CoffeeShopQueries(
                         sch.Intervals.Any(i => i.CloseTime < i.OpenTime && timeOfDay <= i.CloseTime)));
             }
         }
-        
+
         var totalCount = await query.CountAsync(ct);
-        
+
         var items = await query
             .AsSplitQuery()
             .OrderByDescending(x => x.DataCompletenessScore)
@@ -410,23 +409,25 @@ public class CoffeeShopQueries(
         string Title,
         CoffeeShopType? Type);
 
-    /// <summary>Rating and ReviewCount are ignored by the projection; without this every search result showed 0.</summary>
+    /// <summary>Rating and CheckInCount are ignored by the projection; without this every search result showed 0.</summary>
     private async Task PatchRatingsAsync(ShortShopDto[] items, CancellationToken ct)
     {
         if (items.Length == 0)
             return;
 
         var ids = items.Select(i => i.Id).ToArray();
-        var stats = await context.Reviews
+        var stats = await CheckInEligibility.LatestRatings(context)
             .AsNoTracking()
-            .Where(r => ids.Contains(r.CoffeeShopId) && !r.IsSoftDelete)
-            .GroupBy(r => r.CoffeeShopId)
+            .Where(r => ids.Contains(r.ShopId))
+            .GroupBy(r => r.ShopId)
             .Select(g => new
             {
                 ShopId = g.Key,
-                Average = g.Average(r => (r.Rating.Place + r.Rating.Coffee + r.Rating.Service) / 3m),
-                Count = g.Count()
+                Average = g.Average(r => (r.Rating.Place + r.Rating.Coffee + r.Rating.Service) / 3m)
             })
+            .ToDictionaryAsync(x => x.ShopId, ct);
+        var counts = await CheckInEligibility.Public(context).Where(c => ids.Contains(c.ShopId))
+            .GroupBy(c => c.ShopId).Select(g => new { ShopId = g.Key, Count = g.Count() })
             .ToDictionaryAsync(x => x.ShopId, ct);
 
         foreach (var item in items)
@@ -434,7 +435,7 @@ public class CoffeeShopQueries(
             if (!stats.TryGetValue(item.Id, out var s))
                 continue;
             item.Rating = Math.Round(s.Average, 2);
-            item.ReviewCount = s.Count;
+            item.CheckInCount = counts.GetValueOrDefault(item.Id)?.Count ?? 0;
         }
     }
 

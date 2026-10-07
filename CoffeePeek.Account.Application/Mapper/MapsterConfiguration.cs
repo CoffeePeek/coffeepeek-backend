@@ -22,7 +22,6 @@ public static class MapsterConfiguration
         config.NewConfig<User, UserProfileResponse>()
             .Map(d => d.UserName, s => s.Username.Value)
             .Map(d => d.Email, s => s.Credentials.Email)
-            .Map(dest => dest.ReviewCount, src => src.Statistics.ReviewCount)
             .Map(dest => dest.CheckInCount, src => src.Statistics.CheckInCount)
             .Map(dest => dest.AddedShopsCount, src => src.Statistics.AddedShopsCount)
             .Map(dest => dest.AvatarUrl, src => src.PhotoMetadata != null
@@ -34,7 +33,6 @@ public static class MapsterConfiguration
 
         config.NewConfig<User, PublicUserProfileResponse>()
             .Map(d => d.UserName, s => s.Username.Value)
-            .Map(dest => dest.ReviewCount, src => src.Statistics.ReviewCount)
             .Map(dest => dest.CheckInCount, src => src.Statistics.CheckInCount)
             .Map(dest => dest.AddedShopsCount, src => src.Statistics.AddedShopsCount)
             .Map(dest => dest.AvatarUrl, src => src.PhotoMetadata != null

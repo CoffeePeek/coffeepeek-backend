@@ -24,7 +24,7 @@ public class GetAdminShopsTimeseriesHandlerTests
     public async Task Handle_ClampsDays_AndReturnsEqualLengthSeries(int? requested, int expected)
     {
         _repository.Setup(r => r.GetDailyCountsAsync(It.IsAny<DateTime>(), _ct))
-            .ReturnsAsync(new AdminShopsDailyCounts(Empty, Empty, Empty));
+            .ReturnsAsync(new AdminShopsDailyCounts(Empty, Empty));
 
         var response = await GetAdminShopsTimeseriesHandler.Handle(
             new GetAdminShopsTimeseriesQuery(requested), _repository.Object, _ct);
@@ -32,7 +32,6 @@ public class GetAdminShopsTimeseriesHandlerTests
         response.IsSuccess.Should().BeTrue();
         response.Data.Days.Should().Be(expected);
         response.Data.NewShops.Should().HaveCount(expected);
-        response.Data.NewReviews.Should().HaveCount(expected);
         response.Data.NewCheckIns.Should().HaveCount(expected);
     }
 
@@ -43,14 +42,12 @@ public class GetAdminShopsTimeseriesHandlerTests
         _repository.Setup(r => r.GetDailyCountsAsync(DateTime.UtcNow.Date.AddDays(-2), _ct))
             .ReturnsAsync(new AdminShopsDailyCounts(
                 new Dictionary<DateOnly, int> { [today] = 2 },
-                new Dictionary<DateOnly, int> { [today.AddDays(-2)] = 4 },
                 new Dictionary<DateOnly, int> { [today.AddDays(-1)] = 7 }));
 
         var response = await GetAdminShopsTimeseriesHandler.Handle(
             new GetAdminShopsTimeseriesQuery(3), _repository.Object, _ct);
 
         response.Data.NewShops.Select(x => x.Count).Should().Equal(0, 0, 2);
-        response.Data.NewReviews.Select(x => x.Count).Should().Equal(4, 0, 0);
         response.Data.NewCheckIns.Select(x => x.Count).Should().Equal(0, 7, 0);
         response.Data.NewShops.Last().Date.Should().Be(today);
         response.Data.NewCheckIns.First().Date.Should().Be(today.AddDays(-2));
@@ -65,7 +62,6 @@ public class GetAdminShopsTimeseriesHandlerTests
                 new AdminRatingAggregate(3, 26m / 9m, 3m, 3m, 8m / 3m,
                     [(1, 1), (2, 0), (3, 1), (4, 0), (5, 1)]),
                 [new AdminTopShop(shopId, "Alpha", 3)],
-                [],
                 new AdminDownloadAggregate(3, 2, [("android", 2, 2)], [("DE", 1), ("unknown", 1)])));
 
         var response = await GetAdminShopsInsightsHandler.Handle(
@@ -75,7 +71,6 @@ public class GetAdminShopsTimeseriesHandlerTests
         response.Data.Ratings.AverageCoffee.Should().Be(2.67m);
         response.Data.Ratings.Distribution.Should().HaveCount(5);
         response.Data.TopShopsByCheckIns30Days.Single().Name.Should().Be("Alpha");
-        response.Data.TopShopsByReviews.Should().BeEmpty();
         response.Data.Downloads.Last30Days.Should().Be(2);
         response.Data.Downloads.TopCountries30Days.Select(c => c.Country).Should().Equal("DE", "unknown");
     }

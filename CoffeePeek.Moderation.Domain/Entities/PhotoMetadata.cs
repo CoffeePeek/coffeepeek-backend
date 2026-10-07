@@ -1,15 +1,17 @@
-﻿using CoffeePeek.Shared.Domain.Entities;
+using CoffeePeek.Shared.Domain.Entities;
 
 namespace CoffeePeek.Moderation.Domain.Entities;
 
 public sealed class PhotoMetadata : Entity<Guid>
 {
-    public string FileName { get; private set; } 
-    public string ContentType { get; private set; } 
-    public string StorageKey { get; private set; } 
+    public string FileName { get; private set; }
+    public string ContentType { get; private set; }
+    public string StorageKey { get; private set; }
     public long SizeBytes { get; private set; }
     public Guid? OwnerId { get; private set; }
     public Guid? ModerationShopId { get; private set; }
+    public Guid? CheckInPhotoId { get; private set; }
+    public int SortIndex { get; private set; }
 
     // ReSharper disable once UnusedMember.Local
     private PhotoMetadata() { }
@@ -27,9 +29,21 @@ public sealed class PhotoMetadata : Entity<Guid>
             ? null
             : moderationShopId;
     }
-    
+
     public static PhotoMetadata Create(string fileName, string contentType, string storageKey, long sizeBytes, Guid? ownerId, Guid? moderationShopId)
     {
         return new PhotoMetadata(fileName, contentType, storageKey, sizeBytes, ownerId, moderationShopId);
+    }
+
+    public static PhotoMetadata CreateCheckInPhoto(Guid checkInPhotoId, int sortIndex, string fileName,
+        string contentType, string storageKey, long sizeBytes, Guid ownerId)
+    {
+        if (checkInPhotoId == Guid.Empty || sortIndex < 0 || sizeBytes <= 0 || string.IsNullOrWhiteSpace(storageKey))
+            throw new CoffeePeek.Shared.Kernel.Exceptions.DomainException("Invalid check-in photo metadata.");
+        return new PhotoMetadata(fileName, contentType, storageKey, sizeBytes, ownerId, null)
+        {
+            CheckInPhotoId = checkInPhotoId,
+            SortIndex = sortIndex
+        };
     }
 }

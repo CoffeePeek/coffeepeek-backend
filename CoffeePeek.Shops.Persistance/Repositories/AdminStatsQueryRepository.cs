@@ -1,7 +1,7 @@
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
 using CoffeePeek.Shops.Persistance.Configuration;
+using CoffeePeek.Shops.Persistance.Queries;
 using Microsoft.EntityFrameworkCore;
-using Review = CoffeePeek.Shops.Domain.Aggregates.ReviewAggregate.Review;
 
 namespace CoffeePeek.Shops.Persistance.Repositories;
 
@@ -17,8 +17,8 @@ public class AdminStatsQueryRepository(ShopsDbContext dbContext) : IAdminStatsQu
 
         var totalCoffeeShops = await dbContext.Shops.CountAsync(cancellationToken);
         var newCoffeeShopsToday = await dbContext.Shops.CountAsync(s => s.CreatedAtUtc >= today, cancellationToken);
-        var totalReviews = await dbContext.Set<Review>().CountAsync(cancellationToken);
-        var newReviewsToday = await dbContext.Set<Review>().CountAsync(r => r.CreatedAtUtc >= today, cancellationToken);
+        var totalReviews = await CheckInEligibility.Public(dbContext).CountAsync(cancellationToken);
+        var newReviewsToday = await CheckInEligibility.Public(dbContext).CountAsync(r => r.CreatedAtUtc >= today, cancellationToken);
 
         return new AdminShopsStats(totalCoffeeShops, newCoffeeShopsToday, totalReviews, newReviewsToday);
     }
@@ -27,10 +27,9 @@ public class AdminStatsQueryRepository(ShopsDbContext dbContext) : IAdminStatsQu
     {
         var ratings = await GetRatingsAsync(cancellationToken);
         var topByCheckIns = await GetTopShopsByCheckInsAsync(sinceUtc, cancellationToken);
-        var topByReviews = await GetTopShopsByReviewsAsync(cancellationToken);
         var downloads = await GetDownloadsAsync(sinceUtc, cancellationToken);
 
-        return new AdminShopsInsights(ratings, topByCheckIns, topByReviews, downloads);
+        return new AdminShopsInsights(ratings, topByCheckIns, downloads);
     }
 
     public async Task<AdminShopsDailyCounts> GetDailyCountsAsync(
@@ -44,29 +43,21 @@ public class AdminStatsQueryRepository(ShopsDbContext dbContext) : IAdminStatsQu
             .Select(g => new { Day = g.Key, Count = g.Count() })
             .ToListAsync(cancellationToken);
 
-        var reviews = await dbContext.Set<Review>()
-            .AsNoTracking()
-            .Where(r => !r.IsSoftDelete && r.CreatedAtUtc >= fromUtcDate)
-            .GroupBy(r => r.CreatedAtUtc.Date)
-            .Select(g => new { Day = g.Key, Count = g.Count() })
-            .ToListAsync(cancellationToken);
-
         var checkIns = await dbContext.CheckIns
             .AsNoTracking()
-            .Where(c => c.CreatedAtUtc >= fromUtcDate)
+            .Where(c => c.CreatedAtUtc >= fromUtcDate && c.DeletedAtUtc == null)
             .GroupBy(c => c.CreatedAtUtc.Date)
             .Select(g => new { Day = g.Key, Count = g.Count() })
             .ToListAsync(cancellationToken);
 
         return new AdminShopsDailyCounts(
             shops.ToDictionary(x => DateOnly.FromDateTime(x.Day), x => x.Count),
-            reviews.ToDictionary(x => DateOnly.FromDateTime(x.Day), x => x.Count),
             checkIns.ToDictionary(x => DateOnly.FromDateTime(x.Day), x => x.Count));
     }
 
     private async Task<AdminRatingAggregate> GetRatingsAsync(CancellationToken ct)
     {
-        var visible = dbContext.Set<Review>().AsNoTracking().Where(r => !r.IsSoftDelete);
+        var visible = CheckInEligibility.LatestRatings(dbContext).AsNoTracking();
 
         // Group server-side on the integer sum (3..15); star bucketing happens in memory.
         var histogram = await visible
@@ -101,22 +92,8 @@ public class AdminStatsQueryRepository(ShopsDbContext dbContext) : IAdminStatsQu
     {
         var rows = await dbContext.CheckIns
             .AsNoTracking()
-            .Where(c => c.CreatedAtUtc >= sinceUtc)
+            .Where(c => c.CreatedAtUtc >= sinceUtc && c.DeletedAtUtc == null)
             .GroupBy(c => c.ShopId)
-            .Select(g => new { ShopId = g.Key, Count = g.Count() })
-            .OrderByDescending(x => x.Count)
-            .Take(TopLimit)
-            .ToListAsync(ct);
-
-        return await ResolveShopNamesAsync(rows.Select(r => (r.ShopId, r.Count)).ToList(), ct);
-    }
-
-    private async Task<IReadOnlyList<AdminTopShop>> GetTopShopsByReviewsAsync(CancellationToken ct)
-    {
-        var rows = await dbContext.Set<Review>()
-            .AsNoTracking()
-            .Where(r => !r.IsSoftDelete)
-            .GroupBy(r => r.CoffeeShopId)
             .Select(g => new { ShopId = g.Key, Count = g.Count() })
             .OrderByDescending(x => x.Count)
             .Take(TopLimit)

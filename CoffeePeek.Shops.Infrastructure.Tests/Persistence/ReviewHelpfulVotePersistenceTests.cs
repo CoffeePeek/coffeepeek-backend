@@ -1,11 +1,11 @@
-using CoffeePeek.Shops.Domain.Aggregates.ReviewAggregate;
+using CoffeePeek.Shops.Domain.Aggregates.CheckInAggregate;
 using CoffeePeek.Shops.Persistance.Configuration;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 
 namespace CoffeePeek.Shops.Infrastructure.Tests.Persistence;
 
-public class ReviewHelpfulVotePersistenceTests
+public class CheckInHelpfulVotePersistenceTests
 {
     private static ShopsDbContext CreateContext()
     {
@@ -16,22 +16,22 @@ public class ReviewHelpfulVotePersistenceTests
     }
 
     [Fact]
-    public void ReviewHelpfulVote_HasCompositeKeyOnReviewAndUser()
+    public void CheckInHelpfulVote_HasCompositeKeyOnReviewAndUser()
     {
         using var db = CreateContext();
-        var entity = db.Model.FindEntityType(typeof(ReviewHelpfulVote));
+        var entity = db.Model.FindEntityType(typeof(CheckInHelpfulVote));
 
         entity.Should().NotBeNull();
         entity!.FindPrimaryKey()!.Properties.Select(p => p.Name)
-            .Should().BeEquivalentTo(nameof(ReviewHelpfulVote.ReviewId), nameof(ReviewHelpfulVote.UserId));
+            .Should().BeEquivalentTo(nameof(CheckInHelpfulVote.CheckInId), nameof(CheckInHelpfulVote.UserId));
     }
 
     [Fact]
     public void Review_MapsHelpfulCount()
     {
         using var db = CreateContext();
-        var entity = db.Model.FindEntityType(typeof(Review));
+        var entity = db.Model.FindEntityType(typeof(CheckIn));
 
-        entity!.FindProperty(nameof(Review.HelpfulCount)).Should().NotBeNull();
+        entity!.FindProperty(nameof(CheckIn.HelpfulCount)).Should().NotBeNull();
     }
 }

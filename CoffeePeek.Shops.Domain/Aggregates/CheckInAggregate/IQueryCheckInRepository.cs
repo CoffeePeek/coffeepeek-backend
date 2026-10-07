@@ -3,7 +3,10 @@ namespace CoffeePeek.Shops.Domain.Aggregates.CheckInAggregate;
 public interface IQueryCheckInRepository
 {
     void Add(CheckIn checkIn);
-    
+    Task<CheckIn?> GetTrackedByIdAsync(Guid id, CancellationToken ct = default);
+    Task<bool> ArePhotoKeysUsedAsync(IReadOnlyCollection<string> keys, CancellationToken ct = default);
+    Task<(bool IsHelpful, int HelpfulCount, bool Changed)> SetHelpfulAsync(Guid id, Guid userId, bool helpful, CancellationToken ct = default);
+
     Task<List<Guid>> GetVisitedShopIdsAsync(Guid userId, CancellationToken ct = default);
     Task<int> GetCheckInCountByCoffeeShopIdAsync(Guid coffeeShopId, CancellationToken ct = default);
 

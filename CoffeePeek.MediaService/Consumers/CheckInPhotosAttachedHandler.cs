@@ -12,26 +12,23 @@ public class CheckInPhotosAttachedHandler(
     IUnitOfWork unitOfWork,
     IStorageService storageService)
 {
-    public Task Handle(CheckInPhotosAttachedEvent message, CancellationToken ct) =>
-        ConfirmPhotos(message.UserId, message.StorageKeys, ct);
-
-    public Task Handle(ReviewPhotosAttachedEvent message, CancellationToken ct) =>
-        ConfirmPhotos(message.UserId, message.StorageKeys, ct);
-
-    private async Task ConfirmPhotos(Guid userId, IReadOnlyCollection<string> storageKeys, CancellationToken ct)
+    public async Task Handle(CheckInPhotosAttachedEvent message, CancellationToken ct)
     {
-        if (storageKeys is null || storageKeys.Count == 0) return;
+        if (message.StorageKeys is null || message.StorageKeys.Count == 0) return;
 
-        var photos = await photoRepository.GetByStorageKeysAsync(userId, storageKeys, ct);
+        var photos = await photoRepository.GetByStorageKeysAsync(message.UserId, message.StorageKeys, ct);
 
         var changed = false;
         foreach (var photo in photos)
         {
-            if (photo.OwnerId != userId || photo.Status != PhotoStatus.Pending) continue;
+            if (photo.OwnerId != message.UserId || photo.Status != PhotoStatus.Pending) continue;
+            if (photo.CheckInId is { } assignedId && assignedId != message.CheckInId) continue;
+            // A released private reservation must not be resurrected by a delayed attachment event.
+            if (photo.BucketType == BucketType.CheckIn && photo.CheckInId != message.CheckInId) continue;
 
-            // Tag storage first: if MinIO throws, the photo stays Pending and the retry redoes it.
-            // MarkAsPermanent is idempotent.
-            await storageService.MarkAsPermanent(photo.StorageKey, BucketType.Shop, ct);
+            // Tag storage first: a failed operation retains Pending and can be retried.
+            await storageService.MarkAsPermanent(photo.StorageKey, photo.BucketType, ct);
+            photo.CheckInId = message.CheckInId;
             photo.Status = PhotoStatus.Confirmed;
             changed = true;
         }

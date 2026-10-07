@@ -1,36 +1,34 @@
 using CoffeePeek.Moderation.Domain.Common.Enums;
 using CoffeePeek.Moderation.Domain.Entities;
 using CoffeePeek.Shared.Kernel.Exceptions;
+using CoffeePeek.Shared.Kernel.Drinks;
 
 namespace CoffeePeek.Moderation.Domain.Aggregates.ModerationReviewAggregate;
 
 public partial class ModerationReview
 {
-    public static ModerationReview Create(Guid userId, Guid shopId, Guid? moderationShopId, string userName, string? header, string comment,
-        int ratingPlace, int ratingService, int ratingCoffee, List<PhotoMetadata> photos)
+    public static ModerationReview CreateCheckInSnapshot(Guid checkInId, int contentRevision,
+        Guid userId, Guid shopId, string userName, string text, int place, int service, int coffee,
+        DrinkSelection? drink, DateTime visitedAtUtc, List<PhotoMetadata> photos)
     {
-        if (shopId == Guid.Empty)
-            throw new DomainException($"{nameof(shopId)} cannot be empty.");
+        if (checkInId == Guid.Empty || userId == Guid.Empty || shopId == Guid.Empty || contentRevision < 1)
+            throw new DomainException("A check-in snapshot requires valid identity and revision.");
+        if (string.IsNullOrWhiteSpace(text) || text.Trim().Length > BusinessConstants.MaxCheckInTextLength)
+            throw new DomainException($"Check-in text is required and must not exceed {BusinessConstants.MaxCheckInTextLength} characters.");
+        if (drink is not null && (string.IsNullOrWhiteSpace(drink.Slug) || drink.Slug.Length > DrinkSelection.MaxSlugLength ||
+            string.IsNullOrWhiteSpace(drink.NameRu) || drink.NameRu.Length > DrinkSelection.MaxNameLength ||
+            string.IsNullOrWhiteSpace(drink.NameEn) || drink.NameEn.Length > DrinkSelection.MaxNameLength ||
+            (drink.Slug == DrinkSelection.OtherSlug
+                ? string.IsNullOrWhiteSpace(drink.CustomName) || drink.CustomName.Length > DrinkSelection.MaxNameLength
+                : drink.CustomName is not null)))
+            throw new DomainException("Invalid frozen check-in drink selection.");
+        if (visitedAtUtc == default || visitedAtUtc.Kind != DateTimeKind.Utc)
+            throw new DomainException("A check-in snapshot requires a UTC visit time.");
+        if (photos is null || photos.Any(p => p.CheckInPhotoId is null || p.CheckInPhotoId == Guid.Empty || p.OwnerId != userId))
+            throw new DomainException("Snapshot photos require canonical identities and the check-in author.");
 
-        if (userId == Guid.Empty)
-            throw new DomainException($"{nameof(userId)} cannot be empty.");
-
-        var normalizedHeader = string.IsNullOrWhiteSpace(header) ? null : header.Trim();
-        if (normalizedHeader != null &&
-            normalizedHeader.Length is < BusinessConstants.MinReviewHeaderLength or > BusinessConstants.MaxReviewHeaderLength)
-            throw new DomainException(
-                $"{nameof(header)} must be between {BusinessConstants.MinReviewHeaderLength} and {BusinessConstants.MaxReviewHeaderLength} characters.");
-
-        if (string.IsNullOrWhiteSpace(comment))
-            throw new DomainException("Review comment is required.");
-
-        if (comment.Length is < BusinessConstants.MinReviewCommentLength or > BusinessConstants.MaxReviewCommentLength)
-            throw new DomainException(
-                $"{nameof(comment)} must be between {BusinessConstants.MinReviewCommentLength} and {BusinessConstants.MaxReviewCommentLength} characters.");
-        
-        var rating = Rating.Create(ratingPlace,ratingService, ratingCoffee);
-
-        return new Aggregates.ModerationReviewAggregate.ModerationReview(userId, shopId, moderationShopId, userName, normalizedHeader, comment.Trim(), rating, photos);
+        return new ModerationReview(checkInId, contentRevision, userId, shopId, userName, text.Trim(),
+            Rating.Create(place, service, coffee), drink, visitedAtUtc, photos);
     }
 
     public bool Approve(Guid moderatorId)
@@ -44,10 +42,12 @@ public partial class ModerationReview
         ModeratedAt = DateTime.UtcNow;
         ModeratedBy = moderatorId;
         ModerationStatus = ModerationStatus.Approved;
+        RejectedReason = null;
+        DecisionSequence++;
         return true;
     }
-    
-    public void Reject(string reason, Guid moderatorId)
+
+    public bool Reject(string reason, Guid moderatorId)
     {
         if (moderatorId == Guid.Empty)
             throw new DomainException($"{nameof(moderatorId)} cannot be empty.");
@@ -59,77 +59,30 @@ public partial class ModerationReview
             throw new DomainException(
                 $"{nameof(reason)} must be between {BusinessConstants.MinRejectReasonCommentLength} and {BusinessConstants.MaxRejectReasonCommentLength} characters.");
 
-        RejectedReason = reason;
+        if (ModerationStatus == ModerationStatus.Rejected)
+            return false;
+
+        RejectedReason = reason.Trim();
         ModeratedAt = DateTime.UtcNow;
         ModeratedBy = moderatorId;
         ModerationStatus = ModerationStatus.Rejected;
-    }
-    
-    public void Resubmit(Guid authorId)
-    {
-        if (authorId == Guid.Empty)
-            throw new DomainException($"{nameof(authorId)} cannot be empty.");
-
-        // Author-initiated re-moderation: do NOT stamp ModeratedBy/ModeratedAt (the actor
-        // is the review author, not a moderator). Only clear the rejection and reset status.
-        RejectedReason = null;
-        ModerationStatus = ModerationStatus.Pending;
+        DecisionSequence++;
+        return true;
     }
 
-    public void MoveToPending(Guid moderatorId)
+    public bool MoveToPending(Guid moderatorId)
     {
         if (moderatorId == Guid.Empty)
             throw new DomainException($"{nameof(moderatorId)} cannot be empty.");
 
+        if (ModerationStatus == ModerationStatus.Pending)
+            return false;
+
         RejectedReason = null;
         ModeratedAt = DateTime.UtcNow;
         ModeratedBy = moderatorId;
         ModerationStatus = ModerationStatus.Pending;
-    }
-
-    public void ReplacePhotos(IEnumerable<PhotoMetadata> photos)
-    {
-        var replacement = photos.ToList();
-        // Existing records are authorized by their membership in this source review.
-        // Keep legacy nullable ownership/old shop-link metadata intact; require current
-        // ownership rules only for genuinely new, Media-verified entities.
-        if (replacement.Count > 20 || replacement.Any(p => !_reviewPhotos.Contains(p) && (p.OwnerId != UserId || p.ModerationShopId is not null)) ||
-            replacement.Select(p => p.StorageKey).Distinct(StringComparer.Ordinal).Count() != replacement.Count)
-            throw new DomainException("Review photos must be unique and belong to its author.");
-        _reviewPhotos.Clear();
-        _reviewPhotos.AddRange(replacement);
-    }
-
-    public void UpdateHeader(string? header)
-    {
-        var normalizedHeader = string.IsNullOrWhiteSpace(header) ? null : header.Trim();
-        if (normalizedHeader == Header)
-        {
-            return;
-        }
-        
-        if (normalizedHeader != null &&
-            normalizedHeader.Length is < BusinessConstants.MinReviewHeaderLength or > BusinessConstants.MaxReviewHeaderLength)
-        {
-            throw new DomainException(
-                $"{nameof(header)} header must be between {BusinessConstants.MinReviewHeaderLength} and {BusinessConstants.MaxReviewHeaderLength} characters.");
-        }
-        
-        Header = normalizedHeader;
-    }
-
-    public void UpdateComment(string comment)
-    {
-        if (string.IsNullOrWhiteSpace(comment))
-            throw new DomainException("Review comment is required.");
-
-        var normalizedComment = comment.Trim();
-        if (normalizedComment.Length is < BusinessConstants.MinReviewCommentLength or > BusinessConstants.MaxReviewCommentLength)
-        {
-            throw new DomainException(
-                $"{nameof(comment)} must be between {BusinessConstants.MinReviewCommentLength} and {BusinessConstants.MaxReviewCommentLength} characters.");
-        }
-        
-        Comment = normalizedComment;
+        DecisionSequence++;
+        return true;
     }
 }

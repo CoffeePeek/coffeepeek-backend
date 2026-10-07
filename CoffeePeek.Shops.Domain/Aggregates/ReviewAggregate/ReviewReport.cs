@@ -6,7 +6,7 @@ namespace CoffeePeek.Shops.Domain.Aggregates.ReviewAggregate;
 public sealed class ReviewReport : Entity<Guid>
 {
     public const int MaxTextLength = 2000;
-    public Guid ReviewId { get; private set; }
+    public Guid? CheckInId { get; private set; }
     public Guid ReportedByUserId { get; private set; }
     public string Text { get; private set; } = null!;
     public ReviewReportStatus Status { get; private set; }
@@ -16,25 +16,25 @@ public sealed class ReviewReport : Entity<Guid>
 
     private ReviewReport() { }
 
-    public static ReviewReport Create(Guid reviewId, Guid userId, string text)
+    public static ReviewReport Create(Guid checkInId, Guid userId, string text)
     {
-        if (reviewId == Guid.Empty || userId == Guid.Empty)
-            throw new ValidationException("Review and reporting user are required.");
+        if (checkInId == Guid.Empty || userId == Guid.Empty)
+            throw new ValidationException("Check-in and reporting user are required.");
         if (string.IsNullOrWhiteSpace(text) || text.Trim().Length > MaxTextLength)
             throw new ValidationException($"Complaint text must contain 1–{MaxTextLength} characters.");
 
         return new ReviewReport
         {
-            Id = Guid.NewGuid(), ReviewId = reviewId, ReportedByUserId = userId,
+            Id = Guid.NewGuid(), CheckInId = checkInId, ReportedByUserId = userId,
             Text = text.Trim(), CreatedAtUtc = DateTime.UtcNow
         };
     }
 
-    public bool Resolve(bool deleteReview, Guid adminId)
+    public bool Resolve(bool deleteCheckIn, Guid adminId)
     {
         if (adminId == Guid.Empty)
             throw new ValidationException("Resolving admin is required.");
-        var decision = deleteReview ? ReviewReportStatus.ReviewDeleted : ReviewReportStatus.Dismissed;
+        var decision = deleteCheckIn ? ReviewReportStatus.CheckInDeleted : ReviewReportStatus.Dismissed;
         if (Status == decision) return false;
         if (Status != ReviewReportStatus.Pending)
             throw new ConflictException("This complaint has already been resolved with a different decision.");
@@ -44,5 +44,3 @@ public sealed class ReviewReport : Entity<Guid>
         return true;
     }
 }
-
-public enum ReviewReportStatus { Pending, Dismissed, ReviewDeleted }

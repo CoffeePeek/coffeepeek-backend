@@ -7,10 +7,45 @@ namespace CoffeePeek.Shops.Persistance.Repositories;
 public class QueryCheckInRepository(ShopsDbContext dbContext) : IQueryCheckInRepository
 {
     private readonly DbSet<CheckIn> _repository = dbContext.CheckIns;
-    
+
+    public Task<CheckIn?> GetTrackedByIdAsync(Guid id, CancellationToken ct = default) =>
+        _repository.Include(x => x.ShopPhotos).FirstOrDefaultAsync(x => x.Id == id, ct);
+
+    public async Task<(bool IsHelpful, int HelpfulCount, bool Changed)> SetHelpfulAsync(Guid id, Guid userId, bool helpful, CancellationToken ct = default)
+    {
+        // Serialize eligibility and votes with edit/delete/moderation on the SAME canonical row.
+        // The unique vote key still makes duplicate requests idempotent.
+        await dbContext.Database.ExecuteSqlInterpolatedAsync($"SELECT 1 FROM \"CanonicalCheckIns\" WHERE \"Id\" = {id} FOR UPDATE", ct);
+        var eligible = await Queries.CheckInEligibility.Public(dbContext).AnyAsync(c => c.Id == id && c.UserId != userId, ct);
+        if (!eligible) throw new CoffeePeek.Shared.Kernel.Exceptions.NotFoundException("Check-in not found.");
+        var changed = helpful
+            ? await dbContext.Database.ExecuteSqlInterpolatedAsync($"""
+                WITH inserted AS (
+                    INSERT INTO "CheckInHelpfulVotes" ("CheckInId", "UserId", "CreatedAtUtc") VALUES ({id}, {userId}, {DateTime.UtcNow})
+                    ON CONFLICT ("CheckInId", "UserId") DO NOTHING RETURNING "CheckInId"
+                ) UPDATE "CanonicalCheckIns" SET "HelpfulCount" = "HelpfulCount" + 1, "RowVersion" = {Guid.NewGuid()}
+                  WHERE "Id" = {id} AND EXISTS (SELECT 1 FROM inserted)
+                """, ct)
+            : await dbContext.Database.ExecuteSqlInterpolatedAsync($"""
+                WITH deleted AS (
+                    DELETE FROM "CheckInHelpfulVotes" WHERE "CheckInId" = {id} AND "UserId" = {userId} RETURNING "CheckInId"
+                ) UPDATE "CanonicalCheckIns" SET "HelpfulCount" = GREATEST("HelpfulCount" - 1, 0), "RowVersion" = {Guid.NewGuid()}
+                  WHERE "Id" = {id} AND EXISTS (SELECT 1 FROM deleted)
+                """, ct);
+        var count = await _repository.AsNoTracking().Where(c => c.Id == id).Select(c => c.HelpfulCount).SingleAsync(ct);
+        var isHelpful = await dbContext.CheckInHelpfulVotes.AnyAsync(v => v.CheckInId == id && v.UserId == userId, ct);
+        return (isHelpful, count, changed == 1);
+    }
+
+    public async Task<bool> ArePhotoKeysUsedAsync(IReadOnlyCollection<string> keys, CancellationToken ct = default) =>
+        await dbContext.ShopPhotos.AnyAsync(p => keys.Contains(p.StorageKey), ct)
+        || await dbContext.RoasterPhotos.AnyAsync(p => keys.Contains(p.StorageKey), ct)
+        || await dbContext.Set<CoffeePeek.Shops.Domain.Aggregates.MenuAggregate.ShopMenuPhoto>()
+            .AnyAsync(p => keys.Contains(p.StorageKey), ct);
+
     public Task<bool> Exists(Guid userId, Guid coffeeShopId, CancellationToken ct = default)
     {
-        return _repository.AnyAsync(x => x.UserId == userId && x.ShopId == coffeeShopId, ct);
+        return _repository.AnyAsync(x => x.UserId == userId && x.ShopId == coffeeShopId && x.DeletedAtUtc == null, ct);
     }
 
     public Task LockUserForCheckInAsync(Guid userId, CancellationToken ct = default) =>
@@ -37,7 +72,7 @@ public class QueryCheckInRepository(ShopsDbContext dbContext) : IQueryCheckInRep
     {
         return await _repository
             .AsNoTracking()
-            .Where(x => x.UserId == userId && x.ShopId == shopId)
+            .Where(x => x.UserId == userId && x.ShopId == shopId && x.DeletedAtUtc == null)
             .Include(x => x.ShopPhotos)
             .OrderByDescending(x => x.CreatedAtUtc)
             .Skip((page - 1) * pageSize)
@@ -54,14 +89,14 @@ public class QueryCheckInRepository(ShopsDbContext dbContext) : IQueryCheckInRep
     {
         return _repository
             .AsNoTracking()
-            .Where(x => x.UserId == userId)
+            .Where(x => x.UserId == userId && x.DeletedAtUtc == null)
             .Select(x => x.ShopId)
             .ToListAsync(ct);
     }
 
     public Task<int> GetCheckInCountByCoffeeShopIdAsync(Guid coffeeShopId, CancellationToken ct = default)
     {
-        return _repository
+        return Queries.CheckInEligibility.Public(dbContext)
             .AsNoTracking()
             .CountAsync(x => x.ShopId == coffeeShopId, ct);
     }
@@ -69,8 +104,8 @@ public class QueryCheckInRepository(ShopsDbContext dbContext) : IQueryCheckInRep
     public async Task<Dictionary<Guid, int>> GetCheckInCountsByShopIdsAsync(IEnumerable<Guid> shopIds, CancellationToken ct = default)
     {
         var shopIdList = shopIds.ToList();
-        
-        var counts = await _repository
+
+        var counts = await Queries.CheckInEligibility.Public(dbContext)
             .AsNoTracking()
             .Where(x => shopIdList.Contains(x.ShopId))
             .GroupBy(x => x.ShopId)

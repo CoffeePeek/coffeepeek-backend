@@ -28,7 +28,7 @@ public class CoffeeShopCard
     [JsonRequired]
     [Required]
     [Range(0, 2147483647)]
-    public int ReviewCount { get; set; }
+    public int CheckInCount { get; set; }
     [JsonRequired]
     public bool? IsOpen { get; set; }
     [JsonRequired]

@@ -6,7 +6,6 @@ public record UserProfileResponse(
     DateTime CreatedAtUtc,
     string? About,
     string? AvatarUrl,
-    int ReviewCount,
     int CheckInCount,
     int AddedShopsCount
 )

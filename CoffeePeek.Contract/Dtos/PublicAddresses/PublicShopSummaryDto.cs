@@ -14,7 +14,7 @@ public record PublicShopSummaryDto
     public string Name { get; init; } = string.Empty;
     public ShortPhotoMetadataDto[] Photos { get; init; } = [];
     public decimal Rating { get; init; }
-    public int ReviewCount { get; init; }
+    public int CheckInCount { get; init; }
     public bool IsVisited { get; init; }
     public bool IsNew { get; init; }
     public bool IsOpen { get; init; }

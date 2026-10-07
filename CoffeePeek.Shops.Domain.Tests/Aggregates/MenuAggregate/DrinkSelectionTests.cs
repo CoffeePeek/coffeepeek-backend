@@ -66,7 +66,7 @@ public class DrinkSelectionTests
     {
         var drink = CoffeeDrinkDefinition.CreateWithId(Guid.NewGuid(), "latte", "Латте", "Latte",
             CoffeeDrinkCategory.Espresso, "latte", 10);
-        var checkIn = CoffeePeek.Shops.Domain.Aggregates.CheckInAggregate.CheckIn.Create(Guid.NewGuid(), Guid.NewGuid(), DateTime.UtcNow);
+        var checkIn = CoffeePeek.Shops.Domain.Aggregates.CheckInAggregate.CheckIn.CreateUnified(Guid.NewGuid(), Guid.NewGuid(), "user", "A visit", CoffeePeek.Shops.Domain.Entities.Rating.Create(5, 5, 5), DateTime.UtcNow);
         checkIn.SetDrink(new(drink.Slug, null, drink.NameRu, drink.NameEn));
         drink.Update("Новое название", "New name", CoffeeDrinkCategory.Espresso, "latte", 20, false);
         drink.Slug.Should().Be("latte");

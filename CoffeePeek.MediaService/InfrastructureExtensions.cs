@@ -64,6 +64,7 @@ public static class InfrastructureExtensions
 
         services.AddScoped<IUnitOfWork, UnitOfWork<MediaDbContext>>();
         services.AddScoped<IPhotoRepository, PhotoRepository>();
+        services.AddScoped<ClaimCheckInPhotosHandler>();
 
         services.AddOptions<MediaPublicUrlOptions>()
             .BindConfiguration(nameof(MediaPublicUrlOptions));

@@ -15,12 +15,12 @@ public static class GetAdminModerationStatsHandler
     {
         // Sequential: both repositories share the same scoped ModerationDbContext.
         // Parallel Task.WhenAll causes InvalidOperationException (concurrent DbContext use).
-        var (pendingShops, pendingReviews) = await repository.GetStatsAsync(ct);
+        var (pendingShops, pendingCheckIns) = await repository.GetStatsAsync(ct);
         var import = await importRepository.GetStatsAsync(ct);
 
         return Response<AdminServiceStatsDto>.Success(new AdminServiceStatsDto(
             PendingModerationShops: pendingShops,
-            PendingModerationReviews: pendingReviews,
+            PendingModerationCheckIns: pendingCheckIns,
             ImportPending: import.Pending,
             ImportPublished: import.Published,
             ImportRejected: import.Rejected,

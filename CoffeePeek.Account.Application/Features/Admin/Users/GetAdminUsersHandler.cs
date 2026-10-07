@@ -36,7 +36,6 @@ public static class GetAdminUsersHandler
         user.PhotoMetadata != null
             ? mediaUrlProvider.BuildAvatarUrl(user.PhotoMetadata.StorageKey)
             : null,
-        user.Statistics.ReviewCount,
         user.Statistics.CheckInCount,
         user.Statistics.AddedShopsCount,
         user.Roles.Select(r => r.Name).ToArray(),

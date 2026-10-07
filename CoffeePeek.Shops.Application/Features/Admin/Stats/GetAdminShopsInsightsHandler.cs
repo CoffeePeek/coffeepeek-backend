@@ -19,14 +19,13 @@ public static class GetAdminShopsInsightsHandler
 
         return Response<AdminShopsInsightsDto>.Success(new AdminShopsInsightsDto(
             Ratings: new AdminRatingStatsDto(
-                TotalReviews: ratings.TotalReviews,
+                TotalCheckIns: ratings.TotalCheckIns,
                 AverageRating: Round2(ratings.AverageRating),
                 AveragePlace: Round2(ratings.AveragePlace),
                 AverageService: Round2(ratings.AverageService),
                 AverageCoffee: Round2(ratings.AverageCoffee),
                 Distribution: ratings.StarCounts.Select(x => new AdminRatingBucketDto(x.Stars, x.Count)).ToList()),
             TopShopsByCheckIns30Days: insights.TopShopsByCheckIns.Select(ToDto).ToList(),
-            TopShopsByReviews: insights.TopShopsByReviews.Select(ToDto).ToList(),
             Downloads: new AdminAppDownloadStatsDto(
                 Total: downloads.Total,
                 Last30Days: downloads.SinceCount,

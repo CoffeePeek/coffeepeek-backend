@@ -1,5 +1,7 @@
 using CoffeePeek.Shared.Kernel.Exceptions;
 using CoffeePeek.Shops.Domain.Aggregates.ReviewAggregate;
+using CoffeePeek.Shops.Domain.Aggregates.CheckInAggregate;
+using CoffeePeek.Shops.Domain.Entities;
 using FluentAssertions;
 
 namespace CoffeePeek.Shops.Domain.Tests.Aggregates.ReviewAggregate;
@@ -38,20 +40,37 @@ public class ReviewReportTests
         report.Resolve(delete, Guid.NewGuid()).Should().BeFalse();
         report.ResolvedByAdminId.Should().Be(admin);
         report.ResolvedAtUtc.Should().Be(at);
-        report.Status.Should().Be(delete ? ReviewReportStatus.ReviewDeleted : ReviewReportStatus.Dismissed);
+        report.Status.Should().Be(delete ? ReviewReportStatus.CheckInDeleted : ReviewReportStatus.Dismissed);
         FluentActions.Invoking(() => report.Resolve(!delete, admin)).Should().Throw<ConflictException>();
     }
 
     [Fact]
-    public void AdminRemoval_PreventsRestoreWhileNormalHideCanRestore()
+    public void CheckInDeletion_IsTerminalAndDelayedApprovalCannotPublishIt()
     {
-        var review = Review.Create(Guid.NewGuid(), Guid.NewGuid(), "tester", null, "comment text body", 5, 5, 5, Guid.NewGuid());
-        review.Hide();
-        review.Restore();
-        review.IsSoftDelete.Should().BeFalse();
-        review.RemoveByAdmin();
-        review.Restore();
-        review.IsRemovedByAdmin.Should().BeTrue();
-        review.IsSoftDelete.Should().BeTrue();
+        var checkIn = CheckIn.CreateUnified(Guid.NewGuid(), Guid.NewGuid(), "tester", "comment text body",
+            Rating.Create(5, 5, 5), DateTime.UtcNow, CheckInVisibility.Public);
+        var revision = checkIn.ContentRevision;
+        checkIn.Delete();
+        var deletedAt = checkIn.DeletedAtUtc;
+        checkIn.Delete();
+        checkIn.DeletedAtUtc.Should().Be(deletedAt);
+        checkIn.IsPubliclyVisible.Should().BeFalse();
+        checkIn.ApplyModerationDecision(revision, Guid.NewGuid(), 1, CheckInModerationState.Approved,
+            null, DateTime.UtcNow).Should().BeFalse();
+        FluentActions.Invoking(() => checkIn.ChangeVisibility(CheckInVisibility.Public)).Should().Throw<DomainException>();
+        FluentActions.Invoking(() => checkIn.UpdateContent("restored text", Rating.Create(5, 5, 5)))
+            .Should().Throw<DomainException>();
+    }
+
+    [Fact]
+    public void Resolve_PreservesOriginalTargetAndAuditText()
+    {
+        var target = Guid.NewGuid();
+        var user = Guid.NewGuid();
+        var report = ReviewReport.Create(target, user, "historical complaint");
+        report.Resolve(true, Guid.NewGuid());
+        report.CheckInId.Should().Be(target);
+        report.ReportedByUserId.Should().Be(user);
+        report.Text.Should().Be("historical complaint");
     }
 }

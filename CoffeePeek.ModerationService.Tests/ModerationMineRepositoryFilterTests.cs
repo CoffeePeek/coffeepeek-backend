@@ -90,7 +90,7 @@ public class ModerationMineRepositoryFilterTests
     }
 
     [Fact]
-    public async Task Reviews_FilteredByUser_ReturnOnlyThatUsersItems()
+    public async Task CheckIns_ModeratorAuthorFilter_ReturnsOnlyMatchingSnapshots()
     {
         var options = NewOptions();
         var userA = Guid.NewGuid();
@@ -127,7 +127,7 @@ public class ModerationMineRepositoryFilterTests
     }
 
     private static ModerationReview NewReview(Guid userId) =>
-        ModerationReview.Create(
-            userId, Guid.NewGuid(), null, "user", "Nice header", "A long enough review comment",
-            4, 4, 4, new List<PhotoMetadata>());
+        ModerationReview.CreateCheckInSnapshot(Guid.NewGuid(), 1,
+            userId, Guid.NewGuid(), "user", "A complete check-in comment",
+            4, 4, 4, null, DateTime.UtcNow, []);
 }

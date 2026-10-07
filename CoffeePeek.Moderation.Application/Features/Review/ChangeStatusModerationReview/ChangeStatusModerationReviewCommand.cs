@@ -7,7 +7,7 @@ namespace CoffeePeek.Moderation.Application.Features.Review.ChangeStatusModerati
 
 public record ChangeStatusModerationReviewCommand(
     [property: JsonIgnore] Guid UserId,
-    Guid ModerationReviewId,
+    Guid SubmissionId,
     [property: JsonConverter(typeof(JsonStringEnumConverter))] ModerationStatus ModerationStatus,
     [MaxLength(BusinessConstants.MaxRejectReasonCommentLength)] string? Comment,
     [MaxLength(BusinessConstants.MaxRejectReasonCommentLength)] string? RejectReason);

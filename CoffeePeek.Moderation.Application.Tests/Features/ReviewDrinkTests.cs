@@ -1,15 +1,6 @@
-using CoffeePeek.Contract.Dtos;
-using CoffeePeek.Moderation.Application.Abstractions;
-using Wolverine;
-using CoffeePeek.Contract.Dtos.CoffeeShop;
-using CoffeePeek.Moderation.Application.Features.Review.SendReviewToModeration;
-using CoffeePeek.Moderation.Application.Features.Review.UpdateCoffeeShopReview;
 using CoffeePeek.Moderation.Domain.Aggregates.ModerationReviewAggregate;
-using CoffeePeek.Shared.Kernel;
 using CoffeePeek.Shared.Kernel.Drinks;
-using CoffeePeek.Shared.Validation;
 using FluentAssertions;
-using MapsterMapper;
 using Moq;
 
 namespace CoffeePeek.Moderation.Application.Tests.Features;
@@ -17,67 +8,55 @@ namespace CoffeePeek.Moderation.Application.Tests.Features;
 public class ReviewDrinkTests
 {
     [Fact]
-    public async Task Submit_StoresCustomDrink()
+    public async Task Snapshot_StoresTrimmedCustomDrinkWithoutCatalogLookup()
     {
-        var ct = TestContext.Current.CancellationToken;
-        var command = new SendReviewToModerationCommand(Guid.NewGuid(), null, "A sufficiently long review comment",
-            new RatingDto { Place = 5, Service = 5, Coffee = 5 }, null)
-        { UserId = Guid.NewGuid(), UserName = "visitor", DrinkSlug = "other", CustomDrinkName = "  Эспрессо-тоник  " };
-        var repo = new Mock<IModerationReviewRepository>();
-        ModerationReview? saved = null;
-        repo.Setup(r => r.Add(It.IsAny<ModerationReview>())).Callback<ModerationReview>(r => saved = r);
         var catalog = new Mock<IDrinkCatalog>(MockBehavior.Strict);
-        var response = await SendReviewToModerationHandler.Handle(command, new SendReviewToModerationValidationStrategy(),
-            Mock.Of<CoffeePeek.Moderation.Domain.Aggregates.IQueryModerationShopRepository>(), repo.Object,
-            Mock.Of<IUnitOfWork>(), catalog.Object, ct);
-        response.EntityId.Should().Be(saved!.Id);
-        saved.DrinkSlug.Should().Be("other");
-        saved.CustomDrinkName.Should().Be("Эспрессо-тоник");
-        saved.DrinkNameEn.Should().Be("Эспрессо-тоник");
+        var selection = await DrinkSelection.ResolveAsync("other", "  Эспрессо-тоник  ", catalog.Object,
+            TestContext.Current.CancellationToken);
+
+        var snapshot = CreateSnapshot(Guid.NewGuid(), 1, selection);
+
+        snapshot.DrinkSlug.Should().Be("other");
+        snapshot.CustomDrinkName.Should().Be("Эспрессо-тоник");
+        snapshot.DrinkNameRu.Should().Be("Эспрессо-тоник");
+        snapshot.DrinkNameEn.Should().Be("Эспрессо-тоник");
+        catalog.VerifyNoOtherCalls();
     }
 
     [Fact]
-    public async Task Submit_UsesTrustedCheckInSnapshotWithoutRecheckingDeactivatedCatalog()
+    public async Task Snapshot_PreservesTrustedNamesAfterCatalogDeactivation()
     {
-        var ct = TestContext.Current.CancellationToken;
-        var command = new SendReviewToModerationCommand(Guid.NewGuid(), null, "A sufficiently long review comment",
-            new RatingDto { Place = 5, Service = 5, Coffee = 5 }, null)
-        {
-            UserId = Guid.NewGuid(), UserName = "visitor", DrinkSlug = "latte",
-            TrustedDrink = new("latte", null, "Латте", "Latte")
-        };
-        var repo = new Mock<IModerationReviewRepository>();
-        ModerationReview? saved = null;
-        repo.Setup(r => r.Add(It.IsAny<ModerationReview>())).Callback<ModerationReview>(r => saved = r);
-        await SendReviewToModerationHandler.Handle(command, new SendReviewToModerationValidationStrategy(),
-            Mock.Of<CoffeePeek.Moderation.Domain.Aggregates.IQueryModerationShopRepository>(), repo.Object,
-            Mock.Of<IUnitOfWork>(), Mock.Of<IDrinkCatalog>(MockBehavior.Strict), ct);
-        saved!.DrinkNameRu.Should().Be("Латте");
+        var catalog = new Mock<IDrinkCatalog>();
+        catalog.Setup(x => x.FindAsync("latte", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new DrinkCatalogEntry("Латте", "Latte", true));
+        var selected = await DrinkSelection.ResolveAsync("latte", null, catalog.Object,
+            TestContext.Current.CancellationToken);
+        catalog.Setup(x => x.FindAsync("latte", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new DrinkCatalogEntry("Новое название", "Renamed", false));
+
+        var snapshot = CreateSnapshot(Guid.NewGuid(), 1, selected);
+
+        snapshot.DrinkNameRu.Should().Be("Латте");
+        snapshot.DrinkNameEn.Should().Be("Latte");
+        catalog.Verify(x => x.FindAsync("latte", It.IsAny<CancellationToken>()), Times.Once);
     }
 
-    [Theory]
-    [InlineData(false, false)]
-    [InlineData(true, false)]
-    [InlineData(false, true)]
-    public async Task Edit_PreservesExistingSelectionOrExplicitlyClearsIt(bool sameSelection, bool clear)
+    [Fact]
+    public void NewRevision_CanClearDrinkWithoutMutatingEarlierSnapshot()
     {
-        var ct = TestContext.Current.CancellationToken;
-        var review = ModerationReview.Create(Guid.NewGuid(), Guid.NewGuid(), null, "visitor", null,
-            "A sufficiently long review comment", 5, 5, 5, []);
-        review.SetDrink(new("latte", null, "Латте", "Latte"));
-        var repo = new Mock<IModerationReviewRepository>();
-        repo.Setup(r => r.GetById(review.Id, ct)).ReturnsAsync(review);
-        var mapper = new Mock<IMapper>();
-        mapper.Setup(m => m.Map<ModerationReviewDto>(review)).Returns(() => new ModerationReviewDto
-        { Id = review.Id, DrinkSlug = review.DrinkSlug, DrinkNameRu = review.DrinkNameRu });
-        var command = new UpdateCoffeeShopReviewCommand(review.UserId, review.Id, null,
-            review.Comment, new RatingDto { Place = 5, Service = 5, Coffee = 5 })
-        { DrinkSlug = sameSelection ? "latte" : null, ClearDrink = clear };
-        var (response, outgoing) = await UpdateCoffeeShopReviewHandler.Handle(command,
-            new ReviewUpdateValidationStrategy(), repo.Object, mapper.Object, Mock.Of<IUnitOfWork>(),
-            Mock.Of<IDrinkCatalog>(MockBehavior.Strict), Mock.Of<IReviewPhotoLookup>(), Mock.Of<IMessageBus>(), ct);
-        response.IsSuccess.Should().BeTrue();
-        outgoing!.Review.DrinkSlug.Should().Be(clear ? null : "latte");
-        review.DrinkNameRu.Should().Be(clear ? null : "Латте");
+        var checkInId = Guid.NewGuid();
+        var original = CreateSnapshot(checkInId, 1, new("latte", null, "Латте", "Latte"));
+        var next = CreateSnapshot(checkInId, 2, null);
+
+        original.DrinkSlug.Should().Be("latte");
+        original.DrinkNameRu.Should().Be("Латте");
+        next.DrinkSlug.Should().BeNull();
+        next.CustomDrinkName.Should().BeNull();
+        next.DrinkNameRu.Should().BeNull();
+        next.DrinkNameEn.Should().BeNull();
     }
+
+    private static ModerationReview CreateSnapshot(Guid checkInId, int revision, DrinkSelection? drink) =>
+        ModerationReview.CreateCheckInSnapshot(checkInId, revision, Guid.NewGuid(), Guid.NewGuid(),
+            "visitor", "A sufficiently long check-in comment", 5, 5, 5, drink, DateTime.UtcNow, []);
 }

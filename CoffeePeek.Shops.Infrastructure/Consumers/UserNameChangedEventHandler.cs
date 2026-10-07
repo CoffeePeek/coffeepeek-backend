@@ -8,9 +8,8 @@ public class UserNameChangedHandler(ShopsDbContext dbContext)
 {
     public async Task Handle(UserNameChangedEvent message, CancellationToken cancellationToken = default)
     {
-        // ExecuteUpdateAsync bypasses EF Core change tracker (skips AuditInterceptor.UpdatedAtUtc). Acceptable: UserName on Review is a denormalized display field, not auditable content.
-        await dbContext.Reviews
-            .Where(r => r.UserId == message.UserId && r.UserName != message.NewUserName)
-            .ExecuteUpdateAsync(s => s.SetProperty(r => r.UserName, message.NewUserName), cancellationToken);
+        await dbContext.CheckIns.Where(c => c.UserId == message.UserId && c.Username != message.NewUserName)
+            .ExecuteUpdateAsync(s => s.SetProperty(c => c.Username, message.NewUserName)
+                .SetProperty(c => c.RowVersion, Guid.NewGuid()), cancellationToken);
     }
 }

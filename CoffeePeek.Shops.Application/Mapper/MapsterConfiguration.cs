@@ -6,7 +6,6 @@ using CoffeePeek.Shared.Kernel;
 using CoffeePeek.Shared.Kernel.Options;
 using CoffeePeek.Shops.Domain.Aggregates.BrewMethods;
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
-using CoffeePeek.Shops.Domain.Aggregates.ReviewAggregate;
 using CoffeePeek.Shops.Domain.Entities;
 using Mapster;
 using MapsterMapper;
@@ -39,9 +38,9 @@ public static class MapsterConfiguration
             // IsOpen/IsNew patched after materialize in CoffeeShopQueries (Schedules not in ProjectTo)
             .Ignore(dest => dest.IsOpen)
             .Ignore(dest => dest.IsNew)
-            // Rating and ReviewCount are set manually in handlers via repository
+            // Rating and CheckInCount are set manually in handlers via repository
             .Ignore(dest => dest.Rating)
-            .Ignore(dest => dest.ReviewCount)
+            .Ignore(dest => dest.CheckInCount)
             .Ignore(dest => dest.IsVisited);
 
         // These photo maps also run inside EF Core ProjectToType (CoffeeShopQueries, CheckInQueries), so the Urls
@@ -100,22 +99,16 @@ public static class MapsterConfiguration
                 .ThenBy(p => p.CreatedAtUtc)
                 .FirstOrDefault());
 
-        // Mapster's default name matching is case-sensitive, so Review.UserName doesn't
-        // auto-match ReviewDto.Username without this explicit map.
-        config.NewConfig<Review, ReviewDto>()
-            .Map(dest => dest.Username, src => src.UserName)
-            .Map(dest => dest.Photos, src => src.Photos.OrderBy(p => p.SortIndex));
-
         config.NewConfig<CoffeeShop, ShopDto>()
             .Map(d => d.Photos, s => s.ShopPhotos.OrderBy(p => p.SortIndex).ThenBy(p => p.CreatedAtUtc))
             .Map(dest => dest.DataCompletenessScore, src => (int)src.DataCompletenessScore)
             .Map(dest => dest.IsOpen, src => true)
             .Map(dest => dest.Type, src => (Contract.Enums.CoffeeShopType?)(int?)src.Type)
             .Map(dest => dest.CoffeeBeans, src => src.CoffeeBeans)
-            // Rating, ReviewCount and Reviews are set manually in handlers via repository
+            // Rating, CheckInCount and Reviews are set manually in handlers via repository
             .Ignore(dest => dest.Rating)
-            .Ignore(dest => dest.ReviewCount)
-            .Ignore(dest => dest.Reviews);
+            .Ignore(dest => dest.CheckInCount)
+            .Ignore(dest => dest.CheckIns);
 
         config.NewConfig<CoffeeShop, CoffeeShopDetailsDto>()
             .Map(d => d.CityId, s => s.Location.CityId)
@@ -130,17 +123,10 @@ public static class MapsterConfiguration
             // Tags loaded separately in CoffeeShopQueries.GetDetailsById
             .Ignore(dest => dest.Tags)
             .Ignore(dest => dest.Menu)
-            // Rating, ReviewCount and Reviews are set manually in handlers via repository
+            // Rating, CheckInCount and Reviews are set manually in handlers via repository
             .Ignore(dest => dest.Rating)
-            .Ignore(dest => dest.ReviewCount)
-            .Ignore(dest => dest.Reviews);
-
-        config.NewConfig<CheckIn, CheckInDto>()
-            // ShopName is set manually in handlers via repository
-            .Ignore(dest => dest.ShopName)
-            .Map(dest => dest.CreatedAt, src => src.CreatedAtUtc)
-            .Map(dest => dest.VisitedAt, src => src.VisitedAt)
-            .Map(dest => dest.Photos, src => src.ShopPhotos.OrderBy(p => p.SortIndex).ThenBy(p => p.CreatedAtUtc));
+            .Ignore(dest => dest.CheckInCount)
+            .Ignore(dest => dest.CheckIns);
 
         config.NewConfig<EquipmentCategory, EquipmentCategoryEnum>()
             .MapWith(category => (EquipmentCategoryEnum)category.Id);

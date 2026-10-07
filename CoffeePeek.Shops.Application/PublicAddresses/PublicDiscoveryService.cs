@@ -1,4 +1,5 @@
 using CoffeePeek.Contract.Dtos.CoffeeShop;
+using CoffeePeek.Contract.Dtos.CheckIns;
 using CoffeePeek.Contract.Dtos.PublicAddresses;
 using CoffeePeek.Contract.Dtos.Shop;
 using CoffeePeek.Shared.Kernel.Exceptions;
@@ -30,7 +31,7 @@ public sealed class PublicDiscoveryService(IPublicAddressService addresses, IPro
             .Ignore(x => x.Roasters, x => x.Beans, x => x.Equipments, x => x.BrewMethods);
         config.NewConfig<CoffeeShopDetailsDto, PublicShopDetailsDto>()
             .Ignore(x => x.Roasters, x => x.Beans, x => x.Equipments, x => x.BrewMethods,
-                x => x.Reviews, x => x.UserCheckIns, x => x.Tags);
+                x => x.CheckIns, x => x.UserCheckIns, x => x.Tags);
         return config;
     }
     public async Task<Guid> ResolveIdAsync(PublicAddressKind kind, string slug, CancellationToken ct) =>
@@ -90,7 +91,7 @@ public sealed class PublicDiscoveryService(IPublicAddressService addresses, IPro
         var equipments = await ReadAsync(PublicAddressKind.Equipment, (x.Equipments ?? []).Select(r => r.Id), ct);
         var methods = await ReadAsync(PublicAddressKind.BrewMethod, (x.BrewMethods ?? []).Select(r => r.Id), ct);
         var tags = await ReadAsync(PublicAddressKind.ShopTag, x.Tags.Select(r => r.Id), ct);
-        var reviews = await ReviewsAsync(x.Reviews, ct);
+        var visitsPublic = await CheckInsAsync(x.CheckIns, ct);
         var visits = await CheckInsAsync(x.UserCheckIns, ct);
         // Cached details never decide current visibility, including a hide racing the data read.
         if (await addresses.ResolveAsync(PublicAddressKind.CoffeeShop, slug, ct) is not { } current) return null;
@@ -99,7 +100,7 @@ public sealed class PublicDiscoveryService(IPublicAddressService addresses, IPro
             Address = PublicAddressDto.From(current), City = Find(cities, x.CityId), Beans = Beans(x.CoffeeBeans, beans),
             Equipments = Equipments(x.Equipments, equipments), BrewMethods = Methods(x.BrewMethods, methods),
             Tags = Tags(x.Tags, tags),
-            Roasters = Roasters(x.Roasters, roasters), Reviews = reviews, UserCheckIns = visits
+            Roasters = Roasters(x.Roasters, roasters), CheckIns = visitsPublic, UserCheckIns = visits
         };
     }
 
@@ -124,19 +125,20 @@ public sealed class PublicDiscoveryService(IPublicAddressService addresses, IPro
         { CoffeeShopsCount = x.CoffeeShopsCount, CoffeeProductsCount = x.CoffeeProductsCount };
     }
 
-    public async Task<PublicReviewDto[]> ReviewsAsync(ReviewDto[] items, CancellationToken ct)
-    {
-        var shops = await ReadAsync(PublicAddressKind.CoffeeShop, items.Select(x => x.CoffeeShopId), ct);
-        var authors = (await profiles.GetByIdsAsync(items.Select(x => x.UserId).Distinct().ToArray(), ct))
-            .ToDictionary(x => x.EntityId, PublicAddressDto.From);
-        return items.Select(x => x.Adapt<PublicReviewDto>() with
-        { Shop = Find(shops, x.CoffeeShopId), Author = Find(authors, x.UserId) }).ToArray();
-    }
-
-    public async Task<PublicCheckInDto[]> CheckInsAsync(CheckInDto[] items, CancellationToken ct)
+    public async Task<PublicCheckInDto[]> CheckInsAsync(UnifiedCheckInDto[] items, CancellationToken ct)
     {
         var shops = await ReadAsync(PublicAddressKind.CoffeeShop, items.Select(x => x.ShopId), ct);
-        return items.Select(x => x.Adapt<PublicCheckInDto>() with { Shop = Find(shops, x.ShopId) }).ToArray();
+        var authors = (await profiles.GetByIdsAsync(items.Select(x => x.UserId).Distinct().ToArray(), ct))
+            .ToDictionary(x => x.EntityId, PublicAddressDto.From);
+        return items.Select(x => new PublicCheckInDto
+        {
+            Id=x.Id, Shop=Find(shops,x.ShopId), Author=Find(authors,x.UserId), Username=x.Username,
+            ShopName=x.ShopName, Text=x.Text, Rating=x.Rating, VisitedAt=x.VisitedAt, CreatedAtUtc=x.CreatedAtUtc,
+            Visibility=x.Visibility, ModerationState=x.ModerationState, ContentRevision=x.ContentRevision,
+            RejectionReason=x.RejectionReason, DrinkSlug=x.Drink?.Slug, CustomDrinkName=x.Drink?.CustomName,
+            DrinkNameRu=x.Drink?.NameRu, DrinkNameEn=x.Drink?.NameEn, Photos=x.Photos,
+            HelpfulCount=x.HelpfulCount, IsHelpfulByCurrentUser=x.IsHelpfulByCurrentUser
+        }).ToArray();
     }
 
     public async Task<PublicMapDto> MapAsync(MapShopDto[] shops, MapClusterDto[]? clusters, MapCoffeeZoneDto[]? zones,
