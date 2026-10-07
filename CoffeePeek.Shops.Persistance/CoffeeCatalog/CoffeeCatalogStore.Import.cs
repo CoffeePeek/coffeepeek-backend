@@ -108,6 +108,7 @@ public sealed partial class CoffeeCatalogStore
                         {
                             row = new CoffeeVariant { SourceKey = request.SourceKey, ExternalVariantId = offer.ExternalVariantId };
                             source.Variants.Add(row);
+                            db.Set<CoffeeVariant>().Add(row);
                         }
                         row.WeightGrams = offer.WeightGrams; row.Price = offer.Price; row.Currency = offer.Currency;
                         row.Availability = offer.AvailableForPurchase ? CoffeeAvailability.InStock : CoffeeAvailability.OutOfStock;
@@ -129,7 +130,11 @@ public sealed partial class CoffeeCatalogStore
                         foreach (var image in item.StoredPhotos.DistinctBy(p => p.StorageKey))
                         {
                             var row = source.Photos.SingleOrDefault(p => p.StorageKey == image.StorageKey);
-                            if (row is null) { row = new CoffeeProductPhoto(); source.Photos.Add(row); }
+                            if (row is null)
+                            {
+                                row = new CoffeeProductPhoto(); source.Photos.Add(row);
+                                db.Set<CoffeeProductPhoto>().Add(row);
+                            }
                             row.SourceUrl = image.SourceUrl!; row.StorageKey = image.StorageKey;
                             row.MediaPhotoId = image.Id; row.FileName = image.FileName; row.ContentType = image.ContentType;
                             row.SizeBytes = image.SizeBytes; row.SortIndex = index++;

@@ -90,6 +90,57 @@ public sealed class DiscoveryQueryLiveTests : IClassFixture<ShopsLiveDatabase>
     }
 
     [Fact]
+    public async Task Reimport_AddsNewVariantsAndPhotosToExistingCoffee_ExecuteInPostgres()
+    {
+        await using var db = fixture.Context(true);
+        var roaster = AddRoaster(db, Key()); await db.SaveChangesAsync(Ct);
+        var sourceKey = Key() + ".example";
+        var store = new CoffeeCatalogStore(db, Options.Create(new MediaPublicUrlOptions { PublicEndpoint = "https://media.example" }),
+            Options.Create(new CoffeeImportOptions { Roasters = new() { [sourceKey] = new() { ["ROAST"] = roaster.Id } } }),
+            Mock.Of<IPublicAddressService>(), NullLogger<CoffeeCatalogStore>.Instance);
+        var request = CoffeeCatalogTests.Snapshot('a', DateTimeOffset.UtcNow.AddMinutes(-2));
+        request.SourceKey = sourceKey; request.Snapshot.Source = "https://" + sourceKey + "/";
+        request.SnapshotId = Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(Guid.NewGuid().ToByteArray()));
+        var item = request.Snapshot.Products[0];
+        item.SourceKey = sourceKey; item.SourceProductId = Key(); item.SourceUrl = request.Snapshot.Source;
+        foreach (var variant in item.Variants) variant.ExternalVariantId = Key();
+        await store.ImportAsync(request, Ct);
+        var product = await db.CoffeeProducts.SingleAsync(p => p.RoasterId == roaster.Id, Ct);
+        product.ProtectFields(["Name"]); product.SetStatus(CoffeePublicationStatus.Published);
+        await db.SaveChangesAsync(Ct);
+        var productId = product.Id;
+        var originalPhotoId = item.StoredPhotos[0].Id;
+        var originalOffer = item.Variants[0].ExternalVariantId;
+        db.ChangeTracker.Clear();
+
+        request.SnapshotId = Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(Guid.NewGuid().ToByteArray()));
+        request.Snapshot.CollectedAtUtc = request.Snapshot.CollectedAtUtc.AddMinutes(1);
+        item.Name = "Imported replacement name";
+        item.Variants[0].Price = 31;
+        var newOffer = Key();
+        item.Variants = [.. item.Variants, new() { ExternalVariantId = newOffer, WeightGrams = 500, Price = 50,
+            Currency = "BYN", AvailableForPurchase = true }];
+        var newPhotoId = Guid.NewGuid();
+        item.ImageUrls = [.. item.ImageUrls, "https://roast.by/new-photo.jpg"];
+        item.StoredPhotos = [.. item.StoredPhotos, new(newPhotoId, "coffees/" + new string('b', 64) + ".jpg",
+            "new-coffee.jpg", "image/jpeg", 200, "https://roast.by/new-photo.jpg")];
+        var result = await store.ImportAsync(request, Ct);
+        Assert.Equal("Applied", result.Status); Assert.Equal(0, result.Added);
+        Assert.Equal(result.RunId, (await store.ImportAsync(request, Ct)).RunId);
+        db.ChangeTracker.Clear();
+        product = await db.CoffeeProducts.Include(p => p.Sources).ThenInclude(s => s.Variants)
+            .Include(p => p.Sources).ThenInclude(s => s.Photos).SingleAsync(p => p.Id == productId, Ct);
+        Assert.Equal("Колумбия", product.Name); Assert.Equal(CoffeePublicationStatus.Published, product.Status);
+        var source = Assert.Single(product.Sources);
+        Assert.Equal(3, source.Variants.Count);
+        Assert.Equal(31, source.Variants.Single(v => v.ExternalVariantId == originalOffer).Price);
+        Assert.Equal(50, source.Variants.Single(v => v.ExternalVariantId == newOffer).Price);
+        Assert.Equal(2, source.Photos.Count);
+        Assert.Contains(source.Photos, p => p.MediaPhotoId == originalPhotoId);
+        Assert.Contains(source.Photos, p => p.MediaPhotoId == newPhotoId);
+    }
+
+    [Fact]
     public async Task ConcurrentFavoriteDeletes_AreIdempotent_ExecuteInPostgres()
     {
         await using var first = fixture.Context(false);
