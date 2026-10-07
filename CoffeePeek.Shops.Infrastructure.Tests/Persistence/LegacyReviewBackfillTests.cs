@@ -236,4 +236,65 @@ public class LegacyReviewBackfillTests
         Assert.Equal(mapped["Snapshots"]![1]!["Id"]!.ToString(),current["Snapshots"]![0]!["SnapshotId"]!.ToString());
     }
 
+
+    [Fact]
+    public async Task ActualMainOtherSelectionPreservesReviewAndChangedLinkedSnapshotWithoutCatalogOtherRow()
+    {
+        var catalog = new Moq.Mock<CoffeePeek.Shared.Kernel.Drinks.IDrinkCatalog>();
+        var first = await CoffeePeek.Shared.Kernel.Drinks.DrinkSelection.ResolveAsync("other","Original custom",catalog.Object,TestContext.Current.CancellationToken);
+        var current = await CoffeePeek.Shared.Kernel.Drinks.DrinkSelection.ResolveAsync("other","Changed custom",catalog.Object,TestContext.Current.CancellationToken);
+        var inv = Fixture();
+        void Set(JsonObject row,CoffeePeek.Shared.Kernel.Drinks.DrinkSelection drink)
+        { row["DrinkSlug"]=drink.Slug; row["CustomDrinkName"]=drink.CustomName; row["DrinkNameRu"]=drink.NameRu; row["DrinkNameEn"]=drink.NameEn; }
+        Set(inv["Reviews"]![0]!.AsObject(),first!);
+        Set(inv["Reviews"]![1]!.AsObject(),first!);
+        Set(inv["ModerationReviews"]![0]!.AsObject(),current!);
+        var plan = LegacyReviewBackfill.Map(inv);
+        Assert.Equal("mapped",plan[0]!["Outcome"]!.ToString());
+        Assert.Equal("other",plan[0]!["Target"]!["DrinkSlug"]!.ToString());
+        Assert.Equal("Original custom",plan[0]!["Target"]!["CustomDrinkName"]!.ToString());
+        Assert.Equal("Changed custom",plan[1]!["Target"]!["CustomDrinkName"]!.ToString());
+        Assert.Equal("Original custom",plan[1]!["Snapshots"]![0]!["DrinkNameRu"]!.ToString());
+        Assert.Equal("Changed custom",plan[1]!["Snapshots"]![1]!["DrinkNameEn"]!.ToString());
+        catalog.Verify(c=>c.FindAsync(Moq.It.IsAny<string>(),Moq.It.IsAny<CancellationToken>()),Moq.Times.Never);
+    }
+    [Theory]
+    [InlineData("other",null)]
+    [InlineData("other"," ")]
+    [InlineData("espresso","custom")]
+    [InlineData(null,"custom")]
+    public void IncompleteOtherAndCustomNameForNamedOrAbsentSlugRemainUnresolved(string? slug,string? custom)
+    {
+        var inv=Fixture(); inv["Drinks"]!.AsArray().Add(new JsonObject {["Slug"]="espresso"});
+        inv["Reviews"]![0]!["DrinkSlug"]=slug; inv["Reviews"]![0]!["CustomDrinkName"]=custom;
+        Assert.Equal("unresolved",LegacyReviewBackfill.Map(inv)[0]!["Outcome"]!.ToString());
+        inv["Reviews"]![0]!["DrinkSlug"]="other"; inv["Reviews"]![0]!["CustomDrinkName"]=new string('x',101);
+        Assert.Equal("unresolved",LegacyReviewBackfill.Map(inv)[0]!["Outcome"]!.ToString());
+    }
+    [Theory]
+    [InlineData("000123","123")]
+    [InlineData("2025-01-01T00:00:00Z","2025-01-01T03:00:00+03:00")]
+    [InlineData("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa","AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA")]
+    public void AuthoredStringsStayExactInHashesAndRetryComparisons(string before,string after)
+    {
+        var a=new JsonObject {["Note"]=before}; var b=new JsonObject {["Note"]=after};
+        Assert.NotEqual(LegacyReviewBackfill.Hash(a),LegacyReviewBackfill.Hash(b));
+        Assert.False(LegacyReviewBackfill.Matches(a,b));
+    }
+    [Fact]
+    public void NullNeverMatchesLiteralSentinelAndOnlyKnownTypedColumnsAllowTimeUuidEquivalence()
+    {
+        var empty=new JsonObject {["CustomDrinkName"]=null}; var literal=new JsonObject {["CustomDrinkName"]="NULL"};
+        Assert.NotEqual(LegacyReviewBackfill.Hash(empty),LegacyReviewBackfill.Hash(literal));
+        Assert.False(LegacyReviewBackfill.Matches(empty,literal)); Assert.False(LegacyReviewBackfill.Matches(literal,empty));
+        Assert.False(LegacyReviewBackfill.Matches(empty,new JsonObject()));
+        Assert.NotEqual(LegacyReviewBackfill.Hash(null!),LegacyReviewBackfill.Hash(System.Text.Json.Nodes.JsonValue.Create("NULL")!));
+        var a=new JsonObject {["VisitedAt"]="2025-01-01T00:00:00Z",["Id"]="aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"};
+        var b=new JsonObject {["VisitedAt"]="2025-01-01T03:00:00+03:00",["Id"]="AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA"};
+        Assert.NotEqual(LegacyReviewBackfill.Hash(a),LegacyReviewBackfill.Hash(b));
+        Assert.True(LegacyReviewBackfill.Matches(a,b));
+        Assert.Equal(LegacyReviewBackfill.Hash(JsonNode.Parse("{\"Count\":1}")!),LegacyReviewBackfill.Hash(JsonNode.Parse("{\"Count\":1.0}")!));
+        Assert.NotEqual(LegacyReviewBackfill.Hash(JsonNode.Parse("{\"Count\":1}")!),LegacyReviewBackfill.Hash(JsonNode.Parse("{\"Count\":\"1\"}")!));
+    }
+
 }
