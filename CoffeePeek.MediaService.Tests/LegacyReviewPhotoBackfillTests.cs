@@ -104,6 +104,7 @@ public class LegacyReviewPhotoBackfillTests
         statements.Should().HaveCount(2);
         statements[0]!["Sid"]!.GetValue<string>().Should().Be("gallery");
         statements[1]!["Effect"]!.GetValue<string>().Should().Be("Deny");
+        statements[1]!["Condition"]!["StringEquals"]!["aws:PrincipalType"]!.GetValue<string>().Should().Be("Anonymous");
         statements[1]!["Resource"]![0]!.GetValue<string>().Should().Be($"arn:aws:s3:::{ShopBucket}/{SourceKey}");
         _client.Verify(c => c.RemoveObjectAsync(It.IsAny<RemoveObjectArgs>(), It.IsAny<CancellationToken>()), Times.Never);
     }
@@ -218,13 +219,37 @@ public class LegacyReviewPhotoBackfillTests
         _client.Verify(c => c.SetPolicyAsync(It.IsAny<SetPolicyArgs>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
-    [Fact]
-    public async Task HistoricalCopy_UserBucketIsRejectedBeforeStorageChanges()
+    [Theory]
+    [InlineData("user")]
+    [InlineData("bucket")]
+    [InlineData("key")]
+    [InlineData("photo")]
+    [InlineData("checkin")]
+    public async Task HistoricalCopy_InvalidIdentityOrSourceIsRejectedBeforeStorageChanges(string invalid)
     {
         using var storage = new MinIOStorageService(_options, _client.Object);
-        await FluentActions.Awaiting(() => storage.CopyHistoricalToCheckInStorageAsync(SourceKey, _photo, _checkIn, Ct, BucketType.User))
+        var sourceBucket = invalid == "user" ? BucketType.User : invalid == "bucket" ? (BucketType)99 : BucketType.Shop;
+        await FluentActions.Awaiting(() => storage.CopyHistoricalToCheckInStorageAsync(
+            invalid == "key" ? " " : SourceKey, invalid == "photo" ? Guid.Empty : _photo,
+            invalid == "checkin" ? Guid.Empty : _checkIn, Ct, sourceBucket))
             .Should().ThrowAsync<InvalidOperationException>();
         _client.Invocations.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void HistoricalPolicy_DeniesAnonymousReadsAndKeepsSignedArchiveRecoveryAndLivePolicy()
+    {
+        var historical = MinIOStorageService.BuildObjectDenyPolicy(_policy, ShopBucket, SourceKey, anonymousOnly: true);
+        var statements = JsonNode.Parse(historical)!["Statement"]!.AsArray();
+        statements.Should().HaveCount(2);
+        statements[0]!["Sid"]!.GetValue<string>().Should().Be("gallery");
+        var condition = statements[1]!["Condition"]!["StringEquals"]!["aws:PrincipalType"]!.GetValue<string>();
+        condition.Should().Be("Anonymous");
+        new[] { "User", "AssumedRole", "Account" }.Should().NotContain(condition);
+        MinIOStorageService.BuildObjectDenyPolicy(historical, ShopBucket, SourceKey, anonymousOnly: true).Should().Be(historical);
+        var live = JsonNode.Parse(MinIOStorageService.BuildObjectDenyPolicy(_policy, ShopBucket, SourceKey))!["Statement"]!.AsArray()[1]!;
+        live["Condition"].Should().BeNull();
+        live["Sid"]!.GetValue<string>().Should().NotBe(statements[1]!["Sid"]!.GetValue<string>());
     }
 
     private static ObjectStat Stat(string key, long size) => ObjectStat.FromResponseHeaders(key, new Dictionary<string, string>

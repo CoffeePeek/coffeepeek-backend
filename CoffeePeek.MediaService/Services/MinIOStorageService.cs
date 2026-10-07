@@ -157,23 +157,7 @@ public class MinIOStorageService : IStorageService, IDisposable
         BucketType sourceBucket = BucketType.Shop)
     {
         await EnsureCheckInBucketPrivateAsync(ct);
-        // A photo-owned destination also survives a failed DB save and a retry with a new visit ID.
-        var target = $"check-ins/{photoId:N}{Path.GetExtension(key)}";
-        // A still-live PUT may have changed the source after another successful/ambiguous attempt.
-        // Freeze the first private copy; never overwrite it from a retry's upload source.
-        if (await GetObjectSize(target, BucketType.CheckIn, ct) == null)
-        {
-            var sourceSize = await GetObjectSize(key, sourceBucket, ct)
-                ?? throw new InvalidOperationException("Photo object was not found.");
-            var sourceHash = await HashAsync(key, sourceBucket, ct);
-            await _internalClient.CopyObjectAsync(new CopyObjectArgs().WithBucket(GetBucketName(BucketType.CheckIn))
-                .WithObject(target).WithCopyObjectSource(new CopySourceObjectArgs()
-                    .WithBucket(GetBucketName(sourceBucket)).WithObject(key)), ct);
-            var targetHash = await HashAsync(target, BucketType.CheckIn, ct);
-            if (await GetObjectSize(target, BucketType.CheckIn, ct) != sourceSize
-                || !CryptographicOperations.FixedTimeEquals(sourceHash, targetHash))
-                throw new InvalidOperationException("Private photo copy could not be verified.");
-        }
+        var target = await CopyVerifiedCheckInObjectAsync(key, photoId, sourceBucket, verifyExisting: false, ct);
         await MarkAsPermanent(target, BucketType.CheckIn, ct);
         if (sourceBucket == BucketType.CheckIn && key == target) return target;
         if (sourceBucket == BucketType.Shop) await DenyOldObjectAsync(key, ct);
@@ -184,23 +168,61 @@ public class MinIOStorageService : IStorageService, IDisposable
     }
 
 
-    public Task<string> CopyHistoricalToCheckInStorageAsync(string key, Guid photoId, Guid checkInId, CancellationToken ct = default,
-        BucketType sourceBucket = BucketType.Shop) => throw new NotImplementedException();
+    public async Task<string> CopyHistoricalToCheckInStorageAsync(string key, Guid photoId, Guid checkInId, CancellationToken ct = default,
+        BucketType sourceBucket = BucketType.Shop)
+    {
+        if (sourceBucket is not (BucketType.Shop or BucketType.CheckIn)
+            || string.IsNullOrWhiteSpace(key) || photoId == Guid.Empty || checkInId == Guid.Empty)
+            throw new InvalidOperationException("Historical copies require a valid object, photo, check-in and shop/private source.");
+        await EnsureCheckInBucketPrivateAsync(ct);
+        var target = await CopyVerifiedCheckInObjectAsync(key, photoId, sourceBucket, verifyExisting: true, ct);
+        await MarkAsPermanent(target, BucketType.CheckIn, ct);
+        if (sourceBucket == BucketType.Shop) await DenyOldObjectAsync(key, ct, anonymousOnly: true);
+        return target;
+    }
 
-    public static string BuildObjectDenyPolicy(string existingPolicy, string bucket, string key)
+    private async Task<string> CopyVerifiedCheckInObjectAsync(string key, Guid photoId, BucketType sourceBucket,
+        bool verifyExisting, CancellationToken ct)
+    {
+        // A photo-owned destination survives a failed DB save and a retry with a new visit ID.
+        var target = $"check-ins/{photoId:N}{Path.GetExtension(key)}";
+        var targetSize = await GetObjectSize(target, BucketType.CheckIn, ct);
+        // Live uploads may still change; keep their first private copy. Historical archives must match on every retry.
+        if (targetSize != null && !verifyExisting) return target;
+        var sourceSize = await GetObjectSize(key, sourceBucket, ct)
+            ?? throw new InvalidOperationException("Photo object was not found.");
+        var sourceHash = await HashAsync(key, sourceBucket, ct);
+        if (targetSize == null)
+            await _internalClient.CopyObjectAsync(new CopyObjectArgs().WithBucket(GetBucketName(BucketType.CheckIn))
+                .WithObject(target).WithCopyObjectSource(new CopySourceObjectArgs()
+                    .WithBucket(GetBucketName(sourceBucket)).WithObject(key)), ct);
+        var targetHash = await HashAsync(target, BucketType.CheckIn, ct);
+        if (await GetObjectSize(target, BucketType.CheckIn, ct) != sourceSize
+            || !CryptographicOperations.FixedTimeEquals(sourceHash, targetHash))
+            throw new InvalidOperationException("Private photo copy could not be verified.");
+        return target;
+    }
+
+    public static string BuildObjectDenyPolicy(string existingPolicy, string bucket, string key, bool anonymousOnly = false)
     {
         if (key.IndexOfAny(['*', '?']) >= 0)
             throw new InvalidOperationException("Wildcard object keys require an explicit historical storage policy.");
         var policy = JsonNode.Parse(existingPolicy)?.AsObject() ?? throw new InvalidOperationException("Invalid bucket policy.");
         var statements = policy["Statement"]?.AsArray() ?? throw new InvalidOperationException("Invalid bucket policy statements.");
-        var sid = "CheckInPrivate" + Convert.ToHexString(SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(key)))[..24];
+        var sid = "CheckInPrivate" + (anonymousOnly ? "Anonymous" : "")
+            + Convert.ToHexString(SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(key)))[..24];
         if (!statements.Any(statement => statement?["Sid"]?.GetValue<string>() == sid))
-            statements.Add(new JsonObject { ["Sid"] = sid, ["Effect"] = "Deny", ["Principal"] = "*",
-                ["Action"] = new JsonArray("s3:GetObject", "s3:GetObjectVersion"), ["Resource"] = new JsonArray($"arn:aws:s3:::{bucket}/{key}") });
+        {
+            var statement = new JsonObject { ["Sid"] = sid, ["Effect"] = "Deny", ["Principal"] = "*",
+                ["Action"] = new JsonArray("s3:GetObject", "s3:GetObjectVersion"), ["Resource"] = new JsonArray($"arn:aws:s3:::{bucket}/{key}") };
+            if (anonymousOnly)
+                statement["Condition"] = new JsonObject { ["StringEquals"] = new JsonObject { ["aws:PrincipalType"] = "Anonymous" } };
+            statements.Add(statement);
+        }
         return policy.ToJsonString();
     }
 
-    private async Task DenyOldObjectAsync(string key, CancellationToken ct)
+    private async Task DenyOldObjectAsync(string key, CancellationToken ct, bool anonymousOnly = false)
     {
         await PolicyLock.WaitAsync(ct);
         try
@@ -208,7 +230,7 @@ public class MinIOStorageService : IStorageService, IDisposable
             var bucket = GetBucketName(BucketType.Shop);
             var policy = await _internalClient.GetPolicyAsync(new GetPolicyArgs().WithBucket(bucket), ct);
             await _internalClient.SetPolicyAsync(new SetPolicyArgs().WithBucket(bucket)
-                .WithPolicy(BuildObjectDenyPolicy(policy, bucket, key)), ct);
+                .WithPolicy(BuildObjectDenyPolicy(policy, bucket, key, anonymousOnly)), ct);
         }
         finally { PolicyLock.Release(); }
     }
