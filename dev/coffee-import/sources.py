@@ -9,7 +9,7 @@ from urllib.parse import urlencode, urlsplit
 
 from bs4 import BeautifulSoup
 
-from roast_by import ParseError, clean, money, origins, split_values, weight_grams
+from roast_by import ParseError, clean, money, origins, property_labels, property_value, split_values, weight_grams
 
 
 SPIRITUS_URL = "https://spiritus.by/catalog"
@@ -76,10 +76,7 @@ def spiritus_product(item):
                                               ("Вес", "Тип", "Помол", "sku", "externalid", "quantity") if k in edition}})
     description = text(item.get("text", "")) + "\n" + text(item.get("descr", ""))
     properties = {clean(c["title"]): clean(c.get("value")) for c in item.get("characteristics", [])}
-    for label in ("Во вкусе", "Обработка", "Разновидность", "Q", "Плотность", "Кислотность", "Страна"):
-        match = re.search(re.escape(label) + r"\s*:\s*([^\n]+)", description, re.I)
-        if match:
-            properties.setdefault(label, clean(match[1]))
+    properties = property_labels(item.get("text", "") + "\n" + item.get("descr", "")) | properties
     if properties.get("Страна"):
         properties["Страна произрастания"] = properties["Страна"]
     blend = bool(re.search(r"смесь|бленд", name, re.I))
@@ -88,11 +85,11 @@ def spiritus_product(item):
     brews = [label for flag, label in (("espresso", "Эспрессо"), ("filter", "Фильтр")) if flag in mark]
     gallery = json.loads(item.get("gallery") or "[]")
     return {"sourceKey": "spiritus.by", "sourceProductId": str(item["uid"]), "sourceUrl": url,
-            "name": name, "roasterName": "Spiritus Coffee", "productKind": "roasted_beans",
+            "name": name, "description": clean(description) or None, "roasterName": "Spiritus Coffee", "productKind": "roasted_beans",
             "productForm": "whole_beans", "availableForPurchase": any(v["availableForPurchase"] for v in variants),
             "compositionKind": "blend" if blend else "unknown", "origins": countries,
             "tasteDescriptors": split_values(properties.get("Во вкусе")), "processing": properties.get("Обработка"),
-            "roastLevel": None, "qGraderScoreRaw": properties.get("Q"), "acidity": properties.get("Кислотность"),
+            "roastLevel": None, "qGraderScoreRaw": property_value(properties, "Q", "Quality", "SCA", "Оценка Q", "Оценка Q-грейдера", "Оценка SCA", "Оценка по протоколу SCA"), "acidity": properties.get("Кислотность"),
             "body": properties.get("Плотность"), "features": split_values(mark), "brewRecommendations": brews,
             "grindOptions": sorted({e["Помол"] for e in editions if e.get("Помол") not in (None, "", "-")}),
             "imageUrls": [g["img"] for g in gallery if g.get("img")], "variants": variants,
@@ -169,12 +166,14 @@ def river_products(data):
     products, excluded, identities = {}, [], set()
     for row in rows:
         name = clean(row["name"])
-        stock = quantity(row["count"])
         # The storefront itself classifies beans by these prefixes; drips are a separate category.
         brew = next((prefix for prefix in ("Фильтр", "Эспрессо", "Омнирост") if name.startswith(prefix + " ")), None)
         if not brew:
             excluded.append({"sourceUrl": RIVER_URL, "name": name, "reason": "not_whole_beans"})
             continue
+        count = clean(row["count"])
+        match = re.fullmatch(r"(\d+)(?:\s+шт\.?)?", count)
+        stock = quantity(match[1] if match else count)
         grams = weight_grams(row["weight"])
         if not grams or grams <= 0:
             raise ParseError(f"Invalid River bean weight: {row['weight']!r}")

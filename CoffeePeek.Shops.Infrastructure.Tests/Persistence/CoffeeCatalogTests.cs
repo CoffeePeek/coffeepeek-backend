@@ -97,7 +97,7 @@ public class CoffeeCatalogTests
         Assert.Single(await store.AdminRoasterTagsAsync(r.Id, TestContext.Current.CancellationToken));
         Assert.True(await store.ArchiveAsync(draft.Id, TestContext.Current.CancellationToken));
         Assert.Null(await store.GetAsync(draft.Slug!, TestContext.Current.CancellationToken));
-        Assert.Equal(30, (await store.CountriesAsync(TestContext.Current.CancellationToken)).Length);
+        Assert.Contains(await store.CountriesAsync(TestContext.Current.CancellationToken), c => c.Code == "DO");
     }
 
     [Fact]

@@ -137,6 +137,7 @@ internal static class CoffeeCatalogConfiguration
         new("PG", "Папуа-Новая Гвинея", "Papua New Guinea"), new("ZM", "Замбия", "Zambia"),
         new("CM", "Камерун", "Cameroon"), new("CG", "Конго", "Congo"),
         new("LA", "Лаос", "Laos"), new("MW", "Малави", "Malawi"),
-        new("PA", "Панама", "Panama"), new("SV", "Сальвадор", "El Salvador")
+        new("PA", "Панама", "Panama"), new("SV", "Сальвадор", "El Salvador"),
+        new("DO", "Доминиканская Республика", "Dominican Republic")
     ];
 }

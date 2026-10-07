@@ -18,7 +18,7 @@ public static class CoffeeClassificationNormalizer
         else if (Has(evidence, "decaf", "декаф", "без кофеина", "декофеин", "swiss water")) caffeine = "decaf";
 
         var processingCodes = new List<string>();
-        if (Has(processing, "washed", "мытый", "мытая", "мытой")) processingCodes.Add("washed");
+        if (Has(processing, "washed", "мытый", "мытая", "мытой", "двойная промывка")) processingCodes.Add("washed");
         if (Has(processing, "natural", "натуральн", "сухой", "сухая")) processingCodes.Add("natural");
         if (Has(processing, "honey", "хани", "медовая")) processingCodes.Add("honey");
         if (Has(processing, "wet-hulled", "wet hulled", "вет-халл", "гиллинг басах")) processingCodes.Add("wet-hulled");
@@ -32,9 +32,9 @@ public static class CoffeeClassificationNormalizer
             .OfType<string>().Distinct(StringComparer.Ordinal).ToArray();
         var roast = Text(product.RoastLevel) switch
         {
-            "light" or "светлая" or "светлый" or "легкая" or "легкий" => "light",
-            "medium" or "средняя" or "средний" => "medium",
-            "dark" or "темная" or "темный" => "dark", _ => null
+            "light" or "светлая" or "светлый" or "легкая" or "легкий" or "светлая обжарка" or "светлая обжарка кофе" or "светлая обжарка, фильтр" => "light",
+            "medium" or "медиум" or "средняя" or "средний" or "средняя обжарка" or "средняя обжарка кофе" or "средняя обжарка кофе, эспрессо" => "medium",
+            "dark" or "темная" or "темный" or "темная обжарка" or "темная обжарка кофе" or "темная, эспрессо" or "эспрессо, темная" => "dark", _ => null
         };
         var acidity = Text(product.Acidity) switch
         {
@@ -45,7 +45,7 @@ public static class CoffeeClassificationNormalizer
         // A denominator is explicit source evidence. Bare scores have no known source scale and remain unknown.
         if (acidity is null && product.Acidity is not null)
         {
-            var score = Regex.Match(product.Acidity.Trim(), "\\A(?<score>[0-9]+(?:[.,][0-9]+)?)/(?<max>[0-9]+(?:[.,][0-9]+)?)\\z");
+            var score = Regex.Match(product.Acidity.Trim(), "\\A(?<score>[0-9]+(?:[.,][0-9]+)?)\\s*/\\s*(?<max>[0-9]+(?:[.,][0-9]+)?)\\z");
             if (score.Success && decimal.TryParse(score.Groups["score"].Value.Replace(',', '.'), NumberStyles.AllowDecimalPoint,
                     CultureInfo.InvariantCulture, out var value) && decimal.TryParse(score.Groups["max"].Value.Replace(',', '.'),
                     NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out var maximum) && maximum > 0 && value <= maximum)
@@ -73,8 +73,8 @@ public static class CoffeeClassificationNormalizer
 
     public static string? NormalizeBrewPurpose(string? value) => Text(value) switch
     {
-        "filter" or "фильтр" or "для фильтра" => "filter",
-        "espresso" or "эспрессо" or "для эспрессо" => "espresso",
+        "filter" or "фильтр" or "для фильтра" or "кофе для фильтра" or "обжарка под фильтр" or "под фильтр" => "filter",
+        "espresso" or "эспрессо" or "для эспрессо" or "кофе для эспрессо" or "обжарка под эспрессо" or "под эспрессо" => "espresso",
         "omni" or "omniroast" or "омни" or "омнирост" or "универсальная обжарка" => "omni", _ => null
     };
 

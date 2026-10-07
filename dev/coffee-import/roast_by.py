@@ -31,9 +31,9 @@ CATALOGUES = {
 DEFAULT_OUTPUT = Path(__file__).resolve().parents[1] / "imports" / "roast-by"
 ADAPTER_VERSION = "1.0"
 COUNTRIES = {
-    "CO": ("Колумбия", r"колумби[яиюе]|colombia"),
+    "CO": ("Колумбия", r"колумби[яиюе]|колумбийск[а-я]+|colombia"),
     "ET": ("Эфиопия", r"эфиопи[яиюе]|ethiopia"),
-    "BR": ("Бразилия", r"бразили[яиюе]|brazil"),
+    "BR": ("Бразилия", r"бразили[яиюе]|бразильск[а-я]+|brazil"),
     "KE": ("Кения", r"кени[яиюе]|kenya"),
     "RW": ("Руанда", r"руанд[аыуе]|rwanda"),
     "CR": ("Коста-Рика", r"коста[\s-]+рик[аиеу]|costa\s+rica"),
@@ -61,6 +61,7 @@ COUNTRIES = {
     "PA": ("Панама", r"панам[аыеу]|panama"),
     "SV": ("Сальвадор", r"(?:эль[\s-]+)?саль?вадор[аеу]?|el\s+salvador"),
     "MY": ("Малайзия", r"малайзи[яиюе]|malaysia"),
+    "DO": ("Доминиканская Республика", r"доминиканск(?:ая|ой|ую)\s+республик(?:а|и|е|у)|dominican\s+republic"),
 }
 
 
@@ -69,7 +70,7 @@ class ParseError(ValueError):
 
 
 def clean(value: object) -> str:
-    return re.sub(r"\s+", " ", str(value or "")).strip()
+    return re.sub(r"\s+", " ", str("" if value is None else value)).strip()
 
 
 def decode_unicode(value):
@@ -249,12 +250,12 @@ def origins(properties, name, description, is_blend):
         # A blend's countries must come from an explicit composition statement,
         # rather than general educational paragraphs elsewhere on the page.
         sentences = re.split(r"(?<=[.!?;])\s+|\n+", description)
-        marker = r"в состав|состав\s*:|составляющ|состоит|входят|з[её]рна из|кофе из"
+        marker = r"в состав|состав[,:]|составляющ|состоит|входят|з[её]рна из|кофе из"
         if is_blend:
-            marker += r"|балансирует вкус|добавляет смеси|смесь.*(?:из|и)"
+            marker += r"|балансирует вкус|добавляет смеси|смес[ьи].*(?:из|и)"
         composition = []
         for index, sentence in enumerate(sentences):
-            if re.search(marker, sentence, re.I):
+            if re.search(marker, sentence, re.I) and not re.search(r"\b(?:попробуйте|например|бывает)\b", sentence, re.I):
                 composition.append(sentence)
                 # A composition introduction ending in ':' is followed by the
                 # HTML list as the next block, with all of its ingredients.
@@ -279,6 +280,31 @@ def origins(properties, name, description, is_blend):
         warnings.append("blend_other_origins_not_specified")
     return [{"countryCode": code, "countryNameRu": label, "percentage": None,
              "evidenceField": evidence} for code, label in matches], warnings
+
+
+def property_value(properties, *names):
+    """Match explicit source labels without rewriting their raw values."""
+    values = {clean(k).rstrip(":").casefold(): clean(v) for k, v in properties.items()
+              if isinstance(v, (str, int, float)) and v is not None}
+    return next((values[clean(n).casefold()] for n in names if values.get(clean(n).casefold())), None)
+
+
+def property_labels(html):
+    soup = BeautifulSoup(html or "", "html.parser")
+    for node in soup.find_all("br"):
+        node.replace_with("\n")
+    for node in soup.find_all(["p", "div", "li", "tr"]):
+        node.append("\n")
+    result = {}
+    for line in soup.get_text().splitlines():
+        match = re.match(r"^\s*([^:\n]{1,80}):\s*(.+)$", line)
+        if not match:
+            match = re.match(r"^\s*(Страна(?: происхождения)?|Страны|Степень обжарки|Обжарка|Способ обработки|Обработка|Оценка Q(?:-грейдера)?|Quality|SCA|Q|Кислотность|Плотность|Тело|Дескрипторы|Во вкусе|Вкус|Вкусовой профиль|Метод приготовления)\s+[-–—]\s*(.+)$", line, re.I)
+        if not match:
+            match = re.match(r"^\s*(Кислотность|Плотность|Тело)\s+(\d+(?:[.,]\d+)?\s*/\s*\d+)\s*$", line, re.I)
+        if match:
+            result.setdefault(clean(match[1]), clean(match[2]))
+    return result
 
 
 def split_values(value):
@@ -344,6 +370,7 @@ def parse_product(html, url, kind):
         "sourceProductId": selected,
         "sourceUrl": url,
         "name": name,
+        "description": clean(description) or None,
         "roasterName": brand,
         "productKind": kind,
         "productForm": product_form,
@@ -353,7 +380,7 @@ def parse_product(html, url, kind):
         "tasteDescriptors": split_values(properties.get("Вкусовые дескрипторы")),
         "processing": properties.get("Способ обработки"),
         "roastLevel": properties.get("Степень обжарки"),
-        "qGraderScoreRaw": properties.get("Оценка Q-грейдеров"),
+        "qGraderScoreRaw": property_value(properties, "Оценка Q-грейдеров", "Q", "Quality", "SCA", "Оценка Q", "Оценка SCA"),
         "acidity": properties.get("Кислотность"),
         "body": properties.get("Плотность"),
         "features": features,
@@ -413,7 +440,7 @@ class Fetcher:
                 time.sleep(max(0, self.delay - (time.monotonic() - self.last_request)))
                 self.last_request = time.monotonic()
                 try:
-                    request_headers = {"User-Agent": "CoffeePeekCatalogImport/" + ADAPTER_VERSION}
+                    request_headers = {"User-Agent": "CoffeePeekCatalogImport/" + ADAPTER_VERSION, "Accept-Encoding": "gzip"}
                     if body is not None:
                         request_headers |= {"Content-Type": "application/json", "Accept": "application/json",
                                             "X-CSRF-TOKEN": csrf or ""}

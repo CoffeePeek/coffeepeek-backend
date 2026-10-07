@@ -1303,6 +1303,13 @@ namespace CoffeePeek.Shops.Persistance.Migrations
                             IsActive = true,
                             NameEn = "El Salvador",
                             NameRu = "Сальвадор"
+                        },
+                        new
+                        {
+                            Code = "DO",
+                            IsActive = true,
+                            NameEn = "Dominican Republic",
+                            NameRu = "Доминиканская Республика"
                         });
                 });
 

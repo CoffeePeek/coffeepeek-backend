@@ -156,6 +156,29 @@ public class DiscoveryClassificationTests
         Assert.Equal(["natural"], product.ProcessingCodes);
     }
 
+    [Theory]
+    [InlineData("средняя обжарка кофе", "кофе для эспрессо", "medium", "espresso")]
+    [InlineData("светлая обжарка", "кофе для фильтра", "light", "filter")]
+    [InlineData("светлая обжарка, фильтр", "кофе для фильтра", "light", "filter")]
+    [InlineData("средняя обжарка кофе, эспрессо", "кофе для эспрессо", "medium", "espresso")]
+    [InlineData("тёмная обжарка кофе", "обжарка под эспрессо", "dark", "espresso")]
+    [InlineData("Светлая", "под фильтр", "light", "filter")]
+    [InlineData("Средняя", "под эспрессо", "medium", "espresso")]
+    [InlineData("Медиум", "Эспрессо", "medium", "espresso")]
+    [InlineData("тёмная, эспрессо", "Эспрессо", "dark", "espresso")]
+    [InlineData("эспрессо, тёмная", "Эспрессо", "dark", "espresso")]
+    public void Normalization_RecognizesExplicitSourcePhrases(string roast, string brew, string roastCode, string brewCode)
+    {
+        var result = CoffeeClassificationNormalizer.Normalize(new CoffeeSnapshotProduct
+        {
+            RoastLevel = roast, BrewRecommendations = [brew], Processing = "Двойная промывка", Acidity = "2 / 5"
+        });
+        Assert.Equal(roastCode, result.RoastLevel);
+        Assert.Equal([brewCode], result.DefaultBrewPurposes);
+        Assert.Equal(["washed"], result.Processing);
+        Assert.Equal("low", result.Acidity);
+    }
+
     [Fact]
     public async Task DailyImport_PreservesClassificationProtectionAndVariantOverride()
     {

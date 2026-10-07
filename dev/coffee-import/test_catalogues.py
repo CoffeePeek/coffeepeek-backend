@@ -35,6 +35,8 @@ class CatalogueCheck(unittest.TestCase):
         class Daloni:
             sources = {}
             def fetch(self, url):
+                if url.endswith("/punch/"):
+                    return '<div class="product_info_content">Описание сорта</div>'
                 return ('<div class="single_product"><a data-wishlist data-id="527"></a>'
                         '<h4 class="product_name"><a href="/catalog/monosorta/punch/">Punch Blend</a></h4>'
                         '<form data-action="addToCart"><select name="props[GRIND][VALUE]">'
@@ -89,7 +91,7 @@ class CatalogueCheck(unittest.TestCase):
 
         p = {"id": 780, "name": "Натти", "slug": "/coffee/espresso-nutty", "is_coffee_bean": True,
              "without": 799, "is_archive": False, "price": 739, "processing_method": "смесь",
-             "selectable_options": [{"values": [{"id": 1, "grind_size": "grain", "price": 0}]}],
+             "selectable_options": [{"values": [{"id": 1, "grind_size": "grain", "title": "в зёрнах", "price": 0}]}],
              "measurable_option": {"values": [{"id": 2, "title": "1000 г", "price": 1760,
                                                 "price_without_discount": 2956}]}}
         branch = flatten([{"meta": {"current_page": 1, "total": 1, "last_page": 1}, "data": [p]}])
@@ -108,7 +110,17 @@ class CatalogueCheck(unittest.TestCase):
 
         class Nuxt:
             sources = {}
-            def fetch(self, url): return markup
+            def fetch(self, url):
+                if url.endswith("/espresso-nutty"):
+                    # Detail payload uses a dictionary rather than the catalogue list.
+                    detail_values = json.loads(json.dumps(values))
+                    catalogue_index = detail_values[detail_values[detail_values[0][1]]["data"]][1]
+                    branch_index = detail_values[catalogue_index]["catalog-data-coffee--"]
+                    envelope = detail_values[branch_index][0]
+                    products_index = detail_values[envelope]["data"]
+                    detail_values[envelope]["data"] = detail_values[products_index][0]
+                    return '<script id="__NUXT_DATA__">' + json.dumps(detail_values) + '</script>'
+                return markup
 
         result = collect_tasty(Nuxt())
         self.assertEqual("2499.00", result["products"][0]["variants"][0]["price"])
