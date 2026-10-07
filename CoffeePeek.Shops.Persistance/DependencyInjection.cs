@@ -57,6 +57,7 @@ public static class DependencyInjection
 
         // Queries
         services.AddScoped<ICheckInQueries, CheckInQueries>();
+        services.AddScoped<CoffeePeek.Shops.Application.Features.Feed.ICheckInFeedReader, CheckInFeedReader>();
         services.AddScoped<ICoffeeShopQueries, CoffeeShopQueries>();
         services.AddScoped<ICoffeeZoneQueries, CoffeeZoneQueries>();
 
