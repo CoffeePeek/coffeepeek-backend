@@ -183,6 +183,10 @@ public class MinIOStorageService : IStorageService, IDisposable
         return target;
     }
 
+
+    public Task<string> CopyHistoricalToCheckInStorageAsync(string key, Guid photoId, Guid checkInId, CancellationToken ct = default,
+        BucketType sourceBucket = BucketType.Shop) => throw new NotImplementedException();
+
     public static string BuildObjectDenyPolicy(string existingPolicy, string bucket, string key)
     {
         if (key.IndexOfAny(['*', '?']) >= 0)
