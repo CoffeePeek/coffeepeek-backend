@@ -15,6 +15,8 @@ Persisted Reviews were created by the old approval consumer, so a valid nondelet
 
 Current canonical galleries use only the current revision's evidenced photo set. Older photos remain on the earlier snapshot, including explicitly linked visit photos. Historical sets exceeding five are preserved. Missing Media metadata/bytes, owner or parent conflicts, unknown drink/shop/author, UUID collisions and keys shared with unrelated galleries produce exact unresolved source outcomes. They are release blockers; a saved locator is not proof of protected bytes. Historical non-raster bytes retain MIME metadata and the existing attachment/no-sniff response behavior.
 
+Legacy thumbnail/card/detail/full URLs are generated imgproxy URLs for the same original bucket/key, not independently persisted derivative objects (legacy PhotoMetadata/ShopPhoto and GenerateShopPhotoHandler). The deployed imgproxy has no MinIO credentials and reads originals anonymously, so the per-object anonymous deny also blocks subsequent variant source fetches. Before reopening traffic, invalidate any external proxy/CDN caches of old originals/variants and verify those URLs fail anonymously; previously downloaded client copies cannot be recalled. The current deployment uses plain Caddy reverse_proxy, while IMGPROXY_TTL advertises long-lived cache headers.
+
 ## Inputs and commands
 
 Use a protected local directory outside Git for the manifest: it contains full archived rows and account records. Restrict file access and include it in coordinated backups. Do not commit it, credentials or object contents. Load these explicit environment variables from your secret manager:
