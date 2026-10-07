@@ -1,24 +1,39 @@
-# Canonical check-ins: additive release with retained archives
+# Canonical check-ins: transfer and remove legacy data
 
-Runtime uses `/api/v1/check-ins` and `/api/v1/moderation/check-ins`. Standalone reviews, compatibility APIs/events and old writers are retired. Historical main migrations/designers remain unchanged; new forward migrations prepare source only, with no live database apply.
+Runtime uses `/api/v1/check-ins` and `/api/v1/moderation/check-ins`. The earlier additive migrations introduced the canonical schema and left physical archives. The forward cleanup now transfers recoverable records and permanently removes those archives, as explicitly requested. No backups are created.
 
-| Context / migration | Supported schema and archive |
+`CoffeePeek.LegacyCheckInMigration` coordinates all four databases and MinIO before EF cleanup:
+
+- A visit requires an existing active author, an existing shop, nonblank text of at most 1000 characters and coffee/service/place scores in 1–5. Missing or invalid values are never fabricated. Invalid records, removed reviews and orphaned moderation are discarded.
+- A linked review can complete an incomplete visit only when author and shop match. A complete visit with different text, scores or frozen drink fields is retained separately. Matching records preserve the visit ID and visit time; standalone reviews use their existing review ID and creation time.
+- Visits become private by default. A matching legacy moderation snapshot preserves pending/rejected status; public approval is preserved only for an exact match of text, scores, frozen drink fields and the successfully transferred photo set. A changed or missing photo resets the record to private/unsubmitted, allowing a new submission.
+- Up to five owned, confirmed JPEG/PNG/GIF/WebP/BMP/AVIF photos are verified and copied into the private check-in bucket. Media and Shops use the same photo IDs. Metadata ownership and actual raster signatures are checked; missing/invalid bytes are discarded. Storage/network errors stop the run for retry.
+- Original legacy photo objects and metadata are removed after verified copying. Old public object/version locators are explicitly denied. Keys still used by shop galleries, menus, roasters or catalog coffee remain available to those entities; check-ins receive independent private copies.
+- Helpful votes transfer once, excluding self-votes and missing users; counts are recalculated. Complaints move to the mapped canonical target; complaints about discarded reviews are removed. Existing canonical content takes precedence over colliding legacy IDs. Account check-in counters are recalculated from canonical created visits.
+
+| Database | Forward cleanup |
 | --- | --- |
-| Shops / `20261007133435_CanonicalCheckInsOnMain` | Creates fresh `CanonicalCheckIns` and `CheckInHelpfulVotes`; adds `ShopPhotos.CanonicalCheckInId`. Old `CheckIns`, `Reviews`, `ReviewHelpfulVotes`, data and photo associations remain physical archives outside runtime. |
-| Moderation / `20261007133453_CanonicalCheckInSnapshotsOnMain` | Creates fresh `ModerationCheckIns` with immutable frozen drink names and unique visit/revision. Adds separate `ShopPhotos.ModerationCheckInId`, photo ID and order; existing snapshot/photo history is untouched. |
-| Account / `RetireReviewCountOnMain` | Runtime omits the old review counter; physical values remain archived with default zero so registration satisfies the old NOT NULL column. Useful account counters remain. |
-| Media / `CanonicalCheckInPhotoClaimsOnMain` | Adds claim parent/time/original-key metadata/index; preserves storage-key uniqueness, coffee imports and all objects. |
+| Shops | `20261007160000_RemoveLegacyCheckInArchives` removes `CheckIns`, `Reviews`, `ReviewHelpfulVotes`, obsolete photo rows and `ShopPhotos.CheckInId/ReviewId`. Canonical check-ins, helpful votes, complaint audit and shared galleries remain. Shop completeness calculation and its visit trigger now use canonical current-revision data. |
+| Moderation | `20261007160000_RemoveLegacyReviewSnapshots` removes `ModerationReviews`, obsolete snapshot photos and `ShopPhotos.ModerationReviewId`. Canonical snapshots and current shop/roaster moderation remain. |
+| Account | `20261007160000_RemoveLegacyReviewCounter` removes `Users.ReviewCount` after recalculating `CheckInCount`. |
+| Media | Current schema stays intact; the runner removes scoped obsolete photo records/objects and creates private canonical claims. |
 
-No legacy rows/tables/columns are deleted, renamed or copied into canonical runtime. Fresh canonical tables start empty; old tester history is preserved without publication. Existing DbSet/type names may map to the new physical tables. Shared galleries, menus, roasters and unrelated audit data remain intact.
+Historical migrations and model snapshots are retained so fresh installs and upgrades still work. No legacy compatibility APIs or runtime writers are restored. Cleanup is forward-only: `Down` throws because discarded records cannot be reconstructed.
 
-The existing `ReviewReports` table/target column and all complaint/admin audit remain. Only its obsolete FK to archived Reviews is detached so canonical complaints can be inserted. Old uncertain targets have no canonical content projection. No guessed cross-database mappings or reconciliation writers are added.
+## Deployment
 
-Before deployment, stop old writers/consumers, take coordinated database/object/policy/inbox/outbox backups, review the idempotent forward SQL and rehearse on disposable PostgreSQL. Verify slug creation, complete content, current-revision moderation, private claims/bytes, helpful/reports and latest-author rating fallback. Shops/Moderation Down refuses automatic removal of new canonical content; restore coordinated backups and matching binaries under an operator-reviewed rollback. Passing model/SQL/provider checks alone does not establish an actual database upgrade.
+`deploy/scripts/ci-deploy.sh` stops gateway/account/shops/moderation/media when legacy tables remain, runs `apply-migrations.sh`, then restarts the new services. An unsuccessful migration leaves application writers stopped; fix the cause and rerun the same deployment. No backup/export phase exists. The runner serializes concurrent executions with a dedicated PostgreSQL session lock.
 
-New uploads use private `coffeepeek.checkins` (`MinIOOptions__CheckInBucketName`) through `POST /api/Photos/check-in`. Claims bind trusted raster bytes to owner/single parent and immutable reviewed identity. Protected author/public/moderator routes recheck visibility/revision and set private/no-store/nosniff. Internal Media paths remain blocked by the gateway.
+`apply-migrations.sh` builds and runs the console tool. It first upgrades each database to the existing canonical migrations, transfers data and private objects, writes completion flags containing no archived content, then applies cleanup. Nonempty archives cannot be dropped by a direct `dotnet ef database update` before transfer completes. Completion flags are removed with cleanup. Retry works after interrupted transfer or partial schema cleanup; a later deployment never downgrades the cleaned schema.
 
-Archived locators may still refer to historically public shop-bucket objects. Their retained metadata does not prove source-object anonymous denial. Review historical object/bucket policies and explicit source-object denial on disposable storage before deployment; this remains a release gate. This task performs no object wipe, policy mutation or live backfill and claims no protection of historical source locators.
+The runner reads `PG_HOST`, `PG_PORT`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `MINIO_ROOT_USER`, `MINIO_ROOT_PASSWORD` and optional `MinIOOptions__*`. Production uses the internal MinIO address supplied by CI deployment. Optional `LegacyMigration__Account/Shops/Moderation/Media` connection strings are available for isolated verification. Credentials, object keys and user text are never logged.
 
-`dev/unified-checkin-smoke.ps1` defaults to dry-run; `-SelfTest` sends no HTTP. `-Run` requires an isolated loopback stack, `-CoffeeShopSlug` and distinct Author/Other/Moderator tokens. It creates/deletes only its own canonical visits; optional byte/fallback fixtures otherwise report NOT RUN. Existing cooldown/day limits apply.
+For development, stop running services and execute `dev/migrate-and-seed.sh`. Direct execution against configured databases: `dotnet run --project CoffeePeek.LegacyCheckInMigration --configuration Release`.
 
-Disposable PostgreSQL/MinIO/full HTTP, live migrations and deployment are NOT RUN in this source task. Record operator infrastructure checks separately from successful unit/OpenAPI/model/SQL verification.
+## Verification
+
+`CoffeePeek.LegacyCheckInMigration.Tests` covers mapping rules and rehearses the real four-database EF history on PostgreSQL 17, including incomplete visits, snapshot approval, helpful/report transfer, counters, cleanup refusal before transfer, a simulated storage failure, retries and complete archive removal. Photo scenarios include changed moderation photos and keys shared with a live gallery.
+
+Set `COFFEEPEEK_LIVE_PG` and `PGPASSFILE` as described in [the live PostgreSQL guide](../api/public-addresses.md#live-postgresql-gate). Adding `COFFEEPEEK_LIVE_MINIO=http://127.0.0.1:9000` exercises actual byte copying, public source denial and private bucket access on an isolated loopback MinIO with disposable test credentials `coffee-legacy-test` / `coffee-legacy-test-only`; only uniquely named `cp-legacy-*` buckets are created and removed.
+
+These checks use disposable infrastructure. Applying this migration to the VPS is a separate deployment; local verification does not claim production data has already moved.

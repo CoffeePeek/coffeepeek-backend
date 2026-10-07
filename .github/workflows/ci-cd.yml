@@ -85,6 +85,17 @@ jobs:
       - name: Run tests
         run: dotnet test "CoffeePeek.Backend.ci.slnf" --configuration Release --no-build -m -p:AllowMissingPrunePackageData=true --verbosity normal
 
+      - name: Start isolated MinIO for legacy migration verification
+        run: |
+          docker run -d --name coffeepeek-legacy-test-minio -p 127.0.0.1:9000:9000 \
+            -e MINIO_ROOT_USER=coffee-legacy-test -e MINIO_ROOT_PASSWORD=coffee-legacy-test-only \
+            bitnamilegacy/minio@sha256:451fe6858cb770cc9d0e77ba811ce287420f781c7c1b806a386f6896471a349c
+          for attempt in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:9000/minio/health/ready >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          exit 1
+
       - name: Verify discovery with real PostgreSQL 17
         run: |
           set -euo pipefail
@@ -99,6 +110,20 @@ jobs:
               --configuration Release --no-build -p:AllowMissingPrunePackageData=true \
               --filter 'FullyQualifiedName~DiscoveryClassificationLiveTests|FullyQualifiedName~DiscoveryQueryLiveTests' \
               --verbosity normal
+
+      - name: Rehearse legacy transfer and cleanup with PostgreSQL and MinIO
+        run: |
+          set -euo pipefail
+          pgpass_file="$(mktemp "${RUNNER_TEMP}/coffeepeek-legacy-pgpass.XXXXXX")"
+          trap 'rm -f "$pgpass_file"; docker rm -f coffeepeek-legacy-test-minio' EXIT
+          chmod 600 "$pgpass_file"
+          printf '%s\n' '127.0.0.1:5432:*:postgres:coffeepeek-ci-only-postgres' > "$pgpass_file"
+          COFFEEPEEK_LIVE_PG='Host=127.0.0.1;Port=5432;Username=postgres;Database=postgres;SslMode=Disable' \
+          COFFEEPEEK_LIVE_PG_ALLOW_SUPERUSER=1 \
+          COFFEEPEEK_LIVE_MINIO=http://127.0.0.1:9000 \
+          PGPASSFILE="$pgpass_file" \
+            dotnet test CoffeePeek.LegacyCheckInMigration.Tests --configuration Release --no-build \
+              --filter 'Category=LivePostgres' --verbosity normal
 
       - name: Setup Python
         uses: actions/setup-python@v5
