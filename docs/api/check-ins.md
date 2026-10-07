@@ -56,4 +56,4 @@ The moderator policy protects every `/api/v1/moderation/check-ins` action. Snaps
 
 Status values are `Pending`, `Approved` and `Rejected`. A rejection requires a reason. Snapshot photo URLs always point to the protected canonical moderation-photo route.
 
-The former v2 check-in routes, unversioned check-in/review APIs, review upload action and review submission/edit adapters are removed. No compatibility aliases remain. The prepared database cleanup and tester-record deletion scope are documented in [the migration guide](../migrations/unified-check-ins.md).
+The former v2 check-in routes, unversioned check-in/review APIs, review upload action and review submission/edit adapters are removed. No compatibility aliases remain. The additive forward schema and preserved legacy archives are documented in [the migration guide](../migrations/unified-check-ins.md).
