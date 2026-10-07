@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using CoffeePeek.Contract.Dtos;
 using CoffeePeek.Contract.Dtos.CheckIns;
+using CoffeePeek.Contract.Dtos.Feed;
 using CoffeePeek.Contract.Dtos.PublicAddresses;
 using CoffeePeek.Contract.Enums;
 using CoffeePeek.Shared.Domain.Interfaces.Infrastructure;
@@ -134,7 +135,7 @@ public class ApiExamplesContractTests
         profiles.Setup(x => x.GetByIdsAsync(It.IsAny<Guid[]>(), ct))
             .ReturnsAsync([new PublicAddressMetadata(AuthorId, "example-author", "/users/example-author", 1)]);
         var discovery = new PublicDiscoveryService(addresses.Object, profiles.Object, Mock.Of<ICoffeeShopQueries>(),
-            Mock.Of<IQueryCheckInRepository>(), Mock.Of<IMessageBus>());
+            Mock.Of<IQueryCheckInRepository>(), Mock.Of<IMessageBus>(), new PublicCheckInProjector(addresses.Object, profiles.Object));
         var visits = await discovery.CheckInsAsync([pending, privateVisit, approved], ct);
         Assert.Equal(CheckInVisibility.Public, visits[0].Visibility);
         Assert.Equal(CheckInModerationState.Pending, visits[0].ModerationState);
@@ -149,6 +150,9 @@ public class ApiExamplesContractTests
             ["check-in.json"] = Response<PublicCheckInDto>.Success(visits[0]),
             ["check-ins-mine.json"] = Response<PublicCanonicalOwnerCheckInPage>.Success(new(visits, 3)),
             ["check-ins-feed.json"] = Response<PublicCanonicalCheckInPage>.Success(new([visits[2]], null)),
+            ["feed.json"] = Response<CheckInFeedPageDto>.Success(new([
+                new(visits[0].CreatedAtUtc, visits[0] with { Visibility = CheckInVisibility.Public,
+                    ModerationState = CheckInModerationState.Approved, RejectionReason = null })], null)),
             ["menu-drinks.json"] = Response<GetMenuDrinksResponse>.Success(new GetMenuDrinksResponse(CreateCatalog()))
         };
     }

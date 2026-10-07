@@ -29,7 +29,7 @@ public sealed class PublicZoneColorTests
             .ReturnsAsync([]);
         var service = new PublicDiscoveryService(addresses.Object,
             Mock.Of<IProfileAddressLookup>(), Mock.Of<ICoffeeShopQueries>(),
-            Mock.Of<IQueryCheckInRepository>(), Mock.Of<IMessageBus>());
+            Mock.Of<IQueryCheckInRepository>(), Mock.Of<IMessageBus>(), Mock.Of<IPublicCheckInProjector>());
         var zone = new MapCoffeeZoneDto(id, "Center", null, 53.9m, 27.56m, 400, 3, [], "#A1B2C3");
 
         var result = await service.MapAsync([], [], [zone], false, CancellationToken.None);

@@ -233,6 +233,7 @@ public sealed class PublicAddressGatewaySmokeTests
         shopsBuilder.Services.AddScoped<PublicAddressHttpClient>();
         shopsBuilder.Services.AddHttpClient("account-user-lookup", c => c.BaseAddress = new Uri(Address(account)));
         shopsBuilder.Services.AddScoped<PublicDiscoveryService>();
+        shopsBuilder.Services.AddScoped<IPublicCheckInProjector, PublicCheckInProjector>();
         shopsBuilder.Services.AddScoped<ICoffeeCatalogStore, CoffeeCatalogStore>();
         shopsBuilder.Services.AddOptions<CoffeeImportOptions>();
         await using var shops = shopsBuilder.Build();

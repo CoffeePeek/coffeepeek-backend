@@ -1,8 +1,6 @@
 using System.Globalization;
 using System.Text;
-using CoffeePeek.Contract.Dtos;
 using CoffeePeek.Contract.Dtos.CheckIns;
-using CoffeePeek.Contract.Dtos.CoffeeShop;
 using CoffeePeek.Shared.Kernel.Exceptions;
 using CoffeePeek.Shops.Application.Features.CheckIn;
 using CoffeePeek.Shops.Domain.Aggregates.CheckInAggregate;
@@ -76,26 +74,7 @@ public class CheckInQueries(ShopsDbContext dbContext) : ICheckInQueries
     private async Task<UnifiedCheckInDto[]> ProjectAsync(IQueryable<CheckIn> query, Guid? readerId, CancellationToken ct)
     {
         var rows = await query.AsNoTracking().Include(c => c.ShopPhotos).ToArrayAsync(ct);
-        var shopIds = rows.Select(c => c.ShopId).Distinct().ToArray();
-        var shops = await dbContext.Shops.Where(s => shopIds.Contains(s.Id)).Select(s => new { s.Id, s.Name }).ToDictionaryAsync(s => s.Id, ct);
-        var ids = rows.Select(c => c.Id).ToArray();
-        var helpful = readerId == null ? [] : await dbContext.CheckInHelpfulVotes
-            .Where(v => v.UserId == readerId && ids.Contains(v.CheckInId)).Select(v => v.CheckInId).ToArrayAsync(ct);
-        return rows.Select(c => new UnifiedCheckInDto
-        {
-            Id = c.Id, UserId = c.UserId, Username = c.Username, ShopId = c.ShopId,
-            ShopName = shops.GetValueOrDefault(c.ShopId)?.Name ?? "", Text = c.Note,
-            Rating = new RatingDto { Place = c.Rating.Place, Service = c.Rating.Service, Coffee = c.Rating.Coffee },
-            VisitedAt = c.VisitedAt, CreatedAtUtc = c.CreatedAtUtc,
-            Visibility = (Contract.Enums.CheckInVisibility)c.Visibility,
-            ModerationState = (Contract.Enums.CheckInModerationState)c.ModerationState,
-            ContentRevision = c.ContentRevision, RejectionReason = c.UserId == readerId ? c.RejectionReason : null,
-            Drink = c.DrinkSlug == null ? null : new CheckInDrinkDto(c.DrinkSlug, c.CustomDrinkName, c.DrinkNameRu!, c.DrinkNameEn!),
-            Photos = c.ShopPhotos.OrderBy(p => p.SortIndex).ThenBy(p => p.Id)
-                .Select(p => new CheckInPhotoDto(p.Id, p.FileName, p.ContentType, p.StorageKey, p.SizeBytes, p.SortIndex,
-                    $"/api/v1/check-ins/{c.Id}/photos/{p.Id}")).ToArray(),
-            HelpfulCount = c.HelpfulCount, IsHelpfulByCurrentUser = helpful.Contains(c.Id)
-        }).ToArray();
+        return await CheckInProjection.FromRowsAsync(dbContext, rows, readerId, ct);
     }
 
     public static string EncodeCursor(DateTime createdAt, Guid id) => Convert.ToBase64String(
