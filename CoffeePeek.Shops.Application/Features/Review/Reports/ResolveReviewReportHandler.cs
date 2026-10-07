@@ -21,7 +21,7 @@ public static class ResolveReviewReportHandler
             ? await checkIns.GetTrackedByIdAsync(id, ct) : null;
         if (changed)
         {
-            if (checkIn is { IsPubliclyVisible: true })
+            if (checkIn is not null)
                 checkIn.Delete();
             await uow.SaveChangesAsync(ct);
         }
