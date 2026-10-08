@@ -146,7 +146,7 @@ public sealed class ShopProfileOutboxLiveTests : IClassFixture<ShopsLiveDatabase
             options.UseRuntimeCompilation();
             options.CodeGeneration.TypeLoadMode = TypeLoadMode.Auto;
             options.CodeGeneration.AlwaysUseServiceLocationFor(typeof(ShopsDbContext));
-            options.PersistMessagesWithPostgresql(fixture.ConnectionString);
+            options.PersistMessagesWithPostgresql(fixture.ConnectionString, "wolverine");
             options.Policies.UseDurableOutboxOnAllSendingEndpoints();
             options.Policies.UseDurableInboxOnAllListeners();
             options.Policies.UseDurableLocalQueues();
@@ -161,8 +161,8 @@ public sealed class ShopProfileOutboxLiveTests : IClassFixture<ShopsLiveDatabase
         await using var connection = new NpgsqlConnection(fixture.ConnectionString);
         await connection.OpenAsync(ct);
         await using var command = new NpgsqlCommand(
-            "SELECT (SELECT count(*) FROM wolverine_outgoing_envelopes) + " +
-            "(SELECT count(*) FROM wolverine_incoming_envelopes)", connection);
+            "SELECT (SELECT count(*) FROM wolverine.wolverine_outgoing_envelopes) + " +
+            "(SELECT count(*) FROM wolverine.wolverine_incoming_envelopes)", connection);
         return (long)(await command.ExecuteScalarAsync(ct))!;
     }
 }
