@@ -17,6 +17,17 @@ namespace CoffeePeek.Gateway.Tests;
 public class ReverseProxyRouteConfigurationTests
 {
     [Fact]
+    public void FeedRouteIsAnonymousAndTargetsShopsWithoutPathRewrite()
+    {
+        using var document = LoadGatewayAppsettings();
+        var route = document.RootElement.GetProperty("ReverseProxy").GetProperty("Routes").GetProperty("shops-feed-route");
+        route.GetProperty("ClusterId").GetString().Should().Be("shops-cluster");
+        route.GetProperty("Match").GetProperty("Path").GetString().Should().Be("/api/v1/feed");
+        route.TryGetProperty("AuthorizationPolicy", out _).Should().BeFalse();
+        route.TryGetProperty("Transforms", out _).Should().BeFalse();
+    }
+
+    [Fact]
     public void CheckInReportRoutes_UseShopsWithRequiredAuthAndSubmissionLimiter()
     {
         using var document = LoadGatewayAppsettings();

@@ -342,6 +342,10 @@ namespace CoffeePeek.Shops.Persistance.Migrations
 
                     b.HasIndex("UserId");
 
+                    b.HasIndex("FirstPublishedAtUtc", "Id")
+                        .IsDescending()
+                        .HasFilter("\"DeletedAtUtc\" IS NULL AND \"Visibility\" = 1 AND \"ModerationState\" = 2 AND \"ApprovedRevision\" = \"ContentRevision\" AND \"FirstPublishedAtUtc\" IS NOT NULL");
+
                     b.HasIndex("UserId", "ShopId");
 
                     b.HasIndex("Visibility", "ModerationState", "CreatedAtUtc", "Id");

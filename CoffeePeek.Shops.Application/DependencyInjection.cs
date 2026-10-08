@@ -40,6 +40,7 @@ public static class DependencyInjection
 
         // Application Services
         services.AddScoped<PublicAddresses.PublicDiscoveryService>();
+        services.AddScoped<PublicAddresses.IPublicCheckInProjector, PublicAddresses.PublicCheckInProjector>();
         services.AddScoped<ICreateShopFromModerationService, CreateShopFromModerationService>();
         services.AddScoped<ICreateShopFromImportService, CreateShopFromImportService>();
         services.AddScoped<IEnrichShopFromImportService, EnrichShopFromImportService>();

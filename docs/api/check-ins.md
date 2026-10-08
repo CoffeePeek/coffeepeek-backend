@@ -2,6 +2,9 @@
 
 Full current response files and slug examples are in [check-ins-examples.md](check-ins-examples.md).
 
+The application-wide chronological publication feed is [GET /api/v1/feed](feed.md).
+It reuses check-in cards and actions, with a separate publication-time cursor.
+
 `/api/v1/check-ins` is the sole supported visit API. Text is required (1–1,000 nonblank characters after trimming), together with three integer scores from 1 through 5: coffee, service and place. Author identity comes from the authenticated account. Drink and photos are optional.
 
 ```json

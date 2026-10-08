@@ -136,6 +136,8 @@ public class ShopsDbContext(DbContextOptions<ShopsDbContext> options, IOptions<P
             entity.Property(c => c.RowVersion).IsConcurrencyToken();
             entity.Ignore(c => c.IsPubliclyVisible);
             entity.HasIndex(c => new { c.Visibility, c.ModerationState, c.CreatedAtUtc, c.Id });
+            entity.HasIndex(c => new { c.FirstPublishedAtUtc, c.Id }).IsDescending()
+                .HasFilter("\"DeletedAtUtc\" IS NULL AND \"Visibility\" = 1 AND \"ModerationState\" = 2 AND \"ApprovedRevision\" = \"ContentRevision\" AND \"FirstPublishedAtUtc\" IS NOT NULL");
             entity.HasIndex(c => new { c.UserId, c.ShopId, c.VisitedAt, c.CreatedAtUtc, c.Id });
             entity.Property(c => c.DrinkSlug).HasMaxLength(50);
             entity.Property(c => c.CustomDrinkName).HasMaxLength(100);

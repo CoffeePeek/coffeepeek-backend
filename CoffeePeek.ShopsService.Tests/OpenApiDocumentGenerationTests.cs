@@ -63,6 +63,16 @@ public class OpenApiDocumentGenerationTests
                 "the real Shops OpenAPI document must generate successfully; body: {0}", body);
             using var document = JsonDocument.Parse(body);
             var paths = document.RootElement.GetProperty("paths");
+            var timeline = paths.GetProperty("/api/v1/feed").GetProperty("get");
+            timeline.GetProperty("parameters").EnumerateArray().Select(x => x.GetProperty("name").GetString())
+                .Should().Contain(new[] { "citySlug", "coffeeShopSlug", "authorSlug", "pageSize", "cursor" });
+            var timelineEnvelope = ResolveSchema(document.RootElement,
+                timeline.GetProperty("responses").GetProperty("200").GetProperty("content").GetProperty("application/json").GetProperty("schema"));
+            var timelinePage = SchemaProperties(document.RootElement, SchemaProperties(document.RootElement, timelineEnvelope)["data"]);
+            timelinePage.Keys.Should().Contain(new[] { "items", "nextCursor" });
+            var timelineItems = ResolveSchema(document.RootElement, timelinePage["items"]);
+            SchemaProperties(document.RootElement, timelineItems.GetProperty("items")).Keys
+                .Should().Contain(new[] { "publishedAtUtc", "checkIn" });
             paths.TryGetProperty("/api/admin/check-in-reports", out _).Should().BeTrue();
             foreach (var route in new[] { "/api/Catalogs/roasters", "/api/v1/roasters/search", "/api/v1/roasters/facets" })
                 paths.TryGetProperty(route, out _).Should().BeFalse();

@@ -92,7 +92,7 @@ public class CheckInControllerTests
             Drink = drinkSlug is null && customDrinkName is null ? null : new CheckInDrinkDto(drinkSlug!, customDrinkName, "", "")
         });
         var discovery = new PublicDiscoveryService(addresses.Object, profiles.Object, Mock.Of<ICoffeeShopQueries>(),
-            Mock.Of<IQueryCheckInRepository>(), bus);
+            Mock.Of<IQueryCheckInRepository>(), bus, new PublicCheckInProjector(addresses.Object, profiles.Object));
         var controller = new UnifiedCheckInsController(bus, user.Object, Mock.Of<ICheckInQueries>(), discovery, profiles.Object);
 
         var result = Assert.IsType<OkObjectResult>(await controller.Create(request, ct));

@@ -21,7 +21,7 @@ namespace CoffeePeek.Shops.Application.PublicAddresses;
 
 // Composes public read models; aggregate identities and existing command handlers stay internal.
 public sealed class PublicDiscoveryService(IPublicAddressService addresses, IProfileAddressLookup profiles,
-    ICoffeeShopQueries queries, IQueryCheckInRepository checkIns, IMessageBus bus)
+    ICoffeeShopQueries queries, IQueryCheckInRepository checkIns, IMessageBus bus, IPublicCheckInProjector checkInProjector)
 {
     private static readonly TypeAdapterConfig PublicMapping = CreateMapping();
     private static TypeAdapterConfig CreateMapping()
@@ -125,21 +125,8 @@ public sealed class PublicDiscoveryService(IPublicAddressService addresses, IPro
         { CoffeeShopsCount = x.CoffeeShopsCount, CoffeeProductsCount = x.CoffeeProductsCount };
     }
 
-    public async Task<PublicCheckInDto[]> CheckInsAsync(UnifiedCheckInDto[] items, CancellationToken ct)
-    {
-        var shops = await ReadAsync(PublicAddressKind.CoffeeShop, items.Select(x => x.ShopId), ct);
-        var authors = (await profiles.GetByIdsAsync(items.Select(x => x.UserId).Distinct().ToArray(), ct))
-            .ToDictionary(x => x.EntityId, PublicAddressDto.From);
-        return items.Select(x => new PublicCheckInDto
-        {
-            Id=x.Id, Shop=Find(shops,x.ShopId), Author=Find(authors,x.UserId), Username=x.Username,
-            ShopName=x.ShopName, Text=x.Text, Rating=x.Rating, VisitedAt=x.VisitedAt, CreatedAtUtc=x.CreatedAtUtc,
-            Visibility=x.Visibility, ModerationState=x.ModerationState, ContentRevision=x.ContentRevision,
-            RejectionReason=x.RejectionReason, DrinkSlug=x.Drink?.Slug, CustomDrinkName=x.Drink?.CustomName,
-            DrinkNameRu=x.Drink?.NameRu, DrinkNameEn=x.Drink?.NameEn, Photos=x.Photos,
-            HelpfulCount=x.HelpfulCount, IsHelpfulByCurrentUser=x.IsHelpfulByCurrentUser
-        }).ToArray();
-    }
+    public Task<PublicCheckInDto[]> CheckInsAsync(UnifiedCheckInDto[] items, CancellationToken ct) =>
+        checkInProjector.ProjectAsync(items, ct);
 
     public async Task<PublicMapDto> MapAsync(MapShopDto[] shops, MapClusterDto[]? clusters, MapCoffeeZoneDto[]? zones,
         bool? truncated, CancellationToken ct)
