@@ -6,7 +6,6 @@ public class ShortPhotoMetadataDto
     public string FileName { get; init; }
     public string StorageKey { get; init; }
     public string FullUrl { get; init; }
-    public PhotoUrlsDto? Urls { get; init; }
     public int SortIndex { get; init; }
     public bool IsPrimary { get; init; }
 }
