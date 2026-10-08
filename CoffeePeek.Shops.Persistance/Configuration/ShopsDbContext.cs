@@ -8,9 +8,12 @@ using CoffeePeek.Shops.Domain.Aggregates.ShopTagAggregate;
 using CoffeePeek.Shops.Domain.Entities;
 using CoffeePeek.Shared.Domain.PublicAddresses;
 using CoffeePeek.Shops.Application.PublicAddresses;
+using CoffeePeek.Shops.Application.Observability;
 using CoffeePeek.Shops.Persistance.PublicAddresses;
+using CoffeePeek.Shared.Kernel.Exceptions;
 using Microsoft.Extensions.Options;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 using CheckIn = CoffeePeek.Shops.Domain.Aggregates.CheckInAggregate.CheckIn;
 
 namespace CoffeePeek.Shops.Persistance.Configuration;
@@ -31,20 +34,54 @@ public class ShopsDbContext(DbContextOptions<ShopsDbContext> options, IOptions<P
     public override int SaveChanges(bool acceptAllChangesOnSuccess) =>
         SaveChangesAsync(acceptAllChangesOnSuccess).GetAwaiter().GetResult();
 
-    public override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
+    public override async Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
     {
         ChangeTracker.DetectChanges();
+        // A profile write must fail as a conflict on its original request. Wolverine's global
+        // transient-DB policy retries raw EF concurrency errors with a fresh context, which
+        // could otherwise turn a concurrent legacy PUT into a successful stale overwrite.
+        var profileRevisionChanged = ChangeTracker.Entries<CoffeeShop>().Any(entry =>
+            entry.State == EntityState.Modified &&
+            entry.Property(nameof(CoffeeShop.ProfileRevision)).IsModified);
         var ownerChanges = PublicAddressesEnabled && ChangeTracker.Entries().Any(e =>
             (e.Entity is IPublicSlugOwner && e.State == EntityState.Added && e.Entity is not CoffeeZone) ||
             PublicAddressWriter.IsNewlyPublished(e));
-        if (!ownerChanges) return base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
-
-        // Intercepts every supported repository/UoW/Wolverine save, including menu imports' early save.
-        return PublicAddressTransaction.RunAsync(this, async () =>
+        try
         {
-            await PublicAddressWriter.PrepareOwnerChangesAsync(this, cancellationToken);
-            return await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
-        }, cancellationToken);
+            if (!ownerChanges)
+                return await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+
+            // Intercepts every supported repository/UoW/Wolverine save, including menu imports' early save.
+            return await PublicAddressTransaction.RunAsync(this, async () =>
+            {
+                await PublicAddressWriter.PrepareOwnerChangesAsync(this, cancellationToken);
+                return await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+            }, cancellationToken);
+        }
+        catch (DbUpdateConcurrencyException) when (profileRevisionChanged)
+        {
+            // Do not retain the EF exception as InnerException: the global Wolverine retry
+            // predicate walks the exception chain and would retry the stale profile write.
+            ShopsTelemetry.ProfileWriteConflict();
+            throw new ConflictException("Shop profile changed; reload and retry.", statusCode: 409);
+        }
+        catch (DbUpdateException ex) when (ex.InnerException is PostgresException
+                   { SqlState: PostgresErrorCodes.UniqueViolation,
+                     ConstraintName: "IX_ShopMenus_CoffeeShopId" })
+        {
+            ShopsTelemetry.MenuWriteConflict();
+            // Two requests may both observe that a shop has no menu. The database keeps
+            // one row; surface the losing create as a conflict rather than an HTTP 500.
+            throw new ConflictException("Shop menu was created concurrently; reload and retry.", statusCode: 409);
+        }
+        catch (DbUpdateException ex) when (ex.InnerException is PostgresException
+                   { SqlState: PostgresErrorCodes.UniqueViolation,
+                     ConstraintName: "IX_CoffeeDrinkDefinitions_Slug" })
+        {
+            // The slug pre-check is only advisory when two administrators create concurrently.
+            // The database unique index remains authoritative at Wolverine's final save.
+            throw new ConflictException("Drink slug already exists.", statusCode: 409);
+        }
     }
     //category
     public virtual DbSet<BrewMethod> BrewMethods { get; set; }
@@ -70,11 +107,13 @@ public class ShopsDbContext(DbContextOptions<ShopsDbContext> options, IOptions<P
 
     public virtual DbSet<EquipmentCategory> EquipmentCategories { get; set; }
     public virtual DbSet<Equipment> Equipments { get; set; }
+    public virtual DbSet<ShopEquipment> ShopEquipments { get; set; }
 
     public virtual DbSet<ShopTag> ShopTags { get; set; }
     public virtual DbSet<CoffeeShopTag> CoffeeShopTags { get; set; }
     public virtual DbSet<CoffeeDrinkDefinition> CoffeeDrinkDefinitions { get; set; }
     public virtual DbSet<ShopMenu> ShopMenus { get; set; }
+    public virtual DbSet<MenuOcrJob> MenuOcrJobs { get; set; }
     public virtual DbSet<AppDistributionSettings> AppDistributionSettings { get; set; }
     public virtual DbSet<AndroidRelease> AndroidReleases { get; set; }
     public virtual DbSet<AppDistributionAuditLog> AppDistributionAuditLogs { get; set; }
@@ -95,6 +134,7 @@ public class ShopsDbContext(DbContextOptions<ShopsDbContext> options, IOptions<P
         PublicSlugConfiguration.Configure(modelBuilder.Entity<CoffeeShop>(), "Shops");
 
         modelBuilder.ApplyConfiguration(new CoffeeShopConfiguration());
+        modelBuilder.ApplyConfiguration(new ShopEquipmentConfiguration());
         modelBuilder.ApplyConfiguration(new CoffeeZoneConfiguration());
         modelBuilder.ApplyConfiguration(new CoffeeZoneMembershipOverrideConfiguration());
         modelBuilder.ApplyConfiguration(new ShopPhotoConfiguration());
@@ -108,6 +148,16 @@ public class ShopsDbContext(DbContextOptions<ShopsDbContext> options, IOptions<P
         modelBuilder.ApplyConfiguration(new ShopMenuConfiguration());
         modelBuilder.ApplyConfiguration(new ShopMenuItemConfiguration());
         modelBuilder.ApplyConfiguration(new ShopMenuPhotoConfiguration());
+        modelBuilder.ApplyConfiguration(new MenuOcrJobConfiguration());
+        modelBuilder.Entity<ShopMenu>(menu =>
+        {
+            menu.Property(m => m.InputRevision).HasDefaultValue(0L).IsConcurrencyToken();
+            menu.HasMany(m => m.OcrJobs)
+                .WithOne()
+                .HasForeignKey(job => job.ShopMenuId)
+                .OnDelete(DeleteBehavior.Cascade);
+            menu.Navigation(m => m.OcrJobs).UsePropertyAccessMode(PropertyAccessMode.Field);
+        });
         modelBuilder.ApplyConfiguration(new AppDistributionSettingsConfiguration());
         modelBuilder.ApplyConfiguration(new AndroidReleaseConfiguration());
         modelBuilder.ApplyConfiguration(new AppDistributionAuditLogConfiguration());

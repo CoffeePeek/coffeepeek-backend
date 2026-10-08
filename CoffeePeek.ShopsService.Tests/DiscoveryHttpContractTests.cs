@@ -21,7 +21,7 @@ public sealed class DiscoveryHttpContractTests : IAsyncLifetime
     private HttpClient client = null!;
     private const string Secret = "discovery-http-tests-private-gateway-secret-123456789";
     private readonly Mock<IDiscoveryQueryStore> queries = new();
-    private readonly Mock<ICoffeeCatalogStore> catalog = new();
+    private readonly Mock<IPublicCoffeeCatalogReader> catalog = new();
     private readonly Mock<IDiscoveryClassificationStore> classification = new();
     private readonly Mock<IDiscoveryFavoritesStore> favorites = new();
 

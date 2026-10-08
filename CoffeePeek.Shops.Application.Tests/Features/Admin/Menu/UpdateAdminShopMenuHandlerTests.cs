@@ -23,6 +23,139 @@ namespace CoffeePeek.Shops.Application.Tests.Features.Admin.Menu;
 public class UpdateAdminShopMenuHandlerTests
 {
     [Fact]
+    public async Task ApplyingSuggestedPriceRange_AdvancesSharedProfileRevision()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var shop = new DomainCoffeeShop(null, "Coffee", null, PriceRange.Moderate, Guid.NewGuid());
+        var menu = ShopMenu.Create(shop.Id);
+        menu.CompleteParse(null, PriceRange.Expensive, null);
+        var drink = CoffeeDrinkDefinition.CreateWithId(Guid.NewGuid(), "latte", "Латте", "Latte",
+            CoffeeDrinkCategory.Espresso, "latte", 1);
+        var shops = new Mock<ICoffeeShopRepository>();
+        shops.Setup(x => x.GetByIdAsync(shop.Id, ct)).ReturnsAsync(shop);
+        var applyMenu = new Mock<IApplyShopMenuService>();
+        applyMenu.Setup(x => x.ApplyManualItemsAsync(shop.Id,
+                It.IsAny<IReadOnlyList<ManualShopMenuItemUpdate>>(), It.IsAny<Guid?>(), ct))
+            .ReturnsAsync(menu);
+        var drinks = new Mock<IQueryCoffeeDrinkRepository>();
+        drinks.Setup(x => x.GetActiveAsync(ct)).ReturnsAsync([drink]);
+        var query = new Mock<IQueryShopMenuRepository>();
+        query.Setup(x => x.GetByShopIdAsync(shop.Id, ct)).ReturnsAsync(menu);
+
+        var result = await UpdateAdminShopMenuHandler.Handle(
+            new UpdateAdminShopMenuCommand(shop.Id,
+                [new UpdateShopMenuItemRequest("latte", ContractAvailability.Present, 5m, 200)], true, Guid.NewGuid()),
+            shops.Object, applyMenu.Object, drinks.Object, query.Object,
+            new Mock<IUnitOfWork>().Object, new Mock<ICacheService>().Object,
+            Options.Create(new MediaPublicUrlOptions { PublicEndpoint = "https://media.example.com" }), ct);
+
+        result.IsSuccess.Should().BeTrue();
+        shop.PriceRange.Should().Be(PriceRange.Expensive);
+        shop.ProfileRevision.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task RepeatedDrink_Returns400ForWholeBatchBeforeApplying()
+    {
+        var shopId = Guid.NewGuid();
+        var shop = new DomainCoffeeShop(null, "Coffee", null, PriceRange.Moderate, Guid.NewGuid());
+        var shops = new Mock<ICoffeeShopRepository>();
+        shops.Setup(x => x.GetByIdAsync(shopId, It.IsAny<CancellationToken>())).ReturnsAsync(shop);
+        var drinks = new Mock<IQueryCoffeeDrinkRepository>();
+        drinks.Setup(x => x.GetActiveAsync(It.IsAny<CancellationToken>())).ReturnsAsync([
+            CoffeeDrinkDefinition.CreateWithId(Guid.NewGuid(), "latte", "Латте", "Latte",
+                CoffeeDrinkCategory.Espresso, "latte", 1)
+        ]);
+        var applyMenu = new Mock<IApplyShopMenuService>(MockBehavior.Strict);
+        var unitOfWork = new Mock<IUnitOfWork>(MockBehavior.Strict);
+
+        var result = await UpdateAdminShopMenuHandler.Handle(
+            new UpdateAdminShopMenuCommand(shopId,
+                [new UpdateShopMenuItemRequest("latte", ContractAvailability.Present, 5m, 200),
+                 new UpdateShopMenuItemRequest("LATTE", ContractAvailability.Present, 6m, 250)],
+                false, Guid.NewGuid()),
+            shops.Object, applyMenu.Object, drinks.Object, new Mock<IQueryShopMenuRepository>().Object,
+            unitOfWork.Object, new Mock<ICacheService>(MockBehavior.Strict).Object,
+            Options.Create(new MediaPublicUrlOptions { PublicEndpoint = "https://media.example.com" }),
+            CancellationToken.None);
+
+        result.StatusCode.Should().Be(400);
+        applyMenu.VerifyNoOtherCalls();
+        unitOfWork.VerifyNoOtherCalls();
+    }
+
+    [Fact]
+    public async Task InvalidLaterRow_Returns400BeforeAnyRepositoryOrWriteCall()
+    {
+        var invalidRows = new[]
+        {
+            new UpdateShopMenuItemRequest("latte", ContractAvailability.Present, null, 200),
+            new UpdateShopMenuItemRequest("latte", ContractAvailability.Present, 5m, null),
+            new UpdateShopMenuItemRequest("latte", ContractAvailability.Present, 0m, 200),
+            new UpdateShopMenuItemRequest("latte", ContractAvailability.Present, 5m, -1),
+            new UpdateShopMenuItemRequest("latte", ContractAvailability.Absent, 5m, null),
+            new UpdateShopMenuItemRequest("latte", ContractAvailability.Unknown, null, 200),
+            new UpdateShopMenuItemRequest("latte", (ContractAvailability)99, null, null)
+        };
+        foreach (var invalid in invalidRows)
+        {
+            var shops = new Mock<ICoffeeShopRepository>(MockBehavior.Strict);
+            var applyMenu = new Mock<IApplyShopMenuService>(MockBehavior.Strict);
+            var drinks = new Mock<IQueryCoffeeDrinkRepository>(MockBehavior.Strict);
+            var unitOfWork = new Mock<IUnitOfWork>(MockBehavior.Strict);
+            var cache = new Mock<ICacheService>(MockBehavior.Strict);
+
+            var result = await UpdateAdminShopMenuHandler.Handle(
+                new UpdateAdminShopMenuCommand(Guid.NewGuid(),
+                    [new UpdateShopMenuItemRequest("latte", ContractAvailability.Present, 5m, 200), invalid],
+                    false, Guid.NewGuid()),
+                shops.Object, applyMenu.Object, drinks.Object, new Mock<IQueryShopMenuRepository>().Object,
+                unitOfWork.Object, cache.Object,
+                Options.Create(new MediaPublicUrlOptions { PublicEndpoint = "https://media.example.com" }),
+                CancellationToken.None);
+
+            result.StatusCode.Should().Be(400);
+            shops.VerifyNoOtherCalls();
+            drinks.VerifyNoOtherCalls();
+            applyMenu.VerifyNoOtherCalls();
+            unitOfWork.VerifyNoOtherCalls();
+            cache.VerifyNoOtherCalls();
+        }
+    }
+
+    [Fact]
+    public async Task UnknownOrInactiveSlug_Returns400WithoutApplyingValidEarlierRow()
+    {
+        var shopId = Guid.NewGuid();
+        var shop = new DomainCoffeeShop(null, "Coffee", null, PriceRange.Moderate, Guid.NewGuid());
+        var shops = new Mock<ICoffeeShopRepository>();
+        shops.Setup(x => x.GetByIdAsync(shopId, It.IsAny<CancellationToken>())).ReturnsAsync(shop);
+        var drinks = new Mock<IQueryCoffeeDrinkRepository>();
+        drinks.Setup(x => x.GetActiveAsync(It.IsAny<CancellationToken>())).ReturnsAsync([
+            CoffeeDrinkDefinition.CreateWithId(Guid.NewGuid(), "latte", "Латте", "Latte",
+                CoffeeDrinkCategory.Espresso, "латте,latte", 1)
+        ]);
+        var applyMenu = new Mock<IApplyShopMenuService>(MockBehavior.Strict);
+        var unitOfWork = new Mock<IUnitOfWork>(MockBehavior.Strict);
+        var cache = new Mock<ICacheService>(MockBehavior.Strict);
+
+        var result = await UpdateAdminShopMenuHandler.Handle(
+            new UpdateAdminShopMenuCommand(shopId,
+                [new UpdateShopMenuItemRequest("latte", ContractAvailability.Present, 5m, 200),
+                 new UpdateShopMenuItemRequest("inactive", ContractAvailability.Present, 6m, 250)],
+                false, Guid.NewGuid()),
+            shops.Object, applyMenu.Object, drinks.Object, new Mock<IQueryShopMenuRepository>().Object,
+            unitOfWork.Object, cache.Object,
+            Options.Create(new MediaPublicUrlOptions { PublicEndpoint = "https://media.example.com" }),
+            CancellationToken.None);
+
+        result.StatusCode.Should().Be(400);
+        applyMenu.VerifyNoOtherCalls();
+        unitOfWork.VerifyNoOtherCalls();
+        cache.VerifyNoOtherCalls();
+    }
+
+    [Fact]
     public async Task AttachPhotos_InvalidatesShopDetailCache()
     {
         var userId = Guid.NewGuid();
@@ -40,6 +173,14 @@ public class UpdateAdminShopMenuHandlerTests
         var unitOfWork = new Mock<IUnitOfWork>();
         var cache = new Mock<ICacheService>();
         var media = Options.Create(new MediaPublicUrlOptions { PublicEndpoint = "https://media.example.com" });
+        var photoLookup = new Mock<CoffeePeek.Shops.Application.Abstractions.IUploadedPhotoLookup>();
+        photoLookup.Setup(p => p.ClaimForShopAsync(userId, shop.Id,
+                CoffeePeek.Contract.Dtos.ShopPhotos.ShopPhotoAttachmentKind.Menu,
+                It.IsAny<IReadOnlyCollection<string>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new CoffeePeek.Shops.Application.Abstractions.ShopPhotoClaimResult(true,
+                [new CoffeePeek.Contract.Dtos.ShopPhotos.ClaimedShopPhotoDto(Guid.NewGuid(),
+                    "menu/key", "verified-menu.jpg", "image/jpeg", 150)]));
+        var bus = new Mock<Wolverine.IMessageBus>();
 
         var result = await AttachAdminShopMenuPhotosHandler.Handle(
             new AttachAdminShopMenuPhotosCommand(
@@ -53,9 +194,16 @@ public class UpdateAdminShopMenuHandlerTests
             unitOfWork.Object,
             cache.Object,
             media,
+            photoLookup.Object,
+            bus.Object,
             CancellationToken.None);
 
         result.Item1.IsSuccess.Should().BeTrue();
+        result.Item2.Should().NotBeNull();
+        menu.ActiveOcrJobId.Should().Be(result.Item2!.JobId);
+        menu.OcrJobs.Should().ContainSingle();
+        menu.Photos.Single().FileName.Should().Be("verified-menu.jpg");
+        menu.Photos.Single().SizeBytes.Should().Be(150);
         cache.Verify(c => c.RemoveAsync(CacheKey.Shop.Detail(shop.Id)), Times.Once);
     }
 
@@ -91,6 +239,9 @@ public class UpdateAdminShopMenuHandlerTests
             CancellationToken.None);
 
         result.Item1.IsSuccess.Should().BeTrue();
+        result.Item2.Should().NotBeNull();
+        menu.ActiveOcrJobId.Should().Be(result.Item2!.JobId);
+        menu.OcrJobs.Should().ContainSingle();
         cache.Verify(c => c.RemoveAsync(CacheKey.Shop.Detail(shop.Id)), Times.Once);
     }
 

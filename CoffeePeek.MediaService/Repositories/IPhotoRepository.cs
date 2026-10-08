@@ -1,4 +1,5 @@
 using CoffeePeek.MediaService.Data;
+using CoffeePeek.Contract.Dtos.ShopPhotos;
 
 namespace CoffeePeek.MediaService.Repositories;
 
@@ -14,6 +15,8 @@ public interface IPhotoRepository
         CancellationToken ct = default);
 
     Task<bool> TryClaimAsync(Guid photoId, Guid ownerId, Guid checkInId, CancellationToken ct = default);
+    Task<bool> TryClaimShopBatchAsync(IReadOnlyList<Guid> photoIds, Guid ownerId, Guid shopId,
+        ShopPhotoAttachmentKind kind, CancellationToken ct = default);
     Task<IAsyncDisposable> AcquireClaimLocksAsync(Guid ownerId, IReadOnlyCollection<string> storageKeys, CancellationToken ct = default);
     Task<List<PhotoMetadata>> GetClaimPhotosAsync(Guid ownerId, IReadOnlyCollection<string> storageKeys, CancellationToken ct = default);
     Task ReleaseClaimAsync(Guid ownerId, Guid checkInId, CancellationToken ct = default);

@@ -114,11 +114,11 @@ public sealed class PublicAddressGatewaySmokeTests
         var coffee = new CoffeeProduct(roaster.Id, new("Colombia test", null, "roasted_beans", "whole_beans", "unknown",
             null, null, null, null, null, [], [], [], []));
         coffee.SetStatus(CoffeePublicationStatus.Published);
-        var coffeeSource = new CoffeeProductSource { CoffeeProductId = coffee.Id, SourceKey = "roast.by", ExternalProductId = "coffee",
+        var coffeeSource = new CoffeeProductSource { CoffeeProductId = coffee.Id, Product = coffee, SourceKey = "roast.by", ExternalProductId = "coffee",
             SourceUrl = "https://roast.by/coffee/", SellerName = "Test seller", LastSeenAtUtc = DateTime.UtcNow };
-        coffeeSource.Variants.Add(new CoffeeVariant { SourceKey = "roast.by", ExternalVariantId = "bag-250", WeightGrams = 250,
+        coffee.AttachSource(coffeeSource);
+        coffeeSource.AttachVariant(new CoffeeVariant { SourceKey = "roast.by", ExternalVariantId = "bag-250", WeightGrams = 250,
             Price = 30, Currency = "BYN", Availability = CoffeeAvailability.InStock, CheckedAtUtc = DateTime.UtcNow });
-        coffee.Sources.Add(coffeeSource);
         await using (var db = Shops())
         {
             db.AddRange(shop, bean, equipment, method, tag, roaster, coffee);
@@ -235,6 +235,7 @@ public sealed class PublicAddressGatewaySmokeTests
         shopsBuilder.Services.AddScoped<PublicDiscoveryService>();
         shopsBuilder.Services.AddScoped<IPublicCheckInProjector, PublicCheckInProjector>();
         shopsBuilder.Services.AddScoped<ICoffeeCatalogStore, CoffeeCatalogStore>();
+        shopsBuilder.Services.AddScoped<IPublicCoffeeCatalogReader, CoffeeCatalogStore>();
         shopsBuilder.Services.AddOptions<CoffeeImportOptions>();
         await using var shops = shopsBuilder.Build();
         MapControllers(shops, "shops");

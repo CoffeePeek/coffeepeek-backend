@@ -25,11 +25,23 @@ public class CoffeeShopTests
     }
 
     [Fact]
-    public void IsOpen_WhenActiveWithNoSchedule_ReturnsTrue()
+    public void IsOpen_WhenActiveWithNoSchedule_ReturnsUnknown()
     {
         var shop = new CoffeeShop(Guid.NewGuid(), "Test Shop", null, PriceRange.Cheap, Guid.NewGuid());
 
-        shop.IsOpen.Should().BeTrue();
+        shop.IsOpen.Should().BeNull();
+        shop.IsOpenAtUtc(new DateTime(2026, 9, 7, 10, 0, 0, DateTimeKind.Utc))
+            .Should().BeNull();
+    }
+
+    [Fact]
+    public void IsOpenAtUtc_WhenShopIsTemporarilyClosed_ReturnsFalseEvenWithoutSchedule()
+    {
+        var shop = new CoffeeShop(Guid.NewGuid(), "Closed Shop", null, PriceRange.Cheap, Guid.NewGuid());
+        shop.SetStatus(CoffeeShopStatus.TemporarilyClosed);
+
+        shop.IsOpenAtUtc(new DateTime(2026, 9, 7, 10, 0, 0, DateTimeKind.Utc))
+            .Should().BeFalse();
     }
 
     [Theory]

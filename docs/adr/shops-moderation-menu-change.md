@@ -1,0 +1,11 @@
+# Applying moderated menu changes
+
+`ShopChangeRequestApprovedV1` remains the existing wire message. Its Menu branch delegates to the Shops Menu module. The module validates the catalog and retained photo IDs before mutation, writes the menu and `AppliedShopChangeRequest` marker in the same Shops database transaction, and returns `ShopChangeRequestApplyFailedV1` for permanent validation failures. Repeated delivery of an applied request uses the marker and does not write menu rows again.
+
+`ShopChangeMenuDto.ExpectedInputRevision` is an optional additive field. Clients can read `ShopMenuDto.InputRevision` from a published shop menu and submit it with a menu change request. At apply time, a different current revision rejects the entire request through the existing failure event. A missing menu has revision zero. The EF concurrency token also rejects a concurrent menu update between read and save, allowing Wolverine to retry and then evaluate the revision again.
+
+Existing clients and already stored Moderation requests omit the field; they retain legacy behavior. This means an old request without a captured revision can still overwrite newer menu changes. P27/P34 must introduce server-side revision capture at submission or a versioned API contract before claiming strict stale-request protection for all clients. `InputRevision` currently tracks manual item and photo inputs; OCR-only output changes need a separate aggregate/content revision if they must also invalidate pending requests.
+
+The existing wire behavior also treats null or absent menu item/photo collections as empty; the Menu module preserves that behavior for already queued events.
+
+This vertical does not implement Media photo ownership or the claim/finalization protocol. P17 still needs a cross-service reservation with an idempotency key, confirmation after the Shops commit, and recovery for a lost Media HTTP response, an uncertain Shops commit, and an unfinished reservation. A rollback must not release a file already bound to another committed aggregate. Until that protocol exists, the Menu payload's `NewPhotos` storage metadata is trusted as before; this change does not claim that another user's file cannot be attached.

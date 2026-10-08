@@ -20,23 +20,35 @@ public sealed class CoffeeProduct : Entity<Guid>, IPublicSlugOwner
     public string? Acidity { get; private set; }
     public string? Body { get; private set; }
     public string? QGraderScoreRaw { get; private set; }
-    public string[] TasteDescriptors { get; private set; } = [];
-    public string[] BrewRecommendations { get; private set; } = [];
-    public string[] GrindOptions { get; private set; } = [];
-    public string[] Features { get; private set; } = [];
-    public string[] ProtectedFields { get; private set; } = [];
-    public string[] DefaultBrewPurposes { get; private set; } = [];
+    private string[] _tasteDescriptors = [];
+    public string[] TasteDescriptors { get => [.. _tasteDescriptors]; private set => _tasteDescriptors = [.. value]; }
+    private string[] _brewRecommendations = [];
+    public string[] BrewRecommendations { get => [.. _brewRecommendations]; private set => _brewRecommendations = [.. value]; }
+    private string[] _grindOptions = [];
+    public string[] GrindOptions { get => [.. _grindOptions]; private set => _grindOptions = [.. value]; }
+    private string[] _features = [];
+    public string[] Features { get => [.. _features]; private set => _features = [.. value]; }
+    private string[] _protectedFields = [];
+    public string[] ProtectedFields { get => [.. _protectedFields]; private set => _protectedFields = [.. value]; }
+    private string[] _defaultBrewPurposes = [];
+    public string[] DefaultBrewPurposes { get => [.. _defaultBrewPurposes]; private set => _defaultBrewPurposes = [.. value]; }
     public string? CaffeineCode { get; private set; }
     public string? RoastLevelCode { get; private set; }
     public string? AcidityCode { get; private set; }
-    public string[] ProcessingCodes { get; private set; } = [];
-    public string[] FermentationCodes { get; private set; } = [];
-    public string[] TasteGroupCodes { get; private set; } = [];
+    private string[] _processingCodes = [];
+    public string[] ProcessingCodes { get => [.. _processingCodes]; private set => _processingCodes = [.. value]; }
+    private string[] _fermentationCodes = [];
+    public string[] FermentationCodes { get => [.. _fermentationCodes]; private set => _fermentationCodes = [.. value]; }
+    private string[] _tasteGroupCodes = [];
+    public string[] TasteGroupCodes { get => [.. _tasteGroupCodes]; private set => _tasteGroupCodes = [.. value]; }
     public string? CompositionCode { get; private set; }
-    public string[] ClassificationProtectedFields { get; private set; } = [];
+    private string[] _classificationProtectedFields = [];
+    public string[] ClassificationProtectedFields { get => [.. _classificationProtectedFields]; private set => _classificationProtectedFields = [.. value]; }
     public CoffeePublicationStatus Status { get; private set; }
-    public List<CoffeeProductCountry> Countries { get; private set; } = [];
-    public List<CoffeeProductSource> Sources { get; private set; } = [];
+    private readonly List<CoffeeProductCountry> _countries = [];
+    public IReadOnlyCollection<CoffeeProductCountry> Countries => _countries.AsReadOnly();
+    private readonly List<CoffeeProductSource> _sources = [];
+    public IReadOnlyCollection<CoffeeProductSource> Sources => _sources.AsReadOnly();
 
     private CoffeeProduct() { }
     public CoffeeProduct(Guid roasterId, CoffeeContent content)
@@ -138,9 +150,29 @@ public sealed class CoffeeProduct : Entity<Guid>, IPublicSlugOwner
         var values = codes.Distinct(StringComparer.Ordinal).ToArray();
         if (values.Any(c => c.Length != 2 || c.Any(x => x is < 'A' or > 'Z')))
             throw new DomainException("Country codes must be ISO alpha-2 codes.");
-        Countries.RemoveAll(c => !values.Contains(c.CountryCode));
-        foreach (var code in values.Except(Countries.Select(c => c.CountryCode)))
-            Countries.Add(new CoffeeProductCountry(Id, code));
+        _countries.RemoveAll(c => !values.Contains(c.CountryCode));
+        foreach (var code in values.Except(_countries.Select(c => c.CountryCode)))
+            _countries.Add(new CoffeeProductCountry(Id, code));
         Version = checked(Version + 1);
+    }
+
+    public void ApplyImportedCountries(IEnumerable<string> codes)
+    {
+        ArgumentNullException.ThrowIfNull(codes);
+        var values = codes.ToArray();
+        if (values.Length == 0 || IsProtected(nameof(Countries)))
+            return;
+        ReplaceCountries(values);
+    }
+
+    public void AttachSource(CoffeeProductSource source)
+    {
+        ArgumentNullException.ThrowIfNull(source);
+        if (source.CoffeeProductId != Id || !ReferenceEquals(source.Product, this))
+            throw new DomainException("Coffee source must belong to this product.");
+        if (_sources.Any(existing => existing.Id == source.Id))
+            return;
+        _sources.Add(source);
+        AdvanceVersion();
     }
 }

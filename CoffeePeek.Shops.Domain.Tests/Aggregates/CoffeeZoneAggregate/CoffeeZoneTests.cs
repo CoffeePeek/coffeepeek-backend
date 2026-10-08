@@ -96,6 +96,34 @@ public sealed class CoffeeZoneTests
     }
 
     [Fact]
+    public void Polygon_CannotBeChangedThroughInputOrExposedCollection()
+    {
+        var cityId = Guid.NewGuid();
+        var input = LShape.ToList();
+        var zone = new CoffeeZone(cityId, "Center", null, input);
+        var original = zone.Polygon.ToArray();
+        var center = (zone.CenterLatitude, zone.CenterLongitude, zone.RadiusMeters);
+        var inside = zone.Contains(53.901m, 27.564m);
+
+        input[0] = new CoffeeZonePoint(0, 0);
+        input.Clear();
+        var exposed = zone.Polygon;
+        exposed[0] = new CoffeeZonePoint(0, 0);
+        exposed.Clear();
+
+        zone.Polygon.Should().Equal(original);
+        (zone.CenterLatitude, zone.CenterLongitude, zone.RadiusMeters).Should().Be(center);
+        zone.Contains(53.901m, 27.564m).Should().Be(inside);
+
+        var replacement = CoffeeZonePoint.Circle(53.9m, 27.56m, 400).ToList();
+        zone.Update(cityId, "Center", null, replacement);
+        var updated = zone.Polygon.ToArray();
+        replacement[0] = new CoffeeZonePoint(0, 0);
+        replacement.Clear();
+        zone.Polygon.Should().Equal(updated);
+    }
+
+    [Fact]
     public void Circle_StaysWithinRadiusAndHoldsPointsNearTheEdge()
     {
         var zone = new CoffeeZone(Guid.NewGuid(), "Center", null, CoffeeZonePoint.Circle(53.9m, 27.56m, 2000));

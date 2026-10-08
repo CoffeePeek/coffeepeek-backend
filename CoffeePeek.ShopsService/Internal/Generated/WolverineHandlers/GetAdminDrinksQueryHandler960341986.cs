@@ -25,9 +25,9 @@ namespace Internal.Generated.WolverineHandlers
             await using var serviceScope = _serviceScopeFactory.CreateAsyncScope();
             Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<Wolverine.Runtime.ScopedMessageContextHolder>(serviceScope.ServiceProvider).Context = context;
             // This service has been marked as requiring service location independent of Wolverine's ability to use constructor injection of everything else
-            var coffeeDrinkRepository = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<CoffeePeek.Shops.Domain.Aggregates.MenuAggregate.ICoffeeDrinkRepository>(serviceScope.ServiceProvider);
-            // This service has been marked as requiring service location independent of Wolverine's ability to use constructor injection of everything else
             var shopsDbContext = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<CoffeePeek.Shops.Persistance.Configuration.ShopsDbContext>(serviceScope.ServiceProvider);
+            // This service has been marked as requiring service location independent of Wolverine's ability to use constructor injection of everything else
+            var coffeeDrinkRepository = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<CoffeePeek.Shops.Domain.Aggregates.MenuAggregate.ICoffeeDrinkRepository>(serviceScope.ServiceProvider);
             // The actual message body
             var getAdminDrinksQuery = (CoffeePeek.Shops.Application.Features.Catalogs.Drinks.GetAdminDrinksQuery)context.Envelope.Message;
 

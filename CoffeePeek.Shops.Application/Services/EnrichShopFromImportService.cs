@@ -55,6 +55,9 @@ public class EnrichShopFromImportService(
         if (enrichedIds.Count == 0)
             return 0;
 
+        foreach (var shopId in enrichedIds)
+            byId[shopId].AdvanceProfileRevision();
+
         await unitOfWork.SaveChangesAsync(ct);
 
         foreach (var shopId in enrichedIds)

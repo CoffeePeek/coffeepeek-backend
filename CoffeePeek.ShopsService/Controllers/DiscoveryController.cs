@@ -11,7 +11,7 @@ namespace CoffeePeek.ShopsService.Controllers;
 [ApiController]
 [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
 public sealed class DiscoveryController(IDiscoveryQueryStore queries, IDiscoveryClassificationStore classification,
-    ICoffeeCatalogStore catalog, IUserContext user) : ControllerBase
+    IPublicCoffeeCatalogReader catalog, IUserContext user) : ControllerBase
 {
     [HttpPost("api/v1/discovery/search")]
     public Task<IActionResult> Discovery(DiscoverySearchRequest request, CancellationToken ct) =>
@@ -30,7 +30,7 @@ public sealed class DiscoveryController(IDiscoveryQueryStore queries, IDiscovery
         Ok(Response<FilterGroup[]>.Success(await classification.PublicValuesAsync(ct)));
     [HttpGet("api/v1/catalogs/roaster-tags")]
     public async Task<IActionResult> Tags(CancellationToken ct) => Ok(Response<PublicTag[]>.Success(
-        (await catalog.TagsAsync(false, ct)).Select(t => new PublicTag { Slug = t.Slug, Name = t.Name,
+        (await catalog.PublicTagsAsync(ct)).Select(t => new PublicTag { Slug = t.Slug, Name = t.Name,
             Description = t.Description, SortOrder = t.SortOrder }).ToArray()));
     [HttpGet("api/v1/coffees/{slug}")]
     public async Task<IActionResult> Details(string slug, CancellationToken ct)

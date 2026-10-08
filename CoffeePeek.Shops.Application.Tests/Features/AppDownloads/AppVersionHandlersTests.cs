@@ -25,6 +25,7 @@ public class AppVersionHandlersTests
     public AppVersionHandlersTests()
     {
         _repo.Setup(r => r.GetOrCreateSettingsAsync(_ct)).ReturnsAsync(_settings);
+        _repo.Setup(r => r.GetSettingsOrDefaultAsync(_ct)).ReturnsAsync(_settings);
     }
 
     [Theory]
@@ -47,6 +48,8 @@ public class AppVersionHandlersTests
         var result = await GetAppVersionHandler.Handle(new GetAppVersionQuery("android"), _repo.Object, _ct);
 
         result.StatusCode.Should().Be((int)HttpStatusCode.NotFound);
+        _repo.Verify(r => r.GetSettingsOrDefaultAsync(_ct), Times.Once);
+        _repo.Verify(r => r.GetOrCreateSettingsAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]

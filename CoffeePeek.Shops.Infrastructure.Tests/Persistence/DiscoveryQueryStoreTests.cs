@@ -41,11 +41,11 @@ public class DiscoveryQueryStoreTests
         if (source is null)
         {
             source = new CoffeeProductSource { CoffeeProductId = p.Id, Product = p, SourceKey = "source.example", ExternalProductId = p.Id.ToString(), SourceUrl = "https://source.example/item", LastSeenAtUtc = DateTime.UtcNow };
-            p.Sources.Add(source);
+            p.AttachSource(source);
         }
         var v = new CoffeeVariant { CoffeeProductSourceId = source.Id, Source = source, SourceKey = source.SourceKey, ExternalVariantId = Guid.NewGuid().ToString(),
             WeightGrams = weight, Price = price, Currency = "BYN", Availability = availability, CheckedAtUtc = DateTime.UtcNow };
-        v.SetBrewPurpose(purpose, false); source.Variants.Add(v); return v;
+        v.SetBrewPurpose(purpose, false); source.AttachVariant(v); return v;
     }
 
     [Fact]

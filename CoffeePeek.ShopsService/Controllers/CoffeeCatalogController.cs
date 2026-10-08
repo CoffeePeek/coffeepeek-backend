@@ -8,13 +8,13 @@ namespace CoffeePeek.ShopsService.Controllers;
 
 [ApiController]
 [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
-public sealed class CoffeeCatalogController(ICoffeeCatalogStore store) : ControllerBase
+public sealed class CoffeeCatalogController(IPublicCoffeeCatalogReader store) : ControllerBase
 {
     [HttpGet("api/Catalogs/coffee-origin-countries")]
     public async Task<IActionResult> Countries(CancellationToken ct) => Ok(Response<CountryDto[]>.Success(await store.CountriesAsync(ct)));
     [HttpGet("api/Catalogs/roaster-tags")]
     public async Task<IActionResult> Tags(CancellationToken ct) => Ok(Response<PublicTagDto[]>.Success(
-        (await store.TagsAsync(false, ct)).Select(t => new PublicTagDto(t.Slug, t.Name, t.Description, t.SortOrder)).ToArray()));
+        (await store.PublicTagsAsync(ct)).Select(t => new PublicTagDto(t.Slug, t.Name, t.Description, t.SortOrder)).ToArray()));
     [HttpGet("api/roasters")]
     [ProducesResponseType<Response<PublicRoasterDto[]>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> Roasters(CancellationToken ct, [FromQuery] string[]? tags = null) =>

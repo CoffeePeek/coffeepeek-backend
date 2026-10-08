@@ -1,4 +1,5 @@
 using CoffeePeek.Shared.Domain.Entities;
+using CoffeePeek.Shared.Kernel.Exceptions;
 
 namespace CoffeePeek.Shops.Domain.Aggregates.MenuAggregate;
 
@@ -27,6 +28,12 @@ public sealed class ShopMenuItem : Entity<Guid>
         int? volumeMl,
         MenuItemSource source)
     {
+        if (drinkDefinitionId == Guid.Empty)
+            throw new DomainException("Drink definition is required.");
+        if (!Enum.IsDefined(source))
+            throw new DomainException("Menu item source is invalid.");
+        ValidateValues(availability, price, volumeMl);
+
         return new ShopMenuItem
         {
             Id = Guid.NewGuid(),
@@ -41,6 +48,7 @@ public sealed class ShopMenuItem : Entity<Guid>
 
     public void ApplyParsed(decimal? price, int? volumeMl)
     {
+        ValidateValues(MenuItemAvailability.Present, price, volumeMl);
         Availability = MenuItemAvailability.Present;
         Price = price;
         VolumeMl = volumeMl;
@@ -48,9 +56,28 @@ public sealed class ShopMenuItem : Entity<Guid>
 
     public void ApplyManual(MenuItemAvailability availability, decimal? price, int? volumeMl)
     {
+        ValidateValues(availability, price, volumeMl);
         Availability = availability;
-        Price = availability == MenuItemAvailability.Present ? price : null;
+        Price = price;
         VolumeMl = volumeMl;
         Source = MenuItemSource.Manual;
+    }
+
+    public static void ValidateValues(MenuItemAvailability availability, decimal? price, int? volumeMl)
+    {
+        if (!Enum.IsDefined(availability))
+            throw new DomainException("Menu item availability is invalid.");
+
+        if (availability == MenuItemAvailability.Present)
+        {
+            if (price is null or <= 0)
+                throw new DomainException("Present menu item requires a positive price.");
+            if (volumeMl is null or <= 0)
+                throw new DomainException("Present menu item requires a positive volume.");
+        }
+        else if (price is not null || volumeMl is not null)
+        {
+            throw new DomainException("Absent or unknown menu item must not have a price or volume.");
+        }
     }
 }

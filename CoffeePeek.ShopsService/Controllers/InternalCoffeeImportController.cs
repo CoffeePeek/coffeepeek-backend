@@ -11,7 +11,7 @@ namespace CoffeePeek.ShopsService.Controllers;
 [ApiController]
 [ApiExplorerSettings(IgnoreApi = true)]
 [Route("internal/coffee-import")]
-public sealed class InternalCoffeeImportController(IMessageBus bus, IOptions<CoffeeImportAuthOptions> auth, ICoffeeCatalogStore store) : ControllerBase
+public sealed class InternalCoffeeImportController(IMessageBus bus, IOptions<CoffeeImportAuthOptions> auth, ICoffeeImportWriter store) : ControllerBase
 {
     [HttpPost("failures")]
     [RequestSizeLimit(8192)]

@@ -167,6 +167,8 @@ public static class ShopChangeRequestPayload
 
     private static void ValidateMenu(ShopChangeMenuDto menu)
     {
+        if (menu.ExpectedInputRevision is null or < 0)
+            throw new ArgumentException("Expected menu revision is required and cannot be negative.");
         ArgumentNullException.ThrowIfNull(menu.Items);
         ArgumentNullException.ThrowIfNull(menu.RetainedPhotoIds);
         ArgumentNullException.ThrowIfNull(menu.NewPhotos);

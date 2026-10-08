@@ -2,8 +2,10 @@
 #pragma warning disable
 using CoffeePeek.Shared.Domain.Interfaces.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System.Collections.Generic;
+using System.Net.Http;
 
 namespace Internal.Generated.WolverineHandlers
 {
@@ -13,21 +15,28 @@ namespace Internal.Generated.WolverineHandlers
     {
         private readonly CoffeePeek.Shared.Domain.Interfaces.Infrastructure.ICacheService _cacheService;
         private readonly Microsoft.Extensions.DependencyInjection.IServiceScopeFactory _serviceScopeFactory;
+        private readonly Microsoft.Extensions.Logging.ILogger<CoffeePeek.Shops.Infrastructure.Media.MediaUploadedPhotoLookup> _loggerOfMediaUploadedPhotoLookup;
+        private readonly Microsoft.Extensions.Options.IOptions<CoffeePeek.Shared.Auth.Options.GatewayAuthOptions> _optionsOfGatewayAuthOptions;
         private readonly Microsoft.Extensions.Options.IOptions<CoffeePeek.Shared.Kernel.Options.MediaPublicUrlOptions> _optionsOfMediaPublicUrlOptions;
         private readonly System.Collections.Generic.IEnumerable<Wolverine.EntityFrameworkCore.IDomainEventScraper> _domainEventScraperIEnumerable;
+        private readonly System.Net.Http.IHttpClientFactory _httpClientFactory;
 
-        public AddPublishedShopPhotosCommandHandler869140189(CoffeePeek.Shared.Domain.Interfaces.Infrastructure.ICacheService cacheService, Microsoft.Extensions.DependencyInjection.IServiceScopeFactory serviceScopeFactory, Microsoft.Extensions.Options.IOptions<CoffeePeek.Shared.Kernel.Options.MediaPublicUrlOptions> optionsOfMediaPublicUrlOptions, System.Collections.Generic.IEnumerable<Wolverine.EntityFrameworkCore.IDomainEventScraper> domainEventScraperIEnumerable)
+        public AddPublishedShopPhotosCommandHandler869140189(CoffeePeek.Shared.Domain.Interfaces.Infrastructure.ICacheService cacheService, Microsoft.Extensions.DependencyInjection.IServiceScopeFactory serviceScopeFactory, Microsoft.Extensions.Logging.ILogger<CoffeePeek.Shops.Infrastructure.Media.MediaUploadedPhotoLookup> loggerOfMediaUploadedPhotoLookup, Microsoft.Extensions.Options.IOptions<CoffeePeek.Shared.Auth.Options.GatewayAuthOptions> optionsOfGatewayAuthOptions, Microsoft.Extensions.Options.IOptions<CoffeePeek.Shared.Kernel.Options.MediaPublicUrlOptions> optionsOfMediaPublicUrlOptions, System.Collections.Generic.IEnumerable<Wolverine.EntityFrameworkCore.IDomainEventScraper> domainEventScraperIEnumerable, System.Net.Http.IHttpClientFactory httpClientFactory)
         {
             _cacheService = cacheService;
             _serviceScopeFactory = serviceScopeFactory;
+            _loggerOfMediaUploadedPhotoLookup = loggerOfMediaUploadedPhotoLookup;
+            _optionsOfGatewayAuthOptions = optionsOfGatewayAuthOptions;
             _optionsOfMediaPublicUrlOptions = optionsOfMediaPublicUrlOptions;
             _domainEventScraperIEnumerable = domainEventScraperIEnumerable;
+            _httpClientFactory = httpClientFactory;
         }
 
 
 
         public override async System.Threading.Tasks.Task HandleAsync(Wolverine.Runtime.MessageContext context, System.Threading.CancellationToken cancellation)
         {
+            var mediaUploadedPhotoLookup = new CoffeePeek.Shops.Infrastructure.Media.MediaUploadedPhotoLookup(_httpClientFactory, _optionsOfGatewayAuthOptions, _loggerOfMediaUploadedPhotoLookup);
             await using var serviceScope = _serviceScopeFactory.CreateAsyncScope();
             Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<Wolverine.Runtime.ScopedMessageContextHolder>(serviceScope.ServiceProvider).Context = context;
             // This service has been marked as requiring service location independent of Wolverine's ability to use constructor injection of everything else
@@ -37,7 +46,7 @@ namespace Internal.Generated.WolverineHandlers
             // The actual message body
             var addPublishedShopPhotosCommand = (CoffeePeek.Shops.Application.Features.CoffeeShop.ShopProfile.AddPublishedShopPhotosCommand)context.Envelope.Message;
 
-            
+
             // Enroll the DbContext & IMessagingContext in the outgoing Wolverine outbox transaction
             var efCoreEnvelopeTransaction = new Wolverine.EntityFrameworkCore.Internals.EfCoreEnvelopeTransaction(shopsDbContext, context, _domainEventScraperIEnumerable);
             await context.EnlistInOutboxAsync(efCoreEnvelopeTransaction).ConfigureAwait(false);
@@ -51,15 +60,15 @@ namespace Internal.Generated.WolverineHandlers
             {
                 System.Diagnostics.Activity.Current?.SetTag("message.handler", "CoffeePeek.Shops.Application.Features.CoffeeShop.ShopProfile.AddPublishedShopPhotosHandler");
                 System.Diagnostics.Activity.Current?.SetTag("handler.type", "CoffeePeek.Shops.Application.Features.CoffeeShop.ShopProfile.AddPublishedShopPhotosHandler");
-                
-                // The actual message execution
-                var outgoing1 = await CoffeePeek.Shops.Application.Features.CoffeeShop.ShopProfile.AddPublishedShopPhotosHandler.Handle(addPublishedShopPhotosCommand, coffeeShopRepository, unitOfWorkOfShopsDbContext, _cacheService, _optionsOfMediaPublicUrlOptions, cancellation).ConfigureAwait(false);
 
-                
+                // The actual message execution
+                var outgoing1 = await CoffeePeek.Shops.Application.Features.CoffeeShop.ShopProfile.AddPublishedShopPhotosHandler.Handle(addPublishedShopPhotosCommand, coffeeShopRepository, unitOfWorkOfShopsDbContext, _cacheService, _optionsOfMediaPublicUrlOptions, mediaUploadedPhotoLookup, context, cancellation).ConfigureAwait(false);
+
+
                 // Outgoing, cascaded message
                 await context.EnqueueCascadingAsync(outgoing1).ConfigureAwait(false);
 
-                
+
                 // Added by EF Core Transaction Middleware
                 var result_of_SaveChangesAsync = await shopsDbContext.SaveChangesAsync(cancellation).ConfigureAwait(false);
 
@@ -78,7 +87,6 @@ namespace Internal.Generated.WolverineHandlers
     }
 
     // END: AddPublishedShopPhotosCommandHandler869140189
-    
-    
-}
 
+
+}

@@ -40,7 +40,7 @@ namespace Internal.Generated.WolverineHandlers
             // The actual message body
             var applyShopMenuSnapshotEvent = (CoffeePeek.Contract.Events.Menu.ApplyShopMenuSnapshotEvent)context.Envelope.Message;
 
-            
+
             // Enroll the DbContext & IMessagingContext in the outgoing Wolverine outbox transaction
             var efCoreEnvelopeTransaction = new Wolverine.EntityFrameworkCore.Internals.EfCoreEnvelopeTransaction(shopsDbContext, context, _domainEventScraperIEnumerable);
             await context.EnlistInOutboxAsync(efCoreEnvelopeTransaction).ConfigureAwait(false);
@@ -55,11 +55,11 @@ namespace Internal.Generated.WolverineHandlers
                 System.Diagnostics.Activity.Current?.SetTag("message.handler", "CoffeePeek.Shops.Infrastructure.Consumers.ApplyShopMenuSnapshotEventHandler");
                 System.Diagnostics.Activity.Current?.SetTag("handler.type", "CoffeePeek.Shops.Infrastructure.Consumers.ApplyShopMenuSnapshotEventHandler");
                 var applyShopMenuSnapshotEventHandler = new CoffeePeek.Shops.Infrastructure.Consumers.ApplyShopMenuSnapshotEventHandler(applyShopMenuService, unitOfWorkOfShopsDbContext, _loggerOfApplyShopMenuSnapshotEventHandler);
-                
+
                 // The actual message execution
                 await applyShopMenuSnapshotEventHandler.Handle(applyShopMenuSnapshotEvent, cancellation).ConfigureAwait(false);
 
-                
+
                 // Added by EF Core Transaction Middleware
                 var result_of_SaveChangesAsync = await shopsDbContext.SaveChangesAsync(cancellation).ConfigureAwait(false);
 
@@ -78,7 +78,6 @@ namespace Internal.Generated.WolverineHandlers
     }
 
     // END: ApplyShopMenuSnapshotEventHandler2036916338
-    
-    
-}
 
+
+}

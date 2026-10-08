@@ -57,11 +57,14 @@ public class AdminCitiesController(IMessageBus bus) : ControllerBase
     [HttpDelete("{id:guid}")]
     [ProducesResponseType<Response>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
     {
         var response = await bus.InvokeAsync<Response>(new DeleteCityCommand(id), ct);
-        return response.IsSuccess ? Ok(response) : NotFound(response);
+        return response.IsSuccess ? Ok(response) : response.StatusCode switch
+        {
+            StatusCodes.Status409Conflict => Conflict(response),
+            _ => NotFound(response)
+        };
     }
 }
-
-public record UpdateCityRequest(string Name);

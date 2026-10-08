@@ -11,4 +11,5 @@ public record ShopMenuDto(
     string? ParseError,
     PriceRange? SuggestedPriceRange,
     IReadOnlyList<ShopMenuItemDto> Items,
-    IReadOnlyList<ShortPhotoMetadataDto> Photos);
+    IReadOnlyList<ShortPhotoMetadataDto> Photos,
+    long? InputRevision = null);

@@ -10,6 +10,9 @@ public class MediaDbContext(DbContextOptions<MediaDbContext> options) : DbContex
     {
         modelBuilder.Entity<PhotoMetadata>(entity =>
         {
+            entity.ToTable("Photos", table => table.HasCheckConstraint(
+                "CK_Photos_ShopAttachmentPair",
+                "(\"ShopAttachmentId\" IS NULL) = (\"ShopAttachmentKind\" IS NULL)"));
             entity.HasKey(p => p.Id);
             entity.Property(p => p.Id).ValueGeneratedOnAdd();
 
@@ -24,6 +27,8 @@ public class MediaDbContext(DbContextOptions<MediaDbContext> options) : DbContex
             entity.Property(p => p.OwnerType).IsRequired().HasConversion<string>().HasMaxLength(20);
             entity.Property(p => p.OwnerId).IsRequired();
             entity.Property(p => p.CheckInId);
+            entity.Property(p => p.ShopAttachmentId);
+            entity.Property(p => p.ShopAttachmentKind).HasConversion<string>().HasMaxLength(20);
             entity.Property(p => p.ClaimedAtUtc);
             entity.Property(p => p.OriginalStorageKey).HasMaxLength(255);
             entity.Property(p => p.UploadedAt).IsRequired();
@@ -34,6 +39,7 @@ public class MediaDbContext(DbContextOptions<MediaDbContext> options) : DbContex
             entity.HasIndex(p => new { p.OwnerType, p.OwnerId });
             entity.HasIndex(p => p.Status);
             entity.HasIndex(p => p.CheckInId);
+            entity.HasIndex(p => new { p.ShopAttachmentId, p.ShopAttachmentKind });
             entity.HasIndex(p => new { p.Status, p.ScheduledDeletionAt });
         });
 

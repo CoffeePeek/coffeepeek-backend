@@ -18,4 +18,30 @@ public sealed class CoffeeImportRun : Entity<Guid>
     public bool MissingAvailabilityApplied { get; set; }
     public string? Error { get; set; }
     public CoffeeImportRun() { Id = Guid.NewGuid(); }
+
+    /// <summary>
+    /// A pre-apply failure report has no payload, so its snapshot ID is only a
+    /// placeholder hash until the first complete payload is supplied.
+    /// </summary>
+    public bool CanApplyPayload(string payloadHash) => PayloadHash == payloadHash ||
+        (Status == "Failed" && PayloadHash == SnapshotId && Error is not null &&
+         (Error.StartsWith("collect: ", StringComparison.Ordinal) ||
+          Error.StartsWith("photos: ", StringComparison.Ordinal) ||
+          Error.StartsWith("apply: ", StringComparison.Ordinal)));
+
+    public void MarkApplied(string payloadHash, DateTime collectedAtUtc, int products, int variants,
+        int added, bool missingAvailabilityApplied)
+    {
+        if (!CanApplyPayload(payloadHash))
+            throw new InvalidOperationException("Snapshot identity was reused for different content.");
+        PayloadHash = payloadHash;
+        CollectedAtUtc = collectedAtUtc;
+        AppliedAtUtc = DateTime.UtcNow;
+        Status = "Applied";
+        Error = null;
+        Products = products;
+        Variants = variants;
+        Added = added;
+        MissingAvailabilityApplied = missingAvailabilityApplied;
+    }
 }

@@ -9,17 +9,12 @@ namespace CoffeePeek.Shops.Application.Tests.Features.Menu;
 public class VisionOutputSanitizeTests
 {
     [Fact]
-    public void AbsurdModelValues_AreDroppedOrClamped()
+    public void AbsurdModelValues_DropEntireOffer()
     {
         // Text in a photo can steer the model; values must be bounded before they reach pricing and the DB.
         var line = new VisionDrinkLine(new string('x', 500), 99_999_999m, -5, 7.5);
 
-        var clean = ParseMenuPhotosHandler.Sanitize([line]).Single();
-
-        clean.RawName.Should().HaveLength(100);
-        clean.Price.Should().BeNull();
-        clean.VolumeMl.Should().BeNull();
-        clean.Confidence.Should().Be(1);
+        ParseMenuPhotosHandler.Sanitize([line]).Should().BeEmpty();
     }
 
     [Fact]

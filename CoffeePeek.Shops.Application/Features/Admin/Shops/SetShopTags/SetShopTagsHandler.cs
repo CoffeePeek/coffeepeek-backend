@@ -35,6 +35,7 @@ public static class SetShopTagsHandler
         try
         {
             shop.SetTags(tagIds, command.AdminUserId);
+            shop.AdvanceProfileRevision();
         }
         catch (Exception ex) when (ex is ArgumentException or Shared.Kernel.Exceptions.DomainException)
         {

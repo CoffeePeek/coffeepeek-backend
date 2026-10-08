@@ -52,8 +52,11 @@ public class ParseMenuRequestedEventHandlerTests
             .Setup(p => p.ParseAsync(It.IsAny<IReadOnlyList<MenuVisionPhoto>>(), _ct))
             .ReturnsAsync(new MenuVisionParseResult(true, null,
             [
-                new VisionDrinkLine("Cappuccino", 8m, null, 0.9)
+                new VisionDrinkLine("Cappuccino", 8m, 250, 0.9)
             ]));
+
+        _applyMenu.Setup(a => a.GetOrCreateAsync(It.IsAny<Guid>(), _ct))
+            .ReturnsAsync((Guid id, CancellationToken _) => ShopMenu.Create(id));
 
         _applyMenu
             .Setup(a => a.ApplyParseResultAsync(
@@ -82,7 +85,7 @@ public class ParseMenuRequestedEventHandlerTests
 
     private static ParseMenuRequestedEvent CreateMessage(Guid shopId) =>
         new(
-            MenuParseSourceKind.PublishedShop,
+            MenuParseSourceKind.ModerationShop,
             Guid.NewGuid(),
             shopId,
             [new MenuPhotoRef("a.jpg", "image/jpeg", "menus/a.jpg", 123)],
@@ -112,7 +115,7 @@ public class ParseMenuRequestedEventHandlerTests
 
         var handler = CreateHandler();
 
-        var result = await handler.Handle(message, _ct);
+        var result = (MenuParsedEvent)await handler.Handle(message, _ct);
 
         result.Success.Should().BeTrue();
         result.Items.Should().Contain(i => i.Slug == "cappuccino");
@@ -129,6 +132,44 @@ public class ParseMenuRequestedEventHandlerTests
             _ct), Times.Exactly(2));
         _unitOfWork.Verify(u => u.SaveChangesAsync(_ct), Times.Exactly(2));
         _unitOfWork.Verify(u => u.ClearTracking(), Times.Once);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task LegacyPublishedRequest_IsQuarantinedBeforePaidParse(bool manuallyEdited)
+    {
+        var shopId = Guid.NewGuid();
+        var menu = ShopMenu.Create(shopId);
+        if (manuallyEdited)
+            menu.ApplyManualItem(Guid.NewGuid(), MenuItemAvailability.Present, 5m, 200, Guid.NewGuid());
+        _applyMenu.Setup(a => a.GetOrCreateAsync(shopId, _ct)).ReturnsAsync(menu);
+
+        var legacy = CreateMessage(shopId) with { SourceKind = MenuParseSourceKind.PublishedShop };
+        var result = (MenuParsedEvent)await CreateHandler().Handle(legacy, _ct);
+
+        result.Success.Should().BeFalse();
+        _parser.Verify(p => p.ParseAsync(It.IsAny<IReadOnlyList<MenuVisionPhoto>>(), _ct), Times.Never);
+        _downloader.Verify(d => d.DownloadAsync(It.IsAny<IReadOnlyList<MenuPhotoDownloadRequest>>(), _ct), Times.Never);
+        _unitOfWork.Verify(u => u.SaveChangesAsync(_ct), Times.Never);
+    }
+
+    [Fact]
+    public async Task LegacyEnvelopeWithJobId_ForwardsWithoutPaidParse()
+    {
+        var jobId = Guid.NewGuid();
+        var message = CreateMessage(Guid.NewGuid()) with
+        {
+            SourceKind = MenuParseSourceKind.PublishedShop,
+            JobId = jobId
+        };
+
+        var forwarded = await CreateHandler().Handle(message, _ct);
+
+        forwarded.Should().BeOfType<ParseMenuOcrJobRequestedEvent>()
+            .Which.JobId.Should().Be(jobId);
+        _parser.Verify(p => p.ParseAsync(It.IsAny<IReadOnlyList<MenuVisionPhoto>>(), _ct), Times.Never);
+        _applyMenu.Verify(a => a.GetOrCreateAsync(It.IsAny<Guid>(), _ct), Times.Never);
     }
 
     [Fact]

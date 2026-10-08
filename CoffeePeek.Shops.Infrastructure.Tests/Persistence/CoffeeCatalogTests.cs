@@ -168,6 +168,7 @@ public class CoffeeCatalogTests
         await store.ImportAsync(Snapshot('a', DateTimeOffset.UtcNow.AddMinutes(-2)), ct);
         var product = await db.CoffeeProducts.SingleAsync(ct);
         product.SetStatus(CoffeePublicationStatus.Published); await db.SaveChangesAsync(ct);
+        var versionBeforeAvailabilityOnlyImport = product.Version;
         var next = Snapshot('b', DateTimeOffset.UtcNow.AddMinutes(-1));
         next.Snapshot.Products = [];
         await Assert.ThrowsAsync<CoffeeCatalogException>(() => store.ImportAsync(next, ct));
@@ -182,7 +183,76 @@ public class CoffeeCatalogTests
             Assert.Equal(next.Snapshot.CollectedAtUtc.UtcDateTime, v.CheckedAtUtc);
         });
         Assert.Equal(CoffeePublicationStatus.Published, product.Status);
+        Assert.True(product.Version > versionBeforeAvailabilityOnlyImport);
         Assert.Empty((await store.ListAsync(new(), ct)).Items);
+    }
+
+    [Fact]
+    public async Task ReportedPreApplyFailureCanResumeWithSameSnapshotIdentity()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        await using var db = new ShopsDbContext(new DbContextOptionsBuilder<ShopsDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString()).Options);
+        await db.Database.EnsureCreatedAsync(ct);
+        var roaster = new Roaster("ROAST");
+        db.Roasters.Add(roaster);
+        await db.SaveChangesAsync(ct);
+        var store = Store(db, roaster.Id);
+        var request = Snapshot('d', DateTimeOffset.UtcNow.AddMinutes(-2));
+
+        await store.RecordFailureAsync(new CoffeeImportFailureDto(request.SourceKey, request.SnapshotId,
+            request.Snapshot.CollectedAtUtc, "photos", "Media temporarily unavailable"), ct);
+        var failed = await db.CoffeeImportRuns.SingleAsync(ct);
+        Assert.Equal("Failed", failed.Status);
+
+        var applied = await store.ImportAsync(request, ct);
+
+        Assert.Equal("Applied", applied.Status);
+        Assert.Single(await db.CoffeeProducts.ToArrayAsync(ct));
+        Assert.Equal(applied.RunId, (await store.ImportAsync(request, ct)).RunId);
+        Assert.Equal("Applied", (await db.CoffeeImportRuns.SingleAsync(ct)).Status);
+        Assert.NotEqual(request.SnapshotId, (await db.CoffeeImportRuns.SingleAsync(ct)).PayloadHash);
+        request.Snapshot.Products[0].Name = "Different content with same identity";
+        await Assert.ThrowsAsync<CoffeeCatalogException>(() => store.ImportAsync(request, ct));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task MissingOffersAreRetiredOnlyWhenCoverageIsConfirmed(bool completeCoverage)
+    {
+        var ct = TestContext.Current.CancellationToken;
+        await using var db = new ShopsDbContext(new DbContextOptionsBuilder<ShopsDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString()).Options);
+        await db.Database.EnsureCreatedAsync(ct);
+        var roaster = new Roaster("ROAST");
+        db.Roasters.Add(roaster);
+        await db.SaveChangesAsync(ct);
+        var store = Store(db, roaster.Id);
+        var first = Snapshot('e', DateTimeOffset.UtcNow.AddMinutes(-2));
+        var missing = JsonSerializer.Deserialize<CoffeeSnapshotProduct>(
+            JsonSerializer.Serialize(first.Snapshot.Products[0]))!;
+        missing.SourceProductId = "p2";
+        missing.Variants[0].ExternalVariantId = "p2-v1";
+        missing.Variants[1].ExternalVariantId = "p2-v2";
+        first.Snapshot.Products = [first.Snapshot.Products[0], missing];
+        first.Snapshot.Coverage[0].ExpectedProducts = 2;
+        first.Snapshot.Coverage[0].DiscoveredProducts = 2;
+        await store.ImportAsync(first, ct);
+
+        var next = Snapshot('f', first.Snapshot.CollectedAtUtc.AddMinutes(1));
+        next.Snapshot.Coverage[0].ExpectedProducts = completeCoverage ? 1 : 2;
+        next.Snapshot.Coverage[0].DiscoveredProducts = 1;
+        var result = await store.ImportAsync(next, ct);
+
+        db.ChangeTracker.Clear();
+        var source = await db.CoffeeProductSources.Include(s => s.Variants)
+            .SingleAsync(s => s.ExternalProductId == "p2", ct);
+        Assert.Equal(completeCoverage, result.MissingAvailabilityApplied);
+        Assert.Equal(!completeCoverage, source.IsPresent);
+        Assert.All(source.Variants, variant => Assert.Equal(
+            completeCoverage ? CoffeeAvailability.Unknown : CoffeeAvailability.InStock,
+            variant.Availability));
     }
 
     private static CoffeeCatalogStore Store(ShopsDbContext db, Guid roasterId) => new(db,

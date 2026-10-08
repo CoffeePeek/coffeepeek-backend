@@ -27,8 +27,23 @@ public class ParseMenuRequestedEventHandler(
 {
     private const int MaxApplyAndSaveAttempts = 3;
 
-    public async Task<MenuParsedEvent> Handle(ParseMenuRequestedEvent message, CancellationToken ct)
+    public async Task<object> Handle(ParseMenuRequestedEvent message, CancellationToken ct)
     {
+        // P15 briefly emitted this legacy envelope with JobId. Forward it to the new
+        // short-transaction worker without paying for OCR in this eager EF transaction.
+        if (message.SourceKind == MenuParseSourceKind.PublishedShop && message.JobId is { } jobId)
+            return new ParseMenuOcrJobRequestedEvent(jobId, message.RequestedByUserId);
+
+        if (message.SourceKind == MenuParseSourceKind.PublishedShop)
+        {
+            var publishedShopId = message.PublishedShopId ?? message.SourceId;
+            logger.LogWarning("Quarantined legacy published menu OCR for shop {ShopId} without JobId", publishedShopId);
+            return new MenuParsedEvent(
+                message.SourceKind, message.SourceId, publishedShopId, false,
+                "Legacy published OCR requires an explicit migration to a persisted job.",
+                null, [], [], DateTime.UtcNow);
+        }
+
         logger.LogInformation(
             "Starting menu parse for {Kind} {SourceId} photos={PhotoCount} publishedShop={PublishedShopId}",
             message.SourceKind,
@@ -149,32 +164,6 @@ public class ParseMenuRequestedEventHandler(
                 "Menu parse threw for {Kind} {SourceId}",
                 message.SourceKind,
                 message.SourceId);
-            throw;
-        }
-    }
-}
-
-public class ApplyShopMenuSnapshotEventHandler(
-    IApplyShopMenuService applyMenu,
-    IUnitOfWork unitOfWork,
-    ILogger<ApplyShopMenuSnapshotEventHandler> logger)
-{
-    public async Task Handle(ApplyShopMenuSnapshotEvent message, CancellationToken ct)
-    {
-        try
-        {
-            await applyMenu.ApplySnapshotAsync(
-                message.ShopId,
-                message.Snapshot,
-                message.ApplySuggestedPriceRange,
-                message.UserId,
-                ct);
-            await unitOfWork.SaveChangesAsync(ct);
-            logger.LogInformation("Applied menu snapshot to shop {ShopId}", message.ShopId);
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Failed to apply menu snapshot to shop {ShopId}", message.ShopId);
             throw;
         }
     }

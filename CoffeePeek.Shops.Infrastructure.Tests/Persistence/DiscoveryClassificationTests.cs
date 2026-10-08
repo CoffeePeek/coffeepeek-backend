@@ -102,7 +102,7 @@ public class DiscoveryClassificationTests
             SourceKey = "roast.by", ExternalProductId = "p1", SourceUrl = "https://roast.by/product" };
         var variant = new CoffeeVariant { SourceKey = "roast.by", ExternalVariantId = "v1", Price = 30,
             Currency = "BYN", Source = source, CoffeeProductSourceId = source.Id };
-        source.Variants.Add(variant); product.Sources.Add(source);
+        source.AttachVariant(variant); product.AttachSource(source);
         db.CoffeeProducts.Add(product); await db.SaveChangesAsync(Ct);
         var store = new DiscoveryClassificationStore(db); var version = product.Version;
         var edited = (await store.EditVariantClassificationAsync(product.Id, variant.Id,

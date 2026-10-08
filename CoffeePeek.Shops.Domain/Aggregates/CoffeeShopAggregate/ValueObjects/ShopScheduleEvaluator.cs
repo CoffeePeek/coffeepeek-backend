@@ -3,10 +3,11 @@ namespace CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
 /// <summary>
 /// Evaluates weekly shop schedules. Both the schedule and the supplied clock value use UTC.
 /// An interval whose close time is earlier than its open time continues into the next UTC day.
+/// An empty schedule has unknown opening status.
 /// </summary>
 public static class ShopScheduleEvaluator
 {
-    public static bool IsOpenAtUtc(IEnumerable<ShopSchedule> schedules, DateTime utcNow)
+    public static bool? IsOpenAtUtc(IEnumerable<ShopSchedule> schedules, DateTime utcNow)
     {
         ArgumentNullException.ThrowIfNull(schedules);
 
@@ -15,7 +16,7 @@ public static class ShopScheduleEvaluator
 
         var scheduleList = schedules as IReadOnlyCollection<ShopSchedule> ?? schedules.ToArray();
         if (scheduleList.Count == 0)
-            return true;
+            return null;
 
         var currentTime = utcNow.TimeOfDay;
 

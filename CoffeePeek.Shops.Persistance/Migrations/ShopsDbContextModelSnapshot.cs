@@ -1533,6 +1533,12 @@ namespace CoffeePeek.Shops.Persistance.Migrations
                     b.Property<int>("PriceRange")
                         .HasColumnType("integer");
 
+                    b.Property<long>("ProfileRevision")
+                        .ValueGeneratedOnAdd()
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasDefaultValue(0L);
+
                     b.Property<string>("PublicSlug")
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)")
@@ -1625,9 +1631,6 @@ namespace CoffeePeek.Shops.Persistance.Migrations
                     b.Property<bool>("IsCustom")
                         .HasColumnType("boolean");
 
-                    b.Property<bool>("IsPrimary")
-                        .HasColumnType("boolean");
-
                     b.Property<string>("ModelName")
                         .IsRequired()
                         .HasColumnType("text");
@@ -1650,6 +1653,8 @@ namespace CoffeePeek.Shops.Persistance.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
+
+                    b.HasAlternateKey("Id", "CategoryId");
 
                     b.HasIndex("CategoryId");
 
@@ -1929,10 +1934,86 @@ namespace CoffeePeek.Shops.Persistance.Migrations
                     b.ToTable("CoffeeDrinkDefinitions", (string)null);
                 });
 
+            modelBuilder.Entity("CoffeePeek.Shops.Domain.Aggregates.MenuAggregate.MenuOcrJob", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("CompletedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Error")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<string>("InputPhotosJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<long?>("MenuRevision")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("PhotoSetHash")
+                        .IsRequired()
+                        .IsFixedLength()
+                        .HasMaxLength(64)
+                        .HasColumnType("character(64)");
+
+                    b.Property<Guid?>("PublishedShopId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("RequestedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ResultJson")
+                        .HasColumnType("jsonb");
+
+                    b.Property<DateTime?>("ResultStoredAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("SourceId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("SourceKind")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid?>("ShopMenuId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("StartedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ShopMenuId", "Status");
+
+                    b.HasIndex("SourceKind", "SourceId", "RequestedAtUtc");
+
+                    b.ToTable("MenuOcrJobs", (string)null, t =>
+                        {
+                            t.HasCheckConstraint("CK_MenuOcrJobs_Status", "\"Status\" BETWEEN 0 AND 5");
+                            t.HasCheckConstraint("CK_MenuOcrJobs_SourceKind", "\"SourceKind\" BETWEEN 1 AND 3");
+                            t.HasCheckConstraint("CK_MenuOcrJobs_MenuRevision", "\"MenuRevision\" IS NULL OR \"MenuRevision\" >= 0");
+                        });
+                });
+
             modelBuilder.Entity("CoffeePeek.Shops.Domain.Aggregates.MenuAggregate.ShopMenu", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("ActiveOcrJobId")
                         .HasColumnType("uuid");
 
                     b.Property<DateTime?>("CapturedAtUtc")
@@ -1948,6 +2029,12 @@ namespace CoffeePeek.Shops.Persistance.Migrations
                         .IsRequired()
                         .HasMaxLength(8)
                         .HasColumnType("character varying(8)");
+
+                    b.Property<long>("InputRevision")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasDefaultValue(0L);
 
                     b.Property<string>("ParseError")
                         .HasMaxLength(1000)
@@ -2022,12 +2109,13 @@ namespace CoffeePeek.Shops.Persistance.Migrations
                         .IsUnique();
 
                     b.ToTable("ShopMenuItems", (string)null);
+
+                    b.ToTable(tb => tb.HasCheckConstraint("CK_ShopMenuItems_Values", "\"Availability\" IN (0, 1, 2) AND ((\"Availability\" = 1 AND \"Price\" IS NOT NULL AND \"Price\" > 0 AND \"VolumeMl\" IS NOT NULL AND \"VolumeMl\" > 0) OR (\"Availability\" <> 1 AND \"Price\" IS NULL AND \"VolumeMl\" IS NULL))"));
                 });
 
             modelBuilder.Entity("CoffeePeek.Shops.Domain.Aggregates.MenuAggregate.ShopMenuPhoto", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<string>("ContentType")
@@ -2424,17 +2512,31 @@ namespace CoffeePeek.Shops.Persistance.Migrations
                     b.ToTable("CoffeeShopCoffeeBeans");
                 });
 
-            modelBuilder.Entity("CoffeeShopEquipments", b =>
+            modelBuilder.Entity("CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate.ShopEquipment", b =>
                 {
-                    b.Property<Guid>("CoffeeShopId")
-                        .HasColumnType("uuid");
+                    b.Property<Guid>("ShopId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("CoffeeShopId");
+
+                    b.Property<int>("CategoryId")
+                        .HasColumnType("integer");
 
                     b.Property<Guid>("EquipmentId")
                         .HasColumnType("uuid");
 
-                    b.HasKey("CoffeeShopId", "EquipmentId");
+                    b.Property<bool>("IsPrimary")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
 
-                    b.HasIndex("EquipmentId");
+                    b.HasKey("ShopId", "EquipmentId");
+
+                    b.HasIndex("EquipmentId", "CategoryId");
+
+                    b.HasIndex("ShopId", "CategoryId")
+                        .IsUnique()
+                        .HasDatabaseName("UX_CoffeeShopEquipments_PrimaryCategory")
+                        .HasFilter("\"IsPrimary\"");
 
                     b.ToTable("CoffeeShopEquipments");
                 });
@@ -2602,6 +2704,12 @@ namespace CoffeePeek.Shops.Persistance.Migrations
 
                             b1.ToTable("Shops");
 
+                            b1.HasOne("CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate.City", null)
+                                .WithMany()
+                                .HasForeignKey("CityId")
+                                .OnDelete(DeleteBehavior.Restrict)
+                                .IsRequired();
+
                             b1.WithOwner()
                                 .HasForeignKey("CoffeeShopId");
                         });
@@ -2768,7 +2876,15 @@ namespace CoffeePeek.Shops.Persistance.Migrations
 
                             b1.HasKey("RoasterId");
 
+                            b1.HasIndex("CityId");
+
                             b1.ToTable("Roasters");
+
+                            b1.HasOne("CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate.City", null)
+                                .WithMany()
+                                .HasForeignKey("CityId")
+                                .OnDelete(DeleteBehavior.Restrict)
+                                .IsRequired();
 
                             b1.WithOwner()
                                 .HasForeignKey("RoasterId");
@@ -2824,6 +2940,14 @@ namespace CoffeePeek.Shops.Persistance.Migrations
                         .HasForeignKey("ZoneId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("CoffeePeek.Shops.Domain.Aggregates.MenuAggregate.MenuOcrJob", b =>
+                {
+                    b.HasOne("CoffeePeek.Shops.Domain.Aggregates.MenuAggregate.ShopMenu", null)
+                        .WithMany("OcrJobs")
+                        .HasForeignKey("ShopMenuId")
+                        .OnDelete(DeleteBehavior.Cascade);
                 });
 
             modelBuilder.Entity("CoffeePeek.Shops.Domain.Aggregates.MenuAggregate.ShopMenu", b =>
@@ -2928,19 +3052,22 @@ namespace CoffeePeek.Shops.Persistance.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("CoffeeShopEquipments", b =>
+            modelBuilder.Entity("CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate.ShopEquipment", b =>
                 {
                     b.HasOne("CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate.CoffeeShop", null)
-                        .WithMany()
-                        .HasForeignKey("CoffeeShopId")
+                        .WithMany("ShopEquipments")
+                        .HasForeignKey("ShopId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate.Equipment", null)
+                    b.HasOne("CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate.Equipment", "Equipment")
                         .WithMany()
-                        .HasForeignKey("EquipmentId")
+                        .HasForeignKey("EquipmentId", "CategoryId")
+                        .HasPrincipalKey("Id", "CategoryId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Equipment");
                 });
 
             modelBuilder.Entity("CoffeeShopRoasters", b =>
@@ -2981,6 +3108,8 @@ namespace CoffeePeek.Shops.Persistance.Migrations
                 {
                     b.Navigation("ShopPhotos");
 
+                    b.Navigation("ShopEquipments");
+
                     b.Navigation("ShopTags");
                 });
 
@@ -2992,6 +3121,8 @@ namespace CoffeePeek.Shops.Persistance.Migrations
             modelBuilder.Entity("CoffeePeek.Shops.Domain.Aggregates.MenuAggregate.ShopMenu", b =>
                 {
                     b.Navigation("Items");
+
+                    b.Navigation("OcrJobs");
 
                     b.Navigation("Photos");
                 });

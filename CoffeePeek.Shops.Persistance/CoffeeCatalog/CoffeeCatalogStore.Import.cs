@@ -7,6 +7,7 @@ using CoffeePeek.Shops.Domain.Aggregates.CoffeeProductAggregate;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using CoffeePeek.Shops.Persistance.PublicAddresses;
+using Npgsql;
 
 namespace CoffeePeek.Shops.Persistance.CoffeeCatalog;
 
@@ -22,10 +23,22 @@ public sealed partial class CoffeeCatalogStore
             failure.Stage is not ("collect" or "photos" or "apply") || string.IsNullOrWhiteSpace(failure.Error) || failure.Error.Length > 2000)
             throw new CoffeeCatalogException("Invalid import failure report.");
         if (await db.CoffeeImportRuns.AnyAsync(r => r.SourceKey == failure.SourceKey && r.SnapshotId == failure.SnapshotId, ct)) return;
-        db.CoffeeImportRuns.Add(new CoffeeImportRun { SourceKey = failure.SourceKey, SnapshotId = failure.SnapshotId,
+        var run = new CoffeeImportRun { SourceKey = failure.SourceKey, SnapshotId = failure.SnapshotId,
             PayloadHash = failure.SnapshotId, CollectedAtUtc = failure.CollectedAtUtc.UtcDateTime, AppliedAtUtc = DateTime.UtcNow,
-            Status = "Failed", Error = failure.Stage + ": " + failure.Error[..Math.Min(failure.Error.Length, 1980)] });
-        await db.SaveChangesAsync(ct);
+            Status = "Failed", Error = failure.Stage + ": " + failure.Error[..Math.Min(failure.Error.Length, 1980)] };
+        db.CoffeeImportRuns.Add(run);
+        try
+        {
+            await db.SaveChangesAsync(ct);
+        }
+        catch (DbUpdateException ex) when (ex.InnerException is PostgresException
+                   { SqlState: PostgresErrorCodes.UniqueViolation,
+                     ConstraintName: "IX_CoffeeImportRuns_SourceKey_SnapshotId" })
+        {
+            // A concurrent duplicate report is idempotent. Detach the failed insert so
+            // this context can still serve a subsequent import attempt.
+            db.Entry(run).State = EntityState.Detached;
+        }
     }
 
     public async Task<CoffeeImportResult> ImportAsync(CoffeeSnapshotImportRequest request, CancellationToken ct)
@@ -38,7 +51,7 @@ public sealed partial class CoffeeCatalogStore
             Func<Task<CoffeeImportResult>> operation = () => PublicAddressTransaction.RunAsync(db, async () =>
             {
                 var previous = await db.CoffeeImportRuns.SingleOrDefaultAsync(r => r.SourceKey == request.SourceKey && r.SnapshotId == request.SnapshotId, ct);
-                if (previous is not null && previous.PayloadHash != payloadHash)
+                if (previous is not null && !previous.CanApplyPayload(payloadHash))
                     throw new CoffeeCatalogException("Snapshot identity was reused for different content.", 409);
                 if (previous?.Status == "Applied") return Result(previous);
                 var last = await db.CoffeeImportRuns.Where(r => r.SourceKey == request.SourceKey && r.Status == "Applied")
@@ -77,7 +90,7 @@ public sealed partial class CoffeeCatalogStore
                         var product = new CoffeeProduct(roasterId, data);
                         product.SetPublicSlug(CoffeePeek.Shared.Domain.PublicAddresses.PublicSlug.Candidate(product.Name, product.Id, 1));
                         source = new CoffeeProductSource { Product = product, CoffeeProductId = product.Id, SourceKey = request.SourceKey };
-                        product.Sources.Add(source); db.CoffeeProducts.Add(product); sources.Add(source); added++;
+                        product.AttachSource(source); db.CoffeeProducts.Add(product); sources.Add(source); added++;
                     }
                     if (!observed.Add(source.Id)) throw new CoffeeCatalogException("Two source cards resolve to the same product group.", 409);
                     source.ExternalProductId = item.SourceProductId;
@@ -99,8 +112,7 @@ public sealed partial class CoffeeCatalogStore
                             warnings.Add("country_requires_confirmation:" + origin.CountryCode);
                         else countryCodes.Add(origin.CountryCode);
                     }
-                    if (!source.Product.IsProtected(nameof(CoffeeProduct.Countries)) && countryCodes.Count > 0)
-                        source.Product.ReplaceCountries(countryCodes);
+                    source.Product.ApplyImportedCountries(countryCodes);
                     var seenVariants = new HashSet<string>(StringComparer.Ordinal);
                     foreach (var offer in item.Variants)
                     {
@@ -109,7 +121,7 @@ public sealed partial class CoffeeCatalogStore
                         if (row is null)
                         {
                             row = new CoffeeVariant { SourceKey = request.SourceKey, ExternalVariantId = offer.ExternalVariantId };
-                            source.Variants.Add(row);
+                            source.AttachVariant(row);
                             db.Set<CoffeeVariant>().Add(row);
                         }
                         row.WeightGrams = offer.WeightGrams; row.Price = offer.Price; row.Currency = offer.Currency;
@@ -127,14 +139,14 @@ public sealed partial class CoffeeCatalogStore
                     if (item.StoredPhotos.Length > 0 && !source.Product.IsProtected("Photos"))
                     {
                         var keys = item.StoredPhotos.Select(p => p.StorageKey).ToHashSet(StringComparer.Ordinal);
-                        db.Set<CoffeeProductPhoto>().RemoveRange(source.Photos.Where(p => !keys.Contains(p.StorageKey)));
+                        db.Set<CoffeeProductPhoto>().RemoveRange(source.RemovePhotosExcept(keys));
                         var index = 0;
                         foreach (var image in item.StoredPhotos.DistinctBy(p => p.StorageKey))
                         {
                             var row = source.Photos.SingleOrDefault(p => p.StorageKey == image.StorageKey);
                             if (row is null)
                             {
-                                row = new CoffeeProductPhoto(); source.Photos.Add(row);
+                                row = new CoffeeProductPhoto(); source.AttachPhoto(row);
                                 db.Set<CoffeeProductPhoto>().Add(row);
                             }
                             row.SourceUrl = image.SourceUrl!; row.StorageKey = image.StorageKey;
@@ -144,7 +156,7 @@ public sealed partial class CoffeeCatalogStore
                     }
                     if (item.ImageUrls.Length > 0 && item.StoredPhotos.Length == 0) warnings.Add("photos_not_imported");
                     if (item.ImageUrls.Length == 0 && source.Photos.Count == 0) warnings.Add("photos_not_provided");
-                    source.ReviewWarnings = warnings.Distinct().ToArray();
+                    source.SetReviewWarnings(warnings);
                 }
 
                 // ponytail: HTML without an independent counter never retires missing offers automatically;
@@ -154,7 +166,11 @@ public sealed partial class CoffeeCatalogStore
                     (last is null || request.Snapshot.Products.Length * 2 >= last.Products);
                 if (reconcile)
                     foreach (var missing in sources.Where(s => !observed.Contains(s.Id)))
-                    { missing.IsPresent = false; foreach (var v in missing.Variants) v.Availability = CoffeeAvailability.Unknown; }
+                    {
+                        missing.IsPresent = false;
+                        foreach (var v in missing.Variants) v.Availability = CoffeeAvailability.Unknown;
+                        missing.Product.AdvanceVersion();
+                    }
                 // Explicit unavailable rows are safe even when an HTML catalogue has no total counter.
                 foreach (var excluded in request.Snapshot.Excluded.Where(e => e.Reason == "not_purchasable"))
                 {
@@ -163,11 +179,11 @@ public sealed partial class CoffeeCatalogStore
                     source.LastSeenAtUtc = collectedAt;
                     source.IsPresent = true;
                     foreach (var v in source.Variants) { v.Availability = CoffeeAvailability.OutOfStock; v.CheckedAtUtc = collectedAt; }
+                    source.Product.AdvanceVersion();
                 }
                 var run = previous ?? new CoffeeImportRun { SourceKey = request.SourceKey, SnapshotId = request.SnapshotId, PayloadHash = payloadHash };
-                run.CollectedAtUtc = collectedAt; run.AppliedAtUtc = DateTime.UtcNow; run.Status = "Applied"; run.Error = null;
-                run.Products = request.Snapshot.Products.Length; run.Variants = request.Snapshot.Products.Sum(p => p.Variants.Length);
-                run.Added = added; run.MissingAvailabilityApplied = reconcile;
+                run.MarkApplied(payloadHash, collectedAt, request.Snapshot.Products.Length,
+                    request.Snapshot.Products.Sum(p => p.Variants.Length), added, reconcile);
                 if (previous is null) db.CoffeeImportRuns.Add(run);
                 await db.SaveChangesAsync(ct);
                 return Result(run);

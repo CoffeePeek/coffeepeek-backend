@@ -3,11 +3,11 @@ using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using CoffeePeek.Shared.Domain.Interfaces.Infrastructure;
 using CoffeePeek.Shops.Application.Features.Catalogs.Drinks;
 using CoffeePeek.Shops.Domain.Aggregates.MenuAggregate;
 using FluentAssertions;
 using Moq;
+using Wolverine;
 using Xunit;
 
 namespace CoffeePeek.Shops.Application.Tests.Features;
@@ -28,19 +28,35 @@ public class DrinkCatalogTests
     }
 
     [Fact]
-    public async Task AdminUpdate_DeactivatesDrinkAndInvalidatesCatalogAndMenuCaches()
+    public async Task AdminUpdate_DeactivatesDrinkAndQueuesInvalidation()
     {
         var ct = TestContext.Current.CancellationToken;
         var drink = CoffeeDrinkDefinition.CreateWithId(Guid.NewGuid(), "latte", "Латте", "Latte", CoffeeDrinkCategory.Espresso, "", 10);
         var catalog = new Mock<ICoffeeDrinkRepository>();
         catalog.Setup(c => c.FindTrackedAsync("latte", ct)).ReturnsAsync(drink);
-        var cache = new Mock<ICacheService>();
+        var bus = new Mock<IMessageBus>();
         var result = await UpdateCatalogDrinkHandler.Handle(new("latte", "Новое", "New", CoffeeDrinkCategory.Espresso, "", 20, false),
-            catalog.Object, cache.Object, ct);
+            catalog.Object, bus.Object, ct);
         result.Data!.IsActive.Should().BeFalse();
         result.Data!.NameRu.Should().Be("Новое");
-        catalog.Verify(c => c.SaveAsync(ct), Times.Once);
-        cache.Verify(c => c.RemoveAsync(CacheKey.Shop.MenuDrinks()), Times.Once);
-        cache.Verify(c => c.RemoveByPattern("shop:detail:*", ct), Times.Once);
+        bus.Verify(b => b.PublishAsync(It.IsAny<DrinkCatalogCacheInvalidationRequested>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task DuplicateCreate_DoesNotPublishInvalidation()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var catalog = new Mock<ICoffeeDrinkRepository>();
+        catalog.Setup(c => c.FindTrackedAsync("latte", ct)).ReturnsAsync(
+            CoffeeDrinkDefinition.CreateWithId(Guid.NewGuid(), "latte", "Латте", "Latte",
+                CoffeeDrinkCategory.Espresso, "", 10));
+        var bus = new Mock<IMessageBus>();
+
+        await Assert.ThrowsAsync<CoffeePeek.Shared.Kernel.Exceptions.ConflictException>(() =>
+            CreateCatalogDrinkHandler.Handle(new("latte", "Латте", "Latte",
+                CoffeeDrinkCategory.Espresso, "", 10, true), catalog.Object, bus.Object, ct));
+
+        catalog.Verify(c => c.Add(It.IsAny<CoffeeDrinkDefinition>()), Times.Never);
+        bus.Verify(b => b.PublishAsync(It.IsAny<DrinkCatalogCacheInvalidationRequested>()), Times.Never);
     }
 }

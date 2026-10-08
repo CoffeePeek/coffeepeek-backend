@@ -19,7 +19,7 @@ namespace CoffeePeek.Shops.Persistance.CoffeeCatalog;
 
 public sealed partial class CoffeeCatalogStore(ShopsDbContext db, IOptions<MediaPublicUrlOptions> media,
     IOptions<CoffeeImportOptions> importOptions, IPublicAddressService addresses,
-    ILogger<CoffeeCatalogStore> logger) : ICoffeeCatalogStore
+    ILogger<CoffeeCatalogStore> logger) : ICoffeeCatalogStore, IPublicCoffeeCatalogReader, ICoffeeProductWriter, ICoffeeImportWriter
 {
     public Task<CountryDto[]> CountriesAsync(CancellationToken ct) => db.Countries.AsNoTracking()
         .Where(c => c.IsActive).OrderBy(c => c.NameRu).Select(c => new CountryDto(c.Code, c.NameRu, c.NameEn)).ToArrayAsync(ct);
@@ -27,6 +27,7 @@ public sealed partial class CoffeeCatalogStore(ShopsDbContext db, IOptions<Media
     public async Task<RoasterTagDto[]> TagsAsync(bool admin, CancellationToken ct) =>
         (await db.RoasterTags.AsNoTracking().Where(t => admin || t.IsActive).OrderBy(t => t.SortOrder).ThenBy(t => t.Name).ToArrayAsync(ct))
         .Select(Tag).ToArray();
+    public Task<RoasterTagDto[]> PublicTagsAsync(CancellationToken ct) => TagsAsync(false, ct);
     public async Task<RoasterTagDto> CreateTagAsync(CreateRoasterTagRequest request, CancellationToken ct)
     {
         if (await db.RoasterTags.AnyAsync(t => t.Slug == request.Slug, ct)) throw new CoffeeCatalogException("Tag slug is reserved.", 409);

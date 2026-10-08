@@ -83,6 +83,7 @@ public static class ShopMenuDtoFactory
                 ? null
                 : (ContractPriceRange)(int)menu.SuggestedPriceRange.Value,
             items,
-            photos);
+            photos,
+            menu.InputRevision);
     }
 }

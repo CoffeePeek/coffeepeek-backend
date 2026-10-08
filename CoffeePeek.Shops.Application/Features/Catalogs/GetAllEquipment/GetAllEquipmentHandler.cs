@@ -1,5 +1,4 @@
 using CoffeePeek.Contract.Dtos.Shop;
-using CoffeePeek.Shared.Domain.Interfaces.Infrastructure;
 using CoffeePeek.Shared.Kernel.Response;
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
 using MapsterMapper;
@@ -12,18 +11,10 @@ public class GetAllEquipmentHandler
         GetAllEquipmentCommand request,
         IQueryEquipmentRepository repository,
         IMapper mapper,
-        ICacheService redisService,
         CancellationToken cancellationToken)
     {
-        var cacheKey = CacheKey.Equipment.ListAll();
-        var result = await redisService.GetAsync<EquipmentDto[]>(cacheKey);
-
-        if (result == null)
-        {
-            var equipments = await repository.GetAll(cancellationToken);
-            result = mapper.Map<EquipmentDto[]>(equipments);
-            await redisService.SetAsync(cacheKey, result);
-        }
+        var equipments = await repository.GetAll(cancellationToken);
+        var result = mapper.Map<EquipmentDto[]>(equipments);
         
         var response = new GetAllEquipmentResponse(result);
 

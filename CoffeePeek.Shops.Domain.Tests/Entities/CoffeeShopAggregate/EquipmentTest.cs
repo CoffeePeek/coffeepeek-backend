@@ -17,7 +17,7 @@ public class EquipmentTest
         const string model = "Alpha A7 IV";
 
         // Act
-        var equipment = new Equipment(brand, model, _testCategory, isCustom: true, isPrimary: true);
+        var equipment = new Equipment(brand, model, _testCategory, isCustom: true);
 
         // Assert
         equipment.Id.Should().NotBeEmpty();
@@ -26,7 +26,6 @@ public class EquipmentTest
         equipment.Name.Should().Be($"{brand} {model}");
         equipment.Category.Should().Be(_testCategory);
         equipment.IsCustom.Should().BeTrue();
-        equipment.IsPrimary.Should().BeTrue();
     }
 
     [Theory]
@@ -55,32 +54,6 @@ public class EquipmentTest
         act.Should().Throw<ArgumentException>().WithMessage("Model name is required");
     }
     
-    [Fact]
-    public void MarkAsPrimary_ShouldSetIsPrimaryToTrue()
-    {
-        // Arrange
-        var equipment = new Equipment("Brand", "Model", _testCategory, isPrimary: false);
-
-        // Act
-        equipment.MarkAsPrimary();
-
-        // Assert
-        equipment.IsPrimary.Should().BeTrue();
-    }
-
-    [Fact]
-    public void UnmarkAsPrimary_ShouldSetIsPrimaryToFalse()
-    {
-        // Arrange
-        var equipment = new Equipment("Brand", "Model", _testCategory, isPrimary: true);
-
-        // Act
-        equipment.UnmarkAsPrimary();
-
-        // Assert
-        equipment.IsPrimary.Should().BeFalse();
-    }
-
     [Theory]
     [InlineData(true)]
     [InlineData(false)]

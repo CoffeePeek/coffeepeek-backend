@@ -28,6 +28,7 @@ public class ClaimCheckInPhotosHandler(IPhotoRepository repository, IStorageServ
         }).ToArray();
         if (ordered.Any(p => p == null || !GenerateShopPhotoHandler.IsSafePhotoContentType(p.ContentType)
                 || p.BucketType is not (BucketType.Shop or BucketType.CheckIn)
+                || p.ShopAttachmentId != null
                 || (p.CheckInId != null && p.CheckInId != request.CheckInId)
                 || (p.CheckInId == null && (p.Status != PhotoStatus.Pending || p.IsExpired))
                 || (p.CheckInId == request.CheckInId && p.Status is not (PhotoStatus.Pending or PhotoStatus.Confirmed)))

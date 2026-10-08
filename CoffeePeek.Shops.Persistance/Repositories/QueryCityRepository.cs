@@ -23,13 +23,3 @@ public class QueryCityRepository(ShopsDbContext dbContext) : IQueryCityRepositor
     public Task<City?> GetById(Guid id, CancellationToken ct = default) =>
         _repository.AsNoTracking().FirstOrDefaultAsync(c => c.Id == id, ct);
 }
-
-public class CityRepository(ShopsDbContext dbContext) : ICityRepository
-{
-    public Task<City?> GetByIdAsync(Guid id, CancellationToken ct = default) =>
-        dbContext.Cities.FirstOrDefaultAsync(c => c.Id == id, ct);
-
-    public void Add(City city) => dbContext.Cities.Add(city);
-
-    public void Remove(City city) => dbContext.Cities.Remove(city);
-}

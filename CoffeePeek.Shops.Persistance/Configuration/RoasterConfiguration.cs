@@ -61,6 +61,11 @@ public class RoasterConfiguration : IEntityTypeConfiguration<Roaster>
             location
                 .Property(l => l.CityId)
                 .HasColumnName(nameof(Location.CityId));
+            location.HasOne<City>()
+                .WithMany()
+                .HasForeignKey(l => l.CityId)
+                .OnDelete(DeleteBehavior.Restrict)
+                .HasConstraintName("FK_Roasters_Cities_CityId");
         });
     }
 }

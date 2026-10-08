@@ -44,6 +44,17 @@ public class CoffeeShopRepository(ShopsDbContext dbContext) : ICoffeeShopReposit
         return shop;
     }
 
+    public async Task ClearSupersededPrimaryEquipmentAsync(
+        Guid shopId, IReadOnlyCollection<Guid> equipmentIds, CancellationToken ct = default)
+    {
+        if (equipmentIds.Count == 0)
+            return;
+
+        await dbContext.ShopEquipments
+            .Where(a => a.ShopId == shopId && equipmentIds.Contains(a.EquipmentId) && a.IsPrimary)
+            .ExecuteUpdateAsync(update => update.SetProperty(a => a.IsPrimary, false), ct);
+    }
+
     public async Task<bool> TryAttachGalleryPhotosAsync(
         Guid shopId,
         Guid? ownerUserId,
@@ -62,9 +73,18 @@ public class CoffeeShopRepository(ShopsDbContext dbContext) : ICoffeeShopReposit
             .Select(p => (int?)p.SortIndex)
             .MaxAsync(ct) ?? -1;
 
+        var keys = photos.Select(p => p.StorageKey).ToArray();
+        var alreadyAttached = await dbContext.ShopPhotos
+            .Where(p => EF.Property<Guid?>(p, CoffeeShopIdShadow) == shopId
+                && keys.Contains(p.StorageKey))
+            .Select(p => p.StorageKey)
+            .ToArrayAsync(ct);
+        var existingKeys = alreadyAttached.ToHashSet(StringComparer.Ordinal);
+
         var nextIndex = maxSort + 1;
         foreach (var photo in photos)
         {
+            if (existingKeys.Contains(photo.StorageKey)) continue;
             photo.SetSortIndex(nextIndex++);
             dbContext.ShopPhotos.Add(photo);
             dbContext.Entry(photo).Property(CoffeeShopIdShadow).CurrentValue = shopId;
@@ -87,57 +107,10 @@ public class CoffeeShopRepository(ShopsDbContext dbContext) : ICoffeeShopReposit
     private async Task LoadCatalogsAsync(CoffeeShop shop, CancellationToken ct)
     {
         var entry = dbContext.Entry(shop);
-        await entry.Collection(s => s.Equipments).LoadAsync(ct);
+        await entry.Collection(s => s.ShopEquipments).Query()
+            .Include(a => a.Equipment).LoadAsync(ct);
         await entry.Collection(s => s.CoffeeBeans).LoadAsync(ct);
         await entry.Collection(s => s.Roasters).LoadAsync(ct);
         await entry.Collection(s => s.BrewMethods).LoadAsync(ct);
-    }
-}
-
-public class AdminCoffeeShopQueryRepository(ShopsDbContext dbContext) : IAdminCoffeeShopQueryRepository
-{
-    public async Task<(IReadOnlyList<CoffeeShop> Items, int TotalCount)> GetPagedAsync(
-        int page,
-        int pageSize,
-        string? search,
-        CoffeeShopStatus? status,
-        CancellationToken ct = default,
-        bool? importedFromFile = null)
-    {
-        var query = dbContext.Shops.AsNoTracking();
-
-        if (!string.IsNullOrWhiteSpace(search))
-        {
-            var term = search.Trim().ToLowerInvariant();
-            query = query.Where(s =>
-                s.Name.ToLower().Contains(term) ||
-                s.Location.Address.ToLower().Contains(term));
-        }
-
-        if (status.HasValue)
-            query = query.Where(s => s.Status == status.Value);
-
-        if (importedFromFile == true)
-            query = query.Where(s => s.ImportedFromFileAt != null);
-        else if (importedFromFile == false)
-            query = query.Where(s => s.ImportedFromFileAt == null);
-
-        var totalCount = await query.CountAsync(ct);
-        var items = await query
-            .OrderByDescending(s => s.CreatedAtUtc)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .ToListAsync(ct);
-
-        return (items, totalCount);
-    }
-
-    public async Task<IReadOnlyList<CoffeeShop>> GetByOwnerUserIdAsync(Guid ownerUserId, CancellationToken ct = default)
-    {
-        return await dbContext.Shops
-            .AsNoTracking()
-            .Where(s => s.OwnerUserId == ownerUserId)
-            .OrderBy(s => s.Name)
-            .ToListAsync(ct);
     }
 }

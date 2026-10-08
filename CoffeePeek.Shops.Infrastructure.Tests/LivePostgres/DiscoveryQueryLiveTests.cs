@@ -1,3 +1,4 @@
+using CoffeePeek.Contract.Dtos.Coffee;
 using CoffeePeek.Contract.Dtos.Discovery;
 using CoffeePeek.Shared.Kernel.Options;
 using CoffeePeek.Shops.Application.PublicAddresses;
@@ -51,11 +52,11 @@ public sealed class DiscoveryQueryLiveTests : IClassFixture<ShopsLiveDatabase>
         {
             source = new CoffeeProductSource { Product = p, CoffeeProductId = p.Id, SourceKey = "live.example", ExternalProductId = p.Id.ToString(),
                 SourceUrl = "https://live.example/coffee", LastSeenAtUtc = DateTime.UtcNow };
-            p.Sources.Add(source);
+            p.AttachSource(source);
         }
         var v = new CoffeeVariant { Source = source, CoffeeProductSourceId = source.Id, SourceKey = source.SourceKey,
             ExternalVariantId = Guid.NewGuid().ToString(), WeightGrams = weight, Price = price, Currency = "BYN", Availability = availability, CheckedAtUtc = DateTime.UtcNow };
-        v.SetBrewPurpose(brew, false); source.Variants.Add(v);
+        v.SetBrewPurpose(brew, false); source.AttachVariant(v);
     }
 
     [Fact]
@@ -76,6 +77,7 @@ public sealed class DiscoveryQueryLiveTests : IClassFixture<ShopsLiveDatabase>
         await store.ImportAsync(request, Ct);
         var source = await db.CoffeeProductSources.Include(s => s.Product).SingleAsync(s => s.Product.RoasterId == roaster.Id, Ct);
         source.Product.SetStatus(CoffeePublicationStatus.Published); await db.SaveChangesAsync(Ct);
+        var versionBeforeAvailabilityOnlyImport = source.Product.Version;
         request.SnapshotId = Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(Guid.NewGuid().ToByteArray()));
         request.Snapshot.CollectedAtUtc = request.Snapshot.CollectedAtUtc.AddMinutes(1);
         request.Snapshot.Products = [];
@@ -84,9 +86,65 @@ public sealed class DiscoveryQueryLiveTests : IClassFixture<ShopsLiveDatabase>
         var result = await store.ImportAsync(request, Ct);
         Assert.Equal(result.RunId, (await store.ImportAsync(request, Ct)).RunId);
         db.ChangeTracker.Clear();
-        Assert.Equal(CoffeePublicationStatus.Published, (await db.CoffeeProducts.SingleAsync(p => p.RoasterId == roaster.Id, Ct)).Status);
+        var persisted = await db.CoffeeProducts.SingleAsync(p => p.RoasterId == roaster.Id, Ct);
+        Assert.Equal(CoffeePublicationStatus.Published, persisted.Status);
+        Assert.True(persisted.Version > versionBeforeAvailabilityOnlyImport);
         Assert.All(await db.Set<CoffeeVariant>().Where(v => v.Source.CoffeeProductId == source.CoffeeProductId).ToArrayAsync(Ct),
             v => Assert.Equal(CoffeeAvailability.OutOfStock, v.Availability));
+    }
+
+    [Fact]
+    public async Task ReportedFailureResumesAtomicallyAndPinsPayloadHash_ExecuteInPostgres()
+    {
+        await using var db = fixture.Context(false);
+        var sourceKey = Key() + ".example";
+        var roaster = AddRoaster(db, Key());
+        await db.SaveChangesAsync(Ct);
+        var store = new CoffeeCatalogStore(db,
+            Options.Create(new MediaPublicUrlOptions { PublicEndpoint = "https://media.example" }),
+            Options.Create(new CoffeeImportOptions { Roasters = new() { [sourceKey] = new() { ["ROAST"] = roaster.Id } } }),
+            Mock.Of<IPublicAddressService>(), NullLogger<CoffeeCatalogStore>.Instance);
+        var request = CoffeeCatalogTests.Snapshot('a', DateTimeOffset.UtcNow.AddMinutes(-2));
+        request.SourceKey = sourceKey;
+        request.Snapshot.Source = "https://" + sourceKey + "/";
+        request.Snapshot.Products[0].SourceKey = sourceKey;
+        request.Snapshot.Products[0].SourceUrl = request.Snapshot.Source;
+        request.Snapshot.Products[0].SourceProductId = Key();
+        foreach (var variant in request.Snapshot.Products[0].Variants)
+            variant.ExternalVariantId = Key();
+        request.SnapshotId = Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(Guid.NewGuid().ToByteArray()));
+
+        await store.RecordFailureAsync(new CoffeeImportFailureDto(request.SourceKey, request.SnapshotId,
+            request.Snapshot.CollectedAtUtc, "photos", "retry"), Ct);
+        var result = await store.ImportAsync(request, Ct);
+        Assert.Equal("Applied", result.Status);
+        Assert.Equal(result.RunId, (await store.ImportAsync(request, Ct)).RunId);
+        db.ChangeTracker.Clear();
+        var run = await db.CoffeeImportRuns.SingleAsync(r => r.Id == result.RunId, Ct);
+        Assert.NotEqual(request.SnapshotId, run.PayloadHash);
+        Assert.Single(await db.CoffeeProducts.Where(p => p.RoasterId == roaster.Id).ToArrayAsync(Ct));
+    }
+
+    [Fact]
+    public async Task ConcurrentFailureReportsKeepOneRun_ExecuteInPostgres()
+    {
+        var sourceKey = Key() + ".example";
+        var snapshotId = Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(Guid.NewGuid().ToByteArray()));
+        var report = new CoffeeImportFailureDto(sourceKey, snapshotId,
+            DateTimeOffset.UtcNow.AddMinutes(-1), "collect", "collector unavailable");
+        await using var firstDb = fixture.Context(false);
+        await using var secondDb = fixture.Context(false);
+        CoffeeCatalogStore Store(ShopsDbContext db) => new(db,
+            Options.Create(new MediaPublicUrlOptions { PublicEndpoint = "https://media.example" }),
+            Options.Create(new CoffeeImportOptions { Roasters = new() { [sourceKey] = new() { ["ROAST"] = Guid.NewGuid() } } }),
+            Mock.Of<IPublicAddressService>(), NullLogger<CoffeeCatalogStore>.Instance);
+
+        await Task.WhenAll(Store(firstDb).RecordFailureAsync(report, Ct),
+            Store(secondDb).RecordFailureAsync(report, Ct));
+
+        await using var verify = fixture.Context(false);
+        Assert.Equal(1, await verify.CoffeeImportRuns.CountAsync(
+            run => run.SourceKey == sourceKey && run.SnapshotId == snapshotId, Ct));
     }
 
     [Fact]
@@ -170,7 +228,7 @@ public sealed class DiscoveryQueryLiveTests : IClassFixture<ShopsLiveDatabase>
         var draft = AddProduct(db, r, "Draft", "decaf", "light", brew: ["filter"]); draft.SetStatus(CoffeePublicationStatus.Draft); AddOffer(draft, 250, 5);
         await db.SaveChangesAsync(Ct);
         a.CreatedAtUtc = DateTime.UtcNow.AddDays(-2); b.CreatedAtUtc = DateTime.UtcNow.AddDays(-1);
-        a.Sources[0].LastSeenAtUtc = DateTime.UtcNow; b.Sources[0].LastSeenAtUtc = DateTime.UtcNow.AddHours(-1);
+        a.Sources.First().LastSeenAtUtc = DateTime.UtcNow; b.Sources.First().LastSeenAtUtc = DateTime.UtcNow.AddHours(-1);
         await db.SaveChangesAsync(Ct); db.ChangeTracker.Clear();
         var filter = new CoffeeFilters { Roasters = [r.PublicSlug!], Caffeine = ["decaf"], Roast = ["light"], Brew = ["filter"], Currency = "BYN", WeightGrams = 250, MaxPrice = 40 };
         var store = Store(db);

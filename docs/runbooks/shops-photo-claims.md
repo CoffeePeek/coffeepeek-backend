@@ -1,0 +1,22 @@
+# Recovering an abandoned shop photo claim
+
+Shop gallery and menu uploads are reserved in Media before Shops commits. A lost HTTP response or an uncertain Shops commit can leave a `Pending` Media photo with `ShopAttachmentId` and `ShopAttachmentKind`. The normal recovery is to retry the **same** shop, kind and storage key: Media returns the existing claim, and Shops either completes the write or observes that it already committed. Do not release a claim just because it is old. A committed Shops row or a delayed `ShopPhotosAttachedEvent` may still need it.
+
+The following is an **operator-only** exception path for a claim that cannot be completed. It requires a maintenance window. There is no automatic reaper and no public release API.
+
+1. Block new Shops writes at every ingress, including direct service traffic and imports. Let in-flight requests finish. While Shops and Media are still running, wait for the Shops outgoing Wolverine queue to drain (`SELECT count(*) FROM wolverine_outgoing_envelopes` in the Shops database), and inspect Media's `wolverine_incoming_envelopes` and RabbitMQ for unhandled `ShopPhotosAttachedEvent` deliveries. Handled inbox history may remain, so assess message status rather than requiring an empty inbox table. If a relevant delivery cannot drain or its state is uncertain, stop and investigate rather than releasing the claim.
+2. Stop ShopsService and MediaService. Confirm their PostgreSQL sessions have closed; this rules out an in-flight Shops transaction whose outcome is still ambiguous and prevents the Media finalizer from racing the release. Keep both stopped until the SQL transaction below finishes.
+3. In the **Shops** database, query the exact storage key across every published photo table. Any match blocks release, regardless of owner or parent ID:
+
+   ```sql
+   SELECT 'ShopPhotos' AS source, "Id" FROM "ShopPhotos" WHERE "StorageKey" = :'storage_key'
+   UNION ALL SELECT 'ShopMenuPhotos', "Id" FROM "ShopMenuPhotos" WHERE "StorageKey" = :'storage_key'
+   UNION ALL SELECT 'RoasterPhotos', "Id" FROM "RoasterPhotos" WHERE "StorageKey" = :'storage_key'
+   UNION ALL SELECT 'CoffeeProductPhotos', "Id" FROM "CoffeeProductPhotos" WHERE "StorageKey" = :'storage_key';
+   ```
+
+   Record the query result, timestamp and DB identity in the incident ticket. It must be empty. Also check the Shops outgoing envelope count is zero. If a row exists, restore delivery/finalization instead of releasing the claim.
+4. In the **Media** database, read the exact photo row by `Id` and record `OwnerId`, `StorageKey`, `ShopAttachmentId`, `ShopAttachmentKind`, `ClaimedAtUtc`, `Status`, `BucketType` and `CheckInId`. Only a `Pending` `Shop` bucket claim for `Gallery` or `Menu` is eligible. Pass those recorded values to [the conditional SQL script](../../dev/reconcile-shop-photo-claim.sql) as `psql -v` variables (`photo_id`, `owner_id`, `shop_id`, `kind`, `storage_key`, `claimed_at_utc`). Set `attestation=SHOPS_AND_MEDIA_STOPPED_ABSENCE_VERIFIED` only after steps 1–3. Run `psql -X -v ON_ERROR_STOP=1 ... -f dev/reconcile-shop-photo-claim.sql` against the **Media** database. The script locks the row and releases exactly one claim only if all recorded values still match and the claim is at least 48 hours old. A mismatch aborts and rolls back the transaction.
+5. Restart MediaService, then ShopsService and ingress. Watch the relevant Wolverine dead-letter queue and logs for a delayed `ShopPhotosAttachedEvent`. The Media consumer refuses to confirm a released claim, so an old event may fail visibly; investigate it against the recorded Shops snapshot. Do not reapply it blindly. The storage object is not deleted by this procedure; handle orphan object cleanup separately after retention review.
+
+The SQL script verifies only the Media row and the operator attestation; it cannot independently inspect the Shops database or prove services are stopped. This process cannot safely run while Shops writes or Media consumers are active, and an empty Shops query alone is insufficient proof. The four-table query reflects the current Shops schema and must be extended if new photo tables are added. It covers Gallery/Menu reservations only. Roaster photos currently have read-only owner verification but no durable reservation/finalization protocol. Claims for which the maintenance prerequisites cannot be proven must remain reserved for manual investigation.

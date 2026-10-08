@@ -26,6 +26,9 @@ public sealed class CoffeeShop : Entity<Guid>, IPublicSlugOwner
     public PriceRange PriceRange { get; private set; }
     public CoffeeFocusType? Type { get; private set; }
     public CoffeeShopStatus Status { get; private set; } = CoffeeShopStatus.Active;
+    public long ProfileRevision { get; private set; }
+
+    public void AdvanceProfileRevision() => ProfileRevision = checked(ProfileRevision + 1);
 
     /// <summary>
     /// Admin moderation flag, independent of the business status. Hiding used to overload TemporarilyClosed,
@@ -48,8 +51,9 @@ public sealed class CoffeeShop : Entity<Guid>, IPublicSlugOwner
     private readonly List<ShopPhoto> _shopPhotos = [];
     public IReadOnlyCollection<ShopPhoto> ShopPhotos => _shopPhotos.AsReadOnly();
 
-    private readonly List<Equipment> _equipments = [];
-    public IReadOnlyCollection<Equipment> Equipments => _equipments.AsReadOnly();
+    private readonly List<ShopEquipment> _shopEquipments = [];
+    public IReadOnlyCollection<ShopEquipment> ShopEquipments => _shopEquipments.AsReadOnly();
+    public IReadOnlyCollection<Equipment> Equipments => _shopEquipments.Select(x => x.Equipment).ToArray();
 
     private readonly List<CoffeeBean> _coffeeBeans = [];
     public IReadOnlyCollection<CoffeeBean> CoffeeBeans => _coffeeBeans.AsReadOnly();
@@ -70,6 +74,7 @@ public sealed class CoffeeShop : Entity<Guid>, IPublicSlugOwner
 
     public CoffeeShop(Guid? creatorId, string name, string? description, PriceRange priceRange, Guid moderationId)
     {
+        ThrowIfInvalid(ValidateDetails(name, description, priceRange));
         Id = Guid.NewGuid();
         CreatorId = creatorId;
         Name = name;
@@ -81,12 +86,12 @@ public sealed class CoffeeShop : Entity<Guid>, IPublicSlugOwner
     #region Domain Logic
 
     public bool IsNew => CreatedAtUtc > DateTime.UtcNow.AddDays(-BusinessConstants.ItNewEntityInDays);
-    public bool IsOpen => IsOpenAtUtc(DateTime.UtcNow);
+    public bool? IsOpen => IsOpenAtUtc(DateTime.UtcNow);
 
     /// <summary>
     /// Evaluates the shop against a weekly schedule expressed entirely in UTC.
     /// </summary>
-    public bool IsOpenAtUtc(DateTime utcNow)
+    public bool? IsOpenAtUtc(DateTime utcNow)
     {
         if (utcNow.Kind != DateTimeKind.Utc)
             throw new ArgumentException("Schedule must be evaluated with a UTC DateTime.", nameof(utcNow));
@@ -103,22 +108,58 @@ public sealed class CoffeeShop : Entity<Guid>, IPublicSlugOwner
         return ShopScheduleEvaluator.IsOpenAtUtc(Schedules, utcNow);
     }
     
+    public static Result ValidateDetails(string? name, string? description, PriceRange priceRange)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            return Result.Fail("Shop name is required.");
+
+        if (name.Length > BusinessConstants.MaxCoffeeShopNameLength)
+            return Result.Fail($"Shop name cannot exceed {BusinessConstants.MaxCoffeeShopNameLength} characters.");
+
+        if (description?.Length > BusinessConstants.MaxCoffeeShopDescriptionLength)
+            return Result.Fail($"Shop description cannot exceed {BusinessConstants.MaxCoffeeShopDescriptionLength} characters.");
+
+        return ValidatePriceRange(priceRange);
+    }
+
+    public static Result ValidatePriceRange(PriceRange priceRange) =>
+        Enum.IsDefined(priceRange) ? Result.Ok() : Result.Fail("Unknown shop price range.");
+
+    public static Result ValidateStatus(CoffeeShopStatus status) =>
+        Enum.IsDefined(status) ? Result.Ok() : Result.Fail("Unknown shop status.");
+
+    public static Result ValidateCoffeeFocus(CoffeeFocusType? focus) =>
+        focus is null || Enum.IsDefined(focus.Value) ? Result.Ok() : Result.Fail("Unknown shop coffee focus.");
+
+    private static void ThrowIfInvalid(Result validation)
+    {
+        if (validation.IsFailed)
+            throw new DomainException(validation.Errors[0].Message);
+    }
+
     public void UpdateDetails(string name, string? description, PriceRange priceRange)
     {
+        ThrowIfInvalid(ValidateDetails(name, description, priceRange));
         Name = name;
         Description = description;
         PriceRange = priceRange;
     }
 
-    public void SetPriceRange(PriceRange priceRange) => PriceRange = priceRange;
+    public void SetPriceRange(PriceRange priceRange)
+    {
+        ThrowIfInvalid(ValidatePriceRange(priceRange));
+        PriceRange = priceRange;
+    }
 
     public void SetStatus(CoffeeShopStatus status)
     {
+        ThrowIfInvalid(ValidateStatus(status));
         Status = status;
     }
 
     public void SetCoffeeFocus(CoffeeFocusType? focus)
     {
+        ThrowIfInvalid(ValidateCoffeeFocus(focus));
         Type = focus;
     }
 
@@ -303,38 +344,58 @@ public sealed class CoffeeShop : Entity<Guid>, IPublicSlugOwner
     
     public void AddEquipment(Equipment equipment)
     {
-        if (_equipments.Any(e => e.Brand == equipment.Brand && e.ModelName == equipment.ModelName))
+        if (_shopEquipments.Any(e => e.EquipmentId == equipment.Id
+                                    || e.Equipment.Brand == equipment.Brand && e.Equipment.ModelName == equipment.ModelName))
             return;
-        
-        if (equipment.IsPrimary)
-        {
-            foreach (var e in _equipments.Where(e => e.CategoryId == equipment.CategoryId))
-            {
-                e.UnmarkAsPrimary();
-            }
-        }
 
-        _equipments.Add(equipment);
+        _shopEquipments.Add(new ShopEquipment(Id, equipment));
     }
 
     public void RemoveEquipment(Guid equipmentId)
     {
-        var equipment = _equipments.FirstOrDefault(e => e.Id == equipmentId);
-        if (equipment != null)
-        {
-            _equipments.Remove(equipment);
-        }
+        var assignment = _shopEquipments.FirstOrDefault(e => e.EquipmentId == equipmentId);
+        if (assignment is not null)
+            _shopEquipments.Remove(assignment);
     }
 
     /// <summary>
-    /// Replaces the shop's equipment set. Duplicate brand+model entries are skipped by
-    /// <see cref="AddEquipment"/>. An empty sequence clears the collection.
+    /// Replaces the shop's equipment set. Existing primary choices survive for retained
+    /// equipment unless an explicit per-category selection is supplied.
     /// </summary>
-    public void SetEquipment(IEnumerable<Equipment> equipment)
+    public Result SetEquipment(IEnumerable<Equipment> equipment, IReadOnlyCollection<Guid>? primaryEquipmentIds = null)
     {
-        _equipments.Clear();
-        foreach (var item in equipment)
-            AddEquipment(item);
+        var selected = equipment.DistinctBy(e => e.Id).DistinctBy(e => (e.Brand, e.ModelName)).ToArray();
+        var primaryIds = primaryEquipmentIds?.ToArray()
+            ?? _shopEquipments.Where(e => e.IsPrimary && selected.Any(s => s.Id == e.EquipmentId))
+                .Select(e => e.EquipmentId).ToArray();
+        var validation = ValidateEquipmentSelection(selected, primaryIds);
+        if (validation.IsFailed)
+            return validation;
+
+        var selectedIds = selected.Select(e => e.Id).ToHashSet();
+        _shopEquipments.RemoveAll(e => !selectedIds.Contains(e.EquipmentId));
+        foreach (var item in selected)
+        {
+            if (_shopEquipments.All(e => e.EquipmentId != item.Id))
+                _shopEquipments.Add(new ShopEquipment(Id, item));
+        }
+        var chosen = primaryIds.ToHashSet();
+        foreach (var assignment in _shopEquipments)
+            assignment.SetPrimary(chosen.Contains(assignment.EquipmentId));
+        return Result.Ok();
+    }
+
+    public static Result ValidateEquipmentSelection(
+        IReadOnlyCollection<Equipment> equipment, IReadOnlyCollection<Guid> primaryEquipmentIds)
+    {
+        if (primaryEquipmentIds.Count != primaryEquipmentIds.Distinct().Count())
+            return Result.Fail("Primary equipment IDs must be distinct.");
+        var selected = equipment.ToDictionary(e => e.Id);
+        if (primaryEquipmentIds.Any(id => !selected.ContainsKey(id)))
+            return Result.Fail("Primary equipment must belong to this shop.");
+        if (primaryEquipmentIds.GroupBy(id => selected[id].CategoryId).Any(group => group.Count() > 1))
+            return Result.Fail("Only one primary equipment is allowed per category.");
+        return Result.Ok();
     }
     
     public void SetBrewMethods(IEnumerable<BrewMethod> methods)
@@ -362,7 +423,7 @@ public sealed class CoffeeShop : Entity<Guid>, IPublicSlugOwner
 
     /// <summary>
     /// Replaces the weekly schedule. Duplicate days are rejected. Empty list means no hours stored
-    /// (treated as always open when the shop is <see cref="CoffeeShopStatus.Active"/>).
+    /// and the opening state of an active shop is unknown.
     /// </summary>
     public Result ReplaceSchedules(IReadOnlyList<ShopSchedule> schedules)
     {

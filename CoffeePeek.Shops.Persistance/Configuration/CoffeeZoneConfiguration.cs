@@ -27,25 +27,10 @@ public sealed class CoffeeZoneConfiguration : IEntityTypeConfiguration<CoffeeZon
         builder.Property(z => z.Color).HasMaxLength(7).HasDefaultValue(CoffeeZone.DefaultColor).IsRequired();
         builder.Property(z => z.CenterLatitude).HasPrecision(BusinessConstants.MaxLocationPrecision, BusinessConstants.MaxLocationScale);
         builder.Property(z => z.CenterLongitude).HasPrecision(BusinessConstants.MaxLocationPrecision, BusinessConstants.MaxLocationScale);
-        builder.ComplexCollection(z => z.Polygon, polygon => polygon.ToJson());
+        builder.ComplexCollection(z => z.Polygon, polygon => polygon.ToJson())
+            .UsePropertyAccessMode(PropertyAccessMode.Field);
         builder.HasIndex(z => new { z.CityId, z.Status });
-        builder.HasOne<City>().WithMany().HasForeignKey(z => z.CityId).OnDelete(DeleteBehavior.Restrict);
-    }
-}
-
-public sealed class CoffeeZoneMembershipOverrideConfiguration : IEntityTypeConfiguration<CoffeeZoneMembershipOverride>
-{
-    public void Configure(EntityTypeBuilder<CoffeeZoneMembershipOverride> builder)
-    {
-        builder.ToTable("CoffeeZoneMembershipOverrides", table =>
-            table.HasCheckConstraint("CK_CoffeeZoneMembershipOverrides_Kind", "\"Kind\" BETWEEN 0 AND 2"));
-        builder.HasKey(x => new { x.ZoneId, x.ShopId });
-        builder.HasOne<CoffeeZone>().WithMany().HasForeignKey(x => x.ZoneId).OnDelete(DeleteBehavior.Cascade);
-        builder.HasOne<CoffeeShop>().WithMany().HasForeignKey(x => x.ShopId).OnDelete(DeleteBehavior.Cascade);
-        builder.HasIndex(x => x.ShopId);
-        builder.HasIndex(x => x.ShopId)
-            .IsUnique()
-            .HasFilter("\"Kind\" = 2")
-            .HasDatabaseName("UX_CoffeeZoneMembershipOverrides_PrimaryShop");
+        builder.HasOne<City>().WithMany().HasForeignKey(z => z.CityId).OnDelete(DeleteBehavior.Restrict)
+            .HasConstraintName("FK_CoffeeZones_Cities_CityId");
     }
 }

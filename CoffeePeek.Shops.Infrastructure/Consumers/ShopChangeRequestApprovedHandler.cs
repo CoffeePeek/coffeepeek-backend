@@ -1,26 +1,43 @@
 using CoffeePeek.Contract.Events.Moderation;
 using CoffeePeek.Contract.Events.Shops;
+using CoffeePeek.Contract.Events;
+using CoffeePeek.Contract.Dtos.ShopPhotos;
 using CoffeePeek.Shared.Domain.Interfaces.Infrastructure;
 using CoffeePeek.Shared.Kernel;
 using CoffeePeek.Shared.Kernel.Exceptions;
+using CoffeePeek.Shops.Application.Services;
+using CoffeePeek.Shops.Application.Abstractions;
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
-using CoffeePeek.Shops.Domain.Aggregates.MenuAggregate;
 using CoffeePeek.Shops.Domain.Entities;
 using CoffeePeek.Shops.Persistance.Configuration;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using DomainAvailability = CoffeePeek.Shops.Domain.Aggregates.MenuAggregate.MenuItemAvailability;
-using DomainSource = CoffeePeek.Shops.Domain.Aggregates.MenuAggregate.MenuItemSource;
+using Wolverine;
 
 namespace CoffeePeek.Shops.Infrastructure.Consumers;
 
 public class ShopChangeRequestApprovedHandler(
     ShopsDbContext dbContext,
     ICacheService cacheService,
-    ILogger<ShopChangeRequestApprovedHandler> logger)
+    ILogger<ShopChangeRequestApprovedHandler> logger,
+    IApplyApprovedShopMenuChangeService menuChanges,
+    IUploadedPhotoLookup photoLookup,
+    IMessageBus bus)
 {
     public async Task<ShopChangeRequestApplyFailedV1?> Handle(ShopChangeRequestApprovedV1 message, CancellationToken ct)
     {
+        if (message.Section == CoffeePeek.Contract.Enums.ShopChangeSection.Menu)
+        {
+            var failure = await menuChanges.ApplyAsync(message, ct);
+            if (failure is null)
+                logger.LogInformation("Applied or replayed Menu change request {RequestId} for shop {ShopId}",
+                    message.RequestId, message.ShopId);
+            else
+                logger.LogWarning("Menu change request {RequestId} for shop {ShopId} was rejected: {Reason}",
+                    message.RequestId, message.ShopId, failure.Reason);
+            return failure;
+        }
+
         if (await dbContext.AppliedShopChangeRequests.AnyAsync(x => x.Id == message.RequestId, ct))
         {
             logger.LogInformation("Shop change request {RequestId} was already applied", message.RequestId);
@@ -35,7 +52,7 @@ public class ShopChangeRequestApprovedHandler(
                 .AsSplitQuery()
                 .Include(x => x.ShopPhotos)
                 .Include(x => x.ShopTags)
-                .Include(x => x.Equipments)
+                .Include(x => x.ShopEquipments).ThenInclude(x => x.Equipment)
                 .Include(x => x.Roasters)
                 .Include(x => x.BrewMethods)
                 .FirstOrDefaultAsync(x => x.Id == message.ShopId, ct)
@@ -65,16 +82,22 @@ public class ShopChangeRequestApprovedHandler(
                         dbContext.BrewMethods, message.Payload.BrewMethodIds, "brew methods", ct));
                     break;
                 case CoffeePeek.Contract.Enums.ShopChangeSection.Photos:
-                    ApplyGallery(shop, message.Payload.Photos, message.SubmittedByUserId);
-                    break;
-                case CoffeePeek.Contract.Enums.ShopChangeSection.Menu:
-                    await ApplyMenu(message, ct);
+                    var newPhotoKeys = await ApplyGalleryAsync(shop, message.Payload.Photos,
+                        message.SubmittedByUserId, ct);
+                    if (newPhotoKeys.Length > 0)
+                        await bus.PublishAsync(new ShopPhotosAttachedEvent(message.SubmittedByUserId,
+                            shop.Id, ShopPhotoAttachmentKind.Gallery, newPhotoKeys));
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(message.Section));
             }
+
+            // Moderation writes the same published profile as admin and owner PUTs.
+            // Advancing its concurrency token makes an older If-Match unusable.
+            shop.AdvanceProfileRevision();
         }
-        catch (Exception ex) when (ex is DomainException or NotFoundException or ArgumentException)
+        catch (Exception ex) when (ex is DomainException or NotFoundException or ArgumentException
+            or ValidationException)
         {
             dbContext.ChangeTracker.Clear();
             logger.LogWarning(ex,
@@ -128,10 +151,11 @@ public class ShopChangeRequestApprovedHandler(
         return items;
     }
 
-    private void ApplyGallery(
+    private async Task<string[]> ApplyGalleryAsync(
         CoffeeShop shop,
         CoffeePeek.Contract.Dtos.CoffeeShop.ShopChangeGalleryDto? gallery,
-        Guid submittedByUserId)
+        Guid submittedByUserId,
+        CancellationToken ct)
     {
         if (gallery is null) throw new DomainException("Photos payload is required.");
         var retained = gallery.RetainedPhotoIds ?? [];
@@ -139,63 +163,24 @@ public class ShopChangeRequestApprovedHandler(
         if (retained.Any(id => !currentIds.Contains(id)))
             throw new DomainException("One or more retained gallery photos do not belong to this shop.");
 
+        var newPhotos = gallery.NewPhotos ?? [];
+        var claimed = newPhotos.Count == 0 ? [] : await TrustedUploadedShopPhotos.ClaimAsync(
+            photoLookup, submittedByUserId, shop.Id, ShopPhotoAttachmentKind.Gallery, newPhotos, ct);
+
         var removed = shop.ShopPhotos.Where(x => !retained.Contains(x.Id)).ToList();
         dbContext.ShopPhotos.RemoveRange(removed);
         var result = shop.RemovePhotos(removed.Select(x => x.Id).ToList());
         if (result.IsFailed) throw new DomainException(result.Errors[0].Message);
 
-        var added = (gallery.NewPhotos ?? [])
-            .Select(x => new ShopPhoto(x.FileName, x.ContentType, x.StorageKey, x.Size, submittedByUserId))
+        var added = claimed
+            .Select(x => new ShopPhoto(x.FileName, x.ContentType, x.StorageKey, x.SizeBytes,
+                submittedByUserId, id: x.PhotoId))
             .ToList();
         shop.AddPhotos(added);
         dbContext.ShopPhotos.AddRange(added);
         var reordered = shop.ReorderPhotos(retained.Concat(added.Select(x => x.Id)).ToList());
         if (reordered.IsFailed) throw new DomainException(reordered.Errors[0].Message);
+        return claimed.Select(p => p.StorageKey).ToArray();
     }
 
-    private async Task ApplyMenu(ShopChangeRequestApprovedV1 message, CancellationToken ct)
-    {
-        var change = message.Payload.Menu ?? throw new DomainException("Menu payload is required.");
-        var definitions = await dbContext.CoffeeDrinkDefinitions
-            .Where(x => x.IsActive)
-            .ToListAsync(ct);
-        var bySlug = definitions.ToDictionary(x => x.Slug, StringComparer.OrdinalIgnoreCase);
-
-        var items = new List<ShopMenuItem>();
-        foreach (var row in change.Items ?? [])
-        {
-            if (!bySlug.TryGetValue(row.Slug, out var definition))
-                throw new DomainException($"Coffee drink '{row.Slug}' was not found.");
-            items.Add(ShopMenuItem.Create(
-                definition.Id,
-                (DomainAvailability)(int)row.Availability,
-                row.Price,
-                row.VolumeMl,
-                DomainSource.Manual));
-        }
-
-        var menu = await dbContext.ShopMenus
-            .Include(x => x.Items)
-            .Include(x => x.Photos)
-            .FirstOrDefaultAsync(x => x.CoffeeShopId == message.ShopId, ct);
-        if (menu is null)
-        {
-            if ((change.RetainedPhotoIds?.Count ?? 0) > 0)
-                throw new DomainException("Cannot retain photos because this shop has no menu.");
-            menu = ShopMenu.Create(message.ShopId);
-            dbContext.ShopMenus.Add(menu);
-        }
-
-        var retainedIds = change.RetainedPhotoIds ?? [];
-        var photosById = menu.Photos.ToDictionary(x => x.Id);
-        if (retainedIds.Any(id => !photosById.ContainsKey(id)))
-            throw new DomainException("One or more retained menu photos do not belong to this shop.");
-
-        menu.MarkManuallyCaptured(message.ApprovedAtUtc);
-        menu.ApplyParsedItems(items, menu.UnmatchedJson, menu.SuggestedPriceRange, message.ApprovedByUserId);
-        var photos = retainedIds.Select(id => photosById[id]).Concat(
-            (change.NewPhotos ?? []).Select(x => ShopMenuPhoto.Create(
-                x.FileName, x.ContentType, x.StorageKey, x.Size)));
-        menu.ReplacePhotos(photos);
-    }
 }

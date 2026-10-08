@@ -22,7 +22,7 @@ public record CoffeeShopDetailsDto
 
 
     public bool IsVisited { get; init; }
-    public bool IsOpen { get; init; }
+    public bool? IsOpen { get; init; }
     public bool IsNew { get; init; }
     public int DataCompletenessScore { get; init; }
     public PriceRange PriceRange { get; init; }

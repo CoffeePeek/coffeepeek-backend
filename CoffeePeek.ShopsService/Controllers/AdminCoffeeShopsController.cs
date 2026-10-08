@@ -1,5 +1,6 @@
 using CoffeePeek.Shared.Auth;
 using CoffeePeek.Shared.Auth.Constants;
+using CoffeePeek.Shared.Kernel.Exceptions;
 using CoffeePeek.Shared.Kernel.Response;
 using CoffeePeek.Shops.Application.Features.Admin.Menu;
 using CoffeePeek.Shops.Application.Features.Admin.Shops;
@@ -8,6 +9,7 @@ using CoffeePeek.Shops.Application.Features.Admin.Shops.SetShopTags;
 using CoffeePeek.Shops.Application.Features.CoffeeShop.ShopProfile;
 using CoffeePeek.ShopsService.Controllers.Admin;
 using CoffeePeek.Contract.Dtos.Menu;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Wolverine;
@@ -59,12 +61,19 @@ public class AdminCoffeeShopsController(IMessageBus bus, IUserContext userContex
 
     [HttpPut("{id:guid}")]
     [ProducesResponseType<Response<AdminPublishedShopDto>>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> UpdateShop(
         Guid id,
         [FromBody] UpdateAdminCoffeeShopRequest request,
-        CancellationToken ct)
+        CancellationToken ct,
+        [FromHeader(Name = "If-Match")] string? ifMatch = null)
     {
+        if (!ShopProfileRevisionHeader.TryParse(ifMatch, out var expectedRevision))
+            return ShopMutationResult(Response<AdminPublishedShopDto>.Error(
+                System.Net.HttpStatusCode.BadRequest, "If-Match must contain a nonnegative profile revision."));
+
         var command = new UpdateAdminCoffeeShopCommand(
             id,
             request.Name,
@@ -92,9 +101,32 @@ public class AdminCoffeeShopsController(IMessageBus bus, IUserContext userContex
                     request.Catalogs.EquipmentIds,
                     request.Catalogs.BeanIds,
                     request.Catalogs.RoasterIds,
-                    request.Catalogs.BrewMethodIds));
-        var response = await bus.InvokeAsync<Response<AdminPublishedShopDto>>(command, ct);
-        return ShopMutationResult(response);
+                    request.Catalogs.BrewMethodIds))
+        {
+            ExpectedRevision = expectedRevision
+        };
+        try
+        {
+            var response = await bus.InvokeAsync<Response<AdminPublishedShopDto>>(command, ct);
+            return ShopMutationResult(response);
+        }
+        catch (NotFoundException ex)
+        {
+            return ShopMutationResult(Response<AdminPublishedShopDto>.Error(System.Net.HttpStatusCode.NotFound, ex.Message));
+        }
+        catch (ValidationException ex)
+        {
+            return ShopMutationResult(Response<AdminPublishedShopDto>.Error(System.Net.HttpStatusCode.BadRequest, ex.Message));
+        }
+        catch (ConflictException ex)
+        {
+            return ShopMutationResult(Response<AdminPublishedShopDto>.Error(System.Net.HttpStatusCode.Conflict, ex.Message));
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            return ShopMutationResult(Response<AdminPublishedShopDto>.Error(
+                System.Net.HttpStatusCode.Conflict, "Shop profile changed; reload and retry."));
+        }
     }
 
     [HttpPatch("{id:guid}/visibility")]

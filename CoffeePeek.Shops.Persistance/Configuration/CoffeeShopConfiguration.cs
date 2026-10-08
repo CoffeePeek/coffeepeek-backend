@@ -14,6 +14,7 @@ public class CoffeeShopConfiguration : IEntityTypeConfiguration<CoffeeShop>
         builder.Property(x => x.Name).HasMaxLength(BusinessConstants.MaxCoffeeShopNameLength);
         builder.Property(x => x.Description).HasMaxLength(BusinessConstants.MaxCoffeeShopDescriptionLength);
         builder.Property(x => x.Type);
+        builder.Property(x => x.ProfileRevision).HasDefaultValue(0L).IsConcurrencyToken();
         builder.Property(x => x.DataCompletenessScore)
             .HasDefaultValue((short)0);
         builder.ToTable(table => table.HasCheckConstraint(
@@ -99,6 +100,11 @@ public class CoffeeShopConfiguration : IEntityTypeConfiguration<CoffeeShop>
             location
                 .Property(l => l.CityId)
                 .HasColumnName(nameof(Location.CityId));
+            location.HasOne<City>()
+                .WithMany()
+                .HasForeignKey(l => l.CityId)
+                .OnDelete(DeleteBehavior.Restrict)
+                .HasConstraintName("FK_Shops_Cities_CityId");
         });
 
         builder.OwnsMany(e => e.Schedules, schedules =>
@@ -144,14 +150,7 @@ public class CoffeeShopConfiguration : IEntityTypeConfiguration<CoffeeShop>
                 j => j.HasOne<CoffeeShop>().WithMany().HasForeignKey("CoffeeShopId")
                 );
 
-        builder
-            .HasMany(u => u.Equipments)
-            .WithMany()
-            .UsingEntity<Dictionary<string, object>>(
-                "CoffeeShopEquipments",
-                j => j.HasOne<Equipment>().WithMany().HasForeignKey("EquipmentId"),
-                j => j.HasOne<CoffeeShop>().WithMany().HasForeignKey("CoffeeShopId")
-            );
+        builder.Ignore(s => s.Equipments);
 
         #endregion
     }
