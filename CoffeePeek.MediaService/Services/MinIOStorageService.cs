@@ -235,6 +235,13 @@ public class MinIOStorageService : IStorageService, IDisposable
         finally { PolicyLock.Release(); }
     }
 
+    /// <summary>Retire historical public check-in bytes and deny old object/version locators.</summary>
+    public async Task DeleteHistoricalCheckInObjectAsync(string key, CancellationToken ct = default)
+    {
+        await DenyOldObjectAsync(key, ct);
+        await Delete(key, BucketType.Shop, ct);
+    }
+
     private async Task<byte[]> HashAsync(string key, BucketType bucket, CancellationToken ct)
     {
         byte[] hash = [];

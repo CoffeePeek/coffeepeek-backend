@@ -28,7 +28,7 @@ Visibility defaults to `0` (`Private`, author only); `1` (`Public`) requests mod
 | `DELETE /api/v1/check-ins/{id}` | Author soft deletion; remove public eligibility and rating contribution immediately. |
 | `GET /api/v1/check-ins` | Public cursor feed; optional `citySlug`, `coffeeShopSlug`, `authorSlug`, `pageSize` (1–100) and opaque `cursor`. |
 | `PUT` / `DELETE /api/v1/check-ins/{id}/helpful` | Idempotent vote on eligible public content; authors cannot vote on their own visit. |
-| `POST /api/v1/check-ins/{id}/reports` | Report current approved public content; reporter identity comes from authentication. Historical report audit remains available to administrators. |
+| `POST /api/v1/check-ins/{id}/reports` | Report current approved public content; reporter identity comes from authentication. Historical report audit remains available to administrators; accepted reviews rebind to the transferred check-in, and unmapped reports keep their original target UUID even when the target is missing. |
 | `GET /api/v1/check-ins/{id}/photos/{photoId}` | Protected photo bytes; current author/public visibility checked on every request. |
 | `GET /api/v1/check-ins/{id}/moderation-photos/{photoId}?revision=N` | Moderator-only bytes for the current public submission revision. Private, deleted and stale revisions are inaccessible. |
 
@@ -59,4 +59,4 @@ The moderator policy protects every `/api/v1/moderation/check-ins` action. Snaps
 
 Status values are `Pending`, `Approved` and `Rejected`. A rejection requires a reason. Snapshot photo URLs always point to the protected canonical moderation-photo route.
 
-The former v2 check-in routes, unversioned check-in/review APIs, review upload action and review submission/edit adapters are removed. No compatibility aliases remain. The additive forward schema and preserved legacy archives are documented in [the migration guide](../migrations/unified-check-ins.md).
+The former v2 check-in routes, unversioned check-in/review APIs, review upload action and review submission/edit adapters are removed. No compatibility aliases remain. Legacy data transfer and permanent archive cleanup are documented in [the migration guide](../migrations/unified-check-ins.md).

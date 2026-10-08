@@ -15,6 +15,7 @@ public class AdditiveCanonicalSchemaTests
         using var db = new ShopsDbContext(new DbContextOptionsBuilder<ShopsDbContext>()
             .UseNpgsql("Host=127.0.0.1;Port=1;Database=design_only;Username=test;Password=test").Options);
         var script = db.GetService<IMigrator>().GenerateScript("20261007065353_AddDominicanCoffeeOrigin",
+            "20261007133435_CanonicalCheckInsOnMain",
             options: MigrationsSqlGenerationOptions.Idempotent);
         Assert.Contains("CREATE TABLE \"CanonicalCheckIns\"", script);
         Assert.Contains("CREATE TABLE \"CheckInHelpfulVotes\"", script);

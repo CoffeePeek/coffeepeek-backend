@@ -21,6 +21,13 @@ until docker compose exec -T postgres pg_isready -U "${POSTGRES_USER}" >/dev/nul
 done
 
 if [[ "${SKIP_MIGRATIONS:-}" != "1" ]]; then
+  legacy_tables=$(docker compose exec -T postgres psql -U "${POSTGRES_USER}" -d cpshopsdb -Atc \
+    "SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name IN ('CheckIns','Reviews'))")
+  if [[ "${legacy_tables}" == "t" ]]; then
+    echo "==> Stopping application writers for legacy check-in transfer..."
+    docker compose stop gateway account shops moderation media
+    # On failure keep writers stopped; rerun ci-deploy.sh to finish and restart.
+  fi
   echo "==> Applying EF Core migrations via Docker..."
   docker run --rm \
     --network coffeepeek_default \
@@ -30,6 +37,9 @@ if [[ "${SKIP_MIGRATIONS:-}" != "1" ]]; then
     -e POSTGRES_PASSWORD \
     -e PG_HOST=postgres \
     -e PG_PORT=5432 \
+    -e MINIO_ROOT_USER \
+    -e MINIO_ROOT_PASSWORD \
+    -e MinIOOptions__Endpoint=http://minio:9000 \
     -e ASPNETCORE_ENVIRONMENT=Production \
     -e DOTNET_CLI_TELEMETRY_OPTOUT=1 \
     mcr.microsoft.com/dotnet/sdk:10.0 \

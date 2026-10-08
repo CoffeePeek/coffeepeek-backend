@@ -9,10 +9,12 @@
     <Project Path="CoffePeek.ServiceDefaults/CoffePeek.ServiceDefaults.csproj" />
   </Folder>
   <Folder Name="/CoffeePeek/">
+    <Project Path="CoffeePeek.LegacyCheckInMigration/CoffeePeek.LegacyCheckInMigration.csproj" />
     <Project Path="CoffeePeek.Gateway/CoffeePeek.Gateway.csproj" />
     <Project Path="CoffeePeek.MediaService/CoffeePeek.MediaService.csproj" />
   </Folder>
   <Folder Name="/CoffeePeek/Tests/">
+    <Project Path="CoffeePeek.LegacyCheckInMigration.Tests/CoffeePeek.LegacyCheckInMigration.Tests.csproj" />
     <Project Path="CoffeePeek.Gateway.Tests/CoffeePeek.Gateway.Tests.csproj" />
     <Project Path="CoffeePeek.MediaService.Tests/CoffeePeek.MediaService.Tests.csproj" />
   </Folder>
