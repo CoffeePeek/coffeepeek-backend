@@ -30,7 +30,7 @@ public sealed class ShopEquipmentLiveTests : IClassFixture<ShopsLiveDatabase>
             Assert.False(seed.Database.HasPendingModelChanges());
             seed.Cities.Add(city);
             seed.EquipmentCategories.Add(category);
-            seed.Entry(category).Property(x => x.Name).CurrentValue = "equipment-category-" + Guid.NewGuid().ToString("N");
+            seed.Entry(category).Property(x => x.Name).CurrentValue = "equip-cat-" + Guid.NewGuid().ToString("N");
             await seed.SaveChangesAsync(Ct);
 
             first = new Equipment("Primary", "A", category);
@@ -63,7 +63,7 @@ public sealed class ShopEquipmentLiveTests : IClassFixture<ShopsLiveDatabase>
         await using var db = _fixture.Context(false);
         db.Cities.Add(city);
         db.EquipmentCategories.Add(category);
-        db.Entry(category).Property(x => x.Name).CurrentValue = "equipment-conflict-category-" + Guid.NewGuid().ToString("N");
+        db.Entry(category).Property(x => x.Name).CurrentValue = "equip-conflict-" + Guid.NewGuid().ToString("N");
         await db.SaveChangesAsync(Ct);
         var first = new Equipment("Conflict", "A", category);
         var second = new Equipment("Conflict", "B", category);
@@ -90,7 +90,7 @@ public sealed class ShopEquipmentLiveTests : IClassFixture<ShopsLiveDatabase>
         {
             seed.Cities.Add(city);
             seed.EquipmentCategories.Add(category);
-            seed.Entry(category).Property(x => x.Name).CurrentValue = "equipment-switch-category-" + Guid.NewGuid().ToString("N");
+            seed.Entry(category).Property(x => x.Name).CurrentValue = "equip-switch-" + Guid.NewGuid().ToString("N");
             await seed.SaveChangesAsync(Ct);
             var first = new Equipment("Switch", "A", category);
             var second = new Equipment("Switch", "B", category);
@@ -133,7 +133,7 @@ public sealed class ShopEquipmentLiveTests : IClassFixture<ShopsLiveDatabase>
         {
             seed.Cities.Add(city);
             seed.EquipmentCategories.Add(category);
-            seed.Entry(category).Property(x => x.Name).CurrentValue = "equipment-legacy-category-" + Guid.NewGuid().ToString("N");
+            seed.Entry(category).Property(x => x.Name).CurrentValue = "equip-legacy-" + Guid.NewGuid().ToString("N");
             await seed.SaveChangesAsync(Ct);
             var equipment = new Equipment("Legacy", "A", category);
             var shop = ShopsLiveDatabase.NewShop("equipment-legacy-shop", city.Id);
@@ -196,7 +196,13 @@ public sealed class ShopEquipmentLiveTests : IClassFixture<ShopsLiveDatabase>
         persisted.Update(persisted.Brand, persisted.ModelName,
             await update.EquipmentCategories.SingleAsync(x => x.Id == replacement.Id, Ct));
 
-        var error = await Assert.ThrowsAsync<DbUpdateException>(() => update.SaveChangesAsync(Ct));
-        Assert.True(ShopEquipmentConstraintViolation.Matches(error));
+        var trackedError = await Assert.ThrowsAsync<InvalidOperationException>(() => update.SaveChangesAsync(Ct));
+        Assert.Contains(nameof(Equipment.CategoryId), trackedError.Message);
+
+        await using var direct = _fixture.Context(false);
+        var databaseError = await Assert.ThrowsAsync<PostgresException>(() =>
+            direct.Database.ExecuteSqlInterpolatedAsync(
+                $"UPDATE \"Equipments\" SET \"CategoryId\" = {replacement.Id} WHERE \"Id\" = {equipmentId}", Ct));
+        Assert.Equal(PostgresErrorCodes.ForeignKeyViolation, databaseError.SqlState);
     }
 }

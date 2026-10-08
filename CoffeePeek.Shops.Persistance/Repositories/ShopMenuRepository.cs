@@ -88,8 +88,6 @@ public class ShopMenuRepository(ShopsDbContext dbContext) : IShopMenuRepository
             throw new ConflictException("Menu changed during manual update; reload and retry.", statusCode: 409);
         }
 
-        if (localTransaction is not null)
-            await localTransaction.CommitAsync(ct);
         await dbContext.Entry(menu).ReloadAsync(ct);
 
         // ExecuteSql bypasses EF's change tracker. Discard only the stale menu item entries,
@@ -104,6 +102,9 @@ public class ShopMenuRepository(ShopsDbContext dbContext) : IShopMenuRepository
         backingItems.Clear();
         collection.IsLoaded = false;
         await collection.LoadAsync(ct);
+
+        if (localTransaction is not null)
+            await localTransaction.CommitAsync(ct);
 
         return menu;
     }
