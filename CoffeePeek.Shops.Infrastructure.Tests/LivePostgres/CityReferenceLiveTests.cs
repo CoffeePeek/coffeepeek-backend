@@ -30,7 +30,7 @@ public sealed class CityReferenceLiveTests : IClassFixture<ShopsLiveDatabase>
     [InlineData("zone")]
     public async Task ReferencedCityCannotBeDeleted(string reference)
     {
-        var city = new City("Referenced city " + Guid.NewGuid());
+        var city = new City("Ref city " + Guid.NewGuid());
         await using (var db = _fixture.Context(false))
         {
             Assert.False(db.Database.HasPendingModelChanges());
@@ -78,7 +78,7 @@ public sealed class CityReferenceLiveTests : IClassFixture<ShopsLiveDatabase>
     [Fact]
     public async Task ForeignKeyFailureRollsBackToSavepointAndLeavesTransactionUsable()
     {
-        var city = new City("Savepoint city " + Guid.NewGuid());
+        var city = new City("Save city " + Guid.NewGuid());
         await using (var db = _fixture.Context(false))
         {
             db.Cities.Add(city);
@@ -86,7 +86,7 @@ public sealed class CityReferenceLiveTests : IClassFixture<ShopsLiveDatabase>
             await db.SaveChangesAsync(Ct);
         }
 
-        var marker = new City("Savepoint marker " + Guid.NewGuid());
+        var marker = new City("Save marker " + Guid.NewGuid());
         await using (var db = _fixture.Context(false))
         await using (var tx = await db.Database.BeginTransactionAsync(Ct))
         {
@@ -113,7 +113,7 @@ public sealed class CityReferenceLiveTests : IClassFixture<ShopsLiveDatabase>
     [InlineData("zone")]
     public async Task ConcurrentReferenceInsertWins_CityDeleteWaitsThenReturnsConflict(string reference)
     {
-        var city = new City("Concurrent reference city " + Guid.NewGuid());
+        var city = new City("Concurrent " + Guid.NewGuid());
         await using (var seed = _fixture.Context(false))
         {
             seed.Cities.Add(city);

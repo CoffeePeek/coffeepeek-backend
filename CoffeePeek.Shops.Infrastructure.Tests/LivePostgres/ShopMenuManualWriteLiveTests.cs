@@ -41,7 +41,7 @@ public sealed class ShopMenuManualWriteLiveTests : IClassFixture<ShopsLiveDataba
     public async Task WolverineMenuUpdate_CacheFailureAfterRawUpsert_RollsBackSql()
     {
         var ct = TestContext.Current.CancellationToken;
-        var city = new City("menu-rollback-city-" + Guid.NewGuid().ToString("N"));
+        var city = new City("menu-rollback-" + Guid.NewGuid().ToString("N"));
         var shop = ShopsLiveDatabase.NewShop("menu-rollback-" + Guid.NewGuid().ToString("N"), city.Id);
         string slug;
         Guid drinkId;
@@ -136,7 +136,7 @@ public sealed class ShopMenuManualWriteLiveTests : IClassFixture<ShopsLiveDataba
     public async Task InvalidLaterRow_DoesNotExecuteEarlierSqlUpsert()
     {
         var ct = TestContext.Current.CancellationToken;
-        var city = new City("menu-validation-city-" + Guid.NewGuid().ToString("N"));
+        var city = new City("menu-validate-" + Guid.NewGuid().ToString("N"));
         var shop = ShopsLiveDatabase.NewShop("menu-validation-" + Guid.NewGuid().ToString("N"), city.Id);
         var menu = ShopMenu.Create(shop.Id);
         Guid validDrinkId;
@@ -176,7 +176,7 @@ public sealed class ShopMenuManualWriteLiveTests : IClassFixture<ShopsLiveDataba
     public async Task SqlUpsert_RefreshesPreviouslyTrackedItemsAndAdvancesRevisionOnce()
     {
         var ct = TestContext.Current.CancellationToken;
-        var city = new City("menu-tracking-city-" + Guid.NewGuid().ToString("N"));
+        var city = new City("menu-track-" + Guid.NewGuid().ToString("N"));
         var shop = ShopsLiveDatabase.NewShop("menu-tracking-" + Guid.NewGuid().ToString("N"), city.Id);
         Guid drinkId;
         await using (var seed = fixture.Context())
@@ -214,7 +214,7 @@ public sealed class ShopMenuManualWriteLiveTests : IClassFixture<ShopsLiveDataba
     public async Task DatabaseConstraintRejectsInvalidPresentOfferWhenDomainIsBypassed()
     {
         var ct = TestContext.Current.CancellationToken;
-        var city = new City("menu-constraint-city-" + Guid.NewGuid().ToString("N"));
+        var city = new City("menu-check-" + Guid.NewGuid().ToString("N"));
         var shop = ShopsLiveDatabase.NewShop("menu-constraint-" + Guid.NewGuid().ToString("N"), city.Id);
         Guid menuId;
         Guid drinkId;
@@ -247,7 +247,7 @@ public sealed class ShopMenuManualWriteLiveTests : IClassFixture<ShopsLiveDataba
     public async Task ConcurrentMenuCreationReturnsConflictForLosingWriter()
     {
         var ct = TestContext.Current.CancellationToken;
-        var city = new City("menu-create-race-city-" + Guid.NewGuid().ToString("N"));
+        var city = new City("menu-race-" + Guid.NewGuid().ToString("N"));
         var shop = ShopsLiveDatabase.NewShop("menu-create-race-" + Guid.NewGuid().ToString("N"), city.Id);
         await using (var seed = fixture.Context())
         {

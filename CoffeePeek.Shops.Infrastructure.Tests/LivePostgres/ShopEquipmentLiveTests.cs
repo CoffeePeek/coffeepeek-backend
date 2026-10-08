@@ -58,7 +58,7 @@ public sealed class ShopEquipmentLiveTests : IClassFixture<ShopsLiveDatabase>
     [Fact]
     public async Task DatabaseRejectsSecondPrimaryInSameShopCategory()
     {
-        var city = new City("equipment-conflict-city-" + Guid.NewGuid().ToString("N"));
+        var city = new City("equip-conflict-" + Guid.NewGuid().ToString("N"));
         var category = new EquipmentCategory();
         await using var db = _fixture.Context(false);
         db.Cities.Add(city);
@@ -82,7 +82,7 @@ public sealed class ShopEquipmentLiveTests : IClassFixture<ShopsLiveDatabase>
     [Fact]
     public async Task SwitchingPrimaryClearsOldChoiceWithinSingleTransaction()
     {
-        var city = new City("equipment-switch-city-" + Guid.NewGuid().ToString("N"));
+        var city = new City("equip-switch-" + Guid.NewGuid().ToString("N"));
         var category = new EquipmentCategory();
         var shopId = Guid.Empty;
         var nextId = Guid.Empty;
@@ -124,7 +124,7 @@ public sealed class ShopEquipmentLiveTests : IClassFixture<ShopsLiveDatabase>
     [Fact]
     public async Task LegacyJoinInsert_FillsCategoryAndCatalogFlagRemainsReadable()
     {
-        var city = new City("equipment-legacy-city-" + Guid.NewGuid().ToString("N"));
+        var city = new City("equip-legacy-" + Guid.NewGuid().ToString("N"));
         var category = new EquipmentCategory();
         Guid shopId;
         Guid equipmentId;
@@ -167,7 +167,7 @@ public sealed class ShopEquipmentLiveTests : IClassFixture<ShopsLiveDatabase>
     [Fact]
     public async Task AssignedEquipmentCannotChangeCatalogCategory()
     {
-        var city = new City("equipment-category-city-" + Guid.NewGuid().ToString("N"));
+        var city = new City("equip-category-" + Guid.NewGuid().ToString("N"));
         var original = new EquipmentCategory();
         var replacement = new EquipmentCategory();
         Guid equipmentId;

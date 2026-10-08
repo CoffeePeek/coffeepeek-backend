@@ -30,7 +30,7 @@ public sealed class CheckInModerationRaceLiveTests : IClassFixture<ShopsLiveData
     public async Task HideAfterConsumerRead_RejectsStaleApprovalAndKeepsEveryPublicProjectionClosed()
     {
         var ct = TestContext.Current.CancellationToken;
-        var city = new City("moderation-race-city-" + Guid.NewGuid().ToString("N"));
+        var city = new City("mod-race-" + Guid.NewGuid().ToString("N"));
         var shop = ShopsLiveDatabase.NewShop("moderation-race-" + Guid.NewGuid().ToString("N"), city.Id);
         var checkIn = CheckIn.CreateUnified(Guid.NewGuid(), shop.Id, "author", "original",
             Rating.Create(4, 4, 4), DateTime.UtcNow.AddMinutes(-1), DomainVisibility.Public);
