@@ -271,7 +271,8 @@ public sealed class DiscoveryQueryLiveTests : IClassFixture<ShopsLiveDatabase>
         AddOffer(AddProduct(db, other, "Unavailable"), 250, 20, availability: CoffeeAvailability.OutOfStock);
         var p = AddProduct(db, popular, "Available"); AddOffer(p, 250, 20); AddOffer(p, 1000, 60);
         var draft = AddProduct(db, popular, "Draft"); draft.SetStatus(CoffeePublicationStatus.Draft); AddOffer(draft, 250, 10);
-        var shop = ShopsLiveDatabase.NewShop("List live", Guid.NewGuid()); shop.SetRoasters([popular]); db.Shops.Add(shop);
+        var city = new City(Key()); db.Cities.Add(city);
+        var shop = ShopsLiveDatabase.NewShop("List live", city.Id); shop.SetRoasters([popular]); db.Shops.Add(shop);
         await db.SaveChangesAsync(Ct); db.ChangeTracker.Clear();
         var store = new CoffeeCatalogStore(db, Options.Create(new MediaPublicUrlOptions { PublicEndpoint = "https://media.example" }),
             Options.Create(new CoffeeImportOptions()), Mock.Of<IPublicAddressService>(), NullLogger<CoffeeCatalogStore>.Instance);

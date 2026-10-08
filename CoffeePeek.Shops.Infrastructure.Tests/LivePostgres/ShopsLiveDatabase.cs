@@ -18,10 +18,10 @@ public class ShopsLiveDatabase : LiveDatabase<ShopsDbContext>
     protected override ShopsDbContext Create(DbContextOptions<ShopsDbContext> options, bool enabled) =>
         new(options, Options.Create(new PublicAddressOptions { Enabled = enabled }));
 
-    public static CoffeeShop NewShop(string name, Guid? cityId = null)
+    public static CoffeeShop NewShop(string name, Guid cityId)
     {
         var shop = new CoffeeShop(Guid.NewGuid(), name, null, PriceRange.Moderate, Guid.NewGuid());
-        shop.SetDraftLocation(cityId ?? Guid.NewGuid(), name + " address");
+        shop.SetDraftLocation(cityId, name + " address");
         return shop;
     }
 
@@ -33,7 +33,7 @@ public class ShopsLiveDatabase : LiveDatabase<ShopsDbContext>
         await using var db = Context(enabled);
         object owner = kind switch
         {
-            PublicAddressKind.CoffeeShop => NewShop(name),
+            PublicAddressKind.CoffeeShop => Shop(),
             PublicAddressKind.Roaster => new Roaster(name),
             PublicAddressKind.City => new City(name),
             PublicAddressKind.CoffeeZone => await ZoneAsync(),
@@ -53,6 +53,13 @@ public class ShopsLiveDatabase : LiveDatabase<ShopsDbContext>
             db.Add(category);
             db.Entry(category).Property(nameof(EquipmentCategory.Name)).CurrentValue = "live category";
             return new Equipment(name, "model", category);
+        }
+
+        CoffeeShop Shop()
+        {
+            var city = new City(name + " city");
+            db.Cities.Add(city);
+            return NewShop(name, city.Id);
         }
 
         async Task<CoffeeZone> ZoneAsync()

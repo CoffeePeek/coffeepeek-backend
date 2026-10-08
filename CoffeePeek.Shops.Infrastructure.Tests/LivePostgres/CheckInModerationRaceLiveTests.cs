@@ -4,6 +4,7 @@ using CoffeePeek.Shared.Domain.Interfaces.Infrastructure;
 using CoffeePeek.Shared.Kernel;
 using CoffeePeek.Shops.Domain.Aggregates.CheckInAggregate;
 using CoffeePeek.Shops.Domain.Entities;
+using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
 using CoffeePeek.Shops.Infrastructure.Consumers;
 using CoffeePeek.Shops.Persistance.Queries;
 using CoffeePeek.Shops.Persistance.Repositories;
@@ -29,11 +30,13 @@ public sealed class CheckInModerationRaceLiveTests : IClassFixture<ShopsLiveData
     public async Task HideAfterConsumerRead_RejectsStaleApprovalAndKeepsEveryPublicProjectionClosed()
     {
         var ct = TestContext.Current.CancellationToken;
-        var shop = ShopsLiveDatabase.NewShop("moderation-race-" + Guid.NewGuid().ToString("N"));
+        var city = new City("moderation-race-city-" + Guid.NewGuid().ToString("N"));
+        var shop = ShopsLiveDatabase.NewShop("moderation-race-" + Guid.NewGuid().ToString("N"), city.Id);
         var checkIn = CheckIn.CreateUnified(Guid.NewGuid(), shop.Id, "author", "original",
             Rating.Create(4, 4, 4), DateTime.UtcNow.AddMinutes(-1), DomainVisibility.Public);
         await using (var seed = fixture.Context(false))
         {
+            seed.Cities.Add(city);
             seed.Shops.Add(shop);
             seed.CheckIns.Add(checkIn);
             await seed.SaveChangesAsync(ct);
