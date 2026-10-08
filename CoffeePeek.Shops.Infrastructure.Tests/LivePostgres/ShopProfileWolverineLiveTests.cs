@@ -8,6 +8,7 @@ using CoffeePeek.Shops.Application.Features.CoffeeShop.ShopProfile;
 using CoffeePeek.Shops.Application.Features.Owner;
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
 using CoffeePeek.Shops.Persistance.Configuration;
+using CoffeePeek.Shops.Persistance.Repositories;
 using CoffeePeek.Testing;
 using JasperFx.CodeGeneration;
 using Microsoft.EntityFrameworkCore;
@@ -65,6 +66,12 @@ public sealed class ShopProfileWolverineLiveTests : IClassFixture<ShopsLiveDatab
             {
                 // Reuse the fixture's production Npgsql options, audit interceptor and migrations.
                 services.AddScoped(_ => fixture.Context());
+                services.AddScoped<ICoffeeShopRepository, CoffeeShopRepository>();
+                services.AddScoped<IQueryCityRepository, QueryCityRepository>();
+                services.AddScoped<IQueryEquipmentRepository, QueryEquipmentRepository>();
+                services.AddScoped<IQueryCoffeeBeanRepository, QueryCoffeeBeanRepository>();
+                services.AddScoped<IQueryRoasterRepository, QueryRoasterRepository>();
+                services.AddScoped<IQueryBrewMethodRepository, QueryBrewMethodRepository>();
                 services.AddSingleton(cache.Object);
                 services.AddSingleton<IOptions<MediaPublicUrlOptions>>(Options.Create(
                     new MediaPublicUrlOptions

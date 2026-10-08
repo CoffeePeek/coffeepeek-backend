@@ -1,10 +1,12 @@
 using CoffeePeek.Shared.Kernel.Exceptions;
+using CoffeePeek.Shared.Kernel;
 using CoffeePeek.Shared.Domain.Interfaces.Infrastructure;
 using CoffeePeek.Shared.Kernel.Options;
 using CoffeePeek.Shared.Kernel.Response;
 using CoffeePeek.Shared.Persistence.Data;
 using CoffeePeek.Contract.Dtos.Menu;
 using CoffeePeek.Shops.Application.Features.Admin.Menu;
+using CoffeePeek.Shops.Application.Services;
 using CoffeePeek.Shops.Domain.Aggregates.MenuAggregate;
 using CoffeePeek.Shops.Domain.Entities;
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
@@ -71,6 +73,12 @@ public sealed class ShopMenuManualWriteLiveTests : IClassFixture<ShopsLiveDataba
             .ConfigureServices(services =>
             {
                 services.AddScoped(_ => new ShopsDbContext(options));
+                services.AddScoped<ICoffeeShopRepository, CoffeeShopRepository>();
+                services.AddScoped<IShopMenuRepository, ShopMenuRepository>();
+                services.AddScoped<IQueryCoffeeDrinkRepository, QueryCoffeeDrinkRepository>();
+                services.AddScoped<IQueryShopMenuRepository, QueryShopMenuRepository>();
+                services.AddScoped<IApplyShopMenuService, ApplyShopMenuService>();
+                services.AddScoped<IUnitOfWork, UnitOfWork<ShopsDbContext>>();
                 services.AddSingleton(cache.Object);
                 services.AddSingleton<IOptions<MediaPublicUrlOptions>>(Options.Create(
                     new MediaPublicUrlOptions

@@ -35,7 +35,7 @@ public sealed class ShopVisibilityWolverineLiveTests : IClassFixture<ShopsLiveDa
     }
 
     [Fact]
-    public async Task VisibilityAndFocus_InvalidateOnlyAfterCommittedRevision()
+    public async Task ProfileWriteSlices_InvalidateOnlyAfterCommittedRevision()
     {
         var ct = TestContext.Current.CancellationToken;
         var shop = new CoffeeShop(null, "Visibility test", null, PriceRange.Cheap, Guid.NewGuid());
@@ -50,6 +50,8 @@ public sealed class ShopVisibilityWolverineLiveTests : IClassFixture<ShopsLiveDa
         var invalidated = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
         var focusInvalidated = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
         var tagsInvalidated = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var ownerInvalidated = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var ownerId = Guid.NewGuid();
         var cache = new Mock<IStrictCacheInvalidator>();
         cache.Setup(c => c.RemoveAsync(It.IsAny<CacheKey>(), It.IsAny<CancellationToken>()))
             .Returns(async () =>
@@ -62,6 +64,8 @@ public sealed class ShopVisibilityWolverineLiveTests : IClassFixture<ShopsLiveDa
                     focusInvalidated.TrySetResult(persisted.Type == CoffeeFocusType.Specialty);
                 if (persisted.ProfileRevision == 3)
                     tagsInvalidated.TrySetResult(persisted.ShopTags.Single().TagId == tag.Id);
+                if (persisted.ProfileRevision == 4)
+                    ownerInvalidated.TrySetResult(persisted.OwnerUserId == ownerId);
             });
         cache.Setup(c => c.RemoveByPatternAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
@@ -87,6 +91,7 @@ public sealed class ShopVisibilityWolverineLiveTests : IClassFixture<ShopsLiveDa
                 options.Discovery.IncludeType(typeof(SetAdminCoffeeShopVisibilityHandler));
                 options.Discovery.IncludeType(typeof(SetAdminCoffeeShopFocusHandler));
                 options.Discovery.IncludeType(typeof(SetShopTagsHandler));
+                options.Discovery.IncludeType(typeof(AssignCoffeeShopOwnerHandler));
                 options.Discovery.IncludeType(typeof(ShopProfileCacheInvalidationRequestedHandler));
                 options.UseRuntimeCompilation();
                 options.CodeGeneration.TypeLoadMode = TypeLoadMode.Auto;
@@ -126,6 +131,12 @@ public sealed class ShopVisibilityWolverineLiveTests : IClassFixture<ShopsLiveDa
                 new SetShopTagsCommand(shop.Id, [tag.Id], Guid.NewGuid()), ct);
             Assert.True(assigned.IsSuccess);
             Assert.True(await tagsInvalidated.Task.WaitAsync(TimeSpan.FromSeconds(10), ct));
+
+            var ownership = await bus.InvokeAsync<Response<AdminPublishedShopDto>>(
+                new AssignCoffeeShopOwnerCommand(shop.Id, ownerId), ct);
+            Assert.True(ownership.IsSuccess);
+            Assert.Equal(4, ownership.Data!.ProfileRevision);
+            Assert.True(await ownerInvalidated.Task.WaitAsync(TimeSpan.FromSeconds(10), ct));
         }
         finally
         {
@@ -135,8 +146,9 @@ public sealed class ShopVisibilityWolverineLiveTests : IClassFixture<ShopsLiveDa
         await using var verify = fixture.Context();
         var final = await verify.Shops.AsNoTracking().SingleAsync(s => s.Id == shop.Id, ct);
         Assert.True(final.IsHidden);
-        Assert.Equal(3, final.ProfileRevision);
+        Assert.Equal(4, final.ProfileRevision);
         Assert.Equal(CoffeeFocusType.Specialty, final.Type);
         Assert.Equal(tag.Id, Assert.Single(final.ShopTags).TagId);
+        Assert.Equal(ownerId, final.OwnerUserId);
     }
 }

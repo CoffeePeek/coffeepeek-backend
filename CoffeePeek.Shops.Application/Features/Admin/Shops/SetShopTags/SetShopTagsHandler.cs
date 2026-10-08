@@ -1,5 +1,4 @@
 using System.Net;
-using System.Text.Json.Serialization;
 using CoffeePeek.Shared.Kernel.Response;
 using CoffeePeek.Shops.Application.Features.CoffeeShop.ShopProfile;
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
@@ -7,11 +6,6 @@ using CoffeePeek.Shops.Domain.Aggregates.ShopTagAggregate;
 using Wolverine;
 
 namespace CoffeePeek.Shops.Application.Features.Admin.Shops.SetShopTags;
-
-public record SetShopTagsCommand(
-    [property: JsonIgnore] Guid ShopId,
-    Guid[] TagIds,
-    [property: JsonIgnore] Guid AdminUserId);
 
 public static class SetShopTagsHandler
 {

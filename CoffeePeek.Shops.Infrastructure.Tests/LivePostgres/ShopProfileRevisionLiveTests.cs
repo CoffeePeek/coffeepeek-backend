@@ -69,6 +69,12 @@ public sealed class ShopProfileRevisionLiveTests : IClassFixture<ShopsLiveDataba
             .ConfigureServices(services =>
             {
                 services.AddScoped(_ => new CoffeePeek.Shops.Persistance.Configuration.ShopsDbContext(options));
+                services.AddScoped<ICoffeeShopRepository, CoffeeShopRepository>();
+                services.AddScoped<IQueryCityRepository, QueryCityRepository>();
+                services.AddScoped<IQueryEquipmentRepository, QueryEquipmentRepository>();
+                services.AddScoped<IQueryCoffeeBeanRepository, QueryCoffeeBeanRepository>();
+                services.AddScoped<IQueryRoasterRepository, QueryRoasterRepository>();
+                services.AddScoped<IQueryBrewMethodRepository, QueryBrewMethodRepository>();
                 services.AddSingleton(cache.Object);
                 services.AddSingleton<IOptions<MediaPublicUrlOptions>>(Options.Create(
                     new MediaPublicUrlOptions
