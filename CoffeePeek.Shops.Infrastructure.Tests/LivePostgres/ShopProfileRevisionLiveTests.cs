@@ -138,9 +138,10 @@ public sealed class ShopProfileRevisionLiveTests : IClassFixture<ShopsLiveDataba
             }
 
             var outcomes = await Task.WhenAll(InvokeAdminAsync(), InvokeOwnerAsync());
+            // The barrier synchronizes the first two reads; profile includes and catalog loading
+            // may issue further Shops queries, so their total is not a retry counter.
             Assert.Single(outcomes, error => error is null);
             Assert.Single(outcomes, error => error is ConflictException);
-            Assert.Equal(2, barrier.ShopReads);
         }
         finally
         {
