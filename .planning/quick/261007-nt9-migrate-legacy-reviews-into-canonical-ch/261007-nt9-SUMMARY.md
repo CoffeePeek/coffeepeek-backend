@@ -46,3 +46,7 @@ Deviations: [Rule 1] bounded audit corrected synthetic Other validation and auth
 ## Self-Check: PASSED
 
 All created source/test files and task/gate/audit commits exist; no tracked files were deleted, unfinished stubs remain or published migrations changed. Worktree feature branch retained; no push/live mutation performed.
+
+## Root integration verification
+
+Fetched origin/main advanced from 5f5c0328 to 427d61ac (public chronological feed). Merged it without conflicts and kept incoming feed/index changes. Backend build after integration: zero errors, 664 analyzer warnings (`.tmp/backfill-integrated-build.log`). Rechecked the four affected suites: Shops.Application 233 passed; Shops.Infrastructure 254 passed / 24 guarded live skips; ShopsService 78 passed; Gateway 69 passed. Combined 634 passed / 24 skipped / zero failed. Archived review publication fields use the same canonical public eligibility and FirstPublishedAtUtc required by the incoming feed. Backfill changes do not alter published migrations. Live backfill/rehearsal remain NOT RUN. Primary user source edits remain untouched.
