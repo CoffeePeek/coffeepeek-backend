@@ -1,4 +1,3 @@
-using System.ComponentModel.DataAnnotations;
 using CoffeePeek.Shared.Auth;
 using CoffeePeek.Shared.Auth.Constants;
 using CoffeePeek.Shared.Kernel.Response;
@@ -10,9 +9,9 @@ using Wolverine;
 
 namespace CoffeePeek.ShopsService.Controllers;
 
-/// <summary>Inspect complaints and explicitly dismiss them or remove the reported review.</summary>
+/// <summary>Inspect complaints and explicitly dismiss them or remove the reported check-in.</summary>
 [ApiController]
-[Route("api/admin/review-reports")]
+[Route("api/admin/check-in-reports")]
 [Authorize(Policy = RoleConsts.Admin)]
 [Tags("Admin")]
 [ProducesErrorResponseType(typeof(ErrorResponse))]
@@ -23,18 +22,18 @@ public class AdminReviewReportsController(IMessageBus bus, IUserContext userCont
     [HttpGet]
     [ProducesResponseType<Response<ReviewReportPage>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetAll(CancellationToken ct,
-        [FromQuery] ReviewReportStatus? status = ReviewReportStatus.Pending,
+        [FromQuery] ReviewReportStatus? status = null,
         [FromQuery] int page = 1, [FromQuery] int pageSize = 20) =>
-        Ok(await bus.InvokeAsync<Response<ReviewReportPage>>(new GetReviewReportsQuery(status, page, pageSize), ct));
+        Ok(await bus.InvokeAsync<Response<ReviewReportPage>>(new GetReviewReportsQuery(status ?? ReviewReportStatus.Pending, page, pageSize), ct));
 
-    /// <summary>Read complaint details and the current reported review.</summary>
+    /// <summary>Read complaint details and the current reported check-in.</summary>
     [HttpGet("{reportId:guid}")]
     [ProducesResponseType<Response<ReviewReportDetail>>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetById(Guid reportId, CancellationToken ct) =>
         Ok(await bus.InvokeAsync<Response<ReviewReportDetail>>(new GetReviewReportQuery(reportId), ct));
 
-    /// <summary>Dismiss a complaint or permanently hide its review.</summary>
+    /// <summary>Dismiss a complaint or permanently hide its check-in.</summary>
     [HttpPut("{reportId:guid}/resolution")]
     [ProducesResponseType<Response<ReviewReportDto>>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -42,16 +41,8 @@ public class AdminReviewReportsController(IMessageBus bus, IUserContext userCont
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> Resolve(Guid reportId, [FromBody] ResolveReviewReportRequest request, CancellationToken ct)
     {
-        if (!request.DeleteReview.HasValue) return BadRequest("deleteReview is required.");
+        if (!request.DeleteCheckIn.HasValue) return BadRequest("deleteCheckIn is required.");
         return Ok(await bus.InvokeAsync<Response<ReviewReportDto>>(
-            new ResolveReviewReportCommand(reportId, userContext.GetUserIdOrThrow(), request.DeleteReview.Value), ct));
+            new ResolveReviewReportCommand(reportId, userContext.GetUserIdOrThrow(), request.DeleteCheckIn.Value), ct));
     }
-}
-
-/// <summary>Explicit admin decision; omitted or null values are invalid.</summary>
-public record ResolveReviewReportRequest
-{
-    /// <summary>True to remove the review, false to dismiss the complaint.</summary>
-    [Required]
-    public bool? DeleteReview { get; init; }
 }

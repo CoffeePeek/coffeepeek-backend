@@ -22,56 +22,17 @@ if ! command -v dotnet >/dev/null 2>&1; then
   exit 1
 fi
 
-if ! dotnet ef --version >/dev/null 2>&1; then
-  dotnet tool install --global dotnet-ef
-  export PATH="${PATH}:${HOME}/.dotnet/tools"
-fi
-
 export ASPNETCORE_ENVIRONMENT=Production
-
-PG_HOST="${PG_HOST:-localhost}"
-PG_PORT="${PG_PORT:-5432}"
-
-apply_migration() {
-  local name="$1"
-  local context="$2"
-  local project="$3"
-  local startup="$4"
-  local database="$5"
-  local connection="Host=${PG_HOST};Port=${PG_PORT};Database=${database};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}"
-
-  echo "--- ${name} ---"
-  export PostgresCpOptions__ConnectionString="${connection}"
-  dotnet ef database update \
-    --context "${context}" \
-    --project "${REPO_ROOT}/${project}" \
-    --startup-project "${REPO_ROOT}/${startup}" \
-    --connection "${connection}" \
-    --configuration Release
-}
+export PG_HOST="${PG_HOST:-localhost}"
+export PG_PORT="${PG_PORT:-5432}"
 
 cd "${REPO_ROOT}"
 dotnet restore CoffeePeek.Backend.ci.slnf -p:AllowMissingPrunePackageData=true
 dotnet build CoffeePeek.Backend.ci.slnf --configuration Release --no-restore -m -p:AllowMissingPrunePackageData=true
 
-apply_migration "Account" "AccountDbContext" \
-  "CoffeePeek.Account.Persistence/CoffeePeek.Account.Persistence.csproj" \
-  "CoffeePeek.AccountService/CoffeePeek.AccountService.csproj" \
-  "cpaccountdb"
-
-apply_migration "Shops" "ShopsDbContext" \
-  "CoffeePeek.Shops.Persistance/CoffeePeek.Shops.Persistance.csproj" \
-  "CoffeePeek.ShopsService/CoffeePeek.ShopsService.csproj" \
-  "cpshopsdb"
-
-apply_migration "Moderation" "ModerationDbContext" \
-  "CoffeeShop.Moderation.Persistence/CoffeeShop.Moderation.Persistence.csproj" \
-  "CoffeePeek.ModerationService/CoffeePeek.ModerationService.csproj" \
-  "cpmoderationdb"
-
-apply_migration "Media" "MediaDbContext" \
-  "CoffeePeek.MediaService/CoffeePeek.MediaService.csproj" \
-  "CoffeePeek.MediaService/CoffeePeek.MediaService.csproj" \
-  "cpmediadb"
+# Application writers must be stopped. This runner first upgrades to the canonical
+# schema, transfers recoverable legacy data and private photos, then removes archives.
+# It creates no backups and is safe to rerun after an interrupted deployment.
+dotnet "${REPO_ROOT}/CoffeePeek.LegacyCheckInMigration/bin/Release/net10.0/CoffeePeek.LegacyCheckInMigration.dll"
 
 echo "All migrations applied."

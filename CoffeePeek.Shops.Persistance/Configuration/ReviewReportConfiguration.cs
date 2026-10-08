@@ -13,7 +13,8 @@ public class ReviewReportConfiguration : IEntityTypeConfiguration<ReviewReport>
         builder.Property(x => x.Version).IsRowVersion();
         builder.HasIndex(x => new { x.Status, x.CreatedAtUtc, x.Id });
         builder.HasIndex(x => x.ReportedByUserId);
-        builder.HasOne<Review>().WithMany().HasForeignKey(x => x.ReviewId).OnDelete(DeleteBehavior.Cascade);
+        // Preserve the original target identifier even when no canonical public check-in survives.
+        builder.Property(x => x.CheckInId).HasColumnName("ReviewId").IsRequired();
         builder.ToTable(t =>
         {
             t.HasCheckConstraint("CK_ReviewReports_Text", "length(btrim(\"Text\")) BETWEEN 1 AND 2000");

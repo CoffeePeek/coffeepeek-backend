@@ -28,6 +28,11 @@ public class PhotoMetadata
 
     public Guid OwnerId { get; set; }
 
+    public Guid? CheckInId { get; set; }
+    public DateTime? ClaimedAtUtc { get; set; }
+    [MaxLength(255)]
+    public string? OriginalStorageKey { get; set; }
+
     public DateTime? PermalinkExpiresAt { get; set; }
 
     /// <summary>
@@ -49,10 +54,4 @@ public class PhotoMetadata
         Status == PhotoStatus.PendingDeletion &&
         ScheduledDeletionAt.HasValue &&
         ScheduledDeletionAt.Value <= utcNow;
-}
-
-public enum OwnerType
-{
-    User,
-    Shop
 }

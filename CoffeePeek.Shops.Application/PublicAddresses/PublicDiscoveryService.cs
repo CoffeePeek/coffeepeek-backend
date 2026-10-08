@@ -1,11 +1,11 @@
 using CoffeePeek.Contract.Dtos.CoffeeShop;
+using CoffeePeek.Contract.Dtos.CheckIns;
 using CoffeePeek.Contract.Dtos.PublicAddresses;
 using CoffeePeek.Contract.Dtos.Shop;
 using CoffeePeek.Shared.Kernel.Exceptions;
 using CoffeePeek.Shared.Kernel.Response;
 using CoffeePeek.Shops.Application.Abstractions;
 using CoffeePeek.Shops.Application.Features.Catalogs.GetAllCities;
-using CoffeePeek.Shops.Application.Features.Catalogs.GetAllRoasters;
 using CoffeePeek.Shops.Application.Features.Catalogs.GetRoasterById;
 using CoffeePeek.Shops.Application.Features.Catalogs.GetAllBeans;
 using CoffeePeek.Shops.Application.Features.Catalogs.GetAllEquipment;
@@ -21,7 +21,7 @@ namespace CoffeePeek.Shops.Application.PublicAddresses;
 
 // Composes public read models; aggregate identities and existing command handlers stay internal.
 public sealed class PublicDiscoveryService(IPublicAddressService addresses, IProfileAddressLookup profiles,
-    ICoffeeShopQueries queries, IQueryCheckInRepository checkIns, IMessageBus bus)
+    ICoffeeShopQueries queries, IQueryCheckInRepository checkIns, IMessageBus bus, IPublicCheckInProjector checkInProjector)
 {
     private static readonly TypeAdapterConfig PublicMapping = CreateMapping();
     private static TypeAdapterConfig CreateMapping()
@@ -31,7 +31,7 @@ public sealed class PublicDiscoveryService(IPublicAddressService addresses, IPro
             .Ignore(x => x.Roasters, x => x.Beans, x => x.Equipments, x => x.BrewMethods);
         config.NewConfig<CoffeeShopDetailsDto, PublicShopDetailsDto>()
             .Ignore(x => x.Roasters, x => x.Beans, x => x.Equipments, x => x.BrewMethods,
-                x => x.Reviews, x => x.UserCheckIns, x => x.Tags);
+                x => x.CheckIns, x => x.UserCheckIns, x => x.Tags);
         return config;
     }
     public async Task<Guid> ResolveIdAsync(PublicAddressKind kind, string slug, CancellationToken ct) =>
@@ -91,7 +91,7 @@ public sealed class PublicDiscoveryService(IPublicAddressService addresses, IPro
         var equipments = await ReadAsync(PublicAddressKind.Equipment, (x.Equipments ?? []).Select(r => r.Id), ct);
         var methods = await ReadAsync(PublicAddressKind.BrewMethod, (x.BrewMethods ?? []).Select(r => r.Id), ct);
         var tags = await ReadAsync(PublicAddressKind.ShopTag, x.Tags.Select(r => r.Id), ct);
-        var reviews = await ReviewsAsync(x.Reviews, ct);
+        var visitsPublic = await CheckInsAsync(x.CheckIns, ct);
         var visits = await CheckInsAsync(x.UserCheckIns, ct);
         // Cached details never decide current visibility, including a hide racing the data read.
         if (await addresses.ResolveAsync(PublicAddressKind.CoffeeShop, slug, ct) is not { } current) return null;
@@ -100,7 +100,7 @@ public sealed class PublicDiscoveryService(IPublicAddressService addresses, IPro
             Address = PublicAddressDto.From(current), City = Find(cities, x.CityId), Beans = Beans(x.CoffeeBeans, beans),
             Equipments = Equipments(x.Equipments, equipments), BrewMethods = Methods(x.BrewMethods, methods),
             Tags = Tags(x.Tags, tags),
-            Roasters = Roasters(x.Roasters, roasters), Reviews = reviews, UserCheckIns = visits
+            Roasters = Roasters(x.Roasters, roasters), CheckIns = visitsPublic, UserCheckIns = visits
         };
     }
 
@@ -112,14 +112,6 @@ public sealed class PublicDiscoveryService(IPublicAddressService addresses, IPro
         return cities.Select(x => new PublicCityDto(Required(lookup, x.Id), x.Name)).ToArray();
     }
 
-    public async Task<PublicRoasterSummaryDto[]> RoastersAsync(CancellationToken ct)
-    {
-        var response = await bus.InvokeAsync<Response<GetAllRoastersResponse>>(new GetAllRoastersCommand(), ct);
-        var roasters = response.Data?.Roasters ?? throw new ServiceUnavailableException("Roasters unavailable.");
-        var lookup = await ReadAsync(PublicAddressKind.Roaster, roasters.Select(x => x.Id), ct);
-        return roasters.Select(x => new PublicRoasterSummaryDto(Required(lookup, x.Id), x.Name, x.PhotoUrl, x.CoverPhoto)).ToArray();
-    }
-
     public async Task<PublicRoasterDetailsDto?> GetRoasterAsync(string slug, CancellationToken ct)
     {
         var address = await addresses.ResolveAsync(PublicAddressKind.Roaster, slug, ct);
@@ -129,23 +121,12 @@ public sealed class PublicDiscoveryService(IPublicAddressService addresses, IPro
         var x = response.Data;
         var shops = await ReadAsync(PublicAddressKind.CoffeeShop, x.Shops.Select(s => s.Id), ct);
         return new(PublicAddressDto.From(address), x.Name, x.About, x.Location, x.Contact, x.Photos,
-            x.Shops.Where(s => shops.ContainsKey(s.Id)).Select(s => new PublicLinkedShopDto(Find(shops, s.Id), s.Name, s.CoverPhoto)).ToArray());
+            x.Shops.Where(s => shops.ContainsKey(s.Id)).Select(s => new PublicLinkedShopDto(Find(shops, s.Id), s.Name, s.CoverPhoto)).ToArray())
+        { CoffeeShopsCount = x.CoffeeShopsCount, CoffeeProductsCount = x.CoffeeProductsCount };
     }
 
-    public async Task<PublicReviewDto[]> ReviewsAsync(ReviewDto[] items, CancellationToken ct)
-    {
-        var shops = await ReadAsync(PublicAddressKind.CoffeeShop, items.Select(x => x.CoffeeShopId), ct);
-        var authors = (await profiles.GetByIdsAsync(items.Select(x => x.UserId).Distinct().ToArray(), ct))
-            .ToDictionary(x => x.EntityId, PublicAddressDto.From);
-        return items.Select(x => x.Adapt<PublicReviewDto>() with
-        { Shop = Find(shops, x.CoffeeShopId), Author = Find(authors, x.UserId) }).ToArray();
-    }
-
-    public async Task<PublicCheckInDto[]> CheckInsAsync(CheckInDto[] items, CancellationToken ct)
-    {
-        var shops = await ReadAsync(PublicAddressKind.CoffeeShop, items.Select(x => x.ShopId), ct);
-        return items.Select(x => x.Adapt<PublicCheckInDto>() with { Shop = Find(shops, x.ShopId) }).ToArray();
-    }
+    public Task<PublicCheckInDto[]> CheckInsAsync(UnifiedCheckInDto[] items, CancellationToken ct) =>
+        checkInProjector.ProjectAsync(items, ct);
 
     public async Task<PublicMapDto> MapAsync(MapShopDto[] shops, MapClusterDto[]? clusters, MapCoffeeZoneDto[]? zones,
         bool? truncated, CancellationToken ct)
@@ -203,7 +184,8 @@ public sealed class PublicDiscoveryService(IPublicAddressService addresses, IPro
         items.Where(x => addresses.ContainsKey(x.Id)).Select(x => new PublicTagDto(addresses[x.Id].Slug, x.Name, x.Description, x.SortOrder)).ToArray();
 
     private static PublicRoasterSummaryDto[] Roasters(RoasterDto[]? items, Dictionary<Guid, PublicAddressDto> addresses) =>
-        (items ?? []).Select(x => new PublicRoasterSummaryDto(Find(addresses, x.Id), x.Name, x.PhotoUrl, x.CoverPhoto)).ToArray();
+        (items ?? []).Select(x => new PublicRoasterSummaryDto(Find(addresses, x.Id), x.Name, x.PhotoUrl, x.CoverPhoto)
+        { CoffeeShopsCount = x.CoffeeShopsCount, CoffeeProductsCount = x.CoffeeProductsCount }).ToArray();
 
     private static PublicAddressDto? Find(Dictionary<Guid, PublicAddressDto> addresses, Guid id) => addresses.GetValueOrDefault(id);
     private static PublicAddressDto Required(Dictionary<Guid, PublicAddressDto> addresses, Guid id) =>

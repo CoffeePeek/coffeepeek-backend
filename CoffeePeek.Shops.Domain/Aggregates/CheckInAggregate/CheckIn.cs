@@ -18,31 +18,45 @@ public sealed partial class CheckIn : AggregateRoot<Guid>
         DrinkNameEn = drink?.NameEn;
     }
 
-    public string? Note { get; private set; }
+    public string Note { get; private set; }
 
     public Guid UserId { get; private set; }
     public Guid ShopId { get; private set; }
     public DateTime VisitedAt { get; private set; }
-    public Guid? ReviewId { get; private set; }
-    
+    public string Username { get; private set; } = "";
+    public CheckInVisibility Visibility { get; private set; }
+    public int ContentRevision { get; private set; } = 1;
+    public CheckInModerationState ModerationState { get; private set; }
+    public int? ApprovedRevision { get; private set; }
+    public Guid? ModerationSubmissionId { get; private set; }
+    public long ModerationDecisionSequence { get; private set; }
+    public string? RejectionReason { get; private set; }
+    public DateTime? DeletedAtUtc { get; private set; }
+    public int HelpfulCount { get; private set; }
+    public DateTime? FirstPublishedAtUtc { get; private set; }
+    public Guid RowVersion { get; private set; } = Guid.NewGuid();
+
+    public bool IsPubliclyVisible => DeletedAtUtc == null && Visibility == CheckInVisibility.Public
+        && ModerationState == CheckInModerationState.Approved
+        && ApprovedRevision == ContentRevision;
+
     public Rating Rating { get; private set; }
-    
+
     private readonly List<ShopPhoto> _shopPhotos = [];
     public IReadOnlyCollection<ShopPhoto> ShopPhotos => _shopPhotos.AsReadOnly();
-    
+
     // ReSharper disable once UnusedMember.Local
     private CheckIn() { }
 
-    private CheckIn(Guid userId, Guid shopId, DateTime visitedAt)
+    private CheckIn(Guid userId, Guid shopId, DateTime visitedAt, string text, Rating rating, Guid? id = null)
     {
-        Id = Guid.NewGuid();
+        Id = id ?? Guid.NewGuid();
         UserId = userId;
         ShopId = shopId;
         VisitedAt = visitedAt;
         CreatedAtUtc = DateTime.UtcNow;
 
-        // Rating is an EF-required owned navigation (NOT NULL columns), so every CheckIn
-        // needs a non-null placeholder until AssignRating sets the real value for public check-ins.
-        Rating = new Rating(0, 0, 0);
+        Note = text.Trim();
+        Rating = rating;
     }
 }

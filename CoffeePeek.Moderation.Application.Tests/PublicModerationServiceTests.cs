@@ -71,19 +71,8 @@ public sealed class PublicModerationServiceTests
             EquipmentIds = [ids["equipments"]], RoasterIds = [ids["roasters"]], BrewMethodIds = [ids["brew-methods"]] }], ct);
         shops[0].Beans.Should().Equal("beans-slug");
         shops[0].PublishedShop!.Slug.Should().Be("shops-slug");
-        var photo = Guid.NewGuid();
-        var reviews = await service.ReviewsAsync([new ModerationReviewDto { Id = workflow, ShopId = ids["shops"], UserId = actor,
-            ModeratedBy = actor, Comment = "Coffee", UserName = "User", Rating = new(),
-            DrinkSlug = "other", CustomDrinkName = "Эспрессо-тоник",
-            DrinkNameRu = "Эспрессо-тоник", DrinkNameEn = "Espresso tonic", Photos = [new PhotoMetadataDto
-            { Id = photo, OwnerId = actor, FileName = "coffee.jpg", ContentType = "image/jpeg", StorageKey = "photos/coffee" }] }], ct);
-        reviews[0].Photos[0].Id.Should().Be(photo);
-        reviews[0].DrinkSlug.Should().Be("other");
-        reviews[0].CustomDrinkName.Should().Be("Эспрессо-тоник");
-        reviews[0].DrinkNameRu.Should().Be("Эспрессо-тоник");
-        reviews[0].DrinkNameEn.Should().Be("Espresso tonic");
-        var json = JsonSerializer.Serialize(new { changes, shops, reviews }, new JsonSerializerOptions(JsonSerializerDefaults.Web));
+        var json = JsonSerializer.Serialize(new { changes, shops }, new JsonSerializerOptions(JsonSerializerDefaults.Web));
         foreach (var id in ids.Values.Append(actor)) json.Should().NotContain(id.ToString());
-        json.Should().Contain(workflow.ToString()).And.Contain(photo.ToString()).And.NotContain("ownerId");
+        json.Should().Contain(workflow.ToString()).And.NotContain("ownerId");
     }
 }

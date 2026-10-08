@@ -1,11 +1,13 @@
 using CoffeePeek.Contract.Dtos;
 using CoffeePeek.MediaService.Commands;
 using CoffeePeek.MediaService.Commands.Base;
+using CoffeePeek.MediaService.Configuration;
 using CoffeePeek.MediaService.Controllers;
 using CoffeePeek.MediaService.Responses;
 using CoffeePeek.Shared.Auth;
 using CoffeePeek.Shared.Kernel.Response;
 using FluentAssertions;
+using Microsoft.AspNetCore.Mvc;
 using Moq;
 using Wolverine;
 
@@ -25,7 +27,18 @@ public class PhotosControllerTests
     private PhotosController CreateController() => new(_busMock.Object, _userContextMock.Object);
 
     [Fact]
-    public async Task GenerateReviewUploadUrls_UsesCallerAsOwnerAndReviewsPrefix()
+    public void UploadRoutes_ExposeOnlyCanonicalCheckInAction()
+    {
+        var routes = typeof(PhotosController).GetMethods()
+            .SelectMany(method => method.GetCustomAttributes(typeof(HttpPostAttribute), false)
+                .Cast<HttpPostAttribute>()).Select(route => route.Template).ToArray();
+
+        routes.Should().Contain("check-in");
+        routes.Should().NotContain("review");
+    }
+
+    [Fact]
+    public async Task GenerateCheckInUploadUrls_UsesCallerAndPrivateCheckInBucket()
     {
         GenerateShopPhotosCommand? captured = null;
         _busMock.Setup(b => b.InvokeAsync<Response<List<GenerateUploadUrlResponse>>>(
@@ -33,12 +46,13 @@ public class PhotosControllerTests
             .Callback<object, CancellationToken, TimeSpan?>((m, _, _) => captured = (GenerateShopPhotosCommand)m)
             .ReturnsAsync(Response<List<GenerateUploadUrlResponse>>.Success([]));
 
-        await CreateController().GenerateReviewUploadUrls(
+        await CreateController().GenerateCheckInUploadUrls(
             [new PhotoRequest(1024, "a.jpg", "image/jpeg")], CancellationToken.None);
 
         captured.Should().NotBeNull();
         captured!.OwnerId.Should().Be(_userId);
-        captured.StorageKeyPrefix.Should().Be("reviews");
+        captured.StorageKeyPrefix.Should().Be("check-ins");
+        captured.Bucket.Should().Be(BucketType.CheckIn);
         captured.Requests.Should().HaveCount(1);
     }
 
@@ -68,11 +82,11 @@ public class PhotosControllerTests
             .Callback<object, CancellationToken, TimeSpan?>((m, _, _) => captured = (ResolveUploadedPhotosQuery)m)
             .ReturnsAsync(Response<List<ResolvedUploadedPhotoDto>>.Success([]));
 
-        var forged = new ResolveUploadedPhotosQuery(["reviews/a.jpg"]) { OwnerId = Guid.NewGuid() };
+        var forged = new ResolveUploadedPhotosQuery(["check-ins/a.jpg"]) { OwnerId = Guid.NewGuid() };
         await CreateController().ResolveUploadedPhotos(forged, CancellationToken.None);
 
         captured.Should().NotBeNull();
         captured!.OwnerId.Should().Be(_userId);
-        captured.StorageKeys.Should().Equal("reviews/a.jpg");
+        captured.StorageKeys.Should().Equal("check-ins/a.jpg");
     }
 }

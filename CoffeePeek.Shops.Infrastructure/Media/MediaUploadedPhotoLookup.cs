@@ -1,4 +1,5 @@
 using System.Net.Http.Json;
+using CoffeePeek.Contract.Dtos.CheckIns;
 using CoffeePeek.Contract.Dtos;
 using CoffeePeek.Shared.Auth;
 using CoffeePeek.Shared.Auth.Constants;
@@ -22,6 +23,39 @@ public class MediaUploadedPhotoLookup(
 {
     public const string HttpClientName = "media-photo-lookup";
     public const string ResolvePath = "/api/Photos/resolve";
+
+    public async Task<CheckInPhotoClaimResult> ClaimForCheckInAsync(Guid userId, Guid checkInId,
+        IReadOnlyCollection<string> storageKeys, CancellationToken ct = default)
+    {
+        if (userId == Guid.Empty || checkInId == Guid.Empty || storageKeys.Count == 0)
+            return CheckInPhotoClaimResult.Failed;
+        using var request = new HttpRequestMessage(HttpMethod.Post, "/internal/check-in-photos/claim");
+        request.AddGatewayAuthHeader(gatewayAuthOptions.Value.SecretKey);
+        request.Headers.TryAddWithoutValidation(GatewayHeaderConsts.XUserId, userId.ToString());
+        request.Content = JsonContent.Create(new ClaimCheckInPhotosRequest(checkInId, storageKeys.ToArray()));
+        try
+        {
+            using var response = await httpClientFactory.CreateClient(HttpClientName).SendAsync(request, ct);
+            if (!response.IsSuccessStatusCode) return CheckInPhotoClaimResult.Failed;
+            var payload = await response.Content.ReadFromJsonAsync<Response<List<ClaimedCheckInPhotoDto>>>(cancellationToken: ct);
+            return payload is { IsSuccess: true, Data: not null }
+                ? new CheckInPhotoClaimResult(true, payload.Data) : CheckInPhotoClaimResult.Failed;
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
+        {
+            logger.LogWarning(ex, "Check-in photo claim failed for {CheckInId}", checkInId);
+            return CheckInPhotoClaimResult.Failed;
+        }
+    }
+
+    public async Task ReleaseCheckInClaimAsync(Guid userId, Guid checkInId, CancellationToken ct = default)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Delete, $"/internal/check-in-photos/{checkInId}/claim");
+        request.AddGatewayAuthHeader(gatewayAuthOptions.Value.SecretKey);
+        request.Headers.TryAddWithoutValidation(GatewayHeaderConsts.XUserId, userId.ToString());
+        using var response = await httpClientFactory.CreateClient(HttpClientName).SendAsync(request, ct);
+        response.EnsureSuccessStatusCode();
+    }
 
     public async Task<UploadedPhotoLookupResult> ResolveAsync(
         Guid userId,

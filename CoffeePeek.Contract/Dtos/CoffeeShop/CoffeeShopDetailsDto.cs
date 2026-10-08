@@ -1,4 +1,5 @@
-﻿using CoffeePeek.Contract.Dtos.Contact;
+using CoffeePeek.Contract.Dtos.CheckIns;
+using CoffeePeek.Contract.Dtos.Contact;
 using CoffeePeek.Contract.Dtos.Menu;
 using CoffeePeek.Contract.Dtos.Schedule;
 using CoffeePeek.Contract.Dtos.Shop;
@@ -15,17 +16,12 @@ public record CoffeeShopDetailsDto
     public ShortPhotoMetadataDto[] Photos { get; init; }
 
     public decimal Rating { get; init; }
-    public int ReviewCount { get; init; }
-    public ReviewDto[] Reviews { get; init; } = [];
-    public CheckInDto[] UserCheckIns { get; init; } = [];
+    public int CheckInCount { get; init; }
+    public UnifiedCheckInDto[] CheckIns { get; init; } = [];
+    public UnifiedCheckInDto[] UserCheckIns { get; init; } = [];
 
 
     public bool IsVisited { get; init; }
-    public bool? CanCreateReview { get; init; }
-    /// <summary>
-    /// null if user for unauthenticated user
-    /// </summary>
-    public Guid? ExistingReviewId { get; init; }
     public bool IsOpen { get; init; }
     public bool IsNew { get; init; }
     public int DataCompletenessScore { get; init; }

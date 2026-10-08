@@ -5,6 +5,5 @@ public record PublicUserProfileResponse(
     DateTime CreatedAtUtc,
     string? About,
     string? AvatarUrl,
-    int ReviewCount,
     int CheckInCount,
     int AddedShopsCount);

@@ -37,7 +37,8 @@ public static class ResolveUploadedPhotosHandler
         // The in-memory filter repeats the owner check as defense in depth.
         var candidates = photos.Where(p =>
             p.OwnerId == query.OwnerId
-            && p.BucketType == BucketType.Shop
+            && p.BucketType is BucketType.Shop or BucketType.CheckIn
+            && p.CheckInId == null
             && p.Status == PhotoStatus.Pending
             && !p.IsExpired);
 
@@ -45,7 +46,7 @@ public static class ResolveUploadedPhotosHandler
         foreach (var photo in candidates)
         {
             // The client never uploaded (or the upload failed): nothing to attach.
-            var size = await storageService.GetObjectSize(photo.StorageKey, BucketType.Shop, ct);
+            var size = await storageService.GetObjectSize(photo.StorageKey, photo.BucketType, ct);
             if (size is null) continue;
 
             result.Add(new ResolvedUploadedPhotoDto(photo.StorageKey, photo.FileName, photo.ContentType, size.Value));

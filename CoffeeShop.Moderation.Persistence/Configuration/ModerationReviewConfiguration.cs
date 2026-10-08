@@ -15,29 +15,27 @@ public class ModerationReviewConfiguration : IEntityTypeConfiguration<Moderation
 
         // Optimistic concurrency on PostgreSQL xmin: two moderators deciding the same item at once must not both win.
         entity.Property<uint>("Version").IsRowVersion();
-        entity.HasOne(mr => mr.ModerationShop)
-            .WithMany()
-            .HasForeignKey(mr => mr.ModerationShopId)
-            .IsRequired(false)
-            .OnDelete(DeleteBehavior.Cascade);
-            
+
         entity.HasIndex(mr => mr.ShopId);
         entity.HasIndex(mr => mr.UserId);
         entity.HasIndex(mr => mr.ModeratedBy);
+        entity.HasIndex(mr => new { mr.CheckInId, mr.ContentRevision }).IsUnique();
         // Queue pages filter by status and order by newest; the composite also serves status-only filters.
         entity.HasIndex(mr => new { mr.ModerationStatus, mr.CreatedAtUtc });
 
         entity.Property(mr => mr.UserName).HasMaxLength(30);
-        entity.Property(mr => mr.Header)
-            .IsRequired(false)
-            .HasMaxLength(BusinessConstants.MaxReviewHeaderLength);
         entity.Property(mr => mr.DrinkSlug).HasMaxLength(50);
         entity.Property(mr => mr.CustomDrinkName).HasMaxLength(100);
         entity.Property(mr => mr.DrinkNameRu).HasMaxLength(100);
         entity.Property(mr => mr.DrinkNameEn).HasMaxLength(100);
-        entity.Property(mr => mr.Comment).HasMaxLength(BusinessConstants.MaxReviewCommentLength);
+        entity.Property(mr => mr.Comment).HasMaxLength(BusinessConstants.MaxCheckInTextLength);
+        entity.ToTable("ModerationCheckIns", table => table.HasCheckConstraint("CK_ModerationCheckIns_CanonicalSnapshot",
+            "\"CheckInId\" <> '00000000-0000-0000-0000-000000000000'::uuid AND \"ContentRevision\" > 0 AND " +
+            "length(btrim(\"Comment\")) > 0 AND \"Rating_Place\" BETWEEN 1 AND 5 AND " +
+            "\"Rating_Service\" BETWEEN 1 AND 5 AND \"Rating_Coffee\" BETWEEN 1 AND 5"));
         entity.Property(mr => mr.RejectedReason).HasMaxLength(BusinessConstants.MaxRejectReasonCommentLength);
-            
+
+        entity.HasMany(mr => mr.ReviewPhotos).WithOne().HasForeignKey("ModerationCheckInId");
         entity.OwnsOne<Rating>(r => r.Rating);
     }
 }

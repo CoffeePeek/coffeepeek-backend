@@ -1,30 +1,24 @@
 using CoffeePeek.Moderation.Domain.Common.Enums;
 using CoffeePeek.Moderation.Domain.Entities;
 using CoffeePeek.Shared.Domain.Entities;
+using CoffeePeek.Shared.Kernel.Drinks;
 
 namespace CoffeePeek.Moderation.Domain.Aggregates.ModerationReviewAggregate;
 
 public partial class ModerationReview : Entity<Guid>
 {
-    public string? DrinkSlug { get; private set; }
-    public string? CustomDrinkName { get; private set; }
-    public string? DrinkNameRu { get; private set; }
-    public string? DrinkNameEn { get; private set; }
-
-    public void SetDrink(CoffeePeek.Shared.Kernel.Drinks.DrinkSelection? drink)
-    {
-        DrinkSlug = drink?.Slug;
-        CustomDrinkName = drink?.CustomName;
-        DrinkNameRu = drink?.NameRu;
-        DrinkNameEn = drink?.NameEn;
-    }
-
-    public string? Header { get; private set; }
     public string Comment { get; private set; }
     public Guid UserId { get; private set; }
     public string UserName { get; private set; }
     public Guid ShopId { get; private set; }
-    public Guid? ModerationShopId { get; private set; }
+    public Guid CheckInId { get; private set; }
+    public int ContentRevision { get; private set; }
+    public string? DrinkSlug { get; private set; }
+    public string? CustomDrinkName { get; private set; }
+    public string? DrinkNameRu { get; private set; }
+    public string? DrinkNameEn { get; private set; }
+    public DateTime VisitedAtUtc { get; private set; }
+    public long DecisionSequence { get; private set; }
 
     public Rating Rating { get; private set; }
 
@@ -34,34 +28,36 @@ public partial class ModerationReview : Entity<Guid>
     public ModerationStatus ModerationStatus { get; private set; }
 
     public bool IsSoftDelete { get; private set; }
-    
+
     private readonly List<PhotoMetadata> _reviewPhotos = [];
     public IReadOnlyCollection<PhotoMetadata> ReviewPhotos => _reviewPhotos.AsReadOnly();
-    
-    public ModerationShop? ModerationShop { get; private set; }
-    
+
+
 
     // ReSharper disable once UnusedMember.Local
     private ModerationReview()
     {
     }
 
-    internal ModerationReview(Guid userId, Guid shopId, Guid? moderationShopId, string userName, string? header, string comment,
-        Rating rating, List<PhotoMetadata> photos)
+    private ModerationReview(Guid checkInId, int contentRevision, Guid userId, Guid shopId, string userName,
+        string comment, Rating rating, DrinkSelection? drink, DateTime visitedAtUtc, List<PhotoMetadata> photos)
     {
         Id = Guid.NewGuid();
         UserId = userId;
         ShopId = shopId;
-        ModerationShopId = moderationShopId is null || moderationShopId == Guid.Empty
-            ? null
-            : moderationShopId;
+        CheckInId = checkInId;
+        ContentRevision = contentRevision;
+        DrinkSlug = drink?.Slug;
+        CustomDrinkName = drink?.CustomName;
+        DrinkNameRu = drink?.NameRu;
+        DrinkNameEn = drink?.NameEn;
+        VisitedAtUtc = visitedAtUtc;
         UserName = userName;
-        Header = header;
         Comment = comment;
         Rating = rating;
         ModerationStatus = ModerationStatus.Pending;
         CreatedAtUtc = DateTime.UtcNow;
-        
+
         if (photos.Count != 0)
         {
             _reviewPhotos.AddRange(photos);

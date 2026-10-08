@@ -1,0 +1,770 @@
+{
+  "schemaVersion": 1,
+  "adapterVersion": "1.0",
+  "source": "https://sensecoffee.by/catalog/",
+  "collectedAtUtc": "2026-10-05T10:34:59.580078+00:00",
+  "complete": true,
+  "coverage": [
+    {
+      "productKind": "roasted_beans",
+      "catalogueUrl": "https://sensecoffee.by/catalog/",
+      "pages": 1,
+      "expectedProducts": null,
+      "discoveredProducts": 11
+    }
+  ],
+  "products": [
+    {
+      "sourceKey": "sensecoffee.by",
+      "sourceProductId": "922",
+      "sourceUrl": "https://sensecoffee.by/catalog/espresso/braziliya-serrado/",
+      "name": "Бразилия Серрадо",
+      "description": null,
+      "roasterName": "Sense Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "BR",
+          "countryNameRu": "Бразилия",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [],
+      "imageUrls": [
+        "https://sensecoffee.by/upload/iblock/902/f5uiqs0ip2ywvnfhigwbwcu2rqq968sd.png",
+        "https://sensecoffee.by/upload/resize_cache/iblock/5a8/500_375_2/0jp2czc8okp0up3pb3r3ate0jq0d7o5n.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "1186",
+          "weightGrams": 250,
+          "price": "27.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "PROP_501": "Не молоть",
+            "PROP_502": "250 г"
+          }
+        },
+        {
+          "externalVariantId": "1185",
+          "weightGrams": 1000,
+          "price": "86.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "PROP_501": "Не молоть",
+            "PROP_502": "1000 г"
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "sensecoffee.by",
+      "sourceProductId": "1294",
+      "sourceUrl": "https://sensecoffee.by/catalog/espresso/kolumbiya-uila/",
+      "name": "Колумбия Уила",
+      "description": null,
+      "roasterName": "Sense Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "CO",
+          "countryNameRu": "Колумбия",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [],
+      "imageUrls": [
+        "https://sensecoffee.by/upload/iblock/ced/tpfhi5u22ntu4gv18zsdt3kbftcga2fj.png",
+        "https://sensecoffee.by/upload/resize_cache/iblock/086/500_375_2/9nlis7magq4lwrfofqagfrqud0wb40z2.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "1296",
+          "weightGrams": 250,
+          "price": "28.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "PROP_501": "Не молоть",
+            "PROP_502": "250 г"
+          }
+        },
+        {
+          "externalVariantId": "1295",
+          "weightGrams": 1000,
+          "price": "89.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "PROP_501": "Не молоть",
+            "PROP_502": "1000 г"
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "sensecoffee.by",
+      "sourceProductId": "1410",
+      "sourceUrl": "https://sensecoffee.by/catalog/espresso/rwanda-nyakibanda/",
+      "name": "Руанда Ньякибанда",
+      "description": null,
+      "roasterName": "Sense Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "RW",
+          "countryNameRu": "Руанда",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [],
+      "imageUrls": [
+        "https://sensecoffee.by/upload/iblock/a34/4ky90ni2h7irxxisl9k0a7u7n0fl2x0r.png",
+        "https://sensecoffee.by/upload/resize_cache/iblock/a70/500_375_2/6np577bli0jiu1pc06hhke88b0ako3gc.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "1412",
+          "weightGrams": 250,
+          "price": "28.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "PROP_501": "Не молоть",
+            "PROP_502": "250 г"
+          }
+        },
+        {
+          "externalVariantId": "1411",
+          "weightGrams": 1000,
+          "price": "90.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "PROP_501": "Не молоть",
+            "PROP_502": "1000 г"
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "sensecoffee.by",
+      "sourceProductId": "1313",
+      "sourceUrl": "https://sensecoffee.by/catalog/filtr/kolumbiya-uila-filter/",
+      "name": "Колумбия Уила",
+      "description": null,
+      "roasterName": "Sense Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "CO",
+          "countryNameRu": "Колумбия",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [],
+      "imageUrls": [
+        "https://sensecoffee.by/upload/iblock/ad9/pikxpktcx05o9zplcf2e9ehszjzszqpf.png",
+        "https://sensecoffee.by/upload/resize_cache/iblock/5cc/500_375_2/l5z6x4opkk3r974m2an56x7nnvsw922a.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "1323",
+          "weightGrams": 250,
+          "price": "28.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "PROP_501": "Не молоть",
+            "PROP_502": "250 г"
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "sensecoffee.by",
+      "sourceProductId": "1423",
+      "sourceUrl": "https://sensecoffee.by/catalog/filtr/ruanda-nyakibanda/",
+      "name": "Руанда Ньякибанда",
+      "description": null,
+      "roasterName": "Sense Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "RW",
+          "countryNameRu": "Руанда",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [],
+      "imageUrls": [
+        "https://sensecoffee.by/upload/iblock/fd8/1tfly36k0zmnm239b9x8keovuy3pd5k3.png",
+        "https://sensecoffee.by/upload/resize_cache/iblock/a36/500_375_2/0h094k6zk0htv8e0rmmgoh9bqv5n2yla.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "1424",
+          "weightGrams": 250,
+          "price": "28.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "PROP_501": "Не молоть",
+            "PROP_502": "250 г"
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "sensecoffee.by",
+      "sourceProductId": "1380",
+      "sourceUrl": "https://sensecoffee.by/catalog/filtr/uganda-kadzhere/",
+      "name": "Уганда Каджере",
+      "description": null,
+      "roasterName": "Sense Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "UG",
+          "countryNameRu": "Уганда",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [],
+      "imageUrls": [
+        "https://sensecoffee.by/upload/iblock/579/yz66tm64ttt4r8rsuycis2dnu8gcio4x.png",
+        "https://sensecoffee.by/upload/resize_cache/iblock/b74/500_375_2/32slcobovxt0tb5fzxw913y9902lq16a.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "1381",
+          "weightGrams": 250,
+          "price": "33.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "PROP_501": "Не молоть",
+            "PROP_502": "250 г"
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "sensecoffee.by",
+      "sourceProductId": "1370",
+      "sourceUrl": "https://sensecoffee.by/catalog/filtr/efiopiya-balese-dinigu/",
+      "name": "Эфиопия Балесе Динигу",
+      "description": null,
+      "roasterName": "Sense Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "ET",
+          "countryNameRu": "Эфиопия",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [],
+      "imageUrls": [
+        "https://sensecoffee.by/upload/iblock/41b/clfwhx7cggv8f8zjehlub6zk0dn0zkvk.png",
+        "https://sensecoffee.by/upload/resize_cache/iblock/e51/500_375_2/dao52vim87zlicmaix3luntgkl1xore7.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "1371",
+          "weightGrams": 250,
+          "price": "36.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "PROP_501": "Не молоть",
+            "PROP_502": "250 г"
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "sensecoffee.by",
+      "sourceProductId": "1342",
+      "sourceUrl": "https://sensecoffee.by/catalog/filtr/efiopiya-yabitu-tume/",
+      "name": "Эфиопия Ябиту Туме",
+      "description": null,
+      "roasterName": "Sense Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "ET",
+          "countryNameRu": "Эфиопия",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [],
+      "imageUrls": [
+        "https://sensecoffee.by/upload/iblock/a83/ho84ozpg46kdnost2qxawsay41k1ozx3.png",
+        "https://sensecoffee.by/upload/resize_cache/iblock/60d/500_375_2/gsd7vg1rky8t05ug7muoxolh5ty7mqiv.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "1345",
+          "weightGrams": 250,
+          "price": "39.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "PROP_501": "Не молоть",
+            "PROP_502": "250 г"
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "sensecoffee.by",
+      "sourceProductId": "1332",
+      "sourceUrl": "https://sensecoffee.by/catalog/filtr/ruanda-mubuga-khill/",
+      "name": "Руанда Мубуга Хилл",
+      "description": null,
+      "roasterName": "Sense Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "RW",
+          "countryNameRu": "Руанда",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [],
+      "imageUrls": [
+        "https://sensecoffee.by/upload/iblock/2ec/d01gkjfty7eua99uzpe1gmutxye87wr7.png",
+        "https://sensecoffee.by/upload/resize_cache/iblock/ac8/500_375_2/y5syx97xd6xyka85ue5wsa112b07g8qb.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "1333",
+          "weightGrams": 250,
+          "price": "40.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "PROP_501": "Не молоть",
+            "PROP_502": "250 г"
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "sensecoffee.by",
+      "sourceProductId": "1430",
+      "sourceUrl": "https://sensecoffee.by/catalog/filtr/kolumbiya-florida-papayo/",
+      "name": "Колумбия Флорида Папайо",
+      "description": null,
+      "roasterName": "Sense Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "CO",
+          "countryNameRu": "Колумбия",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [],
+      "imageUrls": [
+        "https://sensecoffee.by/upload/iblock/445/22hyeqgvaq1ptimhpycg6uj5o0bf4klr.png",
+        "https://sensecoffee.by/upload/resize_cache/iblock/557/500_375_2/q5qrde54adft0szunwpsjcioeoom45el.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "1431",
+          "weightGrams": 250,
+          "price": "52.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "PROP_501": "Не молоть",
+            "PROP_502": "250 г"
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "sensecoffee.by",
+      "sourceProductId": "1437",
+      "sourceUrl": "https://sensecoffee.by/catalog/filtr/kolumbiya-roble-vush-vush/",
+      "name": "Колумбия Робле Вуш-Вуш",
+      "description": null,
+      "roasterName": "Sense Coffee",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "CO",
+          "countryNameRu": "Колумбия",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [],
+      "imageUrls": [
+        "https://sensecoffee.by/upload/iblock/571/fi6a4n2i1h802u92irhsx490oyfv7b57.png",
+        "https://sensecoffee.by/upload/resize_cache/iblock/ae7/500_375_2/3ltibeiiqw9g6jxl6oz0yzx9lcduy10c.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "1438",
+          "weightGrams": 250,
+          "price": "62.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "PROP_501": "Не молоть",
+            "PROP_502": "250 г"
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    }
+  ],
+  "excluded": [],
+  "sourceSnapshots": [
+    {
+      "url": "https://sensecoffee.by/catalog/",
+      "fetchedAtUtc": "2026-10-05T10:02:19.692406+00:00",
+      "sha256": "195578a493cc839034b892a697926c8c66c5efa4e69e1ce101725fb4a3e51540"
+    },
+    {
+      "url": "https://sensecoffee.by/catalog/espresso/braziliya-serrado/",
+      "fetchedAtUtc": "2026-10-05T10:29:27.333216+00:00",
+      "sha256": "000af0a6abf109a63e10b5842e07bc49fbe465a8301ce74f3368eee2b1a82f20",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sensecoffee.by/catalog/espresso/braziliya-serrado/?oid=1185",
+      "fetchedAtUtc": "2026-10-05T10:33:55.019669+00:00",
+      "sha256": "674a5b10a4576e4913e563287d9dbe7bd83e7a13f3d4890a3dea1405893b2776",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sensecoffee.by/catalog/espresso/braziliya-serrado/?oid=1186",
+      "fetchedAtUtc": "2026-10-05T10:29:29.293428+00:00",
+      "sha256": "64a84b4cee316d7e5a3995e18c44fb811d71d4373d9bc62c34dda6b379c3cada",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sensecoffee.by/catalog/espresso/kolumbiya-uila/",
+      "fetchedAtUtc": "2026-10-05T10:33:56.550412+00:00",
+      "sha256": "fb557707c893213ae85d4b5953499c0b40590347d04b960e839e5891417d122f",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sensecoffee.by/catalog/espresso/kolumbiya-uila/?oid=1295",
+      "fetchedAtUtc": "2026-10-05T10:34:02.634981+00:00",
+      "sha256": "bf83da772dfd267d5fdfe08566892e49e386605dbdb1253713a8c547225c856d",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sensecoffee.by/catalog/espresso/kolumbiya-uila/?oid=1296",
+      "fetchedAtUtc": "2026-10-05T10:33:59.514989+00:00",
+      "sha256": "2a8560371ec136836e07e767f7670b5d21d4e7151ec501813aca770fcf8c0067",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sensecoffee.by/catalog/espresso/rwanda-nyakibanda/",
+      "fetchedAtUtc": "2026-10-05T10:34:05.528139+00:00",
+      "sha256": "b0883a735798f1a1411a8937d2dd1d6f0d5c241d8d3246b80ca44da54b692e1f",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sensecoffee.by/catalog/espresso/rwanda-nyakibanda/?oid=1411",
+      "fetchedAtUtc": "2026-10-05T10:34:11.560367+00:00",
+      "sha256": "1f6fc1ec40e32e551e875b32d226db6dbd3ade11c7d0a124f5fe5e4ecbfd10f8",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sensecoffee.by/catalog/espresso/rwanda-nyakibanda/?oid=1412",
+      "fetchedAtUtc": "2026-10-05T10:34:08.550079+00:00",
+      "sha256": "74737341335b3cf51df64c445789ca31739a6dcbf4335bf2991f124563e2368f",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sensecoffee.by/catalog/filtr/efiopiya-balese-dinigu/",
+      "fetchedAtUtc": "2026-10-05T10:34:32.534249+00:00",
+      "sha256": "316aa5b98a4a62599efa4600ac3cc615857fd08c3c58b6f7b81f082141791dcc",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sensecoffee.by/catalog/filtr/efiopiya-balese-dinigu/?oid=1371",
+      "fetchedAtUtc": "2026-10-05T10:34:35.559410+00:00",
+      "sha256": "e6ae93ec872b53a532176229716f833a5517ad09f6c28421a030000ca402b392",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sensecoffee.by/catalog/filtr/efiopiya-yabitu-tume/",
+      "fetchedAtUtc": "2026-10-05T10:34:38.551873+00:00",
+      "sha256": "caedaf69514502f750fc6c3bf6a7fa6f2722956823dfcb08885bce4b226481d6",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sensecoffee.by/catalog/filtr/efiopiya-yabitu-tume/?oid=1345",
+      "fetchedAtUtc": "2026-10-05T10:34:41.588769+00:00",
+      "sha256": "ad6ab2e38bab642df901b271a79b4e6179cdf3d06b0747a269daf2591cc08190",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sensecoffee.by/catalog/filtr/kolumbiya-florida-papayo/",
+      "fetchedAtUtc": "2026-10-05T10:34:50.549480+00:00",
+      "sha256": "4ff3668977796bc5a413d423994fa1fea0354501117396fb7790e394087dc48a",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sensecoffee.by/catalog/filtr/kolumbiya-florida-papayo/?oid=1431",
+      "fetchedAtUtc": "2026-10-05T10:34:53.582179+00:00",
+      "sha256": "3d0b6f5f375781fe99f0919a55784774c5a11ef75c44bf125c3ee18c766cba4d",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sensecoffee.by/catalog/filtr/kolumbiya-roble-vush-vush/",
+      "fetchedAtUtc": "2026-10-05T10:34:56.679108+00:00",
+      "sha256": "b62556d4adb22f0a0ebcfed3e26abadf248c174374f9be80188a6064bb1146e8",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sensecoffee.by/catalog/filtr/kolumbiya-roble-vush-vush/?oid=1438",
+      "fetchedAtUtc": "2026-10-05T10:34:59.580078+00:00",
+      "sha256": "5fdd895858a4a2e892c673164b81fe5308a421902b2070c419687578a68c666b",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sensecoffee.by/catalog/filtr/kolumbiya-uila-filter/",
+      "fetchedAtUtc": "2026-10-05T10:34:14.540019+00:00",
+      "sha256": "b38a7bcb0aa3f31847c2c5958315da41f74cecb3f2684f3b6f56b0c66814fc28",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sensecoffee.by/catalog/filtr/kolumbiya-uila-filter/?oid=1323",
+      "fetchedAtUtc": "2026-10-05T10:34:17.540670+00:00",
+      "sha256": "1d5b9f4d2cbbe3a9189656fd77e88a47e9f258b46e41869bb5cb37069a813371",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sensecoffee.by/catalog/filtr/ruanda-mubuga-khill/",
+      "fetchedAtUtc": "2026-10-05T10:34:44.530693+00:00",
+      "sha256": "968f42627b20d3cb58f1bd87f846ce8bb91aca823c1fdf30e77f0a628f835e37",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sensecoffee.by/catalog/filtr/ruanda-mubuga-khill/?oid=1333",
+      "fetchedAtUtc": "2026-10-05T10:34:47.541847+00:00",
+      "sha256": "297c6c326e0fa17e36a7062042d42d22ec29e64f1db92d3df1c9e73607721e29",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sensecoffee.by/catalog/filtr/ruanda-nyakibanda/",
+      "fetchedAtUtc": "2026-10-05T10:34:20.527112+00:00",
+      "sha256": "40ece43a7e932161ab83079e5ff20a4d0669a9ef87b724443364dba720ac8428",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sensecoffee.by/catalog/filtr/ruanda-nyakibanda/?oid=1424",
+      "fetchedAtUtc": "2026-10-05T10:34:23.538825+00:00",
+      "sha256": "0084fadbf96a1ba9a96d2c85bf9869c1259f943bdb71346711cbbdaafcd79243",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sensecoffee.by/catalog/filtr/uganda-kadzhere/",
+      "fetchedAtUtc": "2026-10-05T10:34:26.545130+00:00",
+      "sha256": "9ff085e7709d885d520539b3fc9426617d96e396449c8dd97d86286ade26dd69",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sensecoffee.by/catalog/filtr/uganda-kadzhere/?oid=1381",
+      "fetchedAtUtc": "2026-10-05T10:34:29.526426+00:00",
+      "sha256": "fac4f02ebe4117e8dcc4b45622a2d3aba8e05cb87e314920db456a6ed22c3b9e",
+      "paginationHeaders": {}
+    }
+  ]
+}

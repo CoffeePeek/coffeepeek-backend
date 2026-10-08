@@ -3,7 +3,6 @@ namespace CoffeePeek.Account.Domain.Entities.UserAggregate;
 public partial record UserStatistics
 {
     public int CheckInCount { get; private set; }
-    public int ReviewCount { get; private set; }
     public int AddedShopsCount { get; private set; }
     public DateTime StatisticUpdatedAtUtc { get; set; } = DateTime.UtcNow;
 
@@ -12,19 +11,13 @@ public partial record UserStatistics
         //ef core
     }
 
-    internal UserStatistics(int checkInCount, int reviewCount, int addedShopsCount)
+    internal UserStatistics(int checkInCount, int addedShopsCount)
     {
         CheckInCount = checkInCount;
-        ReviewCount = reviewCount;
         AddedShopsCount = addedShopsCount;
     }
-    
-    public static UserStatistics Empty() => new(0, 0, 0);
 
-    public void IncrementReviews()
-    {
-        ReviewCount += 1;
-    }
+    public static UserStatistics Empty() => new(0, 0);
     public void IncrementCheckIn()
     {
         CheckInCount += 1;

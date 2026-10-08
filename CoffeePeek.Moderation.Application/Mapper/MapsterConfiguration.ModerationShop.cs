@@ -38,7 +38,7 @@ public partial class MapsterConfiguration
         config.NewConfig<ModerationShop, ShopDto>()
             .Map(d => d.Photos, s => s.ShopPhotos)
             .Map(d => d.Rating, s => 0)
-            .Map(d => d.ReviewCount, s => 0)
+            .Map(d => d.CheckInCount, s => 0)
             .Map(d => d.IsOpen, s => true)
             .Map(dest => dest.Type, src => src.CoffeeFocus == null
                 ? (ContractCoffeeShopType?)null
@@ -51,7 +51,7 @@ public partial class MapsterConfiguration
             .Map(d => d.Schedules, s => s.Schedules)
             .Ignore(dest => dest.Menu)
             .AfterMapping((src, dest) => dest.Menu = MenuDraftMapper.ToDto(src.Menu, mediaOptions));
-        
+
         config.NewConfig<ModerationShopRoaster, RoasterDto>()
             .Map(dest => dest.Id, src => src.RoasterId);
         config.NewConfig<ModerationShopEquipment, EquipmentDto>()

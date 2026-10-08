@@ -13,7 +13,7 @@ namespace CoffeePeek.ShopsService.Controllers;
 [Route("api/roasters")]
 [ProducesErrorResponseType(typeof(ErrorResponse))]
 [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
-public class RoastersController(PublicDiscoveryService discovery) : ControllerBase
+public class RoastersController(PublicDiscoveryService discovery, CoffeePeek.Shops.Application.Features.CoffeeCatalog.ICoffeeCatalogStore coffees) : ControllerBase
 {
     [HttpGet("{slug}")]
     [HttpGet("by-slug/{slug}")]
@@ -22,6 +22,11 @@ public class RoastersController(PublicDiscoveryService discovery) : ControllerBa
     public async Task<IActionResult> GetById(string slug, CancellationToken ct)
     {
         var data = await discovery.GetRoasterAsync(slug, ct);
+        if (data is not null)
+        {
+            var catalog = await coffees.RoasterOverviewAsync(slug, ct);
+            data = data with { Tags = catalog.Tags, AvailableCoffeeProducts = catalog.AvailableProducts };
+        }
         return data is null ? NotFound() : Ok(Response<PublicRoasterDetailsDto>.Success(data));
     }
 }

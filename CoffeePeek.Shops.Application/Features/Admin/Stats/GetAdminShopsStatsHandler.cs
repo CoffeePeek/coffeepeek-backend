@@ -15,8 +15,8 @@ public static class GetAdminShopsStatsHandler
 
         return Response<AdminServiceStatsDto>.Success(new AdminServiceStatsDto(
             TotalCoffeeShops: stats.TotalCoffeeShops,
-            TotalReviews: stats.TotalReviews,
+            TotalCheckIns: stats.TotalCheckIns,
             NewCoffeeShopsToday: stats.NewCoffeeShopsToday,
-            NewReviewsToday: stats.NewReviewsToday));
+            NewCheckInsToday: stats.NewCheckInsToday));
     }
 }

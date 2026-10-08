@@ -1,0 +1,79 @@
+[
+  {
+    "uid": 617425645552,
+    "title": "Кофе в зернах Kanga Бразилия Феникс Натти",
+    "sku": "",
+    "text": "<strong>Станция обработки: </strong>Альта Виста<br /><strong>Состав: </strong>Арабика 100%<br /><strong>Способ обработки: </strong>Натуральная<br /><strong>Оценка Q: </strong>83<br /><strong>Вкус: </strong>Шоколад, лесной орех, кешью, карамель <br /><strong>Страны: </strong>Бразилия<br /><strong>Регион: </strong>Альта Можиана<br /><strong>Разновидность: </strong>Мундо-ново, Желтый катуаи<br /><strong>Высота произрастания, м: </strong>900<br /><strong>Метод приготовления: </strong>Турка, Рожковая кофемашина, Суперавтомат, Гейзерная кофеварка<br /><br /><br />",
+    "mark": "STRONG",
+    "quantity": "",
+    "portion": 0,
+    "unit": "",
+    "single": "",
+    "price": "26.0000",
+    "priceold": "",
+    "descr": "Мягкий и обволакивающий кофе с нотами ванили и карамели, тёплым акцентом кешью и лесного ореха, в сливочной шоколадной оболочке",
+    "gallery": "[{\"img\":\"https:\\/\\/static.tildacdn.biz\\/stor6433-3565-4730-b331-353234316362\\/46b22d616686c379e4d05eecf2820dc3.webp\"},{\"img\":\"https:\\/\\/static.tildacdn.biz\\/stor6139-3832-4438-b864-643030656565\\/c93f4832de4a18002d0197cb5ab7b8f2.jpg\"},{\"img\":\"https:\\/\\/static.tildacdn.biz\\/stor3263-3461-4331-a263-376530663863\\/26380694.jpg\"}]",
+    "buttonlink": "https://xn--80ad9al.xn--90ais/braziliya-feniks-natti",
+    "buttontarget": "",
+    "json_options": "[{\"title\":\"Вид фасовки\",\"params\":{\"view\":\"select\",\"hasColor\":false,\"linkImage\":false},\"values\":[\"1000 г.\",\"2000 г.\",\"250 г.\"]},{\"title\":\"Метод обработки\",\"params\":{\"view\":\"select\",\"hasColor\":false,\"linkImage\":false},\"values\":[\"Натуральный\"]},{\"title\":\"Бренд\",\"params\":{\"view\":\"select\",\"hasColor\":false,\"linkImage\":false},\"values\":[\"KANGA\"]}]",
+    "sort": 1000512,
+    "url": "https://xn--80ad9al.xn--90ais/braziliya-feniks-natti",
+    "pack_label": "lwh",
+    "pack_x": 0,
+    "pack_y": 0,
+    "pack_z": 0,
+    "pack_m": 0,
+    "partuids": "[108155442411,382310104262]",
+    "brand": "Kanga",
+    "externalid": "e9a4beoNmseCdA8MZ0DG",
+    "properties": [
+      {
+        "title": "Степень помола",
+        "params": {
+          "type": "single"
+        },
+        "sort": 1,
+        "values": "Не молоть\nПод чашку\nПод эспрессо\nПод турку\nПод гейзер"
+      }
+    ],
+    "editions": [
+      {
+        "uid": 372649071602,
+        "externalid": "aAim6tg9K4gn1zpIm06L",
+        "sku": "",
+        "price": "85.00",
+        "priceold": "",
+        "quantity": "7",
+        "img": "https://static.tildacdn.biz/stor6433-3565-4730-b331-353234316362/46b22d616686c379e4d05eecf2820dc3.webp",
+        "Вид фасовки": "1000 г.",
+        "Метод обработки": "Натуральный",
+        "Бренд": "KANGA"
+      },
+      {
+        "uid": 411155185792,
+        "externalid": "MSUEFIDVzzhE0ivGUNZ8",
+        "sku": "",
+        "price": "160.00",
+        "priceold": "",
+        "quantity": "19",
+        "img": "https://static.tildacdn.biz/stor6139-3832-4438-b864-643030656565/c93f4832de4a18002d0197cb5ab7b8f2.jpg",
+        "Вид фасовки": "2000 г.",
+        "Метод обработки": "Натуральный",
+        "Бренд": "KANGA"
+      },
+      {
+        "uid": 423138138852,
+        "externalid": "fXkdBS5Rfp2lDp386GjD",
+        "sku": "",
+        "price": "26.00",
+        "priceold": "",
+        "quantity": "10",
+        "img": "https://static.tildacdn.biz/stor3263-3461-4331-a263-376530663863/26380694.jpg",
+        "Вид фасовки": "250 г.",
+        "Метод обработки": "Натуральный",
+        "Бренд": "KANGA"
+      }
+    ],
+    "characteristics": []
+  }
+]

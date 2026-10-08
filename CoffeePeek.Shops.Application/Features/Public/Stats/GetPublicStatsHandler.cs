@@ -13,27 +13,12 @@ public static class GetPublicStatsHandler
         ICacheService cacheService,
         CancellationToken ct)
     {
-        var cacheKey = CacheKey.Shop.PublicPlatformStats();
-        var cached = await cacheService.GetAsync<PublicPlatformStatsDto>(cacheKey, ct);
-
-        if (cached is not null)
-            return Response<PublicPlatformStatsDto>.Success(cached);
-
         var stats = await repository.GetStatsAsync(ct);
         var dto = new PublicPlatformStatsDto(
             TotalCoffeeShops: stats.TotalCoffeeShops,
-            TotalReviews: stats.TotalReviews,
             TotalCheckIns: stats.TotalCheckIns,
             AverageRating: stats.AverageRating);
 
-        await cacheService.SetAsync(cacheKey, dto);
-
         return Response<PublicPlatformStatsDto>.Success(dto);
     }
-}
-
-public static class PublicStatsCacheInvalidator
-{
-    public static Task InvalidateAsync(ICacheService cacheService, CancellationToken ct = default) =>
-        cacheService.RemoveAsync(CacheKey.Shop.PublicPlatformStats());
 }

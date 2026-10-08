@@ -11,26 +11,14 @@ namespace CoffeePeek.ModerationService.Tests;
 public class ModerationReviewDtoContractTests
 {
     [Fact]
-    public void ReviewWithPhoto_MappingAndSerialization_ExposePhotoWithFullUrl()
+    public void SnapshotWithPhoto_ExposesCanonicalContentAndProtectedUrl()
     {
-        var photo = PhotoMetadata.Create(
-            "review.jpg",
-            "image/jpeg",
-            "reviews/review.jpg",
-            1_024,
-            Guid.NewGuid(),
-            null);
-        var review = ModerationReview.Create(
-            Guid.NewGuid(),
-            Guid.NewGuid(),
-            null,
-            "Test User",
-            null,
-            "A detailed review comment.",
-            5,
-            4,
-            3,
-            [photo]);
+        var author = Guid.NewGuid();
+        var checkInId = Guid.NewGuid();
+        var photoId = Guid.NewGuid();
+        var photo = PhotoMetadata.CreateCheckInPhoto(photoId, 0, "checkin.jpg", "image/jpeg", "private-key", 1024, author);
+        var review = ModerationReview.CreateCheckInSnapshot(checkInId, 2, author, Guid.NewGuid(),
+            "Test User", "A detailed check-in comment.", 5, 4, 3, null, DateTime.UtcNow, [photo]);
         var mapper = MapsterConfiguration.CreateMapper(new MediaPublicUrlOptions
         {
             PublicEndpoint = "https://media.example.com",
@@ -41,35 +29,26 @@ public class ModerationReviewDtoContractTests
         var json = JsonSerializer.Serialize(dto, new JsonSerializerOptions(JsonSerializerDefaults.Web));
 
         dto.Photos.Should().ContainSingle();
-        dto.Photos[0].FileName.Should().Be("review.jpg");
-        dto.Photos[0].FullUrl.Should().Be(
-            "https://media.example.com/coffeepeek.shops/reviews/review.jpg");
+        dto.CheckInId.Should().Be(checkInId);
+        dto.ContentRevision.Should().Be(2);
+        dto.Text.Should().Be(review.Comment);
+        dto.VisitedAtUtc.Should().Be(review.VisitedAtUtc);
+        dto.Photos[0].FileName.Should().Be("checkin.jpg");
+        dto.Photos[0].FullUrl.Should().Be($"/api/v1/check-ins/{checkInId}/moderation-photos/{photoId}?revision=2");
         json.Should().Contain("\"photos\":[{");
-        json.Should().Contain(
-            "\"fullUrl\":\"https://media.example.com/coffeepeek.shops/reviews/review.jpg\"");
+        json.Should().Contain($"\"fullUrl\":\"/api/v1/check-ins/{checkInId}/moderation-photos/{photoId}?revision=2\"");
+        json.Should().NotContain("\"header\"").And.NotContain("\"comment\"");
     }
 
     [Fact]
-    public void ReviewWithPhoto_WithImageProxy_ExposesVariantUrls()
+    public void SnapshotWithPhoto_WithImageProxy_StillExposesOnlyProtectedUrl()
     {
-        var photo = PhotoMetadata.Create(
-            "review.jpg",
-            "image/jpeg",
-            "reviews/review.jpg",
-            1_024,
-            Guid.NewGuid(),
-            null);
-        var review = ModerationReview.Create(
-            Guid.NewGuid(),
-            Guid.NewGuid(),
-            null,
-            "Test User",
-            null,
-            "A detailed review comment.",
-            5,
-            4,
-            3,
-            [photo]);
+        var author = Guid.NewGuid();
+        var checkInId = Guid.NewGuid();
+        var photoId = Guid.NewGuid();
+        var photo = PhotoMetadata.CreateCheckInPhoto(photoId, 0, "checkin.jpg", "image/jpeg", "private-key", 1024, author);
+        var snapshot = ModerationReview.CreateCheckInSnapshot(checkInId, 2, author, Guid.NewGuid(),
+            "Test User", "A detailed check-in comment.", 5, 4, 3, null, DateTime.UtcNow, [photo]);
         var mapper = MapsterConfiguration.CreateMapper(new MediaPublicUrlOptions
         {
             PublicEndpoint = "https://media.example.com",
@@ -77,20 +56,13 @@ public class ModerationReviewDtoContractTests
             ShopBucketName = "coffeepeek.shops"
         });
 
-        var dto = mapper.Map<ModerationReviewDto>(review);
+        var dto = mapper.Map<ModerationReviewDto>(snapshot);
         var json = JsonSerializer.Serialize(dto, new JsonSerializerOptions(JsonSerializerDefaults.Web));
 
         dto.Photos.Should().ContainSingle();
-        dto.Photos[0].FullUrl.Should().Be(
-            "https://media.example.com/coffeepeek.shops/reviews/review.jpg");
-        var urls = dto.Photos[0].Urls;
-        urls.Should().NotBeNull();
-        urls!.Detail.Should().Be(
-            "https://media.example.com/img/_/detail/plain/coffeepeek.shops/reviews/review.jpg");
-        urls.Thumbnail.Should().Be(
-            "https://media.example.com/img/_/thumb/plain/coffeepeek.shops/reviews/review.jpg");
-        json.Should().Contain("\"urls\":{");
-        json.Should().Contain("\"fullscreen\":");
+        dto.Photos[0].FullUrl.Should().Be($"/api/v1/check-ins/{checkInId}/moderation-photos/{photoId}?revision=2");
+        dto.Photos[0].Urls.Should().BeNull();
+        json.Should().NotContain("https://media.example.com");
     }
 
     [Fact]

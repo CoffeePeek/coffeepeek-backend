@@ -119,7 +119,7 @@ public sealed class PublicUserAddressControllerTests
     {
         var ownerId = Guid.NewGuid();
         var address = new PublicAddressMetadata(ownerId, "petr", "/users/petr", 2, true);
-        var profile = new PublicUserProfileResponse("Petr", DateTime.UtcNow, "about", null, 1, 2, 3);
+        var profile = new PublicUserProfileResponse("Petr", DateTime.UtcNow, "about", null, 2, 3);
         object? captured = null;
         _addresses.Setup(a => a.ResolveAsync("ivan-petrov", _ct)).ReturnsAsync(address);
         SetupProfile()

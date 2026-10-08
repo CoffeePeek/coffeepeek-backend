@@ -1,0 +1,309 @@
+{
+  "product": {
+    "id": 17597,
+    "name": "Кения Гатура",
+    "permalink": "https://kcr.by/product/keniya-gatura/",
+    "attributes": [
+      {
+        "id": 0,
+        "name": "Вес",
+        "taxonomy": null,
+        "has_variations": true,
+        "terms": [
+          {
+            "id": 0,
+            "name": "1000г",
+            "slug": "1000г"
+          },
+          {
+            "id": 0,
+            "name": "250г",
+            "slug": "250г"
+          }
+        ]
+      },
+      {
+        "id": 0,
+        "name": "Регион",
+        "taxonomy": null,
+        "has_variations": false,
+        "terms": [
+          {
+            "id": 0,
+            "name": "Гикумби",
+            "slug": "Гикумби"
+          }
+        ]
+      },
+      {
+        "id": 0,
+        "name": "Станция обработки",
+        "taxonomy": null,
+        "has_variations": false,
+        "terms": [
+          {
+            "id": 0,
+            "name": "Нова",
+            "slug": "Нова"
+          }
+        ]
+      },
+      {
+        "id": 0,
+        "name": "Сорт/разновидность",
+        "taxonomy": null,
+        "has_variations": false,
+        "terms": [
+          {
+            "id": 0,
+            "name": "Красный Бурбон",
+            "slug": "Красный Бурбон"
+          }
+        ]
+      },
+      {
+        "id": 0,
+        "name": "Высота произрастания",
+        "taxonomy": null,
+        "has_variations": false,
+        "terms": [
+          {
+            "id": 0,
+            "name": "1800 м",
+            "slug": "1800 м"
+          }
+        ]
+      },
+      {
+        "id": 1,
+        "name": "Способ обработки",
+        "taxonomy": "pa_proccessing-method",
+        "has_variations": false,
+        "terms": [
+          {
+            "id": 96,
+            "name": "Мытый",
+            "slug": "washed"
+          }
+        ]
+      },
+      {
+        "id": 0,
+        "name": "Помол",
+        "taxonomy": null,
+        "has_variations": true,
+        "terms": [
+          {
+            "id": 0,
+            "name": "Крупный (френч-пресс, капельная кофеварка и кемекс)",
+            "slug": "Крупный (френч-пресс, капельная кофеварка и кемекс)"
+          },
+          {
+            "id": 0,
+            "name": "Средний (чашка, воронка и аэропресс)",
+            "slug": "Средний (чашка, воронка и аэропресс)"
+          },
+          {
+            "id": 0,
+            "name": "Мелкий (эспрессо, гейзерная кофеварка)",
+            "slug": "Мелкий (эспрессо, гейзерная кофеварка)"
+          },
+          {
+            "id": 0,
+            "name": "Ультра мелкий (джезва/турка)",
+            "slug": "Ультра мелкий (джезва/турка)"
+          },
+          {
+            "id": 0,
+            "name": "В зерне",
+            "slug": "В зерне"
+          }
+        ]
+      }
+    ],
+    "variations": [
+      {
+        "id": 17598,
+        "attributes": [
+          {
+            "name": "Вес",
+            "value": "1000г"
+          },
+          {
+            "name": "Помол",
+            "value": null
+          }
+        ]
+      },
+      {
+        "id": 17599,
+        "attributes": [
+          {
+            "name": "Вес",
+            "value": "250г"
+          },
+          {
+            "name": "Помол",
+            "value": null
+          }
+        ]
+      }
+    ],
+    "description": "<p style=\"color: #977e4b\">регион: Ньери<br/>\nспособ обработки: Натуральный / Анаэробный<br/>\nсорт/разновидность: SL28, SL34<br/>\nвысота произрастания: 1650м</p>",
+    "short_description": "<div class=\"page\" title=\"Page 10\">\n<div class=\"section\">\n<div class=\"layoutArea\">\n<div class=\"column\">\n<p class=\"p1\">Ежевика, темный виноград, виски.<br />\nЯркий и округлый</p>\n</div>\n</div>\n</div>\n</div>",
+    "images": [
+      {
+        "id": 17600,
+        "src": "https://kcr.by/wp-content/uploads/2026/06/кения-гатура.jpg",
+        "thumbnail": "https://kcr.by/wp-content/uploads/2026/06/кения-гатура-300x300.jpg",
+        "srcset": "https://kcr.by/wp-content/uploads/2026/06/кения-гатура.jpg 1240w, https://kcr.by/wp-content/uploads/2026/06/кения-гатура-300x290.jpg 300w, https://kcr.by/wp-content/uploads/2026/06/кения-гатура-1024x991.jpg 1024w, https://kcr.by/wp-content/uploads/2026/06/кения-гатура-768x743.jpg 768w, https://kcr.by/wp-content/uploads/2026/06/кения-гатура-1080x1045.jpg 1080w, https://kcr.by/wp-content/uploads/2026/06/кения-гатура-980x948.jpg 980w, https://kcr.by/wp-content/uploads/2026/06/кения-гатура-480x465.jpg 480w, https://kcr.by/wp-content/uploads/2026/06/кения-гатура-600x581.jpg 600w",
+        "sizes": "(max-width: 1240px) 100vw, 1240px",
+        "name": "кения гатура",
+        "alt": ""
+      },
+      {
+        "id": 4555,
+        "src": "https://kcr.by/wp-content/uploads/2019/01/KitchenCoffeeRoasters_250_Back.jpg",
+        "thumbnail": "https://kcr.by/wp-content/uploads/2019/01/KitchenCoffeeRoasters_250_Back-300x300.jpg",
+        "srcset": "https://kcr.by/wp-content/uploads/2019/01/KitchenCoffeeRoasters_250_Back.jpg 1200w, https://kcr.by/wp-content/uploads/2019/01/KitchenCoffeeRoasters_250_Back-980x980.jpg 980w, https://kcr.by/wp-content/uploads/2019/01/KitchenCoffeeRoasters_250_Back-480x480.jpg 480w",
+        "sizes": "(min-width: 0px) and (max-width: 480px) 480px, (min-width: 481px) and (max-width: 980px) 980px, (min-width: 981px) 1200px, 100vw",
+        "name": "KitchenCoffeeRoasters_250_Back",
+        "alt": ""
+      }
+    ]
+  },
+  "variations": [
+    {
+      "id": 17599,
+      "name": "Кения Гатура",
+      "slug": "%d1%80%d1%83%d0%b0%d0%bd%d0%b4%d0%b0-%d0%bc%d0%b0%d0%ba%d1%83%d0%b1%d0%b0-26",
+      "parent": 17597,
+      "type": "variation",
+      "variation": "Вес: 250г",
+      "permalink": "https://kcr.by/product/keniya-gatura/?attribute_%25d0%25b2%25d0%25b5%25d1%2581=250%D0%B3",
+      "sku": "",
+      "short_description": "",
+      "description": "",
+      "on_sale": false,
+      "prices": {
+        "price": "5500",
+        "regular_price": "5500",
+        "sale_price": "5500",
+        "price_range": null,
+        "currency_code": "BYN",
+        "currency_symbol": " р.",
+        "currency_minor_unit": 2,
+        "currency_decimal_separator": ".",
+        "currency_thousand_separator": ",",
+        "currency_prefix": "",
+        "currency_suffix": " р."
+      },
+      "price_html": "<span class=\"woocommerce-Price-amount amount\">55.00<span class=\"woocommerce-Price-currencySymbol\"> р.</span></span>",
+      "average_rating": "0",
+      "review_count": 0,
+      "images": [
+        {
+          "id": 17600,
+          "src": "https://kcr.by/wp-content/uploads/2026/06/кения-гатура.jpg",
+          "thumbnail": "https://kcr.by/wp-content/uploads/2026/06/кения-гатура-300x300.jpg",
+          "srcset": "https://kcr.by/wp-content/uploads/2026/06/кения-гатура.jpg 1240w, https://kcr.by/wp-content/uploads/2026/06/кения-гатура-300x290.jpg 300w, https://kcr.by/wp-content/uploads/2026/06/кения-гатура-1024x991.jpg 1024w, https://kcr.by/wp-content/uploads/2026/06/кения-гатура-768x743.jpg 768w, https://kcr.by/wp-content/uploads/2026/06/кения-гатура-1080x1045.jpg 1080w, https://kcr.by/wp-content/uploads/2026/06/кения-гатура-980x948.jpg 980w, https://kcr.by/wp-content/uploads/2026/06/кения-гатура-480x465.jpg 480w, https://kcr.by/wp-content/uploads/2026/06/кения-гатура-600x581.jpg 600w",
+          "sizes": "(max-width: 1240px) 100vw, 1240px",
+          "name": "кения гатура",
+          "alt": ""
+        }
+      ],
+      "categories": [],
+      "tags": [],
+      "brands": [],
+      "attributes": [],
+      "variations": [],
+      "grouped_products": [],
+      "has_options": false,
+      "is_purchasable": true,
+      "is_in_stock": true,
+      "is_on_backorder": false,
+      "low_stock_remaining": null,
+      "stock_availability": {
+        "text": "",
+        "class": "in-stock"
+      },
+      "sold_individually": false,
+      "add_to_cart": {
+        "text": "В корзину",
+        "description": "Добавить в корзину &ldquo;Кения Гатура &#8212; 250г&rdquo;",
+        "url": "https://kcr.by/product/keniya-gatura/?attribute_вес=250%D0%B3&#038;variation_id=17599&#038;add-to-cart=17597",
+        "single_text": "В корзину",
+        "minimum": 1,
+        "maximum": 9999,
+        "multiple_of": 1
+      },
+      "extensions": {}
+    },
+    {
+      "id": 17598,
+      "name": "Кения Гатура",
+      "slug": "%d0%ba%d0%b5%d0%bd%d0%b8%d1%8f-%d1%82%d0%b5%d0%b9%d0%bb%d0%be%d1%80-%d0%b2%d0%b8%d0%bd%d1%87-%d0%b0%d0%b0-10",
+      "parent": 17597,
+      "type": "variation",
+      "variation": "Вес: 1000г",
+      "permalink": "https://kcr.by/product/keniya-gatura/?attribute_%25d0%25b2%25d0%25b5%25d1%2581=1000%D0%B3",
+      "sku": "",
+      "short_description": "",
+      "description": "",
+      "on_sale": false,
+      "prices": {
+        "price": "20800",
+        "regular_price": "20800",
+        "sale_price": "20800",
+        "price_range": null,
+        "currency_code": "BYN",
+        "currency_symbol": " р.",
+        "currency_minor_unit": 2,
+        "currency_decimal_separator": ".",
+        "currency_thousand_separator": ",",
+        "currency_prefix": "",
+        "currency_suffix": " р."
+      },
+      "price_html": "<span class=\"woocommerce-Price-amount amount\">208.00<span class=\"woocommerce-Price-currencySymbol\"> р.</span></span>",
+      "average_rating": "0",
+      "review_count": 0,
+      "images": [
+        {
+          "id": 17600,
+          "src": "https://kcr.by/wp-content/uploads/2026/06/кения-гатура.jpg",
+          "thumbnail": "https://kcr.by/wp-content/uploads/2026/06/кения-гатура-300x300.jpg",
+          "srcset": "https://kcr.by/wp-content/uploads/2026/06/кения-гатура.jpg 1240w, https://kcr.by/wp-content/uploads/2026/06/кения-гатура-300x290.jpg 300w, https://kcr.by/wp-content/uploads/2026/06/кения-гатура-1024x991.jpg 1024w, https://kcr.by/wp-content/uploads/2026/06/кения-гатура-768x743.jpg 768w, https://kcr.by/wp-content/uploads/2026/06/кения-гатура-1080x1045.jpg 1080w, https://kcr.by/wp-content/uploads/2026/06/кения-гатура-980x948.jpg 980w, https://kcr.by/wp-content/uploads/2026/06/кения-гатура-480x465.jpg 480w, https://kcr.by/wp-content/uploads/2026/06/кения-гатура-600x581.jpg 600w",
+          "sizes": "(max-width: 1240px) 100vw, 1240px",
+          "name": "кения гатура",
+          "alt": ""
+        }
+      ],
+      "categories": [],
+      "tags": [],
+      "brands": [],
+      "attributes": [],
+      "variations": [],
+      "grouped_products": [],
+      "has_options": false,
+      "is_purchasable": true,
+      "is_in_stock": true,
+      "is_on_backorder": false,
+      "low_stock_remaining": null,
+      "stock_availability": {
+        "text": "",
+        "class": "in-stock"
+      },
+      "sold_individually": false,
+      "add_to_cart": {
+        "text": "В корзину",
+        "description": "Добавить в корзину &ldquo;Кения Гатура &#8212; 1000г&rdquo;",
+        "url": "https://kcr.by/product/keniya-gatura/?attribute_вес=1000%D0%B3&#038;variation_id=17598&#038;add-to-cart=17597",
+        "single_text": "В корзину",
+        "minimum": 1,
+        "maximum": 9999,
+        "multiple_of": 1
+      },
+      "extensions": {}
+    }
+  ]
+}

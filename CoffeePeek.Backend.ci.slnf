@@ -2,10 +2,13 @@
   "solution": {
     "path": "CoffeePeek.slnx",
     "projects": [
+      "CoffeePeek.LegacyCheckInMigration\\CoffeePeek.LegacyCheckInMigration.csproj",
+      "CoffeePeek.LegacyCheckInMigration.Tests\\CoffeePeek.LegacyCheckInMigration.Tests.csproj",
       "CoffeePeek.AccountService\\CoffeePeek.AccountService.csproj",
       "CoffeePeek.ShopsService\\CoffeePeek.ShopsService.csproj",
       "CoffeePeek.ModerationService\\CoffeePeek.ModerationService.csproj",
       "CoffeePeek.MediaService\\CoffeePeek.MediaService.csproj",
+      "CoffeePeek.MediaService.Tests\\CoffeePeek.MediaService.Tests.csproj",
       "CoffeePeek.Gateway\\CoffeePeek.Gateway.csproj",
       "CoffeePeek.Account.Application.Tests\\CoffeePeek.Account.Application.Tests.csproj",
       "CoffeePeek.Account.Domain.Tests\\CoffeePeek.Account.Domain.Tests.csproj",

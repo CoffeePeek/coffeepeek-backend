@@ -18,6 +18,8 @@ set -a
 source .env
 set +a
 
+bash "${SCRIPT_DIR}/check-coffee-import.sh"
+
 if [[ "${JWT_SECRET_KEY:-}" == change-me* ]] || [[ "${POSTGRES_PASSWORD:-}" == change-me* ]]; then
   echo "Warning: default secrets detected in .env — change them before production."
 fi
@@ -46,6 +48,10 @@ if [[ "${PULL_IMAGES:-}" == "1" ]]; then
 fi
 
 "${COMPOSE[@]}" up -d --build
+if [[ -n "${COFFEE_IMPORT_TOKEN:-}" ]]; then
+  # Refresh the mapping bind mount and cached options after configuration updates.
+  "${COMPOSE[@]}" up -d --no-deps --no-build --force-recreate --wait media shops
+fi
 
 echo "==> Stack status:"
 "${COMPOSE[@]}" ps

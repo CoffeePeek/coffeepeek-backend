@@ -29,8 +29,8 @@ public static class GetAdminModerationInsightsHandler
 
         return Response<AdminModerationInsightsDto>.Success(new AdminModerationInsightsDto(
             Sla: new AdminModerationSlaDto(
-                insights.ReviewsModerated,
-                insights.AvgReviewModerationHours is { } avg ? RoundHours(avg) : null),
+                insights.CheckInsModerated,
+                insights.AvgCheckInModerationHours is { } avg ? RoundHours(avg) : null),
             Queues: queues,
             OldestPendingHours: oldestOverall,
             TopModerators30Days: insights.Workload

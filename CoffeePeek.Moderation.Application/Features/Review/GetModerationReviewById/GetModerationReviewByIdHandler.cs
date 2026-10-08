@@ -5,8 +5,6 @@ using MapsterMapper;
 
 namespace CoffeePeek.Moderation.Application.Features.Review.GetModerationReviewById;
 
-public record GetModerationReviewByIdQuery(Guid Id);
-
 public static class GetModerationReviewByIdHandler
 {
     public static async Task<Response<ModerationReviewDto>> Handle(
@@ -17,7 +15,7 @@ public static class GetModerationReviewByIdHandler
     {
         var review = await reviewRepository.GetById(query.Id, ct);
         if (review is null)
-            return Response<ModerationReviewDto>.Error("Moderation review not found");
+            return Response<ModerationReviewDto>.Error("Check-in moderation submission not found");
 
         return Response<ModerationReviewDto>.Success(mapper.Map<ModerationReviewDto>(review));
     }

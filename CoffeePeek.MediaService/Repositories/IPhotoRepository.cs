@@ -1,4 +1,4 @@
-﻿using CoffeePeek.MediaService.Data;
+using CoffeePeek.MediaService.Data;
 
 namespace CoffeePeek.MediaService.Repositories;
 
@@ -12,4 +12,10 @@ public interface IPhotoRepository
         Guid ownerId,
         IReadOnlyCollection<string> storageKeys,
         CancellationToken ct = default);
+
+    Task<bool> TryClaimAsync(Guid photoId, Guid ownerId, Guid checkInId, CancellationToken ct = default);
+    Task<IAsyncDisposable> AcquireClaimLocksAsync(Guid ownerId, IReadOnlyCollection<string> storageKeys, CancellationToken ct = default);
+    Task<List<PhotoMetadata>> GetClaimPhotosAsync(Guid ownerId, IReadOnlyCollection<string> storageKeys, CancellationToken ct = default);
+    Task ReleaseClaimAsync(Guid ownerId, Guid checkInId, CancellationToken ct = default);
+    Task<PhotoMetadata?> GetCheckInPhotoAsync(Guid checkInId, Guid photoId, Guid ownerId, CancellationToken ct = default);
 }

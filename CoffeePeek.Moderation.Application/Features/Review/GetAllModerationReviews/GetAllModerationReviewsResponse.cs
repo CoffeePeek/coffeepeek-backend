@@ -3,7 +3,7 @@
 namespace CoffeePeek.Moderation.Application.Features.Review.GetAllModerationReviews;
 
 public record GetAllModerationReviewsResponse(
-    ModerationReviewDto[] ReviewDtos,
+    ModerationReviewDto[] Items,
     int TotalItems,
     int TotalPages,
     int CurrentPage,

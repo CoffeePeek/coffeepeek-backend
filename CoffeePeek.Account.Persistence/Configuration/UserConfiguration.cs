@@ -17,7 +17,7 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
             .HasConversion(v => v.Value, v => Username.Create(v))
             .HasMaxLength(BusinessConstants.MaxUserNameLength)
             .IsRequired();
-        
+
         builder.HasIndex(u => u.Username).IsUnique();
         // Prevent two requests that read the same cooldown from both renaming, including with slugs disabled.
         builder.Property(u => u.UsernameChangedAtUtc).IsConcurrencyToken();
@@ -42,14 +42,13 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
             cb.Property(c => c.EmailConfirmationExpiresAt).HasColumnName(nameof(UserCredential.EmailConfirmationExpiresAt));
             cb.Property(c => c.PasswordResetToken).HasColumnName(nameof(UserCredential.PasswordResetToken)).HasMaxLength(BusinessConstants.MaxPasswordResetTokenLength);
             cb.Property(c => c.PasswordResetExpiresAt).HasColumnName(nameof(UserCredential.PasswordResetExpiresAt));
-            
+
             cb.HasIndex(c => c.Email).IsUnique();
         });
 
         builder.OwnsOne(u => u.Statistics, sb =>
         {
             sb.Property(s => s.CheckInCount).HasColumnName(nameof(UserStatistics.CheckInCount));
-            sb.Property(s => s.ReviewCount).HasColumnName(nameof(UserStatistics.ReviewCount));
             sb.Property(s => s.AddedShopsCount).HasColumnName(nameof(UserStatistics.AddedShopsCount));
             sb.Property(s => s.StatisticUpdatedAtUtc).HasColumnName(nameof(UserStatistics.StatisticUpdatedAtUtc));
         });
@@ -58,7 +57,7 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
             .WithOne(rt => rt.User)
             .HasForeignKey(rt => rt.UserId)
             .OnDelete(DeleteBehavior.Cascade);
-        
+
         builder.HasMany(u => u.Roles)
             .WithMany(r => r.Users)
             .UsingEntity<Dictionary<string, object>>(

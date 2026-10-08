@@ -8,8 +8,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\CoffeePeek.Shared.Auth\CoffeePeek.Shared.Auth.csproj" />
       <ProjectReference Include="..\CoffeePeek.Moderation.Application\CoffeePeek.Moderation.Application.csproj" />
+      <ProjectReference Include="..\CoffeePeek.Shared.Auth\CoffeePeek.Shared.Auth.csproj" />
     </ItemGroup>
     
     <ItemGroup>

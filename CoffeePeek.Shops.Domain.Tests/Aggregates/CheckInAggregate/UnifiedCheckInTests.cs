@@ -1,0 +1,81 @@
+using CoffeePeek.Shared.Kernel.Exceptions;
+using CoffeePeek.Shops.Domain.Aggregates.CheckInAggregate;
+using CoffeePeek.Shops.Domain.Entities;
+
+namespace CoffeePeek.Shops.Domain.Tests.Aggregates.CheckInAggregate;
+
+public class UnifiedCheckInTests
+{
+    private static CheckIn Create(CheckInVisibility visibility = CheckInVisibility.Private) =>
+        CheckIn.CreateUnified(Guid.NewGuid(), Guid.NewGuid(), "author", " coffee ",
+            Rating.Create(4, 3, 5), DateTime.UtcNow, visibility);
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("  ")]
+    [InlineData(null)]
+    public void BlankTextIsRejectedForBothVisibilities(string? text)
+    {
+        foreach (var visibility in Enum.GetValues<CheckInVisibility>())
+            Assert.Throws<DomainException>(() => CheckIn.CreateUnified(Guid.NewGuid(), Guid.NewGuid(),
+                "author", text!, Rating.Create(1, 1, 1), DateTime.UtcNow, visibility));
+    }
+
+    [Fact]
+    public void TextLimitAppliesToEveryVisibility()
+    {
+        foreach (var visibility in Enum.GetValues<CheckInVisibility>())
+        {
+            var c = CheckIn.CreateUnified(Guid.NewGuid(), Guid.NewGuid(), "author", new string('x',1000), Rating.Create(1,1,1), DateTime.UtcNow, visibility);
+            Assert.Equal(1000,c.Note.Length);
+            Assert.Throws<DomainException>(() => c.UpdateContent(new string('x',1001), Rating.Create(1,1,1)));
+        }
+    }
+
+    [Fact]
+    public void CreateUsesPrivateDefaultAndTrimsText()
+    {
+        var checkIn = Create();
+        Assert.Equal(CheckInVisibility.Private, checkIn.Visibility);
+        Assert.Equal("coffee", checkIn.Note);
+        Assert.Equal(1, checkIn.ContentRevision);
+        Assert.False(checkIn.IsPubliclyVisible);
+    }
+
+    [Fact]
+    public void InvalidScoresVisibilityAndFutureTimeAreRejected()
+    {
+        Assert.Throws<DomainException>(() => Rating.Create(0, 1, 1));
+        Assert.Throws<DomainException>(() => Rating.Create(1, 6, 1));
+        Assert.Throws<DomainException>(() => Rating.Create(1, 1, 0));
+        Assert.Throws<DomainException>(() => CheckIn.CreateUnified(Guid.NewGuid(), Guid.NewGuid(), "author",
+            "x", null!, DateTime.UtcNow));
+        Assert.Throws<DomainException>(() => CheckIn.CreateUnified(Guid.NewGuid(), Guid.NewGuid(), "author",
+            "x", Rating.Create(1, 1, 1), DateTime.UtcNow, (CheckInVisibility)2));
+        Assert.Throws<DomainException>(() => CheckIn.CreateUnified(Guid.NewGuid(), Guid.NewGuid(), "author",
+            "x", Rating.Create(1, 1, 1), DateTime.UtcNow.AddDays(1)));
+    }
+
+    [Fact]
+    public void EditHideDeleteInvalidateApprovalAndChangeRowVersion()
+    {
+        var checkIn = Create(CheckInVisibility.Public);
+        var originalVersion = checkIn.RowVersion;
+        var id = checkIn.Id;
+        checkIn.UpdateContent("edited", Rating.Create(5, 4, 3));
+        Assert.Equal(2, checkIn.ContentRevision);
+        Assert.Equal(CheckInModerationState.Pending, checkIn.ModerationState);
+        Assert.NotEqual(originalVersion, checkIn.RowVersion);
+        checkIn.ChangeVisibility(CheckInVisibility.Private);
+        Assert.Equal(3, checkIn.ContentRevision);
+        Assert.Equal(CheckInModerationState.NotSubmitted, checkIn.ModerationState);
+        checkIn.ChangeVisibility(CheckInVisibility.Private);
+        Assert.Equal(3, checkIn.ContentRevision);
+        checkIn.Delete();
+        Assert.Equal(4, checkIn.ContentRevision);
+        Assert.Equal(id, checkIn.Id);
+        Assert.Throws<DomainException>(() => checkIn.UpdateContent("restore", Rating.Create(1, 1, 1)));
+        Assert.Throws<DomainException>(() => checkIn.ChangeVisibility(CheckInVisibility.Public));
+        Assert.False(checkIn.IsPubliclyVisible);
+    }
+}

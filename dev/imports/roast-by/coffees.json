@@ -1,0 +1,3584 @@
+{
+  "schemaVersion": 1,
+  "adapterVersion": "1.0",
+  "source": "https://roast.by",
+  "collectedAtUtc": "2026-10-05T09:43:14.376564+00:00",
+  "complete": true,
+  "coverage": [
+    {
+      "productKind": "roasted_beans",
+      "catalogueUrl": "https://roast.by/catalog/kofe/svezheobzharennyy_kofe/",
+      "pages": 5,
+      "expectedProducts": 37,
+      "discoveredProducts": 37
+    },
+    {
+      "productKind": "green_beans",
+      "catalogueUrl": "https://roast.by/catalog/kofe/zelenyy_kofe/",
+      "pages": 1,
+      "expectedProducts": 2,
+      "discoveredProducts": 2
+    }
+  ],
+  "products": [
+    {
+      "sourceKey": "roast.by",
+      "sourceProductId": "38566",
+      "sourceUrl": "https://roast.by/catalog/kofe/svezheobzharennyy_kofe/keniya_kagumo/",
+      "name": "Кения Кагумо",
+      "roasterName": "Roast.by",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "KE",
+          "countryNameRu": "Кения",
+          "percentage": null,
+          "evidenceField": "properties.Страна произрастания"
+        }
+      ],
+      "tasteDescriptors": [
+        "Апельсин",
+        "Клубника",
+        "Гуава",
+        "Сахарный тростник"
+      ],
+      "processing": "Мытый",
+      "roastLevel": "Светлая",
+      "qGraderScoreRaw": "88",
+      "acidity": "Выше средней",
+      "body": "Выше средней",
+      "features": [
+        "Арабика",
+        "Микролот"
+      ],
+      "brewRecommendations": [
+        "Френч-пресс",
+        "Капельная кофеварка",
+        "Аэропресс",
+        "Кемекс",
+        "Пуровер"
+      ],
+      "grindOptions": [
+        "Не молоть"
+      ],
+      "imageUrls": [
+        "https://roast.by/upload/resize_cache/iblock/c3d/700_700_1/3unxud55xg96vbooonrqcqm2wuspepi8.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "38566",
+          "weightGrams": 200,
+          "price": "35.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "MASSA": "200"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Вкусовые дескрипторы": "Апельсин,Клубника,Гуава,Сахарный тростник",
+        "Оценка Q-грейдеров": "88",
+        "Рекомендации по приготовлению": "Френч-пресс,Капельная кофеварка,Аэропресс,Кемекс,Пуровер",
+        "Степень обжарки": "Светлая",
+        "Способ обработки": "Мытый",
+        "Кислотность": "Выше средней",
+        "Плотность": "Выше средней",
+        "TDS (для V60)": "1,40",
+        "Особенности кофе": "Арабика,Микролот",
+        "Страна произрастания": "Кения"
+      },
+      "reviewWarnings": []
+    },
+    {
+      "sourceKey": "roast.by",
+      "sourceProductId": "38567",
+      "sourceUrl": "https://roast.by/catalog/kofe/svezheobzharennyy_kofe/efiopiya_chelchele/",
+      "name": "Эфиопия Чельчеле",
+      "roasterName": "Roast.by",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "ET",
+          "countryNameRu": "Эфиопия",
+          "percentage": null,
+          "evidenceField": "properties.Страна произрастания"
+        }
+      ],
+      "tasteDescriptors": [
+        "Какао",
+        "Косточковые фрукты",
+        "Цитрус",
+        "Цветочный чай"
+      ],
+      "processing": "Мытый",
+      "roastLevel": "Средняя",
+      "qGraderScoreRaw": "86",
+      "acidity": "Высокая",
+      "body": "Средняя",
+      "features": [
+        "Арабика"
+      ],
+      "brewRecommendations": [
+        "Для эспрессо",
+        "Гейзерная кофеварка",
+        "Рожковая кофеварка",
+        "Турка",
+        "Чашка"
+      ],
+      "grindOptions": [
+        "Не молоть",
+        "Аэропресс",
+        "Мока",
+        "Под чашку",
+        "Пуровер",
+        "Турка",
+        "Френч-пресс",
+        "Эспрессо крупно",
+        "Эспрессо тонко"
+      ],
+      "imageUrls": [
+        "https://roast.by/upload/resize_cache/iblock/949/700_700_1/0sm2d04klu2131vwhpukgh7jzdl8wt96.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "38567",
+          "weightGrams": 200,
+          "price": "27.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "MASSA": "200"
+          }
+        },
+        {
+          "externalVariantId": "38568",
+          "weightGrams": 1000,
+          "price": "125.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "MASSA": "1000"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Вкусовые дескрипторы": "Какао,Косточковые фрукты,Цитрус,Цветочный чай",
+        "Оценка Q-грейдеров": "86",
+        "Рекомендации по приготовлению": "Для эспрессо,Гейзерная кофеварка,Рожковая кофеварка,Турка,Чашка",
+        "Степень обжарки": "Средняя",
+        "Способ обработки": "Мытый",
+        "Кислотность": "Высокая",
+        "Плотность": "Средняя",
+        "Особенности кофе": "Арабика",
+        "Страна произрастания": "Эфиопия"
+      },
+      "reviewWarnings": []
+    },
+    {
+      "sourceKey": "roast.by",
+      "sourceProductId": "27617",
+      "sourceUrl": "https://roast.by/catalog/kofe/svezheobzharennyy_kofe/efiopiya_uraga_gr_1/",
+      "name": "Эфиопия Урага гр.1",
+      "roasterName": "Roast.by",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "ET",
+          "countryNameRu": "Эфиопия",
+          "percentage": null,
+          "evidenceField": "properties.Страна произрастания"
+        }
+      ],
+      "tasteDescriptors": [
+        "Персик",
+        "Тропические фрукты",
+        "Цветы",
+        "Чай",
+        "Малина"
+      ],
+      "processing": "Мытый",
+      "roastLevel": "Светлая",
+      "qGraderScoreRaw": "87",
+      "acidity": "Средняя",
+      "body": "Ниже средней",
+      "features": [
+        "Арабика"
+      ],
+      "brewRecommendations": [
+        "Френч-пресс",
+        "Капельная кофеварка",
+        "Аэропресс",
+        "Кемекс",
+        "Пуровер"
+      ],
+      "grindOptions": [
+        "Не молоть",
+        "Аэропресс",
+        "Мока",
+        "Под чашку",
+        "Пуровер",
+        "Турка",
+        "Френч-пресс",
+        "Эспрессо крупно",
+        "Эспрессо тонко"
+      ],
+      "imageUrls": [
+        "https://roast.by/upload/resize_cache/iblock/bc0/700_700_1/8z92tcl04aujqj5274jqk3ymbnwm1yj5.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "27617",
+          "weightGrams": 200,
+          "price": "28.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "MASSA": "200"
+          }
+        },
+        {
+          "externalVariantId": "27618",
+          "weightGrams": 1000,
+          "price": "135.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "MASSA": "1000"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Вкусовые дескрипторы": "Персик,Тропические фрукты,Цветы,Чай,Малина",
+        "Оценка Q-грейдеров": "87",
+        "Рекомендации по приготовлению": "Френч-пресс,Капельная кофеварка,Аэропресс,Кемекс,Пуровер",
+        "Степень обжарки": "Светлая",
+        "Способ обработки": "Мытый",
+        "Кислотность": "Средняя",
+        "Плотность": "Ниже средней",
+        "Особенности кофе": "Арабика",
+        "Страна произрастания": "Эфиопия"
+      },
+      "reviewWarnings": []
+    },
+    {
+      "sourceKey": "roast.by",
+      "sourceProductId": "38857",
+      "sourceUrl": "https://roast.by/catalog/kofe/svezheobzharennyy_kofe/kolumbiya_periskop_tvist/",
+      "name": "Колумбия Перископ Твист",
+      "roasterName": "Roast.by",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "CO",
+          "countryNameRu": "Колумбия",
+          "percentage": null,
+          "evidenceField": "properties.Страна произрастания"
+        }
+      ],
+      "tasteDescriptors": [
+        "Черника",
+        "Пчелиный воск",
+        "Черемуха"
+      ],
+      "processing": "Натуральный полуанаэробный",
+      "roastLevel": "Светлая",
+      "qGraderScoreRaw": "88.5",
+      "acidity": "Высокая",
+      "body": "Ниже средней",
+      "features": [
+        "Арабика",
+        "Микролот"
+      ],
+      "brewRecommendations": [
+        "Френч-пресс",
+        "Капельная кофеварка",
+        "Аэропресс",
+        "Кемекс",
+        "Пуровер"
+      ],
+      "grindOptions": [
+        "Не молоть"
+      ],
+      "imageUrls": [
+        "https://roast.by/upload/resize_cache/iblock/629/700_700_1/bv0zqyllyppnib9k5vwmarw99m6xn64f.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "38857",
+          "weightGrams": 200,
+          "price": "38.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "MASSA": "200"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Вкусовые дескрипторы": "Черника,Пчелиный воск,Черемуха",
+        "Оценка Q-грейдеров": "88.5",
+        "Рекомендации по приготовлению": "Френч-пресс,Капельная кофеварка,Аэропресс,Кемекс,Пуровер",
+        "Степень обжарки": "Светлая",
+        "Способ обработки": "Натуральный полуанаэробный",
+        "Кислотность": "Высокая",
+        "Плотность": "Ниже средней",
+        "TDS (для V60)": "1,40",
+        "Особенности кофе": "Арабика,Микролот",
+        "Страна произрастания": "Колумбия"
+      },
+      "reviewWarnings": []
+    },
+    {
+      "sourceKey": "roast.by",
+      "sourceProductId": "38858",
+      "sourceUrl": "https://roast.by/catalog/kofe/svezheobzharennyy_kofe/braziliya_periskop_tvist/",
+      "name": "Бразилия Перископ Твист",
+      "roasterName": "Roast.by",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "BR",
+          "countryNameRu": "Бразилия",
+          "percentage": null,
+          "evidenceField": "properties.Страна произрастания"
+        }
+      ],
+      "tasteDescriptors": [
+        "Ежевика",
+        "Молочный шоколад",
+        "Яблочный сидр"
+      ],
+      "processing": "Натуральный полуанаэробный",
+      "roastLevel": "Светлая",
+      "qGraderScoreRaw": "87",
+      "acidity": "Высокая",
+      "body": "Ниже средней",
+      "features": [
+        "Арабика"
+      ],
+      "brewRecommendations": [
+        "Френч-пресс",
+        "Капельная кофеварка",
+        "Аэропресс",
+        "Кемекс",
+        "Пуровер"
+      ],
+      "grindOptions": [
+        "Не молоть",
+        "Аэропресс",
+        "Мока",
+        "Под чашку",
+        "Пуровер",
+        "Турка",
+        "Френч-пресс",
+        "Эспрессо крупно",
+        "Эспрессо тонко"
+      ],
+      "imageUrls": [
+        "https://roast.by/upload/resize_cache/iblock/d8b/700_700_1/il70qz6hot0xspbeunf8lzftyv9hyn3n.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "38858",
+          "weightGrams": 200,
+          "price": "33.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "MASSA": "200"
+          }
+        },
+        {
+          "externalVariantId": "38859",
+          "weightGrams": 1000,
+          "price": "149.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "MASSA": "1000"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Вкусовые дескрипторы": "Ежевика,Молочный шоколад,Яблочный сидр",
+        "Оценка Q-грейдеров": "87",
+        "Рекомендации по приготовлению": "Френч-пресс,Капельная кофеварка,Аэропресс,Кемекс,Пуровер",
+        "Степень обжарки": "Светлая",
+        "Способ обработки": "Натуральный полуанаэробный",
+        "Кислотность": "Высокая",
+        "Плотность": "Ниже средней",
+        "TDS (для V60)": "1,40",
+        "Особенности кофе": "Арабика",
+        "Страна произрастания": "Бразилия"
+      },
+      "reviewWarnings": []
+    },
+    {
+      "sourceKey": "roast.by",
+      "sourceProductId": "39829",
+      "sourceUrl": "https://roast.by/catalog/kofe/svezheobzharennyy_kofe/osenniy_vayb_2_0/",
+      "name": "Осенний вайб 2.0",
+      "roasterName": "Roast.by",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "blend",
+      "origins": [
+        {
+          "countryCode": "CO",
+          "countryNameRu": "Колумбия",
+          "percentage": null,
+          "evidenceField": "description.composition"
+        },
+        {
+          "countryCode": "MX",
+          "countryNameRu": "Мексика",
+          "percentage": null,
+          "evidenceField": "description.composition"
+        },
+        {
+          "countryCode": "PE",
+          "countryNameRu": "Перу",
+          "percentage": null,
+          "evidenceField": "description.composition"
+        }
+      ],
+      "tasteDescriptors": [
+        "Карамель",
+        "Фундук",
+        "Чернослив"
+      ],
+      "processing": "Другой",
+      "roastLevel": "Темная",
+      "qGraderScoreRaw": null,
+      "acidity": "Низкая",
+      "body": "Высокая",
+      "features": [
+        "Арабика",
+        "Смесь"
+      ],
+      "brewRecommendations": [
+        "Для эспрессо",
+        "Гейзерная кофеварка",
+        "Рожковая кофеварка",
+        "Турка",
+        "Чашка"
+      ],
+      "grindOptions": [
+        "Не молоть",
+        "Аэропресс",
+        "Мока",
+        "Под чашку",
+        "Пуровер",
+        "Турка",
+        "Френч-пресс",
+        "Эспрессо крупно",
+        "Эспрессо тонко"
+      ],
+      "imageUrls": [
+        "https://roast.by/upload/resize_cache/iblock/507/700_700_1/6cfzfzifhyu2kn85w1q1xooevig0uvd5.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "39829",
+          "weightGrams": 200,
+          "price": "24.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "MASSA": "200"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Вкусовые дескрипторы": "Карамель,Фундук,Чернослив",
+        "Рекомендации по приготовлению": "Для эспрессо,Гейзерная кофеварка,Рожковая кофеварка,Турка,Чашка",
+        "Степень обжарки": "Темная",
+        "Способ обработки": "Другой",
+        "Кислотность": "Низкая",
+        "Плотность": "Высокая",
+        "Особенности кофе": "Арабика,Смесь"
+      },
+      "reviewWarnings": [
+        "origin_extracted_from_description.composition"
+      ]
+    },
+    {
+      "sourceKey": "roast.by",
+      "sourceProductId": "34175",
+      "sourceUrl": "https://roast.by/catalog/kofe/svezheobzharennyy_kofe/kolumbiya_aponte/",
+      "name": "Колумбия Апонте",
+      "roasterName": "Roast.by",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "CO",
+          "countryNameRu": "Колумбия",
+          "percentage": null,
+          "evidenceField": "properties.Страна произрастания"
+        }
+      ],
+      "tasteDescriptors": [
+        "Апельсин",
+        "Мед",
+        "Персик"
+      ],
+      "processing": "Хани",
+      "roastLevel": "Средняя",
+      "qGraderScoreRaw": "84.5",
+      "acidity": "Выше средней",
+      "body": "Средняя",
+      "features": [
+        "Арабика"
+      ],
+      "brewRecommendations": [
+        "Для эспрессо",
+        "Гейзерная кофеварка",
+        "Рожковая кофеварка",
+        "Турка",
+        "Чашка"
+      ],
+      "grindOptions": [
+        "Не молоть",
+        "Аэропресс",
+        "Мока",
+        "Под чашку",
+        "Пуровер",
+        "Турка",
+        "Френч-пресс",
+        "Эспрессо крупно",
+        "Эспрессо тонко"
+      ],
+      "imageUrls": [
+        "https://roast.by/upload/resize_cache/iblock/4d5/700_700_1/o29tl2e5we6f1lw3e1qyfh06jvjszbat.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "34175",
+          "weightGrams": 200,
+          "price": "30.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "MASSA": "200"
+          }
+        },
+        {
+          "externalVariantId": "34176",
+          "weightGrams": 1000,
+          "price": "125.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "MASSA": "1000"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Вкусовые дескрипторы": "Апельсин,Мед,Персик",
+        "Оценка Q-грейдеров": "84.5",
+        "Рекомендации по приготовлению": "Для эспрессо,Гейзерная кофеварка,Рожковая кофеварка,Турка,Чашка",
+        "Степень обжарки": "Средняя",
+        "Способ обработки": "Хани",
+        "Высота произрастания": "1500-1800",
+        "Кислотность": "Выше средней",
+        "Плотность": "Средняя",
+        "Особенности кофе": "Арабика",
+        "Страна произрастания": "Колумбия"
+      },
+      "reviewWarnings": []
+    },
+    {
+      "sourceKey": "roast.by",
+      "sourceProductId": "37356",
+      "sourceUrl": "https://roast.by/catalog/kofe/svezheobzharennyy_kofe/kitay_singan/",
+      "name": "Китай Синган",
+      "roasterName": "Roast.by",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "CN",
+          "countryNameRu": "Китай",
+          "percentage": null,
+          "evidenceField": "properties.Страна произрастания"
+        }
+      ],
+      "tasteDescriptors": [
+        "Алкоголь",
+        "Изюм",
+        "Тропические фрукты"
+      ],
+      "processing": "Анаэробный",
+      "roastLevel": "Светлая",
+      "qGraderScoreRaw": "86.5",
+      "acidity": "Средняя",
+      "body": "Выше средней",
+      "features": [
+        "Арабика"
+      ],
+      "brewRecommendations": [
+        "Френч-пресс",
+        "Капельная кофеварка",
+        "Чашка",
+        "Аэропресс",
+        "Кемекс",
+        "Пуровер"
+      ],
+      "grindOptions": [
+        "Не молоть",
+        "Аэропресс",
+        "Мока",
+        "Под чашку",
+        "Пуровер",
+        "Турка",
+        "Френч-пресс",
+        "Эспрессо крупно",
+        "Эспрессо тонко"
+      ],
+      "imageUrls": [
+        "https://roast.by/upload/resize_cache/iblock/ffb/700_700_1/3cy928b404pkrrwtr27u0lc7guxw9mgu.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "37356",
+          "weightGrams": 200,
+          "price": "35.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "MASSA": "200"
+          }
+        },
+        {
+          "externalVariantId": "37357",
+          "weightGrams": 1000,
+          "price": "160.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "MASSA": "1000"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Вкусовые дескрипторы": "Алкоголь,Изюм,Тропические фрукты",
+        "Оценка Q-грейдеров": "86.5",
+        "Рекомендации по приготовлению": "Френч-пресс,Капельная кофеварка,Чашка,Аэропресс,Кемекс,Пуровер",
+        "Степень обжарки": "Светлая",
+        "Способ обработки": "Анаэробный",
+        "Высота произрастания": "1400-1800",
+        "Кислотность": "Средняя",
+        "Плотность": "Выше средней",
+        "Особенности кофе": "Арабика",
+        "Страна произрастания": "Китай"
+      },
+      "reviewWarnings": []
+    },
+    {
+      "sourceKey": "roast.by",
+      "sourceProductId": "34709",
+      "sourceUrl": "https://roast.by/catalog/kofe/svezheobzharennyy_kofe/kolumbiya_pachamama_risaralda/",
+      "name": "Колумбия Пачамама Рисаральда",
+      "roasterName": "Roast.by",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "CO",
+          "countryNameRu": "Колумбия",
+          "percentage": null,
+          "evidenceField": "properties.Страна произрастания"
+        }
+      ],
+      "tasteDescriptors": [
+        "Ваниль",
+        "Персик",
+        "Темный Шоколад",
+        "Тропические фрукты"
+      ],
+      "processing": "Натуральный анаэробный",
+      "roastLevel": "Светлая",
+      "qGraderScoreRaw": "88",
+      "acidity": "Высокая",
+      "body": "Средняя",
+      "features": [
+        "Арабика",
+        "Микролот"
+      ],
+      "brewRecommendations": [
+        "Капельная кофеварка",
+        "Аэропресс",
+        "Кемекс",
+        "Пуровер"
+      ],
+      "grindOptions": [
+        "Не молоть"
+      ],
+      "imageUrls": [
+        "https://roast.by/upload/resize_cache/iblock/5dd/700_700_1/hwyra5gchufs33chn228jsfq193vyyat.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "34709",
+          "weightGrams": 200,
+          "price": "37.90",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "MASSA": "200"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Вкусовые дескрипторы": "Ваниль,Персик,Темный Шоколад,Тропические фрукты",
+        "Оценка Q-грейдеров": "88",
+        "Рекомендации по приготовлению": "Капельная кофеварка,Аэропресс,Кемекс,Пуровер",
+        "Степень обжарки": "Светлая",
+        "Способ обработки": "Натуральный анаэробный",
+        "Кислотность": "Высокая",
+        "Плотность": "Средняя",
+        "Особенности кофе": "Арабика,Микролот",
+        "Страна произрастания": "Колумбия"
+      },
+      "reviewWarnings": []
+    },
+    {
+      "sourceKey": "roast.by",
+      "sourceProductId": "36964",
+      "sourceUrl": "https://roast.by/catalog/kofe/svezheobzharennyy_kofe/venesuela_trukhilo/",
+      "name": "Венесуэла Трухильо",
+      "roasterName": "Roast.by",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "VE",
+          "countryNameRu": "Венесуэла",
+          "percentage": null,
+          "evidenceField": "properties.Страна произрастания"
+        }
+      ],
+      "tasteDescriptors": [
+        "Шоколад",
+        "Яблоко",
+        "Помело"
+      ],
+      "processing": "Мытый",
+      "roastLevel": "Средняя",
+      "qGraderScoreRaw": "83.75",
+      "acidity": "Средняя",
+      "body": "Ниже средней",
+      "features": [
+        "Арабика",
+        "Моносорт"
+      ],
+      "brewRecommendations": [
+        "Для эспрессо",
+        "Гейзерная кофеварка",
+        "Рожковая кофеварка",
+        "Турка",
+        "Хорош с молоком",
+        "Чашка"
+      ],
+      "grindOptions": [
+        "Не молоть",
+        "Аэропресс",
+        "Мока",
+        "Под чашку",
+        "Пуровер",
+        "Турка",
+        "Френч-пресс",
+        "Эспрессо крупно",
+        "Эспрессо тонко"
+      ],
+      "imageUrls": [
+        "https://roast.by/upload/resize_cache/iblock/6c3/700_700_1/53c37lw8t8w6m1yysk6i6le1rgvrxpec.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "36964",
+          "weightGrams": 200,
+          "price": "21.30",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "MASSA": "200"
+          }
+        },
+        {
+          "externalVariantId": "37355",
+          "weightGrams": 1000,
+          "price": "90.31",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "MASSA": "1000"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Вкусовые дескрипторы": "Шоколад,Яблоко,Помело",
+        "Оценка Q-грейдеров": "83.75",
+        "Рекомендации по приготовлению": "Для эспрессо,Гейзерная кофеварка,Рожковая кофеварка,Турка,Хорош с молоком,Чашка",
+        "Степень обжарки": "Средняя",
+        "Способ обработки": "Мытый",
+        "Кислотность": "Средняя",
+        "Плотность": "Ниже средней",
+        "Особенности кофе": "Арабика,Моносорт",
+        "Страна произрастания": "Венесуэла"
+      },
+      "reviewWarnings": []
+    },
+    {
+      "sourceKey": "roast.by",
+      "sourceProductId": "33477",
+      "sourceUrl": "https://roast.by/catalog/kofe/svezheobzharennyy_kofe/nikaragua_khinotega_/",
+      "name": "Никарагуа Хинотега",
+      "roasterName": "Roast.by",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "NI",
+          "countryNameRu": "Никарагуа",
+          "percentage": null,
+          "evidenceField": "properties.Страна произрастания"
+        }
+      ],
+      "tasteDescriptors": [
+        "Какао",
+        "Мускатный орех",
+        "Меласса"
+      ],
+      "processing": "Мытый",
+      "roastLevel": "Темная",
+      "qGraderScoreRaw": "82",
+      "acidity": "Низкая",
+      "body": "Выше средней",
+      "features": [
+        "Арабика"
+      ],
+      "brewRecommendations": [
+        "Для эспрессо",
+        "Гейзерная кофеварка",
+        "Турка",
+        "Чашка"
+      ],
+      "grindOptions": [
+        "Не молоть",
+        "Аэропресс",
+        "Мока",
+        "Под чашку",
+        "Пуровер",
+        "Турка",
+        "Френч-пресс",
+        "Эспрессо крупно",
+        "Эспрессо тонко"
+      ],
+      "imageUrls": [
+        "https://roast.by/upload/resize_cache/iblock/b77/700_700_1/ptd0ruiki3aetpuckvk9j7p0wrtbv603.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "33477",
+          "weightGrams": 200,
+          "price": "19.60",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "MASSA": "200"
+          }
+        },
+        {
+          "externalVariantId": "33478",
+          "weightGrams": 1000,
+          "price": "80.40",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "MASSA": "1000"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Вкусовые дескрипторы": "Какао,Мускатный орех,Меласса",
+        "Оценка Q-грейдеров": "82",
+        "Рекомендации по приготовлению": "Для эспрессо,Гейзерная кофеварка,Турка,Чашка",
+        "Степень обжарки": "Темная",
+        "Способ обработки": "Мытый",
+        "Кислотность": "Низкая",
+        "Плотность": "Выше средней",
+        "Особенности кофе": "Арабика",
+        "Страна произрастания": "Никарагуа"
+      },
+      "reviewWarnings": []
+    },
+    {
+      "sourceKey": "roast.by",
+      "sourceProductId": "34173",
+      "sourceUrl": "https://roast.by/catalog/kofe/svezheobzharennyy_kofe/kolumbiya_dekaf/",
+      "name": "Колумбия Декаф",
+      "roasterName": "Roast.by",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "CO",
+          "countryNameRu": "Колумбия",
+          "percentage": null,
+          "evidenceField": "properties.Страна произрастания"
+        }
+      ],
+      "tasteDescriptors": [
+        "Вишня",
+        "Курага",
+        "Йогурт"
+      ],
+      "processing": "Другой",
+      "roastLevel": "Средняя",
+      "qGraderScoreRaw": "83.5",
+      "acidity": "Средняя",
+      "body": "Низкая",
+      "features": [
+        "Арабика",
+        "Без кофеина",
+        "Моносорт"
+      ],
+      "brewRecommendations": [
+        "Для эспрессо",
+        "Гейзерная кофеварка",
+        "Рожковая кофеварка",
+        "Турка",
+        "Чашка"
+      ],
+      "grindOptions": [
+        "Не молоть",
+        "Аэропресс",
+        "Мока",
+        "Под чашку",
+        "Пуровер",
+        "Турка",
+        "Френч-пресс",
+        "Эспрессо крупно",
+        "Эспрессо тонко"
+      ],
+      "imageUrls": [
+        "https://roast.by/upload/resize_cache/iblock/a85/700_700_1/9yt1nnz4qxb0eemg6hkvq63ygjzlhhnq.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "34173",
+          "weightGrams": 200,
+          "price": "25.70",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "MASSA": "200"
+          }
+        },
+        {
+          "externalVariantId": "34174",
+          "weightGrams": 1000,
+          "price": "117.80",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "MASSA": "1000"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Вкусовые дескрипторы": "Вишня,Курага,Йогурт",
+        "Оценка Q-грейдеров": "83.5",
+        "Рекомендации по приготовлению": "Для эспрессо,Гейзерная кофеварка,Рожковая кофеварка,Турка,Чашка",
+        "Степень обжарки": "Средняя",
+        "Способ обработки": "Другой",
+        "Кислотность": "Средняя",
+        "Плотность": "Низкая",
+        "Особенности кофе": "Арабика,Без кофеина,Моносорт",
+        "Страна произрастания": "Колумбия"
+      },
+      "reviewWarnings": []
+    },
+    {
+      "sourceKey": "roast.by",
+      "sourceProductId": "32104",
+      "sourceUrl": "https://roast.by/catalog/kofe/svezheobzharennyy_kofe/keniya_kiamutuira/",
+      "name": "Кения Киамутуира",
+      "roasterName": "Roast.by",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "KE",
+          "countryNameRu": "Кения",
+          "percentage": null,
+          "evidenceField": "properties.Страна произрастания"
+        }
+      ],
+      "tasteDescriptors": [
+        "Лайм",
+        "Мандарин",
+        "Черная смородина",
+        "Коричневый сахар",
+        "Ревень"
+      ],
+      "processing": "Мытый",
+      "roastLevel": "Светлая",
+      "qGraderScoreRaw": "89.25",
+      "acidity": "Высокая",
+      "body": "Высокая",
+      "features": [
+        "Арабика",
+        "Микролот"
+      ],
+      "brewRecommendations": [
+        "Капельная кофеварка",
+        "Аэропресс",
+        "Кемекс",
+        "Пуровер"
+      ],
+      "grindOptions": [
+        "Не молоть"
+      ],
+      "imageUrls": [
+        "https://roast.by/upload/resize_cache/iblock/e5d/700_700_1/yo3y9kchcuh9iqyuc3e8rlbw9x29afxw.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "32104",
+          "weightGrams": 200,
+          "price": "37.90",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "MASSA": "200"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Вкусовые дескрипторы": "Лайм,Мандарин,Черная смородина,Коричневый сахар,Ревень",
+        "Оценка Q-грейдеров": "89.25",
+        "Рекомендации по приготовлению": "Капельная кофеварка,Аэропресс,Кемекс,Пуровер",
+        "Степень обжарки": "Светлая",
+        "Способ обработки": "Мытый",
+        "Высота произрастания": "1650–1700",
+        "Кислотность": "Высокая",
+        "Плотность": "Высокая",
+        "TDS (для V60)": "1,35",
+        "Особенности кофе": "Арабика,Микролот",
+        "Страна произрастания": "Кения"
+      },
+      "reviewWarnings": []
+    },
+    {
+      "sourceKey": "roast.by",
+      "sourceProductId": "27223",
+      "sourceUrl": "https://roast.by/catalog/kofe/svezheobzharennyy_kofe/ne_vinnyy_kofe/",
+      "name": "(Не)винный кофе",
+      "roasterName": "Roast.by",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "CO",
+          "countryNameRu": "Колумбия",
+          "percentage": null,
+          "evidenceField": "description.composition"
+        }
+      ],
+      "tasteDescriptors": [
+        "Тропические фрукты",
+        "Херес",
+        "Черешня"
+      ],
+      "processing": "Другой",
+      "roastLevel": "Светлая",
+      "qGraderScoreRaw": null,
+      "acidity": "Ниже средней",
+      "body": "Средняя",
+      "features": [
+        "Арабика",
+        "Собственная ферментация"
+      ],
+      "brewRecommendations": [
+        "Френч-пресс",
+        "Капельная кофеварка",
+        "Чашка",
+        "Аэропресс",
+        "Кемекс",
+        "Пуровер"
+      ],
+      "grindOptions": [
+        "Не молоть",
+        "Аэропресс",
+        "Мока",
+        "Под чашку",
+        "Пуровер",
+        "Турка",
+        "Френч-пресс",
+        "Эспрессо крупно",
+        "Эспрессо тонко"
+      ],
+      "imageUrls": [
+        "https://roast.by/upload/resize_cache/iblock/50a/700_700_1/3xyh2xf53vmmbmwvh4ss6sh9slo92aar.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "27223",
+          "weightGrams": 200,
+          "price": "18.70",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "MASSA": "200"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Вкусовые дескрипторы": "Тропические фрукты,Херес,Черешня",
+        "Рекомендации по приготовлению": "Френч-пресс,Капельная кофеварка,Чашка,Аэропресс,Кемекс,Пуровер",
+        "Степень обжарки": "Светлая",
+        "Способ обработки": "Другой",
+        "Кислотность": "Ниже средней",
+        "Плотность": "Средняя",
+        "TDS (для V60)": "1,35",
+        "Особенности кофе": "Арабика,Собственная ферментация"
+      },
+      "reviewWarnings": [
+        "origin_extracted_from_description.composition"
+      ]
+    },
+    {
+      "sourceKey": "roast.by",
+      "sourceProductId": "25740",
+      "sourceUrl": "https://roast.by/catalog/kofe/svezheobzharennyy_kofe/smes_ali_baba_i_sad_spetsiy/",
+      "name": "Смесь Али-баба и сад специй",
+      "roasterName": "Roast.by",
+      "productKind": "roasted_beans",
+      "productForm": "ground_only",
+      "availableForPurchase": true,
+      "compositionKind": "blend",
+      "origins": [
+        {
+          "countryCode": "BR",
+          "countryNameRu": "Бразилия",
+          "percentage": null,
+          "evidenceField": "description.composition"
+        },
+        {
+          "countryCode": "IN",
+          "countryNameRu": "Индия",
+          "percentage": null,
+          "evidenceField": "description.composition"
+        },
+        {
+          "countryCode": "RW",
+          "countryNameRu": "Руанда",
+          "percentage": null,
+          "evidenceField": "description.composition"
+        }
+      ],
+      "tasteDescriptors": [
+        "Специи",
+        "Шоколад"
+      ],
+      "processing": "Другой",
+      "roastLevel": "Темная",
+      "qGraderScoreRaw": null,
+      "acidity": "Ниже средней",
+      "body": "Высокая",
+      "features": [
+        "Смесь"
+      ],
+      "brewRecommendations": [
+        "Турка"
+      ],
+      "grindOptions": [
+        "Турка"
+      ],
+      "imageUrls": [
+        "https://roast.by/upload/resize_cache/iblock/eae/700_700_1/3cnh5qjoo6jdpi2tbf8duc076s6427ta.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "25740",
+          "weightGrams": 200,
+          "price": "20.80",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "MASSA": "200"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Вкусовые дескрипторы": "Специи,Шоколад",
+        "Рекомендации по приготовлению": "Турка",
+        "Степень обжарки": "Темная",
+        "Способ обработки": "Другой",
+        "Кислотность": "Ниже средней",
+        "Плотность": "Высокая",
+        "Особенности кофе": "Смесь"
+      },
+      "reviewWarnings": [
+        "origin_extracted_from_description.composition"
+      ]
+    },
+    {
+      "sourceKey": "roast.by",
+      "sourceProductId": "16963",
+      "sourceUrl": "https://roast.by/catalog/kofe/svezheobzharennyy_kofe/braziliya_veloso_kolekta_200_1/",
+      "name": "Бразилия Велосо Колекта",
+      "roasterName": "Roast.by",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "BR",
+          "countryNameRu": "Бразилия",
+          "percentage": null,
+          "evidenceField": "properties.Страна произрастания"
+        }
+      ],
+      "tasteDescriptors": [
+        "Карамель",
+        "Темный Шоколад",
+        "Фундук"
+      ],
+      "processing": "Натуральный",
+      "roastLevel": "Средняя",
+      "qGraderScoreRaw": "83.5",
+      "acidity": "Ниже средней",
+      "body": "Средняя",
+      "features": [
+        "Арабика"
+      ],
+      "brewRecommendations": [
+        "Для эспрессо",
+        "Гейзерная кофеварка",
+        "Рожковая кофеварка",
+        "Турка",
+        "Хорош с молоком",
+        "Чашка"
+      ],
+      "grindOptions": [
+        "Не молоть",
+        "Аэропресс",
+        "Мока",
+        "Под чашку",
+        "Пуровер",
+        "Турка",
+        "Френч-пресс",
+        "Эспрессо крупно",
+        "Эспрессо тонко"
+      ],
+      "imageUrls": [
+        "https://roast.by/upload/resize_cache/iblock/f73/700_700_1/3o00obplxvafqh8vonatl3k137ke6ky2.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "16963",
+          "weightGrams": 200,
+          "price": "17.10",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "MASSA": "200"
+          }
+        },
+        {
+          "externalVariantId": "16965",
+          "weightGrams": 1000,
+          "price": "73.40",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "MASSA": "1000"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Вкусовые дескрипторы": "Карамель,Темный Шоколад,Фундук",
+        "Оценка Q-грейдеров": "83.5",
+        "Рекомендации по приготовлению": "Для эспрессо,Гейзерная кофеварка,Рожковая кофеварка,Турка,Хорош с молоком,Чашка",
+        "Степень обжарки": "Средняя",
+        "Способ обработки": "Натуральный",
+        "Высота произрастания": "1200",
+        "Кислотность": "Ниже средней",
+        "Плотность": "Средняя",
+        "Особенности кофе": "Арабика",
+        "Страна произрастания": "Бразилия"
+      },
+      "reviewWarnings": []
+    },
+    {
+      "sourceKey": "roast.by",
+      "sourceProductId": "17159",
+      "sourceUrl": "https://roast.by/catalog/kofe/svezheobzharennyy_kofe/smes_8_200_1/",
+      "name": "Смесь №8",
+      "roasterName": "Roast.by",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "blend",
+      "origins": [
+        {
+          "countryCode": "BR",
+          "countryNameRu": "Бразилия",
+          "percentage": null,
+          "evidenceField": "description.composition"
+        },
+        {
+          "countryCode": "ET",
+          "countryNameRu": "Эфиопия",
+          "percentage": null,
+          "evidenceField": "description.composition"
+        }
+      ],
+      "tasteDescriptors": [
+        "Бергамот",
+        "Фундук",
+        "Шоколад"
+      ],
+      "processing": "Другой",
+      "roastLevel": "Средняя",
+      "qGraderScoreRaw": null,
+      "acidity": "Ниже средней",
+      "body": "Средняя",
+      "features": [
+        "Арабика",
+        "Смесь"
+      ],
+      "brewRecommendations": [
+        "Для эспрессо",
+        "Гейзерная кофеварка",
+        "Рожковая кофеварка",
+        "Турка",
+        "Хорош с молоком",
+        "Чашка"
+      ],
+      "grindOptions": [
+        "Не молоть",
+        "Аэропресс",
+        "Мока",
+        "Под чашку",
+        "Пуровер",
+        "Турка",
+        "Френч-пресс",
+        "Эспрессо крупно",
+        "Эспрессо тонко"
+      ],
+      "imageUrls": [
+        "https://roast.by/upload/resize_cache/iblock/c0c/700_700_1/lts0sdogpzk79xqtz4fzs8mhpeq0v0vn.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "17106",
+          "weightGrams": 1000,
+          "price": "78.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "MASSA": "1000"
+          }
+        },
+        {
+          "externalVariantId": "17159",
+          "weightGrams": 200,
+          "price": "19.20",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "MASSA": "200"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Вкусовые дескрипторы": "Бергамот,Фундук,Шоколад",
+        "Рекомендации по приготовлению": "Для эспрессо,Гейзерная кофеварка,Рожковая кофеварка,Турка,Хорош с молоком,Чашка",
+        "Степень обжарки": "Средняя",
+        "Способ обработки": "Другой",
+        "Кислотность": "Ниже средней",
+        "Плотность": "Средняя",
+        "Особенности кофе": "Арабика,Смесь"
+      },
+      "reviewWarnings": [
+        "origin_extracted_from_description.composition"
+      ]
+    },
+    {
+      "sourceKey": "roast.by",
+      "sourceProductId": "17228",
+      "sourceUrl": "https://roast.by/catalog/kofe/svezheobzharennyy_kofe/tanzaniya_mbinga_kilimandzharo_aa_200_1/",
+      "name": "Танзания Мбинга Килиманджаро АА",
+      "roasterName": "Roast.by",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "TZ",
+          "countryNameRu": "Танзания",
+          "percentage": null,
+          "evidenceField": "properties.Страна произрастания"
+        }
+      ],
+      "tasteDescriptors": [
+        "Грецкий орех",
+        "Мандарин",
+        "Темный Шоколад"
+      ],
+      "processing": "Мытый",
+      "roastLevel": "Средняя",
+      "qGraderScoreRaw": "81.5",
+      "acidity": "Средняя",
+      "body": "Средняя",
+      "features": [
+        "Арабика"
+      ],
+      "brewRecommendations": [
+        "Для эспрессо",
+        "Гейзерная кофеварка",
+        "Турка",
+        "Хорош с молоком",
+        "Чашка"
+      ],
+      "grindOptions": [
+        "Не молоть",
+        "Аэропресс",
+        "Мока",
+        "Под чашку",
+        "Пуровер",
+        "Турка",
+        "Френч-пресс",
+        "Эспрессо крупно",
+        "Эспрессо тонко"
+      ],
+      "imageUrls": [
+        "https://roast.by/upload/resize_cache/iblock/80e/700_700_1/gic7rupk1052prsrqofocushcyxevtbg.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "17172",
+          "weightGrams": 1000,
+          "price": "94.80",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "MASSA": "1000"
+          }
+        },
+        {
+          "externalVariantId": "17228",
+          "weightGrams": 200,
+          "price": "21.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "MASSA": "200"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Вкусовые дескрипторы": "Грецкий орех,Мандарин,Темный Шоколад",
+        "Оценка Q-грейдеров": "81.5",
+        "Рекомендации по приготовлению": "Для эспрессо,Гейзерная кофеварка,Турка,Хорош с молоком,Чашка",
+        "Степень обжарки": "Средняя",
+        "Способ обработки": "Мытый",
+        "Высота произрастания": "1122",
+        "Кислотность": "Средняя",
+        "Плотность": "Средняя",
+        "Особенности кофе": "Арабика",
+        "Страна произрастания": "Танзания"
+      },
+      "reviewWarnings": []
+    },
+    {
+      "sourceKey": "roast.by",
+      "sourceProductId": "17157",
+      "sourceUrl": "https://roast.by/catalog/kofe/svezheobzharennyy_kofe/smes_3_peru_kolumbiya_200_1/",
+      "name": "Смесь №3 Перу-Колумбия",
+      "roasterName": "Roast.by",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "blend",
+      "origins": [
+        {
+          "countryCode": "PE",
+          "countryNameRu": "Перу",
+          "percentage": null,
+          "evidenceField": "description.composition"
+        },
+        {
+          "countryCode": "CO",
+          "countryNameRu": "Колумбия",
+          "percentage": null,
+          "evidenceField": "description.composition"
+        }
+      ],
+      "tasteDescriptors": [
+        "Грейпфрут",
+        "Молочный шоколад",
+        "Орехи"
+      ],
+      "processing": "Другой",
+      "roastLevel": "Темная",
+      "qGraderScoreRaw": null,
+      "acidity": "Ниже средней",
+      "body": "Высокая",
+      "features": [
+        "Арабика",
+        "Смесь"
+      ],
+      "brewRecommendations": [
+        "Для эспрессо",
+        "Гейзерная кофеварка",
+        "Рожковая кофеварка",
+        "Турка",
+        "Хорош с молоком",
+        "Чашка"
+      ],
+      "grindOptions": [
+        "Не молоть",
+        "Аэропресс",
+        "Мока",
+        "Под чашку",
+        "Пуровер",
+        "Турка",
+        "Френч-пресс",
+        "Эспрессо крупно",
+        "Эспрессо тонко"
+      ],
+      "imageUrls": [
+        "https://roast.by/upload/resize_cache/iblock/dd2/700_700_1/al6ocn129a3wueuc3p5438zn18cbfx8m.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "17104",
+          "weightGrams": 1000,
+          "price": "79.60",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "MASSA": "1000"
+          }
+        },
+        {
+          "externalVariantId": "17157",
+          "weightGrams": 200,
+          "price": "19.60",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "MASSA": "200"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Вкусовые дескрипторы": "Грейпфрут,Молочный шоколад,Орехи",
+        "Рекомендации по приготовлению": "Для эспрессо,Гейзерная кофеварка,Рожковая кофеварка,Турка,Хорош с молоком,Чашка",
+        "Степень обжарки": "Темная",
+        "Способ обработки": "Другой",
+        "Кислотность": "Ниже средней",
+        "Плотность": "Высокая",
+        "Особенности кофе": "Арабика,Смесь"
+      },
+      "reviewWarnings": [
+        "origin_extracted_from_description.composition"
+      ]
+    },
+    {
+      "sourceKey": "roast.by",
+      "sourceProductId": "16959",
+      "sourceUrl": "https://roast.by/catalog/kofe/svezheobzharennyy_kofe/meksika_chiapas_200/",
+      "name": "Мексика Чиапас",
+      "roasterName": "Roast.by",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "MX",
+          "countryNameRu": "Мексика",
+          "percentage": null,
+          "evidenceField": "properties.Страна произрастания"
+        }
+      ],
+      "tasteDescriptors": [
+        "Молочный шоколад",
+        "Финик",
+        "Фундук"
+      ],
+      "processing": "Мытый",
+      "roastLevel": "Темная",
+      "qGraderScoreRaw": "83.5",
+      "acidity": "Низкая",
+      "body": "Выше средней",
+      "features": [
+        "Арабика"
+      ],
+      "brewRecommendations": [
+        "Для эспрессо",
+        "Гейзерная кофеварка",
+        "Рожковая кофеварка",
+        "Турка",
+        "Хорош с молоком",
+        "Чашка"
+      ],
+      "grindOptions": [
+        "Не молоть",
+        "Аэропресс",
+        "Мока",
+        "Под чашку",
+        "Пуровер",
+        "Турка",
+        "Френч-пресс",
+        "Эспрессо крупно",
+        "Эспрессо тонко"
+      ],
+      "imageUrls": [
+        "https://roast.by/upload/resize_cache/iblock/5e5/700_700_1/032ptetgeqmc5p3bu96sbexs1435xkph.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "16959",
+          "weightGrams": 200,
+          "price": "19.60",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "MASSA": "200"
+          }
+        },
+        {
+          "externalVariantId": "16960",
+          "weightGrams": 1000,
+          "price": "88.50",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "MASSA": "1000"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Вкусовые дескрипторы": "Молочный шоколад,Финик,Фундук",
+        "Оценка Q-грейдеров": "83.5",
+        "Рекомендации по приготовлению": "Для эспрессо,Гейзерная кофеварка,Рожковая кофеварка,Турка,Хорош с молоком,Чашка",
+        "Степень обжарки": "Темная",
+        "Способ обработки": "Мытый",
+        "Высота произрастания": "1200-1600",
+        "Кислотность": "Низкая",
+        "Плотность": "Выше средней",
+        "Особенности кофе": "Арабика",
+        "Страна произрастания": "Мексика"
+      },
+      "reviewWarnings": []
+    },
+    {
+      "sourceKey": "roast.by",
+      "sourceProductId": "29951",
+      "sourceUrl": "https://roast.by/catalog/kofe/svezheobzharennyy_kofe/efiopiya_adado/",
+      "name": "Эфиопия Ададо",
+      "roasterName": "Roast.by",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "ET",
+          "countryNameRu": "Эфиопия",
+          "percentage": null,
+          "evidenceField": "properties.Страна произрастания"
+        }
+      ],
+      "tasteDescriptors": [
+        "Бергамот",
+        "Персик",
+        "Цитрус"
+      ],
+      "processing": "Натуральный",
+      "roastLevel": "Светлая",
+      "qGraderScoreRaw": "86",
+      "acidity": "Средняя",
+      "body": "Ниже средней",
+      "features": [
+        "Арабика"
+      ],
+      "brewRecommendations": [
+        "Френч-пресс",
+        "Капельная кофеварка",
+        "Чашка",
+        "Аэропресс",
+        "Кемекс",
+        "Пуровер"
+      ],
+      "grindOptions": [
+        "Не молоть",
+        "Аэропресс",
+        "Мока",
+        "Под чашку",
+        "Пуровер",
+        "Турка",
+        "Френч-пресс",
+        "Эспрессо крупно",
+        "Эспрессо тонко"
+      ],
+      "imageUrls": [
+        "https://roast.by/upload/resize_cache/iblock/ecf/700_700_1/6wr52rhjsq093h9c0yxcfzmbfmjhussy.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "29951",
+          "weightGrams": 200,
+          "price": "27.60",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "MASSA": "200"
+          }
+        },
+        {
+          "externalVariantId": "29952",
+          "weightGrams": 1000,
+          "price": "123.50",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "MASSA": "1000"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Вкусовые дескрипторы": "Бергамот,Персик,Цитрус",
+        "Оценка Q-грейдеров": "86",
+        "Рекомендации по приготовлению": "Френч-пресс,Капельная кофеварка,Чашка,Аэропресс,Кемекс,Пуровер",
+        "Степень обжарки": "Светлая",
+        "Способ обработки": "Натуральный",
+        "Высота произрастания": "2150-2400",
+        "Кислотность": "Средняя",
+        "Плотность": "Ниже средней",
+        "TDS (для V60)": "1,40",
+        "Особенности кофе": "Арабика",
+        "Страна произрастания": "Эфиопия"
+      },
+      "reviewWarnings": []
+    },
+    {
+      "sourceKey": "roast.by",
+      "sourceProductId": "17451",
+      "sourceUrl": "https://roast.by/catalog/kofe/svezheobzharennyy_kofe/nikaragua_maragodzhip_200_1/",
+      "name": "Никарагуа Марагоджип",
+      "roasterName": "Roast.by",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "NI",
+          "countryNameRu": "Никарагуа",
+          "percentage": null,
+          "evidenceField": "properties.Страна произрастания"
+        }
+      ],
+      "tasteDescriptors": [
+        "Молочный шоколад",
+        "Сухофрукты",
+        "Фрукты"
+      ],
+      "processing": "Мытый",
+      "roastLevel": "Средняя",
+      "qGraderScoreRaw": "83",
+      "acidity": "Средняя",
+      "body": "Выше средней",
+      "features": [
+        "Арабика",
+        "Моносорт"
+      ],
+      "brewRecommendations": [
+        "Для эспрессо",
+        "Гейзерная кофеварка",
+        "Турка",
+        "Чашка"
+      ],
+      "grindOptions": [
+        "Не молоть",
+        "Аэропресс",
+        "Мока",
+        "Под чашку",
+        "Пуровер",
+        "Турка",
+        "Френч-пресс",
+        "Эспрессо крупно",
+        "Эспрессо тонко"
+      ],
+      "imageUrls": [
+        "https://roast.by/upload/iblock/153/g2ac816fi1y8f10r6q7ggopjtvr3ubwi.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "17303",
+          "weightGrams": 1000,
+          "price": "112.90",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "MASSA": "1000"
+          }
+        },
+        {
+          "externalVariantId": "17451",
+          "weightGrams": 200,
+          "price": "24.40",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "MASSA": "200"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Вкусовые дескрипторы": "Молочный шоколад,Сухофрукты,Фрукты",
+        "Оценка Q-грейдеров": "83",
+        "Рекомендации по приготовлению": "Для эспрессо,Гейзерная кофеварка,Турка,Чашка",
+        "Степень обжарки": "Средняя",
+        "Способ обработки": "Мытый",
+        "Кислотность": "Средняя",
+        "Плотность": "Выше средней",
+        "Особенности кофе": "Арабика,Моносорт",
+        "Страна произрастания": "Никарагуа"
+      },
+      "reviewWarnings": []
+    },
+    {
+      "sourceKey": "roast.by",
+      "sourceProductId": "17402",
+      "sourceUrl": "https://roast.by/catalog/kofe/svezheobzharennyy_kofe/kosta_rika_tarrazu_200_1/",
+      "name": "Коста-Рика Тарразу",
+      "roasterName": "Roast.by",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "CR",
+          "countryNameRu": "Коста-Рика",
+          "percentage": null,
+          "evidenceField": "properties.Страна произрастания"
+        }
+      ],
+      "tasteDescriptors": [
+        "Орехи",
+        "Сухофрукты",
+        "Фрукты"
+      ],
+      "processing": "Мытый",
+      "roastLevel": "Средняя",
+      "qGraderScoreRaw": "84",
+      "acidity": "Средняя",
+      "body": "Средняя",
+      "features": [
+        "Арабика"
+      ],
+      "brewRecommendations": [
+        "Для эспрессо",
+        "Гейзерная кофеварка",
+        "Рожковая кофеварка",
+        "Турка",
+        "Чашка"
+      ],
+      "grindOptions": [
+        "Не молоть",
+        "Аэропресс",
+        "Мока",
+        "Под чашку",
+        "Пуровер",
+        "Турка",
+        "Френч-пресс",
+        "Эспрессо крупно",
+        "Эспрессо тонко"
+      ],
+      "imageUrls": [
+        "https://roast.by/upload/resize_cache/iblock/356/700_700_1/lxeov2pkat4o31l8qdqc4be12w353okc.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "17241",
+          "weightGrams": 1000,
+          "price": "90.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "MASSA": "1000"
+          }
+        },
+        {
+          "externalVariantId": "17402",
+          "weightGrams": 200,
+          "price": "22.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "MASSA": "200"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Вкусовые дескрипторы": "Орехи,Сухофрукты,Фрукты",
+        "Оценка Q-грейдеров": "84",
+        "Рекомендации по приготовлению": "Для эспрессо,Гейзерная кофеварка,Рожковая кофеварка,Турка,Чашка",
+        "Степень обжарки": "Средняя",
+        "Способ обработки": "Мытый",
+        "Кислотность": "Средняя",
+        "Плотность": "Средняя",
+        "Особенности кофе": "Арабика",
+        "Страна произрастания": "Коста-Рика"
+      },
+      "reviewWarnings": []
+    },
+    {
+      "sourceKey": "roast.by",
+      "sourceProductId": "17360",
+      "sourceUrl": "https://roast.by/catalog/kofe/svezheobzharennyy_kofe/efiopiya_sidamo_gr_2_200_1/",
+      "name": "Эфиопия Сидамо гр. 2",
+      "roasterName": "Roast.by",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "ET",
+          "countryNameRu": "Эфиопия",
+          "percentage": null,
+          "evidenceField": "properties.Страна произрастания"
+        }
+      ],
+      "tasteDescriptors": [
+        "Гибискус",
+        "Красные ягоды",
+        "Молочный шоколад"
+      ],
+      "processing": "Мытый",
+      "roastLevel": "Средняя",
+      "qGraderScoreRaw": "84.5",
+      "acidity": "Средняя",
+      "body": "Выше средней",
+      "features": [
+        "Арабика"
+      ],
+      "brewRecommendations": [
+        "Для эспрессо",
+        "Гейзерная кофеварка",
+        "Рожковая кофеварка",
+        "Турка",
+        "Хорош с молоком",
+        "Чашка"
+      ],
+      "grindOptions": [
+        "Не молоть",
+        "Аэропресс",
+        "Мока",
+        "Под чашку",
+        "Пуровер",
+        "Турка",
+        "Френч-пресс",
+        "Эспрессо крупно",
+        "Эспрессо тонко"
+      ],
+      "imageUrls": [
+        "https://roast.by/upload/resize_cache/iblock/4ad/700_700_1/nn62g7jplikc3p6zo6xeqifiejhp37s4.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "17310",
+          "weightGrams": 1000,
+          "price": "81.80",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "MASSA": "1000"
+          }
+        },
+        {
+          "externalVariantId": "17360",
+          "weightGrams": 200,
+          "price": "20.10",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "MASSA": "200"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Вкусовые дескрипторы": "Гибискус,Красные ягоды,Молочный шоколад",
+        "Оценка Q-грейдеров": "84.5",
+        "Рекомендации по приготовлению": "Для эспрессо,Гейзерная кофеварка,Рожковая кофеварка,Турка,Хорош с молоком,Чашка",
+        "Степень обжарки": "Средняя",
+        "Способ обработки": "Мытый",
+        "Кислотность": "Средняя",
+        "Плотность": "Выше средней",
+        "Особенности кофе": "Арабика",
+        "Страна произрастания": "Эфиопия"
+      },
+      "reviewWarnings": []
+    },
+    {
+      "sourceKey": "roast.by",
+      "sourceProductId": "17356",
+      "sourceUrl": "https://roast.by/catalog/kofe/svezheobzharennyy_kofe/efiopiya_irgacheffe_gr_2_200_1/",
+      "name": "Эфиопия Иргачеффе гр.2",
+      "roasterName": "Roast.by",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "ET",
+          "countryNameRu": "Эфиопия",
+          "percentage": null,
+          "evidenceField": "properties.Страна произрастания"
+        }
+      ],
+      "tasteDescriptors": [
+        "Апельсин",
+        "Бергамот",
+        "Черный чай"
+      ],
+      "processing": "Мытый",
+      "roastLevel": "Светлая",
+      "qGraderScoreRaw": "85",
+      "acidity": "Высокая",
+      "body": "Низкая",
+      "features": [
+        "Арабика"
+      ],
+      "brewRecommendations": [
+        "Френч-пресс",
+        "Капельная кофеварка",
+        "Чашка",
+        "Аэропресс",
+        "Кемекс",
+        "Пуровер"
+      ],
+      "grindOptions": [
+        "Не молоть",
+        "Аэропресс",
+        "Мока",
+        "Под чашку",
+        "Пуровер",
+        "Турка",
+        "Френч-пресс",
+        "Эспрессо крупно",
+        "Эспрессо тонко"
+      ],
+      "imageUrls": [
+        "https://roast.by/upload/resize_cache/iblock/75f/700_700_1/7gktxdjp6amtayt05y2ayvpisgbkpgxg.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "17306",
+          "weightGrams": 1000,
+          "price": "85.30",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "MASSA": "1000"
+          }
+        },
+        {
+          "externalVariantId": "17356",
+          "weightGrams": 200,
+          "price": "21.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "MASSA": "200"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Вкусовые дескрипторы": "Апельсин,Бергамот,Черный чай",
+        "Оценка Q-грейдеров": "85",
+        "Рекомендации по приготовлению": "Френч-пресс,Капельная кофеварка,Чашка,Аэропресс,Кемекс,Пуровер",
+        "Степень обжарки": "Светлая",
+        "Способ обработки": "Мытый",
+        "Кислотность": "Высокая",
+        "Плотность": "Низкая",
+        "TDS (для V60)": "1,15",
+        "Особенности кофе": "Арабика",
+        "Экстракция (для V60)": "19,50%",
+        "Страна произрастания": "Эфиопия"
+      },
+      "reviewWarnings": []
+    },
+    {
+      "sourceKey": "roast.by",
+      "sourceProductId": "17293",
+      "sourceUrl": "https://roast.by/catalog/kofe/svezheobzharennyy_kofe/espresso_smes_1_200_1/",
+      "name": "Эспрессо смесь №1",
+      "roasterName": "Roast.by",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "blend",
+      "origins": [
+        {
+          "countryCode": "ET",
+          "countryNameRu": "Эфиопия",
+          "percentage": null,
+          "evidenceField": "description.composition"
+        },
+        {
+          "countryCode": "BR",
+          "countryNameRu": "Бразилия",
+          "percentage": null,
+          "evidenceField": "description.composition"
+        },
+        {
+          "countryCode": "UG",
+          "countryNameRu": "Уганда",
+          "percentage": null,
+          "evidenceField": "description.composition"
+        }
+      ],
+      "tasteDescriptors": [
+        "Ананас",
+        "Нуга",
+        "Цитрус",
+        "Шоколад"
+      ],
+      "processing": "Другой",
+      "roastLevel": "Средняя",
+      "qGraderScoreRaw": null,
+      "acidity": "Средняя",
+      "body": "Выше средней",
+      "features": [
+        "Смесь",
+        "Арабика/Робуста"
+      ],
+      "brewRecommendations": [
+        "Для эспрессо",
+        "Гейзерная кофеварка",
+        "Рожковая кофеварка",
+        "Турка",
+        "Хорош с молоком",
+        "Чашка"
+      ],
+      "grindOptions": [
+        "Не молоть",
+        "Аэропресс",
+        "Мока",
+        "Под чашку",
+        "Пуровер",
+        "Турка",
+        "Френч-пресс",
+        "Эспрессо крупно",
+        "Эспрессо тонко"
+      ],
+      "imageUrls": [
+        "https://roast.by/upload/resize_cache/iblock/10b/700_700_1/be2n3qgac0sbam0ra2masmc7rpvp2zj4.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "17246",
+          "weightGrams": 1000,
+          "price": "76.40",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "MASSA": "1000"
+          }
+        },
+        {
+          "externalVariantId": "17293",
+          "weightGrams": 200,
+          "price": "18.90",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "MASSA": "200"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Вкусовые дескрипторы": "Ананас,Нуга,Цитрус,Шоколад",
+        "Рекомендации по приготовлению": "Для эспрессо,Гейзерная кофеварка,Рожковая кофеварка,Турка,Хорош с молоком,Чашка",
+        "Степень обжарки": "Средняя",
+        "Способ обработки": "Другой",
+        "Кислотность": "Средняя",
+        "Плотность": "Выше средней",
+        "Особенности кофе": "Смесь,Арабика/Робуста"
+      },
+      "reviewWarnings": [
+        "origin_extracted_from_description.composition"
+      ]
+    },
+    {
+      "sourceKey": "roast.by",
+      "sourceProductId": "17287",
+      "sourceUrl": "https://roast.by/catalog/kofe/svezheobzharennyy_kofe/firmennaya_smes_roast_by_200_1/",
+      "name": "Фирменная смесь Roast.by",
+      "roasterName": "Roast.by",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "blend",
+      "origins": [
+        {
+          "countryCode": "BR",
+          "countryNameRu": "Бразилия",
+          "percentage": null,
+          "evidenceField": "description.composition"
+        },
+        {
+          "countryCode": "CO",
+          "countryNameRu": "Колумбия",
+          "percentage": null,
+          "evidenceField": "description.composition"
+        },
+        {
+          "countryCode": "VN",
+          "countryNameRu": "Вьетнам",
+          "percentage": null,
+          "evidenceField": "description.composition"
+        },
+        {
+          "countryCode": "ET",
+          "countryNameRu": "Эфиопия",
+          "percentage": null,
+          "evidenceField": "description.composition"
+        }
+      ],
+      "tasteDescriptors": [
+        "Красный апельсин",
+        "Урюк",
+        "Фундук"
+      ],
+      "processing": "Другой",
+      "roastLevel": "Средняя",
+      "qGraderScoreRaw": "82.75",
+      "acidity": "Средняя",
+      "body": "Выше средней",
+      "features": [
+        "Арабика",
+        "Смесь"
+      ],
+      "brewRecommendations": [
+        "Для эспрессо",
+        "Гейзерная кофеварка",
+        "Рожковая кофеварка",
+        "Турка",
+        "Хорош с молоком",
+        "Чашка"
+      ],
+      "grindOptions": [
+        "Не молоть",
+        "Аэропресс",
+        "Мока",
+        "Под чашку",
+        "Пуровер",
+        "Турка",
+        "Френч-пресс",
+        "Эспрессо крупно",
+        "Эспрессо тонко"
+      ],
+      "imageUrls": [
+        "https://roast.by/upload/resize_cache/iblock/44c/700_700_1/vauwxvp7jotqcjvtt90vbl77gqjwd1jx.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "17180",
+          "weightGrams": 1000,
+          "price": "74.50",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "MASSA": "1000"
+          }
+        },
+        {
+          "externalVariantId": "17287",
+          "weightGrams": 200,
+          "price": "18.90",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "MASSA": "200"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Вкусовые дескрипторы": "Красный апельсин,Урюк,Фундук",
+        "Оценка Q-грейдеров": "82.75",
+        "Рекомендации по приготовлению": "Для эспрессо,Гейзерная кофеварка,Рожковая кофеварка,Турка,Хорош с молоком,Чашка",
+        "Степень обжарки": "Средняя",
+        "Способ обработки": "Другой",
+        "Кислотность": "Средняя",
+        "Плотность": "Выше средней",
+        "Особенности кофе": "Арабика,Смесь"
+      },
+      "reviewWarnings": [
+        "origin_extracted_from_description.composition"
+      ]
+    },
+    {
+      "sourceKey": "roast.by",
+      "sourceProductId": "17279",
+      "sourceUrl": "https://roast.by/catalog/kofe/svezheobzharennyy_kofe/indoneziya_sumatra_200_1/",
+      "name": "Индонезия Суматра",
+      "roasterName": "Roast.by",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "ID",
+          "countryNameRu": "Индонезия",
+          "percentage": null,
+          "evidenceField": "properties.Страна произрастания"
+        }
+      ],
+      "tasteDescriptors": [
+        "Мускатный орех",
+        "Темный Шоколад",
+        "Тростниковый сахар"
+      ],
+      "processing": "Другой",
+      "roastLevel": "Средняя",
+      "qGraderScoreRaw": "84",
+      "acidity": "Средняя",
+      "body": "Выше средней",
+      "features": [
+        "Арабика"
+      ],
+      "brewRecommendations": [
+        "Для эспрессо",
+        "Гейзерная кофеварка",
+        "Турка",
+        "Хорош с молоком",
+        "Чашка"
+      ],
+      "grindOptions": [
+        "Не молоть",
+        "Аэропресс",
+        "Мока",
+        "Под чашку",
+        "Пуровер",
+        "Турка",
+        "Френч-пресс",
+        "Эспрессо крупно",
+        "Эспрессо тонко"
+      ],
+      "imageUrls": [
+        "https://roast.by/upload/resize_cache/iblock/73b/700_700_1/tyg0hfdgwjfiu8i1zbum0623ot33rzrl.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "17090",
+          "weightGrams": 1000,
+          "price": "92.70",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "MASSA": "1000"
+          }
+        },
+        {
+          "externalVariantId": "17279",
+          "weightGrams": 200,
+          "price": "21.80",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "MASSA": "200"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Вкусовые дескрипторы": "Мускатный орех,Темный Шоколад,Тростниковый сахар",
+        "Оценка Q-грейдеров": "84",
+        "Рекомендации по приготовлению": "Для эспрессо,Гейзерная кофеварка,Турка,Хорош с молоком,Чашка",
+        "Степень обжарки": "Средняя",
+        "Способ обработки": "Другой",
+        "Кислотность": "Средняя",
+        "Плотность": "Выше средней",
+        "Особенности кофе": "Арабика",
+        "Страна произрастания": "Индонезия"
+      },
+      "reviewWarnings": []
+    },
+    {
+      "sourceKey": "roast.by",
+      "sourceProductId": "17231",
+      "sourceUrl": "https://roast.by/catalog/kofe/svezheobzharennyy_kofe/uganda_robusta_200_1/",
+      "name": "Уганда Робуста",
+      "roasterName": "Roast.by",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "UG",
+          "countryNameRu": "Уганда",
+          "percentage": null,
+          "evidenceField": "properties.Страна произрастания"
+        }
+      ],
+      "tasteDescriptors": [
+        "Земля",
+        "Табак"
+      ],
+      "processing": "Натуральный",
+      "roastLevel": "Темная",
+      "qGraderScoreRaw": "74",
+      "acidity": "Низкая",
+      "body": "Очень высокая",
+      "features": [
+        "Робуста"
+      ],
+      "brewRecommendations": [
+        "Для эспрессо",
+        "Хорош с молоком"
+      ],
+      "grindOptions": [
+        "Не молоть",
+        "Аэропресс",
+        "Мока",
+        "Под чашку",
+        "Пуровер",
+        "Турка",
+        "Френч-пресс",
+        "Эспрессо крупно",
+        "Эспрессо тонко"
+      ],
+      "imageUrls": [
+        "https://roast.by/upload/resize_cache/iblock/8f2/700_700_1/yk8uy9wn4i1nx80op371z2ci90fqihuu.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "17175",
+          "weightGrams": 1000,
+          "price": "52.80",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "MASSA": "1000"
+          }
+        },
+        {
+          "externalVariantId": "17231",
+          "weightGrams": 200,
+          "price": "13.30",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "MASSA": "200"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Вкусовые дескрипторы": "Земля,Табак",
+        "Оценка Q-грейдеров": "74",
+        "Рекомендации по приготовлению": "Для эспрессо,Хорош с молоком",
+        "Степень обжарки": "Темная",
+        "Способ обработки": "Натуральный",
+        "Высота произрастания": "900-1400",
+        "Кислотность": "Низкая",
+        "Плотность": "Очень высокая",
+        "Особенности кофе": "Робуста",
+        "Страна произрастания": "Уганда"
+      },
+      "reviewWarnings": []
+    },
+    {
+      "sourceKey": "roast.by",
+      "sourceProductId": "17226",
+      "sourceUrl": "https://roast.by/catalog/kofe/svezheobzharennyy_kofe/smes_moloko_200_1/",
+      "name": "Смесь Молоко+",
+      "roasterName": "Roast.by",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "blend",
+      "origins": [
+        {
+          "countryCode": "BR",
+          "countryNameRu": "Бразилия",
+          "percentage": null,
+          "evidenceField": "description.composition"
+        },
+        {
+          "countryCode": "ET",
+          "countryNameRu": "Эфиопия",
+          "percentage": null,
+          "evidenceField": "description.composition"
+        },
+        {
+          "countryCode": "UG",
+          "countryNameRu": "Уганда",
+          "percentage": null,
+          "evidenceField": "description.composition"
+        }
+      ],
+      "tasteDescriptors": [
+        "Арахис",
+        "Молочный шоколад",
+        "Табак"
+      ],
+      "processing": "Другой",
+      "roastLevel": "Средняя",
+      "qGraderScoreRaw": "82.75",
+      "acidity": "Ниже средней",
+      "body": "Выше средней",
+      "features": [
+        "Смесь",
+        "Арабика/Робуста"
+      ],
+      "brewRecommendations": [
+        "Для эспрессо",
+        "Гейзерная кофеварка",
+        "Рожковая кофеварка",
+        "Турка",
+        "Хорош с молоком",
+        "Чашка"
+      ],
+      "grindOptions": [
+        "Не молоть",
+        "Аэропресс",
+        "Мока",
+        "Под чашку",
+        "Пуровер",
+        "Турка",
+        "Френч-пресс",
+        "Эспрессо крупно",
+        "Эспрессо тонко"
+      ],
+      "imageUrls": [
+        "https://roast.by/upload/resize_cache/iblock/0d8/700_700_1/v7xdlivoxk9lhsoeqghbi78ucnsba7wz.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "17170",
+          "weightGrams": 1000,
+          "price": "74.80",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "MASSA": "1000"
+          }
+        },
+        {
+          "externalVariantId": "17226",
+          "weightGrams": 200,
+          "price": "18.50",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "MASSA": "200"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Вкусовые дескрипторы": "Арахис,Молочный шоколад,Табак",
+        "Оценка Q-грейдеров": "82.75",
+        "Рекомендации по приготовлению": "Для эспрессо,Гейзерная кофеварка,Рожковая кофеварка,Турка,Хорош с молоком,Чашка",
+        "Степень обжарки": "Средняя",
+        "Способ обработки": "Другой",
+        "Кислотность": "Ниже средней",
+        "Плотность": "Выше средней",
+        "Особенности кофе": "Смесь,Арабика/Робуста"
+      },
+      "reviewWarnings": [
+        "origin_extracted_from_description.composition"
+      ]
+    },
+    {
+      "sourceKey": "roast.by",
+      "sourceProductId": "17225",
+      "sourceUrl": "https://roast.by/catalog/kofe/svezheobzharennyy_kofe/smes_koshchey_bessonnyy_200_1/",
+      "name": "Смесь Кощей Бессонный",
+      "roasterName": "Roast.by",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "blend",
+      "origins": [
+        {
+          "countryCode": "ID",
+          "countryNameRu": "Индонезия",
+          "percentage": null,
+          "evidenceField": "description.composition"
+        }
+      ],
+      "tasteDescriptors": [
+        "Арахис",
+        "Темный Шоколад",
+        "Тост"
+      ],
+      "processing": "Другой",
+      "roastLevel": "Темная",
+      "qGraderScoreRaw": null,
+      "acidity": "Низкая",
+      "body": "Очень высокая",
+      "features": [
+        "Смесь",
+        "Арабика/Робуста"
+      ],
+      "brewRecommendations": [
+        "Для эспрессо",
+        "Гейзерная кофеварка",
+        "Турка",
+        "Хорош с молоком",
+        "Чашка"
+      ],
+      "grindOptions": [
+        "Не молоть",
+        "Аэропресс",
+        "Мока",
+        "Под чашку",
+        "Пуровер",
+        "Турка",
+        "Френч-пресс",
+        "Эспрессо крупно",
+        "Эспрессо тонко"
+      ],
+      "imageUrls": [
+        "https://roast.by/upload/resize_cache/iblock/0aa/700_700_1/cj05zsgth6f01nx9w5mfj4pnhy9mj6yx.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "17111",
+          "weightGrams": 1000,
+          "price": "70.70",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "MASSA": "1000"
+          }
+        },
+        {
+          "externalVariantId": "17225",
+          "weightGrams": 200,
+          "price": "17.50",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "MASSA": "200"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Вкусовые дескрипторы": "Арахис,Темный Шоколад,Тост",
+        "Рекомендации по приготовлению": "Для эспрессо,Гейзерная кофеварка,Турка,Хорош с молоком,Чашка",
+        "Степень обжарки": "Темная",
+        "Способ обработки": "Другой",
+        "Кислотность": "Низкая",
+        "Плотность": "Очень высокая",
+        "Особенности кофе": "Смесь,Арабика/Робуста"
+      },
+      "reviewWarnings": [
+        "blend_other_origins_not_specified",
+        "origin_extracted_from_description.composition"
+      ]
+    },
+    {
+      "sourceKey": "roast.by",
+      "sourceProductId": "17215",
+      "sourceUrl": "https://roast.by/catalog/kofe/svezheobzharennyy_kofe/gonduras_shg_200_1/",
+      "name": "Гондурас SHG",
+      "roasterName": "Roast.by",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "HN",
+          "countryNameRu": "Гондурас",
+          "percentage": null,
+          "evidenceField": "properties.Страна произрастания"
+        }
+      ],
+      "tasteDescriptors": [
+        "Апельсин",
+        "Финик",
+        "Фундук"
+      ],
+      "processing": "Мытый",
+      "roastLevel": "Средняя",
+      "qGraderScoreRaw": "81",
+      "acidity": "Средняя",
+      "body": "Средняя",
+      "features": [
+        "Арабика"
+      ],
+      "brewRecommendations": [
+        "Для эспрессо",
+        "Гейзерная кофеварка",
+        "Турка",
+        "Хорош с молоком",
+        "Чашка"
+      ],
+      "grindOptions": [
+        "Не молоть",
+        "Аэропресс",
+        "Мока",
+        "Под чашку",
+        "Пуровер",
+        "Турка",
+        "Френч-пресс",
+        "Эспрессо крупно",
+        "Эспрессо тонко"
+      ],
+      "imageUrls": [
+        "https://roast.by/upload/resize_cache/iblock/76a/700_700_1/r1wqf9qb8z7byafs2fe5m8dh9ry1v58k.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "17030",
+          "weightGrams": 1000,
+          "price": "75.60",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "MASSA": "1000"
+          }
+        },
+        {
+          "externalVariantId": "17215",
+          "weightGrams": 200,
+          "price": "18.90",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "MASSA": "200"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Вкусовые дескрипторы": "Апельсин,Финик,Фундук",
+        "Оценка Q-грейдеров": "81",
+        "Рекомендации по приготовлению": "Для эспрессо,Гейзерная кофеварка,Турка,Хорош с молоком,Чашка",
+        "Степень обжарки": "Средняя",
+        "Способ обработки": "Мытый",
+        "Кислотность": "Средняя",
+        "Плотность": "Средняя",
+        "Особенности кофе": "Арабика",
+        "Страна произрастания": "Гондурас"
+      },
+      "reviewWarnings": []
+    },
+    {
+      "sourceKey": "roast.by",
+      "sourceProductId": "17212",
+      "sourceUrl": "https://roast.by/catalog/kofe/svezheobzharennyy_kofe/gvatemala_ueuetenango_200_1/",
+      "name": "Гватемала Уэуэтенанго",
+      "roasterName": "Roast.by",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "GT",
+          "countryNameRu": "Гватемала",
+          "percentage": null,
+          "evidenceField": "properties.Страна произрастания"
+        }
+      ],
+      "tasteDescriptors": [
+        "Зеленое яблоко",
+        "Какао",
+        "Карамель"
+      ],
+      "processing": "Мытый",
+      "roastLevel": "Средняя",
+      "qGraderScoreRaw": "83",
+      "acidity": "Выше средней",
+      "body": "Выше средней",
+      "features": [
+        "Арабика"
+      ],
+      "brewRecommendations": [
+        "Для эспрессо",
+        "Гейзерная кофеварка",
+        "Турка",
+        "Чашка"
+      ],
+      "grindOptions": [
+        "Не молоть",
+        "Аэропресс",
+        "Мока",
+        "Под чашку",
+        "Пуровер",
+        "Турка",
+        "Френч-пресс",
+        "Эспрессо крупно",
+        "Эспрессо тонко"
+      ],
+      "imageUrls": [
+        "https://roast.by/upload/resize_cache/iblock/590/700_700_1/jn7tuvcyeolhy7znzcs3xv0n10m35g4o.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "17212",
+          "weightGrams": 200,
+          "price": "21.10",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "MASSA": "200"
+          }
+        },
+        {
+          "externalVariantId": "17461",
+          "weightGrams": 1000,
+          "price": "85.80",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "MASSA": "1000"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Вкусовые дескрипторы": "Зеленое яблоко,Какао,Карамель",
+        "Оценка Q-грейдеров": "83",
+        "Рекомендации по приготовлению": "Для эспрессо,Гейзерная кофеварка,Турка,Чашка",
+        "Степень обжарки": "Средняя",
+        "Способ обработки": "Мытый",
+        "Высота произрастания": "2000",
+        "Кислотность": "Выше средней",
+        "Плотность": "Выше средней",
+        "Особенности кофе": "Арабика",
+        "Страна произрастания": "Гватемала"
+      },
+      "reviewWarnings": []
+    },
+    {
+      "sourceKey": "roast.by",
+      "sourceProductId": "17147",
+      "sourceUrl": "https://roast.by/catalog/kofe/svezheobzharennyy_kofe/vetnam_200_1/",
+      "name": "Вьетнам",
+      "roasterName": "Roast.by",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "VN",
+          "countryNameRu": "Вьетнам",
+          "percentage": null,
+          "evidenceField": "properties.Страна произрастания"
+        }
+      ],
+      "tasteDescriptors": [
+        "Темный Шоколад",
+        "Тертое какао"
+      ],
+      "processing": "Мытый",
+      "roastLevel": "Темная",
+      "qGraderScoreRaw": "82",
+      "acidity": "Низкая",
+      "body": "Высокая",
+      "features": [
+        "Арабика"
+      ],
+      "brewRecommendations": [
+        "Для эспрессо",
+        "Турка",
+        "Хорош с молоком",
+        "Чашка"
+      ],
+      "grindOptions": [
+        "Не молоть",
+        "Аэропресс",
+        "Мока",
+        "Под чашку",
+        "Пуровер",
+        "Турка",
+        "Френч-пресс",
+        "Эспрессо крупно",
+        "Эспрессо тонко"
+      ],
+      "imageUrls": [
+        "https://roast.by/upload/resize_cache/iblock/1e3/700_700_1/3pyil9dng0a901750xzgluy48jk0abqh.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "17147",
+          "weightGrams": 200,
+          "price": "19.20",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "MASSA": "200"
+          }
+        },
+        {
+          "externalVariantId": "17456",
+          "weightGrams": 1000,
+          "price": "78.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "MASSA": "1000"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Вкусовые дескрипторы": "Темный Шоколад,Тертое какао",
+        "Оценка Q-грейдеров": "82",
+        "Рекомендации по приготовлению": "Для эспрессо,Турка,Хорош с молоком,Чашка",
+        "Степень обжарки": "Темная",
+        "Способ обработки": "Мытый",
+        "Кислотность": "Низкая",
+        "Плотность": "Высокая",
+        "Особенности кофе": "Арабика",
+        "Страна произрастания": "Вьетнам"
+      },
+      "reviewWarnings": []
+    },
+    {
+      "sourceKey": "roast.by",
+      "sourceProductId": "17145",
+      "sourceUrl": "https://roast.by/catalog/kofe/svezheobzharennyy_kofe/burundi_ngozi_rudori_ngozi_rudori_200_1/",
+      "name": "Бурунди Нгози Рудори (Ngozi Rudori)",
+      "roasterName": "Roast.by",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "BI",
+          "countryNameRu": "Бурунди",
+          "percentage": null,
+          "evidenceField": "properties.Страна произрастания"
+        }
+      ],
+      "tasteDescriptors": [
+        "Ежевика",
+        "Клубника",
+        "Курага"
+      ],
+      "processing": "Мытый",
+      "roastLevel": "Средняя",
+      "qGraderScoreRaw": "84",
+      "acidity": "Выше средней",
+      "body": "Средняя",
+      "features": [
+        "Арабика"
+      ],
+      "brewRecommendations": [
+        "Для эспрессо",
+        "Гейзерная кофеварка",
+        "Турка",
+        "Чашка"
+      ],
+      "grindOptions": [
+        "Не молоть",
+        "Аэропресс",
+        "Мока",
+        "Под чашку",
+        "Пуровер",
+        "Турка",
+        "Френч-пресс",
+        "Эспрессо крупно",
+        "Эспрессо тонко"
+      ],
+      "imageUrls": [
+        "https://roast.by/upload/resize_cache/iblock/795/700_700_1/zk1fjnlbt7nj2zf0zlmts72sx5ftgivs.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "17145",
+          "weightGrams": 200,
+          "price": "16.32",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "MASSA": "200"
+          }
+        },
+        {
+          "externalVariantId": "17454",
+          "weightGrams": 1000,
+          "price": "69.78",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "MASSA": "1000"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Вкусовые дескрипторы": "Ежевика,Клубника,Курага",
+        "Оценка Q-грейдеров": "84",
+        "Рекомендации по приготовлению": "Для эспрессо,Гейзерная кофеварка,Турка,Чашка",
+        "Степень обжарки": "Средняя",
+        "Способ обработки": "Мытый",
+        "Кислотность": "Выше средней",
+        "Плотность": "Средняя",
+        "Особенности кофе": "Арабика",
+        "Страна произрастания": "Бурунди"
+      },
+      "reviewWarnings": []
+    },
+    {
+      "sourceKey": "roast.by",
+      "sourceProductId": "17079",
+      "sourceUrl": "https://roast.by/catalog/kofe/svezheobzharennyy_kofe/peru_monte_verde_gr_1_200_1/",
+      "name": "Перу Монте Верде гр.1",
+      "roasterName": "Roast.by",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "PE",
+          "countryNameRu": "Перу",
+          "percentage": null,
+          "evidenceField": "properties.Страна произрастания"
+        }
+      ],
+      "tasteDescriptors": [
+        "Ваниль",
+        "Молочный шоколад",
+        "Специи",
+        "Фрукты"
+      ],
+      "processing": "Натуральный",
+      "roastLevel": "Светлая",
+      "qGraderScoreRaw": "86",
+      "acidity": "Средняя",
+      "body": "Выше средней",
+      "features": [
+        "Арабика",
+        "Микролот",
+        "Моносорт"
+      ],
+      "brewRecommendations": [
+        "Френч-пресс",
+        "Капельная кофеварка",
+        "Чашка",
+        "Аэропресс",
+        "Кемекс",
+        "Пуровер"
+      ],
+      "grindOptions": [
+        "Не молоть",
+        "Аэропресс",
+        "Мока",
+        "Под чашку",
+        "Пуровер",
+        "Турка",
+        "Френч-пресс",
+        "Эспрессо крупно",
+        "Эспрессо тонко"
+      ],
+      "imageUrls": [
+        "https://roast.by/upload/resize_cache/iblock/807/700_700_1/tpx1g9y2a2b2enlkn1a0nj5x3kdahnka.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "17079",
+          "weightGrams": 200,
+          "price": "27.60",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "MASSA": "200"
+          }
+        },
+        {
+          "externalVariantId": "17469",
+          "weightGrams": 1000,
+          "price": "123.50",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "MASSA": "1000"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Вкусовые дескрипторы": "Ваниль,Молочный шоколад,Специи,Фрукты",
+        "Оценка Q-грейдеров": "86",
+        "Рекомендации по приготовлению": "Френч-пресс,Капельная кофеварка,Чашка,Аэропресс,Кемекс,Пуровер",
+        "Степень обжарки": "Светлая",
+        "Способ обработки": "Натуральный",
+        "Кислотность": "Средняя",
+        "Плотность": "Выше средней",
+        "TDS (для V60)": "1,35",
+        "Особенности кофе": "Арабика,Микролот,Моносорт",
+        "Страна произрастания": "Перу"
+      },
+      "reviewWarnings": []
+    },
+    {
+      "sourceKey": "roast.by",
+      "sourceProductId": "16964",
+      "sourceUrl": "https://roast.by/catalog/kofe/svezheobzharennyy_kofe/peru_mitsui_gr_1_200_1/",
+      "name": "Перу Мицуи гр. 1",
+      "roasterName": "Roast.by",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "PE",
+          "countryNameRu": "Перу",
+          "percentage": null,
+          "evidenceField": "properties.Страна произрастания"
+        }
+      ],
+      "tasteDescriptors": [
+        "Какао",
+        "Орехи",
+        "Сухофрукты"
+      ],
+      "processing": "Мытый",
+      "roastLevel": "Темная",
+      "qGraderScoreRaw": "84",
+      "acidity": "Средняя",
+      "body": "Высокая",
+      "features": [
+        "Арабика"
+      ],
+      "brewRecommendations": [
+        "Для эспрессо",
+        "Гейзерная кофеварка",
+        "Турка",
+        "Хорош с молоком",
+        "Чашка"
+      ],
+      "grindOptions": [
+        "Не молоть",
+        "Аэропресс",
+        "Мока",
+        "Под чашку",
+        "Пуровер",
+        "Турка",
+        "Френч-пресс",
+        "Эспрессо крупно",
+        "Эспрессо тонко"
+      ],
+      "imageUrls": [
+        "https://roast.by/upload/resize_cache/iblock/b09/700_700_1/mgswt5zl9f9960g7obo03ckm11h0myfj.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "16964",
+          "weightGrams": 200,
+          "price": "19.60",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "MASSA": "200"
+          }
+        },
+        {
+          "externalVariantId": "16966",
+          "weightGrams": 1000,
+          "price": "80.40",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "MASSA": "1000"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Вкусовые дескрипторы": "Какао,Орехи,Сухофрукты",
+        "Оценка Q-грейдеров": "84",
+        "Рекомендации по приготовлению": "Для эспрессо,Гейзерная кофеварка,Турка,Хорош с молоком,Чашка",
+        "Степень обжарки": "Темная",
+        "Способ обработки": "Мытый",
+        "Высота произрастания": "2750",
+        "Кислотность": "Средняя",
+        "Плотность": "Высокая",
+        "Особенности кофе": "Арабика",
+        "Страна произрастания": "Перу"
+      },
+      "reviewWarnings": []
+    },
+    {
+      "sourceKey": "roast.by",
+      "sourceProductId": "20362",
+      "sourceUrl": "https://roast.by/catalog/kofe/zelenyy_kofe/zelenyy_kofe_kolumbiya_supremo/",
+      "name": "Зеленый кофе Колумбия Супремо",
+      "roasterName": "Roast.by",
+      "productKind": "green_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "CO",
+          "countryNameRu": "Колумбия",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": "Мытый",
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [],
+      "imageUrls": [
+        "https://roast.by/upload/resize_cache/iblock/9d2/700_700_1/dbhrvoyupkfx5bfu6jlhpwizxcqp7z71.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "20362",
+          "weightGrams": 350,
+          "price": "23.10",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "MASSA": "350 грамм"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Способ обработки": "Мытый"
+      },
+      "reviewWarnings": [
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "roast.by",
+      "sourceProductId": "20360",
+      "sourceUrl": "https://roast.by/catalog/kofe/zelenyy_kofe/zelenyy_kofe_braziliya_santos_fc/",
+      "name": "Зеленый кофе Бразилия Сантос FC",
+      "roasterName": "Roast.by",
+      "productKind": "green_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "BR",
+          "countryNameRu": "Бразилия",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": "Натуральный",
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [],
+      "imageUrls": [
+        "https://roast.by/upload/resize_cache/iblock/32e/700_700_1/mojna17sj6vda39hf3fqdw3gpj5st20q.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "20360",
+          "weightGrams": 350,
+          "price": "17.80",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "MASSA": "350 грамм"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Способ обработки": "Натуральный"
+      },
+      "reviewWarnings": [
+        "origin_extracted_from_name"
+      ]
+    }
+  ],
+  "excluded": [],
+  "sourceSnapshots": [
+    {
+      "url": "https://roast.by/catalog/kofe/svezheobzharennyy_kofe/",
+      "fetchedAtUtc": "2026-10-05T09:41:02.996401+00:00",
+      "sha256": "287f869c9a9cfe16b0784f3f3f32db20159cd769f154f18c39b8c3dcc62c261a"
+    },
+    {
+      "url": "https://roast.by/catalog/kofe/svezheobzharennyy_kofe/?PAGEN_1=2",
+      "fetchedAtUtc": "2026-10-05T09:41:05.958837+00:00",
+      "sha256": "895e202106ba82f887996b992a3056806e7ba735809aa667231a3b90e7078710"
+    },
+    {
+      "url": "https://roast.by/catalog/kofe/svezheobzharennyy_kofe/?PAGEN_1=3",
+      "fetchedAtUtc": "2026-10-05T09:41:09.061940+00:00",
+      "sha256": "eb7caed78c0df23bfcbd5635faea35da1207c10dd69b4bb7bfd36a6377042a12"
+    },
+    {
+      "url": "https://roast.by/catalog/kofe/svezheobzharennyy_kofe/?PAGEN_1=4",
+      "fetchedAtUtc": "2026-10-05T09:41:11.553521+00:00",
+      "sha256": "61e491cf6955c9c58bba227d3f06edd5d5377e75a8f34d0d3a4515f26547aea5"
+    },
+    {
+      "url": "https://roast.by/catalog/kofe/svezheobzharennyy_kofe/?PAGEN_1=5",
+      "fetchedAtUtc": "2026-10-05T09:41:14.824503+00:00",
+      "sha256": "d251cadaac24ec8c78ea43b4702bda92fb498004e6d1aa2d7caed870760c5e1f"
+    },
+    {
+      "url": "https://roast.by/catalog/kofe/svezheobzharennyy_kofe/braziliya_periskop_tvist/",
+      "fetchedAtUtc": "2026-10-05T09:41:29.387552+00:00",
+      "sha256": "997ab5ae6fc7be5c9f6520e6ba8122fb929c591f44ca6e412620deed440c4909"
+    },
+    {
+      "url": "https://roast.by/catalog/kofe/svezheobzharennyy_kofe/braziliya_veloso_kolekta_200_1/",
+      "fetchedAtUtc": "2026-10-05T09:42:02.436335+00:00",
+      "sha256": "1284faeb944cdf8d3cd0ffa8634460404dcccbe7204a395c3f494ee256e66668"
+    },
+    {
+      "url": "https://roast.by/catalog/kofe/svezheobzharennyy_kofe/burundi_ngozi_rudori_ngozi_rudori_200_1/",
+      "fetchedAtUtc": "2026-10-05T09:42:59.405251+00:00",
+      "sha256": "c3a80c9d04487a5b2d8d11d1a4145320387ef6b126b4cd06f1aaadadcdda25ff"
+    },
+    {
+      "url": "https://roast.by/catalog/kofe/svezheobzharennyy_kofe/efiopiya_adado/",
+      "fetchedAtUtc": "2026-10-05T09:42:17.387221+00:00",
+      "sha256": "534a9bd688c5e1483582d4131a60014e8bb7e7e32d2d3dccbc30fee6025524fc"
+    },
+    {
+      "url": "https://roast.by/catalog/kofe/svezheobzharennyy_kofe/efiopiya_chelchele/",
+      "fetchedAtUtc": "2026-10-05T09:41:20.385602+00:00",
+      "sha256": "5efddaf9fe3ddb0a1d37886abb3ea724a394d5ad413a78045d5999b37f3d71a4"
+    },
+    {
+      "url": "https://roast.by/catalog/kofe/svezheobzharennyy_kofe/efiopiya_irgacheffe_gr_2_200_1/",
+      "fetchedAtUtc": "2026-10-05T09:42:29.409055+00:00",
+      "sha256": "3cb6f4ef32a6aadbfd1f02a3403ef703618f9a4dae5cad6aa55d7ca36f8eadf0"
+    },
+    {
+      "url": "https://roast.by/catalog/kofe/svezheobzharennyy_kofe/efiopiya_sidamo_gr_2_200_1/",
+      "fetchedAtUtc": "2026-10-05T09:42:26.395210+00:00",
+      "sha256": "33cd52318d45a5380b72f2aae65388d01c92b5dba56896637b7e0047481a8cc5"
+    },
+    {
+      "url": "https://roast.by/catalog/kofe/svezheobzharennyy_kofe/efiopiya_uraga_gr_1/",
+      "fetchedAtUtc": "2026-10-05T09:41:23.387925+00:00",
+      "sha256": "0a2e368fdcd780b28309db298334c7d28194058ad2fdf61d6fe5e1d4f602a600"
+    },
+    {
+      "url": "https://roast.by/catalog/kofe/svezheobzharennyy_kofe/espresso_smes_1_200_1/",
+      "fetchedAtUtc": "2026-10-05T09:42:32.391976+00:00",
+      "sha256": "bc12bd6c3daad624b20e2b17e7cce89a50162ca34605947c122e3e35a049fc5d"
+    },
+    {
+      "url": "https://roast.by/catalog/kofe/svezheobzharennyy_kofe/firmennaya_smes_roast_by_200_1/",
+      "fetchedAtUtc": "2026-10-05T09:42:35.382595+00:00",
+      "sha256": "4fa60dda687df47b9ea7924fa982b147571330377e68954d439c4d36925fef17"
+    },
+    {
+      "url": "https://roast.by/catalog/kofe/svezheobzharennyy_kofe/gonduras_shg_200_1/",
+      "fetchedAtUtc": "2026-10-05T09:42:50.383329+00:00",
+      "sha256": "acb0e41d6a616f5e325cc6030f699225773e9f1341f6c301a3e14bc72f9b4565"
+    },
+    {
+      "url": "https://roast.by/catalog/kofe/svezheobzharennyy_kofe/gvatemala_ueuetenango_200_1/",
+      "fetchedAtUtc": "2026-10-05T09:42:53.389708+00:00",
+      "sha256": "13a77f561b75752986f981d36159b496a180abdff8e76eaf0e3a130265c42a01"
+    },
+    {
+      "url": "https://roast.by/catalog/kofe/svezheobzharennyy_kofe/indoneziya_sumatra_200_1/",
+      "fetchedAtUtc": "2026-10-05T09:42:38.382807+00:00",
+      "sha256": "43f97685d23c5e0d61d84e63557d81f0cb006570706219e45bb50c6100e3e738"
+    },
+    {
+      "url": "https://roast.by/catalog/kofe/svezheobzharennyy_kofe/keniya_kagumo/",
+      "fetchedAtUtc": "2026-10-05T09:41:17.372343+00:00",
+      "sha256": "5a4a674b113afe51ed25d76ef03e8b6f8d895c9d35f05fab4f775c903413ab8e"
+    },
+    {
+      "url": "https://roast.by/catalog/kofe/svezheobzharennyy_kofe/keniya_kiamutuira/",
+      "fetchedAtUtc": "2026-10-05T09:41:53.379684+00:00",
+      "sha256": "de0234af5f59d251828eeb787ee7e188c08ac38f448b11f58a1ec62aa7c45d7c"
+    },
+    {
+      "url": "https://roast.by/catalog/kofe/svezheobzharennyy_kofe/kitay_singan/",
+      "fetchedAtUtc": "2026-10-05T09:41:38.378110+00:00",
+      "sha256": "e65d93541b9bda9d8eaf0c4a533542892c5aa76a1afdf9ccd9baa0ebefa821e7"
+    },
+    {
+      "url": "https://roast.by/catalog/kofe/svezheobzharennyy_kofe/kolumbiya_aponte/",
+      "fetchedAtUtc": "2026-10-05T09:41:35.389731+00:00",
+      "sha256": "c7af94f91fceb5ec97075a7537c1137110dac0e2f2dd4c934d2707045d2795e5"
+    },
+    {
+      "url": "https://roast.by/catalog/kofe/svezheobzharennyy_kofe/kolumbiya_dekaf/",
+      "fetchedAtUtc": "2026-10-05T09:41:50.383571+00:00",
+      "sha256": "bc3286651949abf913341fc46980ffea06e85c5c364ced2d469d235840fe49b4"
+    },
+    {
+      "url": "https://roast.by/catalog/kofe/svezheobzharennyy_kofe/kolumbiya_pachamama_risaralda/",
+      "fetchedAtUtc": "2026-10-05T09:41:41.374076+00:00",
+      "sha256": "26a71cd7698997f10e48d2f605fe7fc24d2d3862ce2714156a1f0bd0b495aed0"
+    },
+    {
+      "url": "https://roast.by/catalog/kofe/svezheobzharennyy_kofe/kolumbiya_periskop_tvist/",
+      "fetchedAtUtc": "2026-10-05T09:41:26.388421+00:00",
+      "sha256": "3b047025ce8dfdeba4feab5c73475c757e11d79564b778fbec145e1a4a59f5de"
+    },
+    {
+      "url": "https://roast.by/catalog/kofe/svezheobzharennyy_kofe/kosta_rika_tarrazu_200_1/",
+      "fetchedAtUtc": "2026-10-05T09:42:23.401356+00:00",
+      "sha256": "dc82dfb1a34fe46350ec9e950be917e0d922f1b41c6fccef2920719ba9346c5b"
+    },
+    {
+      "url": "https://roast.by/catalog/kofe/svezheobzharennyy_kofe/meksika_chiapas_200/",
+      "fetchedAtUtc": "2026-10-05T09:42:14.388115+00:00",
+      "sha256": "7bfcd7f2b01ee4e05d9d781bdcfa720b36eb701c59c673c5207c499229300e58"
+    },
+    {
+      "url": "https://roast.by/catalog/kofe/svezheobzharennyy_kofe/ne_vinnyy_kofe/",
+      "fetchedAtUtc": "2026-10-05T09:41:56.367763+00:00",
+      "sha256": "dac08c26d404f50872ed40161252460373f5160dc439a81a1408a8f14a22d08d"
+    },
+    {
+      "url": "https://roast.by/catalog/kofe/svezheobzharennyy_kofe/nikaragua_khinotega_/",
+      "fetchedAtUtc": "2026-10-05T09:41:47.385895+00:00",
+      "sha256": "2fa6e01acef03be059a3d141a11fec1b1579603de7ce66a9f5c6bf2f3535ff8f"
+    },
+    {
+      "url": "https://roast.by/catalog/kofe/svezheobzharennyy_kofe/nikaragua_maragodzhip_200_1/",
+      "fetchedAtUtc": "2026-10-05T09:42:20.375900+00:00",
+      "sha256": "1209c10ba9c4010ee465c764e05975b817c4ef69976a81c6b3e8d382eb589875"
+    },
+    {
+      "url": "https://roast.by/catalog/kofe/svezheobzharennyy_kofe/osenniy_vayb_2_0/",
+      "fetchedAtUtc": "2026-10-05T09:41:32.388477+00:00",
+      "sha256": "1e8f688a2c62f586b6948ea4c2c9e50c80a25b035bf55c45664c26e9730d728f"
+    },
+    {
+      "url": "https://roast.by/catalog/kofe/svezheobzharennyy_kofe/peru_mitsui_gr_1_200_1/",
+      "fetchedAtUtc": "2026-10-05T09:43:05.492591+00:00",
+      "sha256": "c636d79f704e661256d0057a613db9583a0259390b8e9e339f4866ae4039fe28"
+    },
+    {
+      "url": "https://roast.by/catalog/kofe/svezheobzharennyy_kofe/peru_monte_verde_gr_1_200_1/",
+      "fetchedAtUtc": "2026-10-05T09:43:02.387143+00:00",
+      "sha256": "53769c9301fde289d3803240b9ef4bd67df2c2ab06ad3e01a00de4c9c36d5d10"
+    },
+    {
+      "url": "https://roast.by/catalog/kofe/svezheobzharennyy_kofe/smes_3_peru_kolumbiya_200_1/",
+      "fetchedAtUtc": "2026-10-05T09:42:11.383753+00:00",
+      "sha256": "0a650c7cfc63666fe3d7c2094e5ccacea2e21865c5eae6878d7568b62f8d5d89"
+    },
+    {
+      "url": "https://roast.by/catalog/kofe/svezheobzharennyy_kofe/smes_8_200_1/",
+      "fetchedAtUtc": "2026-10-05T09:42:05.396627+00:00",
+      "sha256": "0fc41b5ccab838483f6a5a2ab504436ea0b23a5abd0a54ea777e2bf61b97d102"
+    },
+    {
+      "url": "https://roast.by/catalog/kofe/svezheobzharennyy_kofe/smes_ali_baba_i_sad_spetsiy/",
+      "fetchedAtUtc": "2026-10-05T09:41:59.379806+00:00",
+      "sha256": "d89f7c1ef53f6d5255c3567ab9743bc5aa31414c6a36c53ef6468a420410d77d"
+    },
+    {
+      "url": "https://roast.by/catalog/kofe/svezheobzharennyy_kofe/smes_koshchey_bessonnyy_200_1/",
+      "fetchedAtUtc": "2026-10-05T09:42:47.379694+00:00",
+      "sha256": "1d508ba463d96702126c71928733675d8cc0ba96f66e8e629f880e99f62f5b12"
+    },
+    {
+      "url": "https://roast.by/catalog/kofe/svezheobzharennyy_kofe/smes_moloko_200_1/",
+      "fetchedAtUtc": "2026-10-05T09:42:44.378236+00:00",
+      "sha256": "4baf1509e6de39c5d0a52bd2af99176311c3c4d3868d7a1a4b12c552f148ed2b"
+    },
+    {
+      "url": "https://roast.by/catalog/kofe/svezheobzharennyy_kofe/tanzaniya_mbinga_kilimandzharo_aa_200_1/",
+      "fetchedAtUtc": "2026-10-05T09:42:08.378989+00:00",
+      "sha256": "855747f69d179dd874c864df9d0db8581e52e5dddd577c0dd39fc2d5440cffac"
+    },
+    {
+      "url": "https://roast.by/catalog/kofe/svezheobzharennyy_kofe/uganda_robusta_200_1/",
+      "fetchedAtUtc": "2026-10-05T09:42:41.412012+00:00",
+      "sha256": "a2567981761c32bfca47e23039e9f6a926cd9bc35b0c17d02119374b14eb054f"
+    },
+    {
+      "url": "https://roast.by/catalog/kofe/svezheobzharennyy_kofe/venesuela_trukhilo/",
+      "fetchedAtUtc": "2026-10-05T09:41:44.373081+00:00",
+      "sha256": "429a25787bce5971692fb41be324d079a04a1203871ec224c040e6a67cebfc31"
+    },
+    {
+      "url": "https://roast.by/catalog/kofe/svezheobzharennyy_kofe/vetnam_200_1/",
+      "fetchedAtUtc": "2026-10-05T09:42:56.400089+00:00",
+      "sha256": "91938a095f1cc67e71dff456d967821ec8eeb5355361529298f399da61e63b05"
+    },
+    {
+      "url": "https://roast.by/catalog/kofe/zelenyy_kofe/",
+      "fetchedAtUtc": "2026-10-05T09:43:08.452576+00:00",
+      "sha256": "d151a60fa320999209261d6bc0cf4bc7e8f2c09b03c45bad7cca670a2a7ffff2"
+    },
+    {
+      "url": "https://roast.by/catalog/kofe/zelenyy_kofe/zelenyy_kofe_braziliya_santos_fc/",
+      "fetchedAtUtc": "2026-10-05T09:43:14.376564+00:00",
+      "sha256": "3763fd3a187744c041133f4d51fb9399b28d66b7a0e4ba63132cd57da46ba000"
+    },
+    {
+      "url": "https://roast.by/catalog/kofe/zelenyy_kofe/zelenyy_kofe_kolumbiya_supremo/",
+      "fetchedAtUtc": "2026-10-05T09:43:11.362679+00:00",
+      "sha256": "bab98c078081720b6be7e31a6dc735d0725e5c503be029e52bb9d56ed30717b7"
+    }
+  ]
+}

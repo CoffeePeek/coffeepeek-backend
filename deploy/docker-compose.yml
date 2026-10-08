@@ -147,7 +147,9 @@ services:
       until mc alias set local http://minio:9000 ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD}; do sleep 2; done;
       mc mb --ignore-existing local/coffeepeek.shops;
       mc mb --ignore-existing local/coffeepeek.avatars;
-      mc anonymous set download local/coffeepeek.shops;
+      mc mb --ignore-existing local/coffeepeek.checkins;
+      mc anonymous set none local/coffeepeek.checkins;
+      mc anonymous get-json local/coffeepeek.shops | grep -q CheckInPrivate || mc anonymous set download local/coffeepeek.shops;
       mc anonymous set download local/coffeepeek.avatars
       "
     environment:
@@ -226,6 +228,18 @@ services:
       dockerfile: CoffeePeek.ShopsService/ShopsService.Dockerfile
     restart: unless-stopped
     logging: *default-logging
+    # The host systemd collector reaches private APIs only through loopback.
+    ports:
+      - "127.0.0.1:${COFFEE_IMPORT_SHOPS_PORT:-5243}:8080"
+    volumes:
+      # ASP.NET's standard Production JSON provider binds the source/brand GUID map.
+      # Keep the reviewed mapping outside the checkout, which CI rsync replaces.
+      - type: bind
+        source: ${COFFEE_IMPORT_MAPPING_FILE:-./coffee-import/disabled-mapping.json}
+        target: /app/appsettings.Production.json
+        read_only: true
+        bind:
+          create_host_path: false
     depends_on:
       postgres:
         condition: service_healthy
@@ -239,6 +253,7 @@ services:
       <<: [*dotnet-common, *rabbitmq-env, *redis-env, *media-public-env, *gateway-auth-env, *aspire-service-discovery]
       PostgresCpOptions__ConnectionString: Host=postgres;Port=5432;Database=cpshopsdb;Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD};SslMode=Disable;GSS Encryption Mode=Disable
       PublicAddresses__Enabled: "${SHOPS_PUBLIC_ADDRESSES_ENABLED:-false}"
+      CoffeeImportAuthOptions__Token: ${COFFEE_IMPORT_TOKEN:-}
       OpenAiOptions__ApiKey: ${OPENAI_API_KEY:-}
       OpenAiOptions__Model: ${OPENAI_MODEL:-gpt-4.1-mini}
       OpenAiOptions__BaseUrl: ${OPENAI_BASE_URL:-https://api.openai.com/v1}
@@ -284,6 +299,8 @@ services:
       dockerfile: CoffeePeek.MediaService/MediaService.Dockerfile
     restart: unless-stopped
     logging: *default-logging
+    ports:
+      - "127.0.0.1:${COFFEE_IMPORT_MEDIA_PORT:-5025}:8080"
     depends_on:
       postgres:
         condition: service_healthy
@@ -294,6 +311,7 @@ services:
     environment:
       <<: [*dotnet-common, *rabbitmq-env, *media-public-env, *gateway-auth-env]
       PostgresCpOptions__ConnectionString: Host=postgres;Port=5432;Database=cpmediadb;Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD};SslMode=Disable;GSS Encryption Mode=Disable
+      CoffeeImportAuthOptions__Token: ${COFFEE_IMPORT_TOKEN:-}
       MinIOOptions__Endpoint: http://minio:9000
       MinIOOptions__AccessKey: ${MINIO_ROOT_USER}
       MinIOOptions__SecretKey: ${MINIO_ROOT_PASSWORD}

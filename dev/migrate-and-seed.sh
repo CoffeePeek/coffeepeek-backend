@@ -15,17 +15,9 @@ set -a; source dev/dev.env; set +a
 
 PG_CONTAINER=${PG_CONTAINER:-coffeepeek-dev-infra-postgres-1}
 
-mig() {
-  local db="$1" proj="$2" startup="$3" ctx="$4"
-  echo "== migrate $ctx -> $db =="
-  PostgresCpOptions__ConnectionString="Host=localhost;Port=5432;Database=$db;Username=coffeepeek;Password=coffeepeek;SslMode=Disable" \
-    dotnet ef database update --project "$proj" --startup-project "$startup" --context "$ctx"
-}
-
-mig cpaccountdb    CoffeePeek.Account.Persistence      CoffeePeek.AccountService     AccountDbContext
-mig cpshopsdb      CoffeePeek.Shops.Persistance        CoffeePeek.ShopsService       ShopsDbContext
-mig cpmoderationdb CoffeeShop.Moderation.Persistence   CoffeePeek.ModerationService  ModerationDbContext
-mig cpmediadb      CoffeePeek.MediaService             CoffeePeek.MediaService       MediaDbContext
+# Stop dev/run-services.sh first when upgrading an existing database with archives.
+POSTGRES_USER=coffeepeek POSTGRES_PASSWORD=coffeepeek PG_HOST=localhost PG_PORT=5432 \
+  dotnet run --project CoffeePeek.LegacyCheckInMigration --configuration Release
 
 echo "== seed roles (cpaccountdb) =="
 docker exec "$PG_CONTAINER" psql -U coffeepeek -d cpaccountdb -c \

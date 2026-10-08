@@ -12,10 +12,9 @@ Use `Authorization: Bearer {jwt}`. Missing/invalid authentication returns 401; n
 | --- | --- |
 | `/api/ModerationShops/mine` | `PublicModerationShopDto` |
 | `/api/ModerationRoasters/mine` | `PublicModerationRoasterDto` |
-| `/api/ModerationReviews/mine` | `PublicModerationReviewDto` |
 | `/api/ShopChangeRequests/mine` | `PublicShopChangeRequestDto` |
 
-Shared query parameters: `page=1`, `pageSize=20` (1–100), optional `status=Pending|Approved|Rejected`. Shops, roasters and reviews validate pagination; change requests use the existing handler's clamping. Change requests additionally accept `shop={slug}` and `section=Photos|Contacts|Description|Tags|Roasters|Equipment|Menu|BrewMethods`.
+Shared query parameters: `page=1`, `pageSize=20` (1–100), optional `status=Pending|Approved|Rejected`. Shops and roasters validate pagination; change requests use the existing handler's clamping. Change requests additionally accept `shop={slug}` and `section=Photos|Contacts|Description|Tags|Roasters|Equipment|Menu|BrewMethods`.
 
 ## Response
 
@@ -43,9 +42,10 @@ The item `id` is a service workflow ID, not the published shop/roaster ID. It re
 
 - Shops: `city` and `publishedShop` are addresses or null. `publishedShop` can remain null briefly after approval while the Shops consumer publishes it. Catalog references are `beans`, `equipments`, `roasters`, `brewMethods`, arrays of slug.
 - Roasters: `city` is an address or null; status/rejection fields and photos are preserved.
-- Reviews: `shop` is an address or null. Rating, header, comment, username, timestamps and photos are preserved.
 - Change requests: `shop` is an address or null. Payload uses `tags`, `roasters`, `equipments`, `brewMethods` as slug arrays; photo IDs remain GUIDs. Status/timestamps/rejection reason are preserved.
 
 Hidden/deleted historical references become null or are omitted from reference arrays, with no GUID fallback. The usual pagination headers are also present: `X-Total-Count`, `X-Total-Pages`, `X-Current-Page`, `X-Page-Size`. Responses use no-store.
 
 A regular user's `GET /api/ShopChangeRequests/{workflowId}` and successful POST also return the public item shape. Moderator-only query/update endpoints retain administrative DTOs and internal IDs.
+
+Canonical check-in submissions and owner history use [the check-ins API](check-ins.md). The standalone review submission API is retired.

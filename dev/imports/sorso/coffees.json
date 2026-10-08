@@ -1,0 +1,2662 @@
+{
+  "schemaVersion": 1,
+  "adapterVersion": "1.0",
+  "source": "https://sorso.by/catalog/kofe/",
+  "collectedAtUtc": "2026-10-05T10:36:20.513969+00:00",
+  "complete": true,
+  "coverage": [
+    {
+      "productKind": "roasted_beans",
+      "catalogueUrl": "https://sorso.by/catalog/kofe/",
+      "pages": 2,
+      "expectedProducts": null,
+      "discoveredProducts": 37
+    }
+  ],
+  "products": [
+    {
+      "sourceKey": "sorso.by",
+      "sourceProductId": "2878",
+      "sourceUrl": "https://sorso.by/catalog/kofe/kofe-sorso-brazil/",
+      "name": "Кофе SORSO Бразилия Сантос 250 гр. (В зернах)",
+      "description": null,
+      "roasterName": "SORSO",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "BR",
+          "countryNameRu": "Бразилия",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [],
+      "imageUrls": [
+        "https://sorso.by/upload/iblock/52d/rjey463rhqwjyyqoduq79gbcuwyqh63n.png",
+        "https://sorso.by/upload/iblock/693/quhsgl8ocy9ols4o3gfmsroul1qdhmgv.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "3033",
+          "weightGrams": 250,
+          "price": "21.90",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "PROP_691": "250",
+            "PROP_690": "В зернах"
+          }
+        },
+        {
+          "externalVariantId": "3040",
+          "weightGrams": 1000,
+          "price": "79.90",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "PROP_691": "1000",
+            "PROP_690": "В зернах"
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "sorso.by",
+      "sourceProductId": "2884",
+      "sourceUrl": "https://sorso.by/catalog/kofe/kofe-sorso-ethiopia-sidamo-oromia-anaerobic-fermentation/",
+      "name": "Кофе SORSO Эфиопия Сидамо Оромия Анаэробик Ферментэйшион 250 гр. (В зернах)",
+      "description": null,
+      "roasterName": "SORSO",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "ET",
+          "countryNameRu": "Эфиопия",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [],
+      "imageUrls": [
+        "https://sorso.by/upload/iblock/1e4/p0s3fdvqsktjsnsb4038rn6rgwroa81j.png",
+        "https://sorso.by/upload/iblock/8be/cfrznte494rqpd3fidmtljsh89sb272j.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "3132",
+          "weightGrams": 250,
+          "price": "25.50",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "PROP_691": "250",
+            "PROP_690": "В зернах"
+          }
+        },
+        {
+          "externalVariantId": "3139",
+          "weightGrams": 1000,
+          "price": "97.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "PROP_691": "1000",
+            "PROP_690": "В зернах"
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "sorso.by",
+      "sourceProductId": "3559",
+      "sourceUrl": "https://sorso.by/catalog/kofe/kofe-100-arabika-costa-rica-tarrazu-colibri-shb/",
+      "name": "Кофе SORSO Коста Рика Тарразу Колибри СХБ 250 гр. (В зернах)",
+      "description": null,
+      "roasterName": "SORSO",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "CR",
+          "countryNameRu": "Коста-Рика",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [],
+      "imageUrls": [
+        "https://sorso.by/upload/iblock/0d9/4p2wwy0xldlysa5am24d2bmbvpyugjgf.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "3560",
+          "weightGrams": 250,
+          "price": "24.90",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "PROP_691": "250",
+            "PROP_690": "В зернах"
+          }
+        },
+        {
+          "externalVariantId": "3567",
+          "weightGrams": 1000,
+          "price": "95.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "PROP_691": "1000",
+            "PROP_690": "В зернах"
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "sorso.by",
+      "sourceProductId": "2874",
+      "sourceUrl": "https://sorso.by/catalog/kofe/kofe-sorso-peru/",
+      "name": "Кофе SORSO Перу 250 гр. (В зернах)",
+      "description": null,
+      "roasterName": "SORSO",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "PE",
+          "countryNameRu": "Перу",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [],
+      "imageUrls": [
+        "https://sorso.by/upload/iblock/6ce/0m76es3x9p20ndu00r4eiskve6x966yy.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "2963",
+          "weightGrams": 250,
+          "price": "23.90",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "PROP_691": "250",
+            "PROP_690": "В зернах"
+          }
+        },
+        {
+          "externalVariantId": "2970",
+          "weightGrams": 1000,
+          "price": "91.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "PROP_691": "1000",
+            "PROP_690": "В зернах"
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "sorso.by",
+      "sourceProductId": "2873",
+      "sourceUrl": "https://sorso.by/catalog/kofe/kofe-espresso-blend-choco/",
+      "name": "Кофе SORSO Эспрессо Бленд Шоко 250 гр. (В зернах)",
+      "description": null,
+      "roasterName": "SORSO",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "blend",
+      "origins": [],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [],
+      "imageUrls": [
+        "https://sorso.by/upload/iblock/4f9/z9picke30ydqrgjnegf0ohgct1sw6rud.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "2927",
+          "weightGrams": 250,
+          "price": "22.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "PROP_691": "250",
+            "PROP_690": "В зернах"
+          }
+        },
+        {
+          "externalVariantId": "2934",
+          "weightGrams": 1000,
+          "price": "81.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "PROP_691": "1000",
+            "PROP_690": "В зернах"
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "blend_composition_may_be_incomplete",
+        "detail_properties_not_collected",
+        "origin_not_specified"
+      ]
+    },
+    {
+      "sourceKey": "sorso.by",
+      "sourceProductId": "2876",
+      "sourceUrl": "https://sorso.by/catalog/kofe/kofe-sorso-blend-gimbarr/",
+      "name": "Кофе SORSO Эспрессо Бленд Джимбарр 250 гр. (В зернах)",
+      "description": null,
+      "roasterName": "SORSO",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "blend",
+      "origins": [],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [],
+      "imageUrls": [
+        "https://sorso.by/upload/iblock/c84/vqdwn6z4qiqyk9bskl7vr4ohh5fi5kjl.png",
+        "https://sorso.by/upload/iblock/f41/w5l4lxbawqovvk4dq1jx6lpfy65kx533.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "2991",
+          "weightGrams": 250,
+          "price": "23.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "PROP_691": "250",
+            "PROP_690": "В зернах"
+          }
+        },
+        {
+          "externalVariantId": "2998",
+          "weightGrams": 1000,
+          "price": "85.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "PROP_691": "1000",
+            "PROP_690": "В зернах"
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "blend_composition_may_be_incomplete",
+        "detail_properties_not_collected",
+        "origin_not_specified"
+      ]
+    },
+    {
+      "sourceKey": "sorso.by",
+      "sourceProductId": "2881",
+      "sourceUrl": "https://sorso.by/catalog/kofe/kofe-sorso-colombia-supremo/",
+      "name": "Кофе SORSO Колумбия Супремо 250 гр. (В зернах)",
+      "description": null,
+      "roasterName": "SORSO",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "CO",
+          "countryNameRu": "Колумбия",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [],
+      "imageUrls": [
+        "https://sorso.by/upload/iblock/029/lg3oew50ctowzw8udgijznlfnhgyzib5.png",
+        "https://sorso.by/upload/iblock/e65/32f8g0bqo3xtiymf8vzbqhz8h5do6ypi.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "3075",
+          "weightGrams": 250,
+          "price": "23.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "PROP_691": "250",
+            "PROP_690": "В зернах"
+          }
+        },
+        {
+          "externalVariantId": "3082",
+          "weightGrams": 1000,
+          "price": "84.90",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "PROP_691": "1000",
+            "PROP_690": "В зернах"
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "sorso.by",
+      "sourceProductId": "5913",
+      "sourceUrl": "https://sorso.by/catalog/kofe/kofe-sorso-brazil-yellow-bourbon-fazenda-alta-vista/",
+      "name": "Кофе SORSO Бразилия Еллоу Бурбон Фазенда Алта Виста 250 гр. (В зернах)",
+      "description": null,
+      "roasterName": "SORSO",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "BR",
+          "countryNameRu": "Бразилия",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [],
+      "imageUrls": [
+        "https://sorso.by/upload/iblock/ddc/p1xjd0fg7mif5ynd5zbcr26ietvuixwr.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "5929",
+          "weightGrams": 250,
+          "price": "23.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "PROP_691": "250",
+            "PROP_690": "В зернах"
+          }
+        },
+        {
+          "externalVariantId": "5936",
+          "weightGrams": 1000,
+          "price": "84.90",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "PROP_691": "1000",
+            "PROP_690": "В зернах"
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "sorso.by",
+      "sourceProductId": "2888",
+      "sourceUrl": "https://sorso.by/catalog/kofe/kofe-sorso-india-malabar-aa/",
+      "name": "Кофе SORSO Индия Мусонный АА Малабар Чикмагалур 250 гр. (В зернах)",
+      "description": null,
+      "roasterName": "SORSO",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "IN",
+          "countryNameRu": "Индия",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [],
+      "imageUrls": [
+        "https://sorso.by/upload/iblock/c5f/bczm9epmqkco102ej8piqbtuqtz6pwxe.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "3188",
+          "weightGrams": 250,
+          "price": "23.50",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "PROP_691": "250",
+            "PROP_690": "В зернах"
+          }
+        },
+        {
+          "externalVariantId": "3195",
+          "weightGrams": 1000,
+          "price": "89.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "PROP_691": "1000",
+            "PROP_690": "В зернах"
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "sorso.by",
+      "sourceProductId": "3313",
+      "sourceUrl": "https://sorso.by/catalog/kofe/kofe-sorso-uganda/",
+      "name": "Кофе SORSO Уганда 250 гр. (В зернах)",
+      "description": null,
+      "roasterName": "SORSO",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "UG",
+          "countryNameRu": "Уганда",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [],
+      "imageUrls": [
+        "https://sorso.by/upload/iblock/1f1/jq23met7lsam1czrw1oindar30lxp3mc.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "3331",
+          "weightGrams": 250,
+          "price": "23.90",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "PROP_691": "250",
+            "PROP_690": "В зернах"
+          }
+        },
+        {
+          "externalVariantId": "3338",
+          "weightGrams": 1000,
+          "price": "87.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "PROP_691": "1000",
+            "PROP_690": "В зернах"
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "sorso.by",
+      "sourceProductId": "6449",
+      "sourceUrl": "https://sorso.by/catalog/kofe/kofe-sorso-keniya-aa-top/",
+      "name": "Кофе SORSO Кения АА ТОП (В зернах)",
+      "description": null,
+      "roasterName": "SORSO",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "KE",
+          "countryNameRu": "Кения",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [],
+      "imageUrls": [
+        "https://sorso.by/upload/iblock/1c2/dhknmu3tnjnrb4zclk23zjbu2w3txdbm.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "6465",
+          "weightGrams": 250,
+          "price": "34.50",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "PROP_691": "250",
+            "PROP_690": "В зернах"
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "sorso.by",
+      "sourceProductId": "2880",
+      "sourceUrl": "https://sorso.by/catalog/kofe/kofe-sorso-brazilian-blend/",
+      "name": "Кофе SORSO Бразилиан Бленд 250 гр. (В зернах)",
+      "description": null,
+      "roasterName": "SORSO",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "blend",
+      "origins": [],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [],
+      "imageUrls": [
+        "https://sorso.by/upload/iblock/255/jae7r3u6askxm5w7vgqgwsgp4l6bq8o2.png",
+        "https://sorso.by/upload/iblock/583/85uzpk73b2z3hxkyu4siewckhb2bzsyj.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "3061",
+          "weightGrams": 250,
+          "price": "21.90",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "PROP_691": "250",
+            "PROP_690": "В зернах"
+          }
+        },
+        {
+          "externalVariantId": "3068",
+          "weightGrams": 1000,
+          "price": "83.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "PROP_691": "1000",
+            "PROP_690": "В зернах"
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "blend_composition_may_be_incomplete",
+        "detail_properties_not_collected",
+        "origin_not_specified"
+      ]
+    },
+    {
+      "sourceKey": "sorso.by",
+      "sourceProductId": "2879",
+      "sourceUrl": "https://sorso.by/catalog/kofe/kofe-sorso-brazilia-santos-temnaya-obzharka/",
+      "name": "Кофе SORSO Бразилия Сантос (темная обжарка) 250 гр. (В зернах)",
+      "description": null,
+      "roasterName": "SORSO",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "BR",
+          "countryNameRu": "Бразилия",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [],
+      "imageUrls": [
+        "https://sorso.by/upload/iblock/b78/ii6uc9nc75c6he4ugc9awj94kb5b39dl.png",
+        "https://sorso.by/upload/iblock/52d/rjey463rhqwjyyqoduq79gbcuwyqh63n.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "3047",
+          "weightGrams": 250,
+          "price": "21.90",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "PROP_691": "250",
+            "PROP_690": "В зернах"
+          }
+        },
+        {
+          "externalVariantId": "3054",
+          "weightGrams": 1000,
+          "price": "79.90",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "PROP_691": "1000",
+            "PROP_690": "В зернах"
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "sorso.by",
+      "sourceProductId": "6440",
+      "sourceUrl": "https://sorso.by/catalog/kofe/kofe-sorso-braziliya-feniks/",
+      "name": "Кофе SORSO Бразилия Феникс (В зернах)",
+      "description": null,
+      "roasterName": "SORSO",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "BR",
+          "countryNameRu": "Бразилия",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [],
+      "imageUrls": [
+        "https://sorso.by/upload/iblock/1fa/n7b204cuh0oibf7m5l6l1lt31ytowfwv.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "6458",
+          "weightGrams": 250,
+          "price": "34.50",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "PROP_691": "250",
+            "PROP_690": "В зернах"
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "sorso.by",
+      "sourceProductId": "6439",
+      "sourceUrl": "https://sorso.by/catalog/kofe/kofe-sorso-uganda-mvezi/",
+      "name": "Кофе SORSO Уганда Мвези (В зернах)",
+      "description": null,
+      "roasterName": "SORSO",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "UG",
+          "countryNameRu": "Уганда",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [],
+      "imageUrls": [
+        "https://sorso.by/upload/iblock/500/zsthvjiea8w1n62ds88e7t4eldb83qvi.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "6451",
+          "weightGrams": 250,
+          "price": "31.90",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "PROP_691": "250",
+            "PROP_690": "В зернах"
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "sorso.by",
+      "sourceProductId": "6005",
+      "sourceUrl": "https://sorso.by/catalog/kofe/kofe-sorso-burundi-butikhinda/",
+      "name": "Кофе SORSO Бурунди Бутихинда 250 гр. (В зернах)",
+      "description": null,
+      "roasterName": "SORSO",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "BI",
+          "countryNameRu": "Бурунди",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [],
+      "imageUrls": [
+        "https://sorso.by/upload/iblock/af1/l53tk2gvjhf31j62i5fjcdwanaxk04c4.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "6020",
+          "weightGrams": 250,
+          "price": "31.90",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "PROP_691": "250",
+            "PROP_690": "В зернах"
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "sorso.by",
+      "sourceProductId": "6332",
+      "sourceUrl": "https://sorso.by/catalog/kofe/kofe-sorso-ruanda-sakhara-khill/",
+      "name": "Кофе SORSO Руанда Сахара Хилл 250 гр. (В зернах)",
+      "description": null,
+      "roasterName": "SORSO",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "RW",
+          "countryNameRu": "Руанда",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [],
+      "imageUrls": [
+        "https://sorso.by/upload/iblock/786/f199koo4jvb3uvwcwbqe5jfkrdukuqv6.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "6325",
+          "weightGrams": 250,
+          "price": "39.50",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "PROP_691": "250",
+            "PROP_690": "В зернах"
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "sorso.by",
+      "sourceProductId": "6353",
+      "sourceUrl": "https://sorso.by/catalog/kofe/kofe-sorso-efiopiya-suke-kuto/",
+      "name": "Кофе SORSO Эфиопия Сукэ Куто 250 гр. (В зернах)",
+      "description": null,
+      "roasterName": "SORSO",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "ET",
+          "countryNameRu": "Эфиопия",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [],
+      "imageUrls": [
+        "https://sorso.by/upload/iblock/961/usu0bnvawbi37bcmujlwqnsvukyeqf3d.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "6346",
+          "weightGrams": 250,
+          "price": "33.90",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "PROP_691": "250",
+            "PROP_690": "В зернах"
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "sorso.by",
+      "sourceProductId": "6340",
+      "sourceUrl": "https://sorso.by/catalog/kofe/kofe-sorso-ruanda-nova/",
+      "name": "Кофе SORSO Руанда Нова 250 гр. (В зернах)",
+      "description": null,
+      "roasterName": "SORSO",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "RW",
+          "countryNameRu": "Руанда",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [],
+      "imageUrls": [
+        "https://sorso.by/upload/iblock/3ad/lfv1kuqgpooydxre5g0111f1jhvd4tg9.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "6333",
+          "weightGrams": 250,
+          "price": "34.90",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "PROP_691": "250",
+            "PROP_690": "В зернах"
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "sorso.by",
+      "sourceProductId": "2882",
+      "sourceUrl": "https://sorso.by/catalog/kofe/kofe-sorso-espresso-blend/",
+      "name": "Кофе SORSO Эспрессо Бленд 100% 250 гр. (В зернах)",
+      "description": null,
+      "roasterName": "SORSO",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "blend",
+      "origins": [],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [],
+      "imageUrls": [
+        "https://sorso.by/upload/iblock/b0e/alhvtsb1quf2o00vsqd8lcjtep6m8usz.png",
+        "https://sorso.by/upload/iblock/c27/qup36uyyhcja112ivg58h6wf7up08fig.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "3104",
+          "weightGrams": 250,
+          "price": "20.90",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "PROP_691": "250",
+            "PROP_690": "В зернах"
+          }
+        },
+        {
+          "externalVariantId": "3111",
+          "weightGrams": 1000,
+          "price": "76.90",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "PROP_691": "1000",
+            "PROP_690": "В зернах"
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "blend_composition_may_be_incomplete",
+        "detail_properties_not_collected",
+        "origin_not_specified"
+      ]
+    },
+    {
+      "sourceKey": "sorso.by",
+      "sourceProductId": "2877",
+      "sourceUrl": "https://sorso.by/catalog/kofe/kofe-sorso-blend-latino/",
+      "name": "Кофе SORSO Эспрессо Бленд Латино 250 гр. (В зернах)",
+      "description": null,
+      "roasterName": "SORSO",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "blend",
+      "origins": [],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [],
+      "imageUrls": [
+        "https://sorso.by/upload/iblock/92c/3jquxutydmzzxdcy1pd5ig5mpwidk4jr.png",
+        "https://sorso.by/upload/iblock/918/ptt3ei4xi622elm243n5talzizw8iva0.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "3005",
+          "weightGrams": 250,
+          "price": "23.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "PROP_691": "250",
+            "PROP_690": "В зернах"
+          }
+        },
+        {
+          "externalVariantId": "3012",
+          "weightGrams": 1000,
+          "price": "85.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "PROP_691": "1000",
+            "PROP_690": "В зернах"
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "blend_composition_may_be_incomplete",
+        "detail_properties_not_collected",
+        "origin_not_specified"
+      ]
+    },
+    {
+      "sourceKey": "sorso.by",
+      "sourceProductId": "5963",
+      "sourceUrl": "https://sorso.by/catalog/kofe/kofe-sorso-ethiopia-sidamo/",
+      "name": "Кофе SORSO Эфиопия Сидамо 250 гр. (В зернах)",
+      "description": null,
+      "roasterName": "SORSO",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "ET",
+          "countryNameRu": "Эфиопия",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [],
+      "imageUrls": [
+        "https://sorso.by/upload/iblock/dd1/eq4bbqmzokb73rkfg1m8mstmd2978wwe.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "5964",
+          "weightGrams": 250,
+          "price": "23.90",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "PROP_691": "250",
+            "PROP_690": "В зернах"
+          }
+        },
+        {
+          "externalVariantId": "5971",
+          "weightGrams": 1000,
+          "price": "89.90",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "PROP_691": "1000",
+            "PROP_690": "В зернах"
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "sorso.by",
+      "sourceProductId": "2887",
+      "sourceUrl": "https://sorso.by/catalog/kofe/kofe-sorso-honduras-san-marcos/",
+      "name": "Кофе SORSO Гондурас Сан Маркос СХГ 250 гр. (В зернах)",
+      "description": null,
+      "roasterName": "SORSO",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "HN",
+          "countryNameRu": "Гондурас",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [],
+      "imageUrls": [
+        "https://sorso.by/upload/iblock/175/80f25ykxkrih2m8k6evr2wd50uc0k26b.png",
+        "https://sorso.by/upload/iblock/9ae/c8e72acg3o2bwfi8nesuimourmorzy7h.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "3174",
+          "weightGrams": 250,
+          "price": "23.50",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "PROP_691": "250",
+            "PROP_690": "В зернах"
+          }
+        },
+        {
+          "externalVariantId": "3181",
+          "weightGrams": 1000,
+          "price": "89.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "PROP_691": "1000",
+            "PROP_690": "В зернах"
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "sorso.by",
+      "sourceProductId": "2883",
+      "sourceUrl": "https://sorso.by/catalog/kofe/kofe-sorso-espresso-blend-90-10/",
+      "name": "Кофе SORSO Эспрессо Бленд 90/10 250 гр. (В зернах)",
+      "description": null,
+      "roasterName": "SORSO",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "blend",
+      "origins": [],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [],
+      "imageUrls": [
+        "https://sorso.by/upload/iblock/27d/hvzta63gd00pxubemvy86s0o3nt46er5.png",
+        "https://sorso.by/upload/iblock/0c5/pjk9wmd5p5h4ly8iwcs1i0wxtf98cyn1.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "3118",
+          "weightGrams": 250,
+          "price": "23.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "PROP_691": "250",
+            "PROP_690": "В зернах"
+          }
+        },
+        {
+          "externalVariantId": "3125",
+          "weightGrams": 1000,
+          "price": "85.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "PROP_691": "1000",
+            "PROP_690": "В зернах"
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "blend_composition_may_be_incomplete",
+        "detail_properties_not_collected",
+        "origin_not_specified"
+      ]
+    },
+    {
+      "sourceKey": "sorso.by",
+      "sourceProductId": "5948",
+      "sourceUrl": "https://sorso.by/catalog/kofe/kofe-sorso-ethiopia-yirgacheffe/",
+      "name": "Кофе SORSO Эфиопия Юргачиффе 250 гр. (В зернах)",
+      "description": null,
+      "roasterName": "SORSO",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "ET",
+          "countryNameRu": "Эфиопия",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [],
+      "imageUrls": [
+        "https://sorso.by/upload/iblock/75f/4830atcer00q8r4l1qxc48b1gkd4ql2j.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "5949",
+          "weightGrams": 250,
+          "price": "24.90",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "PROP_691": "250",
+            "PROP_690": "В зернах"
+          }
+        },
+        {
+          "externalVariantId": "5956",
+          "weightGrams": 1000,
+          "price": "95.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "PROP_691": "1000",
+            "PROP_690": "В зернах"
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "sorso.by",
+      "sourceProductId": "2889",
+      "sourceUrl": "https://sorso.by/catalog/kofe/kofe-sorso-kenya/",
+      "name": "Кофе SORSO Кения 250 гр. (В зернах)",
+      "description": null,
+      "roasterName": "SORSO",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "KE",
+          "countryNameRu": "Кения",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [],
+      "imageUrls": [
+        "https://sorso.by/upload/iblock/198/lb0c3czaryciwi5e2120e0ymk171tvlr.png",
+        "https://sorso.by/upload/iblock/d56/qvz45j44y5op2frq8yz9kl4g57jakvs7.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "3202",
+          "weightGrams": 250,
+          "price": "25.50",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "PROP_691": "250",
+            "PROP_690": "В зернах"
+          }
+        },
+        {
+          "externalVariantId": "3209",
+          "weightGrams": 1000,
+          "price": "97.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "PROP_691": "1000",
+            "PROP_690": "В зернах"
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "sorso.by",
+      "sourceProductId": "6487",
+      "sourceUrl": "https://sorso.by/catalog/kofe/kofe-sorso-venesuela/",
+      "name": "Кофе SORSO Венесуэла Ловадо 250 гр. (В зернах)",
+      "description": null,
+      "roasterName": "SORSO",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "VE",
+          "countryNameRu": "Венесуэла",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [],
+      "imageUrls": [
+        "https://sorso.by/upload/iblock/210/xrkp08bbfn2d3wz9cauz4anww4xklz9l.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "6488",
+          "weightGrams": 250,
+          "price": "23.50",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "PROP_691": "250",
+            "PROP_690": "В зернах"
+          }
+        },
+        {
+          "externalVariantId": "6495",
+          "weightGrams": 1000,
+          "price": "88.90",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "PROP_691": "1000",
+            "PROP_690": "В зернах"
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "sorso.by",
+      "sourceProductId": "2827",
+      "sourceUrl": "https://sorso.by/catalog/kofe/kofe-espresso-blend-citrus/",
+      "name": "Кофе SORSO Эспрессо Бленд Цитрус 250 гр. (В зернах)",
+      "description": null,
+      "roasterName": "SORSO",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "blend",
+      "origins": [],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [],
+      "imageUrls": [
+        "https://sorso.by/upload/iblock/5c1/i18jbh51zv2nfah6pjsdh9mav7vcppts.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "2847",
+          "weightGrams": 250,
+          "price": "22.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "PROP_691": "250",
+            "PROP_690": "В зернах"
+          }
+        },
+        {
+          "externalVariantId": "2854",
+          "weightGrams": 1000,
+          "price": "81.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "PROP_691": "1000",
+            "PROP_690": "В зернах"
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "blend_composition_may_be_incomplete",
+        "detail_properties_not_collected",
+        "origin_not_specified"
+      ]
+    },
+    {
+      "sourceKey": "sorso.by",
+      "sourceProductId": "2875",
+      "sourceUrl": "https://sorso.by/catalog/kofe/kofe-sorso-anaerobic-blend/",
+      "name": "Кофе SORSO Эспрессо Анаэробик Бленд 250 гр. (В зернах)",
+      "description": null,
+      "roasterName": "SORSO",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "blend",
+      "origins": [],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [],
+      "imageUrls": [
+        "https://sorso.by/upload/iblock/622/rmwathlmlmng3425bq2n8myfnqwr9lhy.png",
+        "https://sorso.by/upload/iblock/985/g8wmkrko5omc5coxodbnh12wj22tdiu8.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "2977",
+          "weightGrams": 250,
+          "price": "23.90",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "PROP_691": "250",
+            "PROP_690": "В зернах"
+          }
+        },
+        {
+          "externalVariantId": "2984",
+          "weightGrams": 1000,
+          "price": "87.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "PROP_691": "1000",
+            "PROP_690": "В зернах"
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "blend_composition_may_be_incomplete",
+        "detail_properties_not_collected",
+        "origin_not_specified"
+      ]
+    },
+    {
+      "sourceKey": "sorso.by",
+      "sourceProductId": "2886",
+      "sourceUrl": "https://sorso.by/catalog/kofe/kofe-sorso-honduras-anaerobic/",
+      "name": "Кофе SORSO Гондурас СХГ Маркала Анаэробик Ферментэйшион 250 гр. (В зернах)",
+      "description": null,
+      "roasterName": "SORSO",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "HN",
+          "countryNameRu": "Гондурас",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [],
+      "imageUrls": [
+        "https://sorso.by/upload/iblock/e06/gtfmysluwxg2p9obuvkuk91gsrhtgeka.png",
+        "https://sorso.by/upload/iblock/26f/l298zyzaqorz6pd3p5pgm7mktcl5aheq.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "3160",
+          "weightGrams": 250,
+          "price": "25.50",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "PROP_691": "250",
+            "PROP_690": "В зернах"
+          }
+        },
+        {
+          "externalVariantId": "3167",
+          "weightGrams": 1000,
+          "price": "97.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "PROP_691": "1000",
+            "PROP_690": "В зернах"
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "sorso.by",
+      "sourceProductId": "6065",
+      "sourceUrl": "https://sorso.by/catalog/kofe/kofe-sorso-tanzania-aa-kilimanjaro/",
+      "name": "Кофе SORSO Танзания АА Килиманджаро 250 гр. (В зернах)",
+      "description": null,
+      "roasterName": "SORSO",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "TZ",
+          "countryNameRu": "Танзания",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [],
+      "imageUrls": [
+        "https://sorso.by/upload/iblock/97f/v1safpcxjleqzvfel5cxpx5g2i3uzvvp.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "6066",
+          "weightGrams": 250,
+          "price": "23.50",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "PROP_691": "250",
+            "PROP_690": "В зернах"
+          }
+        },
+        {
+          "externalVariantId": "6073",
+          "weightGrams": 1000,
+          "price": "89.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "PROP_691": "1000",
+            "PROP_690": "В зернах"
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "sorso.by",
+      "sourceProductId": "2892",
+      "sourceUrl": "https://sorso.by/catalog/kofe/kofe-sorso-dekaf/",
+      "name": "Кофе SORSO Декаф 250 гр. (В зернах)",
+      "description": null,
+      "roasterName": "SORSO",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [],
+      "imageUrls": [
+        "https://sorso.by/upload/iblock/2c7/z9tagqteweuqjrfqcu75dyspjq4wdpsp.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "3244",
+          "weightGrams": 250,
+          "price": "28.90",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "PROP_691": "250",
+            "PROP_690": "В зернах"
+          }
+        },
+        {
+          "externalVariantId": "3251",
+          "weightGrams": 1000,
+          "price": "99.50",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "PROP_691": "1000",
+            "PROP_690": "В зернах"
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_not_specified"
+      ]
+    },
+    {
+      "sourceKey": "sorso.by",
+      "sourceProductId": "3312",
+      "sourceUrl": "https://sorso.by/catalog/kofe/kofe-sorso-indonesia/",
+      "name": "Кофе SORSO Индонезия 250 гр. (В зернах)",
+      "description": null,
+      "roasterName": "SORSO",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "ID",
+          "countryNameRu": "Индонезия",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [],
+      "imageUrls": [
+        "https://sorso.by/upload/iblock/6d9/pt9c02kcrusqdyljqdbtc3f6ku3tez1d.png",
+        "https://sorso.by/upload/iblock/83c/os91b0kjl8i4zfufzg3vx2ivpybka8aj.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "3345",
+          "weightGrams": 250,
+          "price": "25.90",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "PROP_691": "250",
+            "PROP_690": "В зернах"
+          }
+        },
+        {
+          "externalVariantId": "3352",
+          "weightGrams": 1000,
+          "price": "98.90",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "PROP_691": "1000",
+            "PROP_690": "В зернах"
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "sorso.by",
+      "sourceProductId": "2885",
+      "sourceUrl": "https://sorso.by/catalog/kofe/kofe-sorso-guatemala-vides-farms/",
+      "name": "Кофе SORSO Гватемала Видес Фармс 250 гр. (В зернах)",
+      "description": null,
+      "roasterName": "SORSO",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "GT",
+          "countryNameRu": "Гватемала",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [],
+      "imageUrls": [
+        "https://sorso.by/upload/iblock/d3c/9phde0ut5lre807tnb496e3r214qmyne.png",
+        "https://sorso.by/upload/iblock/a9d/ozp0eipzi0py9sxl36qiuznz05pf6d86.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "3146",
+          "weightGrams": 250,
+          "price": "24.90",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "PROP_691": "250",
+            "PROP_690": "В зернах"
+          }
+        },
+        {
+          "externalVariantId": "3153",
+          "weightGrams": 1000,
+          "price": "95.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "PROP_691": "1000",
+            "PROP_690": "В зернах"
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    },
+    {
+      "sourceKey": "sorso.by",
+      "sourceProductId": "3311",
+      "sourceUrl": "https://sorso.by/catalog/kofe/kofe-sorso-mexico-chiapas-shg/",
+      "name": "Кофе SORSO Mexico Chiapas SHG 250 гр. (В зернах)",
+      "description": null,
+      "roasterName": "SORSO",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "MX",
+          "countryNameRu": "Мексика",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [],
+      "imageUrls": [
+        "https://sorso.by/upload/iblock/d8d/sgjn042m1jls2swbyh3a7fnql4oexcj8.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "3317",
+          "weightGrams": 250,
+          "price": "23.90",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "PROP_691": "250",
+            "PROP_690": "В зернах"
+          }
+        },
+        {
+          "externalVariantId": "3324",
+          "weightGrams": 1000,
+          "price": "89.90",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "PROP_691": "1000",
+            "PROP_690": "В зернах"
+          }
+        }
+      ],
+      "sourceProperties": {},
+      "reviewWarnings": [
+        "detail_properties_not_collected",
+        "origin_extracted_from_name"
+      ]
+    }
+  ],
+  "excluded": [
+    {
+      "sourceProductId": "6563",
+      "sourceUrl": "https://sorso.by/catalog/kofe/degustatsionnyy-boks-sorso-speshelti/",
+      "name": "Дегустационный бокс SORSO Спешелти",
+      "reason": "not_whole_beans"
+    },
+    {
+      "sourceProductId": "6562",
+      "sourceUrl": "https://sorso.by/catalog/kofe/degustatsionnyy-boks-sorso-klassik/",
+      "name": "Дегустационный бокс SORSO Классик",
+      "reason": "not_whole_beans"
+    }
+  ],
+  "sourceSnapshots": [
+    {
+      "url": "https://sorso.by/catalog/kofe/",
+      "fetchedAtUtc": "2026-10-05T10:02:18.112124+00:00",
+      "sha256": "a51e7f275c66944a589745abf2e8d13bdee7352e88a680145ed9bd0665cb0da1"
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/?PAGEN_1=2",
+      "fetchedAtUtc": "2026-10-05T10:29:26.655641+00:00",
+      "sha256": "3af90feb9743c303c035e9682133ec24ea470c7bafde6103947a2fa8b86a5773",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/degustatsionnyy-boks-sorso-klassik/",
+      "fetchedAtUtc": "2026-10-05T10:33:56.384414+00:00",
+      "sha256": "e8518b0ea9a498e000e7331d28458bca9e85c7a4b8b705ef8b22db5e9d051774",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/degustatsionnyy-boks-sorso-speshelti/",
+      "fetchedAtUtc": "2026-10-05T10:31:56.473340+00:00",
+      "sha256": "44fbe1fb128f4fb3125ed6bebe78ea0c2f646f2d70c36f396f86addea3887f74",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/kofe-100-arabika-costa-rica-tarrazu-colibri-shb/",
+      "fetchedAtUtc": "2026-10-05T10:29:44.606711+00:00",
+      "sha256": "d75c8035e03173176b7ea5f558b4a6cb05f368150628069ef1e9c65bc64c9fad",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/kofe-100-arabika-costa-rica-tarrazu-colibri-shb/?oid=3560",
+      "fetchedAtUtc": "2026-10-05T10:29:47.566604+00:00",
+      "sha256": "5d1318f31ee2ea20fe9963dc70a203ac780a3fa00c947fda8a5a2cc8e8e99087",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/kofe-100-arabika-costa-rica-tarrazu-colibri-shb/?oid=3567",
+      "fetchedAtUtc": "2026-10-05T10:29:50.608494+00:00",
+      "sha256": "735ff5eeb2d3f35d890725531b0cb350286abae59aea7c1e250a0c76be5415d4",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/kofe-espresso-blend-choco/",
+      "fetchedAtUtc": "2026-10-05T10:30:03.306135+00:00",
+      "sha256": "424921f4c573129e70e3c90f9cd17593f4120bdfa0a9b321a85e1c267c2c7d5e",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/kofe-espresso-blend-choco/?oid=2927",
+      "fetchedAtUtc": "2026-10-05T10:30:05.492123+00:00",
+      "sha256": "b0465afaffeaac656d934e9dddd1b40d1aaf2a97541847fc54d9c7ed9ac598fa",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/kofe-espresso-blend-choco/?oid=2934",
+      "fetchedAtUtc": "2026-10-05T10:30:08.646694+00:00",
+      "sha256": "31d67f77d13d869a7284061e769c584c55a539c409bf22a64e667c1f2614295f",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/kofe-espresso-blend-citrus/",
+      "fetchedAtUtc": "2026-10-05T10:35:11.487151+00:00",
+      "sha256": "b461e7ce7bd91587f8fc736b38f0b95fb7f8921932f8a8761e14271f95e837cb",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/kofe-espresso-blend-citrus/?oid=2847",
+      "fetchedAtUtc": "2026-10-05T10:35:14.518568+00:00",
+      "sha256": "52e028a8db9b2f84206b775ec17edac4a34db05b62ec861192cf46a7db551746",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/kofe-espresso-blend-citrus/?oid=2854",
+      "fetchedAtUtc": "2026-10-05T10:35:17.447287+00:00",
+      "sha256": "dca790507a1c4a42483d274f63db79c73034b698f8ffcfb783e80db823f42f5a",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/kofe-sorso-anaerobic-blend/",
+      "fetchedAtUtc": "2026-10-05T10:35:20.494156+00:00",
+      "sha256": "b9821e9bb79006d248842022ff9612c2cb37a90bb54d3d4494a0577abeaa9492",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/kofe-sorso-anaerobic-blend/?oid=2977",
+      "fetchedAtUtc": "2026-10-05T10:35:23.484003+00:00",
+      "sha256": "32ccdbc0cec9a962a9bec3b058522e6197b4dcac2607d6418453df5dd738dc9a",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/kofe-sorso-anaerobic-blend/?oid=2984",
+      "fetchedAtUtc": "2026-10-05T10:35:26.450408+00:00",
+      "sha256": "724719c3b8878b170250bbd304e0da62d9dfd6d3ac6ea54674669c985ed14793",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/kofe-sorso-blend-gimbarr/",
+      "fetchedAtUtc": "2026-10-05T10:30:11.498158+00:00",
+      "sha256": "ed5567fa623ff847f99873cc5c2a658082be24ab0974c5e852e3bec4f7976d0e",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/kofe-sorso-blend-gimbarr/?oid=2991",
+      "fetchedAtUtc": "2026-10-05T10:30:14.457819+00:00",
+      "sha256": "c122f480e08922bf67327836d6ad7cb223513977dfc2857a8d4964c20dd76876",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/kofe-sorso-blend-gimbarr/?oid=2998",
+      "fetchedAtUtc": "2026-10-05T10:30:17.602862+00:00",
+      "sha256": "c784adf2baee3f298055d2e7112d137afa0f9dceacaeded52e73a559e880930e",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/kofe-sorso-blend-latino/",
+      "fetchedAtUtc": "2026-10-05T10:34:08.458124+00:00",
+      "sha256": "a3c4d15673004f9a4ecc4af7777b59a947e54ca3e770ecb1913eca739c893bd0",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/kofe-sorso-blend-latino/?oid=3005",
+      "fetchedAtUtc": "2026-10-05T10:34:11.451066+00:00",
+      "sha256": "72c5138ea370fd44de66111827c1d1c7157884d40683465fff2856f1e06ce2d2",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/kofe-sorso-blend-latino/?oid=3012",
+      "fetchedAtUtc": "2026-10-05T10:34:14.436207+00:00",
+      "sha256": "f03ff7744db693e04e1b394f3f40fa024b9f1b535f3b1f89eb272761c193656f",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/kofe-sorso-brazil-yellow-bourbon-fazenda-alta-vista/",
+      "fetchedAtUtc": "2026-10-05T10:30:29.563299+00:00",
+      "sha256": "f4c5641ae6bc05002b5f41e2731ff6802276b917ee357bcbbbff920d66e3aa2b",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/kofe-sorso-brazil-yellow-bourbon-fazenda-alta-vista/?oid=5929",
+      "fetchedAtUtc": "2026-10-05T10:30:32.537167+00:00",
+      "sha256": "0736f7a128f378425523ab63ac24e788464286924ee246c8e56120a9658ce46d",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/kofe-sorso-brazil-yellow-bourbon-fazenda-alta-vista/?oid=5936",
+      "fetchedAtUtc": "2026-10-05T10:30:35.596226+00:00",
+      "sha256": "becdf5699cc691fb2f2969f8adb5152868e8798a33d14434c98a695c737ce574",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/kofe-sorso-brazil/",
+      "fetchedAtUtc": "2026-10-05T10:29:29.566207+00:00",
+      "sha256": "564bf2aa9e03ee70fda62d9f215741bb6b4a3d6aa61b8975a7eab96cb138f870",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/kofe-sorso-brazil/?oid=3033",
+      "fetchedAtUtc": "2026-10-05T10:06:16.026224+00:00",
+      "sha256": "1f848c5f015d327674ca7cdcf73f750023f9b5339c6cebb1988f8effe7386664"
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/kofe-sorso-brazil/?oid=3040",
+      "fetchedAtUtc": "2026-10-05T10:29:32.581504+00:00",
+      "sha256": "9a0a88ba4ded743e8c0aa2a27e53884d3f8f4f0237b1517750a05ef6fd01109b",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/kofe-sorso-brazilia-santos-temnaya-obzharka/",
+      "fetchedAtUtc": "2026-10-05T10:31:11.661542+00:00",
+      "sha256": "9966334070927c05ba9060a898364e706c81bf21c68bd1eb9d7b21878d4e5ca1",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/kofe-sorso-brazilia-santos-temnaya-obzharka/?oid=3047",
+      "fetchedAtUtc": "2026-10-05T10:31:14.506705+00:00",
+      "sha256": "b044f6d874f5372aa969085a5cc7a69296a00f9e6071d8500cf3124932bc80dc",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/kofe-sorso-brazilia-santos-temnaya-obzharka/?oid=3054",
+      "fetchedAtUtc": "2026-10-05T10:31:17.632128+00:00",
+      "sha256": "8b3ad07eaad8556a4423cb3e2fc6f6cee499906245a1e5a0a8ff1c88f2cb2514",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/kofe-sorso-brazilian-blend/",
+      "fetchedAtUtc": "2026-10-05T10:31:03.031469+00:00",
+      "sha256": "1558b684b0b3edbc2bfabe99a70ed4cd14f1ac0f825e987f8f3f336735ba4ec4",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/kofe-sorso-brazilian-blend/?oid=3061",
+      "fetchedAtUtc": "2026-10-05T10:31:05.603768+00:00",
+      "sha256": "abd833d8a26b6cc15cb879fa8e724fab9b141e2dc412339ba516c3799f49bc42",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/kofe-sorso-brazilian-blend/?oid=3068",
+      "fetchedAtUtc": "2026-10-05T10:31:08.630747+00:00",
+      "sha256": "63c15e152d16a3ed6e422fe53657d8e8165500c5dc7cd59fbd62db68047e8911",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/kofe-sorso-braziliya-feniks/",
+      "fetchedAtUtc": "2026-10-05T10:31:20.551991+00:00",
+      "sha256": "e9a583e6b7254f890c13a298ba872d0bc33256c7c82bc3005338b650286e9e63",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/kofe-sorso-braziliya-feniks/?oid=6458",
+      "fetchedAtUtc": "2026-10-05T10:31:23.580985+00:00",
+      "sha256": "7e8cc42d2f153b7326a40bc2ac25ea43ec751e5271c13f2bf5335c040d068368",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/kofe-sorso-burundi-butikhinda/",
+      "fetchedAtUtc": "2026-10-05T10:31:32.632826+00:00",
+      "sha256": "096f143f085446967c97ec27f56cfbd8ee87e366be39a3bb24137fbaedbcb83c",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/kofe-sorso-burundi-butikhinda/?oid=6020",
+      "fetchedAtUtc": "2026-10-05T10:31:35.510071+00:00",
+      "sha256": "761a25b881dd40d2a4b14161d8c0bf2f370f698e0661307552e1417440224749",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/kofe-sorso-colombia-supremo/",
+      "fetchedAtUtc": "2026-10-05T10:30:20.640577+00:00",
+      "sha256": "51c6915574d106efbce78091a9c2e99b1e6f9c18e641309d976c51f8137a0843",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/kofe-sorso-colombia-supremo/?oid=3075",
+      "fetchedAtUtc": "2026-10-05T10:30:23.561140+00:00",
+      "sha256": "a57d3d5ef61e56a11fa688662686d0c8ee4f3987daf832545f9c99883b3d1e95",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/kofe-sorso-colombia-supremo/?oid=3082",
+      "fetchedAtUtc": "2026-10-05T10:30:26.571225+00:00",
+      "sha256": "e7723d0f77300c05bbd3fc6d3846426f37e8eb55e7cdfd7eae191d70e2495f3c",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/kofe-sorso-dekaf/",
+      "fetchedAtUtc": "2026-10-05T10:35:47.440850+00:00",
+      "sha256": "17a2a26bd41074ccf68fb55cd5c7692631d33fb12c5fa1dca604ceab53481a79",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/kofe-sorso-dekaf/?oid=3244",
+      "fetchedAtUtc": "2026-10-05T10:35:50.421450+00:00",
+      "sha256": "73a2ab6c01785913834d219da205327f3e29103ebd41cdb4578281da466e2673",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/kofe-sorso-dekaf/?oid=3251",
+      "fetchedAtUtc": "2026-10-05T10:35:53.464649+00:00",
+      "sha256": "2b4227f79c93572e4b511c44ce9f0bea8180367e58463bd8338288151d38abe8",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/kofe-sorso-efiopiya-suke-kuto/",
+      "fetchedAtUtc": "2026-10-05T10:31:44.552818+00:00",
+      "sha256": "eedfa4e2fe392ae2ff962934707624477bc470b9640f4ffba79abd8f87aa0d43",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/kofe-sorso-efiopiya-suke-kuto/?oid=6346",
+      "fetchedAtUtc": "2026-10-05T10:31:47.595889+00:00",
+      "sha256": "8d7a802059a363a9663efdfd90e20b4f4e8bed7b53684717187e117cad3c8f17",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/kofe-sorso-espresso-blend-90-10/",
+      "fetchedAtUtc": "2026-10-05T10:34:35.452776+00:00",
+      "sha256": "b79a608bbd13baff2be199e7eda921a792a8ce822952f4a0f94d68a74eae7a75",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/kofe-sorso-espresso-blend-90-10/?oid=3118",
+      "fetchedAtUtc": "2026-10-05T10:34:38.445717+00:00",
+      "sha256": "def19e914e5845304242018f95f5c4b2a0774bfb92392883a6954cf74b7e68da",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/kofe-sorso-espresso-blend-90-10/?oid=3125",
+      "fetchedAtUtc": "2026-10-05T10:34:41.448984+00:00",
+      "sha256": "09eb1740804512d8ac5150d799d390f45b7677d0f7628bd9f5819e0941b9f9f6",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/kofe-sorso-espresso-blend/",
+      "fetchedAtUtc": "2026-10-05T10:33:59.580030+00:00",
+      "sha256": "d3acd340c59db70ffa07637561ab6d3c46339d4e4cec73f57ab2e84f731ed1ac",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/kofe-sorso-espresso-blend/?oid=3104",
+      "fetchedAtUtc": "2026-10-05T10:34:02.528078+00:00",
+      "sha256": "7cac8222d2b06a4d4accac67f006f10dc2e321867375e92836c207afa6bfde29",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/kofe-sorso-espresso-blend/?oid=3111",
+      "fetchedAtUtc": "2026-10-05T10:34:05.444844+00:00",
+      "sha256": "241c44034eb856cf53a2f3ca2898e50e208aa063759690e2fe61342d32bdad11",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/kofe-sorso-ethiopia-sidamo-oromia-anaerobic-fermentation/",
+      "fetchedAtUtc": "2026-10-05T10:29:35.572014+00:00",
+      "sha256": "54e7f0d6fd6e995be028ad4ebf7042d6ae1e5609ac62e1db8ff9b79cb27bcb2a",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/kofe-sorso-ethiopia-sidamo-oromia-anaerobic-fermentation/?oid=3132",
+      "fetchedAtUtc": "2026-10-05T10:29:38.577861+00:00",
+      "sha256": "d79e24209c507b4e82bbe04119689879fc467f1d300224e8e0916503bbce913b",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/kofe-sorso-ethiopia-sidamo-oromia-anaerobic-fermentation/?oid=3139",
+      "fetchedAtUtc": "2026-10-05T10:29:41.557363+00:00",
+      "sha256": "a4f37b08bc7de0b46297cad80816cab3dbb6584cd2341b78249ebd7ca18ccb0c",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/kofe-sorso-ethiopia-sidamo/",
+      "fetchedAtUtc": "2026-10-05T10:34:17.440815+00:00",
+      "sha256": "9562e8f6aef7c48d8e731b8aeefb6dacbebf6f4861addd31579eaca526116b1b",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/kofe-sorso-ethiopia-sidamo/?oid=5964",
+      "fetchedAtUtc": "2026-10-05T10:34:20.399886+00:00",
+      "sha256": "09273d69f6711b96942f93eae82f1bbf41c326259ff5d562f29b896e1f99275e",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/kofe-sorso-ethiopia-sidamo/?oid=5971",
+      "fetchedAtUtc": "2026-10-05T10:34:23.400830+00:00",
+      "sha256": "1e613675ddc9a963dcb64dd52d4d6923ff6a92507198f26b9fedb84ce1dba2a2",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/kofe-sorso-ethiopia-yirgacheffe/",
+      "fetchedAtUtc": "2026-10-05T10:34:44.546324+00:00",
+      "sha256": "f4f32d6e88d1699f058e66a05ec25705b6062cc25a33559fad1305260a820fc2",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/kofe-sorso-ethiopia-yirgacheffe/?oid=5949",
+      "fetchedAtUtc": "2026-10-05T10:34:47.494539+00:00",
+      "sha256": "b337ecc05abe753de3b0155952a00fc8b78e798cd1e3fd2e3234a8ed64914266",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/kofe-sorso-ethiopia-yirgacheffe/?oid=5956",
+      "fetchedAtUtc": "2026-10-05T10:34:50.445018+00:00",
+      "sha256": "390ae674e4dde10a92fc126998fe83fc8ed14b09be7ef333a85b59875b88d1e3",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/kofe-sorso-guatemala-vides-farms/",
+      "fetchedAtUtc": "2026-10-05T10:36:05.446885+00:00",
+      "sha256": "4f3a3f117a990db2750b63b0efe432b039c766203115e85ab61b4b17684b53a1",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/kofe-sorso-guatemala-vides-farms/?oid=3146",
+      "fetchedAtUtc": "2026-10-05T10:36:08.453963+00:00",
+      "sha256": "5f79f43551e5fd7ef9fa90f35ba761f546cf0a1d4f9894d2d83b3fb782f66bdb",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/kofe-sorso-guatemala-vides-farms/?oid=3153",
+      "fetchedAtUtc": "2026-10-05T10:36:11.503228+00:00",
+      "sha256": "a65b81f68b82774ac979ab6294f3f94cf761f4ed0c2e22cc994f8d1445360b6e",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/kofe-sorso-honduras-anaerobic/",
+      "fetchedAtUtc": "2026-10-05T10:35:29.556997+00:00",
+      "sha256": "4a1c528ae61fa2f3610d75777dd7682342623ad01e7c1a97293b45fd1bb7b8ff",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/kofe-sorso-honduras-anaerobic/?oid=3160",
+      "fetchedAtUtc": "2026-10-05T10:35:32.449860+00:00",
+      "sha256": "38075fde52aed65df18672a009b8929c502a0915b06afd17ce63a2eee6c3d542",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/kofe-sorso-honduras-anaerobic/?oid=3167",
+      "fetchedAtUtc": "2026-10-05T10:35:35.446680+00:00",
+      "sha256": "8f47f28fd00eb37670e88b05f7614941b8260f6604474d5afa660de9ae93013c",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/kofe-sorso-honduras-san-marcos/",
+      "fetchedAtUtc": "2026-10-05T10:34:26.474547+00:00",
+      "sha256": "0b435d7d0f64dadea71be75a47b6e8a0e42188d3416862cdbc89963535840019",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/kofe-sorso-honduras-san-marcos/?oid=3174",
+      "fetchedAtUtc": "2026-10-05T10:34:29.421337+00:00",
+      "sha256": "c1992b656140f3bb1df00320a4d1a4c0e3b06eb0ca8b0e764b1afdd0492f907a",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/kofe-sorso-honduras-san-marcos/?oid=3181",
+      "fetchedAtUtc": "2026-10-05T10:34:32.415994+00:00",
+      "sha256": "55f7423f992848158e428c79f4d51275e1a0a87424ce2aabc739e1cc7e75acd1",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/kofe-sorso-india-malabar-aa/",
+      "fetchedAtUtc": "2026-10-05T10:30:38.628483+00:00",
+      "sha256": "10a032fe4e06cca2ee185edb92216dffefd5d4e5e25036aebda76ade655c8075",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/kofe-sorso-india-malabar-aa/?oid=3188",
+      "fetchedAtUtc": "2026-10-05T10:30:41.471407+00:00",
+      "sha256": "b7d69a1cc4262d1877fea9ad2034f062d27bddb43d7435c3d582639dfc4df7e9",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/kofe-sorso-india-malabar-aa/?oid=3195",
+      "fetchedAtUtc": "2026-10-05T10:30:44.455222+00:00",
+      "sha256": "f2526cf657504bf7ec425e83113d4a029c0508bafb852787c2790990e31b45b4",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/kofe-sorso-indonesia/",
+      "fetchedAtUtc": "2026-10-05T10:35:56.474749+00:00",
+      "sha256": "d9de68f1182d25b97c42db25bc2bfb57c91646116ce2f4bb032f45d717cc825e",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/kofe-sorso-indonesia/?oid=3345",
+      "fetchedAtUtc": "2026-10-05T10:35:59.410719+00:00",
+      "sha256": "ca8ebd3d82aec8812399ced2bb0db4f7e3d266aaa86a1344f49c57c093b4ec24",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/kofe-sorso-indonesia/?oid=3352",
+      "fetchedAtUtc": "2026-10-05T10:36:02.733804+00:00",
+      "sha256": "4ad0b0ff8a098df10c0093bbc21e608f07dbe6fc369088d935d052a9476b3d43",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/kofe-sorso-keniya-aa-top/",
+      "fetchedAtUtc": "2026-10-05T10:30:56.610836+00:00",
+      "sha256": "3bd071baaf518bab62828060f44100d7799348291591b4484feae2c2f16a6728",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/kofe-sorso-keniya-aa-top/?oid=6465",
+      "fetchedAtUtc": "2026-10-05T10:30:59.602127+00:00",
+      "sha256": "cbcad1c08695d52b16f7f5b0a4e1cd2ece2dfa61b0281d9f4ed73c1e1cc2753c",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/kofe-sorso-kenya/",
+      "fetchedAtUtc": "2026-10-05T10:34:53.401301+00:00",
+      "sha256": "2707dc1dfd9b85548ab241b458f48bcc5ec4e8f6552647b2414583e2de5670ab",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/kofe-sorso-kenya/?oid=3202",
+      "fetchedAtUtc": "2026-10-05T10:34:56.422374+00:00",
+      "sha256": "352838b5481013dd369d2e24c011a96c99cedc1853e6d02398bab3665ac3bf6e",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/kofe-sorso-kenya/?oid=3209",
+      "fetchedAtUtc": "2026-10-05T10:34:59.436909+00:00",
+      "sha256": "c8aaf86628fbfd315e48bbf3a623330ff24ec5eb8c30a25a3f628df8cdf8b143",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/kofe-sorso-mexico-chiapas-shg/",
+      "fetchedAtUtc": "2026-10-05T10:36:14.461217+00:00",
+      "sha256": "1f20691ce1559b14e5453a889e76c713050675c75f3044b44d8430aa55e01d24",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/kofe-sorso-mexico-chiapas-shg/?oid=3317",
+      "fetchedAtUtc": "2026-10-05T10:36:17.532623+00:00",
+      "sha256": "8088e11487369d6fdf252040297123b0f939ecd780d38f2d201b00a522097efa",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/kofe-sorso-mexico-chiapas-shg/?oid=3324",
+      "fetchedAtUtc": "2026-10-05T10:36:20.513969+00:00",
+      "sha256": "1d209eddc1658f40febec7839e01b23ca4b30f6b1dbfbde52275d0fbd4203bf8",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/kofe-sorso-peru/",
+      "fetchedAtUtc": "2026-10-05T10:29:53.622123+00:00",
+      "sha256": "8ef9f7fc261419d5d11ed4cb6543781f83fc3400991394a3e5257fbf83b57fea",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/kofe-sorso-peru/?oid=2963",
+      "fetchedAtUtc": "2026-10-05T10:29:56.618120+00:00",
+      "sha256": "010b1ed43e3cdd8a6794904161a41d66f630a840925a16383374e9ddadb40921",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/kofe-sorso-peru/?oid=2970",
+      "fetchedAtUtc": "2026-10-05T10:29:59.591377+00:00",
+      "sha256": "9ba9b2e45806f602cfa962bacd7ac67d9ba563106827a5ec8cf41b4f4c3163b7",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/kofe-sorso-ruanda-nova/",
+      "fetchedAtUtc": "2026-10-05T10:31:50.557571+00:00",
+      "sha256": "99d5061567765810dc6664596c7bae0e0cfd59fa49311d342064a17e1cde378b",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/kofe-sorso-ruanda-nova/?oid=6333",
+      "fetchedAtUtc": "2026-10-05T10:31:53.543619+00:00",
+      "sha256": "af02c988e8252675b43ff4262f9111b373afaf6346a8d5bb1a6780d823707e55",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/kofe-sorso-ruanda-sakhara-khill/",
+      "fetchedAtUtc": "2026-10-05T10:31:38.656609+00:00",
+      "sha256": "53a4d7d77bc75fb8411a83758f68bf83a7679273b82a33dedc476c4763757008",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/kofe-sorso-ruanda-sakhara-khill/?oid=6325",
+      "fetchedAtUtc": "2026-10-05T10:31:41.549876+00:00",
+      "sha256": "fa5502e9b877995326efedc2562ce116b5309978437593f83923cca491440914",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/kofe-sorso-tanzania-aa-kilimanjaro/",
+      "fetchedAtUtc": "2026-10-05T10:35:38.460821+00:00",
+      "sha256": "d81f4be7d42f7847454f85b434b62fee6e2a6b64aff2ff94bd7a72c456336dd7",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/kofe-sorso-tanzania-aa-kilimanjaro/?oid=6066",
+      "fetchedAtUtc": "2026-10-05T10:35:41.435780+00:00",
+      "sha256": "b5e7a3a7fcab485c9140efec8b9951e66e853debe4095952ce4f07834f0399ee",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/kofe-sorso-tanzania-aa-kilimanjaro/?oid=6073",
+      "fetchedAtUtc": "2026-10-05T10:35:44.474313+00:00",
+      "sha256": "8e53ae4064dac301db9d770fa56f153c50ce95ee1f3d60a206b52f59e2ca05c0",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/kofe-sorso-uganda-mvezi/",
+      "fetchedAtUtc": "2026-10-05T10:31:26.585769+00:00",
+      "sha256": "9ea67f91eeba3125b0205c675417b1580e19d8dd67b559a89e6b0bafb0c576a5",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/kofe-sorso-uganda-mvezi/?oid=6451",
+      "fetchedAtUtc": "2026-10-05T10:31:29.628430+00:00",
+      "sha256": "0c98cd2dd51953a04104d6b0f06e40df6897f2024f508413cdae96cbbb998ac9",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/kofe-sorso-uganda/",
+      "fetchedAtUtc": "2026-10-05T10:30:47.750676+00:00",
+      "sha256": "2a8a6aeebfca91ac37d050e4d634dff761f52e32b025288d6792150372912194",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/kofe-sorso-uganda/?oid=3331",
+      "fetchedAtUtc": "2026-10-05T10:30:50.708170+00:00",
+      "sha256": "fbe7809c8ecadf1209e64c597f8549bcf565bd1b9aa695c4d141c954e987f61d",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/kofe-sorso-uganda/?oid=3338",
+      "fetchedAtUtc": "2026-10-05T10:30:53.582293+00:00",
+      "sha256": "fcee6f0ec0aab513da18304603dddb207fbc279e133a7db4a9db4a8efb4b9c51",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/kofe-sorso-venesuela/",
+      "fetchedAtUtc": "2026-10-05T10:35:02.902217+00:00",
+      "sha256": "5c175429001a5c8a0b9f1f46755e79a132bd922e27427eaae04006ce4353d2fb",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/kofe-sorso-venesuela/?oid=6488",
+      "fetchedAtUtc": "2026-10-05T10:35:05.512585+00:00",
+      "sha256": "08131ddb3853e8977fe7b02cc01798ee98a0cc320d94f38db7350ae0baf67783",
+      "paginationHeaders": {}
+    },
+    {
+      "url": "https://sorso.by/catalog/kofe/kofe-sorso-venesuela/?oid=6495",
+      "fetchedAtUtc": "2026-10-05T10:35:08.448872+00:00",
+      "sha256": "69af7a1192ebb1d3e1c819a407854d57e83bf2a81683e1f2ffd7c24e4f7ae056",
+      "paginationHeaders": {}
+    }
+  ]
+}

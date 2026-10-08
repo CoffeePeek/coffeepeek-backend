@@ -64,6 +64,7 @@ public static class InfrastructureExtensions
 
         services.AddScoped<IUnitOfWork, UnitOfWork<MediaDbContext>>();
         services.AddScoped<IPhotoRepository, PhotoRepository>();
+        services.AddScoped<ClaimCheckInPhotosHandler>();
 
         services.AddOptions<MediaPublicUrlOptions>()
             .BindConfiguration(nameof(MediaPublicUrlOptions));
@@ -71,6 +72,8 @@ public static class InfrastructureExtensions
         services.AddValidateOptions<MinIOOptions>();
 
         services.AddScoped<IStorageService, MinIOStorageService>();
+        services.AddOptions<CoffeeImportAuthOptions>().BindConfiguration(nameof(CoffeeImportAuthOptions))
+            .Validate(o => o.Token.Length == 0 || o.Token.Length >= 32).ValidateOnStart();
 
         var handlersAssembly = typeof(ConfirmPhotoHandler).Assembly;
         builder.AddWolverine(

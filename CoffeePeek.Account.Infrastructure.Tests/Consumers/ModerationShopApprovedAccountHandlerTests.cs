@@ -30,7 +30,7 @@ public class ModerationShopApprovedAccountHandlerTests
         {
             Name = "Cafe",
             Photos = [],
-            Reviews = []
+            CheckIns = []
         });
 
         await sut.Handle(message, ct);

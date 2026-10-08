@@ -1,0 +1,1667 @@
+{
+  "schemaVersion": 1,
+  "adapterVersion": "1.0",
+  "source": "https://xn--80ad9al.xn--90ais/coffe",
+  "collectedAtUtc": "2026-10-05T10:03:23.644383+00:00",
+  "complete": true,
+  "coverage": [
+    {
+      "productKind": "roasted_beans",
+      "catalogueUrl": "https://xn--80ad9al.xn--90ais/coffe",
+      "pages": 1,
+      "expectedProducts": 23,
+      "discoveredProducts": 23,
+      "countUnit": "source_cards_including_non_beans"
+    }
+  ],
+  "products": [
+    {
+      "sourceKey": "xn--80ad9al.xn--90ais",
+      "sourceProductId": "573334301442",
+      "sourceUrl": "https://xn--80ad9al.xn--90ais/efiopiya-belionakhi",
+      "name": "Кофе в зернах KOF. Эфиопия Белионахи",
+      "description": "Вкусовой профиль: Красные ягоды, молочный шоколад, темный виноград Обработка: Натуральная Страна: Эфиопия Регион: Гуджи Во вкусе красные ягоды, молочный шоколад, темный виноград",
+      "roasterName": "KOF",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "ET",
+          "countryNameRu": "Эфиопия",
+          "percentage": null,
+          "evidenceField": "properties.Страна произрастания"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": "Натуральная",
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [
+        "Не молоть",
+        "Под чашку",
+        "Под эспрессо",
+        "Под турку",
+        "Под гейзер"
+      ],
+      "imageUrls": [
+        "https://static.tildacdn.biz/stor6337-3037-4164-b532-613561343363/828707445cb5bffef35f3a8005f4b6e7.jpg",
+        "https://static.tildacdn.biz/stor3435-6663-4030-b562-313634653565/98388261d9368711da19a6171a43e7bd.jpg",
+        "https://static.tildacdn.biz/stor3930-6565-4465-b933-303931363663/095b99cd4b3548672870b90a65cf42cf.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "176296741592",
+          "weightGrams": 1000,
+          "price": "77.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "uid": 176296741592,
+            "externalid": "ok8z8F9mUrr0a3uhG6Xp",
+            "sku": "",
+            "price": "77.00",
+            "priceold": "85.00",
+            "quantity": "7",
+            "Вид фасовки": "1000 г.",
+            "Метод обработки": "Натуральный",
+            "Бренд": "KOF"
+          }
+        },
+        {
+          "externalVariantId": "279365939712",
+          "weightGrams": 2000,
+          "price": "150.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "uid": 279365939712,
+            "externalid": "zAug2vDzLc1YV3nieJ7J",
+            "sku": "",
+            "price": "150.00",
+            "priceold": "160.00",
+            "quantity": "4",
+            "Вид фасовки": "2000 г.",
+            "Метод обработки": "Натуральный",
+            "Бренд": "KOF"
+          }
+        },
+        {
+          "externalVariantId": "293534742472",
+          "weightGrams": 250,
+          "price": "26.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "uid": 293534742472,
+            "externalid": "B3kP1XlM729m1b65mCIM",
+            "sku": "",
+            "price": "26.00",
+            "priceold": "",
+            "quantity": "5",
+            "Вид фасовки": "250 г.",
+            "Метод обработки": "Натуральный",
+            "Бренд": "KOF"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Обработка": "Натуральная",
+        "Страна": "Эфиопия",
+        "partuids": [
+          382310104262,
+          108155442411
+        ],
+        "Страна произрастания": "Эфиопия"
+      },
+      "reviewWarnings": [],
+      "sellerName": "Сова"
+    },
+    {
+      "sourceKey": "xn--80ad9al.xn--90ais",
+      "sourceProductId": "617425645552",
+      "sourceUrl": "https://xn--80ad9al.xn--90ais/braziliya-feniks-natti",
+      "name": "Кофе в зернах Kanga Бразилия Феникс Натти",
+      "description": "Станция обработки: Альта Виста Состав: Арабика 100% Способ обработки: Натуральная Оценка Q: 83 Вкус: Шоколад, лесной орех, кешью, карамель Страны: Бразилия Регион: Альта Можиана Разновидность: Мундо-ново, Желтый катуаи Высота произрастания, м: 900 Метод приготовления: Турка, Рожковая кофемашина, Суперавтомат, Гейзерная кофеварка Мягкий и обволакивающий кофе с нотами ванили и карамели, тёплым акцентом кешью и лесного ореха, в сливочной шоколадной оболочке",
+      "roasterName": "Kanga",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "BR",
+          "countryNameRu": "Бразилия",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [
+        "Шоколад",
+        "лесной орех",
+        "кешью",
+        "карамель"
+      ],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [
+        "Не молоть",
+        "Под чашку",
+        "Под эспрессо",
+        "Под турку",
+        "Под гейзер"
+      ],
+      "imageUrls": [
+        "https://static.tildacdn.biz/stor6433-3565-4730-b331-353234316362/46b22d616686c379e4d05eecf2820dc3.webp",
+        "https://static.tildacdn.biz/stor6139-3832-4438-b864-643030656565/c93f4832de4a18002d0197cb5ab7b8f2.jpg",
+        "https://static.tildacdn.biz/stor3263-3461-4331-a263-376530663863/26380694.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "372649071602",
+          "weightGrams": 1000,
+          "price": "85.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "uid": 372649071602,
+            "externalid": "aAim6tg9K4gn1zpIm06L",
+            "sku": "",
+            "price": "85.00",
+            "priceold": "",
+            "quantity": "7",
+            "Вид фасовки": "1000 г.",
+            "Метод обработки": "Натуральный",
+            "Бренд": "KANGA"
+          }
+        },
+        {
+          "externalVariantId": "411155185792",
+          "weightGrams": 2000,
+          "price": "160.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "uid": 411155185792,
+            "externalid": "MSUEFIDVzzhE0ivGUNZ8",
+            "sku": "",
+            "price": "160.00",
+            "priceold": "",
+            "quantity": "19",
+            "Вид фасовки": "2000 г.",
+            "Метод обработки": "Натуральный",
+            "Бренд": "KANGA"
+          }
+        },
+        {
+          "externalVariantId": "423138138852",
+          "weightGrams": 250,
+          "price": "26.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "uid": 423138138852,
+            "externalid": "fXkdBS5Rfp2lDp386GjD",
+            "sku": "",
+            "price": "26.00",
+            "priceold": "",
+            "quantity": "10",
+            "Вид фасовки": "250 г.",
+            "Метод обработки": "Натуральный",
+            "Бренд": "KANGA"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Вкус": "Шоколад, лесной орех, кешью, карамель",
+        "partuids": [
+          108155442411,
+          382310104262
+        ]
+      },
+      "reviewWarnings": [
+        "origin_extracted_from_name"
+      ],
+      "sellerName": "Сова"
+    },
+    {
+      "sourceKey": "xn--80ad9al.xn--90ais",
+      "sourceProductId": "781374585512",
+      "sourceUrl": "https://xn--80ad9al.xn--90ais/brazilfancydark",
+      "name": "Кофе в зернах KOF. Бразилия Фэнси Дарк",
+      "description": "Для любителей крепкого и насыщенного кофе с минимальной кислинкой Характеристики: Фасовка: 250 г. /1000 г. Обжарка: эспрессо Вкусовой профиль: Шоколад, сухофрукты, орех Обработка: Натуральная Страна: Бразилия Регион: Mogiana Высота произрастания: 800—900м Разновидность: Acaia, Catuai, Caturra Степень обжарки: Средне-темная Крепкий и насыщенный кофе для тех, что не любит кислинку",
+      "roasterName": "KOF",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "BR",
+          "countryNameRu": "Бразилия",
+          "percentage": null,
+          "evidenceField": "properties.Страна произрастания"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": "Натуральная",
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [
+        "Не молоть",
+        "Под чашку",
+        "Под эспрессо",
+        "Под турку",
+        "Под гейзер"
+      ],
+      "imageUrls": [
+        "https://static.tildacdn.biz/stor6632-3238-4762-b330-353835333035/826d74385c4392ee0eb61932a3844d28.jpg",
+        "https://static.tildacdn.biz/stor3835-3934-4761-b938-336663636366/f3f53f04b65130a6053fb254807be291.jpg",
+        "https://static.tildacdn.biz/stor3164-3336-4563-a432-633766653537/caa3aadf631fafb7708d667e7f7764f8.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "619958998032",
+          "weightGrams": 1000,
+          "price": "85.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "uid": 619958998032,
+            "externalid": "EueeerpC9Ex2MurZXeLa",
+            "sku": "",
+            "price": "85.00",
+            "priceold": "",
+            "quantity": "2",
+            "Вид фасовки": "1000 г.",
+            "Метод обработки": "Натуральный",
+            "Бренд": "KOF"
+          }
+        },
+        {
+          "externalVariantId": "165735394912",
+          "weightGrams": 2000,
+          "price": "160.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "uid": 165735394912,
+            "externalid": "sFxPVkXZEDMRP1yyrLLy",
+            "sku": "",
+            "price": "160.00",
+            "priceold": "",
+            "quantity": "5",
+            "Вид фасовки": "2000 г.",
+            "Метод обработки": "Натуральный",
+            "Бренд": "KOF"
+          }
+        },
+        {
+          "externalVariantId": "211102607342",
+          "weightGrams": 250,
+          "price": "26.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "uid": 211102607342,
+            "externalid": "AH4UAmTnHt3a6c2Ml0RM",
+            "sku": "",
+            "price": "26.00",
+            "priceold": "",
+            "quantity": "5",
+            "Вид фасовки": "250 г.",
+            "Метод обработки": "Натуральный",
+            "Бренд": "KOF"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Обработка": "Натуральная",
+        "Страна": "Бразилия",
+        "partuids": [
+          382310104262,
+          108155442411
+        ],
+        "Страна произрастания": "Бразилия"
+      },
+      "reviewWarnings": [],
+      "sellerName": "Сова"
+    },
+    {
+      "sourceKey": "xn--80ad9al.xn--90ais",
+      "sourceProductId": "475652277976",
+      "sourceUrl": "https://xn--80ad9al.xn--90ais/blend-2",
+      "name": "Кофе в зернах Kanga Бленд №2",
+      "description": "Смесь Арабики и робусты (60/40) Страна: Бразилия / Уганда Способ обработки: Натуральный Вкус: Ореховая паста, тёмный шоколад Крепкий насыщенный кофе с итальянским темпераментом",
+      "roasterName": "Kanga",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "blend",
+      "origins": [
+        {
+          "countryCode": "BR",
+          "countryNameRu": "Бразилия",
+          "percentage": null,
+          "evidenceField": "properties.Страна произрастания"
+        },
+        {
+          "countryCode": "UG",
+          "countryNameRu": "Уганда",
+          "percentage": null,
+          "evidenceField": "properties.Страна произрастания"
+        }
+      ],
+      "tasteDescriptors": [
+        "Ореховая паста",
+        "тёмный шоколад"
+      ],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [
+        "Не молоть",
+        "Под гейзер",
+        "Под чашку",
+        "Под эспрессо",
+        "Под турку"
+      ],
+      "imageUrls": [
+        "https://static.tildacdn.biz/stor3538-6463-4538-a163-653934393534/fefa00326b145577fe6f33c5d16bfe25.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "565387515006",
+          "weightGrams": 1000,
+          "price": "72.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "uid": 565387515006,
+            "externalid": "ssGkDdAZh2NRcHVE5PzJ",
+            "sku": "",
+            "price": "72.00",
+            "priceold": "",
+            "quantity": "2",
+            "Вид фасовки": "1000 г.",
+            "Метод обработки": "Натуральный",
+            "Бренд": "KANGA"
+          }
+        },
+        {
+          "externalVariantId": "268820592526",
+          "weightGrams": 2000,
+          "price": "138.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "uid": 268820592526,
+            "externalid": "MB3kKuHfFUuLXyuP2o8E",
+            "sku": "",
+            "price": "138.00",
+            "priceold": "",
+            "quantity": "5",
+            "Вид фасовки": "2000 г.",
+            "Метод обработки": "Натуральный",
+            "Бренд": "KANGA"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Страна": "Бразилия / Уганда",
+        "Вкус": "Ореховая паста, тёмный шоколад",
+        "partuids": [
+          108155442411,
+          382310104262
+        ],
+        "Страна произрастания": "Бразилия / Уганда"
+      },
+      "reviewWarnings": [],
+      "sellerName": "Сова"
+    },
+    {
+      "sourceKey": "xn--80ad9al.xn--90ais",
+      "sourceProductId": "712393692862",
+      "sourceUrl": "https://xn--80ad9al.xn--90ais/BrazilEagle",
+      "name": "Кофе в зернах KOF. Бразилия Игл",
+      "description": "Характеристики: Фасовка: 250 г. /1000 г. Обжарка: эспрессо Вкусовой профиль - сухофрукты, орех, молочный шоколад Обработка - Натуральная Страна - Бразилия Регион - Alta Mogiana Высота произрастания - 1000-1200 м Разновидность - Typica, Bourbon Степень обжарки - медиум Оценка Q-грейдера - 83 Кофе из региона Mogiana, во вкусе орех, молочный шоколад, сухофрукты. Оценка Q-грейдера 83",
+      "roasterName": "KOF",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "BR",
+          "countryNameRu": "Бразилия",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [
+        "Не молоть",
+        "Под чашку",
+        "Под эспрессо",
+        "Под турку",
+        "Под гейзер"
+      ],
+      "imageUrls": [
+        "https://static.tildacdn.biz/stor3036-3731-4232-b538-343565313563/b6df69737a74f6fcea07f8c27bca4152.jpg",
+        "https://static.tildacdn.biz/stor6237-3130-4462-a233-623936396461/91cceaaa96cc4374569fc83c051eb481.jpg",
+        "https://static.tildacdn.biz/stor6138-3966-4230-b532-646239626234/1dd2139de0bd7c58628d17089dc169e8.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "986850875282",
+          "weightGrams": 2000,
+          "price": "160.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "uid": 986850875282,
+            "externalid": "PPC0J0aScLC1EJ27BXSg",
+            "sku": "",
+            "price": "160.00",
+            "priceold": "",
+            "quantity": "7",
+            "Вид фасовки": "2000 г.",
+            "Метод обработки": "Натуральный"
+          }
+        },
+        {
+          "externalVariantId": "535752882942",
+          "weightGrams": 1000,
+          "price": "85.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "uid": 535752882942,
+            "externalid": "OG47dHfN5C24iyderiDj",
+            "sku": "",
+            "price": "85.00",
+            "priceold": "",
+            "quantity": "5",
+            "Вид фасовки": "1000 г.",
+            "Метод обработки": "Натуральный"
+          }
+        },
+        {
+          "externalVariantId": "128117645782",
+          "weightGrams": 250,
+          "price": "26.50",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "uid": 128117645782,
+            "externalid": "3meCiUY2clXI6C6Upv2R",
+            "sku": "",
+            "price": "26.50",
+            "priceold": "",
+            "quantity": "5",
+            "Вид фасовки": "250 г.",
+            "Метод обработки": "Натуральный"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "partuids": [
+          382310104262,
+          108155442411
+        ]
+      },
+      "reviewWarnings": [
+        "origin_extracted_from_name"
+      ],
+      "sellerName": "Сова"
+    },
+    {
+      "sourceKey": "xn--80ad9al.xn--90ais",
+      "sourceProductId": "919485716771",
+      "sourceUrl": "https://xn--80ad9al.xn--90ais/kanga-efiopiya-sidamo",
+      "name": "Кофе в зернах Kanga Эфиопия Сидамо",
+      "description": "Станция обработки: Кебеде тесисо Состав: Арабика 100% Вес, г: 1000/250 Способ обработки: Натуральная Оценка Q: 82.75 Вкус: Бергамот, Кедр, Черный чай, Сухофрукты Страны: Эфиопия Регион: Сидамо Разновидность: Эфиопское наследие (heirloom) Высота произрастания, м: 2000 Метод приготовления: Турка, Рожковая кофемашина, Суперавтомат, Гейзерная кофеварка. Чистый и изящный кофе с нотами бергамота, кедра, сухофруктов и чёрного чая",
+      "roasterName": "Kanga",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "ET",
+          "countryNameRu": "Эфиопия",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [
+        "Бергамот",
+        "Кедр",
+        "Черный чай",
+        "Сухофрукты"
+      ],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [
+        "Не молоть",
+        "Под чашку",
+        "Под эспрессо",
+        "Под турку",
+        "Под гейзер"
+      ],
+      "imageUrls": [
+        "https://static.tildacdn.biz/stor3237-3666-4036-a436-353139303538/a3e670679e840c2e09ad4c5cab250cdf.webp",
+        "https://static.tildacdn.biz/stor6561-3532-4633-b036-613236363430/78ccf75187adab1ad75b7e50f317e86e.jpg",
+        "https://static.tildacdn.biz/stor3135-6238-4562-b864-393764623934/42801097.webp"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "483543745132",
+          "weightGrams": 1000,
+          "price": "85.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "uid": 483543745132,
+            "externalid": "itiekanzCsUANudD9O7C",
+            "sku": "",
+            "price": "85.00",
+            "priceold": "",
+            "quantity": "19",
+            "Вид фасовки": "1000 г.",
+            "Метод обработки": "Натуральный",
+            "Бренд": "KANGA"
+          }
+        },
+        {
+          "externalVariantId": "665990696952",
+          "weightGrams": 2000,
+          "price": "160.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "uid": 665990696952,
+            "externalid": "BAy2ztTs8MsBYH53zNME",
+            "sku": "",
+            "price": "160.00",
+            "priceold": "",
+            "quantity": "6",
+            "Вид фасовки": "2000 г.",
+            "Метод обработки": "Натуральный",
+            "Бренд": "KANGA"
+          }
+        },
+        {
+          "externalVariantId": "769835026931",
+          "weightGrams": 250,
+          "price": "26.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "uid": 769835026931,
+            "externalid": "3LA3ijRkajC1U0O1X8K0",
+            "sku": "",
+            "price": "26.00",
+            "priceold": "",
+            "quantity": "5",
+            "Вид фасовки": "250 г.",
+            "Метод обработки": "Натуральный",
+            "Бренд": "KANGA"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Вкус": "Бергамот, Кедр, Черный чай, Сухофрукты",
+        "partuids": [
+          108155442411,
+          382310104262
+        ]
+      },
+      "reviewWarnings": [
+        "origin_extracted_from_name"
+      ],
+      "sellerName": "Сова"
+    },
+    {
+      "sourceKey": "xn--80ad9al.xn--90ais",
+      "sourceProductId": "804457843562",
+      "sourceUrl": "https://xn--80ad9al.xn--90ais/brazilfancy",
+      "name": "Кофе в зернах KOF. Бразилия Фэнси",
+      "description": "Характеристики: Фасовка: 250 г. /1000 г. Обжарка: эспрессо Вкусовой профиль: Шоколад, сухофрукты, орех Обработка: Натуральная Страна: Бразилия Регион: Mogiana Высота произрастания: 800—900м Разновидность: Acaia, Catuai, Caturra Степень обжарки: Медиум Оценка Q-грейдера: 81 Классический бразильский кофе, во вкусе орех, шоколад, сухофрукты.",
+      "roasterName": "KOF",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "BR",
+          "countryNameRu": "Бразилия",
+          "percentage": null,
+          "evidenceField": "properties.Страна произрастания"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": "Натуральная",
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [
+        "Не молоть",
+        "Под чашку",
+        "Под эспрессо",
+        "Под турку",
+        "Под гейзер"
+      ],
+      "imageUrls": [
+        "https://static.tildacdn.biz/stor6632-3238-4762-b330-353835333035/826d74385c4392ee0eb61932a3844d28.jpg",
+        "https://static.tildacdn.biz/stor3835-3934-4761-b938-336663636366/f3f53f04b65130a6053fb254807be291.jpg",
+        "https://static.tildacdn.biz/stor3164-3336-4563-a432-633766653537/caa3aadf631fafb7708d667e7f7764f8.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "558851684782",
+          "weightGrams": 2000,
+          "price": "160.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "uid": 558851684782,
+            "externalid": "oi7JK2X62HGRMxjamX6I",
+            "sku": "",
+            "price": "160.00",
+            "priceold": "",
+            "quantity": "3",
+            "Вид фасовки": "2000 г.",
+            "Метод обработки": "Натуральный",
+            "Бренд": "KOF"
+          }
+        },
+        {
+          "externalVariantId": "897414389352",
+          "weightGrams": 1000,
+          "price": "85.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "uid": 897414389352,
+            "externalid": "CgDH6BiGUpljoumhhNs2",
+            "sku": "",
+            "price": "85.00",
+            "priceold": "",
+            "quantity": "8",
+            "Вид фасовки": "1000 г.",
+            "Метод обработки": "Натуральный",
+            "Бренд": "KOF"
+          }
+        },
+        {
+          "externalVariantId": "596540049062",
+          "weightGrams": 250,
+          "price": "26.00",
+          "currency": "BYN",
+          "availableForPurchase": false,
+          "sourceAttributes": {
+            "uid": 596540049062,
+            "externalid": "vRDtojN13ALy9bxasMhB",
+            "sku": "",
+            "price": "26.00",
+            "priceold": "",
+            "quantity": "0",
+            "Вид фасовки": "250 г.",
+            "Метод обработки": "Натуральный",
+            "Бренд": "KOF"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Обработка": "Натуральная",
+        "Страна": "Бразилия",
+        "partuids": [
+          382310104262,
+          108155442411
+        ],
+        "Страна произрастания": "Бразилия"
+      },
+      "reviewWarnings": [],
+      "sellerName": "Сова"
+    },
+    {
+      "sourceKey": "xn--80ad9al.xn--90ais",
+      "sourceProductId": "924438374212",
+      "sourceUrl": "https://xn--80ad9al.xn--90ais/colombia-dulima",
+      "name": "Кофе в зернах KOF. Колумбия Дулима",
+      "description": "Фасовка: 250 г. /1000 г. Обжарка: эспрессо Обработка: Мытая Вкусовой профиль: лимон, молочный шоколад, ирис Страна: Колумбия Регион: Huila Высота произрастания:1500—2000м Разновидность:Castillo, Caturra Степень обжарки: Медиум Шоколад, ирис и лимон",
+      "roasterName": "KOF",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "CO",
+          "countryNameRu": "Колумбия",
+          "percentage": null,
+          "evidenceField": "properties.Страна произрастания"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": "Мытая",
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [
+        "Не молоть",
+        "Под чашку",
+        "Под эспрессо",
+        "Под турку",
+        "Под гейзер"
+      ],
+      "imageUrls": [
+        "https://static.tildacdn.biz/stor3137-3336-4164-b631-396231613333/5078ff67af934aab079501815433e7f6.jpg",
+        "https://static.tildacdn.biz/stor3264-3738-4661-b938-383634646136/749f1fd9eb1147ce128a16f8f481d777.jpg",
+        "https://static.tildacdn.biz/stor3461-3835-4239-b635-323661383534/2e0c26bf769fd72342678ea5f10cf906.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "544401798232",
+          "weightGrams": 1000,
+          "price": "90.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "uid": 544401798232,
+            "externalid": "yvhzOX2tZjD4GTk1rBLO",
+            "sku": "",
+            "price": "90.00",
+            "priceold": "",
+            "quantity": "5",
+            "Вид фасовки": "1000 г.",
+            "Метод обработки": "Мытый"
+          }
+        },
+        {
+          "externalVariantId": "641117605692",
+          "weightGrams": 2000,
+          "price": "170.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "uid": 641117605692,
+            "externalid": "mFE3haRLhLXzCiBsA97y",
+            "sku": "",
+            "price": "170.00",
+            "priceold": "",
+            "quantity": "4",
+            "Вид фасовки": "2000 г.",
+            "Метод обработки": "Мытый"
+          }
+        },
+        {
+          "externalVariantId": "968065186712",
+          "weightGrams": 250,
+          "price": "28.00",
+          "currency": "BYN",
+          "availableForPurchase": false,
+          "sourceAttributes": {
+            "uid": 968065186712,
+            "externalid": "ahTVyX29bEXL40gP3rks",
+            "sku": "",
+            "price": "28.00",
+            "priceold": "",
+            "quantity": "0",
+            "Вид фасовки": "250 г.",
+            "Метод обработки": "Мытый"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Обработка": "Мытая",
+        "Страна": "Колумбия",
+        "partuids": [
+          382310104262,
+          108155442411
+        ],
+        "Страна произрастания": "Колумбия"
+      },
+      "reviewWarnings": [],
+      "sellerName": "Сова"
+    },
+    {
+      "sourceKey": "xn--80ad9al.xn--90ais",
+      "sourceProductId": "507762808792",
+      "sourceUrl": "https://xn--80ad9al.xn--90ais/mexico-quiza",
+      "name": "Кофе в зернах KOF. Мексика Кисая",
+      "description": "Фасовка: 250 г. /1000 г. Обжарка: эспрессо Обработка: Мытая Вкусовой профиль: изюм, медовая слива, сливочная карамель, шоколад Страна: Мексика Регион: Чьяпас Высота произрастания:1200—1800м Разновидность: Caturra, Costa Rica, Marcelessa Степень обжарки: Медиум Фирменный бленд компании Olam из региона Чьяпас, во вкусе белый изюм, медовая слива, сливочная карамель, молочный шоколад",
+      "roasterName": "KOF",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "MX",
+          "countryNameRu": "Мексика",
+          "percentage": null,
+          "evidenceField": "properties.Страна произрастания"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": "Мытая",
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [
+        "Не молоть",
+        "Под чашку",
+        "Под эспрессо",
+        "Под турку",
+        "Под гейзер"
+      ],
+      "imageUrls": [
+        "https://static.tildacdn.biz/stor3633-6232-4438-b937-386136626235/e723bcd721ffa5dde19aeadc0ffda334.jpg",
+        "https://static.tildacdn.biz/stor3962-3134-4131-b162-653838393634/ac4e3edd16a35d1c73a598e681381b41.jpg",
+        "https://static.tildacdn.biz/stor3039-6531-4330-a364-656462616332/885c8a35de30ce73268bb7cad19d45a8.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "243591051202",
+          "weightGrams": 1000,
+          "price": "90.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "uid": 243591051202,
+            "externalid": "LcDfEn413Ny2LdvpK972",
+            "sku": "",
+            "price": "90.00",
+            "priceold": "",
+            "quantity": "4",
+            "Вид фасовки": "1000 г.",
+            "Метод обработки": "Натуральный"
+          }
+        },
+        {
+          "externalVariantId": "545398963792",
+          "weightGrams": 2000,
+          "price": "170.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "uid": 545398963792,
+            "externalid": "VsH8aE5CuGzxaGTovmGZ",
+            "sku": "",
+            "price": "170.00",
+            "priceold": "",
+            "quantity": "5",
+            "Вид фасовки": "2000 г.",
+            "Метод обработки": "Натуральный"
+          }
+        },
+        {
+          "externalVariantId": "644743625052",
+          "weightGrams": 250,
+          "price": "28.00",
+          "currency": "BYN",
+          "availableForPurchase": false,
+          "sourceAttributes": {
+            "uid": 644743625052,
+            "externalid": "NpkBlx4eb926MkEZalPl",
+            "sku": "",
+            "price": "28.00",
+            "priceold": "",
+            "quantity": "0",
+            "Вид фасовки": "250 г.",
+            "Метод обработки": "Натуральный"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Обработка": "Мытая",
+        "Страна": "Мексика",
+        "partuids": [
+          382310104262,
+          108155442411
+        ],
+        "Страна произрастания": "Мексика"
+      },
+      "reviewWarnings": [],
+      "sellerName": "Сова"
+    },
+    {
+      "sourceKey": "xn--80ad9al.xn--90ais",
+      "sourceProductId": "833250861041",
+      "sourceUrl": "https://xn--80ad9al.xn--90ais/brazil-mogiana-kanga",
+      "name": "Кофе в зернах Kanga Бразилия Можиана",
+      "description": "Состав: Арабика 100% Способ обработки: Натуральная Оценка Q: 82.25 Вкус: Шоколад, Орехи, Изюм, Сухофрукты, Фундук Страны: Бразилия Регион: Можиана Разновидность: Красный и желтый катуаи, икату Высота произрастания, м: 950 Метод приготовления: Рожковая кофемашина, Суперавтомат, Турка, Гейзерная кофеварка Плотный кофе с округлым телом и бархатными кремами. Во вкусе шоколад, фундук и сухофрукты",
+      "roasterName": "Kanga",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "BR",
+          "countryNameRu": "Бразилия",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [
+        "Шоколад",
+        "Орехи",
+        "Изюм",
+        "Сухофрукты",
+        "Фундук"
+      ],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [
+        "Не молоть",
+        "Под чашку",
+        "Под эспрессо",
+        "Под турку",
+        "Под гейзер"
+      ],
+      "imageUrls": [
+        "https://static.tildacdn.biz/stor6231-3738-4134-b432-623839643037/990ef8999c1ca5d5e1176d68be4c6848.jpg",
+        "https://static.tildacdn.biz/stor3832-3461-4061-b666-646461306231/3560e2bb4ecf176f8b14d53a1a839f13.jpg",
+        "https://static.tildacdn.biz/stor3630-3366-4131-b664-663739323666/4c03f2b28aac9f262d24875302bb0db7.webp"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "446527634652",
+          "weightGrams": 2000,
+          "price": "160.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "uid": 446527634652,
+            "externalid": "zEziXsthKPsAztt1chi2",
+            "sku": "",
+            "price": "160.00",
+            "priceold": "",
+            "quantity": "10",
+            "Вид фасовки": "2000 г.",
+            "Метод обработки": "Натуральный",
+            "Бренд": "KANGA"
+          }
+        },
+        {
+          "externalVariantId": "662300546501",
+          "weightGrams": 1000,
+          "price": "85.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "uid": 662300546501,
+            "externalid": "hmc70aR4aTZFaSlr5zYH",
+            "sku": "",
+            "price": "85.00",
+            "priceold": "",
+            "quantity": "41",
+            "Вид фасовки": "1000 г.",
+            "Метод обработки": "Натуральный",
+            "Бренд": "KANGA"
+          }
+        },
+        {
+          "externalVariantId": "595044917582",
+          "weightGrams": 250,
+          "price": "26.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "uid": 595044917582,
+            "externalid": "yzNVkLgTTVoeMa1mVyfz",
+            "sku": "",
+            "price": "26.00",
+            "priceold": "",
+            "quantity": "5",
+            "Вид фасовки": "250 г.",
+            "Метод обработки": "Натуральный",
+            "Бренд": "KANGA"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Вкус": "Шоколад, Орехи, Изюм, Сухофрукты, Фундук",
+        "partuids": [
+          108155442411,
+          382310104262
+        ]
+      },
+      "reviewWarnings": [
+        "origin_extracted_from_name"
+      ],
+      "sellerName": "Сова"
+    },
+    {
+      "sourceKey": "xn--80ad9al.xn--90ais",
+      "sourceProductId": "153579222682",
+      "sourceUrl": "https://xn--80ad9al.xn--90ais/braziliya-moka-amora",
+      "name": "Кофе в зернах KOF. Бразилия Мока Амора",
+      "description": "Обработка: Натуральная Страна: Бразилия Регион: Моджиана Разновидность: Пиберри изюм, темный шоколад, сладкий лимон",
+      "roasterName": "KOF",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "BR",
+          "countryNameRu": "Бразилия",
+          "percentage": null,
+          "evidenceField": "properties.Страна произрастания"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": "Натуральная",
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [
+        "Не молоть",
+        "Под чашку",
+        "Под эспрессо",
+        "Под турку",
+        "Под гейзер"
+      ],
+      "imageUrls": [
+        "https://static.tildacdn.biz/stor6466-3365-4233-a632-333636653737/22b2803258e46d2367709351b9a7e148.jpg",
+        "https://static.tildacdn.biz/stor3266-3464-4166-b662-383830653161/cc90614daec3dba1d912c56d10e1273a.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "911281011372",
+          "weightGrams": 1000,
+          "price": "87.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "uid": 911281011372,
+            "externalid": "E6Yf3tykgrhzOK8zy1Dx",
+            "sku": "",
+            "price": "87.00",
+            "priceold": "",
+            "quantity": "5",
+            "Вид фасовки": "1000 г.",
+            "Метод обработки": "Натуральный",
+            "Бренд": "KOF"
+          }
+        },
+        {
+          "externalVariantId": "710802754472",
+          "weightGrams": 250,
+          "price": "27.00",
+          "currency": "BYN",
+          "availableForPurchase": false,
+          "sourceAttributes": {
+            "uid": 710802754472,
+            "externalid": "vr2GnX69MkpMkBhYurDO",
+            "sku": "",
+            "price": "27.00",
+            "priceold": "",
+            "quantity": "0",
+            "Вид фасовки": "250 г.",
+            "Метод обработки": "Натуральный",
+            "Бренд": "KOF"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Обработка": "Натуральная",
+        "Страна": "Бразилия",
+        "partuids": [
+          382310104262,
+          108155442411,
+          896393526982
+        ],
+        "Страна произрастания": "Бразилия"
+      },
+      "reviewWarnings": [],
+      "sellerName": "Сова"
+    },
+    {
+      "sourceKey": "xn--80ad9al.xn--90ais",
+      "sourceProductId": "417586450221",
+      "sourceUrl": "https://xn--80ad9al.xn--90ais/kanga-brazil-and-ethiopia",
+      "name": "Кофе в зернах Kanga Бленд 5 (Бразилия и Эфиопия)",
+      "description": "Эта смесь двух самых популярных арабик. Нежный и сбалансированный кофе с нотами молочного шоколада, сухофруктов и лёгких цветочных оттенков. Идеален в молочных напитках. Вкусовая группа: Фруктовый деликатный Состав: Арабика 100% Способ обработки: Натуральная Вкус: Цветы, Сухофрукты, Молочный шоколад Страны: Бразилия, Эфиопия Нежный и сбалансированный кофе с нотами молочного шоколада, сухофруктов и лёгких цветочных оттенков. Идеален в молочных напитках",
+      "roasterName": "Kanga",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "blend",
+      "origins": [
+        {
+          "countryCode": "BR",
+          "countryNameRu": "Бразилия",
+          "percentage": null,
+          "evidenceField": "name"
+        },
+        {
+          "countryCode": "ET",
+          "countryNameRu": "Эфиопия",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [
+        "Цветы",
+        "Сухофрукты",
+        "Молочный шоколад"
+      ],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [
+        "Не молоть",
+        "Под чашку",
+        "Под эспрессо",
+        "Под турку",
+        "Под гейзер"
+      ],
+      "imageUrls": [
+        "https://static.tildacdn.biz/stor3537-3533-4038-b439-396265656536/f68b5041091c98ebeb91d63dcedd4f3a.webp",
+        "https://static.tildacdn.biz/stor3063-3963-4662-b665-663430323564/ec600dee46bedabfd3b396aace541c5e.jpg",
+        "https://static.tildacdn.biz/stor3463-3334-4133-a266-353730643934/56137711.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "228546579202",
+          "weightGrams": 1000,
+          "price": "85.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "uid": 228546579202,
+            "externalid": "i1OZPRU90p8F3YVYtPSj",
+            "sku": "",
+            "price": "85.00",
+            "priceold": "",
+            "quantity": "18",
+            "Бренд": "KANGA",
+            "Вид фасовки": "1000 г.",
+            "Метод обработки": "Натуральный"
+          }
+        },
+        {
+          "externalVariantId": "442110532172",
+          "weightGrams": 2000,
+          "price": "160.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "uid": 442110532172,
+            "externalid": "vp2cgAME0x5cujulxvSL",
+            "sku": "",
+            "price": "160.00",
+            "priceold": "",
+            "quantity": "5",
+            "Бренд": "KANGA",
+            "Вид фасовки": "2000 г.",
+            "Метод обработки": "Натуральный"
+          }
+        },
+        {
+          "externalVariantId": "735095505832",
+          "weightGrams": 250,
+          "price": "25.00",
+          "currency": "BYN",
+          "availableForPurchase": false,
+          "sourceAttributes": {
+            "uid": 735095505832,
+            "externalid": "Ze6IMNL6h9Fu5CcgDH0M",
+            "sku": "",
+            "price": "25.00",
+            "priceold": "",
+            "quantity": "0",
+            "Бренд": "KANGA",
+            "Вид фасовки": "250 г.",
+            "Метод обработки": "Натуральный"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Вкус": "Цветы, Сухофрукты, Молочный шоколад",
+        "partuids": [
+          108155442411,
+          382310104262
+        ]
+      },
+      "reviewWarnings": [
+        "blend_composition_may_be_incomplete",
+        "origin_extracted_from_name"
+      ],
+      "sellerName": "Сова"
+    },
+    {
+      "sourceKey": "xn--80ad9al.xn--90ais",
+      "sourceProductId": "614723352732",
+      "sourceUrl": "https://xn--80ad9al.xn--90ais/colombia-decaf",
+      "name": "Кофе в зернах KOF. Колумбия Rainbow Декаф",
+      "description": "Вкусовой профиль: молочный шоколад, красный помело, обжаренный миндаль Обработка: Без кофеина Страна: Колумбия Декафенизация: этилацетат Разновидность: Caturra, Castillo Кофе проходит декофеинизацию на заводе Descafecol в Колумбии с помощью этилацетата, который получен из дистиллированного сахарного тростника.",
+      "roasterName": "KOF",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "CO",
+          "countryNameRu": "Колумбия",
+          "percentage": null,
+          "evidenceField": "properties.Страна произрастания"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": "Без кофеина",
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [
+        "Не молоть",
+        "Под чашку",
+        "Под эспрессо",
+        "Под турку",
+        "Под гейзер"
+      ],
+      "imageUrls": [
+        "https://static.tildacdn.biz/stor3762-3239-4331-b233-623537303135/0cd3554232960aa0f4e3fe2832a1db2d.jpg",
+        "https://static.tildacdn.biz/stor3238-6534-4365-b835-396663376436/4b4819dce2b14e2b1079e8569ba4c6b2.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "547797730862",
+          "weightGrams": 1000,
+          "price": "99.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "uid": 547797730862,
+            "externalid": "gNK6oFm9uiZt3CgFdu22",
+            "sku": "",
+            "price": "99.00",
+            "priceold": "",
+            "quantity": "5",
+            "Вид фасовки": "1000 г.",
+            "Метод обработки": "Без кофеина",
+            "Бренд": "KOF"
+          }
+        },
+        {
+          "externalVariantId": "367963238772",
+          "weightGrams": 250,
+          "price": "30.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "uid": 367963238772,
+            "externalid": "UsLtEXz0Z93HNud7oFBH",
+            "sku": "",
+            "price": "30.00",
+            "priceold": "",
+            "quantity": "3",
+            "Вид фасовки": "250 г.",
+            "Метод обработки": "Без кофеина",
+            "Бренд": "KOF"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Обработка": "Без кофеина",
+        "Страна": "Колумбия",
+        "partuids": [
+          908925628951,
+          382310104262,
+          896393526982
+        ],
+        "Страна произрастания": "Колумбия"
+      },
+      "reviewWarnings": [],
+      "sellerName": "Сова"
+    },
+    {
+      "sourceKey": "xn--80ad9al.xn--90ais",
+      "sourceProductId": "203742864862",
+      "sourceUrl": "https://xn--80ad9al.xn--90ais/https:/colombia-pacamara",
+      "name": "Кофе в зернах KOF. Колумбия Пакамара",
+      "description": "Вкусовой профиль: Ежевика, розовая гуава, коньячная конфта, спелый ананас Обработка: Натуральня Страна: Колумбия Степень обжарки: Фильтр Регион: Южная Уила, Асеведо Разновидность: Pacamara Ежевика, розовая гуава, коньячная конфета, спелый ананас",
+      "roasterName": "KOF",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "CO",
+          "countryNameRu": "Колумбия",
+          "percentage": null,
+          "evidenceField": "properties.Страна произрастания"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": "Натуральня",
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [
+        "Не молоть",
+        "Под чашку",
+        "Под эспрессо",
+        "Под турку",
+        "Под гейзер"
+      ],
+      "imageUrls": [
+        "https://static.tildacdn.biz/stor6638-6634-4635-a237-353932313131/56515705.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "990893472772",
+          "weightGrams": 100,
+          "price": "28.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "uid": 990893472772,
+            "externalid": "y3JzRhGBFBB5EuvvJxrS",
+            "sku": "",
+            "price": "28.00",
+            "priceold": "",
+            "quantity": "1",
+            "Вид фасовки": "100 г.",
+            "Метод обработки": "Натуральный",
+            "Бренд": "KOF"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Обработка": "Натуральня",
+        "Страна": "Колумбия",
+        "partuids": [
+          908925628951,
+          382310104262
+        ],
+        "Страна произрастания": "Колумбия"
+      },
+      "reviewWarnings": [],
+      "sellerName": "Сова"
+    },
+    {
+      "sourceKey": "xn--80ad9al.xn--90ais",
+      "sourceProductId": "167832345632",
+      "sourceUrl": "https://xn--80ad9al.xn--90ais/columbia-omblygon",
+      "name": "Кофе в зернах KOF. Колумбия Омблиго",
+      "description": "Вкусовой профиль: Инжир, папайя, клубничный ликер, шоколадная конфета Обработка: Натуральня Страна: Колумбия Степень обжарки: Фильтр Регион: Южная Уила, Асеведо Разновидность: Ombligon Инжир, папайя, клубничный ликер, шоколадная конфета",
+      "roasterName": "KOF",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "CO",
+          "countryNameRu": "Колумбия",
+          "percentage": null,
+          "evidenceField": "properties.Страна произрастания"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": "Натуральня",
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [
+        "Не молоть",
+        "Под чашку",
+        "Под эспрессо",
+        "Под турку",
+        "Под гейзер"
+      ],
+      "imageUrls": [
+        "https://static.tildacdn.biz/stor6638-6634-4635-a237-353932313131/56515705.png"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "963381019212",
+          "weightGrams": 100,
+          "price": "28.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "uid": 963381019212,
+            "externalid": "BthSljvmM82POvNKGO0j",
+            "sku": "",
+            "price": "28.00",
+            "priceold": "",
+            "quantity": "3",
+            "Вид фасовки": "100 г.",
+            "Метод обработки": "Натуральный",
+            "Бренд": "KOF"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Обработка": "Натуральня",
+        "Страна": "Колумбия",
+        "partuids": [
+          908925628951,
+          382310104262
+        ],
+        "Страна произрастания": "Колумбия"
+      },
+      "reviewWarnings": [],
+      "sellerName": "Сова"
+    },
+    {
+      "sourceKey": "xn--80ad9al.xn--90ais",
+      "sourceProductId": "832622295612",
+      "sourceUrl": "https://xn--80ad9al.xn--90ais/mexico-tenejapa",
+      "name": "Кофе в зернах KOF.Мексика Тенехапа",
+      "description": "Фасовка: 250 г. Обжарка: Фильтр Обработка: Мытая Вкусовой профиль: нектарин, апельсин и нутеллла Страна: Мексика Регион: Тенехапа, Сан Кристобаль де лас Касас, Чьяпа, Мексика Высота произрастания: 1000 -1350 м Разновидность: Марсельеза, Коста Рика, Типика и Катурра Кофе из региона Чьяпас, мытой обработки, во вкусе нектарин, апельсин и нутеллла",
+      "roasterName": "KOF",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "MX",
+          "countryNameRu": "Мексика",
+          "percentage": null,
+          "evidenceField": "properties.Страна произрастания"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": "Мытая",
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [],
+      "grindOptions": [
+        "Не молоть",
+        "Под чашку",
+        "Под эспрессо",
+        "Под турку",
+        "Под гейзер"
+      ],
+      "imageUrls": [
+        "https://static.tildacdn.biz/stor3238-6534-4365-b835-396663376436/4b4819dce2b14e2b1079e8569ba4c6b2.jpg",
+        "https://static.tildacdn.biz/stor3762-3239-4331-b233-623537303135/0cd3554232960aa0f4e3fe2832a1db2d.jpg"
+      ],
+      "variants": [
+        {
+          "externalVariantId": "879186518752",
+          "weightGrams": 250,
+          "price": "28.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "uid": 879186518752,
+            "externalid": "cdnKKcDe4Jf97OF4Lf3T",
+            "sku": "",
+            "price": "28.00",
+            "priceold": "",
+            "quantity": "4",
+            "Вид фасовки": "250 г.",
+            "Метод обработки": "Мытый",
+            "Бренд": "KOF"
+          }
+        },
+        {
+          "externalVariantId": "324862120072",
+          "weightGrams": 1000,
+          "price": "88.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "uid": 324862120072,
+            "externalid": "g12TEX4XGJZKZKnFP6XH",
+            "sku": "",
+            "price": "88.00",
+            "priceold": "",
+            "quantity": "5",
+            "Вид фасовки": "1000 г.",
+            "Метод обработки": "Мытый",
+            "Бренд": "KOF"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "Обработка": "Мытая",
+        "Страна": "Мексика",
+        "partuids": [
+          908925628951,
+          382310104262
+        ],
+        "Страна произрастания": "Мексика"
+      },
+      "reviewWarnings": [],
+      "sellerName": "Сова"
+    }
+  ],
+  "excluded": [
+    {
+      "sourceUrl": "https://xn--80ad9al.xn--90ais/drip-colombia-dos-kebradas",
+      "name": "Дрип-кофе KOF. Дрип Колумбия Дос Кебрадас",
+      "reason": "not_whole_beans",
+      "sourceProductId": "601675119482"
+    },
+    {
+      "sourceUrl": "https://xn--80ad9al.xn--90ais/drip-mexico-kisaya-decaf",
+      "name": "Дрип-кофе KOF. Мексика Кисая Декаф Mountain Water Process",
+      "reason": "not_whole_beans",
+      "sourceProductId": "136953813192"
+    },
+    {
+      "sourceUrl": "https://xn--80ad9al.xn--90ais/drip-ethiopia-banco-gotiti",
+      "name": "Дрип-кофе KOF. Эфиопия Банко Готити",
+      "reason": "not_whole_beans",
+      "sourceProductId": "179107241532"
+    },
+    {
+      "sourceUrl": "https://xn--80ad9al.xn--90ais/drips-ethiopia-bensa-coconut",
+      "name": "Дрипы Эфиопия Бенса Кокоса дрип-пакеты 10шт/уп",
+      "reason": "not_whole_beans",
+      "sourceProductId": "512911331372"
+    },
+    {
+      "sourceUrl": "https://xn--80ad9al.xn--90ais/drip-mix",
+      "name": "Дрип MIX, дрип-пакеты",
+      "reason": "not_whole_beans",
+      "sourceProductId": "369651151532"
+    },
+    {
+      "sourceUrl": "https://xn--80ad9al.xn--90ais/drips-peru-flor",
+      "name": "Дрипы Перу Флор 10 дрип-пакеты 10шт/уп",
+      "reason": "not_whole_beans",
+      "sourceProductId": "338295185412"
+    },
+    {
+      "sourceUrl": "https://xn--80ad9al.xn--90ais/ Drips_kanga_brazil_danilo_barbosa",
+      "name": "Дрипы Бразилия Данило Барбосса 10 дрип-пакеты 10шт/уп",
+      "reason": "not_whole_beans",
+      "sourceProductId": "628789261792"
+    }
+  ],
+  "sourceSnapshots": [
+    {
+      "url": "https://store.tildaapi.biz/api/getproductslist/?storepartuid=382310104262&recid=743249582&getparts=true&getoptions=true&size=36&flag_root=withroot",
+      "fetchedAtUtc": "2026-10-05T10:03:23.644383+00:00",
+      "sha256": "e05304e0cfbeef89dfd1de7c6002c1c84c2751c5fff610fd69beea97dc79a04e"
+    },
+    {
+      "url": "https://store.tildaapi.com/api/getproductslist/?storepartuid=382310104262&recid=743249582&getparts=true&getoptions=true&size=36&flag_root=withroot",
+      "fetchedAtUtc": "2026-10-05T10:03:20.708032+00:00",
+      "sha256": "12bd750d344efb21f319eea7f2264e77522c96b3da025a0cf6f1791b1b607ef0"
+    },
+    {
+      "url": "https://xn--80ad9al.xn--90ais/coffe",
+      "fetchedAtUtc": "2026-10-05T10:02:17.870961+00:00",
+      "sha256": "edcca2a7843048727cea3849b7385dcddf90d518b9059f9237c484acc25a1247"
+    }
+  ]
+}

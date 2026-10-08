@@ -13,21 +13,17 @@ public class RatingTests
     [InlineData(3, 6, 3)]
     [InlineData(3, 3, 0)]
     [InlineData(3, 3, 6)]
-    public void UpdateRating_OutOfRange_ThrowsDomainException(int place, int service, int coffee)
+    public void Create_OutOfRange_ThrowsDomainException(int place, int service, int coffee)
     {
-        var rating = Rating.Create(3, 3, 3);
-
-        var act = () => rating.UpdateRating(place, service, coffee);
+        var act = () => Rating.Create(place, service, coffee);
 
         act.Should().Throw<DomainException>();
     }
 
     [Fact]
-    public void UpdateRating_InRange_UpdatesPlaceServiceCoffeeAndAverage()
+    public void Create_InRange_SetsPlaceServiceCoffeeAndAverage()
     {
-        var rating = Rating.Create(1, 1, 1);
-
-        rating.UpdateRating(3, 4, 5);
+        var rating = Rating.Create(3, 4, 5);
 
         rating.Place.Should().Be(3);
         rating.Service.Should().Be(4);

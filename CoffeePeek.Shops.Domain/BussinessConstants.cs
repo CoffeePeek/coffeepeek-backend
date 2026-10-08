@@ -3,20 +3,20 @@ namespace CoffeePeek.Shops.Domain;
 public static class BusinessConstants
 {
     #region Review
-    
+
     public const int MinReviewRate = 1;
     public const int MaxReviewRate = 5;
-    
+
     public const int MinReviewHeaderLength = 3;
     public const int MaxReviewHeaderLength = 100;
     public const int MinReviewCommentLength = 10;
     public const int MaxReviewCommentLength = 1000;
-    
-    #endregion 
-    
+
+    #endregion
+
     #region CheckIn
-    
-    public const int MaxCheckInNoteLength = 500;
+
+    public const int MaxCheckInNoteLength = 1000;
     public const int MaxCheckInPhotos = 5;
     /// <summary>Matches MediaService PhotoMetadata.StorageKey MaxLength.</summary>
     public const int MaxCheckInPhotoStorageKeyLength = 255;
@@ -25,7 +25,7 @@ public static class BusinessConstants
     public const int MaxUserCheckInsPerDay = 3;
     /// <summary>Allowed client/server clock drift when validating VisitedAt.</summary>
     public const int MaxVisitedAtClockSkewMinutes = 5;
-    
+
     #endregion
 
     #region ShopContact
@@ -101,7 +101,7 @@ public static class BusinessConstants
     public const int MaxLocationLongitude = 180;
 
     #endregion
-    
+
     public const int MaxEquipmentCategoryNameLength = 50;
 
     #region Menu

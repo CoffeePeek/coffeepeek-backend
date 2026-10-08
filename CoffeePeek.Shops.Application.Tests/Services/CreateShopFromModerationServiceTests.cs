@@ -52,7 +52,7 @@ public class CreateShopFromModerationServiceTests
             CoffeeBeans = null,
             Schedules = null,
             Photos = [],
-            Reviews = []
+            CheckIns = []
         };
 
     [Fact]

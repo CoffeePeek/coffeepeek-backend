@@ -39,11 +39,11 @@ public class AdminStatsClient(
 
         return new AdminPlatformStatsSnapshot(
             TotalCoffeeShops: shops?.TotalCoffeeShops ?? 0,
-            TotalReviews: shops?.TotalReviews ?? 0,
+            TotalCheckIns: shops?.TotalCheckIns ?? 0,
             NewCoffeeShopsToday: shops?.NewCoffeeShopsToday ?? 0,
-            NewReviewsToday: shops?.NewReviewsToday ?? 0,
+            NewCheckInsToday: shops?.NewCheckInsToday ?? 0,
             PendingModerationShops: moderation?.PendingModerationShops ?? 0,
-            PendingModerationReviews: moderation?.PendingModerationReviews ?? 0,
+            PendingModerationCheckIns: moderation?.PendingModerationCheckIns ?? 0,
             ImportPending: moderation?.ImportPending ?? 0,
             ImportPublished: moderation?.ImportPublished ?? 0,
             ImportRejected: moderation?.ImportRejected ?? 0,

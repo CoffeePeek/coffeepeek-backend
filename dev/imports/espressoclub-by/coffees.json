@@ -1,0 +1,1636 @@
+{
+  "schemaVersion": 1,
+  "adapterVersion": "1.0",
+  "source": "https://espressoclub.by/storefront",
+  "collectedAtUtc": "2026-10-05T09:43:24.395562+00:00",
+  "complete": true,
+  "coverage": [
+    {
+      "productKind": "roasted_beans",
+      "catalogueUrl": "https://espressoclub.by/storefront",
+      "pages": 1,
+      "expectedProducts": 36,
+      "discoveredProducts": 36,
+      "countUnit": "source_rows_including_drips"
+    }
+  ],
+  "products": [
+    {
+      "sourceKey": "espressoclub.by",
+      "sourceProductId": "name:1740ba59990c4ebf46a7ac8a14f26c130e5e8f30c4260efd6f9afdca5b8fcb8c",
+      "sourceUrl": "https://espressoclub.by/storefront",
+      "name": "Фильтр Колумбия Санта Роса alcohol-free",
+      "roasterName": "River Roasters",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "availabilityScope": "in_store",
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "CO",
+          "countryNameRu": "Колумбия",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [
+        "Фильтр"
+      ],
+      "grindOptions": [],
+      "imageUrls": [],
+      "variants": [
+        {
+          "externalVariantId": "name:1740ba59990c4ebf46a7ac8a14f26c130e5e8f30c4260efd6f9afdca5b8fcb8c:200",
+          "weightGrams": 200,
+          "price": "30.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "name": "Фильтр Колумбия Санта Роса alcohol-free",
+            "weight": "200 г",
+            "count": "7"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "lastUpdateTime": "05.10.2026, 10:18:47",
+        "identityKind": "name_derived"
+      },
+      "reviewWarnings": [
+        "origin_extracted_from_name",
+        "purchase_in_store_only",
+        "source_ids_not_provided"
+      ]
+    },
+    {
+      "sourceKey": "espressoclub.by",
+      "sourceProductId": "name:1b24552bce162b529663b50d3374461b9ca2fcb61e0ca7c28e1444ee56c41203",
+      "sourceUrl": "https://espressoclub.by/storefront",
+      "name": "Фильтр Эфиопия Ненсебо alcohol-free",
+      "roasterName": "River Roasters",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "availabilityScope": "in_store",
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "ET",
+          "countryNameRu": "Эфиопия",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [
+        "Фильтр"
+      ],
+      "grindOptions": [],
+      "imageUrls": [],
+      "variants": [
+        {
+          "externalVariantId": "name:1b24552bce162b529663b50d3374461b9ca2fcb61e0ca7c28e1444ee56c41203:200",
+          "weightGrams": 200,
+          "price": "30.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "name": "Фильтр Эфиопия Ненсебо alcohol-free",
+            "weight": "200 г",
+            "count": "9"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "lastUpdateTime": "05.10.2026, 10:18:47",
+        "identityKind": "name_derived"
+      },
+      "reviewWarnings": [
+        "origin_extracted_from_name",
+        "purchase_in_store_only",
+        "source_ids_not_provided"
+      ]
+    },
+    {
+      "sourceKey": "espressoclub.by",
+      "sourceProductId": "name:77924270a32c9ea1e79d320ad5944a9e2a9240d97080feb5ac46e4e2e492609f",
+      "sourceUrl": "https://espressoclub.by/storefront",
+      "name": "Фильтр Бурунди Бурасира 1752",
+      "roasterName": "River Roasters",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "availabilityScope": "in_store",
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "BI",
+          "countryNameRu": "Бурунди",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [
+        "Фильтр"
+      ],
+      "grindOptions": [],
+      "imageUrls": [],
+      "variants": [
+        {
+          "externalVariantId": "name:77924270a32c9ea1e79d320ad5944a9e2a9240d97080feb5ac46e4e2e492609f:250",
+          "weightGrams": 250,
+          "price": "36.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "name": "Фильтр Бурунди Бурасира 1752",
+            "weight": "250 г",
+            "count": "3"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "lastUpdateTime": "05.10.2026, 10:18:47",
+        "identityKind": "name_derived"
+      },
+      "reviewWarnings": [
+        "origin_extracted_from_name",
+        "purchase_in_store_only",
+        "source_ids_not_provided"
+      ]
+    },
+    {
+      "sourceKey": "espressoclub.by",
+      "sourceProductId": "name:58d233a06bf104b4f10067fdae75231c4f4367243b038022e8c142dcd4b4d93e",
+      "sourceUrl": "https://espressoclub.by/storefront",
+      "name": "Фильтр Бурунди Бурасира 1753",
+      "roasterName": "River Roasters",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "availabilityScope": "in_store",
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "BI",
+          "countryNameRu": "Бурунди",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [
+        "Фильтр"
+      ],
+      "grindOptions": [],
+      "imageUrls": [],
+      "variants": [
+        {
+          "externalVariantId": "name:58d233a06bf104b4f10067fdae75231c4f4367243b038022e8c142dcd4b4d93e:250",
+          "weightGrams": 250,
+          "price": "36.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "name": "Фильтр Бурунди Бурасира 1753",
+            "weight": "250 г",
+            "count": "6"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "lastUpdateTime": "05.10.2026, 10:18:47",
+        "identityKind": "name_derived"
+      },
+      "reviewWarnings": [
+        "origin_extracted_from_name",
+        "purchase_in_store_only",
+        "source_ids_not_provided"
+      ]
+    },
+    {
+      "sourceKey": "espressoclub.by",
+      "sourceProductId": "name:9789ae297831dc6e890ed92822920ece4775d827bc83cd1effa47936d524e886",
+      "sourceUrl": "https://espressoclub.by/storefront",
+      "name": "Фильтр Индонезия Ачех",
+      "roasterName": "River Roasters",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "availabilityScope": "in_store",
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "ID",
+          "countryNameRu": "Индонезия",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [
+        "Фильтр"
+      ],
+      "grindOptions": [],
+      "imageUrls": [],
+      "variants": [
+        {
+          "externalVariantId": "name:9789ae297831dc6e890ed92822920ece4775d827bc83cd1effa47936d524e886:250",
+          "weightGrams": 250,
+          "price": "41.50",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "name": "Фильтр Индонезия Ачех",
+            "weight": "250 г",
+            "count": "4"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "lastUpdateTime": "05.10.2026, 10:18:47",
+        "identityKind": "name_derived"
+      },
+      "reviewWarnings": [
+        "origin_extracted_from_name",
+        "purchase_in_store_only",
+        "source_ids_not_provided"
+      ]
+    },
+    {
+      "sourceKey": "espressoclub.by",
+      "sourceProductId": "name:296764b69aa9e5a7fcac54d49dc7616fc83d3254962b291c5a021b0eb8bda431",
+      "sourceUrl": "https://espressoclub.by/storefront",
+      "name": "Фильтр Индонезия Манделинг",
+      "roasterName": "River Roasters",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "availabilityScope": "in_store",
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "ID",
+          "countryNameRu": "Индонезия",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [
+        "Фильтр"
+      ],
+      "grindOptions": [],
+      "imageUrls": [],
+      "variants": [
+        {
+          "externalVariantId": "name:296764b69aa9e5a7fcac54d49dc7616fc83d3254962b291c5a021b0eb8bda431:250",
+          "weightGrams": 250,
+          "price": "36.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "name": "Фильтр Индонезия Манделинг",
+            "weight": "250 г",
+            "count": "6"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "lastUpdateTime": "05.10.2026, 10:18:47",
+        "identityKind": "name_derived"
+      },
+      "reviewWarnings": [
+        "origin_extracted_from_name",
+        "purchase_in_store_only",
+        "source_ids_not_provided"
+      ]
+    },
+    {
+      "sourceKey": "espressoclub.by",
+      "sourceProductId": "name:c642a8d21cfe63ea8647cafd8fdeff7babba31504fde991711efab9b595b82c4",
+      "sourceUrl": "https://espressoclub.by/storefront",
+      "name": "Фильтр Кения Мугайя",
+      "roasterName": "River Roasters",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "availabilityScope": "in_store",
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "KE",
+          "countryNameRu": "Кения",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [
+        "Фильтр"
+      ],
+      "grindOptions": [],
+      "imageUrls": [],
+      "variants": [
+        {
+          "externalVariantId": "name:c642a8d21cfe63ea8647cafd8fdeff7babba31504fde991711efab9b595b82c4:250",
+          "weightGrams": 250,
+          "price": "37.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "name": "Фильтр Кения Мугайя",
+            "weight": "250 г",
+            "count": "4"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "lastUpdateTime": "05.10.2026, 10:18:47",
+        "identityKind": "name_derived"
+      },
+      "reviewWarnings": [
+        "origin_extracted_from_name",
+        "purchase_in_store_only",
+        "source_ids_not_provided"
+      ]
+    },
+    {
+      "sourceKey": "espressoclub.by",
+      "sourceProductId": "name:bc2dda8b98fac7742b1ab3587ba8ce5d45d2fdef37aab6a9d84d71673758e426",
+      "sourceUrl": "https://espressoclub.by/storefront",
+      "name": "Фильтр Колумбия Гейша Монтебланко",
+      "roasterName": "River Roasters",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "availabilityScope": "in_store",
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "CO",
+          "countryNameRu": "Колумбия",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [
+        "Фильтр"
+      ],
+      "grindOptions": [],
+      "imageUrls": [],
+      "variants": [
+        {
+          "externalVariantId": "name:bc2dda8b98fac7742b1ab3587ba8ce5d45d2fdef37aab6a9d84d71673758e426:250",
+          "weightGrams": 250,
+          "price": "55.50",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "name": "Фильтр Колумбия Гейша Монтебланко",
+            "weight": "250 г",
+            "count": "8"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "lastUpdateTime": "05.10.2026, 10:18:47",
+        "identityKind": "name_derived"
+      },
+      "reviewWarnings": [
+        "origin_extracted_from_name",
+        "purchase_in_store_only",
+        "source_ids_not_provided"
+      ]
+    },
+    {
+      "sourceKey": "espressoclub.by",
+      "sourceProductId": "name:6d7cead3c0f277e85a05491f38f28b16562ab839f1564a2a47f0169e223b7345",
+      "sourceUrl": "https://espressoclub.by/storefront",
+      "name": "Фильтр Колумбия Гейша Гранд Крю",
+      "roasterName": "River Roasters",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "availabilityScope": "in_store",
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "CO",
+          "countryNameRu": "Колумбия",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [
+        "Фильтр"
+      ],
+      "grindOptions": [],
+      "imageUrls": [],
+      "variants": [
+        {
+          "externalVariantId": "name:6d7cead3c0f277e85a05491f38f28b16562ab839f1564a2a47f0169e223b7345:250",
+          "weightGrams": 250,
+          "price": "62.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "name": "Фильтр Колумбия Гейша Гранд Крю",
+            "weight": "250 г",
+            "count": "4"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "lastUpdateTime": "05.10.2026, 10:18:47",
+        "identityKind": "name_derived"
+      },
+      "reviewWarnings": [
+        "origin_extracted_from_name",
+        "purchase_in_store_only",
+        "source_ids_not_provided"
+      ]
+    },
+    {
+      "sourceKey": "espressoclub.by",
+      "sourceProductId": "name:4a0c83480e421b3978c3da4922e19f0fcde35a3f746fb4befd3ff7f43554ea78",
+      "sourceUrl": "https://espressoclub.by/storefront",
+      "name": "Фильтр Колумбия Омблигон Ла Плата",
+      "roasterName": "River Roasters",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "availabilityScope": "in_store",
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "CO",
+          "countryNameRu": "Колумбия",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [
+        "Фильтр"
+      ],
+      "grindOptions": [],
+      "imageUrls": [],
+      "variants": [
+        {
+          "externalVariantId": "name:4a0c83480e421b3978c3da4922e19f0fcde35a3f746fb4befd3ff7f43554ea78:250",
+          "weightGrams": 250,
+          "price": "55.50",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "name": "Фильтр Колумбия Омблигон Ла Плата",
+            "weight": "250 г",
+            "count": "7"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "lastUpdateTime": "05.10.2026, 10:18:47",
+        "identityKind": "name_derived"
+      },
+      "reviewWarnings": [
+        "origin_extracted_from_name",
+        "purchase_in_store_only",
+        "source_ids_not_provided"
+      ]
+    },
+    {
+      "sourceKey": "espressoclub.by",
+      "sourceProductId": "name:30e88385c620fe66986ba44a9a39e0d2fafe387dbe872d6bd25d99e7737c8fee",
+      "sourceUrl": "https://espressoclub.by/storefront",
+      "name": "Фильтр Колумбия Омблигон Эль Дивисо",
+      "roasterName": "River Roasters",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "availabilityScope": "in_store",
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "CO",
+          "countryNameRu": "Колумбия",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [
+        "Фильтр"
+      ],
+      "grindOptions": [],
+      "imageUrls": [],
+      "variants": [
+        {
+          "externalVariantId": "name:30e88385c620fe66986ba44a9a39e0d2fafe387dbe872d6bd25d99e7737c8fee:250",
+          "weightGrams": 250,
+          "price": "55.50",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "name": "Фильтр Колумбия Омблигон Эль Дивисо",
+            "weight": "250 г",
+            "count": "5"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "lastUpdateTime": "05.10.2026, 10:18:47",
+        "identityKind": "name_derived"
+      },
+      "reviewWarnings": [
+        "origin_extracted_from_name",
+        "purchase_in_store_only",
+        "source_ids_not_provided"
+      ]
+    },
+    {
+      "sourceKey": "espressoclub.by",
+      "sourceProductId": "name:8c902084981d7690af1ee87c3daadc78261de3f928c4248da3645fa183f8be30",
+      "sourceUrl": "https://espressoclub.by/storefront",
+      "name": "Фильтр Колумбия Эль Ранчо",
+      "roasterName": "River Roasters",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "availabilityScope": "in_store",
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "CO",
+          "countryNameRu": "Колумбия",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [
+        "Фильтр"
+      ],
+      "grindOptions": [],
+      "imageUrls": [],
+      "variants": [
+        {
+          "externalVariantId": "name:8c902084981d7690af1ee87c3daadc78261de3f928c4248da3645fa183f8be30:250",
+          "weightGrams": 250,
+          "price": "52.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "name": "Фильтр Колумбия Эль Ранчо",
+            "weight": "250 г",
+            "count": "7"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "lastUpdateTime": "05.10.2026, 10:18:47",
+        "identityKind": "name_derived"
+      },
+      "reviewWarnings": [
+        "origin_extracted_from_name",
+        "purchase_in_store_only",
+        "source_ids_not_provided"
+      ]
+    },
+    {
+      "sourceKey": "espressoclub.by",
+      "sourceProductId": "name:b3a842b84470e7a8cced80a691d4f080d9ac34e9f1184d2182477f5b6bc0070e",
+      "sourceUrl": "https://espressoclub.by/storefront",
+      "name": "Фильтр Руанда Бисумо",
+      "roasterName": "River Roasters",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "availabilityScope": "in_store",
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "RW",
+          "countryNameRu": "Руанда",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [
+        "Фильтр"
+      ],
+      "grindOptions": [],
+      "imageUrls": [],
+      "variants": [
+        {
+          "externalVariantId": "name:b3a842b84470e7a8cced80a691d4f080d9ac34e9f1184d2182477f5b6bc0070e:250",
+          "weightGrams": 250,
+          "price": "44.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "name": "Фильтр Руанда Бисумо",
+            "weight": "250 г",
+            "count": "1"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "lastUpdateTime": "05.10.2026, 10:18:47",
+        "identityKind": "name_derived"
+      },
+      "reviewWarnings": [
+        "origin_extracted_from_name",
+        "purchase_in_store_only",
+        "source_ids_not_provided"
+      ]
+    },
+    {
+      "sourceKey": "espressoclub.by",
+      "sourceProductId": "name:75e1116adb78af4e6764d287823468714ff7599f932212319309daea459f4cb5",
+      "sourceUrl": "https://espressoclub.by/storefront",
+      "name": "Фильтр Руанда Гицумби",
+      "roasterName": "River Roasters",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "availabilityScope": "in_store",
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "RW",
+          "countryNameRu": "Руанда",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [
+        "Фильтр"
+      ],
+      "grindOptions": [],
+      "imageUrls": [],
+      "variants": [
+        {
+          "externalVariantId": "name:75e1116adb78af4e6764d287823468714ff7599f932212319309daea459f4cb5:250",
+          "weightGrams": 250,
+          "price": "38.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "name": "Фильтр Руанда Гицумби",
+            "weight": "250 г",
+            "count": "3"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "lastUpdateTime": "05.10.2026, 10:18:47",
+        "identityKind": "name_derived"
+      },
+      "reviewWarnings": [
+        "origin_extracted_from_name",
+        "purchase_in_store_only",
+        "source_ids_not_provided"
+      ]
+    },
+    {
+      "sourceKey": "espressoclub.by",
+      "sourceProductId": "name:4419a1ffac249c251f0c3c13f07d8f57fe4418190f0f154f3c8768b7c9c71d47",
+      "sourceUrl": "https://espressoclub.by/storefront",
+      "name": "Фильтр Руанда Нова",
+      "roasterName": "River Roasters",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "availabilityScope": "in_store",
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "RW",
+          "countryNameRu": "Руанда",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [
+        "Фильтр"
+      ],
+      "grindOptions": [],
+      "imageUrls": [],
+      "variants": [
+        {
+          "externalVariantId": "name:4419a1ffac249c251f0c3c13f07d8f57fe4418190f0f154f3c8768b7c9c71d47:250",
+          "weightGrams": 250,
+          "price": "38.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "name": "Фильтр Руанда Нова",
+            "weight": "250 г",
+            "count": "2"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "lastUpdateTime": "05.10.2026, 10:18:47",
+        "identityKind": "name_derived"
+      },
+      "reviewWarnings": [
+        "origin_extracted_from_name",
+        "purchase_in_store_only",
+        "source_ids_not_provided"
+      ]
+    },
+    {
+      "sourceKey": "espressoclub.by",
+      "sourceProductId": "name:7bb7930f2f42f377967390fda4132622df772a68d35eb7968ccc6925c051b170",
+      "sourceUrl": "https://espressoclub.by/storefront",
+      "name": "Омнирост Колумбия Эксельсо Декаф «Нулёвочка»",
+      "roasterName": "River Roasters",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "availabilityScope": "in_store",
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "CO",
+          "countryNameRu": "Колумбия",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [
+        "Омнирост"
+      ],
+      "grindOptions": [],
+      "imageUrls": [],
+      "variants": [
+        {
+          "externalVariantId": "name:7bb7930f2f42f377967390fda4132622df772a68d35eb7968ccc6925c051b170:250",
+          "weightGrams": 250,
+          "price": "39.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "name": "Омнирост Колумбия Эксельсо Декаф «Нулёвочка»",
+            "weight": "250 г",
+            "count": "7"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "lastUpdateTime": "05.10.2026, 10:18:47",
+        "identityKind": "name_derived"
+      },
+      "reviewWarnings": [
+        "origin_extracted_from_name",
+        "purchase_in_store_only",
+        "source_ids_not_provided"
+      ]
+    },
+    {
+      "sourceKey": "espressoclub.by",
+      "sourceProductId": "name:6c11beee837a68c2cf8b5a184f81298f3012db13c7331e734ef6e90210ca6fe1",
+      "sourceUrl": "https://espressoclub.by/storefront",
+      "name": "Эспрессо Кения Гатомбоя alcohol-free",
+      "roasterName": "River Roasters",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "availabilityScope": "in_store",
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "KE",
+          "countryNameRu": "Кения",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [
+        "Эспрессо"
+      ],
+      "grindOptions": [],
+      "imageUrls": [],
+      "variants": [
+        {
+          "externalVariantId": "name:6c11beee837a68c2cf8b5a184f81298f3012db13c7331e734ef6e90210ca6fe1:200",
+          "weightGrams": 200,
+          "price": "30.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "name": "Эспрессо Кения Гатомбоя alcohol-free",
+            "weight": "200 г",
+            "count": "8"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "lastUpdateTime": "05.10.2026, 10:18:47",
+        "identityKind": "name_derived"
+      },
+      "reviewWarnings": [
+        "origin_extracted_from_name",
+        "purchase_in_store_only",
+        "source_ids_not_provided"
+      ]
+    },
+    {
+      "sourceKey": "espressoclub.by",
+      "sourceProductId": "name:f983c49bcd43ef4d43ec8627f5ab4aeb0dbb73162bb4c0c020eaa13d7ea1efc8",
+      "sourceUrl": "https://espressoclub.by/storefront",
+      "name": "Эспрессо Колумбия Санта Роса alcohol-free",
+      "roasterName": "River Roasters",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "availabilityScope": "in_store",
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "CO",
+          "countryNameRu": "Колумбия",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [
+        "Эспрессо"
+      ],
+      "grindOptions": [],
+      "imageUrls": [],
+      "variants": [
+        {
+          "externalVariantId": "name:f983c49bcd43ef4d43ec8627f5ab4aeb0dbb73162bb4c0c020eaa13d7ea1efc8:200",
+          "weightGrams": 200,
+          "price": "30.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "name": "Эспрессо Колумбия Санта Роса alcohol-free",
+            "weight": "200 г",
+            "count": "6"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "lastUpdateTime": "05.10.2026, 10:18:47",
+        "identityKind": "name_derived"
+      },
+      "reviewWarnings": [
+        "origin_extracted_from_name",
+        "purchase_in_store_only",
+        "source_ids_not_provided"
+      ]
+    },
+    {
+      "sourceKey": "espressoclub.by",
+      "sourceProductId": "name:733a9b591b9ea7e82cd0c96744c0a3be0d0f4cefd2c2613388a0032a312949b0",
+      "sourceUrl": "https://espressoclub.by/storefront",
+      "name": "Эспрессо Эфиопия Ненсебо alcohol-free",
+      "roasterName": "River Roasters",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "availabilityScope": "in_store",
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "ET",
+          "countryNameRu": "Эфиопия",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [
+        "Эспрессо"
+      ],
+      "grindOptions": [],
+      "imageUrls": [],
+      "variants": [
+        {
+          "externalVariantId": "name:733a9b591b9ea7e82cd0c96744c0a3be0d0f4cefd2c2613388a0032a312949b0:200",
+          "weightGrams": 200,
+          "price": "30.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "name": "Эспрессо Эфиопия Ненсебо alcohol-free",
+            "weight": "200 г",
+            "count": "10"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "lastUpdateTime": "05.10.2026, 10:18:47",
+        "identityKind": "name_derived"
+      },
+      "reviewWarnings": [
+        "origin_extracted_from_name",
+        "purchase_in_store_only",
+        "source_ids_not_provided"
+      ]
+    },
+    {
+      "sourceKey": "espressoclub.by",
+      "sourceProductId": "name:d372c6cf9f607630fe954c3205a1f913de1a02f7265d831f195fc66f525cf801",
+      "sourceUrl": "https://espressoclub.by/storefront",
+      "name": "Эспрессо Бразилия Велосо",
+      "roasterName": "River Roasters",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "availabilityScope": "in_store",
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "BR",
+          "countryNameRu": "Бразилия",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [
+        "Эспрессо"
+      ],
+      "grindOptions": [],
+      "imageUrls": [],
+      "variants": [
+        {
+          "externalVariantId": "name:d372c6cf9f607630fe954c3205a1f913de1a02f7265d831f195fc66f525cf801:250",
+          "weightGrams": 250,
+          "price": "30.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "name": "Эспрессо Бразилия Велосо",
+            "weight": "250 г",
+            "count": "3"
+          }
+        },
+        {
+          "externalVariantId": "name:d372c6cf9f607630fe954c3205a1f913de1a02f7265d831f195fc66f525cf801:1000",
+          "weightGrams": 1000,
+          "price": "84.50",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "name": "Эспрессо Бразилия Велосо",
+            "weight": "1 кг",
+            "count": "5"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "lastUpdateTime": "05.10.2026, 10:18:47",
+        "identityKind": "name_derived"
+      },
+      "reviewWarnings": [
+        "origin_extracted_from_name",
+        "purchase_in_store_only",
+        "source_ids_not_provided"
+      ]
+    },
+    {
+      "sourceKey": "espressoclub.by",
+      "sourceProductId": "name:eec7215a463348ed8cc17ce1cf240ebeef39db86ade590942f51077eae558b8e",
+      "sourceUrl": "https://espressoclub.by/storefront",
+      "name": "Эспрессо Бурунди Муинга",
+      "roasterName": "River Roasters",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "availabilityScope": "in_store",
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "BI",
+          "countryNameRu": "Бурунди",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [
+        "Эспрессо"
+      ],
+      "grindOptions": [],
+      "imageUrls": [],
+      "variants": [
+        {
+          "externalVariantId": "name:eec7215a463348ed8cc17ce1cf240ebeef39db86ade590942f51077eae558b8e:250",
+          "weightGrams": 250,
+          "price": "32.50",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "name": "Эспрессо Бурунди Муинга",
+            "weight": "250 г",
+            "count": "3"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "lastUpdateTime": "05.10.2026, 10:18:47",
+        "identityKind": "name_derived"
+      },
+      "reviewWarnings": [
+        "origin_extracted_from_name",
+        "purchase_in_store_only",
+        "source_ids_not_provided"
+      ]
+    },
+    {
+      "sourceKey": "espressoclub.by",
+      "sourceProductId": "name:8e176a5af62d61c4b4bf229ecf7ed294125278a39ddac3bea2cee2d850f4f869",
+      "sourceUrl": "https://espressoclub.by/storefront",
+      "name": "Эспрессо Кения Кириньяга",
+      "roasterName": "River Roasters",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "availabilityScope": "in_store",
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "KE",
+          "countryNameRu": "Кения",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [
+        "Эспрессо"
+      ],
+      "grindOptions": [],
+      "imageUrls": [],
+      "variants": [
+        {
+          "externalVariantId": "name:8e176a5af62d61c4b4bf229ecf7ed294125278a39ddac3bea2cee2d850f4f869:250",
+          "weightGrams": 250,
+          "price": "32.50",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "name": "Эспрессо Кения Кириньяга",
+            "weight": "250 г",
+            "count": "7"
+          }
+        },
+        {
+          "externalVariantId": "name:8e176a5af62d61c4b4bf229ecf7ed294125278a39ddac3bea2cee2d850f4f869:1000",
+          "weightGrams": 1000,
+          "price": "89.50",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "name": "Эспрессо Кения Кириньяга",
+            "weight": "1 кг",
+            "count": "1"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "lastUpdateTime": "05.10.2026, 10:18:47",
+        "identityKind": "name_derived"
+      },
+      "reviewWarnings": [
+        "origin_extracted_from_name",
+        "purchase_in_store_only",
+        "source_ids_not_provided"
+      ]
+    },
+    {
+      "sourceKey": "espressoclub.by",
+      "sourceProductId": "name:1b353d8fb706b051bcd7386507d1dcc9c71f478e535d24a4f19f038bfdbed06b",
+      "sourceUrl": "https://espressoclub.by/storefront",
+      "name": "Эспрессо Колумбия Санта Роса",
+      "roasterName": "River Roasters",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "availabilityScope": "in_store",
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "CO",
+          "countryNameRu": "Колумбия",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [
+        "Эспрессо"
+      ],
+      "grindOptions": [],
+      "imageUrls": [],
+      "variants": [
+        {
+          "externalVariantId": "name:1b353d8fb706b051bcd7386507d1dcc9c71f478e535d24a4f19f038bfdbed06b:250",
+          "weightGrams": 250,
+          "price": "32.50",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "name": "Эспрессо Колумбия Санта Роса",
+            "weight": "250 г",
+            "count": "4"
+          }
+        },
+        {
+          "externalVariantId": "name:1b353d8fb706b051bcd7386507d1dcc9c71f478e535d24a4f19f038bfdbed06b:1000",
+          "weightGrams": 1000,
+          "price": "90.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "name": "Эспрессо Колумбия Санта Роса",
+            "weight": "1 кг",
+            "count": "2"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "lastUpdateTime": "05.10.2026, 10:18:47",
+        "identityKind": "name_derived"
+      },
+      "reviewWarnings": [
+        "origin_extracted_from_name",
+        "purchase_in_store_only",
+        "source_ids_not_provided"
+      ]
+    },
+    {
+      "sourceKey": "espressoclub.by",
+      "sourceProductId": "name:8a72c2e7d941556b0874b789999d859815af14041bf22d588085464a66b224e5",
+      "sourceUrl": "https://espressoclub.by/storefront",
+      "name": "Эспрессо Смесь Баланс",
+      "roasterName": "River Roasters",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "availabilityScope": "in_store",
+      "compositionKind": "blend",
+      "origins": [],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [
+        "Эспрессо"
+      ],
+      "grindOptions": [],
+      "imageUrls": [],
+      "variants": [
+        {
+          "externalVariantId": "name:8a72c2e7d941556b0874b789999d859815af14041bf22d588085464a66b224e5:250",
+          "weightGrams": 250,
+          "price": "29.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "name": "Эспрессо Смесь Баланс",
+            "weight": "250 г",
+            "count": "2"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "lastUpdateTime": "05.10.2026, 10:18:47",
+        "identityKind": "name_derived"
+      },
+      "reviewWarnings": [
+        "blend_composition_may_be_incomplete",
+        "origin_not_specified",
+        "purchase_in_store_only",
+        "source_ids_not_provided"
+      ]
+    },
+    {
+      "sourceKey": "espressoclub.by",
+      "sourceProductId": "name:e37f8ba5f8f2ca36c54fc54d284f07e9431d88d0131de48173e56775b5c15840",
+      "sourceUrl": "https://espressoclub.by/storefront",
+      "name": "Эспрессо Танзания Сонгве",
+      "roasterName": "River Roasters",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "availabilityScope": "in_store",
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "TZ",
+          "countryNameRu": "Танзания",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [
+        "Эспрессо"
+      ],
+      "grindOptions": [],
+      "imageUrls": [],
+      "variants": [
+        {
+          "externalVariantId": "name:e37f8ba5f8f2ca36c54fc54d284f07e9431d88d0131de48173e56775b5c15840:250",
+          "weightGrams": 250,
+          "price": "34.50",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "name": "Эспрессо Танзания Сонгве",
+            "weight": "250 г",
+            "count": "6"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "lastUpdateTime": "05.10.2026, 10:18:47",
+        "identityKind": "name_derived"
+      },
+      "reviewWarnings": [
+        "origin_extracted_from_name",
+        "purchase_in_store_only",
+        "source_ids_not_provided"
+      ]
+    },
+    {
+      "sourceKey": "espressoclub.by",
+      "sourceProductId": "name:284c96710b324ab28977bca07853ecfd78688faa100012b20a61ebf3cebc977a",
+      "sourceUrl": "https://espressoclub.by/storefront",
+      "name": "Эспрессо Эфиопия Гуджи",
+      "roasterName": "River Roasters",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "availabilityScope": "in_store",
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "ET",
+          "countryNameRu": "Эфиопия",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [
+        "Эспрессо"
+      ],
+      "grindOptions": [],
+      "imageUrls": [],
+      "variants": [
+        {
+          "externalVariantId": "name:284c96710b324ab28977bca07853ecfd78688faa100012b20a61ebf3cebc977a:250",
+          "weightGrams": 250,
+          "price": "32.50",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "name": "Эспрессо Эфиопия Гуджи",
+            "weight": "250 г",
+            "count": "5"
+          }
+        },
+        {
+          "externalVariantId": "name:284c96710b324ab28977bca07853ecfd78688faa100012b20a61ebf3cebc977a:1000",
+          "weightGrams": 1000,
+          "price": "90.00",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "name": "Эспрессо Эфиопия Гуджи",
+            "weight": "1 кг",
+            "count": "2"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "lastUpdateTime": "05.10.2026, 10:18:47",
+        "identityKind": "name_derived"
+      },
+      "reviewWarnings": [
+        "origin_extracted_from_name",
+        "purchase_in_store_only",
+        "source_ids_not_provided"
+      ]
+    },
+    {
+      "sourceKey": "espressoclub.by",
+      "sourceProductId": "name:23183e47508a4fc30cb1b47427d29a4044a86d34a62894bdfbfb287963d90b60",
+      "sourceUrl": "https://espressoclub.by/storefront",
+      "name": "Эспрессо Эфиопия Телила",
+      "roasterName": "River Roasters",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "availabilityScope": "in_store",
+      "compositionKind": "unknown",
+      "origins": [
+        {
+          "countryCode": "ET",
+          "countryNameRu": "Эфиопия",
+          "percentage": null,
+          "evidenceField": "name"
+        }
+      ],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [
+        "Эспрессо"
+      ],
+      "grindOptions": [],
+      "imageUrls": [],
+      "variants": [
+        {
+          "externalVariantId": "name:23183e47508a4fc30cb1b47427d29a4044a86d34a62894bdfbfb287963d90b60:250",
+          "weightGrams": 250,
+          "price": "27.50",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "name": "Эспрессо Эфиопия Телила",
+            "weight": "250 г",
+            "count": "4"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "lastUpdateTime": "05.10.2026, 10:18:47",
+        "identityKind": "name_derived"
+      },
+      "reviewWarnings": [
+        "origin_extracted_from_name",
+        "purchase_in_store_only",
+        "source_ids_not_provided"
+      ]
+    },
+    {
+      "sourceKey": "espressoclub.by",
+      "sourceProductId": "name:5eb60de93e173ad79e563640ef14a0d8c4dc6bbfa8796fa30ecb2b0884a0240f",
+      "sourceUrl": "https://espressoclub.by/storefront",
+      "name": "Эспрессо Яркий и Сочный",
+      "roasterName": "River Roasters",
+      "productKind": "roasted_beans",
+      "productForm": "whole_beans",
+      "availableForPurchase": true,
+      "availabilityScope": "in_store",
+      "compositionKind": "unknown",
+      "origins": [],
+      "tasteDescriptors": [],
+      "processing": null,
+      "roastLevel": null,
+      "qGraderScoreRaw": null,
+      "acidity": null,
+      "body": null,
+      "features": [],
+      "brewRecommendations": [
+        "Эспрессо"
+      ],
+      "grindOptions": [],
+      "imageUrls": [],
+      "variants": [
+        {
+          "externalVariantId": "name:5eb60de93e173ad79e563640ef14a0d8c4dc6bbfa8796fa30ecb2b0884a0240f:250",
+          "weightGrams": 250,
+          "price": "32.50",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "name": "Эспрессо Яркий и Сочный",
+            "weight": "250 г",
+            "count": "5"
+          }
+        },
+        {
+          "externalVariantId": "name:5eb60de93e173ad79e563640ef14a0d8c4dc6bbfa8796fa30ecb2b0884a0240f:1000",
+          "weightGrams": 1000,
+          "price": "89.50",
+          "currency": "BYN",
+          "availableForPurchase": true,
+          "sourceAttributes": {
+            "name": "Эспрессо Яркий и Сочный",
+            "weight": "1 кг",
+            "count": "1"
+          }
+        }
+      ],
+      "sourceProperties": {
+        "lastUpdateTime": "05.10.2026, 10:18:47",
+        "identityKind": "name_derived"
+      },
+      "reviewWarnings": [
+        "origin_not_specified",
+        "purchase_in_store_only",
+        "source_ids_not_provided"
+      ]
+    }
+  ],
+  "excluded": [
+    {
+      "sourceUrl": "https://espressoclub.by/storefront",
+      "name": "Дрипы Колумбия Арбуз Декаф",
+      "reason": "not_whole_beans"
+    },
+    {
+      "sourceUrl": "https://espressoclub.by/storefront",
+      "name": "Дрипы Колумбия Валенсия",
+      "reason": "not_whole_beans"
+    },
+    {
+      "sourceUrl": "https://espressoclub.by/storefront",
+      "name": "Дрипы Колумбия Уила Гейша",
+      "reason": "not_whole_beans"
+    }
+  ],
+  "sourceSnapshots": [
+    {
+      "url": "https://espressoclub.by/storefront",
+      "fetchedAtUtc": "2026-10-05T09:43:21.875043+00:00",
+      "sha256": "7984b12aa04dddbe90860e5fb6fb5032bd5a126d7693243fa9084d72f0ee9836"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/thisorient-dev/tilda-price-updater/main/data.json",
+      "fetchedAtUtc": "2026-10-05T09:43:24.395562+00:00",
+      "sha256": "eb5734690a62a0a29808548df2bff21e13a0613339cffe53319b606098e040eb"
+    }
+  ],
+  "sourceUpdatedAtRaw": "05.10.2026, 10:18:47"
+}

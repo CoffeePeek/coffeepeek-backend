@@ -5,11 +5,11 @@ namespace CoffeePeek.Shops.Domain.Entities;
 
 public sealed class ShopPhoto : Entity<Guid>
 {
-    [MaxLength(50)] 
+    [MaxLength(255)]
     public string FileName { get; private set; }
-    [MaxLength(30)] 
+    [MaxLength(100)]
     public string ContentType { get; private set; }
-    [MaxLength(200)] 
+    [MaxLength(255)]
     public string StorageKey { get; private set; }
 
     public long SizeBytes { get; private set; }
@@ -21,9 +21,9 @@ public sealed class ShopPhoto : Entity<Guid>
     // ReSharper disable once UnusedMember.Local
     private ShopPhoto() { }
 
-    public ShopPhoto(string fileName, string contentType, string storageKey, long sizeBytes, Guid ownerId, int sortIndex = 0)
+    public ShopPhoto(string fileName, string contentType, string storageKey, long sizeBytes, Guid ownerId, int sortIndex = 0, Guid? id = null)
     {
-        Id = Guid.NewGuid();
+        Id = id ?? Guid.NewGuid();
         FileName = fileName;
         ContentType = contentType;
         StorageKey = storageKey;

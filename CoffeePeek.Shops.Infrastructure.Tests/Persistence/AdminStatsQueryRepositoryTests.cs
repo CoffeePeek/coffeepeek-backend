@@ -5,7 +5,7 @@ using CoffeePeek.Shops.Persistance.Configuration;
 using CoffeePeek.Shops.Persistance.Repositories;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
-using ReviewEntity = CoffeePeek.Shops.Domain.Aggregates.ReviewAggregate.Review;
+using CoffeePeek.Shops.Domain.Entities;
 
 namespace CoffeePeek.Shops.Infrastructure.Tests.Persistence;
 
@@ -17,15 +17,18 @@ public class AdminStatsQueryRepositoryTests
     private static ShopsDbContext CreateContext() =>
         new(new DbContextOptionsBuilder<ShopsDbContext>().UseInMemoryDatabase(Guid.NewGuid().ToString()).Options);
 
-    private static ReviewEntity Review(Guid shopId, int place, int service, int coffee) =>
-        ReviewEntity.Create(shopId, Guid.NewGuid(), "tester", null, "A long enough comment", place, service, coffee,
-            Guid.NewGuid());
+    private static CheckIn Review(Guid shopId, int place, int service, int coffee)
+    {
+        var c = CheckIn.CreateUnified(Guid.NewGuid(), shopId, "author", "visit", Rating.Create(place,service,coffee), DateTime.UtcNow, CheckInVisibility.Public);
+        c.ApplyModerationDecision(1,Guid.NewGuid(),1,CheckInModerationState.Approved,null,DateTime.UtcNow);
+        return c;
+    }
 
     private static CoffeeShop Shop(string name) => new(Guid.NewGuid(), name, null, PriceRange.Moderate, Guid.NewGuid());
 
     private static CheckIn CheckInAt(Guid shopId, DateTime createdAtUtc)
     {
-        var checkIn = CheckIn.Create(Guid.NewGuid(), shopId, createdAtUtc);
+        var checkIn = CheckIn.CreateUnified(Guid.NewGuid(), shopId, "author", "visit", Rating.Create(4,4,4), createdAtUtc);
         checkIn.CreatedAtUtc = createdAtUtc;
         return checkIn;
     }
@@ -35,17 +38,18 @@ public class AdminStatsQueryRepositoryTests
     {
         await using var db = CreateContext();
         var shopId = Guid.NewGuid();
-        db.Reviews.Add(Review(shopId, 5, 5, 4));
-        db.Reviews.Add(Review(shopId, 1, 1, 1));
-        db.Reviews.Add(Review(shopId, 3, 3, 3));
+        var visibleShop=Shop("fixture");db.Shops.Add(visibleShop);db.Entry(visibleShop).Property(x=>x.Id).CurrentValue=shopId;
+        db.CheckIns.Add(Review(shopId, 5, 5, 4));
+        db.CheckIns.Add(Review(shopId, 1, 1, 1));
+        db.CheckIns.Add(Review(shopId, 3, 3, 3));
         var deleted = Review(shopId, 5, 5, 5);
-        deleted.SoftDelete();
-        db.Reviews.Add(deleted);
+        deleted.Delete();
+        db.CheckIns.Add(deleted);
         await db.SaveChangesAsync(_ct);
 
         var ratings = (await new AdminStatsQueryRepository(db).GetInsightsAsync(Since, _ct)).Ratings;
 
-        ratings.TotalReviews.Should().Be(3);
+        ratings.TotalCheckIns.Should().Be(3);
         ratings.StarCounts.Should().Equal((1, 1), (2, 0), (3, 1), (4, 0), (5, 1));
         Math.Round(ratings.AverageRating, 2, MidpointRounding.AwayFromZero).Should().Be(2.89m);
         Math.Round(ratings.AveragePlace, 2, MidpointRounding.AwayFromZero).Should().Be(3m);
@@ -59,7 +63,7 @@ public class AdminStatsQueryRepositoryTests
 
         var ratings = (await new AdminStatsQueryRepository(db).GetInsightsAsync(Since, _ct)).Ratings;
 
-        ratings.TotalReviews.Should().Be(0);
+        ratings.TotalCheckIns.Should().Be(0);
         ratings.AverageRating.Should().Be(0m);
         ratings.AveragePlace.Should().Be(0m);
         ratings.StarCounts.Select(x => x.Stars).Should().Equal(1, 2, 3, 4, 5);
@@ -106,28 +110,6 @@ public class AdminStatsQueryRepositoryTests
     }
 
     [Fact]
-    public async Task GetInsightsAsync_TopShopsByReviews_CountsNonDeletedDescending()
-    {
-        await using var db = CreateContext();
-        var a = Shop("Alpha");
-        var b = Shop("Beta");
-        db.Shops.AddRange(a, b);
-        db.Reviews.Add(Review(a.Id, 4, 4, 4));
-        db.Reviews.Add(Review(b.Id, 4, 4, 4));
-        db.Reviews.Add(Review(b.Id, 5, 5, 5));
-        var deletedA1 = Review(a.Id, 1, 1, 1);
-        deletedA1.SoftDelete();
-        var deletedA2 = Review(a.Id, 1, 1, 1);
-        deletedA2.SoftDelete();
-        db.Reviews.AddRange(deletedA1, deletedA2);
-        await db.SaveChangesAsync(_ct);
-
-        var top = (await new AdminStatsQueryRepository(db).GetInsightsAsync(Since, _ct)).TopShopsByReviews;
-
-        top.Should().Equal(new AdminTopShop(b.Id, "Beta", 2), new AdminTopShop(a.Id, "Alpha", 1));
-    }
-
-    [Fact]
     public async Task GetInsightsAsync_Downloads_TotalsChannelsAndCountries()
     {
         await using var db = CreateContext();
@@ -165,8 +147,8 @@ public class AdminStatsQueryRepositoryTests
         review2.CreatedAtUtc = today.AddDays(-1).AddHours(22);
         var deletedReview = Review(shopToday.Id, 3, 3, 3);
         deletedReview.CreatedAtUtc = today.AddDays(-1);
-        deletedReview.SoftDelete();
-        db.Reviews.AddRange(review1, review2, deletedReview);
+        deletedReview.Delete();
+        db.CheckIns.AddRange(review1, review2, deletedReview);
 
         db.CheckIns.AddRange(
             CheckInAt(shopToday.Id, today.AddDays(-2).AddHours(8)),
@@ -176,13 +158,10 @@ public class AdminStatsQueryRepositoryTests
         var counts = await new AdminStatsQueryRepository(db).GetDailyCountsAsync(from, _ct);
 
         counts.Shops.Should().BeEquivalentTo(new Dictionary<DateOnly, int> { [DateOnly.FromDateTime(today)] = 1 });
-        counts.Reviews.Should().BeEquivalentTo(new Dictionary<DateOnly, int>
-        {
-            [DateOnly.FromDateTime(today.AddDays(-1))] = 2
-        });
         counts.CheckIns.Should().BeEquivalentTo(new Dictionary<DateOnly, int>
         {
-            [DateOnly.FromDateTime(today.AddDays(-2))] = 1
+            [DateOnly.FromDateTime(today.AddDays(-2))] = 1,
+            [DateOnly.FromDateTime(today.AddDays(-1))] = 2
         });
     }
 }

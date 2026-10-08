@@ -2,5 +2,5 @@
 
 public enum BucketType
 {
-    User, Shop
+    User, Shop, CheckIn
 }

@@ -1,4 +1,3 @@
-using CoffeePeek.Shops.Application.Extensions;
 using CoffeePeek.Shops.Application.Mapper;
 using CoffeePeek.Shops.Application.Services;
 using CoffeePeek.Shops.Application.Features.CoffeeShop.GetShopsInBounds;
@@ -39,11 +38,9 @@ public static class DependencyInjection
 
         services.AddSingleton<IMapper>(sp => new MapsterMapper.Mapper(sp.GetRequiredService<TypeAdapterConfig>()));
 
-        // Validation
-        services.AddValidators();
-
         // Application Services
         services.AddScoped<PublicAddresses.PublicDiscoveryService>();
+        services.AddScoped<PublicAddresses.IPublicCheckInProjector, PublicAddresses.PublicCheckInProjector>();
         services.AddScoped<ICreateShopFromModerationService, CreateShopFromModerationService>();
         services.AddScoped<ICreateShopFromImportService, CreateShopFromImportService>();
         services.AddScoped<IEnrichShopFromImportService, EnrichShopFromImportService>();

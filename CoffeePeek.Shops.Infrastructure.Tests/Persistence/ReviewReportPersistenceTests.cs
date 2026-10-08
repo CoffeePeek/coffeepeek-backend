@@ -1,4 +1,6 @@
 using CoffeePeek.Shops.Domain.Aggregates.ReviewAggregate;
+using CoffeePeek.Shops.Domain.Aggregates.CheckInAggregate;
+using CoffeePeek.Shops.Domain.Entities;
 using CoffeePeek.Shops.Persistance.Configuration;
 using CoffeePeek.Shops.Persistance.Repositories;
 using FluentAssertions;
@@ -17,8 +19,11 @@ public class ReviewReportPersistenceTests
         var report = db.Model.FindEntityType(typeof(ReviewReport))!;
         report.FindProperty(nameof(ReviewReport.Text))!.GetMaxLength().Should().Be(2000);
         report.FindProperty(nameof(ReviewReport.Text))!.IsNullable.Should().BeFalse();
-        report.GetForeignKeys().Single().PrincipalEntityType.ClrType.Should().Be(typeof(Review));
-        foreach (var entity in new[] { report, db.Model.FindEntityType(typeof(Review))! })
+        report.GetForeignKeys().Should().BeEmpty();
+        var target = report.FindProperty(nameof(ReviewReport.CheckInId))!;
+        target.GetColumnName().Should().Be("ReviewId");
+        target.IsNullable.Should().BeFalse();
+        foreach (var entity in new[] { report })
         {
             var version = entity.FindProperty("Version")!;
             version.IsConcurrencyToken.Should().BeTrue();
@@ -32,11 +37,12 @@ public class ReviewReportPersistenceTests
     {
         await using var db = new ShopsDbContext(new DbContextOptionsBuilder<ShopsDbContext>()
             .UseInMemoryDatabase(Guid.NewGuid().ToString()).Options);
-        var review = Review.Create(Guid.NewGuid(), Guid.NewGuid(), "tester", null, "comment text body", 5, 5, 5, Guid.NewGuid());
-        var reports = Enumerable.Range(0, 3).Select(_ => ReviewReport.Create(review.Id, Guid.NewGuid(), "abuse")).ToArray();
+        var checkIn = CheckIn.CreateUnified(Guid.NewGuid(), Guid.NewGuid(), "tester", "comment text body",
+            Rating.Create(5, 5, 5), DateTime.UtcNow);
+        var reports = Enumerable.Range(0, 3).Select(_ => ReviewReport.Create(checkIn.Id, Guid.NewGuid(), "abuse")).ToArray();
         foreach (var report in reports) report.CreatedAtUtc = new DateTime(2026, 10, 2, 0, 0, 0, DateTimeKind.Utc);
         reports[2].Resolve(false, Guid.NewGuid());
-        db.Reviews.Add(review);
+        db.CheckIns.Add(checkIn);
         db.ReviewReports.AddRange(reports);
         await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         db.ChangeTracker.Clear();
@@ -47,6 +53,11 @@ public class ReviewReportPersistenceTests
         new[] { first.Single().Id, second.Single().Id }.Should().Equal(reports.Take(2).OrderBy(x => x.Id).Select(x => x.Id));
         var (_, allCount) = await repository.GetPageAsync(null, 1, 20, TestContext.Current.CancellationToken);
         allCount.Should().Be(3);
+        first.Single().CheckInId.Should().Be(checkIn.Id);
+        db.CheckIns.Remove(checkIn);
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        db.ChangeTracker.Clear();
+        (await repository.GetByIdAsync(reports[0].Id, TestContext.Current.CancellationToken))!.CheckInId.Should().Be(checkIn.Id);
         (await repository.GetByIdAsync(reports[2].Id, TestContext.Current.CancellationToken))!.Status.Should().Be(ReviewReportStatus.Dismissed);
     }
 }

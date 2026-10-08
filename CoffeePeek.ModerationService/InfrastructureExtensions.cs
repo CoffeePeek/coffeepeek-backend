@@ -1,4 +1,4 @@
-﻿using CoffeePeek.Moderation.Application;
+using CoffeePeek.Moderation.Application;
 using CoffeePeek.Moderation.Application.Abstractions;
 using CoffeePeek.Moderation.Application.Features.Shop.CreateShop;
 using CoffeePeek.Moderation.Infrastructure;
@@ -21,12 +21,12 @@ public static class InfrastructureExtensions
         builder.WebHost
             .ConfigureWebhost();
         var applicationAssembly = typeof(SendCoffeeShopToModerationHandler).Assembly;
-        var infrastructureAssembly = typeof(CheckInCreatedHandler).Assembly;
+        var infrastructureAssembly = typeof(CheckInModerationRequestedHandler).Assembly;
         builder.AddWolverine(
             typeof(InfrastructureExtensions).Assembly,
             [applicationAssembly, infrastructureAssembly],
-            [typeof(CoffeePeek.Shared.Kernel.Drinks.IDrinkCatalog), typeof(ModerationDbContext), typeof(IReviewPhotoLookup), typeof(IYandexGeocodingService), typeof(IGooglePlacesLookup), typeof(IOverpassClient)]);
-        
+            [typeof(ModerationDbContext), typeof(IYandexGeocodingService), typeof(IGooglePlacesLookup), typeof(IOverpassClient)]);
+
         builder.Services
             .AddApplication()
             .AddPersistence(builder)

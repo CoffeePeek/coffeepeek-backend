@@ -43,7 +43,7 @@ namespace Internal.Generated.WolverineHandlers
             // The actual message body
             var submitRoasterCommand = (CoffeePeek.Moderation.Application.Features.Roaster.SubmitRoaster.SubmitRoasterCommand)context.Envelope.Message;
 
-            
+
             // Enroll the DbContext & IMessagingContext in the outgoing Wolverine outbox transaction
             var efCoreEnvelopeTransaction = new Wolverine.EntityFrameworkCore.Internals.EfCoreEnvelopeTransaction(moderationDbContext, context, _domainEventScraperIEnumerable);
             await context.EnlistInOutboxAsync(efCoreEnvelopeTransaction).ConfigureAwait(false);
@@ -57,15 +57,15 @@ namespace Internal.Generated.WolverineHandlers
             {
                 System.Diagnostics.Activity.Current?.SetTag("message.handler", "CoffeePeek.Moderation.Application.Features.Roaster.SubmitRoaster.SubmitRoasterHandler");
                 System.Diagnostics.Activity.Current?.SetTag("handler.type", "CoffeePeek.Moderation.Application.Features.Roaster.SubmitRoaster.SubmitRoasterHandler");
-                
+
                 // The actual message execution
                 (var outgoing1, var outgoing2) = await CoffeePeek.Moderation.Application.Features.Roaster.SubmitRoaster.SubmitRoasterHandler.Handle(submitRoasterCommand, moderationRoasterRepository, shopsRoasterExistenceLookup, unitOfWorkOfModerationDbContext, _loggerForMessage, cancellation).ConfigureAwait(false);
 
-                
+
                 // Outgoing, cascaded message
                 await context.EnqueueCascadingAsync(outgoing1).ConfigureAwait(false);
 
-                
+
                 // Outgoing, cascaded message
                 await context.EnqueueCascadingAsync(outgoing2).ConfigureAwait(false);
 
@@ -88,6 +88,6 @@ namespace Internal.Generated.WolverineHandlers
     }
 
     // END: SubmitRoasterCommandHandler1254778809
-    
-    
+
+
 }

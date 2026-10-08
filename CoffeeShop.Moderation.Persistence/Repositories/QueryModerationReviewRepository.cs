@@ -10,11 +10,6 @@ public class QueryModerationReviewRepository(ModerationDbContext dbContext) : IQ
 {
     private readonly DbSet<ModerationReview> _reviewRepository = dbContext.ModerationReviews;
 
-    public Task<ModerationReview[]> GetAll(CancellationToken ct = default)
-    {
-        return _reviewRepository.AsNoTracking().ToArrayAsync(ct);
-    }
-
     public Task<ModerationReview?> GetById(Guid id, CancellationToken ct = default)
     {
         return _reviewRepository.AsNoTracking()
@@ -42,7 +37,6 @@ public class QueryModerationReviewRepository(ModerationDbContext dbContext) : IQ
         {
             var term = ImportCandidateTextSearch.ToILikeContainsPattern(search);
             query = query.Where(r =>
-                EF.Functions.ILike(r.Header ?? string.Empty, term, "\\") ||
                 EF.Functions.ILike(r.Comment, term, "\\") ||
                 EF.Functions.ILike(r.UserName, term, "\\"));
         }

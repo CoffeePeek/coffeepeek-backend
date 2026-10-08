@@ -1,0 +1,3603 @@
+openapi: 3.1.0
+jsonSchemaDialect: https://json-schema.org/draft/2020-12/schema
+info:
+  title: CoffeePeek — discovery and coffee API
+  version: 1.0.0
+  description: Контракт backend-реализации от 2026-10-06. Поиск кофеен и кофе; полный список обжарщиков GET /api/roasters
+    без пагинации. Избранное, классификация кофе и теги услуг управляются существующими маршрутами.
+servers:
+- url: /
+tags:
+- name: Discovery
+- name: Administration
+x-status: implemented-in-branch
+x-initial-roaster-tags:
+- slug: online-order
+  name: Онлайн-заказ
+  description: Подтверждён онлайн-заказ непосредственно у обжарщика; ссылка стороннего продавца сама по себе не
+    подтверждает этот тег.
+  sortOrder: 10
+- slug: pickup
+  name: Самовывоз
+  description: Подтверждена возможность забрать заказ у обжарщика.
+  sortOrder: 20
+- slug: subscription
+  name: Подписка на кофе
+  description: Подтверждена действующая подписка на регулярные поставки кофе.
+  sortOrder: 30
+- slug: wholesale
+  name: Опт
+  description: Подтверждена работа с оптовыми заказами.
+  sortOrder: 40
+- slug: training
+  name: Обучение
+  description: Подтверждены доступные обучающие программы.
+  sortOrder: 50
+x-initial-coffee-filter-values:
+- code: brew
+  name: Назначение обжарки
+  selection: or
+  values:
+  - code: filter
+    name: Для фильтра
+    description: null
+    sortOrder: 10
+  - code: espresso
+    name: Для эспрессо
+    description: null
+    sortOrder: 20
+  - code: omni
+    name: Универсальная обжарка
+    description: null
+    sortOrder: 30
+- code: caffeine
+  name: Кофеин
+  selection: or
+  values:
+  - code: regular
+    name: Обычный
+    description: null
+    sortOrder: 10
+  - code: decaf
+    name: Декаф
+    description: null
+    sortOrder: 20
+  - code: lowcaf
+    name: Лоукаф
+    description: null
+    sortOrder: 30
+- code: roast
+  name: Обжарка
+  selection: or
+  values:
+  - code: light
+    name: Светлая
+    description: null
+    sortOrder: 10
+  - code: medium
+    name: Средняя
+    description: null
+    sortOrder: 20
+  - code: dark
+    name: Тёмная
+    description: null
+    sortOrder: 30
+- code: acidity
+  name: Кислотность
+  selection: or
+  values:
+  - code: low
+    name: Низкая
+    description: null
+    sortOrder: 10
+  - code: balanced
+    name: Умеренная
+    description: null
+    sortOrder: 20
+  - code: bright
+    name: Яркая
+    description: null
+    sortOrder: 30
+- code: processing
+  name: Обработка
+  selection: or
+  values:
+  - code: washed
+    name: Мытая
+    description: null
+    sortOrder: 10
+  - code: natural
+    name: Натуральная
+    description: null
+    sortOrder: 20
+  - code: honey
+    name: Хани
+    description: null
+    sortOrder: 30
+  - code: wet-hulled
+    name: Вет-халл
+    description: null
+    sortOrder: 40
+- code: fermentation
+  name: Ферментация
+  selection: or
+  values:
+  - code: anaerobic
+    name: Анаэробная
+    description: null
+    sortOrder: 10
+  - code: semi-anaerobic
+    name: Полуанаэробная
+    description: null
+    sortOrder: 20
+  - code: experimental
+    name: Экспериментальная
+    description: null
+    sortOrder: 30
+- code: taste
+  name: Вкусовой профиль
+  selection: or
+  values:
+  - code: chocolate
+    name: Шоколад
+    description: null
+    sortOrder: 10
+  - code: nut
+    name: Орехи
+    description: null
+    sortOrder: 20
+  - code: caramel
+    name: Карамель
+    description: null
+    sortOrder: 30
+  - code: berry
+    name: Ягоды
+    description: null
+    sortOrder: 40
+  - code: citrus
+    name: Цитрусы
+    description: null
+    sortOrder: 50
+  - code: tropical
+    name: Тропические фрукты
+    description: null
+    sortOrder: 60
+  - code: floral
+    name: Цветы
+    description: null
+    sortOrder: 70
+  - code: spicy
+    name: Пряности
+    description: null
+    sortOrder: 80
+- code: composition
+  name: Состав
+  selection: or
+  values:
+  - code: single-origin
+    name: Моносорт
+    description: null
+    sortOrder: 10
+  - code: blend
+    name: Купаж
+    description: null
+    sortOrder: 20
+x-contract-rules:
+  public-identities: Объекты идентифицируются slug/public address; агрегатные GUID только в админке. Тип группы
+    различает одинаковые slug.
+  personalization: JWT необязателен для чтения; персональные фильтры требуют его. Ответы с личными полями не разделяются
+    между пользователями.
+  facet-codes: Коды из активных справочников проверяются по группе. Деактивация не удаляет назначения. Новый код
+    не изменяет алгоритм распознавания парсера.
+  empty-selections: Отсутствующая группа и [] не ограничивают поиск. Неизвестные значения не игнорируются. В одиночных
+    фильтрах отсутствие означает отсутствие ограничения.
+  classification-evidence: Нормализация допускается только из подтверждённого источника или ручной правки. Нет вывода
+    regular из отсутствия слова декаф, single-origin из одной страны, назначения обжарки из помола, сопоставления
+    числовых шкал обжарки между сайтами.
+  availability: Публичные товары только Published. Импорт нового товара создаёт Draft, повторный обновляет Published
+    без повторного подтверждения. Archived не возвращается в выдачу импортом. Неисправный источник сохраняет старые
+    данные и checkedAtUtc; InStock не гарантирует свежесть или складской остаток. Клиент показывает время проверки.
+  normalization-lifecycle: Публичные badges/фасеты строятся по нормализованной классификации. Подтверждённые незащищённые
+    поля обновляются импортом. Отсутствующее значение не очищает прежнее; предупреждения и исходный текст остаются
+    для модерации.
+  price: Нет конвертации валют и сравнения цены разных фасовок. price_asc/price_desc требуют currency+weightGrams.
+    Ценовой ключ — самая дешёвая подходящая фасовка указанного веса, а не самое дешёвое предложение продукта вообще.
+  discovery-price: В общем поиске min/maxDrinkPrice относятся к напиткам. Приготовление, цена и объём должны совпасть
+    у одной позиции меню.
+  filter-scopes: 'Общий endpoint принимает q, приготовление, бюджет напитка и пагинацию кофеен. География, расписание
+    и посещения — в coffee-shops/search; характеристики кофе и price/newest сортировки — в coffees/search. Обжарщики:
+    полный список GET /api/roasters с необязательными тегами.'
+  negative-filters: Для неяркой кислотности выбираются low+balanced; unknown не включается.
+  pagination: В поиске кофе/кофеен фильтры и сортировка выполняются до пагинации. Изменение фильтра сбрасывает page=1.
+    Список обжарщиков возвращается целиком без пагинации.
+  validation: 'Неизвестные поля и несовместимые фильтры: 400 INVALID_FILTER с errors по пути поля. Непустой q для
+    relevance. Price sort без currency/weight: 400. Персональный фильтр без JWT: 401. Несвежая admin version: 409
+    VERSION_CONFLICT. Невалидный/неопубликованный slug карточки: 404.'
+paths:
+  /api/v1/discovery/search:
+    post:
+      operationId: searchDiscovery
+      summary: Поиск кофеен
+      description: Read-only JSON search кофеен по стоимости и приготовлению. matchingMenuItems объясняет совпадение.
+        Ошибка чтения возвращает 503.
+      tags:
+      - Discovery
+      security:
+      - {}
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Успешный ответ в стандартном Response<T> проекта.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                properties:
+                  isSuccess:
+                    type: boolean
+                    const: true
+                  message:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/DiscoverySearchResult'
+                required:
+                - isSuccess
+                - message
+                - data
+              example:
+                isSuccess: true
+                message: Operation successful
+                data:
+                  q: пример
+                  coffeeShops:
+                    items:
+                    - address:
+                        slug: sample-shop
+                        canonicalPath: /coffee-shops/sample-shop
+                        revision: 1
+                      name: Пример кофейни
+                      city:
+                        slug: minsk
+                        canonicalPath: /cities/minsk
+                        revision: 1
+                      addressLine: Пример улицы, 1
+                      coverPhoto: null
+                      rating: 4.3
+                      reviewCount: 12
+                      isOpen: true
+                      isVisited: null
+                      isFavorite: null
+                      distanceMeters: null
+                      tags: []
+                      matchingMenuItems:
+                      - drinkSlug: filter-coffee
+                        name: Фильтр-кофе
+                        brewMethod: filter
+                        price: 8
+                        currency: BYN
+                        volumeMl: 250
+                        checkedAtUtc: '2026-10-05T08:00:00Z'
+                    totalItems: 1
+                    totalPages: 1
+                    currentPage: 1
+                    pageSize: 10
+        '400':
+          description: Некорректный фильтр, несовместимые параметры или неизвестный/неактивный код.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Необходим JWT для административной операции или персонального фильтра.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Сервис данных временно недоступен.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DiscoverySearchRequest'
+            example:
+              q: пример
+              sections:
+              - coffee_shops
+              filters:
+                brew:
+                - filter
+                budget:
+                  currency: BYN
+                  maxDrinkPrice: 10
+              coffeeShops:
+                page: 1
+                pageSize: 10
+  /api/v1/coffee-shops/search:
+    post:
+      operationId: searchCoffeeShopsV1
+      summary: Отдельный поиск кофеен со своей фильтрацией
+      description: Полный собственный набор фильтров кофеен, независимый от общего поиска. Существующий GET /api/CoffeeShops
+        сохраняет свой текущий контракт.
+      tags:
+      - Discovery
+      security:
+      - {}
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Успешный ответ в стандартном Response<T> проекта.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                properties:
+                  isSuccess:
+                    type: boolean
+                    const: true
+                  message:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/CoffeeShopPage'
+                required:
+                - isSuccess
+                - message
+                - data
+              example:
+                isSuccess: true
+                message: Operation successful
+                data:
+                  items:
+                  - address:
+                      slug: sample-shop
+                      canonicalPath: /coffee-shops/sample-shop
+                      revision: 1
+                    name: Пример кофейни
+                    city:
+                      slug: minsk
+                      canonicalPath: /cities/minsk
+                      revision: 1
+                    addressLine: Пример улицы, 1
+                    coverPhoto: null
+                    rating: 4.3
+                    reviewCount: 12
+                    isOpen: true
+                    isVisited: null
+                    isFavorite: null
+                    distanceMeters: null
+                    tags: []
+                    matchingMenuItems:
+                    - drinkSlug: filter-coffee
+                      name: Фильтр-кофе
+                      brewMethod: filter
+                      price: 8
+                      currency: BYN
+                      volumeMl: 250
+                      checkedAtUtc: '2026-10-05T08:00:00Z'
+                  totalItems: 1
+                  totalPages: 1
+                  currentPage: 1
+                  pageSize: 20
+        '400':
+          description: Некорректный фильтр, несовместимые параметры или неизвестный/неактивный код.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Необходим JWT для административной операции или персонального фильтра.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Сервис данных временно недоступен.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CoffeeShopSearchRequest'
+            example:
+              filters:
+                city: minsk
+                isOpen: true
+                brewMethods:
+                - filter
+                menu:
+                  brew:
+                  - filter
+                  currency: BYN
+                  maxPrice: 10
+              sort: name_asc
+              page: 1
+              pageSize: 20
+  /api/v1/coffees/search:
+    post:
+      operationId: searchCoffees
+      summary: Поиск кофе с нормализованными фильтрами и сортировкой
+      description: ''
+      tags:
+      - Discovery
+      security:
+      - {}
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Успешный ответ в стандартном Response<T> проекта.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                properties:
+                  isSuccess:
+                    type: boolean
+                    const: true
+                  message:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/CoffeePage'
+                required:
+                - isSuccess
+                - message
+                - data
+              example:
+                isSuccess: true
+                message: Operation successful
+                data:
+                  items:
+                  - address:
+                      slug: example-decaf
+                      canonicalPath: /coffees/example-decaf
+                      revision: 1
+                    name: Пример декафа
+                    roaster:
+                      address:
+                        slug: sample-roaster
+                        canonicalPath: /roasters/sample-roaster
+                        revision: 1
+                      name: Пример обжарщика
+                      coverPhoto: null
+                    productKind: roasted_beans
+                    productForm: whole_beans
+                    classification:
+                      defaultBrewPurposes:
+                      - filter
+                      caffeine: decaf
+                      roastLevel: light
+                      acidity: balanced
+                      processing:
+                      - washed
+                      fermentation: []
+                      tasteGroups:
+                      - chocolate
+                      - nut
+                      composition: single-origin
+                    countries:
+                    - code: CO
+                      nameRu: Колумбия
+                      nameEn: Colombia
+                    coverPhoto: null
+                    matchingOffers:
+                    - offerKey: offer-example-250
+                      weightGrams: 250
+                      price: 32
+                      currency: BYN
+                      brewPurpose: filter
+                      grind: null
+                      availability: InStock
+                      availabilityScope: online
+                      sellerName: Пример обжарщика
+                      sourceUrl: https://example.com/coffees/example
+                      checkedAtUtc: '2026-10-05T03:30:00Z'
+                    sortPrice: 32
+                    createdAtUtc: '2026-10-04T12:00:00Z'
+                    catalogCheckedAtUtc: '2026-10-05T03:30:00Z'
+                  totalItems: 1
+                  totalPages: 1
+                  currentPage: 1
+                  pageSize: 20
+        '400':
+          description: Некорректный фильтр, несовместимые параметры или неизвестный/неактивный код.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Необходим JWT для административной операции или персонального фильтра.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Сервис данных временно недоступен.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CoffeeSearchRequest'
+            example:
+              filters:
+                roasters:
+                - sample-roaster
+                countries:
+                - CO
+                - ET
+                brew:
+                - filter
+                caffeine:
+                - decaf
+                weightGrams: 250
+                currency: BYN
+                maxPrice: 50
+                availableOnly: true
+              sort: price_asc
+              page: 1
+              pageSize: 20
+  /api/v1/coffees/facets:
+    post:
+      operationId: getCoffeeFacets
+      summary: Доступные фильтры и счётчики кофе
+      description: 'Возвращаются все поддержанные группы: roasters, countries, productKind, productForm, brew, caffeine,
+        roast, acidity, processing, fermentation, taste, composition, weightGrams, currency, availabilityScope.
+        Для productKind/productForm/weightGrams/currency/availabilityScope selection=single, для массивов — or.
+        weightGrams.options.code — десятичная строка; в filters.weightGrams передаётся целое число. Списки обжарщиков/стран
+        ограничиваются опубликованным каталогом, выбранные значения сохраняются даже с нулевым count.'
+      tags:
+      - Discovery
+      security:
+      - {}
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Успешный ответ в стандартном Response<T> проекта.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                properties:
+                  isSuccess:
+                    type: boolean
+                    const: true
+                  message:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/CoffeeFacetsResult'
+                required:
+                - isSuccess
+                - message
+                - data
+              example:
+                isSuccess: true
+                message: Operation successful
+                data:
+                  totalItems: 1
+                  groups:
+                  - code: caffeine
+                    name: Кофеин
+                    selection: or
+                    options:
+                    - code: decaf
+                      name: Декаф
+                      count: 1
+                      selected: true
+                    - code: regular
+                      name: Обычный
+                      count: 8
+                      selected: false
+                  priceRange:
+                    currency: BYN
+                    weightGrams: 250
+                    min: 32
+                    max: 62
+        '400':
+          description: Некорректный фильтр, несовместимые параметры или неизвестный/неактивный код.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Необходим JWT для административной операции или персонального фильтра.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Сервис данных временно недоступен.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CoffeeFacetsRequest'
+            example:
+              filters:
+                roasters:
+                - sample-roaster
+                countries:
+                - CO
+                - ET
+                brew:
+                - filter
+                caffeine:
+                - decaf
+                weightGrams: 250
+                currency: BYN
+                maxPrice: 50
+                availableOnly: true
+  /api/v1/catalogs/roaster-tags:
+    get:
+      operationId: getPublicRoasterTags
+      summary: Активные постоянные теги обжарщиков
+      description: ''
+      tags:
+      - Discovery
+      security:
+      - {}
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Успешный ответ в стандартном Response<T> проекта.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                properties:
+                  isSuccess:
+                    type: boolean
+                    const: true
+                  message:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PublicTag'
+                required:
+                - isSuccess
+                - message
+                - data
+              example:
+                isSuccess: true
+                message: Operation successful
+                data:
+                - slug: online-order
+                  name: Онлайн-заказ
+                  description: Подтверждён онлайн-заказ непосредственно у обжарщика; ссылка стороннего продавца
+                    сама по себе не подтверждает этот тег.
+                  sortOrder: 10
+                - slug: pickup
+                  name: Самовывоз
+                  description: Подтверждена возможность забрать заказ у обжарщика.
+                  sortOrder: 20
+                - slug: subscription
+                  name: Подписка на кофе
+                  description: Подтверждена действующая подписка на регулярные поставки кофе.
+                  sortOrder: 30
+                - slug: wholesale
+                  name: Опт
+                  description: Подтверждена работа с оптовыми заказами.
+                  sortOrder: 40
+                - slug: training
+                  name: Обучение
+                  description: Подтверждены доступные обучающие программы.
+                  sortOrder: 50
+        '400':
+          description: Некорректный фильтр, несовместимые параметры или неизвестный/неактивный код.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Необходим JWT для административной операции или персонального фильтра.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Сервис данных временно недоступен.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/v1/catalogs/coffee-filter-values:
+    get:
+      operationId: getCoffeeFilterValues
+      summary: Активные группы и значения классификации кофе
+      description: Клиент использует коды для запросов, названия для отображения. Страны остаются в существующем
+        GET /api/Catalogs/coffee-origin-countries. Тексты processing/brew из старого API не становятся новыми кодами
+        автоматически.
+      tags:
+      - Discovery
+      security:
+      - {}
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Успешный ответ в стандартном Response<T> проекта.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                properties:
+                  isSuccess:
+                    type: boolean
+                    const: true
+                  message:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/FilterGroup'
+                required:
+                - isSuccess
+                - message
+                - data
+              example:
+                isSuccess: true
+                message: Operation successful
+                data:
+                - code: brew
+                  name: Назначение обжарки
+                  selection: or
+                  values:
+                  - code: filter
+                    name: Для фильтра
+                    description: null
+                    sortOrder: 10
+                  - code: espresso
+                    name: Для эспрессо
+                    description: null
+                    sortOrder: 20
+                  - code: omni
+                    name: Универсальная обжарка
+                    description: null
+                    sortOrder: 30
+                - code: caffeine
+                  name: Кофеин
+                  selection: or
+                  values:
+                  - code: regular
+                    name: Обычный
+                    description: null
+                    sortOrder: 10
+                  - code: decaf
+                    name: Декаф
+                    description: null
+                    sortOrder: 20
+                  - code: lowcaf
+                    name: Лоукаф
+                    description: null
+                    sortOrder: 30
+                - code: roast
+                  name: Обжарка
+                  selection: or
+                  values:
+                  - code: light
+                    name: Светлая
+                    description: null
+                    sortOrder: 10
+                  - code: medium
+                    name: Средняя
+                    description: null
+                    sortOrder: 20
+                  - code: dark
+                    name: Тёмная
+                    description: null
+                    sortOrder: 30
+                - code: acidity
+                  name: Кислотность
+                  selection: or
+                  values:
+                  - code: low
+                    name: Низкая
+                    description: null
+                    sortOrder: 10
+                  - code: balanced
+                    name: Умеренная
+                    description: null
+                    sortOrder: 20
+                  - code: bright
+                    name: Яркая
+                    description: null
+                    sortOrder: 30
+                - code: processing
+                  name: Обработка
+                  selection: or
+                  values:
+                  - code: washed
+                    name: Мытая
+                    description: null
+                    sortOrder: 10
+                  - code: natural
+                    name: Натуральная
+                    description: null
+                    sortOrder: 20
+                  - code: honey
+                    name: Хани
+                    description: null
+                    sortOrder: 30
+                  - code: wet-hulled
+                    name: Вет-халл
+                    description: null
+                    sortOrder: 40
+                - code: fermentation
+                  name: Ферментация
+                  selection: or
+                  values:
+                  - code: anaerobic
+                    name: Анаэробная
+                    description: null
+                    sortOrder: 10
+                  - code: semi-anaerobic
+                    name: Полуанаэробная
+                    description: null
+                    sortOrder: 20
+                  - code: experimental
+                    name: Экспериментальная
+                    description: null
+                    sortOrder: 30
+                - code: taste
+                  name: Вкусовой профиль
+                  selection: or
+                  values:
+                  - code: chocolate
+                    name: Шоколад
+                    description: null
+                    sortOrder: 10
+                  - code: nut
+                    name: Орехи
+                    description: null
+                    sortOrder: 20
+                  - code: caramel
+                    name: Карамель
+                    description: null
+                    sortOrder: 30
+                  - code: berry
+                    name: Ягоды
+                    description: null
+                    sortOrder: 40
+                  - code: citrus
+                    name: Цитрусы
+                    description: null
+                    sortOrder: 50
+                  - code: tropical
+                    name: Тропические фрукты
+                    description: null
+                    sortOrder: 60
+                  - code: floral
+                    name: Цветы
+                    description: null
+                    sortOrder: 70
+                  - code: spicy
+                    name: Пряности
+                    description: null
+                    sortOrder: 80
+                - code: composition
+                  name: Состав
+                  selection: or
+                  values:
+                  - code: single-origin
+                    name: Моносорт
+                    description: null
+                    sortOrder: 10
+                  - code: blend
+                    name: Купаж
+                    description: null
+                    sortOrder: 20
+        '400':
+          description: Некорректный фильтр, несовместимые параметры или неизвестный/неактивный код.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Необходим JWT для административной операции или персонального фильтра.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Сервис данных временно недоступен.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/v1/coffees/{slug}:
+    get:
+      operationId: getCoffeeDetailsV1
+      summary: Карточка кофе со всеми предложениями
+      description: ''
+      tags:
+      - Discovery
+      security:
+      - {}
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Успешный ответ в стандартном Response<T> проекта.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                properties:
+                  isSuccess:
+                    type: boolean
+                    const: true
+                  message:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/CoffeeDetails'
+                required:
+                - isSuccess
+                - message
+                - data
+              example:
+                isSuccess: true
+                message: Operation successful
+                data:
+                  address:
+                    slug: example-decaf
+                    canonicalPath: /coffees/example-decaf
+                    revision: 1
+                  name: Пример декафа
+                  roaster:
+                    address:
+                      slug: sample-roaster
+                      canonicalPath: /roasters/sample-roaster
+                      revision: 1
+                    name: Пример обжарщика
+                    coverPhoto: null
+                  productKind: roasted_beans
+                  productForm: whole_beans
+                  classification:
+                    defaultBrewPurposes:
+                    - filter
+                    caffeine: decaf
+                    roastLevel: light
+                    acidity: balanced
+                    processing:
+                    - washed
+                    fermentation: []
+                    tasteGroups:
+                    - chocolate
+                    - nut
+                    composition: single-origin
+                  countries:
+                  - code: CO
+                    nameRu: Колумбия
+                    nameEn: Colombia
+                  createdAtUtc: '2026-10-04T12:00:00Z'
+                  catalogCheckedAtUtc: '2026-10-05T03:30:00Z'
+                  description: Демонстрационная карточка.
+                  tasteDescriptors:
+                  - Тёмный шоколад
+                  - Фундук
+                  photos: []
+                  offers:
+                  - offerKey: offer-example-250
+                    weightGrams: 250
+                    price: 32
+                    currency: BYN
+                    brewPurpose: filter
+                    grind: null
+                    availability: InStock
+                    availabilityScope: online
+                    sellerName: Пример обжарщика
+                    sourceUrl: https://example.com/coffees/example
+                    checkedAtUtc: '2026-10-05T03:30:00Z'
+        '400':
+          description: Некорректный фильтр, несовместимые параметры или неизвестный/неактивный код.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Необходим JWT для административной операции или персонального фильтра.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Объект не найден или не опубликован.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Сервис данных временно недоступен.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - name: slug
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/PublicSlug'
+  /api/admin/roaster-tags:
+    get:
+      operationId: getAdminRoasterTags
+      summary: Все постоянные теги, включая неактивные
+      description: 'Существующий маршрут PR #334; совместимый контракт.'
+      tags:
+      - Administration
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Успешный ответ в стандартном Response<T> проекта.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                properties:
+                  isSuccess:
+                    type: boolean
+                    const: true
+                  message:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AdminRoasterTag'
+                required:
+                - isSuccess
+                - message
+                - data
+        '400':
+          description: Некорректный фильтр, несовместимые параметры или неизвестный/неактивный код.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Необходим JWT для административной операции или персонального фильтра.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Требуется роль Moderator или Admin.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Сервис данных временно недоступен.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    post:
+      operationId: createRoasterTag
+      summary: Создать постоянный тег
+      description: Slug неизменяем и остаётся зарезервированным после деактивации. Значения услуг подтверждает модератор;
+        импорт кофе их не устанавливает.
+      tags:
+      - Administration
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Успешный ответ в стандартном Response<T> проекта.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                properties:
+                  isSuccess:
+                    type: boolean
+                    const: true
+                  message:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/AdminRoasterTag'
+                required:
+                - isSuccess
+                - message
+                - data
+        '400':
+          description: Некорректный фильтр, несовместимые параметры или неизвестный/неактивный код.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Необходим JWT для административной операции или персонального фильтра.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Требуется роль Moderator или Admin.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Конфликт версии или зарезервированный код/slug.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Сервис данных временно недоступен.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRoasterTagRequest'
+            example:
+              slug: online-order
+              name: Онлайн-заказ
+              description: Подтверждён онлайн-заказ непосредственно у обжарщика; ссылка стороннего продавца сама
+                по себе не подтверждает этот тег.
+              sortOrder: 10
+  /api/admin/roaster-tags/{id}:
+    patch:
+      operationId: editRoasterTag
+      summary: Изменить название, порядок и активность тега
+      description: ''
+      tags:
+      - Administration
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Успешный ответ в стандартном Response<T> проекта.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                properties:
+                  isSuccess:
+                    type: boolean
+                    const: true
+                  message:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/AdminRoasterTag'
+                required:
+                - isSuccess
+                - message
+                - data
+        '400':
+          description: Некорректный фильтр, несовместимые параметры или неизвестный/неактивный код.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Необходим JWT для административной операции или персонального фильтра.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Требуется роль Moderator или Admin.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Объект не найден или не опубликован.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Конфликт версии или зарезервированный код/slug.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Сервис данных временно недоступен.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EditRoasterTagRequest'
+    delete:
+      operationId: deactivateRoasterTag
+      summary: Деактивировать тег
+      description: Мягкое удаление. Назначения сохраняются, публично скрыты. Возврат через PATCH isActive=true.
+      tags:
+      - Administration
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Успешный ответ в стандартном Response<T> проекта.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                properties:
+                  isSuccess:
+                    type: boolean
+                    const: true
+                  message:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/AdminRoasterTag'
+                required:
+                - isSuccess
+                - message
+                - data
+        '400':
+          description: Некорректный фильтр, несовместимые параметры или неизвестный/неактивный код.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Необходим JWT для административной операции или персонального фильтра.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Требуется роль Moderator или Admin.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Объект не найден или не опубликован.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Сервис данных временно недоступен.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+  /api/admin/roasters/{id}/tags:
+    get:
+      operationId: getAssignedRoasterTags
+      summary: Назначения обжарщика, включая неактивные
+      description: ''
+      tags:
+      - Administration
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Успешный ответ в стандартном Response<T> проекта.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                properties:
+                  isSuccess:
+                    type: boolean
+                    const: true
+                  message:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AdminRoasterTag'
+                required:
+                - isSuccess
+                - message
+                - data
+        '400':
+          description: Некорректный фильтр, несовместимые параметры или неизвестный/неактивный код.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Необходим JWT для административной операции или персонального фильтра.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Требуется роль Moderator или Admin.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Объект не найден или не опубликован.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Сервис данных временно недоступен.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    put:
+      operationId: setAssignedRoasterTags
+      summary: Заменить назначения обжарщика
+      description: ''
+      tags:
+      - Administration
+      security:
+      - bearerAuth: []
+      responses:
+        '204':
+          description: Операция выполнена.
+        '400':
+          description: Некорректный фильтр, несовместимые параметры или неизвестный/неактивный код.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Необходим JWT для административной операции или персонального фильтра.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Требуется роль Moderator или Admin.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Объект не найден или не опубликован.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Конфликт версии или зарезервированный код/slug.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Сервис данных временно недоступен.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetRoasterTagsRequest'
+            example:
+              tagIds:
+              - 10000000-0000-4000-8000-000000000001
+  /api/admin/coffee-filter-values:
+    get:
+      operationId: getAdminCoffeeFilterValues
+      summary: Все значения классификации кофе
+      description: ''
+      tags:
+      - Administration
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Успешный ответ в стандартном Response<T> проекта.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                properties:
+                  isSuccess:
+                    type: boolean
+                    const: true
+                  message:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AdminCoffeeFilterValue'
+                required:
+                - isSuccess
+                - message
+                - data
+        '400':
+          description: Некорректный фильтр, несовместимые параметры или неизвестный/неактивный код.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Необходим JWT для административной операции или персонального фильтра.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Требуется роль Moderator или Admin.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Сервис данных временно недоступен.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    post:
+      operationId: createCoffeeFilterValue
+      summary: Добавить значение в фиксированную группу
+      description: ''
+      tags:
+      - Administration
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Успешный ответ в стандартном Response<T> проекта.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                properties:
+                  isSuccess:
+                    type: boolean
+                    const: true
+                  message:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/AdminCoffeeFilterValue'
+                required:
+                - isSuccess
+                - message
+                - data
+        '400':
+          description: Некорректный фильтр, несовместимые параметры или неизвестный/неактивный код.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Необходим JWT для административной операции или персонального фильтра.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Требуется роль Moderator или Admin.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Конфликт версии или зарезервированный код/slug.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Сервис данных временно недоступен.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCoffeeFilterValueRequest'
+            example:
+              groupCode: taste
+              code: tea
+              name: Чайные ноты
+              description: null
+              sortOrder: 90
+  /api/admin/coffee-filter-values/{id}:
+    patch:
+      operationId: editCoffeeFilterValue
+      summary: Изменить название, порядок и активность значения
+      description: groupCode и code неизменяемы. Неактивные назначения сохраняются в административных карточках;
+        публично не используются.
+      tags:
+      - Administration
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Успешный ответ в стандартном Response<T> проекта.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                properties:
+                  isSuccess:
+                    type: boolean
+                    const: true
+                  message:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/AdminCoffeeFilterValue'
+                required:
+                - isSuccess
+                - message
+                - data
+        '400':
+          description: Некорректный фильтр, несовместимые параметры или неизвестный/неактивный код.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Необходим JWT для административной операции или персонального фильтра.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Требуется роль Moderator или Admin.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Объект не найден или не опубликован.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Конфликт версии или зарезервированный код/slug.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Сервис данных временно недоступен.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EditCoffeeFilterValueRequest'
+    delete:
+      operationId: deactivateCoffeeFilterValue
+      summary: Деактивировать значение классификации
+      description: ''
+      tags:
+      - Administration
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Успешный ответ в стандартном Response<T> проекта.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                properties:
+                  isSuccess:
+                    type: boolean
+                    const: true
+                  message:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/AdminCoffeeFilterValue'
+                required:
+                - isSuccess
+                - message
+                - data
+        '400':
+          description: Некорректный фильтр, несовместимые параметры или неизвестный/неактивный код.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Необходим JWT для административной операции или персонального фильтра.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Требуется роль Moderator или Admin.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Объект не найден или не опубликован.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Сервис данных временно недоступен.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+  /api/admin/coffees/{id}/classification:
+    get:
+      operationId: getAdminCoffeeClassification
+      summary: Классификация кофе, защита и версии
+      description: ''
+      tags:
+      - Administration
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Успешный ответ в стандартном Response<T> проекта.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                properties:
+                  isSuccess:
+                    type: boolean
+                    const: true
+                  message:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/AdminCoffeeClassification'
+                required:
+                - isSuccess
+                - message
+                - data
+        '400':
+          description: Некорректный фильтр, несовместимые параметры или неизвестный/неактивный код.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Необходим JWT для административной операции или персонального фильтра.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Требуется роль Moderator или Admin.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Объект не найден или не опубликован.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Сервис данных временно недоступен.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    patch:
+      operationId: editCoffeeClassification
+      summary: Исправить классификацию и защитить её от импорта
+      description: ''
+      tags:
+      - Administration
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Успешный ответ в стандартном Response<T> проекта.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                properties:
+                  isSuccess:
+                    type: boolean
+                    const: true
+                  message:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/AdminCoffeeClassification'
+                required:
+                - isSuccess
+                - message
+                - data
+        '400':
+          description: Некорректный фильтр, несовместимые параметры или неизвестный/неактивный код.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Необходим JWT для административной операции или персонального фильтра.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Требуется роль Moderator или Admin.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Объект не найден или не опубликован.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Конфликт версии или зарезервированный код/slug.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Сервис данных временно недоступен.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CoffeeClassificationEditRequest'
+            example:
+              classification:
+                defaultBrewPurposes:
+                - filter
+                caffeine: decaf
+                roastLevel: light
+                acidity: balanced
+                processing:
+                - washed
+                fermentation: []
+                tasteGroups:
+                - chocolate
+                - nut
+                composition: single-origin
+              protectedFields:
+              - caffeine
+              - roastLevel
+              version: 7
+  /api/admin/coffees/{id}/variants/{variantId}/classification:
+    patch:
+      operationId: editVariantClassification
+      summary: Исправить назначение конкретной фасовки
+      description: ''
+      tags:
+      - Administration
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Успешный ответ в стандартном Response<T> проекта.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                properties:
+                  isSuccess:
+                    type: boolean
+                    const: true
+                  message:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/AdminCoffeeClassification'
+                required:
+                - isSuccess
+                - message
+                - data
+        '400':
+          description: Некорректный фильтр, несовместимые параметры или неизвестный/неактивный код.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Необходим JWT для административной операции или персонального фильтра.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Требуется роль Moderator или Admin.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Объект не найден или не опубликован.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Конфликт версии или зарезервированный код/slug.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Сервис данных временно недоступен.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: variantId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VariantClassificationEditRequest'
+            example:
+              brewPurpose: espresso
+              protectFromImport: true
+              version: 8
+  /api/v1/favorites:
+    get:
+      operationId: getDiscoveryFavorites
+      summary: Избранные кофейни и обжарщики текущего пользователя
+      security: &id001
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Успех
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/DiscoveryFavoriteItem'
+                required:
+                - data
+        '401':
+          description: Требуется авторизация
+  /api/v1/favorites/{kind}/{slug}:
+    put:
+      operationId: addDiscoveryFavorite
+      summary: Добавить в избранное
+      security: *id001
+      parameters: &id002
+      - name: kind
+        in: path
+        required: true
+        schema:
+          type: string
+          enum:
+          - coffee_shop
+          - roaster
+      - name: slug
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/PublicSlug'
+      responses:
+        '204':
+          description: Изменение сохранено; повторный запрос идемпотентен
+        '401':
+          description: Требуется авторизация
+        '404':
+          description: Публичный объект не найден
+    delete:
+      operationId: removeDiscoveryFavorite
+      summary: Удалить из избранного
+      security: *id001
+      parameters: *id002
+      responses:
+        '204':
+          description: Изменение сохранено; повторный запрос идемпотентен
+        '401':
+          description: Требуется авторизация
+        '404':
+          description: Публичный объект не найден
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    FilterCode:
+      type: string
+      pattern: ^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$
+      maxLength: 100
+      description: 'Стабильный код из активного справочника нужной группы. Неизвестный или неактивный код: 400.
+        Код не меняется при переименовании.'
+    PublicSlug:
+      type: string
+      pattern: ^[a-z0-9]+(?:-[a-z0-9]+)*$
+      minLength: 1
+      maxLength: 100
+      not:
+        anyOf:
+        - enum:
+          - api
+          - admin
+          - new
+          - edit
+          - create
+          - delete
+          - search
+          - me
+          - by-slug
+          - login
+          - logout
+          - register
+          - settings
+          - health
+          - swagger
+          - scalar
+          - 'null'
+          - undefined
+          - public-addresses
+          - history
+          - backfill
+          - initialize
+          - rename
+          - batch
+          - visibility
+          - owner
+          - photos
+          - menu
+        - pattern: ^[a-f0-9]{32}$
+        - pattern: ^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$
+      description: Публичный slug по существующим правилам проекта; допускается начало с цифры. Зарезервированные
+        имена и GUID недопустимы.
+    PublicAddress:
+      type: object
+      additionalProperties: false
+      properties:
+        slug:
+          $ref: '#/components/schemas/PublicSlug'
+        canonicalPath:
+          type: string
+          pattern: ^/
+        revision:
+          type: integer
+          minimum: 1
+        isAlias:
+          type: boolean
+          default: false
+      required:
+      - slug
+      - canonicalPath
+      - revision
+    Photo:
+      type: object
+      additionalProperties: false
+      properties:
+        fullUrl:
+          type: string
+          format: uri
+        urls:
+          anyOf:
+          - type: object
+            additionalProperties: false
+            properties:
+              thumbnail:
+                type: string
+                format: uri
+              card:
+                type: string
+                format: uri
+              detail:
+                type: string
+                format: uri
+              fullscreen:
+                type: string
+                format: uri
+            required:
+            - thumbnail
+            - card
+            - detail
+            - fullscreen
+          - type: 'null'
+      required:
+      - fullUrl
+      - urls
+    Country:
+      type: object
+      additionalProperties: false
+      properties:
+        code:
+          type: string
+          pattern: ^[A-Z]{2}$
+        nameRu:
+          type: string
+        nameEn:
+          type: string
+      required:
+      - code
+      - nameRu
+      - nameEn
+    PublicTag:
+      type: object
+      additionalProperties: false
+      properties:
+        slug:
+          $ref: '#/components/schemas/PublicSlug'
+        name:
+          type: string
+        description:
+          anyOf:
+          - type: string
+          - type: 'null'
+        sortOrder:
+          type: integer
+      required:
+      - slug
+      - name
+      - description
+      - sortOrder
+    Geo:
+      type: object
+      additionalProperties: false
+      properties:
+        latitude:
+          type: number
+          minimum: -90
+          maximum: 90
+        longitude:
+          type: number
+          minimum: -180
+          maximum: 180
+      required:
+      - latitude
+      - longitude
+    Error:
+      type: object
+      additionalProperties: false
+      properties:
+        isSuccess:
+          type: boolean
+          const: false
+        message:
+          type: string
+        data:
+          type: 'null'
+        errorCode:
+          type: string
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+        statusCode:
+          type: integer
+          minimum: 400
+          maximum: 599
+      required:
+      - isSuccess
+      - message
+      - data
+      - errorCode
+    CoffeeFilters:
+      type: object
+      additionalProperties: false
+      properties:
+        roasters:
+          type: array
+          items:
+            $ref: '#/components/schemas/PublicSlug'
+          uniqueItems: true
+          maxItems: 30
+          description: Slug обжарщиков; OR.
+        countries:
+          type: array
+          items:
+            type: string
+            pattern: ^[A-Z]{2}$
+          uniqueItems: true
+          maxItems: 30
+          description: ISO-коды из справочника стран; OR.
+        productKind:
+          type: string
+          enum:
+          - roasted_beans
+          - green_beans
+        productForm:
+          type: string
+          enum:
+          - whole_beans
+          - ground_only
+        brew:
+          type: array
+          items:
+            $ref: '#/components/schemas/FilterCode'
+          uniqueItems: true
+          maxItems: 30
+          description: Назначение обжарки, группа brew; OR. filter/espresso также подходят явно подтверждённой omni.
+            Проверяется у подходящего варианта.
+        caffeine:
+          type: array
+          items:
+            $ref: '#/components/schemas/FilterCode'
+          uniqueItems: true
+          maxItems: 30
+          description: 'Группа caffeine: regular, decaf, lowcaf; OR.'
+        roast:
+          type: array
+          items:
+            $ref: '#/components/schemas/FilterCode'
+          uniqueItems: true
+          maxItems: 30
+          description: 'Группа roast: light, medium, dark; OR.'
+        acidity:
+          type: array
+          items:
+            $ref: '#/components/schemas/FilterCode'
+          uniqueItems: true
+          maxItems: 30
+          description: 'Группа acidity: low, balanced, bright; OR. Неяркая кислотность — low или balanced; неизвестное
+            значение не подходит.'
+        processing:
+          type: array
+          items:
+            $ref: '#/components/schemas/FilterCode'
+          uniqueItems: true
+          maxItems: 30
+          description: 'Группа processing: washed, natural, honey, wet-hulled; OR.'
+        fermentation:
+          type: array
+          items:
+            $ref: '#/components/schemas/FilterCode'
+          uniqueItems: true
+          maxItems: 30
+          description: 'Группа fermentation: anaerobic, semi-anaerobic, experimental; OR.'
+        taste:
+          type: array
+          items:
+            $ref: '#/components/schemas/FilterCode'
+          uniqueItems: true
+          maxItems: 30
+          description: 'Группа taste: chocolate, nut, caramel, berry, citrus, tropical, floral, spicy; OR.'
+        composition:
+          type: array
+          items:
+            $ref: '#/components/schemas/FilterCode'
+          uniqueItems: true
+          maxItems: 30
+          description: 'Группа composition: single-origin, blend; OR.'
+        weightGrams:
+          type: integer
+          minimum: 1
+          maximum: 100000
+        currency:
+          type: string
+          enum:
+          - BYN
+          - RUB
+        minPrice:
+          type: number
+          minimum: 0
+        maxPrice:
+          type: number
+          minimum: 0
+        availabilityScope:
+          type: string
+          enum:
+          - online
+          - in_store
+        availableOnly:
+          type: boolean
+          default: true
+      description: AND между группами, OR внутри одной группы. Признаки относятся к одному продукту; brew, вес,
+        валюта, цена, область и наличие должны совпасть у одного его варианта. Отсутствующее значение не удовлетворяет
+        выбранному фильтру. При заданной цене currency обязательна; minPrice <= maxPrice. availableOnly=true означает
+        наличие хотя бы одного подходящего InStock-варианта.
+      allOf:
+      - if:
+          anyOf:
+          - required:
+            - minPrice
+          - required:
+            - maxPrice
+        then:
+          required:
+          - currency
+    ShopFilters:
+      type: object
+      additionalProperties: false
+      properties:
+        city:
+          $ref: '#/components/schemas/PublicSlug'
+        tags:
+          type: array
+          items:
+            $ref: '#/components/schemas/PublicSlug'
+          uniqueItems: true
+          maxItems: 30
+          description: Активные shop-tag slug; AND.
+        roasters:
+          type: array
+          items:
+            $ref: '#/components/schemas/PublicSlug'
+          uniqueItems: true
+          maxItems: 30
+          description: Кофейни, связанные с одним из выбранных обжарщиков. Связь не доказывает наличие конкретного
+            кофе.
+        isOpen:
+          type: boolean
+        minRating:
+          type: number
+          minimum: 0
+          maximum: 5
+        isNew:
+          type: boolean
+        equipments:
+          type: array
+          items:
+            $ref: '#/components/schemas/PublicSlug'
+          uniqueItems: true
+          maxItems: 30
+        beans:
+          type: array
+          items:
+            $ref: '#/components/schemas/PublicSlug'
+          uniqueItems: true
+          maxItems: 30
+        brewMethods:
+          type: array
+          items:
+            $ref: '#/components/schemas/PublicSlug'
+          uniqueItems: true
+          maxItems: 30
+          description: Методы из существующего справочника кофеен; OR.
+        priceRange:
+          type: string
+          enum:
+          - cheap
+          - moderate
+          - expensive
+          description: Общий ценовой уровень кофейни, не цена пачки кофе.
+        type:
+          type: string
+          enum:
+          - specialty
+          - coffee-bar
+          - cafe
+        visitedOnly:
+          type: boolean
+          default: false
+        favoritesOnly:
+          type: boolean
+          default: false
+        origin:
+          $ref: '#/components/schemas/Geo'
+        radiusKm:
+          type: number
+          exclusiveMinimum: 0
+          maximum: 100
+        menu:
+          $ref: '#/components/schemas/MenuFilters'
+      description: Фильтры применяются только к группе кофеен. radiusKm требует origin. visitedOnly/favoritesOnly=true
+        требуют JWT; иначе 401. Личность пользователя берётся из JWT.
+      allOf:
+      - if:
+          required:
+          - radiusKm
+        then:
+          required:
+          - origin
+    ShopSection:
+      type: object
+      additionalProperties: false
+      properties:
+        filters:
+          $ref: '#/components/schemas/ShopFilters'
+        sort:
+          type: string
+          enum:
+          - relevance
+          - name_asc
+          - distance_asc
+          - rating_desc
+        page:
+          type: integer
+          minimum: 1
+          maximum: 100000
+          default: 1
+        pageSize:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 20
+      description: 'При q: relevance; без q: distance_asc при origin, иначе name_asc. distance_asc требует origin.
+        relevance требует непустой q. При равенстве — name, затем slug.'
+      allOf:
+      - if:
+          required:
+          - sort
+          properties:
+            sort:
+              const: distance_asc
+        then:
+          required:
+          - filters
+          properties:
+            filters:
+              required:
+              - origin
+    DiscoverySearchRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        q:
+          type: string
+          maxLength: 100
+          default: ''
+          description: Trim, схлопывание пробелов, регистронезависимый поиск с ё=е. Точное название выше префикса, затем
+            совпадения слова и подстроки. Нечёткий поиск по опечаткам не входит в v1.
+        filters:
+          $ref: '#/components/schemas/DiscoveryFilters'
+        sections:
+          type: array
+          items:
+            type: string
+            enum:
+            - coffee_shops
+          minItems: 1
+          maxItems: 1
+          uniqueItems: true
+          default:
+          - coffee_shops
+        sort:
+          type: string
+          enum:
+          - relevance
+          - name_asc
+        coffeeShops:
+          $ref: '#/components/schemas/DiscoveryPaging'
+      description: Поиск кофеен по строке q, приготовлению и стоимости напитка. Для q default sort=relevance, без q=name_asc.
+        Обжарщики доступны полным списком GET /api/roasters.
+      allOf:
+      - if:
+          required:
+          - sort
+          properties:
+            sort:
+              const: relevance
+        then:
+          required:
+          - q
+          properties:
+            q:
+              pattern: \S
+      - if:
+          required:
+          - sections
+          properties:
+            sections:
+              not:
+                contains:
+                  const: coffee_shops
+        then:
+          not:
+            required:
+            - coffeeShops
+    CoffeeSearchRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        q:
+          type: string
+          maxLength: 100
+          default: ''
+          description: Trim, схлопывание пробелов, регистронезависимый поиск с ё=е. Точное название выше префикса,
+            затем совпадения слова и подстроки. Нечёткий поиск по опечаткам не входит в v1.
+        filters:
+          $ref: '#/components/schemas/CoffeeFilters'
+        sort:
+          type: string
+          enum:
+          - relevance
+          - name_asc
+          - price_asc
+          - price_desc
+          - newest
+        page:
+          type: integer
+          minimum: 1
+          maximum: 100000
+          default: 1
+        pageSize:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 20
+      description: 'q ищет название кофе и обжарщика: название кофе имеет больший вес. По умолчанию relevance при
+        q, иначе name_asc. relevance требует q. Для price_asc/price_desc обязательны currency и weightGrams. Ключ
+        цены — MIN(price) среди вариантов, подходящих ВСЕМ фильтрам; он сортируется в выбранном направлении. newest
+        использует createdAtUtc, а не дату суточного импорта. При равенстве — name, затем slug. Только Published.'
+      allOf:
+      - if:
+          required:
+          - sort
+          properties:
+            sort:
+              enum:
+              - price_asc
+              - price_desc
+        then:
+          required:
+          - filters
+          properties:
+            filters:
+              required:
+              - currency
+              - weightGrams
+      - if:
+          required:
+          - sort
+          properties:
+            sort:
+              const: relevance
+        then:
+          required:
+          - q
+          properties:
+            q:
+              pattern: \S
+    CoffeeClassification:
+      type: object
+      additionalProperties: false
+      properties:
+        defaultBrewPurposes:
+          type: array
+          items:
+            $ref: '#/components/schemas/FilterCode'
+          uniqueItems: true
+          maxItems: 30
+          description: Группа brew; используется, когда вариант не имеет собственного подтверждённого назначения.
+        caffeine:
+          anyOf:
+          - $ref: '#/components/schemas/FilterCode'
+          - type: 'null'
+        roastLevel:
+          anyOf:
+          - $ref: '#/components/schemas/FilterCode'
+          - type: 'null'
+        acidity:
+          anyOf:
+          - $ref: '#/components/schemas/FilterCode'
+          - type: 'null'
+        processing:
+          type: array
+          items:
+            $ref: '#/components/schemas/FilterCode'
+          uniqueItems: true
+          maxItems: 30
+          description: Группа processing.
+        fermentation:
+          type: array
+          items:
+            $ref: '#/components/schemas/FilterCode'
+          uniqueItems: true
+          maxItems: 30
+          description: Группа fermentation.
+        tasteGroups:
+          type: array
+          items:
+            $ref: '#/components/schemas/FilterCode'
+          uniqueItems: true
+          maxItems: 30
+          description: Группа taste; исходные вкусовые дескрипторы сохраняются отдельно.
+        composition:
+          anyOf:
+          - $ref: '#/components/schemas/FilterCode'
+          - type: 'null'
+      required:
+      - defaultBrewPurposes
+      - caffeine
+      - roastLevel
+      - acidity
+      - processing
+      - fermentation
+      - tasteGroups
+      - composition
+      description: Нормализованные коды групп из /catalogs/coffee-filter-values. null/[] — нет подтверждённых данных.
+        Помол под метод не определяет назначение обжарки. Обработка natural и ферментация anaerobic могут сочетаться.
+        Неактивные значения скрыты публично, но сохранены в административной карточке.
+    RoasterIdentity:
+      type: object
+      additionalProperties: false
+      properties:
+        address:
+          $ref: '#/components/schemas/PublicAddress'
+        name:
+          type: string
+        coverPhoto:
+          anyOf:
+          - $ref: '#/components/schemas/Photo'
+          - type: 'null'
+      required:
+      - address
+      - name
+      - coverPhoto
+    CoffeeShopCard:
+      type: object
+      additionalProperties: false
+      properties:
+        address:
+          $ref: '#/components/schemas/PublicAddress'
+        name:
+          type: string
+        city:
+          anyOf:
+          - $ref: '#/components/schemas/PublicAddress'
+          - type: 'null'
+        addressLine:
+          type: string
+        coverPhoto:
+          anyOf:
+          - $ref: '#/components/schemas/Photo'
+          - type: 'null'
+        rating:
+          type: number
+          minimum: 0
+          maximum: 5
+        reviewCount:
+          type: integer
+          minimum: 0
+        isOpen:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+        isVisited:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+        isFavorite:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+        distanceMeters:
+          anyOf:
+          - type: integer
+            minimum: 0
+          - type: 'null'
+        tags:
+          type: array
+          items:
+            $ref: '#/components/schemas/PublicTag'
+        matchingMenuItems:
+          type: array
+          items:
+            $ref: '#/components/schemas/MatchedMenuItem'
+      required:
+      - address
+      - name
+      - city
+      - addressLine
+      - coverPhoto
+      - rating
+      - reviewCount
+      - isOpen
+      - isVisited
+      - isFavorite
+      - distanceMeters
+      - tags
+      - matchingMenuItems
+      description: Краткая карточка группы кофеен. Личные признаки=null у гостя; distanceMeters=null без origin;
+        isOpen=null при неизвестном расписании.
+    CoffeeOffer:
+      type: object
+      additionalProperties: false
+      properties:
+        offerKey:
+          type: string
+          minLength: 1
+          maxLength: 200
+          description: Стабильный непрозрачный публичный ключ варианта; не внешний SKU и не административный GUID.
+        weightGrams:
+          anyOf:
+          - type: integer
+            minimum: 1
+          - type: 'null'
+        price:
+          type: number
+          exclusiveMinimum: 0
+        currency:
+          type: string
+          enum:
+          - BYN
+          - RUB
+        brewPurpose:
+          anyOf:
+          - $ref: '#/components/schemas/FilterCode'
+          - type: 'null'
+        grind:
+          anyOf:
+          - type: string
+          - type: 'null'
+        availability:
+          type: string
+          enum:
+          - InStock
+          - OutOfStock
+          - Unknown
+        availabilityScope:
+          type: string
+          enum:
+          - online
+          - in_store
+        sellerName:
+          type: string
+        sourceUrl:
+          type: string
+          format: uri
+        checkedAtUtc:
+          type: string
+          format: date-time
+      required:
+      - offerKey
+      - weightGrams
+      - price
+      - currency
+      - brewPurpose
+      - grind
+      - availability
+      - availabilityScope
+      - sellerName
+      - sourceUrl
+      - checkedAtUtc
+    CoffeeCard:
+      type: object
+      additionalProperties: false
+      properties:
+        address:
+          $ref: '#/components/schemas/PublicAddress'
+        name:
+          type: string
+        roaster:
+          $ref: '#/components/schemas/RoasterIdentity'
+        productKind:
+          type: string
+          enum:
+          - roasted_beans
+          - green_beans
+        productForm:
+          type: string
+          enum:
+          - whole_beans
+          - ground_only
+        classification:
+          $ref: '#/components/schemas/CoffeeClassification'
+        countries:
+          type: array
+          items:
+            $ref: '#/components/schemas/Country'
+        coverPhoto:
+          anyOf:
+          - $ref: '#/components/schemas/Photo'
+          - type: 'null'
+        matchingOffers:
+          type: array
+          items:
+            $ref: '#/components/schemas/CoffeeOffer'
+        sortPrice:
+          anyOf:
+          - type: number
+            exclusiveMinimum: 0
+          - type: 'null'
+        createdAtUtc:
+          type: string
+          format: date-time
+        catalogCheckedAtUtc:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+      required:
+      - address
+      - name
+      - roaster
+      - productKind
+      - productForm
+      - classification
+      - countries
+      - coverPhoto
+      - matchingOffers
+      - sortPrice
+      - createdAtUtc
+      - catalogCheckedAtUtc
+      description: matchingOffers содержит только варианты по текущим фильтрам. Без currency суммы разных валют
+        отображаются раздельно. sortPrice заполнен только при price-сортировке и равен выбранному ключу цены. При
+        availableOnly=false и отсутствии offer-фильтров ручная Published-карточка без предложений допустима.
+    CoffeeDetails:
+      type: object
+      additionalProperties: false
+      properties:
+        address:
+          $ref: '#/components/schemas/PublicAddress'
+        name:
+          type: string
+        description:
+          anyOf:
+          - type: string
+          - type: 'null'
+        roaster:
+          $ref: '#/components/schemas/RoasterIdentity'
+        productKind:
+          type: string
+          enum:
+          - roasted_beans
+          - green_beans
+        productForm:
+          type: string
+          enum:
+          - whole_beans
+          - ground_only
+        classification:
+          $ref: '#/components/schemas/CoffeeClassification'
+        tasteDescriptors:
+          type: array
+          items:
+            type: string
+        countries:
+          type: array
+          items:
+            $ref: '#/components/schemas/Country'
+        photos:
+          type: array
+          items:
+            $ref: '#/components/schemas/Photo'
+        offers:
+          type: array
+          items:
+            $ref: '#/components/schemas/CoffeeOffer'
+        createdAtUtc:
+          type: string
+          format: date-time
+        catalogCheckedAtUtc:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+      required:
+      - address
+      - name
+      - description
+      - roaster
+      - productKind
+      - productForm
+      - classification
+      - tasteDescriptors
+      - countries
+      - photos
+      - offers
+      - createdAtUtc
+      - catalogCheckedAtUtc
+      description: Только Published. Все варианты покупки, в том числе Unknown/OutOfStock. Каноническая ссылка остаётся
+        /coffees/{slug}; старые slug разрешаются через aliases.
+    CoffeePage:
+      type: object
+      additionalProperties: false
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CoffeeCard'
+        totalItems:
+          type: integer
+          minimum: 0
+        totalPages:
+          type: integer
+          minimum: 0
+        currentPage:
+          type: integer
+          minimum: 1
+        pageSize:
+          type: integer
+          minimum: 1
+          maximum: 100
+      required:
+      - items
+      - totalItems
+      - totalPages
+      - currentPage
+      - pageSize
+    CoffeeShopPage:
+      type: object
+      additionalProperties: false
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CoffeeShopCard'
+        totalItems:
+          type: integer
+          minimum: 0
+        totalPages:
+          type: integer
+          minimum: 0
+        currentPage:
+          type: integer
+          minimum: 1
+        pageSize:
+          type: integer
+          minimum: 1
+          maximum: 100
+      required:
+      - items
+      - totalItems
+      - totalPages
+      - currentPage
+      - pageSize
+    DiscoverySearchResult:
+      type: object
+      additionalProperties: false
+      properties:
+        q:
+          type: string
+        coffeeShops:
+          anyOf:
+          - $ref: '#/components/schemas/CoffeeShopPage'
+          - type: 'null'
+      required:
+      - q
+      - coffeeShops
+      description: 'Результаты поиска кофеен. Пустая выбранная секция: items=[] и totalItems=totalPages=0.'
+    SharedBrewMethod:
+      type: string
+      enum:
+      - espresso
+      - filter
+      description: 'Общий v1-фильтр приготовления: напитки на основе эспрессо или фильтр. Для обжарщиков проверяются
+        подтверждённые brewPurpose/defaultBrewPurposes кофе; omni подходит обоим. Для кофеен используются подтверждённые
+        методы или позиции меню с соответствующей CoffeeDrinkCategory. Точные способы и характеристики доступны
+        в отдельных каталогах.'
+    MenuFilters:
+      type: object
+      additionalProperties: false
+      properties:
+        brew:
+          type: array
+          items:
+            $ref: '#/components/schemas/SharedBrewMethod'
+          uniqueItems: true
+          maxItems: 2
+        currency:
+          type: string
+          enum:
+          - BYN
+          - RUB
+        minPrice:
+          type: number
+          minimum: 0
+        maxPrice:
+          type: number
+          minimum: 0
+        volumeMl:
+          type: integer
+          minimum: 1
+          maximum: 5000
+      description: Поиск по Present-позициям меню. При цене currency обязательна; цена, brew и объём должны совпасть
+        у одной позиции. Без цены brew может опираться на подтверждённый метод кофейни. Отсутствующая цена не проходит
+        числовой фильтр.
+      allOf:
+      - if:
+          anyOf:
+          - required:
+            - minPrice
+          - required:
+            - maxPrice
+        then:
+          required:
+          - currency
+    MatchedMenuItem:
+      type: object
+      additionalProperties: false
+      properties:
+        drinkSlug:
+          $ref: '#/components/schemas/PublicSlug'
+        name:
+          type: string
+        brewMethod:
+          $ref: '#/components/schemas/SharedBrewMethod'
+        price:
+          anyOf:
+          - type: number
+            exclusiveMinimum: 0
+          - type: 'null'
+        currency:
+          type: string
+          enum:
+          - BYN
+          - RUB
+        volumeMl:
+          anyOf:
+          - type: integer
+            minimum: 1
+          - type: 'null'
+        checkedAtUtc:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+      required:
+      - drinkSlug
+      - name
+      - brewMethod
+      - price
+      - currency
+      - volumeMl
+      - checkedAtUtc
+      description: Подходящая позиция меню объясняет совпадение по цене/приготовлению. При ценовом фильтре price
+        не null. Время проверки относится к меню. Это цена напитка, не зерна.
+    DiscoveryPaging:
+      type: object
+      additionalProperties: false
+      properties:
+        page:
+          type: integer
+          minimum: 1
+          maximum: 100000
+          default: 1
+        pageSize:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 10
+      description: Только независимая пагинация группы. Специфические filters/sort задаются в отдельных endpoints,
+        в общий поиск не передаются.
+    DiscoveryBudget:
+      type: object
+      additionalProperties: false
+      properties:
+        currency:
+          type: string
+          enum:
+          - BYN
+          - RUB
+        minDrinkPrice:
+          type: number
+          minimum: 0
+        maxDrinkPrice:
+          type: number
+          minimum: 0
+        drinkVolumeMl:
+          type: integer
+          minimum: 1
+          maximum: 5000
+      required:
+      - currency
+      description: 'Стоимость напитка в кофейне: валюта, минимальная/максимальная цена и объём. min <= max. Конвертации
+        валют нет.'
+    DiscoveryFilters:
+      type: object
+      additionalProperties: false
+      properties:
+        brew:
+          type: array
+          items:
+            $ref: '#/components/schemas/SharedBrewMethod'
+          uniqueItems: true
+          maxItems: 2
+        budget:
+          $ref: '#/components/schemas/DiscoveryBudget'
+      description: Только общие критерии приготовления и стоимости. OR внутри brew, AND с бюджетом. У кофейни brew+цена
+        совпадают у одной Present-позиции меню; у обжарщика — у одного Published-продукта и одного InStock-варианта.
+        Без этих критериев каталог не требует наличия меню/продуктов. Услуги, обжарка, кислотность, география и
+        личные фильтры задаются в отдельных endpoints.
+    CoffeeShopSearchRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        q:
+          type: string
+          maxLength: 100
+          default: ''
+          description: Trim, схлопывание пробелов, регистронезависимый поиск с ё=е. Точное название выше префикса,
+            затем совпадения слова и подстроки. Нечёткий поиск по опечаткам не входит в v1.
+        filters:
+          $ref: '#/components/schemas/ShopFilters'
+        sort:
+          type: string
+          enum:
+          - relevance
+          - name_asc
+          - distance_asc
+          - rating_desc
+        page:
+          type: integer
+          minimum: 1
+          maximum: 100000
+          default: 1
+        pageSize:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 20
+      description: 'При q: relevance; без q: distance_asc при origin, иначе name_asc. distance_asc требует origin.
+        relevance требует непустой q. При равенстве — name, затем slug.'
+      allOf:
+      - if:
+          required:
+          - sort
+          properties:
+            sort:
+              const: relevance
+        then:
+          required:
+          - q
+          properties:
+            q:
+              pattern: \S
+      - if:
+          required:
+          - sort
+          properties:
+            sort:
+              const: distance_asc
+        then:
+          required:
+          - filters
+          properties:
+            filters:
+              required:
+              - origin
+    CoffeeFilterGroupCode:
+      type: string
+      enum:
+      - brew
+      - caffeine
+      - roast
+      - acidity
+      - processing
+      - fermentation
+      - taste
+      - composition
+    FilterValue:
+      type: object
+      additionalProperties: false
+      properties:
+        code:
+          $ref: '#/components/schemas/FilterCode'
+        name:
+          type: string
+        description:
+          anyOf:
+          - type: string
+          - type: 'null'
+        sortOrder:
+          type: integer
+      required:
+      - code
+      - name
+      - description
+      - sortOrder
+    FilterGroup:
+      type: object
+      additionalProperties: false
+      properties:
+        code:
+          $ref: '#/components/schemas/CoffeeFilterGroupCode'
+        name:
+          type: string
+        selection:
+          type: string
+          const: or
+        values:
+          type: array
+          items:
+            $ref: '#/components/schemas/FilterValue'
+      required:
+      - code
+      - name
+      - selection
+      - values
+    FacetOption:
+      type: object
+      additionalProperties: false
+      properties:
+        code:
+          type: string
+        name:
+          type: string
+        count:
+          type: integer
+          minimum: 0
+        selected:
+          type: boolean
+      required:
+      - code
+      - name
+      - count
+      - selected
+    FacetGroup:
+      type: object
+      additionalProperties: false
+      properties:
+        code:
+          type: string
+        name:
+          type: string
+        selection:
+          type: string
+          enum:
+          - single
+          - or
+          - and
+        options:
+          type: array
+          items:
+            $ref: '#/components/schemas/FacetOption'
+      required:
+      - code
+      - name
+      - selection
+      - options
+    PriceRange:
+      type: object
+      additionalProperties: false
+      properties:
+        currency:
+          type: string
+          enum:
+          - BYN
+          - RUB
+        weightGrams:
+          type: integer
+          minimum: 1
+        min:
+          type: number
+          exclusiveMinimum: 0
+        max:
+          type: number
+          exclusiveMinimum: 0
+      required:
+      - currency
+      - weightGrams
+      - min
+      - max
+    CoffeeFacetsRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        q:
+          type: string
+          maxLength: 100
+          default: ''
+          description: Trim, схлопывание пробелов, регистронезависимый поиск с ё=е. Точное название выше префикса,
+            затем совпадения слова и подстроки. Нечёткий поиск по опечаткам не входит в v1.
+        filters:
+          $ref: '#/components/schemas/CoffeeFilters'
+    CoffeeFacetsResult:
+      type: object
+      additionalProperties: false
+      properties:
+        totalItems:
+          type: integer
+          minimum: 0
+        groups:
+          type: array
+          items:
+            $ref: '#/components/schemas/FacetGroup'
+        priceRange:
+          anyOf:
+          - $ref: '#/components/schemas/PriceRange'
+          - type: 'null'
+      required:
+      - totalItems
+      - groups
+      - priceRange
+      description: totalItems — число разных кофе по всему фильтру. Для count значения своей группы текущие выбранные
+        значения этой группы исключаются; остальные фильтры и q сохраняются. count — число продуктов при выборе
+        конкретного значения, а не прирост и не сумма с другими значениями группы. Для мультизначных групп счётчики
+        пересекаются. Нулевые опции остаются с count=0. priceRange игнорирует minPrice/maxPrice, но сохраняет другие
+        фильтры; null без currency+weightGrams или без подходящих цен.
+    CreateRoasterTagRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        slug:
+          $ref: '#/components/schemas/PublicSlug'
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        description:
+          anyOf:
+          - type: string
+            maxLength: 2000
+          - type: 'null'
+        sortOrder:
+          type: integer
+          default: 0
+      required:
+      - slug
+      - name
+      - description
+    EditRoasterTagRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        description:
+          anyOf:
+          - type: string
+            maxLength: 2000
+          - type: 'null'
+        sortOrder:
+          type: integer
+        isActive:
+          type: boolean
+      required:
+      - name
+      - description
+      - sortOrder
+      - isActive
+    AdminRoasterTag:
+      type: object
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+          format: uuid
+        slug:
+          $ref: '#/components/schemas/PublicSlug'
+        name:
+          type: string
+        description:
+          anyOf:
+          - type: string
+          - type: 'null'
+        sortOrder:
+          type: integer
+        isActive:
+          type: boolean
+      required:
+      - id
+      - slug
+      - name
+      - description
+      - sortOrder
+      - isActive
+    SetRoasterTagsRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        tagIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+          uniqueItems: true
+          maxItems: 100
+      required:
+      - tagIds
+      description: Полная замена списка. [] снимает все назначения. Только существующие активные теги. Импорт не
+        меняет эти назначения.
+    CreateCoffeeFilterValueRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        groupCode:
+          $ref: '#/components/schemas/CoffeeFilterGroupCode'
+        code:
+          $ref: '#/components/schemas/FilterCode'
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        description:
+          anyOf:
+          - type: string
+            maxLength: 2000
+          - type: 'null'
+        sortOrder:
+          type: integer
+          default: 0
+      required:
+      - groupCode
+      - code
+      - name
+      - description
+      description: Уникальная пара groupCode+code. Новая запись расширяет существующую группу, но не создаёт новую
+        группу и не обучает парсер распознавать её.
+    EditCoffeeFilterValueRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        description:
+          anyOf:
+          - type: string
+            maxLength: 2000
+          - type: 'null'
+        sortOrder:
+          type: integer
+        isActive:
+          type: boolean
+      required:
+      - name
+      - description
+      - sortOrder
+      - isActive
+    AdminCoffeeFilterValue:
+      type: object
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+          format: uuid
+        groupCode:
+          $ref: '#/components/schemas/CoffeeFilterGroupCode'
+        code:
+          $ref: '#/components/schemas/FilterCode'
+        name:
+          type: string
+        description:
+          anyOf:
+          - type: string
+          - type: 'null'
+        sortOrder:
+          type: integer
+        isActive:
+          type: boolean
+      required:
+      - id
+      - groupCode
+      - code
+      - name
+      - description
+      - sortOrder
+      - isActive
+    CoffeeClassificationEditRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        classification:
+          $ref: '#/components/schemas/CoffeeClassification'
+        protectedFields:
+          type: array
+          items:
+            type: string
+            enum:
+            - defaultBrewPurposes
+            - caffeine
+            - roastLevel
+            - acidity
+            - processing
+            - fermentation
+            - tasteGroups
+            - composition
+          uniqueItems: true
+        version:
+          type: integer
+          minimum: 1
+      required:
+      - classification
+      - protectedFields
+      - version
+      description: 'Полная замена нормализованной классификации и списка защиты ТОЛЬКО этой классификации. Имена
+        полей camelCase. Защита названия, описания, стран, фото и других текущих полей сохраняется. Вариант с собственным
+        brewPurpose имеет приоритет над defaultBrewPurposes. Для его исправления есть отдельный endpoint. Импорт
+        заменяет подтверждённые незащищённые значения; неизвестное значение не очищает предыдущую классификацию.
+        Несвежая version: 409.'
+    VariantClassificationEditRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        brewPurpose:
+          anyOf:
+          - $ref: '#/components/schemas/FilterCode'
+          - type: 'null'
+        protectFromImport:
+          type: boolean
+        version:
+          type: integer
+          minimum: 1
+      required:
+      - brewPurpose
+      - protectFromImport
+      - version
+      description: Правка назначения конкретного варианта. version — версия продукта; изменение увеличивает её.
+        null означает использовать defaultBrewPurposes продукта. Цены и наличие остаются данными источника.
+    AdminVariantClassification:
+      type: object
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+          format: uuid
+        brewPurpose:
+          anyOf:
+          - $ref: '#/components/schemas/FilterCode'
+          - type: 'null'
+        protectFromImport:
+          type: boolean
+      required:
+      - id
+      - brewPurpose
+      - protectFromImport
+    AdminCoffeeClassification:
+      type: object
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+          format: uuid
+        classification:
+          $ref: '#/components/schemas/CoffeeClassification'
+        protectedFields:
+          type: array
+          items:
+            type: string
+            enum:
+            - defaultBrewPurposes
+            - caffeine
+            - roastLevel
+            - acidity
+            - processing
+            - fermentation
+            - tasteGroups
+            - composition
+          uniqueItems: true
+        variants:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminVariantClassification'
+        version:
+          type: integer
+          minimum: 1
+      required:
+      - id
+      - classification
+      - protectedFields
+      - variants
+      - version
+    DiscoveryFavoriteItem:
+      type: object
+      additionalProperties: false
+      properties:
+        kind:
+          type: string
+          enum:
+          - coffee_shop
+          - roaster
+        address:
+          $ref: '#/components/schemas/PublicAddress'
+        createdAtUtc:
+          type: string
+          format: date-time
+      required:
+      - kind
+      - address
+      - createdAtUtc

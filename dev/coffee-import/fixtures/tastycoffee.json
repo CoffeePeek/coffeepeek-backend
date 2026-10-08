@@ -1,0 +1,41 @@
+{
+  "id": 780,
+  "name": "Натти",
+  "slug": "/coffee/espresso-nutty",
+  "mini_description": "Плотный кофе с нотами <span style='white-space: nowrap;'><span class='descriptor-badge' style='background: #A0522D; color: #ffffff;'>жареных&nbsp;орехов</span>,</span> <span class='descriptor-badge' style='background: #D2B48C; color: #000000;'>печенья</span> и <span class='descriptor-badge' style='background: #ffebd1; color: #000000;'>нуги</span>",
+  "rating_q": 0,
+  "sourness": 0,
+  "saturation": 3,
+  "is_skip_q_label": true,
+  "processing_method": "смесь",
+  "description": "<p>Плотный кофе с нотами жареных орехов, печенья и нуги.</p>",
+  "additional_info": [
+    {
+      "key": "roast_degree",
+      "name": "Степень обжарки",
+      "value": "тёмная, эспрессо"
+    },
+    {
+      "key": "region",
+      "name": "Регион",
+      "value": "Бразилия"
+    },
+    {
+      "key": "processing_method",
+      "name": "Способ обработки",
+      "value": "смесь"
+    },
+    {
+      "key": "roaster",
+      "name": "Ростер для обжарки",
+      "value": "LORING S70 PEREGRINE"
+    },
+    {
+      "key": "caffeine",
+      "name": "Содержание кофеина",
+      "value": "1,28%"
+    }
+  ],
+  "is_decaf": false,
+  "is_for_milk": true
+}

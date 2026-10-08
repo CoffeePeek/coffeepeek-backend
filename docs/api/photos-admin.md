@@ -12,7 +12,7 @@ Client-side upload flow (presign → `PUT` to MinIO → attach): [photos-client.
 
 | Surface | Header | Policy |
 |---------|--------|--------|
-| Moderation reviews (read, change status) | `Authorization: Bearer {moderatorJwt}` | Moderator |
+| Canonical check-in submissions (read, change status, protected bytes) | `Authorization: Bearer {moderatorJwt}` | Moderator |
 | Admin shop gallery / menu | `Authorization: Bearer {adminJwt}` | Admin |
 | Owner shop gallery | `Authorization: Bearer {ownerJwt}` | Owner (must own the shop) |
 | Presign (`/api/photos/*`) | `Authorization: Bearer {jwt}` | Authenticated; rate limit `media-upload` = 10 / minute per client |
@@ -24,23 +24,29 @@ Client-side upload flow (presign → `PUT` to MinIO → attach): [photos-client.
 ```ts
 type ApiResponse<T> = { isSuccess: boolean; message: string; data?: T };
 
-// Moderation review photo (PhotoMetadataDto)
+// Canonical moderation snapshot photo (PhotoMetadataDto)
 type PhotoMetadataDto = {
   id: string;
   fileName: string;
   contentType: string;
   storageKey: string;
-  fullUrl: string | null; // {MediaPublicUrlOptions.PublicEndpoint}/{ShopBucketName}/{storageKey}; null if not configured
+  fullUrl: string | null; // canonical snapshots always supply the protected moderation-photo route
   sizeBytes: number;
-  ownerId: string;        // review author
+  ownerId: string;        // check-in author
   uploadedAt: string;
   sortIndex: number;
 };
 
 type ModerationReviewDto = {
   id: string;
-  header: string | null;
-  comment: string;
+  checkInId: string;
+  contentRevision: number;
+  visitedAtUtc: string;
+  drinkSlug: string | null;
+  customDrinkName: string | null;
+  drinkNameRu: string | null;
+  drinkNameEn: string | null;
+  text: string;
   userId: string;
   userName: string;
   shopId: string;
@@ -58,27 +64,29 @@ type UploadedPhotoDto = { fileName: string; contentType: string; storageKey: str
 
 ---
 
-## 1. Review photos in moderation
+## 1. Check-in photos in moderation
 
-Reviews created by **public check-ins** arrive through `CheckinCreatedEvent`. Their `photos` are the check-in photos after Shops has verified them against Media (see [photos-client.md](photos-client.md#3-create-the-check-in-with-the-photos)). As a result:
+Public check-ins submit immutable canonical snapshots through `CheckInModerationRequestedEvent`. Every snapshot identifies its check-in and content revision. Shops verifies attached photos through Media's trusted claim flow before submission (see [check-ins.md](check-ins.md)). As a result:
 
-- every photo was presigned by the review author and actually uploaded;
+- every photo was presigned by the check-in author and actually uploaded to private storage;
 - `fileName` / `contentType` are the presign-time values stored in Media, and `sizeBytes` is the real object size;
 - no photo is shared with another check-in.
+
+Authors presign new check-in photos through `POST /api/Photos/check-in`; it issues PUT URLs for the private check-in bucket. Supported raster MIME types are JPEG, PNG, GIF, WebP, BMP and AVIF. Moderation decisions operate on the verified immutable object; an upload URL cannot overwrite an already attached photo.
 
 ### List
 
 ```http
-GET /api/ModerationReviews?page=1&pageSize=20&status=Pending
+GET /api/v1/moderation/check-ins?page=1&pageSize=20&status=Pending
 Authorization: Bearer {moderatorJwt}
 ```
 
-**200** — `ApiResponse<GetAllModerationReviewsResponse>` with pagination headers `X-Total-Count`, `X-Total-Pages`, `X-Current-Page`, `X-Page-Size`.
+**200** — `ApiResponse<GetAllModerationReviewsResponse>` with data fields `items`, `totalItems`, `totalPages`, `currentPage`, `pageSize` and pagination headers `X-Total-Count`, `X-Total-Pages`, `X-Current-Page`, `X-Page-Size`.
 
 ### Detail
 
 ```http
-GET /api/ModerationReviews/{id}
+GET /api/v1/moderation/check-ins/{id}
 Authorization: Bearer {moderatorJwt}
 ```
 
@@ -89,17 +97,24 @@ Authorization: Bearer {moderatorJwt}
   "isSuccess": true,
   "message": "Operation successful",
   "data": {
-    "id": "8d1c...",
-    "comment": "Friendly baristas and a very balanced espresso.",
+    "id": "11111111-1111-1111-1111-111111111111",
+    "checkInId": "22222222-2222-2222-2222-222222222222",
+    "contentRevision": 1,
+    "visitedAtUtc": "2026-09-24T09:31:02Z",
+    "drinkSlug": null,
+    "customDrinkName": null,
+    "drinkNameRu": null,
+    "drinkNameEn": null,
+    "text": "Friendly baristas and a very balanced espresso.",
     "userName": "anna",
     "moderationStatus": "Pending",
     "photos": [
       {
-        "id": "4f0e...",
+        "id": "33333333-3333-3333-3333-333333333333",
         "fileName": "latte.jpg",
         "contentType": "image/jpeg",
-        "storageKey": "reviews/7b2d0b8e-1c55-4b0e-9d7e-5f0b7c9a01e1.jpg",
-        "fullUrl": "https://media.example.com/coffee.shops/reviews/7b2d0b8e-1c55-4b0e-9d7e-5f0b7c9a01e1.jpg",
+        "storageKey": "check-ins/33333333333333333333333333333333.jpg",
+        "fullUrl": "/api/v1/check-ins/22222222-2222-2222-2222-222222222222/moderation-photos/33333333-3333-3333-3333-333333333333?revision=1",
         "sizeBytes": 734003,
         "ownerId": "…author id…",
         "uploadedAt": "2026-09-24T09:31:02Z",
@@ -110,34 +125,34 @@ Authorization: Bearer {moderatorJwt}
 }
 ```
 
-Render `fullUrl` directly; the object is in the public shop bucket.
+Fetch `fullUrl` from the gateway with the moderator bearer token and render the returned bytes. The route requires the current public, non-deleted submission revision and streams from private storage with `Cache-Control: private, no-store` and `X-Content-Type-Options: nosniff`. It returns 404 for hidden/deleted/stale revisions. Never construct a public bucket URL from `storageKey`.
 
-> **Note:** `POST /api/ModerationReviews` (a user submitting a review directly, not through a check-in) still accepts a `photos: UploadedPhotoDto[]` body that is **not** verified against Media. Treat photos on reviews that did not come from a check-in with the pre-hardening level of trust.
+The supported moderation API provides queue/detail GET actions and status PUT only. It has no direct submission, author-mine or content-edit action; users create and edit visits through `/api/v1/check-ins`.
 
 ---
 
 ## 2. Approve / reject: effect on photos
 
 ```http
-PUT /api/ModerationReviews
+PUT /api/v1/moderation/check-ins
 Authorization: Bearer {moderatorJwt}
 Content-Type: application/json
 
-{ "moderationReviewId": "8d1c...", "moderationStatus": "Approved", "comment": null, "rejectReason": null }
+{ "submissionId": "11111111-1111-1111-1111-111111111111", "moderationStatus": "Approved", "comment": null, "rejectReason": null }
 ```
 
 `moderationStatus` is `"Approved" | "Rejected" | "Pending"`. For rejections, `comment` (if non-blank) is used as the reason; otherwise `rejectReason` is used.
 
-| Decision | Moderation review photos | Published shop review | Check-in photos | Media / MinIO |
-|----------|--------------------------|-----------------------|-----------------|---------------|
-| Approved (first time) | Unchanged | Created in Shops **without photos**; photos are not copied to the published review | Unchanged | Unchanged |
-| Approved again (after edit) | Unchanged | Text/rating updated and review restored; photos untouched | Unchanged | Unchanged |
-| Rejected / back to Pending | Unchanged | If it was approved before, the published copy is hidden via `ModerationReviewEditedEvent` | Unchanged | Unchanged |
+| Decision | Canonical public content and bytes | Snapshot / photo metadata | Media / MinIO |
+|----------|------------------------------------|---------------------------|---------------|
+| Current revision approved | Same check-in and its photos become publicly readable; no separate review copy is created | Unchanged | Unchanged |
+| Current revision rejected / back to Pending | Public content, rating contribution and anonymous byte access are withdrawn | Photos retained | Unchanged |
+| Stale, hidden or deleted revision decision | Cannot publish current content or photos | Immutable snapshot retained | Unchanged |
 
 What this means in practice:
 
 - Moderation decisions never delete or re-tag photos.
-- Showing review photos on the published review is **not currently supported**. The photos stay visible on the author's check-in (`GET /api/checkins`) and in the moderation review.
+- Authors can read their retained photo bytes through `/api/v1/check-ins/{id}/photos/{photoId}` while their visit exists. Other readers use the same route only while the current revision is approved and public.
 - Attached photos become permanent (`is_permanent=true`, Media status `Confirmed`) shortly after the check-in is saved (asynchronously via `CheckInPhotosAttachedEvent`), whatever the moderation outcome.
 
 ---
@@ -178,13 +193,13 @@ type RemoveMenuPhotosRequest = { photoIds: string[] };
 
 ## 4. `POST /api/photos/resolve` (service-to-service)
 
-Used by Shops during check-in creation. Shops calls Media directly over service discovery (`http://coffeepeek-mediaservice`) with `X-Gateway-Auth: {GatewayAuth:SecretKey}` and `X-User-Id: {check-in author}`. The endpoint is also reachable through the gateway (`/api/Photos/{**remainder}`, Authenticated, `media-upload` rate limit). It is safe for clients to call because it is always scoped to the caller.
+Read-only metadata lookup for the caller's pending uploads. The endpoint is reachable through the authenticated gateway (`/api/Photos/{**remainder}`, `media-upload` rate limit) and always scoped to the caller. Canonical check-in creation uses the trusted internal claim endpoint to bind uploaded photo IDs to the author/check-in; a resolve result alone does not authorize attachment.
 
 ```http
 POST /api/photos/resolve
 Content-Type: application/json
 
-{ "storageKeys": ["reviews/7b2d0b8e-1c55-4b0e-9d7e-5f0b7c9a01e1.jpg", "reviews/unknown.jpg"] }
+{ "storageKeys": ["check-ins/7b2d0b8e-1c55-4b0e-9d7e-5f0b7c9a01e1.jpg", "check-ins/unknown.jpg"] }
 ```
 
 **200** — `ApiResponse<ResolvedUploadedPhotoDto[]>`
@@ -203,7 +218,7 @@ type ResolvedUploadedPhotoDto = {
   "isSuccess": true,
   "message": "Operation successful",
   "data": [
-    { "storageKey": "reviews/7b2d0b8e-1c55-4b0e-9d7e-5f0b7c9a01e1.jpg", "fileName": "latte.jpg", "contentType": "image/jpeg", "sizeBytes": 734003 }
+    { "storageKey": "check-ins/7b2d0b8e-1c55-4b0e-9d7e-5f0b7c9a01e1.jpg", "fileName": "latte.jpg", "contentType": "image/jpeg", "sizeBytes": 734003 }
   ]
 }
 ```
@@ -211,6 +226,6 @@ type ResolvedUploadedPhotoDto = {
 Rules:
 
 - The owner always comes from the authenticated principal; any owner in the body is ignored.
-- A key is returned only if it belongs to the caller, is in the shop bucket, has status `Pending`, is no older than 24 h, and the object exists in MinIO. Other keys are **omitted**, not reported as errors.
+- A key is returned only if it belongs to the caller, is in the shop/check-in bucket, is not bound to a check-in, has status `Pending`, is no older than 24 h, and the object exists in MinIO. Other keys are **omitted**, not reported as errors.
 - The endpoint is read-only and changes nothing.
 - An empty list returns `isSuccess: false`, `message: "At least one storage key is required"`. More than 20 keys returns `isSuccess: false`, `message: "At most 20 storage keys can be resolved at once"`. In both cases the HTTP status is still 200 (the controller wraps the handler response in `Ok`).

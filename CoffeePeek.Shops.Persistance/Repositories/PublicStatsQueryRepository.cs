@@ -1,7 +1,7 @@
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
 using CoffeePeek.Shops.Persistance.Configuration;
+using CoffeePeek.Shops.Persistance.Queries;
 using Microsoft.EntityFrameworkCore;
-using Review = CoffeePeek.Shops.Domain.Aggregates.ReviewAggregate.Review;
 
 namespace CoffeePeek.Shops.Persistance.Repositories;
 
@@ -13,28 +13,24 @@ public class PublicStatsQueryRepository(ShopsDbContext dbContext) : IPublicStats
             .AsNoTracking()
             .CountAsync(s => s.Status == CoffeeShopStatus.Active && !s.IsHidden, cancellationToken);
 
-        var publishedReviews = dbContext.Set<Review>()
-            .AsNoTracking()
-            .Where(r => !r.IsSoftDelete);
+        var publishedReviews = CheckInEligibility.Public(dbContext).AsNoTracking();
+        var selectedRatings = CheckInEligibility.LatestRatings(dbContext);
 
         var totalReviews = await publishedReviews.CountAsync(cancellationToken);
 
-        var averageRating = totalReviews == 0
+        var averageRating = !await selectedRatings.AnyAsync(cancellationToken)
             ? 0m
             : Math.Round(
-                await publishedReviews.AverageAsync(
+                await selectedRatings.AverageAsync(
                     r => (r.Rating.Place + r.Rating.Coffee + r.Rating.Service) / 3m,
                     cancellationToken),
                 1,
                 MidpointRounding.AwayFromZero);
 
-        var totalCheckIns = await dbContext.CheckIns
-            .AsNoTracking()
-            .CountAsync(cancellationToken);
+        var totalCheckIns = totalReviews;
 
         return new PublicPlatformStats(
             totalCoffeeShops,
-            totalReviews,
             totalCheckIns,
             averageRating);
     }

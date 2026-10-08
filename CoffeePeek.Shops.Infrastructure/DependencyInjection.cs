@@ -26,7 +26,6 @@ public static class DependencyInjection
             // Aspire AddStandardResilienceHandler() retries for ~30s; HttpClient.Timeout wraps that pipeline.
             client.Timeout = Timeout.InfiniteTimeSpan;
         });
-
         services.AddHttpClient(MediaUploadedPhotoLookup.HttpClientName, client =>
         {
             // Hostname is the Aspire resource name; production compose maps it via services__* env vars.
@@ -79,6 +78,7 @@ public static class DependencyInjection
         services.AddScoped<CoffeePeek.Shared.Auth.PublicAddressHttpClient>();
         services.AddScoped<IProfileAddressLookup, AccountProfileAddressLookup>();
         services.AddScoped<IUploadedPhotoLookup, MediaUploadedPhotoLookup>();
+        services.AddScoped<MediaCheckInPhotoClient>();
         services.AddScoped<IMenuVisionParser, OpenAiMenuVisionParser>();
         services.AddScoped<IMenuPhotoDownloader, HttpMenuPhotoDownloader>();
         services.AddScoped<ModerationShopApproveHandler>();
