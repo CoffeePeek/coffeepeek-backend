@@ -61,6 +61,7 @@ public sealed class DrinkCatalogWriteProtocolLiveTests : IClassFixture<ShopsLive
                 options.Discovery.DisableConventionalDiscovery();
                 options.Discovery.IncludeType(typeof(CreateCatalogDrinkHandler));
                 options.Discovery.IncludeType(typeof(DrinkCatalogCacheInvalidationRequestedHandler));
+                options.UseRuntimeCompilation();
                 options.CodeGeneration.TypeLoadMode = TypeLoadMode.Auto;
                 options.CodeGeneration.AlwaysUseServiceLocationFor(typeof(ShopsDbContext));
                 options.CodeGeneration.AlwaysUseServiceLocationFor(typeof(ICoffeeDrinkRepository));

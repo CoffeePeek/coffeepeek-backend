@@ -140,6 +140,7 @@ public sealed class ShopProfileOutboxLiveTests : IClassFixture<ShopsLiveDatabase
             options.Discovery.IncludeType(typeof(UpdateAdminCoffeeShopHandler));
             options.Discovery.IncludeType(typeof(RollbackProfileOutboxProbeHandler));
             options.Discovery.IncludeType(typeof(ShopProfileCacheInvalidationRequestedHandler));
+            options.UseRuntimeCompilation();
             options.CodeGeneration.TypeLoadMode = TypeLoadMode.Auto;
             options.CodeGeneration.AlwaysUseServiceLocationFor(typeof(ShopsDbContext));
             options.PersistMessagesWithPostgresql(fixture.ConnectionString);

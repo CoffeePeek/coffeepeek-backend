@@ -238,12 +238,31 @@ public class UpdateAdminCoffeeShopHandlerTests
 
         var result = await SetAdminCoffeeShopFocusHandler.Handle(
             new SetAdminCoffeeShopFocusCommand(shop.Id, type, Guid.NewGuid()),
-            _shops.Object, _uow.Object, _cache.Object, _media, _ct);
+            _shops.Object, _bus.Object, _media, _ct);
 
         result.IsSuccess.Should().BeTrue();
         shop.Type.Should().Be((CoffeeFocusType)(int)type);
         shop.ShopTags.Should().ContainSingle().Which.Should().BeSameAs(originalTag);
         result.Data!.TagIds.Should().ContainSingle().Which.Should().Be(tagId);
-        _uow.Verify(u => u.SaveChangesAsync(_ct), Times.Once);
+        result.Data.ProfileRevision.Should().Be(1);
+        _bus.Verify(b => b.PublishAsync(It.Is<ShopProfileCacheInvalidationRequested>(
+            message => message.ShopId == shop.Id)), Times.Once);
+        _uow.Verify(u => u.SaveChangesAsync(_ct), Times.Never);
+    }
+
+    [Fact]
+    public async Task SetFocus_AlreadySelected_DoesNotAdvanceRevisionOrInvalidateCache()
+    {
+        var shop = new DomainCoffeeShop(Guid.NewGuid(), "Shop", null, DomainPriceRange.Cheap, Guid.NewGuid());
+        shop.SetCoffeeFocus(CoffeeFocusType.Cafe);
+        _shops.Setup(r => r.GetByIdAsync(shop.Id, _ct)).ReturnsAsync(shop);
+
+        var result = await SetAdminCoffeeShopFocusHandler.Handle(
+            new SetAdminCoffeeShopFocusCommand(shop.Id, CoffeePeek.Contract.Enums.CoffeeShopType.Cafe, Guid.NewGuid()),
+            _shops.Object, _bus.Object, _media, _ct);
+
+        result.IsSuccess.Should().BeTrue();
+        result.Data!.ProfileRevision.Should().Be(0);
+        _bus.Verify(b => b.PublishAsync(It.IsAny<ShopProfileCacheInvalidationRequested>()), Times.Never);
     }
 }

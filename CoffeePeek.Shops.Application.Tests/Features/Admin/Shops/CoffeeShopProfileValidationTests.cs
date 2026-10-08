@@ -140,11 +140,12 @@ public class CoffeeShopProfileValidationTests
 
         var response = await SetAdminCoffeeShopFocusHandler.Handle(
             new SetAdminCoffeeShopFocusCommand(shop.Id, (CoffeeShopType)99, Guid.NewGuid()),
-            _shops.Object, _unitOfWork.Object, _cache.Object, _media, _ct);
+            _shops.Object, _bus.Object, _media, _ct);
 
         response.StatusCode.Should().Be((int)HttpStatusCode.BadRequest);
         shop.Type.Should().Be(CoffeeFocusType.Specialty);
         _unitOfWork.Verify(x => x.SaveChangesAsync(_ct), Times.Never);
+        _bus.Verify(x => x.PublishAsync(It.IsAny<ShopProfileCacheInvalidationRequested>()), Times.Never);
     }
 
     private static DomainCoffeeShop NewShop() => new(null, "Original", null, DomainPriceRange.Cheap, Guid.NewGuid());

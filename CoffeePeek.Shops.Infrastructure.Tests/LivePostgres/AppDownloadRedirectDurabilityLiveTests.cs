@@ -104,6 +104,7 @@ public sealed class AppDownloadRedirectDurabilityLiveTests : IClassFixture<Shops
                 options.ApplicationAssembly = typeof(AppDownloadRedirectDurabilityLiveTests).Assembly;
                 options.Discovery.DisableConventionalDiscovery();
                 options.Discovery.IncludeType(typeof(RecordAppDownloadRedirectHandler));
+                options.UseRuntimeCompilation();
                 options.CodeGeneration.TypeLoadMode = TypeLoadMode.Auto;
                 options.CodeGeneration.AlwaysUseServiceLocationFor(typeof(ShopsDbContext));
                 options.PersistMessagesWithPostgresql(fixture.ConnectionString);

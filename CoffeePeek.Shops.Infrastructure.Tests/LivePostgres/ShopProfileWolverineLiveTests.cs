@@ -79,6 +79,7 @@ public sealed class ShopProfileWolverineLiveTests : IClassFixture<ShopsLiveDatab
                 options.Discovery.DisableConventionalDiscovery();
                 options.Discovery.IncludeType(typeof(UpdateAdminCoffeeShopHandler));
                 options.Discovery.IncludeType(typeof(UpdateOwnerCoffeeShopHandler));
+                options.UseRuntimeCompilation();
                 options.CodeGeneration.TypeLoadMode = TypeLoadMode.Auto;
                 options.CodeGeneration.AlwaysUseServiceLocationFor(typeof(ShopsDbContext));
                 options.UseEntityFrameworkCoreTransactions();

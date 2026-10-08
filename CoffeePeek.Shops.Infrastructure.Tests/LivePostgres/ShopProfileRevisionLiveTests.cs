@@ -84,6 +84,7 @@ public sealed class ShopProfileRevisionLiveTests : IClassFixture<ShopsLiveDataba
                 wolverine.Discovery.IncludeType(typeof(UpdateAdminCoffeeShopHandler));
                 wolverine.Discovery.IncludeType(typeof(UpdateOwnerCoffeeShopHandler));
                 wolverine.Discovery.IncludeType(typeof(ShopProfileCacheInvalidationRequestedHandler));
+                wolverine.UseRuntimeCompilation();
                 wolverine.CodeGeneration.TypeLoadMode = TypeLoadMode.Auto;
                 wolverine.CodeGeneration.AlwaysUseServiceLocationFor(
                     typeof(CoffeePeek.Shops.Persistance.Configuration.ShopsDbContext));

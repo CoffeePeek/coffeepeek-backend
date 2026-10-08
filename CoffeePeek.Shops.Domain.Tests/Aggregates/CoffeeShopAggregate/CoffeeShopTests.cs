@@ -1,4 +1,5 @@
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
+using CoffeePeek.Shops.Domain.Aggregates.BrewMethods;
 using CoffeePeek.Shops.Domain.Entities;
 using CoffeePeek.Shared.Kernel.Exceptions;
 using CoffeePeek.Shops.Domain;
@@ -250,6 +251,38 @@ public class CoffeeShopTests
     }
 
     [Fact]
+    public void ReplaceSchedules_WithOwnReadOnlyView_PreservesHours()
+    {
+        var shop = new CoffeeShop(Guid.NewGuid(), "Test Shop", null, PriceRange.Cheap, Guid.NewGuid());
+        shop.AddSchedule([ShopSchedule.Create(DayOfWeek.Monday, true, [])]);
+
+        var result = shop.ReplaceSchedules((IReadOnlyList<ShopSchedule>)shop.Schedules);
+
+        result.IsSuccess.Should().BeTrue();
+        shop.Schedules.Should().ContainSingle(s => s.DayOfWeek == DayOfWeek.Monday);
+    }
+
+    [Fact]
+    public void SetCatalogSelections_WithOwnReadOnlyViews_PreservesSelections()
+    {
+        var shop = new CoffeeShop(Guid.NewGuid(), "Test Shop", null, PriceRange.Cheap, Guid.NewGuid());
+        var method = new BrewMethod("Filter", BrewMethodCategory.Gravity);
+        var roaster = new Roaster("Roaster");
+        var bean = new CoffeeBean("Bean");
+        shop.SetBrewMethods([method]);
+        shop.SetRoasters([roaster]);
+        shop.SetBeans([bean]);
+
+        shop.SetBrewMethods(shop.BrewMethods);
+        shop.SetRoasters(shop.Roasters);
+        shop.SetBeans(shop.CoffeeBeans);
+
+        shop.BrewMethods.Should().ContainSingle().Which.Should().BeSameAs(method);
+        shop.Roasters.Should().ContainSingle().Which.Should().BeSameAs(roaster);
+        shop.CoffeeBeans.Should().ContainSingle().Which.Should().BeSameAs(bean);
+    }
+
+    [Fact]
     public void SetEquipment_ReplacesCollection()
     {
         var shop = new CoffeeShop(Guid.NewGuid(), "Test Shop", null, PriceRange.Cheap, Guid.NewGuid());
@@ -311,6 +344,19 @@ public class CoffeeShopTests
 
         act.Should().Throw<DomainException>()
             .WithMessage($"*{BusinessConstants.MaxShopTagsPerShop}*");
+    }
+
+    [Fact]
+    public void SetTags_EmptyTagIdAfterValidTag_LeavesExistingAssignmentUntouched()
+    {
+        var shop = new CoffeeShop(Guid.NewGuid(), "Test Shop", null, PriceRange.Cheap, Guid.NewGuid());
+        shop.SetTags([Guid.NewGuid()], Guid.NewGuid());
+        var existing = shop.ShopTags.Single();
+
+        var act = () => shop.SetTags([Guid.NewGuid(), Guid.Empty], Guid.NewGuid());
+
+        act.Should().Throw<DomainException>().WithMessage("TagId cannot be empty.");
+        shop.ShopTags.Should().ContainSingle().Which.Should().BeSameAs(existing);
     }
 
     [Fact]

@@ -84,6 +84,7 @@ public sealed class ShopMenuManualWriteLiveTests : IClassFixture<ShopsLiveDataba
                 wolverine.ApplicationAssembly = typeof(ShopMenuManualWriteLiveTests).Assembly;
                 wolverine.Discovery.DisableConventionalDiscovery();
                 wolverine.Discovery.IncludeType(typeof(UpdateAdminShopMenuHandler));
+                wolverine.UseRuntimeCompilation();
                 wolverine.CodeGeneration.TypeLoadMode = TypeLoadMode.Auto;
                 wolverine.CodeGeneration.AlwaysUseServiceLocationFor(typeof(ShopsDbContext));
                 wolverine.UseEntityFrameworkCoreTransactions();

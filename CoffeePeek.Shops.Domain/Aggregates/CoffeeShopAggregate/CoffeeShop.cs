@@ -400,20 +400,26 @@ public sealed class CoffeeShop : Entity<Guid>, IPublicSlugOwner
     
     public void SetBrewMethods(IEnumerable<BrewMethod> methods)
     {
+        ArgumentNullException.ThrowIfNull(methods);
+        var replacement = methods.ToArray();
         _brewMethods.Clear();
-        _brewMethods.AddRange(methods);
+        _brewMethods.AddRange(replacement);
     }
 
     public void SetRoasters(IEnumerable<Roaster> roasters)
     {
+        ArgumentNullException.ThrowIfNull(roasters);
+        var replacement = roasters.ToArray();
         _roasters.Clear();
-        _roasters.AddRange(roasters);
+        _roasters.AddRange(replacement);
     }
 
     public void SetBeans(IEnumerable<CoffeeBean> beans)
     {
+        ArgumentNullException.ThrowIfNull(beans);
+        var replacement = beans.ToArray();
         _coffeeBeans.Clear();
-        _coffeeBeans.AddRange(beans);
+        _coffeeBeans.AddRange(replacement);
     }
     
     public void AddSchedule(List<ShopSchedule> schedule)
@@ -430,12 +436,13 @@ public sealed class CoffeeShop : Entity<Guid>, IPublicSlugOwner
         if (schedules is null)
             return Result.Fail("Schedule is required.");
 
-        var days = schedules.Select(s => s.DayOfWeek).ToList();
+        var replacement = schedules.ToArray();
+        var days = replacement.Select(s => s.DayOfWeek).ToList();
         if (days.Distinct().Count() != days.Count)
             return Result.Fail("Schedule contains duplicate days of week.");
 
         _schedules.Clear();
-        _schedules.AddRange(schedules);
+        _schedules.AddRange(replacement);
         return Result.Ok();
     }
 
@@ -456,13 +463,13 @@ public sealed class CoffeeShop : Entity<Guid>, IPublicSlugOwner
             throw new DomainException(
                 $"A shop cannot have more than {BusinessConstants.MaxShopTagsPerShop} tags.");
 
+        if (distinct.Contains(Guid.Empty))
+            throw new DomainException("TagId cannot be empty.");
+
         _shopTags.Clear();
         var now = DateTime.UtcNow;
         foreach (var tagId in distinct)
         {
-            if (tagId == Guid.Empty)
-                throw new DomainException("TagId cannot be empty.");
-
             _shopTags.Add(new CoffeeShopTag(Id, tagId, assignedByUserId, now));
         }
     }
