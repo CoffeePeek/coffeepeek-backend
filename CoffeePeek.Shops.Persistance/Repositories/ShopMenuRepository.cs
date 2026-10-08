@@ -97,6 +97,11 @@ public class ShopMenuRepository(ShopsDbContext dbContext) : IShopMenuRepository
         foreach (var entry in trackedItems)
             entry.State = EntityState.Detached;
         var collection = dbContext.Entry(menu).Collection(m => m.Items);
+        // Detaching an entity does not remove it from the aggregate's backing list.
+        // Clear that list before EF fixes up the rows reloaded after the raw upsert.
+        if (collection.Metadata.FieldInfo?.GetValue(menu) is not List<ShopMenuItem> backingItems)
+            throw new InvalidOperationException("Shop menu item navigation has no mutable backing list.");
+        backingItems.Clear();
         collection.IsLoaded = false;
         await collection.LoadAsync(ct);
 
