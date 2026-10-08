@@ -43,7 +43,11 @@ public class CoffeeCatalogTests
             Assert.Equal("Applied", (await store.ImportAsync(snapshot, ct)).Status);
         Assert.Equal(snapshots.Sum(s => s.Snapshot.Products.Length), await db.CoffeeProducts.CountAsync(ct));
         Assert.Equal(snapshots.Sum(s => s.Snapshot.Products.Sum(p => p.Variants.Length)), await db.Set<CoffeeVariant>().CountAsync(ct));
-        Assert.All(await db.CoffeeProducts.ToArrayAsync(ct), p => Assert.Equal(CoffeePublicationStatus.Draft, p.Status));
+        Assert.All(await db.CoffeeProducts.ToArrayAsync(ct), p =>
+        {
+            Assert.Equal(CoffeePublicationStatus.Draft, p.Status);
+            Assert.Contains(p.CaffeineCode, new[] { "regular", "decaf", "lowcaf" });
+        });
     }
 
     [Fact]
@@ -54,6 +58,7 @@ public class CoffeeCatalogTests
         var r = new Roaster("Test roaster"); r.SetPublicSlug("test-roaster"); db.Roasters.Add(r); await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         var store = Store(db, r.Id);
         var snapshot = Snapshot('a', DateTimeOffset.UtcNow.AddMinutes(-2));
+        snapshot.Snapshot.Products[0].Origins[0].EvidenceField = "name";
         var first = await store.ImportAsync(snapshot, TestContext.Current.CancellationToken);
         var draft = (await store.AdminListAsync(1, 20, null, TestContext.Current.CancellationToken)).Items.Single();
         Assert.Null(await store.GetAsync(draft.Slug!, TestContext.Current.CancellationToken));
@@ -72,6 +77,7 @@ public class CoffeeCatalogTests
         next.Snapshot.Products[0].SourceProductId = "changed-parent"; // Roast grouping follows stable native SKU.
         next.Snapshot.Products[0].Name = "Название с сайта";
         next.Snapshot.Products[0].Origins[0].CountryCode = "ET";
+        next.Snapshot.Products[0].Origins[0].EvidenceField = "name";
         next.Snapshot.Products[0].Variants[0].Price = 31;
         next.Snapshot.Products[0].StoredPhotos = [];
         var second = await store.ImportAsync(next, TestContext.Current.CancellationToken);
@@ -98,6 +104,37 @@ public class CoffeeCatalogTests
         Assert.True(await store.ArchiveAsync(draft.Id, TestContext.Current.CancellationToken));
         Assert.Null(await store.GetAsync(draft.Slug!, TestContext.Current.CancellationToken));
         Assert.Contains(await store.CountriesAsync(TestContext.Current.CancellationToken), c => c.Code == "DO");
+    }
+
+    [Theory]
+    [InlineData("unknown", "name", 1, null, true)]
+    [InlineData("single_origin", "name", 1, null, true)]
+    [InlineData("blend", "name", 1, null, false)]
+    [InlineData("unknown", "name", 2, null, false)]
+    [InlineData("unknown", null, 1, null, false)]
+    [InlineData("blend", "properties.Страна", 2, null, true)]
+    [InlineData("unknown", "", 1, null, false)]
+    [InlineData("unknown", "name", 1, "ambiguous_congo_country", false)]
+    public async Task Import_AcceptsOneNamedCountryAndRetainsAmbiguousOriginWarnings(string composition, string? evidence, int countries, string? reviewWarning, bool accepted)
+    {
+        var ct = TestContext.Current.CancellationToken;
+        await using var db = new ShopsDbContext(new DbContextOptionsBuilder<ShopsDbContext>().UseInMemoryDatabase(Guid.NewGuid().ToString()).Options);
+        await db.Database.EnsureCreatedAsync(ct);
+        var roaster = new Roaster("Test"); db.Roasters.Add(roaster); await db.SaveChangesAsync(ct);
+        var snapshot = Snapshot('a', DateTimeOffset.UtcNow.AddMinutes(-2));
+        snapshot.Snapshot.Products[0].CompositionKind = composition;
+        snapshot.Snapshot.Products[0].ReviewWarnings = reviewWarning is null ? [] : [reviewWarning];
+        snapshot.Snapshot.Products[0].Origins = new[]
+        {
+            new CoffeeSnapshotOrigin { CountryCode = "CO", EvidenceField = evidence },
+            new CoffeeSnapshotOrigin { CountryCode = "ET", EvidenceField = evidence }
+        }.Take(countries).ToArray();
+        await Store(db, roaster.Id).ImportAsync(snapshot, ct);
+        var product = await db.CoffeeProducts.Include(p => p.Countries).SingleAsync(ct);
+        Assert.Equal(accepted ? countries : 0, product.Countries.Count);
+        Assert.Equal("regular", product.CaffeineCode);
+        var source = await db.CoffeeProductSources.SingleAsync(ct);
+        Assert.Equal(!accepted, source.ReviewWarnings.Any(w => w.StartsWith("country_requires_confirmation:", StringComparison.Ordinal)));
     }
 
     [Fact]

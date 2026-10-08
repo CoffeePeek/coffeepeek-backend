@@ -272,7 +272,9 @@ def origins(properties, name, description, is_blend):
         warnings.append("ambiguous_congo_country")
     if not matches:
         warnings.append("origin_not_specified")
-    elif evidence != "properties.Страна произрастания":
+    elif evidence != "properties.Страна произрастания" and (
+            evidence != "name" or is_blend or len(matches) != 1
+            or "ambiguous_congo_country" in warnings):
         warnings.append("origin_extracted_from_" + evidence)
     if is_blend and evidence == "name":
         warnings.append("blend_composition_may_be_incomplete")
@@ -570,7 +572,7 @@ def write_exports(snapshot, output):
     lines = [f"# Кофе {source_name} в продаже", "", "Снимок (UTC): " + snapshot["collectedAtUtc"], "",
              f"Источник: [{source_name}]({snapshot['source']}). Собраны публичные данные текущей витрины.", "",
              "Валюта указана рядом с ценой из карточки на момент сбора. Доступность означает возможность заказа; остатки склада не выводятся из этого признака.", "",
-             "Страны со знаком * извлечены из текстового описания или названия и требуют проверки; основание сохранено в JSON. Неизвестные доли смеси не вычисляются.", ""]
+             "Страны со знаком * требуют проверки; основание извлечения сохранено в JSON. Неизвестные доли смеси не вычисляются.", ""]
     sections = [
         ("Обжаренное зерно", lambda p: p["productKind"] == "roasted_beans" and p["productForm"] == "whole_beans"),
         ("Зелёное зерно", lambda p: p["productKind"] == "green_beans"),
@@ -584,7 +586,7 @@ def write_exports(snapshot, output):
         lines += [f"## {title}: {len(subset)}", "", "| Кофе | Происхождение | Упаковка и цена | Обработка |", "| --- | --- | --- | --- |"]
         for product in subset:
             countries = ", ".join(x["countryNameRu"] + " (" + x["countryCode"] + ")" for x in product["origins"]) or "Не указано"
-            if any(o["evidenceField"] != "properties.Страна произрастания" for o in product["origins"]):
+            if any(w.startswith("origin_extracted_from_") for w in product["reviewWarnings"]):
                 countries += " *"
             if "blend_other_origins_not_specified" in product["reviewWarnings"]:
                 countries += "; остальные страны не указаны"

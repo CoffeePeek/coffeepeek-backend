@@ -89,6 +89,42 @@ class RoastByParserTests(unittest.TestCase):
         self.assertEqual([], result)
         self.assertIn("ambiguous_congo_country", warnings)
 
+    def test_single_country_name_is_accepted_and_keeps_name_evidence(self):
+        for name, code in (("Бразилия Серрадо", "BR"), ("Ethiopia Guji", "ET"),
+                           ("Фильтр Кения Ньери", "KE")):
+            with self.subTest(name=name):
+                result, warnings = origins({}, name, "Например, кофе из Колумбии бывает ярким.", False)
+                self.assertEqual([code], [o["countryCode"] for o in result])
+                self.assertEqual("name", result[0]["evidenceField"])
+                self.assertIsNone(result[0]["percentage"])
+                self.assertEqual([], warnings)
+
+    def test_uncertain_name_origins_keep_review_warnings(self):
+        cases = (
+            ("Смесь Бразилия", True, ["BR"], {"origin_extracted_from_name", "blend_composition_may_be_incomplete"}),
+            ("Бразилия Эфиопия", False, ["BR", "ET"], {"origin_extracted_from_name"}),
+            ("Бразилия и Конго", False, ["BR"], {"origin_extracted_from_name", "ambiguous_congo_country"}),
+            ("Конго", False, [], {"origin_not_specified", "ambiguous_congo_country"}),
+            ("Смесь", True, [], {"origin_not_specified", "blend_composition_may_be_incomplete"}),
+            ("Ява Вайни", False, [], {"origin_not_specified"}),
+        )
+        for name, blend, codes, expected in cases:
+            with self.subTest(name=name):
+                result, warnings = origins({}, name, "", blend)
+                self.assertEqual(codes, [o["countryCode"] for o in result])
+                self.assertEqual(expected, set(warnings))
+                self.assertTrue(all(o["evidenceField"] == "name" for o in result))
+
+    def test_name_policy_does_not_override_explicit_origin_or_composition(self):
+        result, warnings = origins({"Страна произрастания": "Эфиопия"}, "Бразилия", "", False)
+        self.assertEqual(["ET"], [o["countryCode"] for o in result])
+        self.assertEqual("properties.Страна произрастания", result[0]["evidenceField"])
+        self.assertEqual([], warnings)
+        result, warnings = origins({}, "Бразилия", "Кофе из Эфиопии.", False)
+        self.assertEqual(["ET"], [o["countryCode"] for o in result])
+        self.assertEqual("description.composition", result[0]["evidenceField"])
+        self.assertEqual(["origin_extracted_from_description.composition"], warnings)
+
     def test_source_javascript_is_never_evaluated(self):
         node = BeautifulSoup('<div x-data="productCard($el, 100, 100, doSomething(), {})"></div>', "html.parser").div
         with self.assertRaises(ParseError):

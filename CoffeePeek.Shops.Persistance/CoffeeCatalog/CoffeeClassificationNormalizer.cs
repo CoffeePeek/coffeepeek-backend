@@ -5,7 +5,7 @@ using CoffeePeek.Shops.Domain.Aggregates.CoffeeProductAggregate;
 
 namespace CoffeePeek.Shops.Persistance.CoffeeCatalog;
 
-/// <summary>Recognizes explicit source attributes only. Names, countries and grind options are never evidence.</summary>
+/// <summary>Uses explicit attributes, with product name/description evidence and a regular default for caffeine.</summary>
 public static class CoffeeClassificationNormalizer
 {
     public static CoffeeClassificationData Normalize(CoffeeSnapshotProduct product)
@@ -13,9 +13,12 @@ public static class CoffeeClassificationNormalizer
         var processing = Text(product.Processing);
         var features = product.Features.Select(Text).ToArray();
         var evidence = string.Join(";", features.Prepend(processing));
-        var caffeine = features.FirstOrDefault(v => v is "regular" or "с кофеином") is not null ? "regular" : null;
-        if (Has(evidence, "lowcaf", "лоукаф", "низкокофеин", "50% кофеина", "50 % кофеина")) caffeine = "lowcaf";
-        else if (Has(evidence, "decaf", "декаф", "без кофеина", "декофеин", "swiss water")) caffeine = "decaf";
+        // Product labels precede prose about other coffees in the same line.
+        // ponytail: prose uses caffeine keywords; add source-specific parsing for conflicting or indirect claims.
+        var caffeine = NormalizeCaffeine(evidence) ?? NormalizeCaffeine(Text(product.Name)) ??
+            Regex.Split(Text(product.Description), @"(?<=[.!?])\s+|\n+")
+                .Where(sentence => !Regex.IsMatch(sentence, @"\b(?:попробуйте|например|может быть|могут быть|may be|might be)\b"))
+                .Select(NormalizeCaffeine).FirstOrDefault(value => value is not null) ?? "regular";
 
         var processingCodes = new List<string>();
         if (Has(processing, "washed", "мытый", "мытая", "мытой", "двойная промывка")) processingCodes.Add("washed");
@@ -86,6 +89,14 @@ public static class CoffeeClassificationNormalizer
         return new(Many("brew", data.DefaultBrewPurposes), One("caffeine", data.Caffeine), One("roast", data.RoastLevel),
             One("acidity", data.Acidity), Many("processing", data.Processing), Many("fermentation", data.Fermentation),
             Many("taste", data.TasteGroups), One("composition", data.Composition));
+    }
+
+    private static string? NormalizeCaffeine(string text)
+    {
+        text = Regex.Replace(text, @"\b(?:не|not)\s+(?:decaf(?:feinated)?|low[ -]?caf|декаф\w*|декофеин\w*|лоу[- ]?каф\w*|без\s+кофеина)\b", "");
+        if (Has(text, "lowcaf", "low-caf", "low caf", "лоукаф", "лоу-каф", "низкокофеин", "50% кофеина", "50 % кофеина",
+                "пониженное содержание кофеина", "пониженным содержанием кофеина", "низкое содержание кофеина", "низким содержанием кофеина")) return "lowcaf";
+        return Has(text, "decaf", "decaffeinated", "декаф", "без кофеина", "декофеин", "swiss water") ? "decaf" : null;
     }
 
     private static string Text(string? text) => (text ?? "").Trim().ToLowerInvariant().Replace('ё', 'е');

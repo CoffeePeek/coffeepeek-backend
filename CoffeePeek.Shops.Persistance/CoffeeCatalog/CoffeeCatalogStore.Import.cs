@@ -93,7 +93,9 @@ public sealed partial class CoffeeCatalogStore
                     foreach (var origin in item.Origins)
                     {
                         if (!knownCountries.Contains(origin.CountryCode)) warnings.Add("country_not_in_catalog:" + origin.CountryCode);
-                        else if (origin.EvidenceField is null || origin.EvidenceField.Contains("name", StringComparison.OrdinalIgnoreCase))
+                        else if (string.IsNullOrWhiteSpace(origin.EvidenceField) || (origin.EvidenceField.Contains("name", StringComparison.OrdinalIgnoreCase) &&
+                            (item.CompositionKind == "blend" || item.Origins.Length != 1 ||
+                             item.ReviewWarnings.Contains("ambiguous_congo_country", StringComparer.Ordinal))))
                             warnings.Add("country_requires_confirmation:" + origin.CountryCode);
                         else countryCodes.Add(origin.CountryCode);
                     }

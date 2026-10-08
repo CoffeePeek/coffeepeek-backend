@@ -129,7 +129,7 @@ public class DiscoveryClassificationTests
             Name = "Decaf light filter Colombia", Acidity = "4", CompositionKind = "unknown",
             Origins = [new() { CountryCode = "CO", EvidenceField = "origin" }], GrindOptions = ["Эспрессо"]
         });
-        Assert.Null(unknown.Caffeine); Assert.Null(unknown.RoastLevel); Assert.Null(unknown.Acidity);
+        Assert.Equal("decaf", unknown.Caffeine); Assert.Null(unknown.RoastLevel); Assert.Null(unknown.Acidity);
         Assert.Null(unknown.Composition); Assert.Empty(unknown.DefaultBrewPurposes);
         var misleadingEnglish = CoffeeClassificationNormalizer.Normalize(new CoffeeSnapshotProduct
             { Processing = "unwashed", TasteDescriptors = ["nutmeg"] });
@@ -154,6 +154,30 @@ public class DiscoveryClassificationTests
         product.ApplyClassification(unknown, fromImport: true);
         Assert.Equal("decaf", product.CaffeineCode); Assert.Equal("dark", product.RoastLevelCode);
         Assert.Equal(["natural"], product.ProcessingCodes);
+    }
+
+    [Theory]
+    [InlineData("", null, "regular")]
+    [InlineData("Бразилия Сантос", null, "regular")]
+    [InlineData("КОЛУМБИЯ ДЕКАФ", null, "decaf")]
+    [InlineData("Sera DECAF", null, "decaf")]
+    [InlineData("Батч-Брю Лоукаф", "Первый лот в смеси — декаф.", "lowcaf")]
+    [InlineData("Colombia Low-caf", null, "lowcaf")]
+    [InlineData("Colombia low caf", null, "lowcaf")]
+    [InlineData("Мягкий лот", "Сочный декаф с нотами шоколада.", "decaf")]
+    [InlineData("Мягкий лот", "Кофе без кофеина с нотами яблока.", "decaf")]
+    [InlineData("Мягкий лот", "Этот декофеинизированный лот обработан этилацетатом.", "decaf")]
+    [InlineData("Мягкий лот", "Кофе с пониженным содержанием кофеина.", "lowcaf")]
+    [InlineData("Колумбия Декаф", "Линейка включает декафы и лоукафы.", "decaf")]
+    [InlineData("Коста-Рика", "Ферма входит в ассоциацию UNDECAF.", "regular")]
+    [InlineData("Обычный кофе", "Это не декаф.", "regular")]
+    [InlineData("NOT DECAF", null, "regular")]
+    [InlineData("Клин Скин", "Это может быть остаток моносорта, смесь или декаф.", "regular")]
+    [InlineData("Обычный кофе", "Попробуйте также декаф из нашей линейки.", "regular")]
+    public void Normalization_DefaultsCaffeineAndRecognizesProductNameAndDescription(string name, string? description, string expected)
+    {
+        var result = CoffeeClassificationNormalizer.Normalize(new CoffeeSnapshotProduct { Name = name, Description = description });
+        Assert.Equal(expected, result.Caffeine);
     }
 
     [Theory]
@@ -203,7 +227,7 @@ public class DiscoveryClassificationTests
             new() { Version = changed.Version, BrewPurpose = "filter", ProtectFromImport = true }, Ct);
         var next = CoffeeCatalogTests.Snapshot('b', first.Snapshot.CollectedAtUtc.AddMinutes(1));
         next.Snapshot.Products[0].BrewRecommendations = ["Для эспрессо"];
-        next.Snapshot.Products[0].Features = ["Без кофеина"];
+        next.Snapshot.Products[0].Features = [];
         next.Snapshot.Products[0].Variants[0].SourceAttributes = JsonSerializer.SerializeToElement(new { roastPurpose = "omni" });
         await catalog.ImportAsync(next, Ct);
         Assert.Equal("lowcaf", product.CaffeineCode);
