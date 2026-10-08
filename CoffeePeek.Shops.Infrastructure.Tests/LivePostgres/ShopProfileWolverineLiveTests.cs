@@ -18,6 +18,7 @@ using Microsoft.Extensions.Options;
 using Moq;
 using Wolverine;
 using Wolverine.EntityFrameworkCore;
+using Wolverine.Postgresql;
 
 namespace CoffeePeek.Shops.Infrastructure.Tests.LivePostgres;
 
@@ -87,6 +88,7 @@ public sealed class ShopProfileWolverineLiveTests : IClassFixture<ShopsLiveDatab
                 options.Discovery.IncludeType(typeof(UpdateAdminCoffeeShopHandler));
                 options.Discovery.IncludeType(typeof(UpdateOwnerCoffeeShopHandler));
                 options.UseRuntimeCompilation();
+                options.PersistMessagesWithPostgresql(fixture.ConnectionString);
                 options.CodeGeneration.TypeLoadMode = TypeLoadMode.Auto;
                 options.CodeGeneration.AlwaysUseServiceLocationFor(typeof(ShopsDbContext));
                 options.UseEntityFrameworkCoreTransactions();

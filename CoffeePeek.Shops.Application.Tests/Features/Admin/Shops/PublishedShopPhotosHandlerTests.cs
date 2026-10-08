@@ -181,9 +181,44 @@ public class PublishedShopPhotosHandlerTests
 
         var result = await RemovePublishedShopPhotosHandler.Handle(
             new RemovePublishedShopPhotosCommand(shopId, ownerId, [Guid.NewGuid()]),
-            _shops.Object, _uow.Object, _cache.Object, _media, _ct);
+            _shops.Object, _bus.Object, _media, _ct);
 
         result.IsSuccess.Should().BeFalse();
         result.StatusCode.Should().Be((int)HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task RemovePhotos_RemovesPhotoAndPublishesAfterCommitInvalidation()
+    {
+        var shop = new DomainCoffeeShop(Guid.NewGuid(), "Shop", null, DomainPriceRange.Cheap, Guid.NewGuid());
+        var photo = new ShopPhoto("a.jpg", "image/jpeg", "key-a", 1, Guid.NewGuid());
+        shop.AddPhotos([photo]);
+        _shops.Setup(r => r.GetByIdAsync(shop.Id, _ct)).ReturnsAsync(shop);
+
+        var result = await RemovePublishedShopPhotosHandler.Handle(
+            new RemovePublishedShopPhotosCommand(shop.Id, null, [photo.Id]),
+            _shops.Object, _bus.Object, _media, _ct);
+
+        result.IsSuccess.Should().BeTrue();
+        shop.ShopPhotos.Should().BeEmpty();
+        shop.ProfileRevision.Should().Be(1);
+        _bus.Verify(b => b.PublishAsync(It.Is<ShopProfileCacheInvalidationRequested>(e => e.ShopId == shop.Id)), Times.Once);
+        _uow.Verify(u => u.SaveChangesAsync(_ct), Times.Never);
+        _cache.Verify(c => c.RemoveAsync(It.IsAny<CacheKey>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task RemovePhotos_EmptyList_IsNoOp()
+    {
+        var shop = new DomainCoffeeShop(Guid.NewGuid(), "Shop", null, DomainPriceRange.Cheap, Guid.NewGuid());
+        _shops.Setup(r => r.GetByIdAsync(shop.Id, _ct)).ReturnsAsync(shop);
+
+        var result = await RemovePublishedShopPhotosHandler.Handle(
+            new RemovePublishedShopPhotosCommand(shop.Id, null, []),
+            _shops.Object, _bus.Object, _media, _ct);
+
+        result.IsSuccess.Should().BeTrue();
+        shop.ProfileRevision.Should().Be(0);
+        _bus.Verify(b => b.PublishAsync(It.IsAny<ShopProfileCacheInvalidationRequested>()), Times.Never);
     }
 }

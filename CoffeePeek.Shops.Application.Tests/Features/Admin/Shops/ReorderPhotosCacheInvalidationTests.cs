@@ -2,16 +2,16 @@ using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using CoffeePeek.Shared.Domain.Interfaces.Infrastructure;
-using CoffeePeek.Shared.Kernel;
 using CoffeePeek.Shared.Kernel.Options;
 using CoffeePeek.Shops.Application.Features.Admin.Shops.ReorderPhotos;
+using CoffeePeek.Shops.Application.Features.CoffeeShop.ShopProfile;
 using CoffeePeek.Shops.Application.Features.Owner.ReorderPhotos;
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
 using CoffeePeek.Shops.Domain.Entities;
 using FluentAssertions;
 using Microsoft.Extensions.Options;
 using Moq;
+using Wolverine;
 using DomainCoffeeShop = CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate.CoffeeShop;
 
 namespace CoffeePeek.Shops.Application.Tests.Features.Admin.Shops;
@@ -19,17 +19,10 @@ namespace CoffeePeek.Shops.Application.Tests.Features.Admin.Shops;
 public class ReorderPhotosCacheInvalidationTests
 {
     private readonly Mock<ICoffeeShopRepository> _repository = new();
-    private readonly Mock<IUnitOfWork> _unitOfWork = new();
-    private readonly Mock<ICacheService> _cache = new();
+    private readonly Mock<IMessageBus> _bus = new();
     private readonly CancellationToken _ct = CancellationToken.None;
     private readonly IOptions<MediaPublicUrlOptions> _media = Options.Create(
         new MediaPublicUrlOptions { PublicEndpoint = "https://cdn.example.com" });
-
-    public ReorderPhotosCacheInvalidationTests()
-    {
-        _cache.Setup(c => c.RemoveAsync(It.IsAny<CacheKey>())).Returns(Task.CompletedTask);
-        _cache.Setup(c => c.RemoveByPattern(It.IsAny<string>(), _ct)).ReturnsAsync(1);
-    }
 
     [Fact]
     public async Task AdminReorder_InvalidatesSearchCache()
@@ -40,10 +33,11 @@ public class ReorderPhotosCacheInvalidationTests
 
         var result = await ReorderAdminCoffeeShopPhotosHandler.Handle(
             new ReorderAdminCoffeeShopPhotosCommand(shop.Id, order),
-            _repository.Object, _unitOfWork.Object, _cache.Object, _media, _ct);
+            _repository.Object, _bus.Object, _media, _ct);
 
         result.IsSuccess.Should().BeTrue();
-        VerifySearchInvalidated();
+        shop.ProfileRevision.Should().Be(1);
+        VerifyProfileInvalidated(shop.Id);
     }
 
     [Fact]
@@ -56,10 +50,42 @@ public class ReorderPhotosCacheInvalidationTests
 
         var result = await ReorderOwnerCoffeeShopPhotosHandler.Handle(
             new ReorderOwnerCoffeeShopPhotosCommand(shop.Id, ownerId, order),
-            _repository.Object, _unitOfWork.Object, _cache.Object, _media, _ct);
+            _repository.Object, _bus.Object, _media, _ct);
 
         result.IsSuccess.Should().BeTrue();
-        VerifySearchInvalidated();
+        shop.ProfileRevision.Should().Be(1);
+        VerifyProfileInvalidated(shop.Id);
+    }
+
+    [Fact]
+    public async Task AdminUnchangedOrder_DoesNotAdvanceRevisionOrInvalidateCache()
+    {
+        var shop = CreateShopWithPhotos();
+        var order = shop.ShopPhotos.OrderBy(photo => photo.SortIndex).Select(photo => photo.Id).ToArray();
+        _repository.Setup(r => r.GetByIdAsync(shop.Id, _ct)).ReturnsAsync(shop);
+
+        var result = await ReorderAdminCoffeeShopPhotosHandler.Handle(
+            new ReorderAdminCoffeeShopPhotosCommand(shop.Id, order),
+            _repository.Object, _bus.Object, _media, _ct);
+
+        result.IsSuccess.Should().BeTrue();
+        shop.ProfileRevision.Should().Be(0);
+        _bus.Verify(b => b.PublishAsync(It.IsAny<ShopProfileCacheInvalidationRequested>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task AdminInvalidOrder_DoesNotAdvanceRevisionOrInvalidateCache()
+    {
+        var shop = CreateShopWithPhotos();
+        _repository.Setup(r => r.GetByIdAsync(shop.Id, _ct)).ReturnsAsync(shop);
+
+        var result = await ReorderAdminCoffeeShopPhotosHandler.Handle(
+            new ReorderAdminCoffeeShopPhotosCommand(shop.Id, []),
+            _repository.Object, _bus.Object, _media, _ct);
+
+        result.IsSuccess.Should().BeFalse();
+        shop.ProfileRevision.Should().Be(0);
+        _bus.Verify(b => b.PublishAsync(It.IsAny<ShopProfileCacheInvalidationRequested>()), Times.Never);
     }
 
     private static DomainCoffeeShop CreateShopWithPhotos(Guid? ownerId = null)
@@ -73,8 +99,7 @@ public class ReorderPhotosCacheInvalidationTests
         return shop;
     }
 
-    private void VerifySearchInvalidated() =>
-        _cache.Verify(
-            c => c.RemoveByPattern(CacheKey.Shop.SearchPattern(), _ct),
-            Times.Once);
+    private void VerifyProfileInvalidated(Guid shopId) =>
+        _bus.Verify(b => b.PublishAsync(It.Is<ShopProfileCacheInvalidationRequested>(
+            message => message.ShopId == shopId)), Times.Once);
 }
