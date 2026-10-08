@@ -49,8 +49,17 @@ public class LegacyMigrationLiveTests
             var city = new City("Legacy city");
             shopsContext.Cities.Add(city);
             shop.SetDraftLocation(city.Id, "Legacy address");
-            shopsContext.Shops.Add(shop);
             await shopsContext.SaveChangesAsync(ct);
+            // This database deliberately stops before AddShopProfileRevision. Seed the
+            // legacy Shops row with its historical columns rather than the current EF model.
+            await shopsContext.Database.ExecuteSqlInterpolatedAsync($"""
+                INSERT INTO "Shops"
+                    ("Id", "Name", "Address", "CityId", "IsAddressValidated", "CreatedAtUtc",
+                     "IsHidden", "PriceRange", "SlugRevision", "Status")
+                VALUES
+                    ({shop.Id}, {shop.Name}, {"Legacy address"}, {city.Id}, {false}, {DateTime.UtcNow},
+                     {false}, {(int)PriceRange.Moderate}, {0L}, {(int)CoffeeShopStatus.Active})
+                """, ct);
             var open = new List<NpgsqlConnection>();
             try
             {
