@@ -147,7 +147,8 @@ public sealed class ShopVisibilityWolverineLiveTests : IClassFixture<ShopsLiveDa
         }
 
         await using var verify = fixture.Context();
-        var final = await verify.Shops.AsNoTracking().SingleAsync(s => s.Id == shop.Id, ct);
+        var final = await verify.Shops.Include(s => s.ShopTags).AsNoTracking()
+            .SingleAsync(s => s.Id == shop.Id, ct);
         Assert.True(final.IsHidden);
         Assert.Equal(4, final.ProfileRevision);
         Assert.Equal(CoffeeFocusType.Specialty, final.Type);
