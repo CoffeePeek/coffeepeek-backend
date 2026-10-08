@@ -4,7 +4,6 @@ using CoffeePeek.Contract.Dtos;
 using CoffeePeek.Contract.Dtos.Menu;
 using CoffeePeek.Contract.Events.Menu;
 using CoffeePeek.Shared.Domain.Interfaces.Infrastructure;
-using CoffeePeek.Shared.Kernel;
 using CoffeePeek.Shared.Kernel.Options;
 using CoffeePeek.Shared.Kernel.Response;
 using CoffeePeek.Shared.Kernel.Exceptions;
@@ -27,7 +26,6 @@ public static class UpdateAdminShopMenuHandler
         IQueryCoffeeDrinkRepository drinks,
         IQueryShopMenuRepository queryMenu,
         IUnitOfWork unitOfWork,
-        ICacheService cacheService,
         IOptions<MediaPublicUrlOptions> mediaOptions,
         CancellationToken ct)
     {
@@ -78,9 +76,6 @@ public static class UpdateAdminShopMenuHandler
         }
 
         await unitOfWork.SaveChangesAsync(ct);
-        await cacheService.RemoveAsync(CacheKey.Shop.Detail(shop.Id));
-        await cacheService.RemoveByPattern(CacheKey.Shop.SearchPattern(), ct);
-
         var dto = ShopMenuDtoFactory.FromShopMenu(
             await queryMenu.GetByShopIdAsync(command.ShopId, ct), catalog, mediaOptions.Value)!;
         return Response<AdminShopMenuDto>.Success(new AdminShopMenuDto(dto, []));

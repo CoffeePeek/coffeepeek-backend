@@ -1,24 +1,25 @@
 using CoffeePeek.Shared.Kernel.Exceptions;
-using CoffeePeek.Shared.Kernel;
 using CoffeePeek.Shared.Domain.Interfaces.Infrastructure;
 using CoffeePeek.Shared.Kernel.Options;
 using CoffeePeek.Shared.Kernel.Response;
+using CoffeePeek.Shared.Persistence.Cache.Redis;
 using CoffeePeek.Shared.Persistence.Data;
 using CoffeePeek.Contract.Dtos.Menu;
 using CoffeePeek.Shops.Application.Features.Admin.Menu;
 using CoffeePeek.Shops.Application.Services;
+using CoffeePeek.Shops.Infrastructure.Consumers;
 using CoffeePeek.Shops.Domain.Aggregates.MenuAggregate;
 using CoffeePeek.Shops.Domain.Entities;
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
 using CoffeePeek.Shops.Persistance.Configuration;
 using CoffeePeek.Shops.Persistance.Repositories;
 using CoffeePeek.Testing;
+using JasperFx;
 using JasperFx.CodeGeneration;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
-using Moq;
 using Npgsql;
 using Wolverine;
 using Wolverine.EntityFrameworkCore;
@@ -38,7 +39,7 @@ public sealed class ShopMenuManualWriteLiveTests : IClassFixture<ShopsLiveDataba
     }
 
     [Fact]
-    public async Task WolverineMenuUpdate_CacheFailureAfterRawUpsert_RollsBackSql()
+    public async Task WolverineMenuUpdate_RedisFailureAfterRawUpsert_DoesNotRollBackSql_AndRetries()
     {
         var ct = TestContext.Current.CancellationToken;
         var city = new City("menu-rollback-" + Guid.NewGuid().ToString("N"));
@@ -67,9 +68,14 @@ public sealed class ShopMenuManualWriteLiveTests : IClassFixture<ShopsLiveDataba
                 npgsql.ConfigureDataSource(dataSource => dataSource.EnableDynamicJson()))
             .AddInterceptors(new AuditInterceptor(), probe)
             .Options;
-        var cache = new Mock<ICacheService>();
-        cache.Setup(c => c.RemoveByPattern(CacheKey.Shop.SearchPattern(), It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new InvalidOperationException("Injected cache failure after SQL upsert."));
+        var invalidator = new FailOnceStrictCacheInvalidator(shop.Id, async callbackCt =>
+        {
+            await using var db = fixture.Context();
+            var persistedMenu = await db.ShopMenus.AsNoTracking().Include(m => m.Items)
+                .SingleAsync(m => m.CoffeeShopId == shop.Id, callbackCt);
+            return persistedMenu.InputRevision == 2 &&
+                persistedMenu.Items.Single().Price == 8m;
+        });
         using var host = Host.CreateDefaultBuilder()
             .ConfigureServices(services =>
             {
@@ -80,7 +86,7 @@ public sealed class ShopMenuManualWriteLiveTests : IClassFixture<ShopsLiveDataba
                 services.AddScoped<IQueryShopMenuRepository, QueryShopMenuRepository>();
                 services.AddScoped<IApplyShopMenuService, ApplyShopMenuService>();
                 services.AddScoped<IUnitOfWork, UnitOfWork<ShopsDbContext>>();
-                services.AddSingleton(cache.Object);
+                services.AddSingleton<IStrictCacheInvalidator>(invalidator);
                 services.AddSingleton<IOptions<MediaPublicUrlOptions>>(Options.Create(
                     new MediaPublicUrlOptions
                     {
@@ -93,10 +99,15 @@ public sealed class ShopMenuManualWriteLiveTests : IClassFixture<ShopsLiveDataba
                 wolverine.ApplicationAssembly = typeof(ShopMenuManualWriteLiveTests).Assembly;
                 wolverine.Discovery.DisableConventionalDiscovery();
                 wolverine.Discovery.IncludeType(typeof(UpdateAdminShopMenuHandler));
+                wolverine.Discovery.IncludeType(typeof(ShopProfileCacheInvalidationRequestedHandler));
                 wolverine.UseRuntimeCompilation();
-                wolverine.PersistMessagesWithPostgresql(fixture.ConnectionString);
+                wolverine.PersistMessagesWithPostgresql(fixture.ConnectionString, "wolverine");
                 wolverine.CodeGeneration.TypeLoadMode = TypeLoadMode.Auto;
                 wolverine.CodeGeneration.AlwaysUseServiceLocationFor(typeof(ShopsDbContext));
+                wolverine.Policies.UseDurableOutboxOnAllSendingEndpoints();
+                wolverine.Policies.UseDurableInboxOnAllListeners();
+                wolverine.Policies.UseDurableLocalQueues();
+                wolverine.Durability.Mode = DurabilityMode.Solo;
                 wolverine.UseEntityFrameworkCoreTransactions();
                 wolverine.Policies.AutoApplyTransactions();
             })
@@ -106,12 +117,15 @@ public sealed class ShopMenuManualWriteLiveTests : IClassFixture<ShopsLiveDataba
         try
         {
             var bus = host.Services.GetRequiredService<IMessageBus>();
-            await Assert.ThrowsAsync<InvalidOperationException>(() =>
-                bus.InvokeAsync<Response<AdminShopMenuDto>>(
-                    new UpdateAdminShopMenuCommand(shop.Id,
-                        [new UpdateShopMenuItemRequest(slug,
-                            CoffeePeek.Contract.Enums.MenuItemAvailability.Present, 8m, 300)],
-                        ApplySuggestedPriceRange: false, UserId: Guid.NewGuid()), ct));
+            var response = await bus.InvokeAsync<Response<AdminShopMenuDto>>(
+                new UpdateAdminShopMenuCommand(shop.Id,
+                    [new UpdateShopMenuItemRequest(slug,
+                        CoffeePeek.Contract.Enums.MenuItemAvailability.Present, 8m, 300)],
+                    ApplySuggestedPriceRange: false, UserId: Guid.NewGuid()), ct);
+            Assert.True(response.IsSuccess);
+            Assert.True(await invalidator.FirstAttempt.WaitAsync(TimeSpan.FromSeconds(20), ct),
+                "The cache consumer ran before the menu commit was visible.");
+            await invalidator.Recovered.WaitAsync(TimeSpan.FromSeconds(30), ct);
         }
         finally
         {
@@ -120,16 +134,15 @@ public sealed class ShopMenuManualWriteLiveTests : IClassFixture<ShopsLiveDataba
 
         Assert.True(probe.SawUpsert);
         Assert.True(probe.UpsertHadTransaction);
-        cache.Verify(c => c.RemoveByPattern(CacheKey.Shop.SearchPattern(), It.IsAny<CancellationToken>()),
-            Times.Once);
+        Assert.Equal(2, invalidator.DetailAttempts);
 
         await using var verify = fixture.Context();
         var persisted = await verify.ShopMenus.Include(m => m.Items)
             .SingleAsync(m => m.CoffeeShopId == shop.Id, ct);
-        Assert.Equal(1, persisted.InputRevision);
+        Assert.Equal(2, persisted.InputRevision);
         var item = Assert.Single(persisted.Items);
-        Assert.Equal(5m, item.Price);
-        Assert.Equal(200, item.VolumeMl);
+        Assert.Equal(8m, item.Price);
+        Assert.Equal(300, item.VolumeMl);
     }
 
     [Fact]

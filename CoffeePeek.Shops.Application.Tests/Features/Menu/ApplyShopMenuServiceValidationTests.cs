@@ -7,6 +7,7 @@ using CoffeePeek.Shops.Application.Services;
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
 using CoffeePeek.Shops.Domain.Aggregates.MenuAggregate;
 using Moq;
+using Wolverine;
 using ContractAvailability = CoffeePeek.Contract.Enums.MenuItemAvailability;
 using ContractSource = CoffeePeek.Contract.Enums.MenuItemSource;
 using ContractPriceRange = CoffeePeek.Contract.Enums.PriceRange;
@@ -30,7 +31,7 @@ public sealed class ApplyShopMenuServiceValidationTests
         var drinks = new Mock<IQueryCoffeeDrinkRepository>();
         drinks.Setup(x => x.GetActiveAsync(ct)).ReturnsAsync([]);
         var service = new ApplyShopMenuService(menus.Object, drinks.Object, shops.Object,
-            new Mock<ICacheService>().Object);
+            new Mock<IMessageBus>().Object);
         var snapshot = new ShopMenuSnapshot(null, "BYN", ContractPriceRange.Expensive, [], []);
 
         await service.ApplySnapshotAsync(shop.Id, snapshot, true, null, ct);
@@ -53,9 +54,9 @@ public sealed class ApplyShopMenuServiceValidationTests
         repository.Setup(x => x.GetTrackedByShopIdAsync(shopId, ct)).ReturnsAsync(menu);
         var catalog = new Mock<IQueryCoffeeDrinkRepository>();
         catalog.Setup(x => x.GetActiveAsync(ct)).ReturnsAsync([drink]);
-        var cache = new Mock<ICacheService>();
+        var bus = new Mock<IMessageBus>();
         var service = new ApplyShopMenuService(repository.Object, catalog.Object,
-            Mock.Of<ICoffeeShopRepository>(), cache.Object);
+            Mock.Of<ICoffeeShopRepository>(), bus.Object);
 
         await service.ApplySnapshotAsync(shopId,
             new ShopMenuSnapshot(DateTime.UtcNow, "BYN", null,
@@ -79,9 +80,9 @@ public sealed class ApplyShopMenuServiceValidationTests
         var repository = new Mock<IShopMenuRepository>(MockBehavior.Strict);
         var catalog = new Mock<IQueryCoffeeDrinkRepository>();
         catalog.Setup(x => x.GetActiveAsync(ct)).ReturnsAsync([drink]);
-        var cache = new Mock<ICacheService>(MockBehavior.Strict);
+        var bus = new Mock<IMessageBus>(MockBehavior.Strict);
         var service = new ApplyShopMenuService(repository.Object, catalog.Object,
-            Mock.Of<ICoffeeShopRepository>(), cache.Object);
+            Mock.Of<ICoffeeShopRepository>(), bus.Object);
 
         await Assert.ThrowsAsync<DomainException>(() => service.ApplySnapshotAsync(shopId,
             new ShopMenuSnapshot(DateTime.UtcNow, "BYN", null,
@@ -90,7 +91,7 @@ public sealed class ApplyShopMenuServiceValidationTests
                 []), false, null, ct));
 
         repository.VerifyNoOtherCalls();
-        cache.VerifyNoOtherCalls();
+        bus.VerifyNoOtherCalls();
     }
 
     [Fact]
@@ -106,7 +107,7 @@ public sealed class ApplyShopMenuServiceValidationTests
         var catalog = new Mock<IQueryCoffeeDrinkRepository>();
         catalog.Setup(x => x.GetActiveAsync(ct)).ReturnsAsync([drink]);
         var service = new ApplyShopMenuService(repository.Object, catalog.Object,
-            Mock.Of<ICoffeeShopRepository>(), new Mock<ICacheService>().Object);
+            Mock.Of<ICoffeeShopRepository>(), new Mock<IMessageBus>().Object);
 
         await service.ApplyParseResultAsync(shopId,
             [new ParsedMenuItemDto("latte", 1m, null, "Latte")], [], null, [],

@@ -55,7 +55,7 @@ namespace Internal.Generated.WolverineHandlers
             var openAiMenuVisionParser = new CoffeePeek.Shops.Infrastructure.Menu.OpenAiMenuVisionParser(_httpClientFactory1, _optionsOfOpenAiOptions, _loggerOfOpenAiMenuVisionParser);
             var unitOfWorkOfShopsDbContext = new CoffeePeek.Shared.Persistence.Data.UnitOfWork<CoffeePeek.Shops.Persistance.Configuration.ShopsDbContext>(shopsDbContext);
             var queryCoffeeShopRepository = new CoffeePeek.Shops.Persistance.Repositories.QueryCoffeeShopRepository(shopsDbContext);
-            var applyShopMenuService = new CoffeePeek.Shops.Application.Services.ApplyShopMenuService(shopMenuRepository, queryCoffeeDrinkRepository, coffeeShopRepository, _cacheService);
+            var applyShopMenuService = new CoffeePeek.Shops.Application.Services.ApplyShopMenuService(shopMenuRepository, queryCoffeeDrinkRepository, coffeeShopRepository, context);
             // The actual message body
             var parseMenuRequestedEvent = (CoffeePeek.Contract.Events.Menu.ParseMenuRequestedEvent)context.Envelope.Message;
 

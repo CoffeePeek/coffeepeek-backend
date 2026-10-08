@@ -11,14 +11,12 @@ namespace Internal.Generated.WolverineHandlers
     [global::System.CodeDom.Compiler.GeneratedCode("JasperFx", "1.0.0")]
     public sealed class UpdateAdminShopMenuCommandHandler125161899 : Wolverine.Runtime.Handlers.MessageHandler
     {
-        private readonly CoffeePeek.Shared.Domain.Interfaces.Infrastructure.ICacheService _cacheService;
         private readonly Microsoft.Extensions.DependencyInjection.IServiceScopeFactory _serviceScopeFactory;
         private readonly Microsoft.Extensions.Options.IOptions<CoffeePeek.Shared.Kernel.Options.MediaPublicUrlOptions> _optionsOfMediaPublicUrlOptions;
         private readonly System.Collections.Generic.IEnumerable<Wolverine.EntityFrameworkCore.IDomainEventScraper> _domainEventScraperIEnumerable;
 
-        public UpdateAdminShopMenuCommandHandler125161899(CoffeePeek.Shared.Domain.Interfaces.Infrastructure.ICacheService cacheService, Microsoft.Extensions.DependencyInjection.IServiceScopeFactory serviceScopeFactory, Microsoft.Extensions.Options.IOptions<CoffeePeek.Shared.Kernel.Options.MediaPublicUrlOptions> optionsOfMediaPublicUrlOptions, System.Collections.Generic.IEnumerable<Wolverine.EntityFrameworkCore.IDomainEventScraper> domainEventScraperIEnumerable)
+        public UpdateAdminShopMenuCommandHandler125161899(Microsoft.Extensions.DependencyInjection.IServiceScopeFactory serviceScopeFactory, Microsoft.Extensions.Options.IOptions<CoffeePeek.Shared.Kernel.Options.MediaPublicUrlOptions> optionsOfMediaPublicUrlOptions, System.Collections.Generic.IEnumerable<Wolverine.EntityFrameworkCore.IDomainEventScraper> domainEventScraperIEnumerable)
         {
-            _cacheService = cacheService;
             _serviceScopeFactory = serviceScopeFactory;
             _optionsOfMediaPublicUrlOptions = optionsOfMediaPublicUrlOptions;
             _domainEventScraperIEnumerable = domainEventScraperIEnumerable;
@@ -37,7 +35,7 @@ namespace Internal.Generated.WolverineHandlers
             var queryShopMenuRepository = new CoffeePeek.Shops.Persistance.Repositories.QueryShopMenuRepository(shopsDbContext);
             var queryCoffeeDrinkRepository = new CoffeePeek.Shops.Persistance.Repositories.QueryCoffeeDrinkRepository(shopsDbContext);
             var coffeeShopRepository = new CoffeePeek.Shops.Persistance.Repositories.CoffeeShopRepository(shopsDbContext);
-            var applyShopMenuService = new CoffeePeek.Shops.Application.Services.ApplyShopMenuService(shopMenuRepository, queryCoffeeDrinkRepository, coffeeShopRepository, _cacheService);
+            var applyShopMenuService = new CoffeePeek.Shops.Application.Services.ApplyShopMenuService(shopMenuRepository, queryCoffeeDrinkRepository, coffeeShopRepository, context);
             // The actual message body
             var updateAdminShopMenuCommand = (CoffeePeek.Shops.Application.Features.Admin.Menu.UpdateAdminShopMenuCommand)context.Envelope.Message;
 
@@ -57,7 +55,7 @@ namespace Internal.Generated.WolverineHandlers
                 System.Diagnostics.Activity.Current?.SetTag("handler.type", "CoffeePeek.Shops.Application.Features.Admin.Menu.UpdateAdminShopMenuHandler");
 
                 // The actual message execution
-                var outgoing1 = await CoffeePeek.Shops.Application.Features.Admin.Menu.UpdateAdminShopMenuHandler.Handle(updateAdminShopMenuCommand, coffeeShopRepository, applyShopMenuService, queryCoffeeDrinkRepository, queryShopMenuRepository, unitOfWorkOfShopsDbContext, _cacheService, _optionsOfMediaPublicUrlOptions, cancellation).ConfigureAwait(false);
+                var outgoing1 = await CoffeePeek.Shops.Application.Features.Admin.Menu.UpdateAdminShopMenuHandler.Handle(updateAdminShopMenuCommand, coffeeShopRepository, applyShopMenuService, queryCoffeeDrinkRepository, queryShopMenuRepository, unitOfWorkOfShopsDbContext, _optionsOfMediaPublicUrlOptions, cancellation).ConfigureAwait(false);
 
 
                 // Outgoing, cascaded message

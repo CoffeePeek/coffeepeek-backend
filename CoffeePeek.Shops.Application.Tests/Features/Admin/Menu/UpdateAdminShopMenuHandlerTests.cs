@@ -46,7 +46,7 @@ public class UpdateAdminShopMenuHandlerTests
             new UpdateAdminShopMenuCommand(shop.Id,
                 [new UpdateShopMenuItemRequest("latte", ContractAvailability.Present, 5m, 200)], true, Guid.NewGuid()),
             shops.Object, applyMenu.Object, drinks.Object, query.Object,
-            new Mock<IUnitOfWork>().Object, new Mock<ICacheService>().Object,
+            new Mock<IUnitOfWork>().Object,
             Options.Create(new MediaPublicUrlOptions { PublicEndpoint = "https://media.example.com" }), ct);
 
         result.IsSuccess.Should().BeTrue();
@@ -75,7 +75,7 @@ public class UpdateAdminShopMenuHandlerTests
                  new UpdateShopMenuItemRequest("LATTE", ContractAvailability.Present, 6m, 250)],
                 false, Guid.NewGuid()),
             shops.Object, applyMenu.Object, drinks.Object, new Mock<IQueryShopMenuRepository>().Object,
-            unitOfWork.Object, new Mock<ICacheService>(MockBehavior.Strict).Object,
+            unitOfWork.Object,
             Options.Create(new MediaPublicUrlOptions { PublicEndpoint = "https://media.example.com" }),
             CancellationToken.None);
 
@@ -103,14 +103,13 @@ public class UpdateAdminShopMenuHandlerTests
             var applyMenu = new Mock<IApplyShopMenuService>(MockBehavior.Strict);
             var drinks = new Mock<IQueryCoffeeDrinkRepository>(MockBehavior.Strict);
             var unitOfWork = new Mock<IUnitOfWork>(MockBehavior.Strict);
-            var cache = new Mock<ICacheService>(MockBehavior.Strict);
 
             var result = await UpdateAdminShopMenuHandler.Handle(
                 new UpdateAdminShopMenuCommand(Guid.NewGuid(),
                     [new UpdateShopMenuItemRequest("latte", ContractAvailability.Present, 5m, 200), invalid],
                     false, Guid.NewGuid()),
                 shops.Object, applyMenu.Object, drinks.Object, new Mock<IQueryShopMenuRepository>().Object,
-                unitOfWork.Object, cache.Object,
+                unitOfWork.Object,
                 Options.Create(new MediaPublicUrlOptions { PublicEndpoint = "https://media.example.com" }),
                 CancellationToken.None);
 
@@ -119,7 +118,6 @@ public class UpdateAdminShopMenuHandlerTests
             drinks.VerifyNoOtherCalls();
             applyMenu.VerifyNoOtherCalls();
             unitOfWork.VerifyNoOtherCalls();
-            cache.VerifyNoOtherCalls();
         }
     }
 
@@ -137,7 +135,6 @@ public class UpdateAdminShopMenuHandlerTests
         ]);
         var applyMenu = new Mock<IApplyShopMenuService>(MockBehavior.Strict);
         var unitOfWork = new Mock<IUnitOfWork>(MockBehavior.Strict);
-        var cache = new Mock<ICacheService>(MockBehavior.Strict);
 
         var result = await UpdateAdminShopMenuHandler.Handle(
             new UpdateAdminShopMenuCommand(shopId,
@@ -145,14 +142,13 @@ public class UpdateAdminShopMenuHandlerTests
                  new UpdateShopMenuItemRequest("inactive", ContractAvailability.Present, 6m, 250)],
                 false, Guid.NewGuid()),
             shops.Object, applyMenu.Object, drinks.Object, new Mock<IQueryShopMenuRepository>().Object,
-            unitOfWork.Object, cache.Object,
+            unitOfWork.Object,
             Options.Create(new MediaPublicUrlOptions { PublicEndpoint = "https://media.example.com" }),
             CancellationToken.None);
 
         result.StatusCode.Should().Be(400);
         applyMenu.VerifyNoOtherCalls();
         unitOfWork.VerifyNoOtherCalls();
-        cache.VerifyNoOtherCalls();
     }
 
     [Fact]
@@ -367,7 +363,6 @@ public class UpdateAdminShopMenuHandlerTests
             drinks.Object,
             queryMenu.Object,
             new Mock<IUnitOfWork>().Object,
-            new Mock<ICacheService>().Object,
             Options.Create(new MediaPublicUrlOptions { PublicEndpoint = "https://media.example.com" }),
             CancellationToken.None);
 
@@ -450,7 +445,6 @@ public class UpdateAdminShopMenuHandlerTests
 
         var unitOfWork = new Mock<IUnitOfWork>();
         unitOfWork.Setup(unit => unit.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
-        var cache = new Mock<ICacheService>();
         var media = Options.Create(new MediaPublicUrlOptions { PublicEndpoint = "https://media.example.com" });
         var command = new UpdateAdminShopMenuCommand(
             shopId,
@@ -465,7 +459,6 @@ public class UpdateAdminShopMenuHandlerTests
             drinks.Object,
             queryMenu.Object,
             unitOfWork.Object,
-            cache.Object,
             media,
             CancellationToken.None);
 

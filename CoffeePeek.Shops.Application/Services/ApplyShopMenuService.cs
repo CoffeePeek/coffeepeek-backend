@@ -1,12 +1,13 @@
 using System.Text.Json;
 using CoffeePeek.Contract.Dtos.Menu;
 using CoffeePeek.Shared.Domain.Interfaces.Infrastructure;
-using CoffeePeek.Shared.Kernel;
+using CoffeePeek.Shops.Application.Features.CoffeeShop.ShopProfile;
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
 using CoffeePeek.Shops.Domain.Aggregates.MenuAggregate;
 using DomainPriceRange = CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate.PriceRange;
 using DomainAvailability = CoffeePeek.Shops.Domain.Aggregates.MenuAggregate.MenuItemAvailability;
 using DomainSource = CoffeePeek.Shops.Domain.Aggregates.MenuAggregate.MenuItemSource;
+using Wolverine;
 
 namespace CoffeePeek.Shops.Application.Services;
 
@@ -14,7 +15,7 @@ public class ApplyShopMenuService(
     IShopMenuRepository menuRepository,
     IQueryCoffeeDrinkRepository drinkRepository,
     ICoffeeShopRepository shopRepository,
-    ICacheService cacheService) : IApplyShopMenuService
+    IMessageBus bus) : IApplyShopMenuService
 {
     private static readonly JsonSerializerOptions JsonOpts = new(JsonSerializerDefaults.Web);
 
@@ -25,7 +26,7 @@ public class ApplyShopMenuService(
         CancellationToken ct)
     {
         var menu = await menuRepository.ApplyManualItemsAsync(shopId, items, userId, ct);
-        await cacheService.RemoveByPattern(CacheKey.Shop.SearchPattern(), ct);
+        await bus.PublishAsync(new ShopProfileCacheInvalidationRequested(shopId));
         return menu;
     }
 
@@ -84,8 +85,7 @@ public class ApplyShopMenuService(
         if (applySuggestedPriceRange && suggested.HasValue)
             await ApplyPriceRangeAsync(shopId, suggested.Value, ct);
 
-        await cacheService.RemoveAsync(CacheKey.Shop.Detail(shopId));
-        await cacheService.RemoveByPattern(CacheKey.Shop.SearchPattern(), ct);
+        await bus.PublishAsync(new ShopProfileCacheInvalidationRequested(shopId));
     }
 
     public async Task ApplyParseResultAsync(
@@ -128,15 +128,14 @@ public class ApplyShopMenuService(
             menu.AddPhotos(photos.Select(p => ShopMenuPhoto.Create(
                 p.FileName, p.ContentType, p.StorageKey, p.SizeBytes, p.MediaPhotoId)));
 
-        await cacheService.RemoveAsync(CacheKey.Shop.Detail(shopId));
-        await cacheService.RemoveByPattern(CacheKey.Shop.SearchPattern(), ct);
+        await bus.PublishAsync(new ShopProfileCacheInvalidationRequested(shopId));
     }
 
     public async Task MarkParseFailedAsync(Guid shopId, string error, CancellationToken ct)
     {
         var menu = await GetOrCreateAsync(shopId, ct);
         menu.MarkParseFailed(error);
-        await cacheService.RemoveAsync(CacheKey.Shop.Detail(shopId));
+        await bus.PublishAsync(new ShopProfileCacheInvalidationRequested(shopId));
     }
 
     public async Task<ShopMenu> GetOrCreateAsync(Guid shopId, CancellationToken ct)

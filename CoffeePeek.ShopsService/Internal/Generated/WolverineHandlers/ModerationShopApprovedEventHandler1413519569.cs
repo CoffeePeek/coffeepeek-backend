@@ -40,7 +40,7 @@ namespace Internal.Generated.WolverineHandlers
             var queryCoffeeDrinkRepository = new CoffeePeek.Shops.Persistance.Repositories.QueryCoffeeDrinkRepository(shopsDbContext);
             var shopMenuRepository = new CoffeePeek.Shops.Persistance.Repositories.ShopMenuRepository(shopsDbContext);
             var unitOfWorkOfShopsDbContext = new CoffeePeek.Shared.Persistence.Data.UnitOfWork<CoffeePeek.Shops.Persistance.Configuration.ShopsDbContext>(shopsDbContext);
-            var applyShopMenuService = new CoffeePeek.Shops.Application.Services.ApplyShopMenuService(shopMenuRepository, queryCoffeeDrinkRepository, coffeeShopRepository, _cacheService1);
+            var applyShopMenuService = new CoffeePeek.Shops.Application.Services.ApplyShopMenuService(shopMenuRepository, queryCoffeeDrinkRepository, coffeeShopRepository, context);
             var queryBrewMethodRepository = new CoffeePeek.Shops.Persistance.Repositories.QueryBrewMethodRepository(shopsDbContext);
             var queryRoasterRepository = new CoffeePeek.Shops.Persistance.Repositories.QueryRoasterRepository(shopsDbContext);
             var queryEquipmentRepository = new CoffeePeek.Shops.Persistance.Repositories.QueryEquipmentRepository(shopsDbContext);

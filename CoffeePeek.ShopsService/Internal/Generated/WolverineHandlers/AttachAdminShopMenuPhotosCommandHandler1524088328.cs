@@ -46,7 +46,7 @@ namespace Internal.Generated.WolverineHandlers
             var queryCoffeeDrinkRepository = new CoffeePeek.Shops.Persistance.Repositories.QueryCoffeeDrinkRepository(shopsDbContext);
             var queryShopMenuRepository = new CoffeePeek.Shops.Persistance.Repositories.QueryShopMenuRepository(shopsDbContext);
             var coffeeShopRepository = new CoffeePeek.Shops.Persistance.Repositories.CoffeeShopRepository(shopsDbContext);
-            var applyShopMenuService = new CoffeePeek.Shops.Application.Services.ApplyShopMenuService(shopMenuRepository, queryCoffeeDrinkRepository, coffeeShopRepository, _cacheService);
+            var applyShopMenuService = new CoffeePeek.Shops.Application.Services.ApplyShopMenuService(shopMenuRepository, queryCoffeeDrinkRepository, coffeeShopRepository, context);
             // The actual message body
             var attachAdminShopMenuPhotosCommand = (CoffeePeek.Shops.Application.Features.Admin.Menu.AttachAdminShopMenuPhotosCommand)context.Envelope.Message;
 
