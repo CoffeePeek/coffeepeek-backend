@@ -22,7 +22,6 @@ public static class AddPublishedShopPhotosHandler
         AddPublishedShopPhotosCommand command,
         ICoffeeShopRepository repository,
         IUnitOfWork unitOfWork,
-        ICacheService cacheService,
         IOptions<MediaPublicUrlOptions> mediaOptions,
         IUploadedPhotoLookup photoLookup,
         IMessageBus bus,
@@ -39,7 +38,12 @@ public static class AddPublishedShopPhotosHandler
         var verified = await TrustedUploadedShopPhotos.ClaimAsync(
             photoLookup, command.ActorUserId, command.ShopId,
             ShopPhotoAttachmentKind.Gallery, command.Photos, ct);
-        var photos = verified.Select(p => new ShopPhoto(
+        var existingKeys = shop.ShopPhotos.Select(p => p.StorageKey).ToHashSet(StringComparer.Ordinal);
+        var newVerified = verified.Where(p => !existingKeys.Contains(p.StorageKey)).ToArray();
+        if (newVerified.Length == 0)
+            return Response<AdminPublishedShopDto>.Success(AdminPublishedShopMapper.Map(shop, mediaOptions.Value));
+
+        var photos = newVerified.Select(p => new ShopPhoto(
             p.FileName,
             p.ContentType,
             p.StorageKey,
@@ -55,10 +59,9 @@ public static class AddPublishedShopPhotosHandler
 
         await bus.PublishAsync(new ShopPhotosAttachedEvent(command.ActorUserId,
             command.ShopId, ShopPhotoAttachmentKind.Gallery,
-            verified.Select(p => p.StorageKey).ToArray()));
+            newVerified.Select(p => p.StorageKey).ToArray()));
         await unitOfWork.SaveChangesAsync(ct);
-        await cacheService.RemoveAsync(CacheKey.Shop.Detail(command.ShopId));
-        await cacheService.RemoveByPattern(CacheKey.Shop.SearchPattern(), ct);
+        await bus.PublishAsync(new ShopProfileCacheInvalidationRequested(shop.Id));
 
         shop = await LoadShopAsync(repository, command.ShopId, command.OwnerUserId, ct);
         if (shop is null)

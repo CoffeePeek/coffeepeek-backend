@@ -39,9 +39,12 @@ public sealed class ShopVisibilityWolverineLiveTests : IClassFixture<ShopsLiveDa
     {
         var ct = TestContext.Current.CancellationToken;
         var shop = new CoffeeShop(null, "Visibility test", null, PriceRange.Cheap, Guid.NewGuid());
+        var city = new City("Visibility city " + Guid.NewGuid().ToString("N"));
+        shop.SetLocation(city.Id, "Visibility address", 53m, 27m);
         var tag = ShopTag.Create("live-tag-" + Guid.NewGuid().ToString("N"), "Live tag");
         await using (var seed = fixture.Context())
         {
+            seed.Cities.Add(city);
             seed.Shops.Add(shop);
             seed.ShopTags.Add(tag);
             await seed.SaveChangesAsync(ct);

@@ -70,16 +70,39 @@ public class PublishedShopPhotosHandlerTests
             new AddPublishedShopPhotosCommand(shop.Id, actorId, null, [
                 new UploadedPhotoDto("a.jpg", "image/jpeg", "key-a", 12)
             ]),
-            _shops.Object, _uow.Object, _cache.Object, _media, _photos.Object, _bus.Object, _ct);
+            _shops.Object, _uow.Object, _media, _photos.Object, _bus.Object, _ct);
 
         result.IsSuccess.Should().BeTrue();
         shop.ShopPhotos.Should().ContainSingle(p => p.StorageKey == "key-a" && p.OwnerId == actorId);
         shop.ShopPhotos.Single().FileName.Should().Be("verified.jpg");
         shop.ShopPhotos.Single().SizeBytes.Should().Be(512);
         result.Data!.Photos.Should().ContainSingle(p => p.StorageKey == "key-a" && p.SortIndex == 0);
+        shop.ProfileRevision.Should().Be(1);
         _uow.Verify(u => u.SaveChangesAsync(_ct), Times.Once);
         _bus.Verify(b => b.PublishAsync(It.Is<ShopPhotosAttachedEvent>(e =>
             e.OwnerId == actorId && e.ShopId == shop.Id && e.Kind == ShopPhotoAttachmentKind.Gallery)), Times.Once);
+        _bus.Verify(b => b.PublishAsync(It.Is<ShopProfileCacheInvalidationRequested>(e => e.ShopId == shop.Id)), Times.Once);
+        _cache.Verify(c => c.RemoveAsync(It.IsAny<CacheKey>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task AddPhotos_AlreadyAttachedKey_DoesNotAdvanceRevisionOrRepublish()
+    {
+        var shop = new DomainCoffeeShop(Guid.NewGuid(), "Shop", null, DomainPriceRange.Cheap, Guid.NewGuid());
+        shop.AddPhotos([new ShopPhoto("a.jpg", "image/jpeg", "key-a", 12, Guid.NewGuid())]);
+        _shops.Setup(r => r.GetByIdAsync(shop.Id, _ct)).ReturnsAsync(shop);
+
+        var result = await AddPublishedShopPhotosHandler.Handle(
+            new AddPublishedShopPhotosCommand(shop.Id, Guid.NewGuid(), null,
+                [new UploadedPhotoDto("a.jpg", "image/jpeg", "key-a", 12)]),
+            _shops.Object, _uow.Object, _media, _photos.Object, _bus.Object, _ct);
+
+        result.IsSuccess.Should().BeTrue();
+        shop.ProfileRevision.Should().Be(0);
+        _shops.Verify(r => r.TryAttachGalleryPhotosAsync(It.IsAny<Guid>(), It.IsAny<Guid?>(),
+            It.IsAny<IReadOnlyList<ShopPhoto>>(), _ct), Times.Never);
+        _uow.Verify(u => u.SaveChangesAsync(_ct), Times.Never);
+        _bus.VerifyNoOtherCalls();
     }
 
     [Fact]
@@ -87,7 +110,7 @@ public class PublishedShopPhotosHandlerTests
     {
         var result = await AddPublishedShopPhotosHandler.Handle(
             new AddPublishedShopPhotosCommand(Guid.NewGuid(), Guid.NewGuid(), null, []),
-            _shops.Object, _uow.Object, _cache.Object, _media, _photos.Object, _bus.Object, _ct);
+            _shops.Object, _uow.Object, _media, _photos.Object, _bus.Object, _ct);
 
         result.IsSuccess.Should().BeFalse();
         result.StatusCode.Should().Be((int)HttpStatusCode.BadRequest);
@@ -109,7 +132,7 @@ public class PublishedShopPhotosHandlerTests
             new AddPublishedShopPhotosCommand(shopId, Guid.NewGuid(), null, [
                 new UploadedPhotoDto("a.jpg", "image/jpeg", "key-a", 12)
             ]),
-            _shops.Object, _uow.Object, _cache.Object, _media, _photos.Object, _bus.Object, _ct);
+            _shops.Object, _uow.Object, _media, _photos.Object, _bus.Object, _ct);
 
         result.IsSuccess.Should().BeFalse();
         result.StatusCode.Should().Be((int)HttpStatusCode.NotFound);
@@ -129,7 +152,7 @@ public class PublishedShopPhotosHandlerTests
         var act = () => AddPublishedShopPhotosHandler.Handle(
             new AddPublishedShopPhotosCommand(shopId, Guid.NewGuid(), null,
                 [new UploadedPhotoDto("untrusted.jpg", "image/jpeg", "foreign-key", 1)]),
-            _shops.Object, _uow.Object, _cache.Object, _media, _photos.Object, _bus.Object, _ct);
+            _shops.Object, _uow.Object, _media, _photos.Object, _bus.Object, _ct);
 
         await act.Should().ThrowAsync<ValidationException>();
         _shops.Verify(r => r.TryAttachGalleryPhotosAsync(It.IsAny<Guid>(), It.IsAny<Guid?>(),
@@ -147,7 +170,7 @@ public class PublishedShopPhotosHandlerTests
             new AddPublishedShopPhotosCommand(shopId, Guid.NewGuid(), null,
                 [new UploadedPhotoDto("a.jpg", "image/jpeg", "same-key", 1),
                     new UploadedPhotoDto("b.jpg", "image/jpeg", "same-key", 2)]),
-            _shops.Object, _uow.Object, _cache.Object, _media, _photos.Object, _bus.Object, _ct);
+            _shops.Object, _uow.Object, _media, _photos.Object, _bus.Object, _ct);
 
         await act.Should().ThrowAsync<ValidationException>();
         _photos.VerifyNoOtherCalls();
@@ -166,7 +189,7 @@ public class PublishedShopPhotosHandlerTests
         var act = () => AddPublishedShopPhotosHandler.Handle(
             new AddPublishedShopPhotosCommand(shopId, Guid.NewGuid(), null,
                 [new UploadedPhotoDto("a.jpg", "image/jpeg", "key-a", 1)]),
-            _shops.Object, _uow.Object, _cache.Object, _media, _photos.Object, _bus.Object, _ct);
+            _shops.Object, _uow.Object, _media, _photos.Object, _bus.Object, _ct);
 
         await act.Should().ThrowAsync<ServiceUnavailableException>();
         _uow.Verify(u => u.SaveChangesAsync(_ct), Times.Never);

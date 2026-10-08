@@ -13,7 +13,6 @@ namespace Internal.Generated.WolverineHandlers
     [global::System.CodeDom.Compiler.GeneratedCode("JasperFx", "1.0.0")]
     public sealed class AddPublishedShopPhotosCommandHandler869140189 : Wolverine.Runtime.Handlers.MessageHandler
     {
-        private readonly CoffeePeek.Shared.Domain.Interfaces.Infrastructure.ICacheService _cacheService;
         private readonly Microsoft.Extensions.DependencyInjection.IServiceScopeFactory _serviceScopeFactory;
         private readonly Microsoft.Extensions.Logging.ILogger<CoffeePeek.Shops.Infrastructure.Media.MediaUploadedPhotoLookup> _loggerOfMediaUploadedPhotoLookup;
         private readonly Microsoft.Extensions.Options.IOptions<CoffeePeek.Shared.Auth.Options.GatewayAuthOptions> _optionsOfGatewayAuthOptions;
@@ -21,9 +20,8 @@ namespace Internal.Generated.WolverineHandlers
         private readonly System.Collections.Generic.IEnumerable<Wolverine.EntityFrameworkCore.IDomainEventScraper> _domainEventScraperIEnumerable;
         private readonly System.Net.Http.IHttpClientFactory _httpClientFactory;
 
-        public AddPublishedShopPhotosCommandHandler869140189(CoffeePeek.Shared.Domain.Interfaces.Infrastructure.ICacheService cacheService, Microsoft.Extensions.DependencyInjection.IServiceScopeFactory serviceScopeFactory, Microsoft.Extensions.Logging.ILogger<CoffeePeek.Shops.Infrastructure.Media.MediaUploadedPhotoLookup> loggerOfMediaUploadedPhotoLookup, Microsoft.Extensions.Options.IOptions<CoffeePeek.Shared.Auth.Options.GatewayAuthOptions> optionsOfGatewayAuthOptions, Microsoft.Extensions.Options.IOptions<CoffeePeek.Shared.Kernel.Options.MediaPublicUrlOptions> optionsOfMediaPublicUrlOptions, System.Collections.Generic.IEnumerable<Wolverine.EntityFrameworkCore.IDomainEventScraper> domainEventScraperIEnumerable, System.Net.Http.IHttpClientFactory httpClientFactory)
+        public AddPublishedShopPhotosCommandHandler869140189(Microsoft.Extensions.DependencyInjection.IServiceScopeFactory serviceScopeFactory, Microsoft.Extensions.Logging.ILogger<CoffeePeek.Shops.Infrastructure.Media.MediaUploadedPhotoLookup> loggerOfMediaUploadedPhotoLookup, Microsoft.Extensions.Options.IOptions<CoffeePeek.Shared.Auth.Options.GatewayAuthOptions> optionsOfGatewayAuthOptions, Microsoft.Extensions.Options.IOptions<CoffeePeek.Shared.Kernel.Options.MediaPublicUrlOptions> optionsOfMediaPublicUrlOptions, System.Collections.Generic.IEnumerable<Wolverine.EntityFrameworkCore.IDomainEventScraper> domainEventScraperIEnumerable, System.Net.Http.IHttpClientFactory httpClientFactory)
         {
-            _cacheService = cacheService;
             _serviceScopeFactory = serviceScopeFactory;
             _loggerOfMediaUploadedPhotoLookup = loggerOfMediaUploadedPhotoLookup;
             _optionsOfGatewayAuthOptions = optionsOfGatewayAuthOptions;
@@ -62,7 +60,7 @@ namespace Internal.Generated.WolverineHandlers
                 System.Diagnostics.Activity.Current?.SetTag("handler.type", "CoffeePeek.Shops.Application.Features.CoffeeShop.ShopProfile.AddPublishedShopPhotosHandler");
 
                 // The actual message execution
-                var outgoing1 = await CoffeePeek.Shops.Application.Features.CoffeeShop.ShopProfile.AddPublishedShopPhotosHandler.Handle(addPublishedShopPhotosCommand, coffeeShopRepository, unitOfWorkOfShopsDbContext, _cacheService, _optionsOfMediaPublicUrlOptions, mediaUploadedPhotoLookup, context, cancellation).ConfigureAwait(false);
+                var outgoing1 = await CoffeePeek.Shops.Application.Features.CoffeeShop.ShopProfile.AddPublishedShopPhotosHandler.Handle(addPublishedShopPhotosCommand, coffeeShopRepository, unitOfWorkOfShopsDbContext, _optionsOfMediaPublicUrlOptions, mediaUploadedPhotoLookup, context, cancellation).ConfigureAwait(false);
 
 
                 // Outgoing, cascaded message

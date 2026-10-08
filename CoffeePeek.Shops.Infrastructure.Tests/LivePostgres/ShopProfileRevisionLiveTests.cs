@@ -48,11 +48,7 @@ public sealed class ShopProfileRevisionLiveTests : IClassFixture<ShopsLiveDataba
         var ownerId = Guid.NewGuid();
         var shop = new CoffeeShop(null, "Original", null, PriceRange.Cheap, Guid.NewGuid());
         shop.AssignOwner(ownerId);
-        await using (var seed = fixture.Context())
-        {
-            seed.Shops.Add(shop);
-            await seed.SaveChangesAsync(ct);
-        }
+        await SeedShopAsync(shop, ct);
 
         var barrier = new ShopProfileReadBarrierInterceptor();
         var options = new DbContextOptionsBuilder<CoffeePeek.Shops.Persistance.Configuration.ShopsDbContext>()
@@ -166,11 +162,7 @@ public sealed class ShopProfileRevisionLiveTests : IClassFixture<ShopsLiveDataba
         var ownerId = Guid.NewGuid();
         var shop = new CoffeeShop(null, "Original", null, PriceRange.Cheap, Guid.NewGuid());
         shop.AssignOwner(ownerId);
-        await using (var seed = fixture.Context())
-        {
-            seed.Shops.Add(shop);
-            await seed.SaveChangesAsync(ct);
-        }
+        await SeedShopAsync(shop, ct);
 
         await using var adminDb = fixture.Context();
         await using var ownerDb = fixture.Context();
@@ -220,11 +212,7 @@ public sealed class ShopProfileRevisionLiveTests : IClassFixture<ShopsLiveDataba
         var ownerId = Guid.NewGuid();
         var shop = new CoffeeShop(null, "Original", null, PriceRange.Cheap, Guid.NewGuid());
         shop.AssignOwner(ownerId);
-        await using (var seed = fixture.Context())
-        {
-            seed.Shops.Add(shop);
-            await seed.SaveChangesAsync(ct);
-        }
+        await SeedShopAsync(shop, ct);
 
         var media = Options.Create(new MediaPublicUrlOptions
         {
@@ -267,11 +255,7 @@ public sealed class ShopProfileRevisionLiveTests : IClassFixture<ShopsLiveDataba
         var ownerId = Guid.NewGuid();
         var shop = new CoffeeShop(null, "Original", "Old", PriceRange.Cheap, Guid.NewGuid());
         shop.AssignOwner(ownerId);
-        await using (var seed = fixture.Context())
-        {
-            seed.Shops.Add(shop);
-            await seed.SaveChangesAsync(ct);
-        }
+        await SeedShopAsync(shop, ct);
 
         await using (var moderationDb = fixture.Context())
         {
@@ -307,5 +291,15 @@ public sealed class ShopProfileRevisionLiveTests : IClassFixture<ShopsLiveDataba
         var persisted = await verify.Shops.AsNoTracking().SingleAsync(s => s.Id == shop.Id, ct);
         Assert.Equal("Approved", persisted.Description);
         Assert.Equal(1, persisted.ProfileRevision);
+    }
+
+    private async Task SeedShopAsync(CoffeeShop shop, CancellationToken ct)
+    {
+        var city = new City("Revision city " + Guid.NewGuid().ToString("N"));
+        shop.SetLocation(city.Id, "Original address", 53m, 27m);
+        await using var seed = fixture.Context();
+        seed.Cities.Add(city);
+        seed.Shops.Add(shop);
+        await seed.SaveChangesAsync(ct);
     }
 }

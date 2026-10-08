@@ -109,7 +109,10 @@ public sealed class ShopProfileOutboxLiveTests : IClassFixture<ShopsLiveDatabase
     private async Task<CoffeeShop> SeedAsync(CancellationToken ct)
     {
         var shop = new CoffeeShop(null, "Original profile", null, PriceRange.Cheap, Guid.NewGuid());
+        var city = new City("Outbox city " + Guid.NewGuid().ToString("N"));
+        shop.SetLocation(city.Id, "Original address", 53m, 27m);
         await using var db = fixture.Context();
+        db.Cities.Add(city);
         db.Shops.Add(shop);
         await db.SaveChangesAsync(ct);
         return shop;
