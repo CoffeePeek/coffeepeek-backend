@@ -73,6 +73,59 @@ public class UnifiedCheckInHandlerTests
         _bus.Verify(b => b.PublishAsync(It.Is<CheckinCreatedEvent>(e => e.CheckInId == result.Data.Id)), Times.Once);
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task CreationCooldownAppliesToRequestedShop(bool recentVisitAtSameShop)
+    {
+        _repository.Setup(r => r.ExistsSinceAsync(_userId, It.IsAny<Guid>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+        _repository.Setup(r => r.ExistsSinceAsync(_userId, _shopId, It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(recentVisitAtSameShop);
+
+        if (recentVisitAtSameShop)
+        {
+            var error = await Assert.ThrowsAsync<ValidationException>(() => Create(Request()));
+            Assert.Contains("same coffee shop", error.Message);
+            _repository.Verify(r => r.Add(It.IsAny<DomainCheckIn>()), Times.Never);
+            _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+            _bus.Verify(b => b.PublishAsync(It.IsAny<CheckinCreatedEvent>()), Times.Never);
+        }
+        else
+        {
+            Assert.True((await Create(Request())).IsSuccess);
+            _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        _repository.Verify(r => r.ExistsSinceAsync(_userId, _shopId, It.IsAny<DateTime>(), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task SixthDailyCheckInIsAllowed()
+    {
+        _repository.Setup(r => r.CountSinceAsync(_userId, It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(5);
+
+        Assert.True((await Create(Request())).IsSuccess);
+        _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Theory]
+    [InlineData(6)]
+    [InlineData(7)]
+    public async Task DailyLimitStillAppliesAcrossShops(int todayCount)
+    {
+        _repository.Setup(r => r.CountSinceAsync(_userId, It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(todayCount);
+
+        var error = await Assert.ThrowsAsync<ValidationException>(() => Create(Request()));
+
+        Assert.Contains("6 per day", error.Message);
+        _repository.Verify(r => r.Add(It.IsAny<DomainCheckIn>()), Times.Never);
+        _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        _bus.Verify(b => b.PublishAsync(It.IsAny<CheckinCreatedEvent>()), Times.Never);
+    }
+
     [Fact]
     public async Task MissingShopOrInactiveDrinkFailsBeforeSave()
     {

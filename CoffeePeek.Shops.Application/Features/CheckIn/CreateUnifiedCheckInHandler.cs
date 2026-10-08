@@ -40,8 +40,9 @@ public static class CreateUnifiedCheckInHandler
         checkIn.SetDrink(drink);
         await repository.LockUserForCheckInAsync(command.UserId, ct);
         var now = DateTime.UtcNow;
-        if (await repository.ExistsSinceAsync(command.UserId, now.AddHours(-BusinessConstants.MinHoursBetweenUserCheckIns), ct))
-            throw new ValidationException($"Check-ins can be created once every {BusinessConstants.MinHoursBetweenUserCheckIns} hours.");
+        if (await repository.ExistsSinceAsync(command.UserId, request.CoffeeShopId,
+            now.AddHours(-BusinessConstants.MinHoursBetweenUserCheckIns), ct))
+            throw new ValidationException($"Check-ins at the same coffee shop can be created once every {BusinessConstants.MinHoursBetweenUserCheckIns} hours.");
         if (await repository.CountSinceAsync(command.UserId, now.Date, ct) >= BusinessConstants.MaxUserCheckInsPerDay)
             throw new ValidationException($"Check-ins are limited to {BusinessConstants.MaxUserCheckInsPerDay} per day.");
         if (keys.Length > 0)

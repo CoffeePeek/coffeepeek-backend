@@ -1,6 +1,6 @@
 <#
 Run against an isolated local stack with a visible shop and three distinct test accounts.
-Author and Other must have no check-in in the last three hours (the existing cooldown is retained).
+Author and Other must have no check-in at the selected shop in the last three hours and fewer than six check-ins today.
 Tokens are read from CHECKIN_AUTHOR_TOKEN, CHECKIN_OTHER_TOKEN and CHECKIN_MODERATOR_TOKEN.
 Optional PhotoJson is a fresh check-in UploadedPhotoDto uploaded by the OtherToken account.
 PreviousPublicCheckInId can select that account's older approved visit to test same-author rating fallback.
@@ -185,7 +185,7 @@ try {
     $body2 = New-Body "$marker second" 5
     $body2.visibility = 1
     if ($PhotoJson) { $body2.photos = @((Get-Content -LiteralPath $PhotoJson -Raw | ConvertFrom-Json)) }
-    # One creation per account keeps the real three-hour cooldown intact.
+    # One creation per account keeps the real three-hour per-shop cooldown intact.
     $second = Get-Data (Request POST '/api/v1/check-ins' $OtherToken $body2)
     $created.Add(@{ Id = [guid]$second.id; Token = $OtherToken })
     if ($PreviousPublicCheckInId -ne [guid]::Empty) {

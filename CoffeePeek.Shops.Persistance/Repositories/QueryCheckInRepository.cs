@@ -53,9 +53,9 @@ public class QueryCheckInRepository(ShopsDbContext dbContext) : IQueryCheckInRep
         dbContext.Database.ExecuteSqlInterpolatedAsync(
             $"SELECT pg_advisory_xact_lock(hashtextextended({"checkin:" + userId}, 0))", ct);
 
-    public Task<bool> ExistsSinceAsync(Guid userId, DateTime sinceUtc, CancellationToken ct = default)
+    public Task<bool> ExistsSinceAsync(Guid userId, Guid shopId, DateTime sinceUtc, CancellationToken ct = default)
     {
-        return _repository.AnyAsync(x => x.UserId == userId && x.CreatedAtUtc >= sinceUtc, ct);
+        return _repository.AnyAsync(x => x.UserId == userId && x.ShopId == shopId && x.CreatedAtUtc >= sinceUtc, ct);
     }
 
     public Task<int> CountSinceAsync(Guid userId, DateTime sinceUtc, CancellationToken ct = default)

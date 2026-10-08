@@ -196,7 +196,7 @@ All of these are **400** `ErrorResponse`, with `message` exactly as shown:
 
 When any of these occur, nothing is saved and nothing is sent to moderation.
 
-Other check-in validation errors are also 400. The exact strings are: `Coffee shop not found`, `Check-ins can be created once every 3 hours`, `Check-ins are limited to 3 per day`, `VisitedAt cannot be in the future`, `Rating must be between 1 and 5`, `Note is required when checking in publicly`, `Note must be between 10 and 500 characters` (public), `Note must not exceed 500 characters` (private), `Header must be between 3 and 100 characters`.
+Other check-in validation errors are also 400. The exact strings are: `Coffee shop not found`, `Check-ins at the same coffee shop can be created once every 3 hours`, `Check-ins are limited to 6 per day`, `VisitedAt cannot be in the future`, `Rating must be between 1 and 5`, `Note is required when checking in publicly`, `Note must be between 10 and 500 characters` (public), `Note must not exceed 500 characters` (private), `Header must be between 3 and 100 characters`.
 
 ---
 

@@ -22,7 +22,7 @@ public static class BusinessConstants
     public const int MaxCheckInPhotoStorageKeyLength = 255;
     public const int MinPublicCheckinNoteLength = MinReviewHeaderLength;
     public const int MinHoursBetweenUserCheckIns = 3;
-    public const int MaxUserCheckInsPerDay = 3;
+    public const int MaxUserCheckInsPerDay = 6;
     /// <summary>Allowed client/server clock drift when validating VisitedAt.</summary>
     public const int MaxVisitedAtClockSkewMinutes = 5;
 
