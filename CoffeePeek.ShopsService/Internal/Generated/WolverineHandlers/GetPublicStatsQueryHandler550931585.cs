@@ -10,13 +10,11 @@ namespace Internal.Generated.WolverineHandlers
     [global::System.CodeDom.Compiler.GeneratedCode("JasperFx", "1.0.0")]
     public sealed class GetPublicStatsQueryHandler550931585 : Wolverine.Runtime.Handlers.MessageHandler
     {
-        private readonly CoffeePeek.Shared.Domain.Interfaces.Infrastructure.ICacheService _cacheService;
         private readonly Microsoft.Extensions.DependencyInjection.IServiceScopeFactory _serviceScopeFactory;
         private readonly System.Collections.Generic.IEnumerable<Wolverine.EntityFrameworkCore.IDomainEventScraper> _domainEventScraperIEnumerable;
 
-        public GetPublicStatsQueryHandler550931585(CoffeePeek.Shared.Domain.Interfaces.Infrastructure.ICacheService cacheService, Microsoft.Extensions.DependencyInjection.IServiceScopeFactory serviceScopeFactory, System.Collections.Generic.IEnumerable<Wolverine.EntityFrameworkCore.IDomainEventScraper> domainEventScraperIEnumerable)
+        public GetPublicStatsQueryHandler550931585(Microsoft.Extensions.DependencyInjection.IServiceScopeFactory serviceScopeFactory, System.Collections.Generic.IEnumerable<Wolverine.EntityFrameworkCore.IDomainEventScraper> domainEventScraperIEnumerable)
         {
-            _cacheService = cacheService;
             _serviceScopeFactory = serviceScopeFactory;
             _domainEventScraperIEnumerable = domainEventScraperIEnumerable;
         }
@@ -49,7 +47,7 @@ namespace Internal.Generated.WolverineHandlers
                 System.Diagnostics.Activity.Current?.SetTag("handler.type", "CoffeePeek.Shops.Application.Features.Public.Stats.GetPublicStatsHandler");
 
                 // The actual message execution
-                var outgoing1 = await CoffeePeek.Shops.Application.Features.Public.Stats.GetPublicStatsHandler.Handle(getPublicStatsQuery, publicStatsQueryRepository, _cacheService, cancellation).ConfigureAwait(false);
+                var outgoing1 = await CoffeePeek.Shops.Application.Features.Public.Stats.GetPublicStatsHandler.Handle(getPublicStatsQuery, publicStatsQueryRepository, cancellation).ConfigureAwait(false);
 
 
                 // Outgoing, cascaded message

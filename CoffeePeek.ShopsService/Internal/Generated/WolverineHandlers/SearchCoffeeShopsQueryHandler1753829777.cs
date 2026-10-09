@@ -12,15 +12,13 @@ namespace Internal.Generated.WolverineHandlers
     [global::System.CodeDom.Compiler.GeneratedCode("JasperFx", "1.0.0")]
     public sealed class SearchCoffeeShopsQueryHandler1753829777 : Wolverine.Runtime.Handlers.MessageHandler
     {
-        private readonly CoffeePeek.Shared.Domain.Interfaces.Infrastructure.ICacheService _cacheService;
         private readonly MapsterMapper.IMapper _mapper;
         private readonly Microsoft.Extensions.DependencyInjection.IServiceScopeFactory _serviceScopeFactory;
         private readonly Microsoft.Extensions.Options.IOptions<CoffeePeek.Shared.Kernel.Options.MediaPublicUrlOptions> _optionsOfMediaPublicUrlOptions;
         private readonly System.Collections.Generic.IEnumerable<Wolverine.EntityFrameworkCore.IDomainEventScraper> _domainEventScraperIEnumerable;
 
-        public SearchCoffeeShopsQueryHandler1753829777(CoffeePeek.Shared.Domain.Interfaces.Infrastructure.ICacheService cacheService, MapsterMapper.IMapper mapper, Microsoft.Extensions.DependencyInjection.IServiceScopeFactory serviceScopeFactory, Microsoft.Extensions.Options.IOptions<CoffeePeek.Shared.Kernel.Options.MediaPublicUrlOptions> optionsOfMediaPublicUrlOptions, System.Collections.Generic.IEnumerable<Wolverine.EntityFrameworkCore.IDomainEventScraper> domainEventScraperIEnumerable)
+        public SearchCoffeeShopsQueryHandler1753829777(MapsterMapper.IMapper mapper, Microsoft.Extensions.DependencyInjection.IServiceScopeFactory serviceScopeFactory, Microsoft.Extensions.Options.IOptions<CoffeePeek.Shared.Kernel.Options.MediaPublicUrlOptions> optionsOfMediaPublicUrlOptions, System.Collections.Generic.IEnumerable<Wolverine.EntityFrameworkCore.IDomainEventScraper> domainEventScraperIEnumerable)
         {
-            _cacheService = cacheService;
             _mapper = mapper;
             _serviceScopeFactory = serviceScopeFactory;
             _optionsOfMediaPublicUrlOptions = optionsOfMediaPublicUrlOptions;
@@ -58,7 +56,7 @@ namespace Internal.Generated.WolverineHandlers
                 System.Diagnostics.Activity.Current?.SetTag("handler.type", "CoffeePeek.Shops.Application.Features.CoffeeShop.SearchCoffeeShops.SearchCoffeeShopsHandler");
 
                 // The actual message execution
-                var outgoing1 = await CoffeePeek.Shops.Application.Features.CoffeeShop.SearchCoffeeShops.SearchCoffeeShopsHandler.Handle(searchCoffeeShopsQuery, coffeeShopQueries, queryCheckInRepository, _cacheService, cancellation).ConfigureAwait(false);
+                var outgoing1 = await CoffeePeek.Shops.Application.Features.CoffeeShop.SearchCoffeeShops.SearchCoffeeShopsHandler.Handle(searchCoffeeShopsQuery, coffeeShopQueries, queryCheckInRepository, cancellation).ConfigureAwait(false);
 
 
                 // Outgoing, cascaded message
