@@ -10,6 +10,8 @@ using CoffeePeek.Shared.Kernel.Response;
 using CoffeePeek.Shared.Kernel.Exceptions;
 using CoffeePeek.Shops.Application.Features.Menu;
 using CoffeePeek.Shops.Application.Services;
+using CoffeePeek.Shops.Application.Features.CoffeeShop.ShopProfile;
+using Wolverine;
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
 using CoffeePeek.Shops.Domain.Aggregates.MenuAggregate;
 using Microsoft.Extensions.Options;
@@ -27,7 +29,7 @@ public static class ParseAdminShopMenuHandler
         IQueryShopMenuRepository queryMenu,
         IQueryCoffeeDrinkRepository drinks,
         IUnitOfWork unitOfWork,
-        ICacheService cacheService,
+        IMessageBus bus,
         IOptions<MediaPublicUrlOptions> mediaOptions,
         CancellationToken ct)
     {
@@ -40,8 +42,8 @@ public static class ParseAdminShopMenuHandler
             return (Response<AdminShopMenuDto>.Error(HttpStatusCode.BadRequest, "Attach menu photos before parsing."), null);
 
         var job = menu.QueueOcrJob(menu.Photos.ToArray(), DateTime.UtcNow);
+        await bus.PublishAsync(new ShopProfileCacheInvalidationRequested(shop.Id));
         await unitOfWork.SaveChangesAsync(ct);
-        await cacheService.RemoveAsync(CacheKey.Shop.Detail(shop.Id));
 
         var catalog = await drinks.GetActiveAsync(ct);
         var dto = ShopMenuDtoFactory.FromShopMenu(

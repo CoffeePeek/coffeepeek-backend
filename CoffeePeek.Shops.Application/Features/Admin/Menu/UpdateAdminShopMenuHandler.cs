@@ -4,6 +4,7 @@ using CoffeePeek.Contract.Dtos;
 using CoffeePeek.Contract.Dtos.Menu;
 using CoffeePeek.Contract.Events.Menu;
 using CoffeePeek.Shared.Domain.Interfaces.Infrastructure;
+using CoffeePeek.Shared.Kernel;
 using CoffeePeek.Shared.Kernel.Options;
 using CoffeePeek.Shared.Kernel.Response;
 using CoffeePeek.Shared.Kernel.Exceptions;

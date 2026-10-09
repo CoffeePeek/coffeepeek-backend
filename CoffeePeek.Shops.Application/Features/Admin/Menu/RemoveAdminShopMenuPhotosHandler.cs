@@ -10,6 +10,8 @@ using CoffeePeek.Shared.Kernel.Response;
 using CoffeePeek.Shared.Kernel.Exceptions;
 using CoffeePeek.Shops.Application.Features.Menu;
 using CoffeePeek.Shops.Application.Services;
+using CoffeePeek.Shops.Application.Features.CoffeeShop.ShopProfile;
+using Wolverine;
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
 using CoffeePeek.Shops.Domain.Aggregates.MenuAggregate;
 using Microsoft.Extensions.Options;
@@ -27,7 +29,7 @@ public static class RemoveAdminShopMenuPhotosHandler
         IQueryShopMenuRepository queryMenu,
         IQueryCoffeeDrinkRepository drinks,
         IUnitOfWork unitOfWork,
-        ICacheService cacheService,
+        IMessageBus bus,
         IOptions<MediaPublicUrlOptions> mediaOptions,
         CancellationToken ct)
     {
@@ -43,9 +45,8 @@ public static class RemoveAdminShopMenuPhotosHandler
         if (removed.IsFailed)
             return Response<AdminShopMenuDto>.Error(HttpStatusCode.BadRequest, removed.Errors[0].Message);
 
+        await bus.PublishAsync(new ShopProfileCacheInvalidationRequested(shop.Id));
         await unitOfWork.SaveChangesAsync(ct);
-        await cacheService.RemoveAsync(CacheKey.Shop.Detail(shop.Id));
-        await cacheService.RemoveByPattern(CacheKey.Shop.SearchPattern(), ct);
 
         var catalog = await drinks.GetActiveAsync(ct);
         var dto = ShopMenuDtoFactory.FromShopMenu(

@@ -11,14 +11,12 @@ namespace Internal.Generated.WolverineHandlers
     [global::System.CodeDom.Compiler.GeneratedCode("JasperFx", "1.0.0")]
     public sealed class ParseAdminShopMenuCommandHandler1977974989 : Wolverine.Runtime.Handlers.MessageHandler
     {
-        private readonly CoffeePeek.Shared.Domain.Interfaces.Infrastructure.ICacheService _cacheService;
         private readonly Microsoft.Extensions.DependencyInjection.IServiceScopeFactory _serviceScopeFactory;
         private readonly Microsoft.Extensions.Options.IOptions<CoffeePeek.Shared.Kernel.Options.MediaPublicUrlOptions> _optionsOfMediaPublicUrlOptions;
         private readonly System.Collections.Generic.IEnumerable<Wolverine.EntityFrameworkCore.IDomainEventScraper> _domainEventScraperIEnumerable;
 
-        public ParseAdminShopMenuCommandHandler1977974989(CoffeePeek.Shared.Domain.Interfaces.Infrastructure.ICacheService cacheService, Microsoft.Extensions.DependencyInjection.IServiceScopeFactory serviceScopeFactory, Microsoft.Extensions.Options.IOptions<CoffeePeek.Shared.Kernel.Options.MediaPublicUrlOptions> optionsOfMediaPublicUrlOptions, System.Collections.Generic.IEnumerable<Wolverine.EntityFrameworkCore.IDomainEventScraper> domainEventScraperIEnumerable)
+        public ParseAdminShopMenuCommandHandler1977974989(Microsoft.Extensions.DependencyInjection.IServiceScopeFactory serviceScopeFactory, Microsoft.Extensions.Options.IOptions<CoffeePeek.Shared.Kernel.Options.MediaPublicUrlOptions> optionsOfMediaPublicUrlOptions, System.Collections.Generic.IEnumerable<Wolverine.EntityFrameworkCore.IDomainEventScraper> domainEventScraperIEnumerable)
         {
-            _cacheService = cacheService;
             _serviceScopeFactory = serviceScopeFactory;
             _optionsOfMediaPublicUrlOptions = optionsOfMediaPublicUrlOptions;
             _domainEventScraperIEnumerable = domainEventScraperIEnumerable;
@@ -56,7 +54,7 @@ namespace Internal.Generated.WolverineHandlers
                 System.Diagnostics.Activity.Current?.SetTag("handler.type", "CoffeePeek.Shops.Application.Features.Admin.Menu.ParseAdminShopMenuHandler");
 
                 // The actual message execution
-                (var outgoing1, var outgoing2) = await CoffeePeek.Shops.Application.Features.Admin.Menu.ParseAdminShopMenuHandler.Handle(parseAdminShopMenuCommand, coffeeShopRepository, shopMenuRepository, queryShopMenuRepository, queryCoffeeDrinkRepository, unitOfWorkOfShopsDbContext, _cacheService, _optionsOfMediaPublicUrlOptions, cancellation).ConfigureAwait(false);
+                (var outgoing1, var outgoing2) = await CoffeePeek.Shops.Application.Features.Admin.Menu.ParseAdminShopMenuHandler.Handle(parseAdminShopMenuCommand, coffeeShopRepository, shopMenuRepository, queryShopMenuRepository, queryCoffeeDrinkRepository, unitOfWorkOfShopsDbContext, context, _optionsOfMediaPublicUrlOptions, cancellation).ConfigureAwait(false);
 
 
                 // Outgoing, cascaded message

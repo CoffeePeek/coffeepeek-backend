@@ -13,6 +13,7 @@ using CoffeePeek.Shops.Application.Services;
 using CoffeePeek.Shops.Application.Abstractions;
 using CoffeePeek.Contract.Dtos.ShopPhotos;
 using CoffeePeek.Contract.Events;
+using CoffeePeek.Shops.Application.Features.CoffeeShop.ShopProfile;
 using Wolverine;
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
 using CoffeePeek.Shops.Domain.Aggregates.MenuAggregate;
@@ -31,7 +32,6 @@ public static class AttachAdminShopMenuPhotosHandler
         IQueryShopMenuRepository queryMenu,
         IQueryCoffeeDrinkRepository drinks,
         IUnitOfWork unitOfWork,
-        ICacheService cacheService,
         IOptions<MediaPublicUrlOptions> mediaOptions,
         IUploadedPhotoLookup photoLookup,
         IMessageBus bus,
@@ -67,9 +67,8 @@ public static class AttachAdminShopMenuPhotosHandler
         await bus.PublishAsync(new ShopPhotosAttachedEvent(command.UserId,
             command.ShopId, ShopPhotoAttachmentKind.Menu,
             verified.Select(p => p.StorageKey).ToArray()));
+        await bus.PublishAsync(new ShopProfileCacheInvalidationRequested(shop.Id));
         await unitOfWork.SaveChangesAsync(ct);
-        await cacheService.RemoveAsync(CacheKey.Shop.Detail(shop.Id));
-        await cacheService.RemoveByPattern(CacheKey.Shop.SearchPattern(), ct);
 
         var catalog = await drinks.GetActiveAsync(ct);
         var dto = ShopMenuDtoFactory.FromShopMenu(

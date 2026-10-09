@@ -9,6 +9,7 @@ using CoffeePeek.Shared.Domain.Interfaces.Infrastructure;
 using CoffeePeek.Shared.Kernel;
 using CoffeePeek.Shared.Kernel.Options;
 using CoffeePeek.Shops.Application.Features.Admin.Menu;
+using CoffeePeek.Shops.Application.Features.CoffeeShop.ShopProfile;
 using CoffeePeek.Shops.Application.Services;
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
 using CoffeePeek.Shops.Domain.Aggregates.MenuAggregate;
@@ -152,7 +153,7 @@ public class UpdateAdminShopMenuHandlerTests
     }
 
     [Fact]
-    public async Task AttachPhotos_InvalidatesShopDetailCache()
+    public async Task AttachPhotos_QueuesPostCommitCacheInvalidation()
     {
         var userId = Guid.NewGuid();
         var shop = new DomainCoffeeShop(userId, "Coffee", null, PriceRange.Moderate, Guid.NewGuid());
@@ -167,7 +168,6 @@ public class UpdateAdminShopMenuHandlerTests
         drinks.Setup(r => r.GetActiveAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(Array.Empty<CoffeeDrinkDefinition>());
         var unitOfWork = new Mock<IUnitOfWork>();
-        var cache = new Mock<ICacheService>();
         var media = Options.Create(new MediaPublicUrlOptions { PublicEndpoint = "https://media.example.com" });
         var photoLookup = new Mock<CoffeePeek.Shops.Application.Abstractions.IUploadedPhotoLookup>();
         photoLookup.Setup(p => p.ClaimForShopAsync(userId, shop.Id,
@@ -188,7 +188,6 @@ public class UpdateAdminShopMenuHandlerTests
             queryMenu.Object,
             drinks.Object,
             unitOfWork.Object,
-            cache.Object,
             media,
             photoLookup.Object,
             bus.Object,
@@ -200,11 +199,12 @@ public class UpdateAdminShopMenuHandlerTests
         menu.OcrJobs.Should().ContainSingle();
         menu.Photos.Single().FileName.Should().Be("verified-menu.jpg");
         menu.Photos.Single().SizeBytes.Should().Be(150);
-        cache.Verify(c => c.RemoveAsync(CacheKey.Shop.Detail(shop.Id)), Times.Once);
+        bus.Verify(b => b.PublishAsync(It.Is<ShopProfileCacheInvalidationRequested>(
+            e => e.ShopId == shop.Id)), Times.Once);
     }
 
     [Fact]
-    public async Task ParseMenu_InvalidatesShopDetailCache()
+    public async Task ParseMenu_QueuesPostCommitCacheInvalidation()
     {
         var userId = Guid.NewGuid();
         var shop = new DomainCoffeeShop(userId, "Coffee", null, PriceRange.Moderate, Guid.NewGuid());
@@ -220,7 +220,7 @@ public class UpdateAdminShopMenuHandlerTests
         var drinks = new Mock<IQueryCoffeeDrinkRepository>();
         drinks.Setup(r => r.GetActiveAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(Array.Empty<CoffeeDrinkDefinition>());
-        var cache = new Mock<ICacheService>();
+        var bus = new Mock<Wolverine.IMessageBus>();
         var media = Options.Create(new MediaPublicUrlOptions { PublicEndpoint = "https://media.example.com" });
 
         var result = await ParseAdminShopMenuHandler.Handle(
@@ -230,7 +230,7 @@ public class UpdateAdminShopMenuHandlerTests
             queryMenu.Object,
             drinks.Object,
             new Mock<IUnitOfWork>().Object,
-            cache.Object,
+            bus.Object,
             media,
             CancellationToken.None);
 
@@ -238,11 +238,12 @@ public class UpdateAdminShopMenuHandlerTests
         result.Item2.Should().NotBeNull();
         menu.ActiveOcrJobId.Should().Be(result.Item2!.JobId);
         menu.OcrJobs.Should().ContainSingle();
-        cache.Verify(c => c.RemoveAsync(CacheKey.Shop.Detail(shop.Id)), Times.Once);
+        bus.Verify(b => b.PublishAsync(It.Is<ShopProfileCacheInvalidationRequested>(
+            e => e.ShopId == shop.Id)), Times.Once);
     }
 
     [Fact]
-    public async Task RemovePhotos_RemovesOnlyRequestedPhotosAndInvalidatesCaches()
+    public async Task RemovePhotos_RemovesOnlyRequestedPhotosAndQueuesInvalidation()
     {
         var userId = Guid.NewGuid();
         var shop = new DomainCoffeeShop(userId, "Coffee", null, PriceRange.Moderate, Guid.NewGuid());
@@ -262,7 +263,7 @@ public class UpdateAdminShopMenuHandlerTests
         drinks.Setup(r => r.GetActiveAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(Array.Empty<CoffeeDrinkDefinition>());
         var unitOfWork = new Mock<IUnitOfWork>();
-        var cache = new Mock<ICacheService>();
+        var bus = new Mock<Wolverine.IMessageBus>();
         var media = Options.Create(new MediaPublicUrlOptions { PublicEndpoint = "https://media.example.com" });
 
         var result = await RemoveAdminShopMenuPhotosHandler.Handle(
@@ -272,15 +273,15 @@ public class UpdateAdminShopMenuHandlerTests
             queryMenu.Object,
             drinks.Object,
             unitOfWork.Object,
-            cache.Object,
+            bus.Object,
             media,
             CancellationToken.None);
 
         result.IsSuccess.Should().BeTrue();
         menu.Photos.Should().ContainSingle().Which.Should().BeSameAs(remainingPhoto);
         unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
-        cache.Verify(c => c.RemoveAsync(CacheKey.Shop.Detail(shop.Id)), Times.Once);
-        cache.Verify(c => c.RemoveByPattern(CacheKey.Shop.SearchPattern(), It.IsAny<CancellationToken>()), Times.Once);
+        bus.Verify(b => b.PublishAsync(It.Is<ShopProfileCacheInvalidationRequested>(
+            e => e.ShopId == shop.Id)), Times.Once);
     }
 
     [Fact]
@@ -297,6 +298,7 @@ public class UpdateAdminShopMenuHandlerTests
         menuRepository.Setup(r => r.GetTrackedByShopIdAsync(shop.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(menu);
         var unitOfWork = new Mock<IUnitOfWork>();
+        var bus = new Mock<Wolverine.IMessageBus>();
 
         var result = await RemoveAdminShopMenuPhotosHandler.Handle(
             new RemoveAdminShopMenuPhotosCommand(shop.Id, [Guid.NewGuid()]),
@@ -305,7 +307,7 @@ public class UpdateAdminShopMenuHandlerTests
             new Mock<IQueryShopMenuRepository>().Object,
             new Mock<IQueryCoffeeDrinkRepository>().Object,
             unitOfWork.Object,
-            new Mock<ICacheService>().Object,
+            bus.Object,
             Options.Create(new MediaPublicUrlOptions { PublicEndpoint = "https://media.example.com" }),
             CancellationToken.None);
 
@@ -313,6 +315,7 @@ public class UpdateAdminShopMenuHandlerTests
         result.StatusCode.Should().Be(400);
         menu.Photos.Should().ContainSingle();
         unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        bus.Verify(b => b.PublishAsync(It.IsAny<ShopProfileCacheInvalidationRequested>()), Times.Never);
     }
 
     [Fact]
