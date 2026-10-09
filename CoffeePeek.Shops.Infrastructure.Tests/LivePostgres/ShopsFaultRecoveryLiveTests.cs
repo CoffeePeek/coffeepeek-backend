@@ -2,12 +2,16 @@ using CoffeePeek.MediaService.Configuration;
 using CoffeePeek.MediaService.Data;
 using CoffeePeek.Shared.Domain.Interfaces.Infrastructure;
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
+using CoffeePeek.Shops.Domain.Aggregates.MenuAggregate;
+using CoffeePeek.Shops.Persistance.Menu;
+using CoffeePeek.Shops.Application.Services;
 using CoffeePeek.Shops.Infrastructure.Tests.Faults;
 using CoffeePeek.Testing;
 using Microsoft.EntityFrameworkCore;
 using Minio;
 using Minio.DataModel.Args;
 using StackExchange.Redis;
+using Moq;
 
 namespace CoffeePeek.Shops.Infrastructure.Tests.LivePostgres;
 
@@ -165,6 +169,65 @@ public sealed class ShopsFaultRecoveryLiveTests(ShopsLiveDatabase shops, MediaLi
             Assert.Single(roaster.Photos, p => p.Id == id && p.SizeBytes == 3 && p.FileName == "trusted.jpg");
             Assert.Equal(1, await shopsDb.Roasters.CountAsync(r => r.Name == "Fault " + id, ct));
         }
+    }
+
+    [Theory]
+    [InlineData("before-ocr-store")]
+    [InlineData("after-ocr-store")]
+    public async Task OcrProcessCrash_RestartUsesStoredResultOrRequiresOperatorWithoutRepeatingProvider(string checkpoint)
+    {
+        Assert.SkipUnless(ShopsFaultControl.IsConfigured, "Requires the isolated process/PostgreSQL fault gate.");
+        var ct = TestContext.Current.CancellationToken;
+        var city = new City("OCR fault " + Guid.NewGuid().ToString("N"));
+        var shop = ShopsLiveDatabase.NewShop("OCR fault", city.Id);
+        var menu = ShopMenu.Create(shop.Id);
+        var photo = ShopMenuPhoto.Create("menu.jpg", "image/jpeg", "ocr/" + Guid.NewGuid(), 3);
+        menu.AddPhotos([photo]);
+        var job = menu.QueueOcrJob([photo], DateTime.UtcNow);
+        await using (var db = shops.Context(false))
+        {
+            db.Cities.Add(city); db.Shops.Add(shop); db.ShopMenus.Add(menu); await db.SaveChangesAsync(ct);
+        }
+        var root = NewRoot();
+        try
+        {
+            await using var first = new ShopsFaultProcess("ocr", root, shops.ConnectionString, job.Id, checkpoint);
+            await ShopsFaultControl.WaitMarkerAsync(root, "ocr-ready", ct, first.Process);
+            File.WriteAllText(ShopsFaultControl.Marker(root, "execute"), "execute");
+            await ShopsFaultControl.WaitMarkerAsync(root, checkpoint, ct, first.Process);
+            await using (var db = shops.Context(false))
+            {
+                var stored = await db.MenuOcrJobs.SingleAsync(j => j.Id == job.Id, ct);
+                Assert.Equal(checkpoint == "before-ocr-store" ? MenuOcrJobStatus.Running
+                    : MenuOcrJobStatus.ResultStored, stored.Status);
+                Assert.Empty((await db.ShopMenus.Include(m => m.Items).SingleAsync(m => m.Id == menu.Id, ct)).Items);
+            }
+            await first.DisposeAsync();
+            File.Delete(ShopsFaultControl.Marker(root, "ocr-ready"));
+            await using var recovery = new ShopsFaultProcess("ocr", root, shops.ConnectionString, job.Id);
+            await ShopsFaultControl.WaitMarkerAsync(root, "committed", ct, recovery.Process);
+            Assert.Equal("1", File.ReadAllText(ShopsFaultControl.Marker(root, "provider-calls")));
+            await using var verify = shops.Context(false);
+            var final = await verify.MenuOcrJobs.SingleAsync(j => j.Id == job.Id, ct);
+            var current = await verify.ShopMenus.Include(m => m.Items).SingleAsync(m => m.Id == menu.Id, ct);
+            if (checkpoint == "before-ocr-store")
+            {
+                Assert.Equal(MenuOcrJobStatus.Running, final.Status);
+                Assert.Null(final.ResultJson); Assert.Empty(current.Items);
+                var store = new MenuOcrJobStore(verify,
+                    Mock.Of<IApplyShopMenuService>());
+                Assert.Equal(MenuOcrJobStatus.Failed,
+                    await store.RecoverUnknownOutcomeAsync(job.Id, DateTime.UtcNow.AddMinutes(16), ct));
+                Assert.False(await store.StoreResultAsync(job.Id, "{\"success\":true}", ct));
+            }
+            else
+            {
+                Assert.Equal(MenuOcrJobStatus.Applied, final.Status);
+                var item = Assert.Single(current.Items); Assert.Equal(8m, item.Price); Assert.Equal(200, item.VolumeMl);
+                Assert.Single(current.Photos);
+            }
+        }
+        finally { ArchiveLogsAndDelete(root); }
     }
 
     private async Task<int> OutgoingCountAsync(CancellationToken ct)

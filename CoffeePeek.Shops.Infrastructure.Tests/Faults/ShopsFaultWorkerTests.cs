@@ -24,6 +24,11 @@ public sealed class ShopsFaultWorkerTests
         var root = ShopsFaultControl.Required("CP_FAULT_ROOT");
         var connection = ShopsFaultControl.Required("CP_FAULT_DB");
         Assert.True(LivePostgresServer.IsOwnedDatabaseName(new Npgsql.NpgsqlConnectionStringBuilder(connection).Database));
+        if (role == "ocr")
+        {
+            await ShopsOcrFaultWorker.RunAsync(root, connection, ct);
+            return;
+        }
         using var metrics = new MeterListener();
         metrics.InstrumentPublished = (instrument, listener) =>
         {

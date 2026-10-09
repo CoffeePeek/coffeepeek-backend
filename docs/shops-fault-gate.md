@@ -40,7 +40,14 @@ gate; данные каждого теста находятся в собств�
 finally завершает только дочерние процессы, восстанавливает proxy, удаляет собственные
 объекты/БД и сохраняет worker logs в CI artifact. Контур не подключается к deployment.
 
-Gate пока не доказывает потерю PG wire commit acknowledgement, рестарт во время
-платного OCR вызова, все import races и production SLO. Это отдельные пункты P31/P32;
-их нельзя закрыть результатом этих трёх сценариев. Приёмку этих тестов фиксировать
-только после фактического CI выполнения, а не успешной offline сборки.
+Добавлены два OCR process crash/restart сценария: после ответа до сохранения и после
+подтверждённого `ResultStored` commit до apply. Они используют production consumer,
+job store, menu service/repositories, реальную PG БД и принудительный kill процесса.
+Внешние vision provider и download подменены детерминированными test adapters;
+проверяется один вызов provider adapter, отсутствие открытой SQL транзакции во время
+его вызова, operator recovery для `Running`, отказ позднего ответа и применение
+сохранённого результата после рестарта. Это не доказательство exactly-once billing
+внешнего провайдера. Новые два сценария ещё ожидают обязательного CI исполнения.
+
+Gate пока не доказывает потерю PG wire commit acknowledgement и production SLO.
+Import snapshot concurrency проверяется отдельным `CoffeeImportRecoveryLiveTests`.

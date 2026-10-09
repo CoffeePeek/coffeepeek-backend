@@ -82,8 +82,8 @@ public sealed class ShopsReadPerformanceLiveTests(ShopsLiveDatabase fixture) : I
                 product.SetPublicSlug("performance-coffee-" + i);
                 product.ApplyClassification(new([], null, null, null, [], [], ["performance-taste-" + i % 40], null));
                 var source = new CoffeeProductSource(product, "performance.example", i.ToString(), "https://performance.example/" + i);
-                source.AttachVariant(new(source, "small", 250, 10 + i % 10, "BYN", CoffeeAvailability.InStock));
-                source.AttachVariant(new(source, "large", 1000, 30 + i % 10, "BYN", CoffeeAvailability.InStock));
+                source.AttachVariant(new(source, i + "-small", 250, 10 + i % 10, "BYN", CoffeeAvailability.InStock));
+                source.AttachVariant(new(source, i + "-large", 1000, 30 + i % 10, "BYN", CoffeeAvailability.InStock));
                 product.AttachSource(source); product.SetStatus(CoffeePublicationStatus.Published); db.CoffeeProducts.Add(product);
             }
             await db.SaveChangesAsync(ct);
