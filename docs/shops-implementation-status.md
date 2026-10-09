@@ -36,3 +36,7 @@ P05/P25 baseline межмодульных domain writes теперь пуст, �
 Полный [CI commit 9cba8d0a](https://github.com/CoffeePeek/coffeepeek-backend/actions/runs/37906065701) подтвердил оба пустых architecture baseline, все 24 обязательных PostgreSQL-класса и исправленный legacy transfer/cleanup с MinIO. Предыдущий отказ migration rehearsal устранён.
 
 P17 подключил новые административные фото обжарщиков к batch claim и прежнему durable `ShopPhotosAttachedEvent` с новым kind `Roaster=3`. ID назначения create стабилен по actor/upload set; повтор update сохраняет прежние фото без нового claim. Historical moderation protocol сохранён. Локально 2055 тестов прошли, 154 infrastructure live cases пропущены; пять новых PostgreSQL-сценариев входят в обязательный `ShopsDirectWriteBoundaryLiveTests` и ожидают CI. Deploy order и консервативный recovery — в `runbooks/shops-photo-claims.md`.
+
+В [CI 8d3bb3ed](https://github.com/CoffeePeek/coffeepeek-backend/actions/runs/37908095523) два rollback assertions ошибочно считали Wolverine `Handled` history новой работой. Профиль/фото rollback и успешные случаи прошли; assertion исправлен на необработанные envelopes. Повтор gate требуется.
+
+Для P04/P08/P17/P30/P31/P33 добавлен обязательный физический fault contour с отдельными процессами и настоящими Redis/RabbitMQ/Media PG/MinIO. Три родительских сценария и worker logs описаны в `shops-fault-gate.md`; локально он только собран, инфраструктурные проверки ожидают CI. PG wire acknowledgement, OCR/process recovery, дополнительные import races и нагрузочные измерения остаются открытыми.
