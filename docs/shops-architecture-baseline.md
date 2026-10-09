@@ -1,6 +1,6 @@
 # P05: исполняемый baseline архитектурных границ ShopsService
 
-Дата: 8 октября 2026 года. Источник истины для точных IL-вызовов и задачи удаления — `CoffeePeek.ShopsService.Tests/Architecture/CrossModuleWriteTests.cs` и `HostWriteBypassTests.cs`. Реестр в тестах сравнивается с фактическими вызовами **на равенство**: новая запись ломает проверку, исчезнувшая требует удалить старое исключение. `ApplicationAdapterDependencyTests` не имеет исключений. `TableOwnershipTests` сравнивает список владельцев с EF-моделью.
+Дата: 9 октября 2026 года. Источник истины для точных IL-вызовов и задачи удаления — `CoffeePeek.ShopsService.Tests/Architecture/CrossModuleWriteTests.cs` и `HostWriteBypassTests.cs`. Реестр в тестах сравнивается с фактическими вызовами **на равенство**: новая запись ломает проверку, исчезнувшая требует удалить старое исключение. `ApplicationAdapterDependencyTests` не имеет исключений. `TableOwnershipTests` сравнивает список владельцев с EF-моделью.
 
 | Текущий прямой путь | Владелец операции | Количество зафиксированных IL-вызовов | Устранение |
 | --- | --- | ---: | --- |
