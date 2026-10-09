@@ -23,9 +23,8 @@ public sealed partial class CoffeeCatalogStore
             failure.Stage is not ("collect" or "photos" or "apply") || string.IsNullOrWhiteSpace(failure.Error) || failure.Error.Length > 2000)
             throw new CoffeeCatalogException("Invalid import failure report.");
         if (await db.CoffeeImportRuns.AnyAsync(r => r.SourceKey == failure.SourceKey && r.SnapshotId == failure.SnapshotId, ct)) return;
-        var run = new CoffeeImportRun { SourceKey = failure.SourceKey, SnapshotId = failure.SnapshotId,
-            PayloadHash = failure.SnapshotId, CollectedAtUtc = failure.CollectedAtUtc.UtcDateTime, AppliedAtUtc = DateTime.UtcNow,
-            Status = "Failed", Error = failure.Stage + ": " + failure.Error[..Math.Min(failure.Error.Length, 1980)] };
+        var run = new CoffeeImportRun(failure.SourceKey, failure.SnapshotId, failure.SnapshotId);
+        run.MarkFailed(failure.CollectedAtUtc.UtcDateTime, failure.Stage + ": " + failure.Error[..Math.Min(failure.Error.Length, 1980)]);
         db.CoffeeImportRuns.Add(run);
         try
         {
@@ -90,15 +89,12 @@ public sealed partial class CoffeeCatalogStore
                     {
                         var product = new CoffeeProduct(roasterId, data);
                         product.SetPublicSlug(CoffeePeek.Shared.Domain.PublicAddresses.PublicSlug.Candidate(product.Name, product.Id, 1));
-                        source = new CoffeeProductSource { Product = product, CoffeeProductId = product.Id, SourceKey = request.SourceKey };
+                        source = new CoffeeProductSource(product, request.SourceKey, item.SourceProductId, item.SourceUrl);
                         product.AttachSource(source); db.CoffeeProducts.Add(product); sources.Add(source); added++;
                     }
                     if (!observed.Add(source.Id)) throw new CoffeeCatalogException("Two source cards resolve to the same product group.", 409);
-                    source.ExternalProductId = item.SourceProductId;
-                    source.SourceUrl = item.SourceUrl; source.SourceBrand = item.RoasterName;
-                    source.SellerName = item.SellerName ?? item.RoasterName;
-                    source.LastSeenAtUtc = collectedAt; source.IsPresent = true;
-                    source.RawJson = JsonSerializer.Serialize(item, WireJson);
+                    source.UpdateMetadata(item.SourceProductId, item.SourceUrl, item.RoasterName,
+                        item.SellerName ?? item.RoasterName, JsonSerializer.Serialize(item, WireJson), collectedAt);
                     var warnings = item.ReviewWarnings.ToList();
                     source.Product.ApplyContent(data, fromImport: true);
                     source.Product.ApplyClassification(CoffeeClassificationNormalizer.ActiveOnly(
@@ -121,22 +117,21 @@ public sealed partial class CoffeeCatalogStore
                         var row = source.Variants.SingleOrDefault(v => v.ExternalVariantId == offer.ExternalVariantId);
                         if (row is null)
                         {
-                            row = new CoffeeVariant { SourceKey = request.SourceKey, ExternalVariantId = offer.ExternalVariantId };
+                            row = new CoffeeVariant(source, offer.ExternalVariantId, offer.WeightGrams, offer.Price, offer.Currency);
                             source.AttachVariant(row);
                             db.Set<CoffeeVariant>().Add(row);
                         }
-                        row.WeightGrams = offer.WeightGrams; row.Price = offer.Price; row.Currency = offer.Currency;
-                        row.Availability = offer.AvailableForPurchase ? CoffeeAvailability.InStock : CoffeeAvailability.OutOfStock;
-                        row.AvailabilityScope = item.AvailabilityScope; row.CheckedAtUtc = collectedAt;
-                        row.SourceAttributesJson = offer.SourceAttributes.ValueKind == JsonValueKind.Undefined ? "{}" : offer.SourceAttributes.GetRawText();
-                        row.Grind = Attribute(offer.SourceAttributes, "grind");
-                        row.RoastPurpose = Attribute(offer.SourceAttributes, "roastPurpose");
+                        row.UpdateOffer(offer.WeightGrams, offer.Price, offer.Currency,
+                            offer.AvailableForPurchase ? CoffeeAvailability.InStock : CoffeeAvailability.OutOfStock,
+                            item.AvailabilityScope, collectedAt, Attribute(offer.SourceAttributes, "grind"),
+                            Attribute(offer.SourceAttributes, "roastPurpose"),
+                            offer.SourceAttributes.ValueKind == JsonValueKind.Undefined ? "{}" : offer.SourceAttributes.GetRawText());
                         var brewCode = CoffeeClassificationNormalizer.NormalizeBrewPurpose(row.RoastPurpose);
                         if (brewCode is not null && activeClassification.Any(v => v.GroupCode == "brew" && v.Code == brewCode))
                             row.SetBrewPurpose(brewCode, false, fromImport: true);
                     }
                     foreach (var missing in source.Variants.Where(v => !seenVariants.Contains(v.ExternalVariantId)))
-                        missing.Availability = CoffeeAvailability.Unknown;
+                        missing.MarkAvailability(CoffeeAvailability.Unknown);
                     if (item.StoredPhotos.Length > 0 && !source.Product.IsProtected("Photos"))
                     {
                         var keys = item.StoredPhotos.Select(p => p.StorageKey).ToHashSet(StringComparer.Ordinal);
@@ -147,12 +142,12 @@ public sealed partial class CoffeeCatalogStore
                             var row = source.Photos.SingleOrDefault(p => p.StorageKey == image.StorageKey);
                             if (row is null)
                             {
-                                row = new CoffeeProductPhoto(); source.AttachPhoto(row);
+                                row = new CoffeeProductPhoto(image.StorageKey, image.SourceUrl!, image.FileName,
+                                    image.ContentType, image.SizeBytes, image.Id, index);
+                                source.AttachPhoto(row);
                                 db.Set<CoffeeProductPhoto>().Add(row);
                             }
-                            row.SourceUrl = image.SourceUrl!; row.StorageKey = image.StorageKey;
-                            row.MediaPhotoId = image.Id; row.FileName = image.FileName; row.ContentType = image.ContentType;
-                            row.SizeBytes = image.SizeBytes; row.SortIndex = index++;
+                            source.UpdatePhoto(row, image.SourceUrl!, image.FileName, image.ContentType, image.SizeBytes, image.Id, index++);
                         }
                     }
                     if (item.ImageUrls.Length > 0 && item.StoredPhotos.Length == 0) warnings.Add("photos_not_imported");
@@ -168,21 +163,16 @@ public sealed partial class CoffeeCatalogStore
                 if (reconcile)
                     foreach (var missing in sources.Where(s => !observed.Contains(s.Id)))
                     {
-                        missing.IsPresent = false;
-                        foreach (var v in missing.Variants) v.Availability = CoffeeAvailability.Unknown;
-                        missing.Product.AdvanceVersion();
+                        missing.MarkAvailability(CoffeeAvailability.Unknown);
                     }
                 // Explicit unavailable rows are safe even when an HTML catalogue has no total counter.
                 foreach (var excluded in request.Snapshot.Excluded.Where(e => e.Reason == "not_purchasable"))
                 {
                     var source = sources.SingleOrDefault(s => s.ExternalProductId == excluded.SourceProductId);
                     if (source is null) continue;
-                    source.LastSeenAtUtc = collectedAt;
-                    source.IsPresent = true;
-                    foreach (var v in source.Variants) { v.Availability = CoffeeAvailability.OutOfStock; v.CheckedAtUtc = collectedAt; }
-                    source.Product.AdvanceVersion();
+                    source.MarkAvailability(CoffeeAvailability.OutOfStock, collectedAt);
                 }
-                var run = previous ?? new CoffeeImportRun { SourceKey = request.SourceKey, SnapshotId = request.SnapshotId, PayloadHash = payloadHash };
+                var run = previous ?? new CoffeeImportRun(request.SourceKey, request.SnapshotId, payloadHash);
                 run.MarkApplied(payloadHash, collectedAt, request.Snapshot.Products.Length,
                     request.Snapshot.Products.Sum(p => p.Variants.Length), added, reconcile);
                 if (previous is null) db.CoffeeImportRuns.Add(run);
@@ -201,9 +191,9 @@ public sealed partial class CoffeeCatalogStore
                 var failed = await db.CoffeeImportRuns.SingleOrDefaultAsync(r => r.SourceKey == request.SourceKey && r.SnapshotId == request.SnapshotId, ct);
                 if (failed is null)
                 {
-                    db.CoffeeImportRuns.Add(new CoffeeImportRun { SourceKey = request.SourceKey, SnapshotId = request.SnapshotId,
-                        PayloadHash = payloadHash, CollectedAtUtc = collectedAt, AppliedAtUtc = DateTime.UtcNow,
-                        Status = "Failed", Error = ex.Message[..Math.Min(ex.Message.Length, 2000)] });
+                    var run = new CoffeeImportRun(request.SourceKey, request.SnapshotId, payloadHash);
+                    run.MarkFailed(collectedAt, ex.Message[..Math.Min(ex.Message.Length, 2000)]);
+                    db.CoffeeImportRuns.Add(run);
                     await db.SaveChangesAsync(ct);
                 }
             }

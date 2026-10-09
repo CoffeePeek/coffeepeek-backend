@@ -14,8 +14,8 @@ public class ApplicationAdapterDependencyTests
         Assert.Null(Application.GetType("CoffeePeek.Shops.Application.Features.CoffeeCatalog.ICoffeeCatalogStore"));
         string[] writePrefixes = ["Create", "Edit", "Archive", "Set", "Import", "Record"];
         foreach (var reader in new[] { typeof(IPublicCoffeeCatalogReader), typeof(IAdminCoffeeCatalogReader) })
-            Assert.Empty(reader.GetMethods().Where(m => writePrefixes.Any(p => m.Name.StartsWith(p, StringComparison.Ordinal))));
-        Assert.Empty(typeof(IPublicCoffeeCatalogReader).GetMethods().Where(m => m.Name.StartsWith("Admin", StringComparison.Ordinal)));
+            Assert.DoesNotContain(reader.GetMethods(), m => writePrefixes.Any(p => m.Name.StartsWith(p, StringComparison.Ordinal)));
+        Assert.DoesNotContain(typeof(IPublicCoffeeCatalogReader).GetMethods(), m => m.Name.StartsWith("Admin", StringComparison.Ordinal));
     }
 
     [Fact]

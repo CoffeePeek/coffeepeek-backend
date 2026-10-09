@@ -54,7 +54,8 @@ public sealed class CoffeeProductArrayBoundaryTests
         Assert.Throws<NotSupportedException>(() =>
             ((ICollection<CoffeeProductCountry>)product.Countries).Add(new CoffeeProductCountry(product.Id, "ET")));
         Assert.Throws<NotSupportedException>(() =>
-            ((ICollection<CoffeeProductSource>)product.Sources).Add(new CoffeeProductSource()));
+            ((ICollection<CoffeeProductSource>)product.Sources).Add(
+                new CoffeeProductSource(product, "source", "external", "https://example.test/coffee")));
         Assert.Equal(["CO"], product.Countries.Select(c => c.CountryCode));
         Assert.Empty(product.Sources);
         Assert.Equal(countryVersion, product.Version);

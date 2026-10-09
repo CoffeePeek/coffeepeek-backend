@@ -106,7 +106,7 @@ public sealed class CoffeeProduct : Entity<Guid>, IPublicSlugOwner
             nameof(CompositionKind), nameof(Processing), nameof(RoastLevel), nameof(Acidity), nameof(Body),
             nameof(QGraderScoreRaw), nameof(TasteDescriptors), nameof(BrewRecommendations), nameof(GrindOptions),
             nameof(Features), nameof(Countries), "Photos" };
-        if (fields.Any(f => !allowed.Contains(f, StringComparer.Ordinal)))
+        if (fields is null || fields.Any(f => !allowed.Contains(f, StringComparer.Ordinal)))
             throw new DomainException("Unknown protected coffee field.");
         ProtectedFields = fields.Distinct(StringComparer.Ordinal).ToArray();
         Version = checked(Version + 1);
@@ -114,6 +114,7 @@ public sealed class CoffeeProduct : Entity<Guid>, IPublicSlugOwner
 
     public void ApplyContent(CoffeeContent data, bool fromImport = false)
     {
+        ArgumentNullException.ThrowIfNull(data);
         if (string.IsNullOrWhiteSpace(data.Name) || data.Name.Trim().Length > 250)
             throw new DomainException("Coffee name must contain 1–250 characters.");
         if (data.Description?.Length > 20000) throw new DomainException("Coffee description is too long.");
@@ -121,6 +122,10 @@ public sealed class CoffeeProduct : Entity<Guid>, IPublicSlugOwner
             data.ProductForm is not ("whole_beans" or "ground_only") ||
             data.CompositionKind is not ("unknown" or "single_origin" or "blend"))
             throw new DomainException("Invalid coffee kind, form or composition.");
+        if (new[] { data.TasteDescriptors, data.BrewRecommendations, data.GrindOptions, data.Features }
+                .Any(values => values is null || values.Length > 100 || values.Any(v => v is null || v.Length > 500)) ||
+            new[] { data.Processing, data.RoastLevel, data.Acidity, data.Body, data.QGraderScoreRaw }.Any(v => v?.Length > 1000))
+            throw new DomainException("Invalid coffee characteristics.");
         bool Write(string field) => !fromImport || !IsProtected(field);
         if (Write(nameof(Name))) Name = data.Name.Trim();
         if (Write(nameof(Description)) && (!fromImport || data.Description is not null)) Description = data.Description;
@@ -147,8 +152,9 @@ public sealed class CoffeeProduct : Entity<Guid>, IPublicSlugOwner
     }
     public void ReplaceCountries(IEnumerable<string> codes)
     {
+        ArgumentNullException.ThrowIfNull(codes);
         var values = codes.Distinct(StringComparer.Ordinal).ToArray();
-        if (values.Any(c => c.Length != 2 || c.Any(x => x is < 'A' or > 'Z')))
+        if (values.Length > 30 || values.Any(c => c is null || c.Length != 2 || c.Any(x => x is < 'A' or > 'Z')))
             throw new DomainException("Country codes must be ISO alpha-2 codes.");
         _countries.RemoveAll(c => !values.Contains(c.CountryCode));
         foreach (var code in values.Except(_countries.Select(c => c.CountryCode)))

@@ -53,12 +53,11 @@ public sealed class RoasterCountsTests
             var p = new CoffeeProduct(roaster.Id, new($"Coffee {i}", null, "roasted_beans", "whole_beans", "unknown",
                 null, null, null, null, null, [], [], [], []));
             p.SetPublicSlug($"coffee-{i}"); p.SetStatus(status);
-            var source = new CoffeeProductSource { Product = p, CoffeeProductId = p.Id, SourceKey = "source.example",
-                ExternalProductId = p.Id.ToString(), SourceUrl = "https://source.example/coffee", LastSeenAtUtc = DateTime.UtcNow };
+            var source = new CoffeeProductSource(p, "source.example", p.Id.ToString(), "https://source.example/coffee");
+            source.UpdateMetadata(source.ExternalProductId, source.SourceUrl, null, null, "{}", DateTime.UtcNow);
             foreach (var weight in new[] { 250, 1000 })
-                source.AttachVariant(new CoffeeVariant { Source = source, CoffeeProductSourceId = source.Id,
-                    SourceKey = source.SourceKey, ExternalVariantId = $"{p.Id}-{weight}", WeightGrams = weight,
-                    Price = 30, Currency = "BYN", Availability = i == 0 ? CoffeeAvailability.OutOfStock : CoffeeAvailability.InStock });
+                source.AttachVariant(new CoffeeVariant(source, $"{p.Id}-{weight}", weight, 30, "BYN",
+                    i == 0 ? CoffeeAvailability.OutOfStock : CoffeeAvailability.InStock));
             p.AttachSource(source);
             return p;
         }).ToArray();

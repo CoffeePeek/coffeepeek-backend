@@ -50,12 +50,11 @@ public sealed class DiscoveryQueryLiveTests : IClassFixture<ShopsLiveDatabase>
         var source = p.Sources.FirstOrDefault();
         if (source is null)
         {
-            source = new CoffeeProductSource { Product = p, CoffeeProductId = p.Id, SourceKey = "live.example", ExternalProductId = p.Id.ToString(),
-                SourceUrl = "https://live.example/coffee", LastSeenAtUtc = DateTime.UtcNow };
+            source = new CoffeeProductSource(p, "live.example", p.Id.ToString(), "https://live.example/coffee");
+            source.UpdateMetadata(source.ExternalProductId, source.SourceUrl, null, null, "{}", DateTime.UtcNow);
             p.AttachSource(source);
         }
-        var v = new CoffeeVariant { Source = source, CoffeeProductSourceId = source.Id, SourceKey = source.SourceKey,
-            ExternalVariantId = Guid.NewGuid().ToString(), WeightGrams = weight, Price = price, Currency = "BYN", Availability = availability, CheckedAtUtc = DateTime.UtcNow };
+        var v = new CoffeeVariant(source, Guid.NewGuid().ToString(), weight, price, "BYN", availability);
         v.SetBrewPurpose(brew, false); source.AttachVariant(v);
     }
 
@@ -228,7 +227,9 @@ public sealed class DiscoveryQueryLiveTests : IClassFixture<ShopsLiveDatabase>
         var draft = AddProduct(db, r, "Draft", "decaf", "light", brew: ["filter"]); draft.SetStatus(CoffeePublicationStatus.Draft); AddOffer(draft, 250, 5);
         await db.SaveChangesAsync(Ct);
         a.CreatedAtUtc = DateTime.UtcNow.AddDays(-2); b.CreatedAtUtc = DateTime.UtcNow.AddDays(-1);
-        a.Sources.First().LastSeenAtUtc = DateTime.UtcNow; b.Sources.First().LastSeenAtUtc = DateTime.UtcNow.AddHours(-1);
+        var aSource = a.Sources.First(); var bSource = b.Sources.First();
+        aSource.UpdateMetadata(aSource.ExternalProductId, aSource.SourceUrl, null, null, "{}", DateTime.UtcNow);
+        bSource.UpdateMetadata(bSource.ExternalProductId, bSource.SourceUrl, null, null, "{}", DateTime.UtcNow.AddHours(-1));
         await db.SaveChangesAsync(Ct); db.ChangeTracker.Clear();
         var filter = new CoffeeFilters { Roasters = [r.PublicSlug!], Caffeine = ["decaf"], Roast = ["light"], Brew = ["filter"], Currency = "BYN", WeightGrams = 250, MaxPrice = 40 };
         var store = Store(db);

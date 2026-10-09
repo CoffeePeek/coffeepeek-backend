@@ -128,6 +128,7 @@ jobs:
             CoffeeZonePolygonLiveTests \
             CoffeeZoneWriteProtocolLiveTests \
             ShopsDirectWriteBoundaryLiveTests \
+            CoffeeChildConcurrencyLiveTests \
             CityReferenceLiveTests \
             CityCatalogFreshReadLiveTests; do
             result=".test-results/shops-live/${class}.trx"

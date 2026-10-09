@@ -186,10 +186,8 @@ public sealed class ShopsDirectWriteBoundaryLiveTests : IClassFixture<ShopsLiveD
         var roaster = new Roaster("Classification boundary " + code);
         var product = new CoffeeProduct(roaster.Id, new("Boundary coffee", null, "roasted_beans", "whole_beans", "unknown",
             null, null, null, null, null, [], [], [], []));
-        var source = new CoffeeProductSource { Product = product, CoffeeProductId = product.Id,
-            SourceKey = "boundary.example", ExternalProductId = code, SourceUrl = "https://boundary.example/coffee" };
-        var variant = new CoffeeVariant { Source = source, CoffeeProductSourceId = source.Id,
-            SourceKey = source.SourceKey, ExternalVariantId = code, Currency = "BYN", Price = 10 };
+        var source = new CoffeeProductSource(product, "boundary.example", code, "https://boundary.example/coffee");
+        var variant = new CoffeeVariant(source, code, null, 10, "BYN");
         source.AttachVariant(variant); product.AttachSource(source);
         await using (var seed = fixture.Context(false))
         {

@@ -114,11 +114,10 @@ public sealed class PublicAddressGatewaySmokeTests
         var coffee = new CoffeeProduct(roaster.Id, new("Colombia test", null, "roasted_beans", "whole_beans", "unknown",
             null, null, null, null, null, [], [], [], []));
         coffee.SetStatus(CoffeePublicationStatus.Published);
-        var coffeeSource = new CoffeeProductSource { CoffeeProductId = coffee.Id, Product = coffee, SourceKey = "roast.by", ExternalProductId = "coffee",
-            SourceUrl = "https://roast.by/coffee/", SellerName = "Test seller", LastSeenAtUtc = DateTime.UtcNow };
+        var coffeeSource = new CoffeeProductSource(coffee, "roast.by", "coffee", "https://roast.by/coffee/");
+        coffeeSource.UpdateMetadata("coffee", coffeeSource.SourceUrl, null, "Test seller", "{}", DateTime.UtcNow);
         coffee.AttachSource(coffeeSource);
-        coffeeSource.AttachVariant(new CoffeeVariant { SourceKey = "roast.by", ExternalVariantId = "bag-250", WeightGrams = 250,
-            Price = 30, Currency = "BYN", Availability = CoffeeAvailability.InStock, CheckedAtUtc = DateTime.UtcNow });
+        coffeeSource.AttachVariant(new CoffeeVariant(coffeeSource, "bag-250", 250, 30, "BYN", CoffeeAvailability.InStock));
         await using (var db = Shops())
         {
             db.AddRange(shop, bean, equipment, method, tag, roaster, coffee);

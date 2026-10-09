@@ -45,25 +45,11 @@ public sealed class CoffeeProductArrayPersistenceTests
         var product = new CoffeeProduct(Guid.NewGuid(), new CoffeeContent("Children coffee", null,
             "roasted_beans", "whole_beans", "unknown", null, null, null, null, null, [], [], [], []));
         product.ReplaceCountries(["CO"]);
-        var source = new CoffeeProductSource
-        {
-            Product = product,
-            CoffeeProductId = product.Id,
-            SourceKey = "test-source",
-            ExternalProductId = "external-1",
-            SourceUrl = "https://example.test/coffee"
-        };
+        var source = new CoffeeProductSource(product, "test-source", "external-1", "https://example.test/coffee");
         product.AttachSource(source);
-        source.AttachVariant(new CoffeeVariant
-        {
-            SourceKey = "test-source", ExternalVariantId = "variant-1", Price = 10,
-            Currency = "BYN", Availability = CoffeeAvailability.InStock
-        });
-        source.AttachPhoto(new CoffeeProductPhoto
-        {
-            SourceUrl = "https://example.test/photo.jpg", StorageKey = "coffee/photo.jpg",
-            FileName = "photo.jpg", ContentType = "image/jpeg", SizeBytes = 100
-        });
+        source.AttachVariant(new CoffeeVariant(source, "variant-1", null, 10, "BYN", CoffeeAvailability.InStock));
+        source.AttachPhoto(new CoffeeProductPhoto("coffee/photo.jpg", "https://example.test/photo.jpg",
+            "photo.jpg", "image/jpeg", 100, Guid.NewGuid()));
         source.SetReviewWarnings(["review"]);
         var ct = TestContext.Current.CancellationToken;
 
