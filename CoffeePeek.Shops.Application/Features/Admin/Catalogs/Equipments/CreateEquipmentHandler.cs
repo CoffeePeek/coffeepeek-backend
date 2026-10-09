@@ -2,8 +2,6 @@ using System.Net;
 using System.Text.Json.Serialization;
 using CoffeePeek.Contract.Dtos.Shop;
 using CoffeePeek.Contract.Enums;
-using CoffeePeek.Shared.Domain.Interfaces.Infrastructure;
-using CoffeePeek.Shared.Kernel;
 using CoffeePeek.Shared.Kernel.Response;
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
 using MapsterMapper;
@@ -16,8 +14,6 @@ public static class CreateEquipmentHandler
         CreateEquipmentCommand command,
         IEquipmentRepository repository,
         IMapper mapper,
-        IUnitOfWork unitOfWork,
-        ICacheService cacheService,
         CancellationToken ct)
     {
         var category = await repository.GetCategoryByIdAsync((int)command.Category, ct);
@@ -30,15 +26,6 @@ public static class CreateEquipmentHandler
 
         var equipment = new Equipment(command.Brand, command.ModelName, category);
         repository.Add(equipment);
-        await unitOfWork.SaveChangesAsync(ct);
-        await InvalidateEquipmentCachesAsync(cacheService, ct);
-
         return Response<EquipmentDto>.Success(mapper.Map<EquipmentDto>(equipment));
-    }
-
-    internal static async Task InvalidateEquipmentCachesAsync(ICacheService cacheService, CancellationToken ct)
-    {
-        await cacheService.RemoveByPattern(CacheKey.Equipment.ListPattern(), ct);
-        await cacheService.RemoveByPattern(CacheKey.Shop.SearchPattern(), ct);
     }
 }

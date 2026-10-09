@@ -2,8 +2,6 @@ using System.Net;
 using System.Text.Json.Serialization;
 using CoffeePeek.Contract.Dtos.Shop;
 using CoffeePeek.Contract.Enums;
-using CoffeePeek.Shared.Domain.Interfaces.Infrastructure;
-using CoffeePeek.Shared.Kernel;
 using CoffeePeek.Shared.Kernel.Response;
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
 using MapsterMapper;
@@ -16,8 +14,6 @@ public static class UpdateEquipmentHandler
         UpdateEquipmentCommand command,
         IEquipmentRepository repository,
         IMapper mapper,
-        IUnitOfWork unitOfWork,
-        ICacheService cacheService,
         CancellationToken ct)
     {
         var equipment = await repository.GetByIdAsync(command.Id, ct);
@@ -34,9 +30,6 @@ public static class UpdateEquipmentHandler
                 "Equipment assigned to a shop cannot change category. Remove shop assignments first.");
 
         equipment.Update(command.Brand, command.ModelName, category);
-        await unitOfWork.SaveChangesAsync(ct);
-        await CreateEquipmentHandler.InvalidateEquipmentCachesAsync(cacheService, ct);
-
         return Response<EquipmentDto>.Success(mapper.Map<EquipmentDto>(equipment));
     }
 }

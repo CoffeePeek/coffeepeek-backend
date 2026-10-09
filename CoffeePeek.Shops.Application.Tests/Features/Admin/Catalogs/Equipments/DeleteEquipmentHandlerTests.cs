@@ -4,8 +4,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using CoffeePeek.Contract.Dtos.Shop;
 using CoffeePeek.Contract.Enums;
-using CoffeePeek.Shared.Domain.Interfaces.Infrastructure;
-using CoffeePeek.Shared.Kernel;
 using CoffeePeek.Shops.Application.Features.Admin.Catalogs.Equipments;
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
 using FluentAssertions;
@@ -17,8 +15,6 @@ namespace CoffeePeek.Shops.Application.Tests.Features.Admin.Catalogs.Equipments;
 public class DeleteEquipmentHandlerTests
 {
     private readonly Mock<IEquipmentRepository> _repo = new();
-    private readonly Mock<IUnitOfWork> _uow = new();
-    private readonly Mock<ICacheService> _cache = new();
     private readonly CancellationToken _ct = CancellationToken.None;
     private readonly EquipmentCategory _category = new();
 
@@ -27,15 +23,13 @@ public class DeleteEquipmentHandlerTests
     {
         var equipment = new Equipment("Hario", "V60-02", _category);
         _repo.Setup(r => r.GetByIdAsync(equipment.Id, _ct)).ReturnsAsync(equipment);
-        _cache.Setup(c => c.RemoveByPattern(It.IsAny<string>(), _ct)).ReturnsAsync(1);
 
         var result = await DeleteEquipmentHandler.Handle(
             new DeleteEquipmentCommand(equipment.Id),
-            _repo.Object, _uow.Object, _cache.Object, _ct);
+            _repo.Object, _ct);
 
         result.IsSuccess.Should().BeTrue();
         _repo.Verify(r => r.Remove(equipment), Times.Once);
-        _uow.Verify(u => u.SaveChangesAsync(_ct), Times.Once);
     }
 
     [Fact]
@@ -45,7 +39,7 @@ public class DeleteEquipmentHandlerTests
 
         var result = await DeleteEquipmentHandler.Handle(
             new DeleteEquipmentCommand(Guid.NewGuid()),
-            _repo.Object, _uow.Object, _cache.Object, _ct);
+            _repo.Object, _ct);
 
         result.IsSuccess.Should().BeFalse();
         result.StatusCode.Should().Be((int)HttpStatusCode.NotFound);
