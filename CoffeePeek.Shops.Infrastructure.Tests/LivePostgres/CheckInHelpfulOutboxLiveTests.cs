@@ -41,8 +41,8 @@ public sealed class CheckInHelpfulOutboxLiveTests : IClassFixture<ShopsLiveDatab
         var voterId = Guid.NewGuid();
         var checkIn = CheckIn.CreateUnified(ownerId, shop.Id, "owner", "good coffee",
             Rating.Create(4, 4, 4), DateTime.UtcNow.AddMinutes(-1), CheckInVisibility.Public);
-        checkIn.ApplyModerationDecision(checkIn.ContentRevision, Guid.NewGuid(), 1,
-            CheckInModerationState.Approved, null, DateTime.UtcNow);
+        Assert.True(checkIn.ApplyModerationDecision(checkIn.ContentRevision, Guid.NewGuid(), 1,
+            CheckInModerationState.Approved, null, DateTime.UtcNow));
         await using (var seed = fixture.Context(false))
         {
             seed.Cities.Add(city);
