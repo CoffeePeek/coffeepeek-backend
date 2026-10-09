@@ -126,6 +126,7 @@ jobs:
             CheckInHelpfulOutboxLiveTests \
             ReviewReportCommitLiveTests \
             CoffeeZonePolygonLiveTests \
+            CoffeeZoneWriteProtocolLiveTests \
             CityReferenceLiveTests \
             CityCatalogFreshReadLiveTests; do
             result=".test-results/shops-live/${class}.trx"
