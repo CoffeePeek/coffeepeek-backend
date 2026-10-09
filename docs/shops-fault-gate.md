@@ -1,5 +1,10 @@
 # Изолированный fault gate Shops/Media
 
+Все три обязательных родительских сценария прошли без skips в
+[CI fd8604bd](https://github.com/CoffeePeek/coffeepeek-backend/actions/runs/37909817024).
+В том же run прошли 40 direct-write сценариев, полный backend regression,
+vulnerability audit и legacy PostgreSQL/MinIO rehearsal.
+
 `ShopsFaultRecoveryLiveTests` входит в обязательный PostgreSQL CI gate: каждый класс
 запускается отдельно, TRX должен содержать положительное число тестов, только passed
 и ноль skipped. Fault worker не является самостоятельной интеграционной проверкой:

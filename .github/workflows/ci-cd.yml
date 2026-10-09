@@ -145,6 +145,7 @@ jobs:
           for class in \
             DiscoveryClassificationLiveTests \
             DiscoveryQueryLiveTests \
+            CoffeeImportRecoveryLiveTests \
             ShopProfileWolverineLiveTests \
             ShopProfileRevisionLiveTests \
             ShopVisibilityWolverineLiveTests \
