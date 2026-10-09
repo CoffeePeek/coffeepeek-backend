@@ -1,12 +1,33 @@
 # P27: исходная матрица совместимости ShopsService
 
-Срез исходников: 8 октября 2026 года, `HEAD f0cacf555699f051dbda26f79fdad92043db02ba` плюс незакоммиченное ранее исправление атомарности профиля. Этот документ — **база для P27**, а не готовая миграция сообщений. Он фиксирует обнаруженные HTTP и CLR-контракты, точки публикации и приёма. Точные имена RabbitMQ-очередей, wire identity сообщений и байтовые схемы сериализованных envelopes не извлекались из работающего брокера; перед изменением их нужно получить из runtime и брокера в той же версии и конфигурации, что развёрнуты сейчас.
+Срез исходников: 8 октября 2026 года, `HEAD f0cacf555699f051dbda26f79fdad92043db02ba` плюс незакоммиченное ранее исправление атомарности профиля. Ниже сохранена исходная база P27; текущее состояние PR уточнено отдельно. Он фиксирует обнаруженные HTTP и CLR-контракты, точки публикации и приёма. Точные имена RabbitMQ-очередей, wire identity сообщений и байтовые схемы сериализованных envelopes не извлекались из работающего брокера; перед изменением их нужно получить из runtime и брокера в той же версии и конфигурации, что развёрнуты сейчас.
 
-## Что уже определяет совместимость
+## Текущее состояние PR, 9 октября 2026 года
+
+Все HTTP write bypass теперь заменены module commands; обе architecture baselines пусты.
+Stable routes/CLR handler identities, public DTO privacy, controller auth/error mapping
+и старый JSON без JobId проверяются contract/host suites. Регенерированные adapters
+проверены Release suite; настоящая Media claim/finalization delivery/restart — fault gate.
+Independent audit не нашёл скрытого изменения route/auth.
+
+Явные изменения: legacy isOpen теперь nullable при неизвестном UTC schedule по ADR01;
+published menu snapshots требуют observed ExpectedInputRevision, missing/-1 получает
+400 у нового producer, null legacy event quarantined. Draft snapshot сохраняет прежний
+nullable режим. Published ParseMenuRequested без JobId не пишет live menu; с JobId
+переходит в durable lifecycle. Draft OCR возвращает MenuParsedEvent без live mutation.
+Photo kind Roaster=3 добавлен при прежних Gallery=1/Menu=2 и CLR identity.
+Media-first, draining и запрет overlap старых menu/photo writers — [release packet](shops-release-readiness.md).
+
+Существующие JSON fixtures и реальный pinned Wolverine 6.35 gate подтверждают repo
+contracts; старые envelopes/topology конкретного deployment не снимались. Этот остаток
+требует access к развёрнутой версии и фиксируется как rollout prerequisite, а не
+открытый production defect либо выполненный тест прежнего binary.
+
+## Что определяла исходная база
 
 - `CoffeePeek.Shared.Persistence/Extensions/WolverineModule.cs` настраивает RabbitMQ `AutoProvision().UseConventionalRouting(NamingSource.FromHandlerType)`. В комментарии прямо указано, что у каждого handler своя очередь: `ModerationShopApprovedEvent` принимают и Account, и Shops. Следовательно, **CLR-имя handler нужно считать частью маршрутизации**, пока не подтверждён снимок реально созданных очередей и алгоритм их именования. Namespace/type сообщения также считать частью wire identity; точный формат Wolverine message-type header здесь не подтверждён.
 - Тот же модуль включает durable inbox/outbox, durable local queues, PostgreSQL persistence, EF transactions и `DurabilityMode.Solo`. Это описание конфигурации, не доказательство доставки конкретного сообщения при сбое. `Solo` соответствует текущему одному экземпляру сервиса; переход к нескольким репликам требует отдельной проверки.
-- `CoffeePeek.ShopsService/InfrastructureExtensions.cs` сканирует Application и Infrastructure assembly; host assembly служит application assembly для codegen. Не все HTTP запросы идут через Wolverine: `DiscoveryFavoritesController`, `AdminPublicAddressesController`, `InternalCoffeeImportController.Failures` вызывают store/service напрямую.
+- `CoffeePeek.ShopsService/InfrastructureExtensions.cs` сканирует Application и Infrastructure assembly; host assembly служит application assembly для codegen. В базе эти HTTP writes обходили Wolverine; в текущем PR они идут через module commands, что проверено пустым bypass baseline и 45 direct PG cases.
 - В не-Development режиме `TypeLoadMode.Static` и `AssertAllPreGeneratedTypesExist=true`. Реестр `CoffeePeek.ShopsService/Internal/Generated/WolverineHandlers/GeneratedHandlerRegistry.cs` перечисляет обнаруженные handler-типы. После изменения handler, сигнатуры, namespace или сообщения нужен штатный `dotnet run -- codegen write` из `CoffeePeek.ShopsService` и проверки `CoffeePeek.ShopsService.Tests/WolverinePreGeneratedHandlersTests.cs`. Generated-файлы руками не редактировать. Startup-тест ловит отсутствующие существующие типы, второй тест сопоставляет discovered messages с generated classes; оба **не проверяют реальную RabbitMQ-доставку**.
 - В локальном коде не найдено явных `ToRabbitQueue`, `ListenToRabbitQueue`, настройки message aliases или кастомного Wolverine serializer для Shops. Это **не** позволяет восстановить буквальные имена очередей без runtime-снимка. Имя файла с hash (`ParseMenuRequestedEventHandler1007143525.cs` и подобные) — имя сгенерированного .NET класса, а не подтверждённое имя очереди.
 - Admin `PUT /api/admin/shops/{id}` и owner `PUT /api/owner/coffee-shops/{id}` сохраняют прежнее тело запроса. Необязательный `If-Match` принимает ревизию профиля (например, `"7"` или `7`); `AdminPublishedShopDto` добавляет `ProfileRevision` в ответ. Для условного запроса stale revision и EF race возвращают `409` в прежнем `Response<T>` envelope. Без заголовка legacy PUT остаётся допустимым и не защищает от **последовательной** stale-записи; это переходный контракт до обязательного условия в отдельной версии API.
@@ -46,7 +67,7 @@
 | `CoffeePeek.Contract.Events.Moderation.ShopChangeRequestApprovedV1` | `RequestId`, `ShopId`, `SubmittedByUserId`, `Section`, `Payload`, `ApprovedByUserId`, `ApprovedAtUtc` | Moderation `DecideShopChangeRequestHandler` → `CoffeePeek.Shops.Infrastructure.Consumers.ShopChangeRequestApprovedHandler` | Явный `V1`; сохранять обработку старой версии и business idempotency по `RequestId`. |
 | `CoffeePeek.Contract.Events.Moderation.CheckInModerationDecidedEvent` | `CheckInId`, `ContentRevision`, `SubmissionId`, `DecisionSequence`, `Status`, `RejectionReason`, `DecidedAtUtc` | Moderation `ChangeStatusModerationReviewHandler` → `CoffeePeek.Shops.Infrastructure.Consumers.CheckInModerationDecidedHandler` | Проверки последовательности и ревизии являются частью смысла, менять типы/значения enum нельзя без адаптера. |
 | `CoffeePeek.Contract.Events.Menu.ParseMenuRequestedEvent` | Позиционные старые поля `SourceKind`, `SourceId`, `PublishedShopId?`, `Photos[]`, `RequestedByUserId?`; добавлены необязательные `JobId?`, `MenuRevision?`, `PhotoSetHash?` | Moderation draft/import menu handlers **и** Shops `AdminShopMenuHandlers` → `CoffeePeek.Shops.Infrastructure.Consumers.ParseMenuRequestedEventHandler` | Новые поля добавлены без смены CLR identity. `ShopsCompatibilityContractTests` подтверждает, что JSON старого сообщения без этих полей десериализуется с `null`; он не подтверждает совместимость реального Wolverine envelope/serializer. Старому сообщению нельзя выдавать придуманную «актуальную» ревизию. `MenuParseSourceKind` имеет значения 1/2/3. |
-| `CoffeePeek.Contract.Events.Menu.ApplyShopMenuSnapshotEvent` | `ShopId`, `Snapshot`, `ApplySuggestedPriceRange`, `UserId?` | Moderation `ModerationShopMenuHandlers`/`ImportCandidateMenuHandlers` → `CoffeePeek.Shops.Infrastructure.Consumers.ApplyShopMenuSnapshotEventHandler` | Старый snapshot может быть накоплен в очереди при замене протокола меню. |
+| `CoffeePeek.Contract.Events.Menu.ApplyShopMenuSnapshotEvent` | `ShopId`, `Snapshot`, `ApplySuggestedPriceRange`, `UserId?`, добавлен `ExpectedInputRevision?` | Moderation `ModerationShopMenuHandlers`/`ImportCandidateMenuHandlers` → `CoffeePeek.Shops.Infrastructure.Consumers.ApplyShopMenuSnapshotEventHandler` | Старый snapshot может быть накоплен в очереди при замене протокола меню. |
 | `CoffeePeek.Shops.Application.Features.CheckIn.CheckInCacheInvalidationRequested` | `CheckInId` | Shops `CreateUnifiedCheckInHandler` → `CoffeePeek.Shops.Infrastructure.Consumers.CheckInCacheInvalidationRequestedHandler` | Локальный durable message, не тип из `CoffeePeek.Contract`; namespace может входить в persisted envelope identity. |
 | `CoffeePeek.Shops.Application.Features.CoffeeShop.ShopProfile.ShopProfileCacheInvalidationRequested` | `ShopId` | Admin/owner profile PUT → локальный strict-cache consumer после commit | Новый durable local outbox message; повтор безопасен, смена CLR identity после публикации требует draining старых envelopes. |
 
@@ -86,4 +107,4 @@
 4. **Текущий generated code** доказывает наличие adapters в репозитории, но не гарантирует совпадение с работающим релизом. `WolverinePreGeneratedHandlersTests` не заменяет проверку брокера и дешифровку старого envelope.
 5. **Gateway precedence и доступность каждого маршрута** по одной таблице маршрутов не полностью доказаны. Особый риск — общий `/api/admin/{**remainder}` у Account и специализированные Shops routes; нужны HTTP contract tests через Gateway для всех новых/перемещённых URL.
 
-Работу P27 можно считать завершённой только после заполнения неизвестных runtime-снимком, фиксации JSON fixtures, реализации двустороннего перехода и тестов реальной доставки. Этот документ служит входом для такого изменения и не утверждает, что очередь уже осушена или новая версия сообщений выпущена.
+Доступная repo часть P27 реализована и проверена; оставшиеся неизвестные относятся к inventory конкретного deployment и legacy binary/envelopes. Перед production переключением оператор выполняет runtime snapshot и draining по release packet. Документ не утверждает, что production очередь уже осушена, новая версия выпущена либо старый непроверенный snapshot безопасно применим.

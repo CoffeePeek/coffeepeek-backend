@@ -1,6 +1,6 @@
 # Проверка и выпуск схемы Shops (P29)
 
-Состояние на 8 октября 2026 года: миграционная цепочка и EF snapshot проверены без подключения к БД; полный прогон на PostgreSQL 17 с историческими данными ещё обязателен. Этот документ не является разрешением на production-развёртывание.
+Состояние на 9 октября 2026 года: ShopsSchemaUpgradeLiveTests выполнил три mandatory PostgreSQL 17 cases в [CI 0295699a](https://github.com/CoffeePeek/coffeepeek-backend/actions/runs/37921729495): populated previous schema, double idempotent script/old SQL writer compatibility, invalid city/menu preflight. CheckInPhotoMigrationLiveTests выполнил шесть photo cases; [CI fd8604bd](https://github.com/CoffeePeek/coffeepeek-backend/actions/runs/37909817024) также прошёл legacy PostgreSQL/MinIO transfer/cleanup. Это синтетическая репетиция; восстановленная копия production данных и время/WAL/locks её миграций ещё не измерены. Этот документ не является разрешением на production-развёртывание.
 
 ## Preflight до миграций
 
@@ -30,13 +30,15 @@ menu workers, дождаться завершения их in-flight ручны�
 после миграции; rollback требует остановки записи, сверки данных и отдельного плана, а не
 просто перезапуска прежнего образа.
 
-Миграции идут в порядке: `AddMenuOcrJobs` → `ProtectCityReferences` → `AssignShopEquipmentPrimary` → `AddShopProfileRevision` → `EnforceShopMenuItemValues`. Автотест `ShopsCombinedMigrationTests` фиксирует этот порядок и отсутствие расхождения EF snapshot. CI live PostgreSQL gate применяет миграции к чистой тестовой БД и выполняет профиль, меню, город, оборудование, OCR и outbox сценарии.
+Миграции идут в порядке: `AddMenuOcrJobs` → `ProtectCityReferences` → `AssignShopEquipmentPrimary` → `AddShopProfileRevision` → `EnforceShopMenuItemValues` → `SeparateCommunityCheckInPhotos`. Автотест `ShopsCombinedMigrationTests` фиксирует этот порядок и отсутствие расхождения EF snapshot. CI live PostgreSQL gate применяет миграции к чистой тестовой БД и выполняет профиль, меню, город, оборудование, OCR и outbox сценарии.
 
 `AssignShopEquipmentPrimary` сохраняет старую `Equipments.IsPrimary` на переходное окно и даёт ей default `false`, чтобы старый бинарник продолжал читать/писать каталог, а новый мог создавать оборудование. Триггер заполняет новую категорию у старых вставок в `CoffeeShopEquipments`; составной FK проверяет соответствие категории. Новое per-shop `IsPrimary` начинается с `false`: старый глобальный флаг нельзя однозначно перенести на конкретную кофейню. Перед включением нового UI выбор основных устройств нужно проверить отдельно.
 
-Публикация новых фотографий зависит от другой БД: сперва применить Media migration `20261008211500_ReserveShopPhotoAttachments`, затем запустить MediaService с новым внутренним claim endpoint и consumer, и только после этого ShopsService. Если новый ShopsService обратиться к прежнему MediaService, публикация фото должна получить отказ, а не сохранить непроверенный ключ. Обратное смешение версий и повтор событий требуют отдельной интеграционной проверки с Media DB и broker.
+Публикация новых фотографий зависит от другой БД: сперва применить Media migration `20261008211500_ReserveShopPhotoAttachments`, затем запустить MediaService с новым внутренним claim endpoint и consumer, и только после этого ShopsService. Если новый ShopsService обратиться к прежнему MediaService, публикация фото должна получить отказ, а не сохранить непроверенный ключ. Повтор claim/finalization и lost reply/receiver restart выполнены с настоящими Media DB/MinIO/RabbitMQ в fault gate. Совместимость с фактически развёрнутыми прежними бинарниками и топологией всё ещё требует deployment inventory; повтор test composition этого не доказывает.
 
 Переходное окно для menu CHECK требует предварительного исправления старых строк. Новые записи до установки ограничения должны проходить доменную проверку; после установки обход приложения блокируется самой БД. Старые бинарники, которые создают нулевую цену или объём у присутствующего напитка, **несовместимы** с новым ограничением; их нужно вывести из записи до миграции. Для `ProfileRevision` API допускает запросы без `If-Match`, но EF concurrency token предотвращает незаметную потерю конкурентной правки.
+
+Photo expansion и порядок legacy transfer описаны в [Community transition](shops-community-photo-transition.md). Тест upgrade сохраняет сравнимые JSON archive values, старые menu offers/IDs и два shop assignments с неопределимым global primary=false. Invalid preflight не меняет archive/migration history; constraints получают SQLSTATE 23514/23503. Это old SQL writer window, не запуск прежнего binary.
 
 ## Ворота и откат
 

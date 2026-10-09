@@ -28,7 +28,7 @@
 
 ## ADR-03. Цена, объём, наличие и неизвестные значения меню
 
-**Сейчас.** `ShopMenuItem.Create` принимает цену, объём и enum без проверки. `ApplyManual` обнуляет цену для `Absent/Unknown`, но создание новой строки сохраняет переданное значение. SQL upsert для существующего меню тоже обнуляет цену. DTO допускает nullable числа. OCR оставляет только `>0` и лимиты 10 000/2 000. Источники: [ShopMenuItem](../CoffeePeek.Shops.Domain/Aggregates/MenuAggregate/ShopMenuItem.cs), [SQL и create](../CoffeePeek.Shops.Persistance/Repositories/MenuRepositories.cs), [OCR sanitize](../CoffeePeek.Shops.Application/Features/Menu/ParseMenuPhotos/ParseMenuPhotosHandler.cs), [контракт](../CoffeePeek.Contract/Dtos/Menu/UpdateShopMenuRequest.cs).
+**Сейчас.** `ShopMenuItem.Create` принимает цену, объём и enum без проверки. `ApplyManual` обнуляет цену для `Absent/Unknown`, но создание новой строки сохраняет переданное значение. SQL upsert для существующего меню тоже обнуляет цену. DTO допускает nullable числа. OCR оставляет только `>0` и лимиты 10 000/2 000. Источники: [ShopMenuItem](../CoffeePeek.Shops.Domain/Aggregates/MenuAggregate/ShopMenuItem.cs), [SQL и create](../CoffeePeek.Shops.Persistance/Repositories/ShopMenuRepository.cs), [OCR sanitize](../CoffeePeek.Shops.Application/Features/Menu/ParseMenuPhotos/ParseMenuPhotosHandler.cs), [контракт](../CoffeePeek.Contract/Dtos/Menu/UpdateShopMenuRequest.cs).
 
 **Утверждено пользователем:** `Present` требует одновременно `price > 0` и `volumeMl > 0`; `null`, ноль и отрицательные значения в ручной позиции отклоняются. OCR-строка без положительной цены или положительного объёма пропускается целиком: она не создаёт/не обновляет позицию и не участвует в диапазоне цен. Повтор одного напитка в ручном batch возвращает 400 и оставляет весь пакет без изменений (в том числе когда два slug разрешаются в одну definition). Остальные строки таблицы — предложения до подтверждения.
 
@@ -48,7 +48,7 @@
 
 ## ADR-04. Одна позиция на напиток — утверждено
 
-**Сейчас.** В БД уникальна пара `(ShopMenuId, DrinkDefinitionId)`. Парсер при дубле берёт минимальную цену, оставляя объём первой строки: вход «300 мл за 12; 200 мл за 8» может стать «300 мл за 8». Источники: [MenuConfiguration](../CoffeePeek.Shops.Persistance/Configuration/MenuConfiguration.cs), [ParseMenuPhotosHandler](../CoffeePeek.Shops.Application/Features/Menu/ParseMenuPhotos/ParseMenuPhotosHandler.cs).
+**Сейчас.** В БД уникальна пара `(ShopMenuId, DrinkDefinitionId)`. Парсер при дубле берёт минимальную цену, оставляя объём первой строки: вход «300 мл за 12; 200 мл за 8» может стать «300 мл за 8». Источники: [MenuConfiguration](../CoffeePeek.Shops.Persistance/Configuration/ShopMenuConfiguration.cs), [ParseMenuPhotosHandler](../CoffeePeek.Shops.Application/Features/Menu/ParseMenuPhotos/ParseMenuPhotosHandler.cs).
 
 **Утверждено пользователем.** Для каждого напитка в меню кофейни существует не более одной позиции; уникальная пара `(ShopMenuId, DrinkDefinitionId)` соответствует продуктовой модели. OCR-дубли одного напитка нельзя превращать в несколько порций или склеивать цену и объём из разных строк.
 
@@ -66,7 +66,7 @@
 
 ## ADR-06. Удаление справочников и ссылочная целостность
 
-**Сейчас.** `DeleteCityHandler`, `DeleteEquipmentHandler`, `DeleteRoasterHandler` физически удаляют строки. `Location.CityId` кофейни индексирован, но FK на `Cities` не настроен; для некоторых других связей FK есть. `ShopTag` умеет деактивацию. Источники: [AdminCityHandlers](../CoffeePeek.Shops.Application/Features/Admin/Catalogs/Cities/AdminCityHandlers.cs), [AdminEquipmentHandlers](../CoffeePeek.Shops.Application/Features/Admin/Catalogs/Equipments/AdminEquipmentHandlers.cs), [AdminRoasterHandlers](../CoffeePeek.Shops.Application/Features/Admin/Catalogs/Roasters/AdminRoasterHandlers.cs), [CoffeeShopConfiguration](../CoffeePeek.Shops.Persistance/Configuration/CoffeeShopConfiguration.cs), [AdminShopTagHandlers](../CoffeePeek.Shops.Application/Features/Admin/ShopTags/AdminShopTagHandlers.cs).
+**Сейчас.** `DeleteCityHandler`, `DeleteEquipmentHandler`, `DeleteRoasterHandler` физически удаляют строки. `Location.CityId` кофейни индексирован, но FK на `Cities` не настроен; для некоторых других связей FK есть. `ShopTag` умеет деактивацию. Источники: [AdminCityHandlers](../CoffeePeek.Shops.Application/Features/Admin/Catalogs/Cities/DeleteCityHandler.cs), [AdminEquipmentHandlers](../CoffeePeek.Shops.Application/Features/Admin/Catalogs/Equipments/), [AdminRoasterHandlers](../CoffeePeek.Shops.Application/Features/Admin/Catalogs/Roasters/), [CoffeeShopConfiguration](../CoffeePeek.Shops.Persistance/Configuration/CoffeeShopConfiguration.cs), [AdminShopTagHandlers](../CoffeePeek.Shops.Application/Features/Admin/ShopTags/).
 
 **Утверждено пользователем для городов.** Если `City C` используется кофейней, DELETE C возвращает `409 Conflict`; сведения о городе и `Location.CityId` остаются прежними. Проверка должна учитывать гонку параллельного создания ссылки, поэтому P09/P29 должны защитить правило FK/Restrict и проверить его на реальной БД. Для старых осиротевших значений нужен отчёт и ручная политика восстановления до constraint, без автоматической подмены города.
 
@@ -94,7 +94,7 @@
 
 ## ADR-09. Атомарность пакетной команды и импорта
 
-**Предложение.** Пакетная ручная команда меню целиком успешна или целиком отклонена до мутации. Неизвестный slug в списке `[valid, unknown]` возвращает 400 и не сохраняет `valid`; текущее тихое пропускание в [UpdateAdminShopMenuHandler](../CoffeePeek.Shops.Application/Features/Admin/Menu/AdminShopMenuHandlers.cs) прекращается после принятия контракта. Ошибка позднего поля профиля не сохраняет ранние поля; это уже исправлено для admin/owner, но требует PG/Wolverine проверки. Ответ об ошибке не является успешным commit.
+**Предложение.** Пакетная ручная команда меню целиком успешна или целиком отклонена до мутации. Неизвестный slug в списке `[valid, unknown]` возвращает 400 и не сохраняет `valid`; текущее тихое пропускание в [UpdateAdminShopMenuHandler](../CoffeePeek.Shops.Application/Features/Admin/Menu/) прекращается после принятия контракта. Ошибка позднего поля профиля не сохраняет ранние поля; это уже исправлено для admin/owner, но требует PG/Wolverine проверки. Ответ об ошибке не является успешным commit.
 
 Импорт кофе — отдельный явный контракт: сейчас `ImportAsync` применяет снимок в транзакции и хранит `CoffeeImportRun` со статусом, snapshot identity и полнотой; запись failure делается отдельно. Не смешивать «весь HTTP-пакет атомарен» и «допускается частичная обработка импорта». Предложение для P21 — единица атомарности один проверенный снимок источника; частичное применение возможно только после отдельного контракта с checkpoint и статусом. Повтор `(SourceKey, SnapshotId, PayloadHash)` возвращает прежний результат, тот же ID с другим hash — конфликт. Источник: [CoffeeCatalogStore.Import](../CoffeePeek.Shops.Persistance/CoffeeCatalog/CoffeeCatalogStore.Import.cs). Зависимые задачи: P06, P13, P21, P28.
 

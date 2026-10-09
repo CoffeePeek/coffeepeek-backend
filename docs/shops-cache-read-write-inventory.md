@@ -1,17 +1,21 @@
-# ShopsService: фактические пути чтения и инвалидации кеша (P08)
+# ShopsService: cache readers и invalidation (P08)
 
-Срез исходников от 8 октября 2026 года после P08. Таблица относится к вызовам внутри ShopsService, а не к гипотетическим внешним клиентам Redis. Ранее `RedisService.GetAsync` с фабрикой и отдельные `GetAsync`/`SetAsync` реализовывали cache-aside без проверки версии между чтением БД и записью в кеш; затронутые публичные readers теперь обходят эти ключи.
+Срез PR #340, 9 октября 2026 года. Фактических cache-aside readers для перечисленных ниже шести каталогов больше нет: каждый запрос читает DB через repository. После committed write следующий свежий контекст получает актуальные данные, без late-fill старого Redis snapshot.
 
-| Ключ | Чтение/заполнение в ShopsService | Инвалидация при записи | Состояние |
-| --- | --- | --- | --- |
-| `city:list:all` | `GetCitiesRequestHandler` | Create/Update/Delete City вызывают `City.ListPattern` | Чтение переведено на БД при каждом запросе; старый ключ может жить до TTL, но больше не обслуживается этим handler. Новая запись видна в новом контексте после commit. |
-| `equipment:list:all` | `GetAllEquipmentHandler` теперь читает БД на каждом запросе | Create/Update/Delete Equipment | Ключ больше не обслуживается этим reader; тест проверяет обновление при следующем запросе. |
-| `coffeebean:list:all` | `GetAllBeansHandler` теперь читает БД на каждом запросе | Create/Update/Delete Bean | Ключ больше не обслуживается этим reader; тест проверяет обновление при следующем запросе. |
-| `brewmethod:list:all` | `GetAllBrewMethodsHandler` теперь читает БД на каждом запросе | Create/Update/Delete BrewMethod | Ключ больше не обслуживается этим reader; тест проверяет обновление при следующем запросе. |
-| `shop:tags:catalog` | `GetShopTagsHandler` теперь читает БД на каждом запросе | Admin ShopTags | Ключ больше не обслуживается этим reader; тест проверяет обновление при следующем запросе. |
-| `shop:menu:drinks` | `GetMenuDrinksHandler` теперь читает БД на каждом запросе | DrinkCatalogHandlers | Ключ больше не обслуживается этим reader; тест проверяет обновление при следующем запросе. |
-| `shop:detail:v3:*`, `shop:search:v3:*`, `shop:list:city:*`, `shop:public:platform-stats` | В текущем ShopsService нет вызовов Get/Set для этих ключей; public stats читает БД | Много обработчиков, включая durable profile invalidation | Инвалидация существует, но активный cache-aside reader в коде не найден. Защиту от late-fill для этих ключей вводить без реального читателя бессмысленно. |
+| Исторический ключ | Reader | Текущий механизм |
+| --- | --- | --- |
+| city:list:all | GetCitiesRequestHandler | Прямое чтение DB |
+| equipment:list:all | GetAllEquipmentHandler | Прямое чтение DB |
+| coffeebean:list:all | GetAllBeansHandler | Прямое чтение DB |
+| brewmethod:list:all | GetAllBrewMethodsHandler | Прямое чтение DB |
+| shop:tags:catalog | GetShopTagsHandler | Прямое чтение DB |
+| shop:menu:drinks | GetMenuDrinksHandler | Прямое чтение DB |
+| shop:detail:v3:*, shop:search:v3:*, shop:list:city:*, shop:public:platform-stats | Get/Set cache-aside reader в текущем ShopsService не найден | Сохраняются post-commit invalidation consumers для legacy keys |
 
-Исходная гонка была такой: запрос A получает cache miss и старый снимок из БД; команда B фиксирует изменение и удаляет ключ; затем A пишет старый снимок под тем же ключом. Прямое чтение БД во всех шести перечисленных справочниках устраняет late-fill через эти readers. `CatalogReadFreshnessTests` и `GetShopTagsHandlerTests` моделируют изменение снимка между двумя вызовами и подтверждают два обращения в repository. Эти unit-тесты не заменяют сквозную проверку HTTP и PostgreSQL при реальном commit. Старые ключи и writer-side инвалидации сохраняются для совместимости и могут оставаться в Redis до TTL; их наличие не влияет на ответы указанных обработчиков.
+Late-fill гонка раньше позволяла reader после cache miss сохранить старый SQL snapshot уже после commit+DELETE другой команды. Удаление cache-aside из реальных catalog readers устраняет этот механизм. Старый ключ может оставаться до TTL, но перечисленные readers его не обслуживают. Ни Redis contents, ни гипотетические внешние readers не объявлены источником истины для этих API.
 
-`ShopProfileCacheInvalidationRequested` проходит через PostgreSQL outbox и durable local queue; строгий `IStrictCacheInvalidator` пробрасывает ошибку Redis на retry. `ShopProfileOutboxLiveTests` проверяет этот путь с инъекцией `RedisConnectionException`, но не подтверждает доставку RabbitMQ или физическую перезагрузку Redis. Для перечисленных каталогов ответ теперь определяется чтением БД после commit, а не состоянием этих ключей в Redis.
+Все 12 production RemoveAsync/RemoveByPatternAsync references находятся в ShopProfileCacheInvalidationRequestedHandler, CheckInCacheInvalidationRequestedHandler и DrinkCatalogCacheInvalidationRequestedHandler. Они используют strict invalidator, не подавляют Redis failure и запускаются после business commit через durable inbox/outbox. SetAsync references из P28 относятся к Discovery favorites API/store, не к Redis fill.
+
+CatalogReadFreshnessTests и CityCatalogFreshReadLiveTests защищают повторное чтение. ShopProfileOutboxLiveTests проверяет настоящий PG commit/retry и selective DLQ replay. Physical ShopsFaultRecoveryLiveTests выключает Redis TCP, убивает процесс после DELETE до ack и восстанавливает сохранённое invalidation без второго PUT. Rabbit/Media delivery проверяется отдельным сценарием этого gate.
+
+Доказательства и remaining OCR gate — в [статусе](shops-implementation-status.md), [P28](shops-p28-write-protocol-audit.md), [fault contour](shops-fault-gate.md).

@@ -1,42 +1,80 @@
-# ShopsService: журнал реализации архитектурного плана
+# ShopsService: статус P01–P35
 
-Дата обновления: 9 октября 2026 года. Этот журнал показывает состояние кода и проверок относительно [P01–P35](shops-modularization-plan.md). «Реализовано в коде» не означает прохождение PostgreSQL, RabbitMQ, Redis и полного выпускного контура.
+Срез PR #340, 9 октября 2026 года. Доступная repo/CI часть P01–P35 завершена.
+«Подтверждено» означает выполненную проверку в её указанной области. Production
+acceptance требует отдельного доступа/данных и перечислена в [release packet](shops-release-readiness.md).
 
-Срез P28 зон подтверждён [CI commit caeb60f2](https://github.com/CoffeePeek/coffeepeek-backend/actions/runs/37894472606): десять сценариев успешного commit и rollback после SQL-readback прошли на PostgreSQL 17. Команды, handlers и DTO зон разделены по правилу одного top-level типа на файл. Следующий срез переводит PUT/DELETE избранного и отчёт об ошибке импорта в Wolverine-команды; три HTTP→store исключения удалены, осталось восемь. HTTP/auth regression проходит локально; все шесть новых live-сценариев commit/rollback прошли обязательный PostgreSQL 17 gate в [CI commit 6f8f5f42](https://github.com/CoffeePeek/coffeepeek-backend/actions/runs/37896146032). Исторические отметки «ожидает CI» в таблице ниже относятся к моменту реализации: существующие PostgreSQL-классы уже прошли run `37894472606`; это не закрывает физические broker/cache faults и проверку старой БД.
+[CI cb386808](https://github.com/CoffeePeek/coffeepeek-backend/actions/runs/37923822811)
+полностью SUCCESS: backend build/regression, 29 mandatory PostgreSQL классов
+(148 tests, ноль skips/failures), семь physical/process fault cases, три legacy
+PostgreSQL/MinIO transfer/cleanup tests и 43 Python checks. Dependency audit не
+сообщил vulnerable packages. Тестируемый PR merge SHA: be4c4a61fcc4bf36ec3e6abd8f23ab4b8fa994f0,
+source head cb3868081d9f86e4c2aaa647580e000cd9a31ee1.
 
-Срез P25/P28 убрал все восемь оставшихся HTTP→store записей. `HostWriteBypassTests` теперь требует пустой список без baseline исключений. Семь новых commands и generated adapters, 15 HTTP/controller проверок и 17 PostgreSQL-сценариев добавлены; все 23 direct-write сценария прошли PostgreSQL 17 без skips в [CI commit fd93ad96](https://github.com/CoffeePeek/coffeepeek-backend/actions/runs/37897999996). Новый срез удаляет универсальный `ICoffeeCatalogStore`, раскрывает транзакцию шести product/tag writers и добавляет ещё 12 live-сценариев. Меню обновляет `PriceRange` через порт владельца Shops, убраны два cross-module исключения. Остались Community фото, public-address ownership, CoffeeCatalog lifecycle и выпускные проверки.
+Предыдущие два OCR failures были ошибкой fixture: final query не загружал Photos.
+Saved offer сохранялся; Include исправлен, все три OCR checkpoints теперь passed.
+Production item-loss гипотеза снята. История review/fixes сохранена отдельно.
 
-| Карточки | Состояние | Проверяемое свидетельство и оставшаяся работа |
+| Карточка | Доступная часть | Результат / предел |
 | --- | --- | --- |
-| P01–P03 | Документы подготовлены | Исходные write-пути, решения продукта и владельцы таблиц зафиксированы в `shops-write-inventory.md`, `shops-architecture-decisions.md`, `shops-module-ownership.md`. Границы ещё нуждаются в полном исполнении. |
-| P04–P05 | Проверки в коде | Live PostgreSQL harness и тесты профиля, меню, зон, городов, оборудования, moderation/Community и outbox добавлены; architecture suite фиксирует слои и уменьшаемый baseline исключений. Настоящий PostgreSQL предусмотрен в CI, локально тесты пропускаются. |
-| P06–P08 | Частично реализовано | Профильные команды используют конфликт/rollback и durable post-commit invalidation; live PG тест инъецирует отказ Redis. Все шесть реально обслуживаемых cache-aside справочников переведены на прямое чтение БД, чтобы исключить позднее заполнение старым снимком. Остальные write-пути и физические RabbitMQ/Redis сбои ещё требуют перевода и проверок; см. `shops-cache-read-write-inventory.md`. |
-| P09 | Реализовано в коде | Restrict FK и 409 для используемого города, preflight миграции, проверки схемы и live-тесты, включая гонку вставки ссылки и удаления в двух PostgreSQL-сессиях. Ждёт выполнения live-тестов на PostgreSQL в CI. |
-| P10–P12 | Частично / в работе | Инварианты профиля и геометрия зоны усилены; P11 перенёс `IsPrimary` в назначение оборудования кофейни с уникальностью по категории. P10 добавил общую EF-ревизию профиля, условный `If-Match` и 409 для admin/owner PUT. Moderation, галерея, теги, назначение владельца и обогащение импортом теперь тоже повышают ревизию; изменение категории назначенного оборудования получает 409. Защита всё ещё распределена по writer-путям, а не централизована. Миграции и конкурирующие PostgreSQL-проверки ждут CI. |
-| P13–P16 | Реализовано по основному пути, live gate ожидает | Ручное меню проверяет весь пакет, создаётся и обновляется с одним повышением ревизии; SQL upsert перечитывает EF tracking, конфликт создания даёт 409, а миграция добавляет CHECK цены/объёма. Новая фото-запись с Media ID теперь отслеживается EF как `Added` (регрессионный тест). OCR job имеет версионное применение и защищённое Admin-восстановление зависшего `Running` без автоматического повторного платного вызова. Конкурентное создание, rollback SQL и recovery требуют фактического PostgreSQL-прогона; см. `shops-menu-write-invariants.md` и `shops-ocr-recovery.md`. |
-| P17–P21 | Частично / в проверке | Menu-ветка Moderation идёт через Menus. Для галереи и меню Media owner lookup и batch claim/finalization добавлены в код; нужны выпуск Media раньше Shops и live PG/Rabbit проверка. Для доказанно брошенного claim есть консервативный operator-only runbook с точечным условным SQL; автоматического освобождения нет. Фото обжарщиков только проверяются перед записью, без durable finalization. Для Community добавлен PG race test видимости. CoffeeCatalog защищает коллекции, имеет отдельные публичный reader, продуктовый writer и импортный writer. Импорт получил срез failure→retry/coverage с live PG тестами; полный lifecycle ещё не закрыт. |
-| P22–P24 | Частично | Admin/owner projections, неизвестное расписание, `VisitedOnly` и признак усечения карты исправлены. Полная semantic suite и нагрузочные проверки ещё нужны. |
-| P25–P27 | Частично реализовано | Регистрация Persistence и Application сгруппирована по модулям; read-настройки AppDistribution больше не создают строку. Redirect ставит аналитику в durable очередь; при ошибке постановки пробует ту же idempotent команду синхронно, а двойной отказ считает и логирует как `unconfirmed` без ложной гарантии восстановления. Moderation отвергает новые menu change requests без ревизии, а старые queued approvals без неё отправляются на ручную сверку вместо перезаписи меню. Host-тесты защищают ключевые route/verb, Gateway ownership, CLR event identity и старый JSON события; реальные broker имена/доставка ещё не проверены. |
-| P28–P35 | В работе, выпускные ворота открыты | P28 проинвентаризировал 146 операций записи/Redis после P08; visibility, focus, назначения тегов, владельца, добавление/перестановка/удаление фотографий галереи, DrinkCatalog, запись меню/OCR, создание и пакетное enrichment кофейни из импорта/модерации, а также применение одобренных правок переведены на durable invalidation, но весь перечень ещё не унифицирован и photo-add пока имеет ранний EF flush. P29 проверил EF snapshot/порядок миграций и подготовил runbook со stop/drain старых menu writers; старую БД с данными ещё не прогоняли. P30 запускает PostgreSQL-классы по отдельности с обязательной проверкой TRX, включая DrinkCatalog, AppDistribution и конкурентный City; menu Redis-fault сценарий прошёл CI. P33 добавил ограниченные по cardinality метрики, tracing, PG readiness и операционный runbook; P34 провёл независимый review и выявил оставшиеся риски. P32 нагрузочное измерение и P35 итоговая приёмка не начаты. Физические broker/cache fault, Media claim/reconcile и миграции старой БД остаются открытыми. |
+| P01 | Подтверждена | Актуальный [реестр HTTP/messages/SQL](shops-write-inventory.md) и P28 references. |
+| P02 | Выполнена | Утверждённые ADR01–08 реализованы; неутверждённые продуктовые предложения не введены как новые требования. |
+| P03 | Подтверждена | Owner modules/ports, единый snapshot, пустой cross-module write baseline. |
+| P04 | Подтверждена live CI | Isolated PG, настоящие Redis/RabbitMQ/Media PG/MinIO faults; skips не заменяют gate. |
+| P05 | Подтверждена | Обе architecture baselines пусты, проверки обязательны. |
+| P06 | Подтверждена | Command transaction, validate-before-mutate, rollback/409, durable post-commit effects. |
+| P07 | Подтверждена | Early flush под outer transaction; short import/OCR owner scopes, private-envelope/crash recovery. |
+| P08 | Подтверждена | Шесть catalog readers читают DB; 12 Redis removals только в трёх durable consumers. |
+| P09 | Подтверждена PG | City Restrict/409, preflight и concurrent insert/delete. |
+| P10 | Подтверждена domain/PG | Private state, whole-profile validation, общая ProfileRevision/If-Match, concurrency→409. |
+| P11 | Подтверждена PG/upgrade | Per-shop/category primary; ambiguous legacy flag не переносится выдуманным выбором. |
+| P12 | Подтверждена domain/PG | Polygon/radius/version, nested schedules/gallery и копирование входных коллекций. |
+| P13 | Подтверждена | Whole manual packet validation, Present positive price/volume, incomplete parsed offers пропускаются. |
+| P14 | Подтверждена PG | Upsert/tracking reload, CHECK/uniqueness, concurrency/rollback. |
+| P15 | Подтверждена PG/process | Job/version/photo snapshot, ResultStored, terminal state; три kill checkpoints. |
+| P16 | Подтверждена PG/process | Provider вне transaction; unknown Running recovery/late rejection, stored apply после restart без повторного provider call. |
+| P17 | Подтверждена physical gate | Stable claims/finalization/lost replies; Media-first, abandoned claims operator-only. |
+| P18 | Подтверждена PG/legacy | Community CheckInPhotos, IDs/contracts, moderation/limits/votes races, additive archive transition. |
+| P19 | Подтверждена domain/PG | Private catalog children, owner enforcement, manual/import concurrency. |
+| P20 | Подтверждена architecture/PG | Application coordinators и narrow SQL/tracking Storage. |
+| P21 | Подтверждена PG | Snapshot ordering в обоих порядках, SQL-flush rollback, Failed resume/same hash, mismatch409. |
+| P22 | Подтверждена PG/experiment | Полные admin/owner photos/projections, page1/50 SQL counts постоянны. |
+| P23 | Подтверждена PG | Filters, same-offer matching, privacy/VisitedOnly; optimized facet self-exclusion/legacy duplicate arrays. |
+| P24 | Подтверждена PG/experiment | 20001 shops, 20000 clustered points/sentinel, full zone counts/stable primary markers. |
+| P25 | Подтверждена | Modular DI/composition, host regression и пустой HTTP bypass baseline. |
+| P26 | Подтверждена PG/restart | AppDistribution отдельно, read-only GET, active release/redirect после нового host; durable/idempotent analytics. Отдельный forced-kill analytics case не выполнялся. |
+| P27 | Repo contracts подтверждены | Stable CLR/routes/auth; nullable isOpen и required published revision объявлены явно. Deployed legacy topology/envelopes — rollout prerequisite. |
+| P28 | Audit подтверждён | Все HTTP bypass закрыты, 45 direct commit/rollback cases и enrolled OCR outbox; independent source/runtime audit. |
+| P29 | Synthetic upgrade подтверждён | Populated old schema, double idempotent script, old SQL writer window, invalid preflight/no model drift. Production backup rehearsal ещё нужен. |
+| P30 | Подтверждена | 29 mandatory classes с positive-total/pass/no-skips guard, backend/shared suite и diagnostics artifacts. |
+| P31 | Подтверждена physical/process | Redis/Rabbit/Media, PG commit-ack loss, три OCR checkpoints, import races и selective DLQ replay. |
+| P32 | Выполнена как experiment | Read/write/import/OCR metrics/plans; facets72→13 SQL, p95 1138→413ms в measured runs. Production budgets/soak не заявлены. |
+| P33 | Выполнена в доступном стеке | Bounded metrics/readiness/OTLP subscriptions, gauge и selective replay; observed_age ограничен 6.35 semantics, deployment collector/alerts ещё нужен. |
+| P34 | Independent review завершён | [Report](shops-independent-review.md), открытых доказанных source blockers в рассмотренном scope нет. |
+| P35 | Пакет подготовлен | [Release packet](shops-release-readiness.md) связывает G1–G8, evidence, risks, migration/drain/stop/recovery. Production rollout не выполнялся. |
 
-Срез P19 закрывает setters и EF-конструкторы источников, вариантов, фото и ImportRun; изменения дочерних объектов повышают версию продукта, перепривязка к другому owner запрещена. 14 доменных проверок проходят; все шесть child/manual PostgreSQL гонок и все 35 direct-write проверок прошли без skips в [CI commit 88d677f3](https://github.com/CoffeePeek/coffeepeek-backend/actions/runs/37900845897). Он также подтвердил исправленную fixture меню, полный backend regression, vulnerability audit и legacy PostgreSQL/MinIO rehearsal.
+Локальный Release suite: 2064 passed, 177 infrastructure skipped, 0 failed, 13 test
+projects. Это offline result; mandatory live доказан отдельным CI выше. Build
+содержит analyzer/XML/nullable warnings; warning-free результат не заявлен.
 
-P20 вынес product/tag/import координацию в Application, оставив SQL и транзакции в трёх узких Storage-адаптерах. Production module регистрирует прикладные writers; старые concrete store методы — compatibility delegates. Две architecture проверки запрещают возврат manual priority/import lifecycle в Persistence и подтверждают DI реализации; два доменных сценария late manual edit защищают атомарность модели. Live direct-write fixture теперь использует production module и требует следующего CI.
+## Ворота подготовки в доступном контуре
 
-Локальный SDK работает, Docker CLI установлен, но PostgreSQL и Docker engine на этом Windows-хосте не запущены. Поэтому `LivePostgres` здесь честно сообщает `Skipped`; CI запускает PostgreSQL-классы с отказом при нуле тестов или пропусках. Полные Release `dotnet build` и `dotnet test CoffeePeek.Backend.ci.slnf --no-build` проходят: 2038 пройдено, 136 пропущено, 0 упало. Из 136 пропусков 124 относятся к Shops Infrastructure live PostgreSQL, 9 — Account Infrastructure, 3 — legacy migration. Release build завершился без ошибок, но содержит ранее существовавшие предупреждения CS1591/xUnit1051/nullable; предупреждения не закрыты в этой работе. NuGet vulnerability audit прошёл CI `caeb60f2`. Эти результаты не заменяют физические RabbitMQ/Redis/Media fault tests и миграционный прогон старой БД.
+| Gate | Evidence и внешний предел |
+| --- | --- |
+| G1 Модульность | Architecture checks без исключений, owner maps/ports и independent SQL/DI audit. |
+| G2 Защита агрегатов | Domain/PG invariants, private child state, constraints/concurrency. |
+| G3 Единая запись | 45 direct cases, owner transactions, private envelopes, SQL-flush rollback и ACK-loss recovery. |
+| G4 Асинхронная корректность | Three OCR checkpoints, import ordering/hash/resume, Media/cache/DLQ recovery/idempotency. |
+| G5 Чтение | Semantic PG suite, complete photos/owners, map limit, optimized facets и измеренные SQL counts. |
+| G6 Обязательный live contour | 29 classes/148 tests без skips, семь fault cases и полный CI SUCCESS. |
+| G7 Переход | Synthetic populated upgrade и legacy PG/MinIO rehearsal; actual production backup/topology/client acceptance — до rollout. |
+| G8 Эксплуатация | Signals/replay/recovery/runbooks и experiments готовы; actual load budgets/collector/long soak — deployment acceptance. |
 
-Срез P20 подтверждён [CI commit 67da1dc2](https://github.com/CoffeePeek/coffeepeek-backend/actions/runs/37902542852): все 22 обязательных PostgreSQL-класса, включая 35 direct-write cases с production DI и шесть child/manual races, прошли без skips; legacy PostgreSQL/MinIO transfer также зелёный. Product/tag/import координация теперь в Application; Persistence хранит SQL, tracking и техническую транзакцию.
+Без deployment access нельзя закрыть actual backup rehearsal, legacy envelope/topology
+inventory и draining, real client HTTP acceptance, production load/SLO/collector
+dashboard, multi-replica Solo review. Это явно перечисленный внешний остаток, а не
+необнаруженный writer или обещание выполненного rollout.
 
-Следующий срез P18/P29 разделяет Community-фото в `CheckInPhotos`, сохраняет прежние ID/HTTP/Media contracts и архив `ShopPhotos`. Добавлены шесть domain cases, additive schema guard, четыре moderation races, шесть migration/preflight cases и четыре limit/vote races; последние требуют PostgreSQL CI. Cross-module baseline уменьшен до трёх PublicAddresses вызовов; условия перехода и rollback — в `shops-community-photo-transition.md`. Это не закрывает production data rehearsal, физические broker/cache faults, load и независимый release review.
-
-Community срез `7d146925` прошёл все 24 обязательных PostgreSQL-класса в [CI 37904723064](https://github.com/CoffeePeek/coffeepeek-backend/actions/runs/37904723064): четыре moderation races, шесть migration/preflight cases и четыре limit/vote cases выполнены без skips. Полный run остановился на legacy/MinIO этапе: старая подготовка схемы не создавала новую таблицу до удаления архива. Исправлено применение только additive photo script до transfer в обоих инструментах; повторный полный CI требуется.
-
-P05/P25 baseline межмодульных domain writes теперь пуст, как и HTTP→store baseline. Автоматическая allocation, rename и backfill идут через один `IPublicAddressOwnerWriter` к операциям владельцев Shops/CoffeeCatalog; expected revision, owner-column URL semantics и локальная транзакция сохранены. Локально 2047 тестов прошли, 149 инфраструктурных тестов пропущены без настроенного PG; обязательный gate выполняет их отдельно в CI.
-
-Полный [CI commit 9cba8d0a](https://github.com/CoffeePeek/coffeepeek-backend/actions/runs/37906065701) подтвердил оба пустых architecture baseline, все 24 обязательных PostgreSQL-класса и исправленный legacy transfer/cleanup с MinIO. Предыдущий отказ migration rehearsal устранён.
-
-P17 подключил новые административные фото обжарщиков к batch claim и прежнему durable `ShopPhotosAttachedEvent` с новым kind `Roaster=3`. ID назначения create стабилен по actor/upload set; повтор update сохраняет прежние фото без нового claim. Historical moderation protocol сохранён. Локально 2055 тестов прошли, 154 infrastructure live cases пропущены; пять новых PostgreSQL-сценариев входят в обязательный `ShopsDirectWriteBoundaryLiveTests` и ожидают CI. Deploy order и консервативный recovery — в `runbooks/shops-photo-claims.md`.
-
-В [CI 8d3bb3ed](https://github.com/CoffeePeek/coffeepeek-backend/actions/runs/37908095523) два rollback assertions ошибочно считали Wolverine `Handled` history новой работой. Профиль/фото rollback и успешные случаи прошли; assertion исправлен на необработанные envelopes. Повтор gate требуется.
-
-Для P04/P08/P17/P30/P31/P33 добавлен обязательный физический fault contour с отдельными процессами и настоящими Redis/RabbitMQ/Media PG/MinIO. Три родительских сценария и worker logs описаны в `shops-fault-gate.md`; локально он только собран, инфраструктурные проверки ожидают CI. PG wire acknowledgement, OCR/process recovery, дополнительные import races и нагрузочные измерения остаются открытыми.
+Документы: [P28](shops-p28-write-protocol-audit.md), [operations](shops-operations-runbook.md),
+[performance](shops-performance-experiment.md), [faults](shops-fault-gate.md),
+[migration rollout](shops-migration-rollout.md), [release packet](shops-release-readiness.md).

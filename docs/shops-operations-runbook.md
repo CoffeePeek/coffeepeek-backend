@@ -1,109 +1,66 @@
 # ShopsService: наблюдаемость и восстановление
 
-Этот runbook относится к текущей реализации ShopsService. Он не заменяет проверку
-PostgreSQL/RabbitMQ/Redis на стенде перед выпуском. Сырой JSON OCR, ключи объектов Media,
-секреты HTTP-заголовков и пользовательские данные не помещаются в метки метрик или в
-операторские заметки.
+Срез PR #340, 9 октября 2026 года. Production rollout выполняется отдельно. Диагностика не публикует сырой OCR JSON, фото, JWT, credentials или пользовательские payload. Метрики не содержат ShopId/JobId/envelope IDs; эти идентификаторы допустимы в контролируемых traces/logs.
 
-## Проверки состояния и сигналы
+## Сигналы
 
-- `GET /alive` проверяет только процесс. Его используют для liveness: недоступность
-  инфраструктуры не должна вызывать цикл перезапусков.
-- `GET /health` включает подключение к Shops PostgreSQL. База нужна для записи и
-  Wolverine outbox; 503 означает, что экземпляр следует убрать из приёма нового трафика.
-  Redis, RabbitMQ, Media и OCR-провайдер не входят в readiness: Redis invalidation и
-  доставка сообщений восстанавливаются через durable queue/outbox, а публичные чтения
-  остаются полезными при отказе Media/OCR. Их сбои контролируются отдельно.
-- При заданном `OTEL_EXPORTER_OTLP_ENDPOINT` метрики и traces уходят через общий
-  OpenTelemetry exporter. Meter и ActivitySource: `CoffeePeek.Shops`.
+При OTEL_EXPORTER_OTLP_ENDPOINT общий exporter подписан на Meter CoffeePeek.Shops и Wolverine*, ActivitySource CoffeePeek.Shops и Wolverine. У установленного Wolverine 6.35 runtime Meter называется Wolverine:{ServiceName}. В этой работе подписка проверена по pinned source; реальный collector/dashboard в доступном deployment не найден.
 
-| Метрика | Допустимые метки | Что означает |
-| --- | --- | --- |
-| `shops.cache_invalidation.failures` | `source=profile|check_in` | Попытка удаления кеша завершилась исключением; Wolverine должен повторить сообщение. |
-| `shops.ocr.jobs.completed` | `outcome=applied|stale|failed` | Переход OCR-задания в терминальное состояние после коммита. |
-| `shops.ocr.jobs.age` (секунды) | те же `outcome` | Время от запроса до терминального состояния. |
-| `shops.media.claim.failures` | `kind=shop|check_in`, `reason=unavailable|rejected` | Media вернул ошибку/неуспешный ответ при резервировании фото. |
-| `shops.write.conflicts` | `aggregate=profile|menu` | Известный конфликт ревизии профиля или ручной записи/создания меню. |
+| Инструмент | Значение |
+| --- | --- |
+| shops.cache_invalidation.failures | Неуспешная strict invalidation; фиксированные source=profile/check_in. |
+| shops.ocr.jobs.completed, shops.ocr.jobs.age | Терминальный outcome=applied/stale/failed после commit и возраст задания. |
+| shops.media.claim.failures | Фиксированные kind/reason, отказ claim. |
+| shops.write.conflicts | Фиксированные aggregate=profile/menu. |
+| Wolverine incoming/outgoing/scheduled gauges | Штатный backlog sampler библиотеки. |
+| shops.durability.dead_letters | Provider-reported DLQ count. PostgreSQL counts могут быть estimates для больших таблиц. |
+| shops.durability.outbox.observed_age | Возраст backlog, наблюдаемого этим процессом между успешными 30s samples; reset после restart/empty sample. |
+| shops.durability.sample_age | Возраст последнего успешного storage sample. Failed poll сохраняет предыдущий sample; до первого успеха значение отсутствует. |
 
-Все метки имеют фиксированный набор значений. `ShopId`, `CheckInId`, `JobId` есть в
-структурированных логах и в тегах traces соответствующих операций, но не в метриках.
-HTTP request trace связывает синхронные команды; durable envelope после повторной доставки
-ищется по `JobId`/ID события и по данным Wolverine, так как непрерывность trace между
-всеми публикациями пока не проверена.
+observed_age не является возрастом самого старого envelope. Wolverine 6.35 по умолчанию не хранит enqueue timestamp в outgoing table. Не включать OutboxStaleTime только ради метрики: это также меняет срок хранения сообщений. При failed polls непрерывность backlog неизвестна; всегда оценивать observed_age вместе с sample_age.
 
-Начальные правила оповещения для тестового стенда: `/health` неуспешен 2 минуты,
-`shops.cache_invalidation.failures` растёт 5 минут, `shops.media.claim.failures` с
-`reason=unavailable` растёт 5 минут, либо возраст активного OCR-задания превысил
-согласованный SLA. Порог по числу 409 выбирается по обычному уровню конкурентного
-редактирования; отдельный конфликт не авария. Настроенный dashboard/alert в
-пользовательском стеке мониторинга пока отсутствует.
+Liveness и readiness разделены стандартными service defaults; Shops PG check отмечен readiness. Внешний OCR/Media не останавливает liveness. Политика Solo рассчитана на одну реплику: многорепличный rollout требует отдельной проверки ownership/recovery.
 
-## Redis invalidation и outbox
+## Cache / broker / неоднозначный commit
 
-1. При всплеске `shops.cache_invalidation.failures` найдите лог `Shop profile cache
-   invalidation failed` или `Check-in cache invalidation failed` и проверьте Redis.
-   Сохранённая бизнес-запись остаётся в PostgreSQL; ошибку invalidation не превращайте
-   в повтор исходного POST/PUT.
-2. После восстановления Redis проверьте, что durable local queue Wolverine опустела
-   и повторная доставка успешно удалила ключи. Удаление ключа идемпотентно.
-3. При задержке RabbitMQ проверьте размер `wolverine_outgoing_envelopes` в Shops DB:
+1. Найти exception и идентификатор business operation/envelope; восстановить Redis/RabbitMQ, не повторять исходный POST только из-за cache failure.
+2. Проверить business row/revision через свежий контекст и штатные storage counts. После commit invalidation должна восстановиться без второго PUT.
+3. При потерянном commit acknowledgement сначала перечитать бизнес-данные. Повтор profile command с прежней ExpectedRevision получает 409; HTTP exception mapping проверяется отдельно.
+4. Для outbox пользоваться штатным `dotnet CoffeePeek.ShopsService.dll storage counts` с обычной конфигурацией сервиса. SQL/schema имена сперва сверить через information_schema; manual DELETE/COPY envelopes не использовать.
 
-   ```sql
-   SELECT count(*) AS pending FROM wolverine_outgoing_envelopes;
-   ```
+Physical Redis, RabbitMQ/Media restart и PG commit-ack loss выполняются обязательным ShopsFaultRecoveryLiveTests. Selective DLQ replay и production gauge выполнены в ShopProfileOutboxLiveTests; весь contour, включая семь faults и три OCR checkpoints, прошёл в [CI cb386808](https://github.com/CoffeePeek/coffeepeek-backend/actions/runs/37923822811).
 
-   Перед запросами к DLQ проверьте реальные имена таблиц и колонок установленной
-   версии Wolverine через `information_schema.tables`/`information_schema.columns`.
-   Сохраняйте ID envelope, тип сообщения, попытки и причину, затем восстанавливайте
-   зависимость. Не удаляйте и не копируйте envelope SQL вручную: после восстановления
-   процесса/outbox штатная доставка возобновляется, а ручная копия обходит дедупликацию.
-   Для terminal/dead-letter сообщения нужен проверенный replay инструмент Wolverine
-   и сверка бизнес-ключа операции; в репозитории автоматизированный безопасный
-   replay ещё не реализован. Возраст outbox и DLQ пока не экспортируются метриками.
+## Dead letters
 
-## OCR меню
+Сначала исправить зависимость/обработчик и сопоставить тип, envelope ID и business key. Стандартный IDeadLetters API установленного Wolverine поддерживает ID filter:
 
-Состояния `MenuOcrJobs.Status`: 0 Pending, 1 Running, 2 ResultStored, 3 Applied,
-4 Stale, 5 Failed. Read-only запрос для поиска застрявших заданий:
+```csharp
+var letters = host.Services.GetRequiredService<IMessageStore>().DeadLetters;
+await letters.ReplayAsync(
+    new DeadLetterEnvelopeQuery { MessageIds = [verifiedEnvelopeId] }, ct);
+```
+
+Это стандартный API для контролируемой operator composition, а не добавленный публичный HTTP endpoint. Live test сохраняет два DLQ сообщения, replay выбирает одно, подтверждает post-commit cache effect и одну ProfileRevision; второе остаётся в DLQ. Повтор выбранного ID не создаёт второй business effect.
+
+Штатный CLI `storage replay --exception-type ...` в 6.35 фильтрует по exception type, а не по ID. Он может выбрать несколько unrelated envelopes: перед batch replay необходима полная сверка этого множества и idempotency handlers. Для точечного восстановления использовать MessageIds API. Broad unfiltered replay не является процедурой безопасного восстановления.
+
+## OCR
+
+Статусы: Pending=0, Running=1, ResultStored=2, Applied=3, Stale=4, Failed=5.
 
 ```sql
 SELECT "Status", count(*) AS jobs, min("RequestedAtUtc") AS oldest_requested_utc
-FROM "MenuOcrJobs"
-WHERE "Status" IN (0, 1, 2)
-GROUP BY "Status";
+FROM "MenuOcrJobs" WHERE "Status" IN (0,1,2) GROUP BY "Status";
 ```
 
-- `Stale` после ручного редактирования ожидаем: старый ответ полностью отклонён.
-  Новое OCR запускают только через обычную команду с текущими фото/ревизией.
-- `ResultStored` означает, что ответ провайдера уже сохранён. Повтор Wolverine
-  применяет сохранённый результат и не оплачивает повторное распознавание.
-- `Running` после падения может означать оплаченный вызов с неизвестным исходом.
-  Нельзя слепо отправлять тот же job повторно: текущий обработчик намеренно не
-  повторяет вызов провайдера. Сначала сопоставьте `JobId`, лог и состояние меню;
-  затем создайте новый job через штатный API, если это допустимо для владельца.
-  Ручное закрытие зависшего `Running` и self-service retry пока не реализованы.
-- `Failed` содержит текст причины; он может включать детали провайдера. Не
-  публикуйте поле `Error`, `InputPhotosJson` или `ResultJson` в тикете без очистки.
+ResultStored redelivery применяет сохранённый ответ без повторного vision call. После ручного изменения revision/photo set старый результат становится Stale целиком. Running после process loss имеет неизвестный provider outcome и автоматически не оплачивается повторно.
 
-## Media claim и конфликты записи
+Admin закрывает Running ≥15 минут через POST /api/admin/menu-ocr-jobs/{jobId}/recover-unknown-outcome. Locks и повторная проверка актуального input переводят job в Failed/provider-outcome-unknown либо Stale; поздний worker уже не может сохранить результат. Затем владелец может отдельно запросить новое OCR текущих фото. Автоматический повтор paid call не включать. Process gate использует deterministic provider/download adapters; он не доказывает exactly-once billing внешнего сервиса.
 
-При росте `shops.media.claim.failures{reason="unavailable"}` проверьте MediaService
-и его внутренний endpoint claim. HTTP 5xx/таймаут считается временным, а 4xx/
-неуспешный payload — отказом запроса; не обходите проверку владения фото ради
-восстановления. Перед повтором после неоднозначного ответа проверьте привязку claim
-к тому же shop/check-in ID. Автоматическая reconciliation неоднозначных claims
-остаётся открытой задачей P17.
+## Import и Media
 
-409 профиля означает, что общая ревизия изменилась: перечитать профиль и повторно
-применить осмысленное изменение с новой ревизией `If-Match`. 409 меню после
-конкурентной записи требует перечитать актуальную версию меню. Автоматический
-повтор прежнего тела без сравнения может перезаписать чужую правку. Идентификаторы
-запроса и агрегата ищите в структурированном логе, а не в метках метрик.
+Import Failed snapshot повторяется с теми же SourceKey/SnapshotId/payload: RunId стабилен, hash mismatch и старый collected-at отклоняются. Concurrent snapshot ordering и отказ после SQL flush проверены CoffeeImportRecoveryLiveTests.
 
-## Открытые эксплуатационные ворота
+Media claim повторяется с прежними attachment ID/Media photo IDs после неоднозначного ответа. Выпуск Media раньше Shops обязателен для Roaster kind=3; старые moderation events сохраняют identity. Брошенные claims разбираются только по [точечной процедуре](runbooks/shops-photo-claims.md), без автоматического освобождения.
 
-Перед признанием P33 завершённой проверить искусственный отказ Redis/Media/OCR на
-общем стенде и увидеть соответствующие OTLP-сигналы, настроить dashboard и
-уведомления, добавить измерение возраста outbox/DLQ, безопасный replay terminal
-сообщений и процедуру закрытия зависшего OCR `Running`. Здесь описаны уже
-реализованные сигналы и безопасные ограничения текущего восстановления.
+Alert candidates: failed readiness >2m, растущий DLQ, backlog вместе со свежестью samples, рост invalidation/claim errors, Running возраст больше принятого SLA. Порог latency/OCR SLA и dashboard/alerts в реальном collector требуют данных deployment; они не объявлены установленными.

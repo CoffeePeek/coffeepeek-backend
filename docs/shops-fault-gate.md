@@ -1,53 +1,55 @@
 # Изолированный fault gate Shops/Media
 
-Все три обязательных родительских сценария прошли без skips в
-[CI fd8604bd](https://github.com/CoffeePeek/coffeepeek-backend/actions/runs/37909817024).
-В том же run прошли 40 direct-write сценариев, полный backend regression,
-vulnerability audit и legacy PostgreSQL/MinIO rehearsal.
+ShopsFaultRecoveryLiveTests содержит семь обязательных родительских cases. Класс
+запускается отдельно с -failSkips; positive-total/pass/no-skips TRX guard делает CI
+красным при любой failed assertion. Worker запускается дочерним dotnet-процессом и
+завершается Process.Kill только после наблюдаемой контрольной точки.
 
-`ShopsFaultRecoveryLiveTests` входит в обязательный PostgreSQL CI gate: каждый класс
-запускается отдельно, TRX должен содержать положительное число тестов, только passed
-и ноль skipped. Fault worker не является самостоятельной интеграционной проверкой:
-его запускает родительский тест отдельным `dotnet` процессом и завершает через
-`Process.Kill` после наблюдаемой контрольной точки. Его обычный offline skip не
-подменяет выполнение трёх обязательных родительских сценариев.
+Три исходных physical cases прошли в [CI fd8604bd](https://github.com/CoffeePeek/coffeepeek-backend/actions/runs/37909817024).
+[CI 0295699a](https://github.com/CoffeePeek/coffeepeek-backend/actions/runs/37921729495)
+также выполнил PG ACK-loss и before-store OCR recovery; два остальных OCR cases
+прошли saved-offer/provider-once assertions, но упали на незагруженной Photos navigation
+в финальном readback fixture. Include исправлен; [CI cb386808](https://github.com/CoffeePeek/coffeepeek-backend/actions/runs/37923822811)
+выполнил все семь cases: 7 passed, 0 failed/skipped/errors/not-run. В том же run
+прошли все 29 mandatory PG classes/148 tests, backend regression и legacy PG/MinIO.
 
-Контур использует PostgreSQL 17, RabbitMQ 4.1, Redis 7, MinIO и
-[Toxiproxy 2.12](https://github.com/Shopify/toxiproxy). Proxy отключает существующее
-TCP-соединение; тест не подменяет исключение Redis/RabbitMQ. Родитель читает бизнес
-данные через новый DbContext и наблюдает очереди и контрольные точки в файлах.
-Polling ограничен 45 секундами; произвольных задержек перед kill нет.
+Контур использует PostgreSQL 17, RabbitMQ 4.1, Redis 7, MinIO и Toxiproxy 2.12.
+Proxy разрывает настоящие TCP connections; polling ограничен 45 секундами, kill
+не зависит от случайного sleep. Родитель читает бизнес-данные отдельным DbContext.
 
-| Сценарий | Проверка |
+| Case | Проверка |
 | --- | --- |
-| Redis недоступен после commit профиля | Успешный ответ и одна ревизия в PG; настоящий Redis сохраняет старый ключ; production counter `shops.cache_invalidation.failures` зарегистрировал сбой; durable inbox сохраняет работу. Kill/restart и восстановление TCP приводят к удалению ключа и завершению работы без второго PUT. |
-| Kill после фактического Redis DELETE до возврата consumer | Необработанный durable envelope восстанавливается новым процессом; повтор DELETE безопасен, профиль остаётся с одной ревизией. |
-| Потерянный ответ Media, отказ RabbitMQ после commit, kill Media после PG commit до ack и новый envelope повтор | Production Media handler реально резервирует объект в PG/MinIO; потерю ответа моделирует lookup adapter. До retry в Shops нет обжарщика; retry использует прежний ID назначения и Media photo ID. После отказа TCP бизнес-запись сохранена вместе с outgoing envelope. Новый sender доставляет его; Media подтверждает фото и завершает commit до принудительного kill. Новый receiver завершает inbox, повторное бизнес-событие не добавляет фото/обжарщика. |
+| Redis недоступен после profile commit | Одна ревизия в PG, старый настоящий Redis key, production failure counter и durable private envelope. Kill/restart после восстановления TCP удаляет key без второго PUT. |
+| Kill после Redis DELETE до consumer ack | Незавершённый envelope восстанавливается; повтор DELETE безопасен, ревизия остаётся одна. |
+| Lost Media reply + Rabbit outage + kill Media после commit до ack | Реальный claim сохраняется в Media PG/MinIO; retry сохраняет destination/photo IDs. Shops business row и outgoing envelope сохраняются вместе. Новый sender/receiver завершает доставку; повтор business event не добавляет фото/обжарщика. |
+| PG commit acknowledgement loss | После реального SQL flush proxy задерживает PG downstream. Независимое подключение видит committed profile v1 до client ack; TCP разорван и writer убит. Retry ExpectedRevision=0 возвращает ConflictException/409, v1 сохраняется, original private invalidation envelope удаляет настоящий Redis key. |
+| OCR kill до ResultStored | Один provider call без SQL transaction; после restart Running не вызывает paid adapter снова. Admin unknown-outcome recovery закрывает job; late result отклонён. |
+| OCR kill после ResultStored | JSON уже committed; restart применяет stored offer/фото без повторного provider call. |
+| OCR kill после apply SQL flush до commit | Private write/envelope IDs невидимы другому подключению; tracked offer и actual SQL value проверены до kill. Restart применяет stored result один раз, cache callback видит terminal committed job. |
 
-Claim/finalization использует настоящие `PhotoRepository`, `ClaimShopPhotosHandler`,
-`ShopPhotosAttachedHandler`, `UnitOfWork<MediaDbContext>` и `MinIOStorageService`.
-Claim lookup вызывает server handler непосредственно: HTTP/auth/timeout mapping
-проверяются существующими контрактными тестами, а этот gate доказывает сохранение
-резервации и реальную broker delivery. Redis consumer и профильный writer также
-production. Runtime compilation применяется только к тестовой composition; release
-generated adapters проверяются полным backend/host regression.
+ACK-loss доказывает именно неопределённое подтверждение реального commit. Он проверяет
+command ConflictException/409; HTTP envelope mapping проверяется отдельными tests.
+Проверки recovery связываются с ID собственных envelopes, а не общим размером inbox
+shared fixture.
 
-Запуск допустим только на изолированных контейнерах: loopback endpoints,
-`COFFEEPEEK_LIVE_PG` с maintenance DB `postgres` и pgpass, существующие guards
-`cp_live_*`, `COFFEEPEEK_LIVE_FAULTS=1`, `COFFEEPEEK_LIVE_MINIO` и два proxy
-`shops-redis`/`shops-rabbit` из CI. Disposable MinIO credentials совпадают с legacy
-gate; данные каждого теста находятся в собственном `cp-fault-*` bucket. Штатный
-finally завершает только дочерние процессы, восстанавливает proxy, удаляет собственные
-объекты/БД и сохраняет worker logs в CI artifact. Контур не подключается к deployment.
+Redis consumer, profile writer, Media PhotoRepository/claim/finalization/UnitOfWork/
+MinIO adapter и OCR MenuModule/job store/menu service — production implementations.
+Claim lost reply имитируется lookup adapter после actual server reservation; paid
+vision/download adapters детерминированны. Это не доказательство exactly-once billing
+внешнего API. Runtime compilation применяется только к test host composition;
+release generated adapters проверяются backend/host suite.
 
-Добавлены два OCR process crash/restart сценария: после ответа до сохранения и после
-подтверждённого `ResultStored` commit до apply. Они используют production consumer,
-job store, menu service/repositories, реальную PG БД и принудительный kill процесса.
-Внешние vision provider и download подменены детерминированными test adapters;
-проверяется один вызов provider adapter, отсутствие открытой SQL транзакции во время
-его вызова, operator recovery для `Running`, отказ позднего ответа и применение
-сохранённого результата после рестарта. Это не доказательство exactly-once billing
-внешнего провайдера. Новые два сценария ещё ожидают обязательного CI исполнения.
+Selective DLQ replay и production gauge исполняются отдельно в ShopProfileOutboxLiveTests:
+две работы отправляются в настоящий DLQ, dependency восстанавливается, только один
+MessageId replayed, второй остаётся в DLQ; repeat replay не создаёт второй business
+effect. Import races/SQL rollback/hash recovery — CoffeeImportRecoveryLiveTests.
 
-Gate пока не доказывает потерю PG wire commit acknowledgement и production SLO.
-Import snapshot concurrency проверяется отдельным `CoffeeImportRecoveryLiveTests`.
+Запуск разрешён только на disposable loopback контейнерах и guarded cp_live_* DB:
+COFFEEPEEK_LIVE_PG с maintenance DB postgres/pgpass, COFFEEPEEK_LIVE_FAULTS=1,
+COFFEEPEEK_LIVE_MINIO и proxies shops-redis/shops-rabbit/shops-postgres из CI.
+Каждый case использует собственный cp-fault-* bucket. Finally завершает только свои
+child processes, восстанавливает proxies, удаляет свои объекты/БД и сохраняет worker
+logs в shops-fault-workers artifact. Deployment endpoints здесь не используются.
+
+Этот короткий fault contour не измеряет production SLO, длительный soak или сбой
+всего PostgreSQL cluster. Ограничения и recovery procedures — [operations](shops-operations-runbook.md).

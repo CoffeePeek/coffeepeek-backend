@@ -1,8 +1,8 @@
 # ShopsService: карта владения данными и контрактов (P03)
 
-Дата исследования: 8 октября 2026 года. **Статус: целевая архитектурная схема для реализации; изменения бизнес-семантики остаются предложениями из [P02](shops-architecture-decisions.md).** Это инвентаризация текущего кода и назначение одного будущего владельца записи. Папка, namespace и общий `ShopsDbContext` сами по себе не определяют владение.
+Срез реализации: 9 октября 2026 года, PR #340. Владельцы записи реализованы через модульные порты; оба architecture baseline пусты. Утверждённые бизнес-решения перечислены в [P02](shops-architecture-decisions.md). Папка, namespace и общий `ShopsDbContext` сами по себе не определяют владение.
 
-Сверены 42 уникальных имени `ToTable` в [EF model snapshot](../CoffeePeek.Shops.Persistance/Migrations/ShopsDbContextModelSnapshot.cs) и три physical public-address таблицы из [миграции registry](../CoffeePeek.Shops.Persistance/Migrations/20260927112559_AddPublicAddressRegistries.cs) и [миграции audit](../CoffeePeek.Shops.Persistance/Migrations/20260928072406_AddPublicAddressAudit.cs). `ShopSchedule`/`ShopScheduleInterval` — отдельные таблицы owned-типов. Wolverine inbox/outbox и инфраструктурные таблицы не перечислены: ими владеет техническая инфраструктура, а не один из бизнес-модулей. Миграции остаются последовательными под единым владельцем `ShopsDbContextModelSnapshot`.
+Сверены 44 уникальных имени `ToTable` в [EF model snapshot](../CoffeePeek.Shops.Persistance/Migrations/ShopsDbContextModelSnapshot.cs) и три physical public-address таблицы из [миграции registry](../CoffeePeek.Shops.Persistance/Migrations/20260927112559_AddPublicAddressRegistries.cs) и [миграции audit](../CoffeePeek.Shops.Persistance/Migrations/20260928072406_AddPublicAddressAudit.cs). `ShopSchedule`/`ShopScheduleInterval` — отдельные таблицы owned-типов. Wolverine inbox/outbox и инфраструктурные таблицы не перечислены: ими владеет техническая инфраструктура, а не один из бизнес-модулей. Миграции остаются последовательными под единым владельцем `ShopsDbContextModelSnapshot`.
 
 ## Целевая зависимость модулей
 
@@ -27,14 +27,14 @@ flowchart LR
   Discovery --> Addresses
 ```
 
-Стрелка означает вызов прикладного порта или разрешённое чтение проекции, **не прямую ссылку на реализацию репозитория/запись чужой таблицы**. Для устранения циклов `Shops → CoffeeCatalog` и `Menus → Shops` интерфейсы и данные-проекции размещаются у потребителя либо в узком контрактах, а composition root связывает адаптеры. Текущий прямой доступ к одному `DbContext` — переходное состояние; architecture tests P05 должны проверять фактические операции, а не только namespace.
+Стрелка означает вызов прикладного порта или разрешённое чтение проекции, **не прямую ссылку на реализацию репозитория/запись чужой таблицы**. Для устранения циклов `Shops → CoffeeCatalog` и `Menus → Shops` интерфейсы и данные-проекции размещаются у потребителя либо в узком контрактах, а composition root связывает адаптеры. Единый `DbContext` остаётся техническим transaction/snapshot boundary; architecture tests проверяют фактическое право записи, а не только namespace.
 
 ## Таблицы: один целевой владелец записи
 
 | Владелец | Таблицы из EF snapshot | Право записи и замечание |
 | --- | --- | --- |
 | **Shops** | `Shops`, `Cities`, `CoffeeZones`, `CoffeeZoneMembershipOverrides`, `ShopSchedule`, `ShopScheduleInterval`, `ShopPhotos`, `AppliedShopChangeRequests` | Профиль, география, галерея профиля, учёт применённого изменения. Старые canonical photo строки оставлены для перехода; новые посещения в эту таблицу не пишут. |
-| **Shops** | `BrewMethods`, `CoffeeBeans`, `EquipmentCategories`, `Equipments`, `ShopTags`, `CoffeeShopTags`, `CoffeeShopBrewMethods`, `CoffeeShopCoffeeBeans`, `CoffeeShopEquipments`, `CoffeeShopRoasters` | Справочники свойств кофейни и **назначения**. Сущность `Roaster` принадлежит CoffeeCatalog; `CoffeeShopRoasters` — Shops. `CoffeeShopEquipments` станет собственным `ShopEquipment` после P11. |
+| **Shops** | `BrewMethods`, `CoffeeBeans`, `EquipmentCategories`, `Equipments`, `ShopTags`, `CoffeeShopTags`, `CoffeeShopBrewMethods`, `CoffeeShopCoffeeBeans`, `CoffeeShopEquipments`, `CoffeeShopRoasters` | Справочники свойств кофейни и **назначения**. Сущность `Roaster` принадлежит CoffeeCatalog; `CoffeeShopRoasters` — Shops. `CoffeeShopEquipments` отображает сущность назначения `ShopEquipment`; per-shop/category primary защищён unique index и FK. |
 | **Menus** | `CoffeeDrinkDefinitions`, `ShopMenus`, `ShopMenuItems`, `ShopMenuPhotos`, `MenuOcrJobs` | Напитки и меню, включая ссылки на файлы Media и OCR lifecycle. `MenuOcrJobs` хранит задания OCR под тем же владельцем. |
 | **Community** | `CanonicalCheckIns`, `CheckInPhotos`, `CheckInHelpfulVotes`, `ReviewReports` | Посещения, публичность, голоса, жалобы. Фото посещения принадлежат Community и сохраняются в `CheckInPhotos`. |
 | **CoffeeCatalog** | `Roasters`, `RoasterPhotos`, `RoasterTags`, `RoasterTagAssignments`, `CoffeeProducts`, `CoffeeProductCountries`, `CoffeeProductSources`, `CoffeeProductPhotos`, `CoffeeVariants`, `CoffeeImportRuns`, `CoffeeFilterValues`, `Countries` | Обжарщик и его профиль, товары, предложения, импорт и классификация. Нынешний namespace `CoffeeShopAggregate.Entities.Roaster` не меняет владельца. `DiscoveryClassificationStore` пишет `CoffeeFilterValues`, поэтому это каталог, несмотря на имя. |
@@ -42,7 +42,7 @@ flowchart LR
 | **AppDistribution** | `AndroidReleases`, `AppDistributionSettings`, `AppDistributionAuditLogs`, `AppDownloadRedirectEvents` | Релизы, каналы, политика версий и учёт redirect. Запросы версий/настроек теперь читают default без создания строки. Redirect URL вычисляется чтением, после чего HTTP adapter отдельно отправляет команду необязательной аналитики; сбой постановки команды логируется и не отменяет redirect. Платформа должна мониторить потери этой best-effort статистики. |
 | **PublicAddresses (технический компонент)** | `CoffeeShopPublicAddresses`, `RoasterPublicAddresses`, `PublicAddressAudit` | Единственный технический writer registry/history. Логическое право переименовать slug у владельца `Shops` или `CoffeeCatalog`; изменение его основной таблицы и registry — одна транзакция. Для City/Zone/Bean/Equipment/BrewMethod/ShopTag/CoffeeProduct slug живёт в owner row, отдельной registry таблицы нет. |
 
-Это **43 + 3 = 46** актуальных физических имён таблиц в перечисленных источниках после добавления `MenuOcrJobs`. Таблица может содержать FK на другой модуль; FK не передаёт владельцу целевой таблицы право изменять чужую строку. `Shops.Location.CityId` пока не имеет FK к `Cities`; P09/29 закрывают это. `ShopMenus.CoffeeShopId`, `CanonicalCheckIns.ShopId`, `CoffeeProducts.RoasterId` — ссылки между агрегатами, а не единый агрегат. [Контекст и mapping](../CoffeePeek.Shops.Persistance/Configuration/ShopsDbContext.cs), [меню](../CoffeePeek.Shops.Persistance/Configuration/MenuConfiguration.cs), [каталог](../CoffeePeek.Shops.Persistance/Configuration/CoffeeCatalogConfiguration.cs).
+В текущем snapshot **44** физических имени, плюс **3** legacy public-address registry/audit таблицы в сохранённых миграциях: всего **47**. Таблица может содержать FK на другой модуль; FK не передаёт владельцу целевой таблицы право изменять чужую строку. `Shops.Location.CityId` защищён Restrict FK к `Cities`; old-data preflight и concurrent delete проверены PostgreSQL gate. `ShopMenus.CoffeeShopId`, `CanonicalCheckIns.ShopId`, `CoffeeProducts.RoasterId` — ссылки между агрегатами, а не единый агрегат. [Контекст и mapping](../CoffeePeek.Shops.Persistance/Configuration/ShopsDbContext.cs), [меню](../CoffeePeek.Shops.Persistance/Configuration/ShopMenuConfiguration.cs), [каталог](../CoffeePeek.Shops.Persistance/Configuration/CoffeeCatalogConfiguration.cs).
 
 ### Особый случай `ShopPhotos`
 
@@ -70,7 +70,7 @@ flowchart LR
 | **AppDistribution** | `UpdateGooglePlayDownload`, `UpdateAndroidApkChannel`, `UpdateAppStoreDownload`, `UpdateAppVersionPolicy`, `CreateAndroidRelease`, `PublishAndroidRelease`; `GetAppDownloadRedirectQuery`, `GetPublicAppDownloadsQuery`, `GetAppVersionQuery`, `GetAdminAppDownloadsQuery` | Settings, releases, audit и redirect events. Все четыре `Get*` вызывают `GetOrCreateSettingsAsync`; redirect ещё сохраняет event. Убрать скрытую запись из чтения или классифицировать как write use case по P26. |
 | **PublicAddresses** | `ChangePublicAddressCommand`, `BackfillPublicAddressesCommand`; автоматический `PublicAddressWriter` при `SaveChanges` | Initialize/rename/backfill проходят Wolverine; технический savepoint/advisory lock не коммитит внешнюю транзакцию. Перенос изменения owner row к Shops/CoffeeCatalog ещё нужен для закрытия межмодульного baseline. |
 
-Полный поиск входов: [Features](../CoffeePeek.Shops.Application/Features), [Consumers](../CoffeePeek.Shops.Infrastructure/Consumers), [Controllers](../CoffeePeek.ShopsService/Controllers). После P01/P27 эту таблицу сравнить с реально зарегистрированными Wolverine handlers и маршрутами; generated-файлы руками не править. Прочие чтения `Get*`/`Search*` опущены; `GenerateCoffeeZoneCandidatesQuery` явно не записывает.
+Полный поиск входов: [Features](../CoffeePeek.Shops.Application/Features), [Consumers](../CoffeePeek.Shops.Infrastructure/Consumers), [Controllers](../CoffeePeek.ShopsService/Controllers). Реестр P01/P28 и contract/generated-handler suites сверяют таблицу с зарегистрированными Wolverine handlers и маршрутами; generated-файлы руками не править. Прочие чтения `Get*`/`Search*` опущены; `GenerateCoffeeZoneCandidatesQuery` явно не записывает.
 
 ## Узкие межмодульные порты
 
@@ -100,7 +100,9 @@ flowchart LR
 
 Иных межмодульных multi-write разрешений по умолчанию нет. Новое исключение требует сценарий, координатора, owner каждой таблицы, transaction/failure tests и задачи удаления, если исключение временное.
 
-## Размещение кода по этапам
+## Первоначальный порядок переноса (история плана)
+
+Следующие этапы сохранены как rationale. Текущее состояние owners/commands/constraints подтверждено [status](shops-implementation-status.md), [architecture gate](shops-architecture-baseline.md) и [P28 audit](shops-p28-write-protocol-audit.md); baseline исключений теперь нет. Исторический namespace Roaster сохранён ради контрактов, он не меняет owner CoffeeCatalog.
 
 1. **P05:** проверять запрещённые ссылки/вызовы по фактическим зависимостям. Сохранить текущие пути как baseline только с владельцем и задачей удаления: `ShopPhotos`, `PublicAddressService`, `CoffeeCatalogStore`, прямые host→store writes, `ApplyShopMenuService → Shops` и `ShopChangeRequestApprovedHandler` бизнес-координация.
 2. **P06–P07:** в каждом модуле один способ выражения отказа/commit/outbox. Прямые store saves внутри контроллеров и write-side `Get*` выделить в команды, не менять API маршрут. У входящих consumers сохранить wire type и очередь.
@@ -110,4 +112,4 @@ flowchart LR
 
 ## Проверка карты
 
-P05 должен падать на искусственной записи `Discovery → db.Shops.Update`, `Menus → db.CoffeeProducts.Add`, `Community → db.ShopPhotos.Add` после разделения фото и `CoffeeCatalog → db.CoffeeShopRoasters.Add`; на разрешённых read projections и composition root — проходить. P28 повторно инвентаризирует все команды, consumers, прямые host writes, `SaveChanges`, `ExecuteSql*` и невыраженные фоновые эффекты. P34 сравнивает старые и новые HTTP/queue fixtures; изменение одного физического владельца без сохранения контрактов не считается завершением P03.
+P05 падает на искусственной записи `Discovery → db.Shops.Update`, `Menus → db.CoffeeProducts.Add`, `Community → db.ShopPhotos.Add` после разделения фото и `CoffeeCatalog → db.CoffeeShopRoasters.Add`; на разрешённых read projections и composition root — проходить. P28 повторно инвентаризировал все команды, consumers, прямые host writes, `SaveChanges`, `ExecuteSql*` и невыраженные фоновые эффекты. P34 сравнивает старые и новые HTTP/queue fixtures; изменение одного физического владельца без сохранения контрактов не считается завершением P03.

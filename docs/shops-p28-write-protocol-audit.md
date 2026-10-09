@@ -1,117 +1,88 @@
-# P28. Остаточные точки сохранения и кеша ShopsService
+# P28: актуальная матрица write protocol
 
-## Проверка записи зон, 9 октября 2026 года
+Срез PR #340, 9 октября 2026 года. Старый список из 146 вхождений заменён текущим. Контрольный поиск находит 37 SaveChangesAsync references (включая override/делегирование), 12 cache removals и три SetAsync references избранного. Все 12 Redis removals находятся в трёх durable consumers; application writers больше не удаляют Redis непосредственно.
 
-Пять writers зон (`CreateCoffeeZoneHandler`, `UpdateCoffeeZoneHandler`, `SetCoffeeZoneStatusHandler`, `SetCoffeeZoneMembershipOverrideHandler`, `DeleteCoffeeZoneMembershipOverrideHandler`) сохраняют ранний EF flush намеренно: ответ формируется через SQL-проекцию с актуальными геометрией, статусом, составом и primary-признаком участников. Это не самостоятельный commit. Generated Wolverine adapters начинают общую транзакцию до вызова handler, делают итоговое сохранение и commit перед ответом и откатывают транзакцию при ошибке readback. Прямых Redis/Media side effects в этих writers нет. Их команды, handlers и DTO разделены по одному top-level типу на файл без изменения CLR identity и HTTP-контрактов.
+HTTP→store baseline и cross-module write baseline пусты и проверяются architecture suite. [Реестр входов](shops-write-inventory.md) связывает HTTP/messages с владельцами. [Independent review](shops-independent-review.md) проверил прямой SQL, scopes, old events, API/auth и границы. [CI cb386808](https://github.com/CoffeePeek/coffeepeek-backend/actions/runs/37923822811) полностью SUCCESS, включая все семь fault cases. Отсутствующий Include Photos в старом fixture исправлен; stored result, photos и committed invalidation теперь подтверждены после process restart.
 
-`CoffeeZoneWriteProtocolLiveTests` содержит десять сценариев: пять успешных записей и пять исключений после фактической SQL-проекции. Отдельный DbContext в момент readback видит исходные строки, после успешного ответа — новое состояние, после исключения — исходное. Проверяется в том числе перенос primary с другой зоны на существующее назначение под уникальным индексом. Все десять сценариев прошли обязательный PostgreSQL 17 gate в [CI commit caeb60f2](https://github.com/CoffeePeek/coffeepeek-backend/actions/runs/37894472606).
+| Путь / граница | Validate / tracking / commit / retry | Live evidence |
+| --- | --- | --- |
+| Profile/admin/owner/visibility/gallery/tags/owner/import enrichment | Domain validation перед apply, единая ProfileRevision, EF concurrency → 409; publish invalidation внутри transaction. Gallery early flush для SQL readback не является commit. | Profile/revision/visibility/outbox; physical Redis и commit-ack gate |
+| Five zone writers | Domain polygon invariants, early SQL readback под outer EF transaction; late error откатывает geometry/status/overrides и outbox. | CoffeeZoneWriteProtocolLiveTests:10 |
+| CityRepository delete | FK Restrict и concurrency checks; known FK violation →409, только операция удаления; flush остаётся под command transaction. | CityReferenceLiveTests |
+| Manual menu / attach/remove/OCR request | Весь пакет проверен до mutation; SQL upsert + revision атомарны; tracked state перечитан; empty photos не создают menu/job. | ShopMenuManualWriteLiveTests:5, direct boundary |
+| Approved menu/profile и snapshot consumers | Business replay ID, ExpectedInputRevision, controlled tracking clear только для постоянного отказа; старое approval/snapshot без revision не перезаписывает live menu. | ShopChangeRequestMenu/Outbox, direct snapshot tests |
+| MenuOcrJobStore | Fresh scope на переход, row locks, собственный commit. Menu service использует тот же enrolled IDbContextOutbox; FlushOutgoingMessages после commit. Provider вне transaction. | MenuOcrJobLiveTests:4; три OCR process checkpoints passed |
+| Coffee product/tag/classification | Application coordinator; узкие SQL Storage; early flush/savepoint только для известной uniqueness race. Exception не превращается в произвольный partial commit. | Direct boundary:45, child concurrency:6 |
+| Coffee import | Own transaction/advisory ordering; payload hash, stable RunId, Failed record и повтор same payload; hash mismatch/stale snapshot отклоняются. | CoffeeImportRecoveryLiveTests:3 |
+| PublicAddresses | Commands под Wolverine, owner port, advisory/savepoint; dry-run не пишет, outer transaction не завершается внутри service. | Direct boundary initialize/rename/backfill |
+| Favorites / import failure | Commands под Wolverine; idempotent unique insert/savepoint; посторонние unique errors не подавляются. | Direct boundary six cases |
+| Community / review reports | Owner repository SQL locks и additive CheckInPhotos; late error rollback; idempotent consumer/cache delivery. | Community races/migration/limits/votes/reports |
+| AppDistribution | Settings GET read-only; commands commit перед ответом; redirect analytics durable + idempotent fallback, unconfirmed при двойном отказе. | AppDownloadRedirectDurabilityLiveTests:4 |
+| Cache consumers | Strict failures пробрасываются в Wolverine. Redis delete replay безопасен; business write уже committed. | Physical fault gate; selected DLQ replay оставляет unrelated failure |
 
-## Избранное и отчёт об ошибке импорта, 9 октября 2026 года
+В [CI 4129904f](https://github.com/CoffeePeek/coffeepeek-backend/actions/runs/37918432384) эти обязательные классы до process gate прошли без skips, включая 45 direct cases. ACK-loss scenario и DLQ test тоже прошли; весь run красный из-за двух проверок незагруженных Photos в OCR fixture. Позже весь обязательный contour прошёл в CI cb386808; текущий P28 подтверждён source audit и runtime gate.
 
-PUT/DELETE избранного и `POST /internal/coffee-import/failures` теперь вызывают `SetDiscoveryFavoriteCommand` и `RecordCoffeeImportFailureCommand` через Wolverine. Удалены три прямых HTTP→store исключения из architecture baseline. Auth, routes, 204 избранного, error envelope и ответ `status: recorded` сохранены. Factory-регистрация import writer скрывает DbContext от codegen, поэтому новый handler объявляет существующий `IUnitOfWork`: generated adapter начинает EF/outbox-транзакцию до вызова store и завершает commit до HTTP-ответа.
+Ранние saves нужны для DB constraints/savepoint или SQL readback. Generated adapters начинают внешнюю EF transaction до handler и коммитят до ответа; зависимые adapters включены в release build. Особые owners — import lifecycle и short OCR scopes — перечислены явно.
 
-Ранние `SaveChangesAsync` в двух stores оставлены как flush: они нужны для обработки конкурентного idempotent insert через EF savepoint. Favorites подавляет только конфликт `PK_DiscoveryFavorites` для одной записи избранного; другие unique violations больше не скрываются. `ShopsDirectWriteBoundaryLiveTests` проверяет четыре сценария PUT/DELETE и два сценария отчёта: отдельная SQL-сессия не видит flush, поздняя ошибка откатывает запись, успешный ответ означает commit, повторный отчёт не создаёт вторую строку. Все шесть сценариев прошли обязательный PostgreSQL 17 gate без пропусков в [CI commit 6f8f5f42](https://github.com/CoffeePeek/coffeepeek-backend/actions/runs/37896146032); локально без PostgreSQL они пропускаются.
+## Контрольный список references
 
-## Закрытие HTTP bypass, 9 октября 2026 года
-
-Пять записей классификации проходят `CoffeeClassificationHandler`, initialize/rename — `ChangePublicAddressCommand`, backfill — `BackfillPublicAddressesCommand`. Все семь generated adapters используют одну EF/outbox-транзакцию до ответа. PublicAddresses сохраняет advisory lock и savepoint, но не завершает внешнюю транзакцию. Dry-run не меняет owner rows. В `HostWriteBypassTests` больше нет разрешённых исключений: фактический список обязан быть пустым.
-
-`ShopsDirectWriteBoundaryLiveTests` расширен до 23 обязательных сценариев: десять классификации, шесть initialize/rename/backfill, один dry-run и шесть ранее подтверждённых сценариев избранного/import failure. Добавлены HTTP success/404/409 и controller request/actor/revision проверки. Локальный полный suite: 2019 passed, 118 infrastructure skips, 0 failed; новые 17 PostgreSQL-сценариев требуют CI.
-
-Таблицы ниже сохраняют историческую инвентаризацию 8 октября; актуальные изменения зон и HTTP-путей приведены выше. Остальные ранние flush остаются предметом P28.
-
-Срез рабочего дерева: 8 октября 2026 года, после профильного P06/P10 и узкой правки visibility. Это инвентаризация **вхождений вызовов**, а не утверждение, что каждое раннее `SaveChangesAsync` уже приводит к частичному commit: generated Wolverine adapter может держать внешнюю EF-транзакцию. Контрольный поиск по production C# (без миграций и Generated):
+Следующий поиск воспроизводит список; это ссылки вызовов/объявлений, а не количество команд:
 
 ```text
-rg -n '\bSaveChangesAsync\(|\bRemoveAsync\(|\bRemoveByPattern(?:Async)?\(|\bSetAsync\(' CoffeePeek.Shops.Application CoffeePeek.Shops.Infrastructure CoffeePeek.Shops.Persistance CoffeePeek.ShopsService -g '*.cs' -g '!**/Internal/Generated/**' -g '!**/Migrations/**'
+rg -n '\bSaveChangesAsync\(|\bRemoveAsync\(|\bRemoveByPattern(?:Async)?\(|\bSetAsync\(' CoffeePeek.Shops.Application CoffeePeek.Shops.Infrastructure CoffeePeek.Shops.Persistance CoffeePeek.ShopsService -g '*.cs' -g '!**/Internal/Generated/**' -g '!**/Migrations/**' -g '!**/bin/**' -g '!**/obj/**'
 ```
 
-Результат: 78 вхождений `SaveChangesAsync` (включая четыре строки инфраструктурного override `ShopsDbContext`), 64 прямых вызова удаления/паттерна кеша, 4 вхождения `SetAsync` (API избранного и интерфейс store). В таблицах ниже перечислены **все** эти вхождения, сгруппированные только там, где механизм и следующий шаг совпадают. Номера строк соответствуют этому срезу; при параллельных правках использовать контрольный поиск выше.
-
-Обозначения: **E** — ранний EF flush внутри handler/service; проверить generated adapter и убрать, если результат не требуется до завершения команды. **R** — прямой Redis side effect после изменения SQL, но до финального commit; перевести в transactional outbox и идемпотентный consumer. **S** — собственный `DbContext.SaveChangesAsync` в store/прямом HTTP пути; определить единственного владельца commit и внешнюю транзакцию. **D** — отдельный durable consumer после commit, ожидаемая точка инвалидации. **P** — EF инфраструктура, не application writer. Сочетание E+R требует обеих проверок.
-
-## Application: ранний EF flush
-
-| Вызовы (строки) | Класс | Следующий шаг |
-| --- | --- | --- |
-| `Features/Admin/Catalogs/Beans/AdminCoffeeBeanHandlers.cs` 30,60,83; `BrewMethods/AdminBrewMethodHandlers.cs` 32,62,85; `Equipments/AdminEquipmentHandlers.cs` 35,73,96; `Roasters/CreateRoasterHandler.cs` 42, `UpdateRoasterHandler.cs` 40, `DeleteRoasterHandler.cs` 29; `Features/Admin/ShopTags/AdminShopTagHandlers.cs` 76,110,133 | E | Справочники: проверить ответы после save и generated transaction, оставить commit в одном месте. |
-| `Features/Admin/Catalogs/Cities/CreateCityHandler.cs` 28; `UpdateCityHandler.cs` 26 | E | City reference и конфликт удаления проверить отдельно; не смешивать с profile write. |
-| `Features/Admin/Menu/AttachAdminShopMenuPhotosHandler.cs` 70; `ParseAdminShopMenuHandler.cs` 43; `RemoveAdminShopMenuPhotosHandler.cs` 46; `UpdateAdminShopMenuHandler.cs` 80 | E | Согласовать с P17 Media, OCR job и Menus→Shops price-range портом. |
-| `Features/Admin/Shops/AssignCoffeeShopOwnerHandler.cs` 25; `ReorderPhotos/ReorderAdminCoffeeShopPhotosHandler.cs` 30; `SetAdminCoffeeShopFocusHandler.cs` 34; `SetShopTags/SetShopTagsHandler.cs` 44; `Features/CoffeeShop/ShopProfile/AddPublishedShopPhotosHandler.cs` 57; `RemovePublishedShopPhotosHandler.cs` 40; `Features/Owner/ReorderPhotos/ReorderOwnerCoffeeShopPhotosHandler.cs` 31 | E | Остальные writers Shops: ревизия/commit/cache должны совпасть с profile-протоколом; gallery зависит от P17 Media. |
-| `Features/AppDownloads/CreateAndroidReleaseHandler.cs` 34; `PublishAndroidReleaseHandler.cs` 27,37; `RecordAppDownloadRedirectHandler.cs` 23; `UpdateAndroidApkChannelHandler.cs` 28; `UpdateAppStoreDownloadHandler.cs` 28; `UpdateAppVersionPolicyHandler.cs` 36; `UpdateGooglePlayDownloadHandler.cs` 28 | E | AppDistribution: проверить, где нужен flush для чтения результата и где достаточно Wolverine commit; аналитика redirect уже вынесена из GET. |
-| `Features/CheckIn/CreateUnifiedCheckInHandler.cs` 72; `UpdateUnifiedCheckInHandlers.cs` 47,73; `Features/Review/Reports/SubmitReviewReportHandler.cs` 21; `ResolveReviewReportHandler.cs` 26 | E | Community: проверить SQL voice/report race, ошибки после flush и атомарность с outbox. |
-| `Features/CoffeeZones/CoffeeZoneMessages.cs` 87,109,135,173,195 | E | Один агрегат зоны: удалить лишний flush после проверки зависимых запросов, не менять геометрию/права в P28. |
-| `Services/CreateShopFromModerationService.cs` 127; `CreateShopFromImportService.cs` 75; `EnrichShopFromImportService.cs` 58; `CreateRoasterFromModerationService.cs` 57 | E | Эти сервисы вызываются из consumers и могут вызываться повторно: сначала проверить idempotency и transaction middleware. |
-
-## Redis: прямые удаления до границы commit
-
-| Вызовы (строки) | Класс | Следующий шаг |
-| --- | --- | --- |
-| `Features/Admin/Catalogs/Beans/AdminCoffeeBeanHandlers.cs` 38–39; `BrewMethods/AdminBrewMethodHandlers.cs` 40–41; `Cities/CreateCityHandler.cs` 36–37; `Equipments/AdminEquipmentHandlers.cs` 43–44; `Roasters/CreateRoasterHandler.cs` 50–51; `Features/Admin/ShopTags/AdminShopTagHandlers.cs` 84–85 | R | Инвалидация справочника/поиска после commit через события владельцев. City.ListAll больше не cache-aside. |
-| `Features/Admin/Menu/AttachAdminShopMenuPhotosHandler.cs` 71–72; `ParseAdminShopMenuHandler.cs` 44; `RemoveAdminShopMenuPhotosHandler.cs` 47–48; `UpdateAdminShopMenuHandler.cs` 81–82; `Services/ApplyShopMenuService.cs` 28,87–88,131–132,139 | R | Меню/OCR/Media: перенос после общей транзакции, без повторного OCR ради Redis. |
-| `Features/Admin/Shops/ReorderPhotos/ReorderAdminCoffeeShopPhotosHandler.cs` 31–32; `SetAdminCoffeeShopFocusHandler.cs` 35–36; `SetShopTags/SetShopTagsHandler.cs` 46; `Features/CoffeeShop/ShopProfile/AddPublishedShopPhotosHandler.cs` 58–59; `RemovePublishedShopPhotosHandler.cs` 41–42; `Features/Owner/ReorderPhotos/ReorderOwnerCoffeeShopPhotosHandler.cs` 32–33 | R | Перевести в общий Shops invalidation event и согласовать ревизию этих writers. |
-| `Features/Catalogs/Drinks/DrinkCatalogHandlers.cs` 57–58,72–73 | R | Каталог напитков — владелец ключа MenuDrinks, detail/search обновлять после commit. |
-| `Features/CheckIn/CheckInCacheInvalidator.cs` 11–15 | R | Вызов из write path проверить на фактическую очередь; прямой Redis убрать в пользу существующего durable CheckIn consumer. |
-| `Features/Public/Stats/PublicStatsCacheInvalidator.cs` 11 | R | Helper сам выполняет Redis, не обеспечивает postcommit; больше не вызывается visibility writer после этого среза. |
-| `Services/CreateRoasterFromModerationService.cs` 58–59; `CreateShopFromImportService.cs` 77–78; `CreateShopFromModerationService.cs` 129–130; `EnrichShopFromImportService.cs` 61,63 | R | Импорт/Moderation: согласовать commit, redelivery и инвалидацию через outbox. |
-| `Infrastructure/Consumers/ShopChangeRequestApprovedHandler.cs` 108–109; `Persistance/Menu/ApplyApprovedShopMenuChangeService.cs` 125–126 | R | Consumer/делегат P17 всё ещё делают прямую инвалидацию до завершения общей транзакции. |
-
-`Infrastructure/Consumers/CheckInCacheInvalidationRequestedHandler.cs` 32–33 и `ShopProfileCacheInvalidationRequestedHandler.cs` 29–32 — класс **D**: отдельные retryable consumer после commit. Они должны оставаться идемпотентными и входить в проверку redelivery, а не переноситься обратно в SQL handler.
-
-## Persistence и прямые HTTP пути
-
-| Вызовы (строки) | Класс | Следующий шаг |
-| --- | --- | --- |
-| `CoffeeCatalog/CoffeeCatalogStore.cs` 36,44,58,83,205,218; `CoffeeCatalogStore.Import.cs` 28,175,193; `DiscoveryClassificationStore.cs` 41,52,61,118 | S | P20/P21 writer ports выделены частично; после стабилизации контрактов определить один commit для каждого HTTP/consumer входа и не делать Redis/Media после уже зафиксированного SQL. |
-| `Discovery/DiscoveryFavoritesStore.cs` 51 и `Controllers/DiscoveryFavoritesController.cs` 20,23 (`SetAsync`) | S | Прямой HTTP→store без Wolverine; отдельный transaction/idempotency contract для PUT/DELETE избранного. `IDiscoveryFavoritesStore.cs` 8 — только интерфейс, не запись сама по себе. |
-| `Menu/MenuOcrJobStore.cs` 134; `Menu/ApplyApprovedShopMenuChangeService.cs` 41; `Repositories/QueryCoffeeDrinkRepository.cs` 26 | S | Menu job/approved snapshot/каталог напитков: проверить, где store save является сознательной границей, и rollback при последующем отказе. |
-| `PublicAddresses/PublicAddressService.cs` 156,202 | S | Собственная транзакция/advisory lock; сохранить atomic reservation, но подключить к общему write protocol и retry classification. |
-| `Repositories/CityRepository.cs` 30 | S | Проверить при удалении использованного города и 409; не полагаться на catch вместо FK теста. |
-| `Configuration/ShopsDbContext.cs` 33,35,50,56 | P | Sync bridge, override и два `base.SaveChangesAsync`; здесь узкая трансляция профильного concurrency в неретрабельный `ConflictException`, остальные EF конфликты сохраняют общую retry-политику. |
-| `Infrastructure/Consumers/ApplyShopMenuSnapshotEventHandler.cs` 23; `CheckInModerationDecidedHandler.cs` 29; `ParseMenuRequestedEventHandler.cs` 104; `ShopChangeRequestApprovedHandler.cs` 106 | E | Consumer-specific flush; P16/P17 разделили OCR и menu approval, но остаточные ветки требуют проверки generated transaction и redelivery. |
-
-## Чтение и операции избранного
-
-Пять малых справочников (`GetAllBeans`, `GetAllBrewMethods`, `GetAllEquipment`, `GetShopTags`, `GetMenuDrinks`) после P08 читают repository без cache-aside, поэтому прямых Redis `SetAsync` в read handlers больше нет. Четыре `SetAsync` из поиска — `IDiscoveryFavoritesStore` 8 (контракт), `DiscoveryFavoritesStore` 34 (реализация) и `DiscoveryFavoritesController` 20,23 (два HTTP вызова); это операции избранного, описанные в разделе Persistence, а не запись в Redis.
-
-`SearchCoffeeShopsHandler` и `GetPublicStatsHandler` тоже читают БД на каждом запросе. Их неиспользуемые `ICacheService` параметры удалены из read handlers и generated adapters: контракт чтения теперь явно не зависит от Redis. Неиспользуемые вычисление Redis search hash и TTL расписания удалены вместе с тестами этих мёртвых веток; тест текущей персонализации поиска сохранён. Старые write-инвалидаторы search/stats и каталогов ещё присутствуют; их удаление требует отдельной сверки всех владельцев ключей и контрактных тестов, а не фиктивного outbox-события для кеша, который уже не заполняется.
-
-Первый реализуемый P28 срез — `SetAdminCoffeeShopVisibilityHandler`: прежние `SaveChangesAsync` и прямое удаление detail/search/stats уже убраны, `ProfileRevision` увеличивается только при реальном изменении `IsHidden`, событие `ShopProfileCacheInvalidationRequested` ставится в одну Wolverine EF/outbox-транзакцию. Offline handler тесты проходят; live PostgreSQL тест `ShopVisibilityWolverineLiveTests` проверяет, что consumer увидит уже зафиксированную ревизию, но локально пропускается без `COFFEEPEEK_LIVE_PG`.
-
-Срез записи меню и OCR: `ApplyShopMenuService` больше не вызывает Redis из транзакции. Ручное изменение, применение snapshot/parse и ошибка парсинга публикуют `ShopProfileCacheInvalidationRequested` в Wolverine outbox. Административные handlers обновления меню, прикрепления/удаления фото и запуска OCR тоже убрали прямые удаления Redis. Durable consumer удаляет detail/search/list/stats после commit и повторяет запрос при отказе Redis. Live PostgreSQL сценарий `ShopMenuManualWriteLiveTests.WolverineMenuUpdate_RedisFailureAfterRawUpsert_DoesNotRollBackSql_AndRetries` наблюдает транзакцию во время raw SQL upsert, зафиксированную ревизию из отдельного `DbContext` при первом отказе Redis и успешный повтор consumer. Локально этот live сценарий пропускается без PostgreSQL; обязательный CI gate проверяет исполнение.
-
-Административные изменения `focus` и назначений тегов кофейни также убрали ранний `SaveChangesAsync` и прямое удаление Redis. Изменение агрегата и `ShopProfileCacheInvalidationRequested` проходят через одну Wolverine EF/outbox-транзакцию; для неизменённого `focus` ревизия не растёт. Общий live PostgreSQL-тест для visibility/focus/tags/owner проверяет, что consumer видит уже зафиксированную ревизию. Доменная замена тегов теперь отклоняет пустой `TagId` до очистки старых назначений; замена расписания и связей справочников материализует вход до очистки собственных коллекций.
-
-Назначение владельца переведено на тот же протокол: новая ревизия и инвалидация появляются только при фактической смене владельца. Входной `Guid.Empty` нормализуется в отсутствие владельца до сравнения, поэтому повторный сброс остаётся идемпотентным. Live PostgreSQL-тест проверяет видимость записанного владельца из consumer после commit.
-
-Перестановка галереи из admin и owner API теперь тоже повышает общую ревизию и ставит post-commit инвалидацию через outbox. Повтор того же полного порядка не создаёт новую ревизию; неверный набор ID отклоняется без события. Адресные application-тесты проверяют обе роли и no-op/invalid случаи; отдельная live PostgreSQL проверка именно перестановки ещё нужна.
-
-Удаление опубликованных фотографий тоже следует этому протоколу: фактическое удаление повышает ревизию и публикует инвалидацию в outbox, пустой запрос остаётся no-op. Ранний `SaveChangesAsync` и прямой Redis вызов из handler удалены. Добавление фотографий публикует `ShopPhotosAttachedEvent` и профильную инвалидацию в outbox; повтор уже прикреплённого storage key не поднимает ревизию. Для возвращаемого DTO оно пока делает ранний EF flush внутри внешней Wolverine-транзакции и повторную загрузку; Media claim и этот flush требуют отдельной live проверки вместе с P17.
-
-Срез каталога напитков: `CreateCatalogDrinkHandler` и `UpdateCatalogDrinkHandler` больше не сохраняют EF досрочно и не обращаются к Redis. Wolverine делает единственный `SaveChangesAsync` и commit; в той же EF/outbox-транзакции публикуется `DrinkCatalogCacheInvalidationRequested`, а отдельный durable consumer удаляет `MenuDrinks` и detail-ключи после commit с повтором при ошибке Redis. Конфликт уникального slug по `IX_CoffeeDrinkDefinitions_Slug` преобразуется в HTTP 409 на финальном сохранении, в том числе при конкурентном создании. `DrinkCatalogWriteProtocolLiveTests` проверяет видимость committed строки из consumer и узкую трансляцию 409; локально live PG сценарии пропущены без `COFFEEPEEK_LIVE_PG`.
-
-Создание кофейни по событиям импорта и модерации также оставляет сохранение Wolverine EF middleware: сервисы больше не вызывают ранний `SaveChangesAsync` и Redis, а публикуют `ShopProfileCacheInvalidationRequested` в общей транзакции. Повтор события, обнаруживший существующий `ModerationId`, по-прежнему возвращает прежний ID без новой записи и без инвалидирования. Дубликаты одного кандидата внутри ещё не сохранённого import-пакета обрабатываются по ID в памяти handler, чтобы избежать двойной вставки после удаления раннего EF flush. Массовое enrichment теперь тоже публикует post-commit событие, пакетируя до 256 ID: durable consumer удаляет каждую detail-запись, затем один раз общие search/list/stats ключи на пакет. Старые queued сообщения без нового поля `AdditionalShopIds` остаются читаемыми.
-
-Применение одобренных владельцем изменений профиля и меню тоже публикует `ShopProfileCacheInvalidationRequested` вместо прямого Redis-вызова. `AppliedShopChangeRequest`, изменения агрегата и событие остаются в общей Wolverine EF/outbox-транзакции. Ранний EF flush здесь пока сохранён для прямых вызывающих сценариев; повтор уже применённого RequestId не создаёт второй записи или события. Live PostgreSQL тесты конкурентной ревизии и меню проверяют прямой путь; `ShopChangeRequestOutboxLiveTests` проверяет, что Redis-отказ случается после видимого commit и durable consumer повторяет инвалидирование. Локально live тест пропускается без PostgreSQL, обязательный CI gate должен подтвердить его исполнение.
-
-Создание обжарщика по одобренному Moderation событию и admin create/update/delete теперь оставляют единственный commit Wolverine EF middleware. Ранний `SaveChangesAsync` и прямые Redis-удаления убраны: каталог обжарщиков и поиск кофейни читают БД напрямую и эти ключи не заполняют. Повтор Moderation события по `ModerationId` возвращает прежний ID без новой записи. Durable Media finalization фотографий обжарщика всё ещё открыт в P17.
-
-Admin create/update города тоже сохраняются в итоговом Wolverine commit без раннего flush. `DeleteCityHandler` больше не обращается к Redis; `CityRepository.DeleteIfUnusedAsync` сохраняет ранний EF flush внутри транзакции намеренно, чтобы перехватить FK-конфликт конкурентной вставки и вернуть 409. Список городов и поиск кофейни читают БД напрямую, поэтому их старые Redis-ключи не заполняются.
-
-Admin create/update/delete оборудования также больше не делают ранний EF flush и Redis-инвалидацию: список моделей и поиск читают БД напрямую, а Wolverine выполняет итоговый commit. Предварительная проверка смены категории модели с назначениями кофейням остаётся перед мутацией; live PostgreSQL контракт уникальности основного оборудования на кофейню и категорию уже входит в P11.
-
-Голос `SetCheckInHelpfulCommand` публикует `CheckInCacheInvalidationRequested` только при реальной смене голоса, в той же Wolverine EF/outbox-транзакции, что и SQL обновление счётчика. Consumer после commit удаляет detail/visited/visit-stats по переданным ID и общие list/search/stats ключи; старые сообщения только с `CheckInId` сохраняют прежнюю глобальную инвалидацию. Создание check-in теперь передаёт в это событие ID кофейни и автора без неиспользуемой Redis-зависимости. `CheckInHelpfulOutboxLiveTests` добавлен в обязательный PostgreSQL 17 gate и проверяет видимость committed голоса при первом отказе Redis и повтор consumer; локально пропускается без БД.
-
-Решение модерации check-in тоже ставит адресное `CheckInCacheInvalidationRequested` в outbox после раннего EF flush, который намеренно выявляет конфликт независимого concurrency token до публикации. Повтор/устаревшая ревизия не публикуют событие. Существующий live PostgreSQL race test продолжает проверять, что одобрение после скрытия не открывает публичную проекцию.
-
-Разрешение жалобы с удалением check-in тоже ставит адресное событие в outbox после сохранения решения. Повтор команды не меняет audit и не публикует второе событие; восстановление после Redis-сбоя обеспечивает durable consumer исходного события, а не повтор HTTP-команды.
-
-Владелец check-in при изменении содержимого/видимости или удалении теперь тоже публикует `CheckInCacheInvalidationRequested` в Wolverine outbox после намеренного EF flush для concurrency check. Неизменённая видимость и отказ по владению/фото не публикуют событие; удаление и редактирование передают ID кофейни и автора. После сверки всех вызовов мёртвые `CheckInCacheInvalidator` и `PublicStatsCacheInvalidator` удалены: прямых Redis-вызовов из Community writers больше нет.
-
-Каталоги зерна и способов заваривания при admin create/update/delete теперь оставляют один итоговый Wolverine commit без прямого Redis: их списки и поиск кофейни читают БД. Команды и обработчики разделены по правилу репозитория «один top-level тип на файл», тестовые классы способов заваривания также разделены. Admin create/update/deactivate тегов использует тот же протокол; список тегов и поиск тоже читают БД напрямую. Прямая Redis-инвалидация из этих application handlers удалена. Другие ранние EF flush и внешние вызовы перечислены выше и остаются предметом P28.
-
-Подача жалобы на опубликованный check-in больше не делает ранний EF flush. ID жалобы создаётся в домене, поэтому результат можно собрать до итогового Wolverine commit; существующая проверка публичной видимости остаётся перед добавлением записи. Обязательный PostgreSQL 17 сценарий `ReviewReportCommitLiveTests` проверяет видимость жалобы из отдельного `DbContext` сразу после ответа Wolverine.
-
-Создание Android release, изменение каналов/версий магазинов и запись redirect-события теперь тоже полагаются на итоговый Wolverine commit: доменные ID и audit log формируются до записи, а активный Android release можно прочитать без flush изменённых настроек. Обязательный `AppDownloadRedirectDurabilityLiveTests` дополнен проверкой committed release, settings и audit log сразу после ответа Wolverine, а также смены единственного активного релиза. `PublishAndroidReleaseHandler` сохраняет только промежуточный flush старого активного релиза перед публикацией нового, чтобы не нарушить уникальный индекс; новая публикация и audit log сохраняются в итоговом Wolverine commit той же транзакции.
-
-Срез каталогов после удаления HTTP bypass: шесть create/edit/archive кофе и create/edit/set тегов теперь имеют generated EF/outbox transaction. Dependency `IUnitOfWork` раскрывает DbContext, скрытый фабриками узких портов; прежние store saves остаются flush для readback внутри этой транзакции. `ShopsDirectWriteBoundaryLiveTests` расширен с 23 до 35 сценариев, включая late-failure rollback каждого из шести writers. Меню меняет `PriceRange` через Shops-порт `IShopPriceRangeWriter`, который также повышает ревизию профиля; два межмодульных baseline исключения удалены.
+```text
+CoffeePeek.Shops.Persistance\Menu\MenuOcrJobStore.cs:184:        await db.SaveChangesAsync(ct);
+CoffeePeek.Shops.Persistance\PublicAddresses\PublicAddressService.cs:156:        await db.SaveChangesAsync(ct);
+CoffeePeek.Shops.Persistance\PublicAddresses\PublicAddressService.cs:202:        if (!dryRun) await db.SaveChangesAsync(ct);
+CoffeePeek.Shops.Persistance\Repositories\CityRepository.cs:30:            await dbContext.SaveChangesAsync(ct);
+CoffeePeek.Shops.Infrastructure\Consumers\ShopProfileCacheInvalidationRequestedHandler.cs:34:                await cache.RemoveAsync(CacheKey.Shop.Detail(shopId), ct);
+CoffeePeek.Shops.Infrastructure\Consumers\ShopProfileCacheInvalidationRequestedHandler.cs:35:            await cache.RemoveByPatternAsync(CacheKey.Shop.SearchPattern(), ct);
+CoffeePeek.Shops.Infrastructure\Consumers\ShopProfileCacheInvalidationRequestedHandler.cs:36:            await cache.RemoveByPatternAsync(CacheKey.Shop.ListPattern(), ct);
+CoffeePeek.Shops.Infrastructure\Consumers\ShopProfileCacheInvalidationRequestedHandler.cs:37:            await cache.RemoveAsync(CacheKey.Shop.PublicPlatformStats(), ct);
+CoffeePeek.Shops.Infrastructure\Consumers\ShopChangeRequestApprovedHandler.cs:109:        await dbContext.SaveChangesAsync(ct);
+CoffeePeek.Shops.Persistance\Menu\ApplyApprovedShopMenuChangeService.cs:38:            await db.SaveChangesAsync(ct);
+CoffeePeek.Shops.Infrastructure\Consumers\DrinkCatalogCacheInvalidationRequestedHandler.cs:29:            await cache.RemoveAsync(CacheKey.Shop.MenuDrinks(), ct);
+CoffeePeek.Shops.Infrastructure\Consumers\DrinkCatalogCacheInvalidationRequestedHandler.cs:30:            await cache.RemoveByPatternAsync(CacheKey.Shop.DetailPattern(), ct);
+CoffeePeek.Shops.Infrastructure\Consumers\CheckInModerationDecidedHandler.cs:28:        await unitOfWork.SaveChangesAsync(ct);
+CoffeePeek.Shops.Infrastructure\Consumers\CheckInCacheInvalidationRequestedHandler.cs:36:                await cache.RemoveAsync(CacheKey.Shop.Detail(shopId), ct);
+CoffeePeek.Shops.Infrastructure\Consumers\CheckInCacheInvalidationRequestedHandler.cs:39:                await cache.RemoveAsync(CacheKey.Shop.Visited(userId), ct);
+CoffeePeek.Shops.Infrastructure\Consumers\CheckInCacheInvalidationRequestedHandler.cs:40:                await cache.RemoveAsync(CacheKey.Shop.VisitStatistics(userId), ct);
+CoffeePeek.Shops.Infrastructure\Consumers\CheckInCacheInvalidationRequestedHandler.cs:42:            await cache.RemoveByPatternAsync(CacheKey.Shop.ListPattern(), ct);
+CoffeePeek.Shops.Infrastructure\Consumers\CheckInCacheInvalidationRequestedHandler.cs:43:            await cache.RemoveAsync(CacheKey.Shop.PublicPlatformStats(), ct);
+CoffeePeek.Shops.Infrastructure\Consumers\CheckInCacheInvalidationRequestedHandler.cs:44:            await cache.RemoveByPatternAsync(CacheKey.Shop.SearchPattern(), ct);
+CoffeePeek.Shops.Infrastructure\Consumers\ApplyShopMenuSnapshotEventHandler.cs:37:            await unitOfWork.SaveChangesAsync(ct);
+CoffeePeek.Shops.Persistance\Configuration\ShopsDbContext.cs:37:        SaveChangesAsync(acceptAllChangesOnSuccess).GetAwaiter().GetResult();
+CoffeePeek.Shops.Persistance\Configuration\ShopsDbContext.cs:39:    public override async Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
+CoffeePeek.Shops.Persistance\Configuration\ShopsDbContext.cs:54:                return await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+CoffeePeek.Shops.Persistance\Configuration\ShopsDbContext.cs:60:                return await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+CoffeePeek.Shops.Persistance\Discovery\DiscoveryFavoritesStore.cs:34:    public async Task SetAsync(Guid userId, string kind, string slug, bool favorite, CancellationToken ct)
+CoffeePeek.Shops.Persistance\Discovery\DiscoveryFavoritesStore.cs:52:        try { await db.SaveChangesAsync(ct); }
+CoffeePeek.Shops.Application\Features\Review\Reports\ResolveReviewReportHandler.cs:26:            await uow.SaveChangesAsync(ct);
+CoffeePeek.Shops.Persistance\CoffeeCatalog\DiscoveryClassificationStore.cs:41:        try { await db.SaveChangesAsync(ct); }
+CoffeePeek.Shops.Persistance\CoffeeCatalog\DiscoveryClassificationStore.cs:52:        await db.SaveChangesAsync(ct);
+CoffeePeek.Shops.Persistance\CoffeeCatalog\DiscoveryClassificationStore.cs:61:        await db.SaveChangesAsync(ct);
+CoffeePeek.Shops.Persistance\CoffeeCatalog\DiscoveryClassificationStore.cs:117:        try { await db.SaveChangesAsync(ct); }
+CoffeePeek.Shops.Persistance\CoffeeCatalog\CoffeeProductStorage.cs:18:        try { await db.SaveChangesAsync(ct); }
+CoffeePeek.Shops.Persistance\CoffeeCatalog\CoffeeImportStorage.cs:42:        await db.SaveChangesAsync(ct);
+CoffeePeek.Shops.Persistance\CoffeeCatalog\CoffeeImportStorage.cs:52:            await db.SaveChangesAsync(ct);
+CoffeePeek.Shops.Persistance\CoffeeCatalog\CoffeeCatalogTagStorage.cs:19:        await db.SaveChangesAsync(ct);
+CoffeePeek.Shops.Persistance\CoffeeCatalog\CoffeeCatalogTagStorage.cs:24:        await db.SaveChangesAsync(ct);
+CoffeePeek.Shops.Application\Features\CheckIn\UpdateUnifiedCheckInHandlers.cs:46:        await unitOfWork.SaveChangesAsync(ct);
+CoffeePeek.Shops.Application\Features\CheckIn\UpdateUnifiedCheckInHandlers.cs:72:        await unitOfWork.SaveChangesAsync(ct);
+CoffeePeek.Shops.Application\Features\Discovery\SetDiscoveryFavoriteHandler.cs:6:        favorites.SetAsync(command.UserId, command.Kind, command.Slug, command.Favorite, ct);
+CoffeePeek.Shops.Application\Features\CheckIn\CreateUnifiedCheckInHandler.cs:72:        await unitOfWork.SaveChangesAsync(ct);
+CoffeePeek.Shops.Application\Features\Discovery\IDiscoveryFavoritesStore.cs:8:    Task SetAsync(Guid userId, string kind, string slug, bool favorite, CancellationToken ct);
+CoffeePeek.Shops.Application\Features\CoffeeZones\DeleteCoffeeZoneMembershipOverrideHandler.cs:24:            await unitOfWork.SaveChangesAsync(ct);
+CoffeePeek.Shops.Application\Features\CoffeeZones\UpdateCoffeeZoneHandler.cs:27:        await unitOfWork.SaveChangesAsync(ct);
+CoffeePeek.Shops.Application\Features\CoffeeZones\CreateCoffeeZoneHandler.cs:25:        await unitOfWork.SaveChangesAsync(ct);
+CoffeePeek.Shops.Application\Features\CoffeeZones\SetCoffeeZoneStatusHandler.cs:30:        await unitOfWork.SaveChangesAsync(ct);
+CoffeePeek.Shops.Application\Features\CoffeeZones\SetCoffeeZoneMembershipOverrideHandler.cs:43:        await unitOfWork.SaveChangesAsync(ct);
+CoffeePeek.Shops.Application\Features\CoffeeShop\ShopProfile\AddPublishedShopPhotosHandler.cs:63:        await unitOfWork.SaveChangesAsync(ct);
+CoffeePeek.Shops.Application\Features\Admin\Menu\UpdateAdminShopMenuHandler.cs:76:        await unitOfWork.SaveChangesAsync(ct);
+CoffeePeek.Shops.Application\Features\AppDownloads\PublishAndroidReleaseHandler.cs:27:            await unitOfWork.SaveChangesAsync(ct);
+CoffeePeek.Shops.Application\Features\Admin\Menu\RemoveAdminShopMenuPhotosHandler.cs:49:        await unitOfWork.SaveChangesAsync(ct);
+CoffeePeek.Shops.Application\Features\Admin\Menu\AttachAdminShopMenuPhotosHandler.cs:71:        await unitOfWork.SaveChangesAsync(ct);
+CoffeePeek.Shops.Application\Features\Admin\Menu\ParseAdminShopMenuHandler.cs:46:        await unitOfWork.SaveChangesAsync(ct);
+```
