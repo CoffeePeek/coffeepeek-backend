@@ -34,7 +34,6 @@ public static class PublishAndroidReleaseHandler
             string.Join(',', previousActive.Select(r => r.Id)),
             $"activeReleaseId={target.Id};version={target.Version}"));
 
-        await unitOfWork.SaveChangesAsync(ct);
         return Response<AndroidReleaseDto>.Success(target.ToDto());
     }
 }

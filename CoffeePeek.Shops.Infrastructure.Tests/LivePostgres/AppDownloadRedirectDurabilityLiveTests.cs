@@ -135,6 +135,46 @@ public sealed class AppDownloadRedirectDurabilityLiveTests : IClassFixture<Shops
         }
     }
 
+    [Fact]
+    public async Task PublishRelease_ReplacesTheOnlyActiveReleaseInOneTransaction()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var first = AndroidRelease.Create("1.0.0", 1001, "https://example.com/first.apk",
+            "first.apk", 1000, new string('a', 64), DateTime.UtcNow.AddDays(-1));
+        first.Publish();
+        var second = AndroidRelease.Create("2.0.0", 1002, "https://example.com/second.apk",
+            "second.apk", 2000, new string('b', 64), DateTime.UtcNow);
+        await using (var seed = fixture.Context())
+        {
+            seed.AndroidReleases.AddRange(first, second);
+            await seed.SaveChangesAsync(ct);
+        }
+
+        using var host = BuildHost();
+        await host.StartAsync(ct);
+        try
+        {
+            var response = await host.Services.GetRequiredService<IMessageBus>()
+                .InvokeAsync<Response<AndroidReleaseDto>>(
+                    new PublishAndroidReleaseCommand(Guid.NewGuid(), second.Id), ct);
+            Assert.True(response.IsSuccess);
+
+            await using var read = fixture.Context();
+            var active = await read.AndroidReleases.AsNoTracking()
+                .Where(release => release.IsActive)
+                .Select(release => release.Id)
+                .ToArrayAsync(ct);
+            Assert.Equal(new[] { second.Id }, active);
+            Assert.True(await read.AppDistributionAuditLogs.AsNoTracking()
+                .AnyAsync(log => log.EntityId == second.Id &&
+                                 log.Action == "AppDistribution.AndroidReleasePublished", ct));
+        }
+        finally
+        {
+            await host.StopAsync(CancellationToken.None);
+        }
+    }
+
     private IHost BuildHost() => Host.CreateDefaultBuilder()
             .ConfigureServices(services =>
             {
@@ -148,6 +188,7 @@ public sealed class AppDownloadRedirectDurabilityLiveTests : IClassFixture<Shops
                 options.Discovery.IncludeType(typeof(RecordAppDownloadRedirectHandler));
                 options.Discovery.IncludeType(typeof(CreateAndroidReleaseHandler));
                 options.Discovery.IncludeType(typeof(UpdateAppStoreDownloadHandler));
+                options.Discovery.IncludeType(typeof(PublishAndroidReleaseHandler));
                 options.UseRuntimeCompilation();
                 options.CodeGeneration.TypeLoadMode = TypeLoadMode.Auto;
                 options.CodeGeneration.AlwaysUseServiceLocationFor(typeof(ShopsDbContext));
