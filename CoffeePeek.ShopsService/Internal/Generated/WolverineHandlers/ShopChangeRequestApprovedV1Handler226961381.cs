@@ -13,7 +13,6 @@ namespace Internal.Generated.WolverineHandlers
     [global::System.CodeDom.Compiler.GeneratedCode("JasperFx", "1.0.0")]
     public sealed class ShopChangeRequestApprovedV1Handler226961381 : Wolverine.Runtime.Handlers.MessageHandler
     {
-        private readonly CoffeePeek.Shared.Domain.Interfaces.Infrastructure.ICacheService _cacheService;
         private readonly Microsoft.Extensions.DependencyInjection.IServiceScopeFactory _serviceScopeFactory;
         private readonly Microsoft.Extensions.Logging.ILogger<CoffeePeek.Shops.Infrastructure.Consumers.ShopChangeRequestApprovedHandler> _loggerOfShopChangeRequestApprovedHandler;
         private readonly Microsoft.Extensions.Logging.ILogger<CoffeePeek.Shops.Infrastructure.Media.MediaUploadedPhotoLookup> _loggerOfMediaUploadedPhotoLookup;
@@ -21,9 +20,8 @@ namespace Internal.Generated.WolverineHandlers
         private readonly System.Collections.Generic.IEnumerable<Wolverine.EntityFrameworkCore.IDomainEventScraper> _domainEventScraperIEnumerable;
         private readonly System.Net.Http.IHttpClientFactory _httpClientFactory;
 
-        public ShopChangeRequestApprovedV1Handler226961381(CoffeePeek.Shared.Domain.Interfaces.Infrastructure.ICacheService cacheService, Microsoft.Extensions.DependencyInjection.IServiceScopeFactory serviceScopeFactory, Microsoft.Extensions.Logging.ILogger<CoffeePeek.Shops.Infrastructure.Consumers.ShopChangeRequestApprovedHandler> loggerOfShopChangeRequestApprovedHandler, Microsoft.Extensions.Logging.ILogger<CoffeePeek.Shops.Infrastructure.Media.MediaUploadedPhotoLookup> loggerOfMediaUploadedPhotoLookup, Microsoft.Extensions.Options.IOptions<CoffeePeek.Shared.Auth.Options.GatewayAuthOptions> optionsOfGatewayAuthOptions, System.Collections.Generic.IEnumerable<Wolverine.EntityFrameworkCore.IDomainEventScraper> domainEventScraperIEnumerable, System.Net.Http.IHttpClientFactory httpClientFactory)
+        public ShopChangeRequestApprovedV1Handler226961381(Microsoft.Extensions.DependencyInjection.IServiceScopeFactory serviceScopeFactory, Microsoft.Extensions.Logging.ILogger<CoffeePeek.Shops.Infrastructure.Consumers.ShopChangeRequestApprovedHandler> loggerOfShopChangeRequestApprovedHandler, Microsoft.Extensions.Logging.ILogger<CoffeePeek.Shops.Infrastructure.Media.MediaUploadedPhotoLookup> loggerOfMediaUploadedPhotoLookup, Microsoft.Extensions.Options.IOptions<CoffeePeek.Shared.Auth.Options.GatewayAuthOptions> optionsOfGatewayAuthOptions, System.Collections.Generic.IEnumerable<Wolverine.EntityFrameworkCore.IDomainEventScraper> domainEventScraperIEnumerable, System.Net.Http.IHttpClientFactory httpClientFactory)
         {
-            _cacheService = cacheService;
             _serviceScopeFactory = serviceScopeFactory;
             _loggerOfShopChangeRequestApprovedHandler = loggerOfShopChangeRequestApprovedHandler;
             _loggerOfMediaUploadedPhotoLookup = loggerOfMediaUploadedPhotoLookup;
@@ -41,7 +39,7 @@ namespace Internal.Generated.WolverineHandlers
             Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<Wolverine.Runtime.ScopedMessageContextHolder>(serviceScope.ServiceProvider).Context = context;
             // This service has been marked as requiring service location independent of Wolverine's ability to use constructor injection of everything else
             var shopsDbContext = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<CoffeePeek.Shops.Persistance.Configuration.ShopsDbContext>(serviceScope.ServiceProvider);
-            var applyApprovedShopMenuChangeService = new CoffeePeek.Shops.Persistance.Menu.ApplyApprovedShopMenuChangeService(shopsDbContext, _cacheService, mediaUploadedPhotoLookup, context);
+            var applyApprovedShopMenuChangeService = new CoffeePeek.Shops.Persistance.Menu.ApplyApprovedShopMenuChangeService(shopsDbContext, mediaUploadedPhotoLookup, context);
             // The actual message body
             var shopChangeRequestApprovedV1 = (CoffeePeek.Contract.Events.Moderation.ShopChangeRequestApprovedV1)context.Envelope.Message;
 
@@ -59,7 +57,7 @@ namespace Internal.Generated.WolverineHandlers
             {
                 System.Diagnostics.Activity.Current?.SetTag("message.handler", "CoffeePeek.Shops.Infrastructure.Consumers.ShopChangeRequestApprovedHandler");
                 System.Diagnostics.Activity.Current?.SetTag("handler.type", "CoffeePeek.Shops.Infrastructure.Consumers.ShopChangeRequestApprovedHandler");
-                var shopChangeRequestApprovedHandler = new CoffeePeek.Shops.Infrastructure.Consumers.ShopChangeRequestApprovedHandler(shopsDbContext, _cacheService, _loggerOfShopChangeRequestApprovedHandler, applyApprovedShopMenuChangeService, mediaUploadedPhotoLookup, context);
+                var shopChangeRequestApprovedHandler = new CoffeePeek.Shops.Infrastructure.Consumers.ShopChangeRequestApprovedHandler(shopsDbContext, _loggerOfShopChangeRequestApprovedHandler, applyApprovedShopMenuChangeService, mediaUploadedPhotoLookup, context);
 
                 // The actual message execution
                 var outgoing1 = await shopChangeRequestApprovedHandler.Handle(shopChangeRequestApprovedV1, cancellation).ConfigureAwait(false);

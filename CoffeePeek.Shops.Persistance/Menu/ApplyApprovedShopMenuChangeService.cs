@@ -2,9 +2,8 @@ using CoffeePeek.Contract.Events.Moderation;
 using CoffeePeek.Contract.Events.Shops;
 using CoffeePeek.Contract.Events;
 using CoffeePeek.Contract.Dtos.ShopPhotos;
-using CoffeePeek.Shared.Domain.Interfaces.Infrastructure;
-using CoffeePeek.Shared.Kernel;
 using CoffeePeek.Shared.Kernel.Exceptions;
+using CoffeePeek.Shops.Application.Features.CoffeeShop.ShopProfile;
 using CoffeePeek.Shops.Application.Services;
 using CoffeePeek.Shops.Application.Abstractions;
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
@@ -17,7 +16,7 @@ using DomainSource = CoffeePeek.Shops.Domain.Aggregates.MenuAggregate.MenuItemSo
 
 namespace CoffeePeek.Shops.Persistance.Menu;
 
-public sealed class ApplyApprovedShopMenuChangeService(ShopsDbContext db, ICacheService cache,
+public sealed class ApplyApprovedShopMenuChangeService(ShopsDbContext db,
     IUploadedPhotoLookup photoLookup, IMessageBus bus)
     : IApplyApprovedShopMenuChangeService
 {
@@ -25,10 +24,7 @@ public sealed class ApplyApprovedShopMenuChangeService(ShopsDbContext db, ICache
         ShopChangeRequestApprovedV1 message, CancellationToken ct)
     {
         if (await db.AppliedShopChangeRequests.AnyAsync(x => x.Id == message.RequestId, ct))
-        {
-            await InvalidateAsync(message.ShopId, ct);
             return null;
-        }
 
         try
         {
@@ -38,6 +34,7 @@ public sealed class ApplyApprovedShopMenuChangeService(ShopsDbContext db, ICache
             if (newPhotoKeys.Length > 0)
                 await bus.PublishAsync(new ShopPhotosAttachedEvent(message.SubmittedByUserId,
                     message.ShopId, ShopPhotoAttachmentKind.Menu, newPhotoKeys));
+            await bus.PublishAsync(new ShopProfileCacheInvalidationRequested(message.ShopId));
             await db.SaveChangesAsync(ct);
         }
         catch (Exception ex) when (ex is DomainException or NotFoundException or ArgumentException
@@ -47,7 +44,6 @@ public sealed class ApplyApprovedShopMenuChangeService(ShopsDbContext db, ICache
             return new ShopChangeRequestApplyFailedV1(message.RequestId, message.ShopId, ex.Message, DateTime.UtcNow);
         }
 
-        await InvalidateAsync(message.ShopId, ct);
         return null;
     }
 
@@ -122,9 +118,4 @@ public sealed class ApplyApprovedShopMenuChangeService(ShopsDbContext db, ICache
         return claimed.Select(p => p.StorageKey).ToArray();
     }
 
-    private async Task InvalidateAsync(Guid shopId, CancellationToken ct)
-    {
-        await cache.RemoveAsync(CacheKey.Shop.Detail(shopId));
-        await cache.RemoveByPattern(CacheKey.Shop.SearchPattern(), ct);
-    }
 }

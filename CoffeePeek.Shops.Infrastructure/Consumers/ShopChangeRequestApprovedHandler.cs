@@ -2,9 +2,8 @@ using CoffeePeek.Contract.Events.Moderation;
 using CoffeePeek.Contract.Events.Shops;
 using CoffeePeek.Contract.Events;
 using CoffeePeek.Contract.Dtos.ShopPhotos;
-using CoffeePeek.Shared.Domain.Interfaces.Infrastructure;
-using CoffeePeek.Shared.Kernel;
 using CoffeePeek.Shared.Kernel.Exceptions;
+using CoffeePeek.Shops.Application.Features.CoffeeShop.ShopProfile;
 using CoffeePeek.Shops.Application.Services;
 using CoffeePeek.Shops.Application.Abstractions;
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
@@ -18,7 +17,6 @@ namespace CoffeePeek.Shops.Infrastructure.Consumers;
 
 public class ShopChangeRequestApprovedHandler(
     ShopsDbContext dbContext,
-    ICacheService cacheService,
     ILogger<ShopChangeRequestApprovedHandler> logger,
     IApplyApprovedShopMenuChangeService menuChanges,
     IUploadedPhotoLookup photoLookup,
@@ -107,10 +105,8 @@ public class ShopChangeRequestApprovedHandler(
 
         dbContext.AppliedShopChangeRequests.Add(AppliedShopChangeRequest.Create(
             message.RequestId, message.ShopId, message.ApprovedByUserId, DateTime.UtcNow));
+        await bus.PublishAsync(new ShopProfileCacheInvalidationRequested(message.ShopId));
         await dbContext.SaveChangesAsync(ct);
-
-        await cacheService.RemoveAsync(CacheKey.Shop.Detail(message.ShopId));
-        await cacheService.RemoveByPattern(CacheKey.Shop.SearchPattern(), ct);
         logger.LogInformation(
             "Applied {Section} from shop change request {RequestId} to shop {ShopId}",
             message.Section, message.RequestId, message.ShopId);

@@ -121,6 +121,7 @@ jobs:
             MenuOcrJobLiveTests \
             ShopEquipmentLiveTests \
             ShopChangeRequestMenuLiveTests \
+            ShopChangeRequestOutboxLiveTests \
             CheckInModerationRaceLiveTests \
             CoffeeZonePolygonLiveTests \
             CityReferenceLiveTests \

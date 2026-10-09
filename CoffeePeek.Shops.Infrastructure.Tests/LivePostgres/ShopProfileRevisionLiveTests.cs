@@ -260,15 +260,11 @@ public sealed class ShopProfileRevisionLiveTests : IClassFixture<ShopsLiveDataba
 
         await using (var moderationDb = fixture.Context())
         {
-            var cache = new Mock<ICacheService>();
-            cache.Setup(x => x.RemoveAsync(It.IsAny<CacheKey>())).Returns(Task.CompletedTask);
-            cache.Setup(x => x.RemoveByPattern(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(0);
             var bus = Mock.Of<IMessageBus>();
             var lookup = Mock.Of<IUploadedPhotoLookup>();
-            var handler = new ShopChangeRequestApprovedHandler(moderationDb, cache.Object,
+            var handler = new ShopChangeRequestApprovedHandler(moderationDb,
                 NullLogger<ShopChangeRequestApprovedHandler>.Instance,
-                new ApplyApprovedShopMenuChangeService(moderationDb, cache.Object, lookup, bus),
+                new ApplyApprovedShopMenuChangeService(moderationDb, lookup, bus),
                 lookup, bus);
             var failure = await handler.Handle(new ShopChangeRequestApprovedV1(
                 Guid.NewGuid(), shop.Id, Guid.NewGuid(), CoffeePeek.Contract.Enums.ShopChangeSection.Description,

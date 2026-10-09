@@ -5,7 +5,6 @@ using CoffeePeek.Contract.Dtos.CoffeeShop;
 using CoffeePeek.Contract.Dtos.Menu;
 using CoffeePeek.Contract.Events.Moderation;
 using CoffeePeek.Contract.Enums;
-using CoffeePeek.Shared.Domain.Interfaces.Infrastructure;
 using CoffeePeek.Shops.Domain.Aggregates.BrewMethods;
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
 using CoffeePeek.Shops.Domain.Aggregates.MenuAggregate;
@@ -15,6 +14,7 @@ using CoffeePeek.Shops.Infrastructure.Consumers;
 using CoffeePeek.Shops.Persistance.Configuration;
 using CoffeePeek.Shops.Persistance.Menu;
 using CoffeePeek.Shops.Application.Abstractions;
+using CoffeePeek.Shops.Application.Features.CoffeeShop.ShopProfile;
 using CoffeePeek.Contract.Dtos.ShopPhotos;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
@@ -38,8 +38,8 @@ public class ShopChangeRequestApprovedHandlerTests
         db.Shops.Add(shop);
         await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var cache = CreateCache();
-        var handler = CreateHandler(db, cache.Object);
+        var bus = new Mock<IMessageBus>();
+        var handler = CreateHandler(db, bus: bus.Object);
         var message = Message(shop.Id, ShopChangeSection.Description,
             new ShopChangePayloadDto(Description: "New description"));
 
@@ -49,6 +49,8 @@ public class ShopChangeRequestApprovedHandlerTests
         shop.Description.Should().Be("New description");
         shop.ProfileRevision.Should().Be(1);
         (await db.AppliedShopChangeRequests.CountAsync(TestContext.Current.CancellationToken)).Should().Be(1);
+        bus.Verify(b => b.PublishAsync(It.Is<ShopProfileCacheInvalidationRequested>(
+            e => e.ShopId == shop.Id)), Times.Once);
     }
 
     [Fact]
@@ -265,10 +267,11 @@ public class ShopChangeRequestApprovedHandlerTests
                 [],
                 [new UploadedPhotoDto("menu.jpg", "image/jpeg", "menus/new", 50)],
                 ExpectedInputRevision: 1)));
+        var bus = new Mock<IMessageBus>();
         await using (var first = new ShopsDbContext(options))
-            (await CreateHandler(first).Handle(approved, TestContext.Current.CancellationToken)).Should().BeNull();
+            (await CreateHandler(first, bus: bus.Object).Handle(approved, TestContext.Current.CancellationToken)).Should().BeNull();
         await using (var replay = new ShopsDbContext(options))
-            (await CreateHandler(replay).Handle(approved, TestContext.Current.CancellationToken)).Should().BeNull();
+            (await CreateHandler(replay, bus: bus.Object).Handle(approved, TestContext.Current.CancellationToken)).Should().BeNull();
 
         await using var verify = new ShopsDbContext(options);
         var menu = await verify.ShopMenus.Include(x => x.Items).Include(x => x.Photos)
@@ -276,6 +279,8 @@ public class ShopChangeRequestApprovedHandlerTests
         menu.Items.Should().ContainSingle(x => x.Id == originalItemId && x.Price == 5 && x.VolumeMl == 30);
         menu.Photos.Should().ContainSingle(x => x.StorageKey == "menus/new");
         (await verify.AppliedShopChangeRequests.CountAsync(TestContext.Current.CancellationToken)).Should().Be(1);
+        bus.Verify(b => b.PublishAsync(It.Is<ShopProfileCacheInvalidationRequested>(
+            e => e.ShopId == shopId)), Times.Once);
     }
 
     [Fact]
@@ -365,27 +370,17 @@ public class ShopChangeRequestApprovedHandlerTests
         return new ShopsDbContext(options);
     }
 
-    private static Mock<ICacheService> CreateCache()
-    {
-        var cache = new Mock<ICacheService>();
-        cache.Setup(x => x.RemoveAsync(It.IsAny<CacheKey>())).Returns(Task.CompletedTask);
-        cache.Setup(x => x.RemoveByPattern(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(0);
-        return cache;
-    }
-
     private static CoffeeShop CreateShop() => new(
         Guid.NewGuid(), "Coffee", null, DomainPriceRange.Moderate, Guid.NewGuid());
 
     private static ShopChangeRequestApprovedHandler CreateHandler(ShopsDbContext db,
-        ICacheService? cache = null, IUploadedPhotoLookup? photoLookup = null)
+        IUploadedPhotoLookup? photoLookup = null, IMessageBus? bus = null)
     {
-        cache ??= CreateCache().Object;
         photoLookup ??= CreatePhotoLookup();
-        var bus = new Mock<IMessageBus>().Object;
-        return new ShopChangeRequestApprovedHandler(db, cache,
+        bus ??= new Mock<IMessageBus>().Object;
+        return new ShopChangeRequestApprovedHandler(db,
             NullLogger<ShopChangeRequestApprovedHandler>.Instance,
-            new ApplyApprovedShopMenuChangeService(db, cache, photoLookup, bus),
+            new ApplyApprovedShopMenuChangeService(db, photoLookup, bus),
             photoLookup, bus);
     }
 

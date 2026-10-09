@@ -83,10 +83,6 @@ public sealed class ShopChangeRequestMenuLiveTests : IClassFixture<ShopsLiveData
 
     private static ShopChangeRequestApprovedHandler Handler(CoffeePeek.Shops.Persistance.Configuration.ShopsDbContext db)
     {
-        var cache = new Mock<ICacheService>();
-        cache.Setup(x => x.RemoveAsync(It.IsAny<CacheKey>())).Returns(Task.CompletedTask);
-        cache.Setup(x => x.RemoveByPattern(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(0);
         var photoLookup = new Mock<CoffeePeek.Shops.Application.Abstractions.IUploadedPhotoLookup>();
         photoLookup.Setup(p => p.ClaimForShopAsync(It.IsAny<Guid>(), It.IsAny<Guid>(),
                 CoffeePeek.Contract.Dtos.ShopPhotos.ShopPhotoAttachmentKind.Menu,
@@ -97,9 +93,9 @@ public sealed class ShopChangeRequestMenuLiveTests : IClassFixture<ShopsLiveData
                     keys.Select(key => new CoffeePeek.Contract.Dtos.ShopPhotos.ClaimedShopPhotoDto(
                         Guid.NewGuid(), key, "trusted.jpg", "image/jpeg", 100)).ToArray()));
         var bus = new Mock<Wolverine.IMessageBus>();
-        return new ShopChangeRequestApprovedHandler(db, cache.Object,
+        return new ShopChangeRequestApprovedHandler(db,
             NullLogger<ShopChangeRequestApprovedHandler>.Instance,
-            new ApplyApprovedShopMenuChangeService(db, cache.Object, photoLookup.Object, bus.Object),
+            new ApplyApprovedShopMenuChangeService(db, photoLookup.Object, bus.Object),
             photoLookup.Object, bus.Object);
     }
 }
