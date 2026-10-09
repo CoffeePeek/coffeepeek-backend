@@ -47,7 +47,7 @@ public class UnifiedCheckInHandlerTests
 
     private Task<CoffeePeek.Shared.Kernel.Response.Response<UnifiedCheckInDto>> Create(CreateUnifiedCheckInRequest request) =>
         CreateUnifiedCheckInHandler.Handle(new(request, _userId, "author"), _repository.Object, _shops.Object,
-            _drinks.Object, _photos.Object, _unitOfWork.Object, _bus.Object, _cache.Object, CancellationToken.None);
+            _drinks.Object, _photos.Object, _unitOfWork.Object, _bus.Object, CancellationToken.None);
 
     [Fact]
     public async Task SmallestPrivateRequestUsesNowAndSkipsOptionalLookups()
@@ -61,6 +61,8 @@ public class UnifiedCheckInHandlerTests
         _photos.VerifyNoOtherCalls();
         _drinks.VerifyNoOtherCalls();
         _bus.Verify(b => b.PublishAsync(It.Is<CheckinCreatedEvent>(e => e.UserId == _userId && e.CheckInId == result.Data.Id)), Times.Once);
+        _bus.Verify(b => b.PublishAsync(It.Is<CheckInCacheInvalidationRequested>(e =>
+            e.CheckInId == result.Data.Id && e.ShopId == _shopId && e.UserId == _userId)), Times.Once);
         _repository.Verify(r => r.Add(It.Is<DomainCheckIn>(c => c.Id == result.Data.Id)), Times.Once);
     }
 

@@ -123,6 +123,7 @@ jobs:
             ShopChangeRequestMenuLiveTests \
             ShopChangeRequestOutboxLiveTests \
             CheckInModerationRaceLiveTests \
+            CheckInHelpfulOutboxLiveTests \
             CoffeeZonePolygonLiveTests \
             CityReferenceLiveTests \
             CityCatalogFreshReadLiveTests; do

@@ -30,8 +30,16 @@ public sealed class CheckInCacheInvalidationRequestedHandler
         activity?.SetTag("check_in.id", message.CheckInId);
         try
         {
-            // Both operations are idempotent. A failed Redis command must make Wolverine retry
+            // Every removal is idempotent. A failed Redis command must make Wolverine retry
             // the durable local message instead of acknowledging a stale cache as invalidated.
+            if (message.ShopId is { } shopId)
+                await cache.RemoveAsync(CacheKey.Shop.Detail(shopId), ct);
+            if (message.UserId is { } userId)
+            {
+                await cache.RemoveAsync(CacheKey.Shop.Visited(userId), ct);
+                await cache.RemoveAsync(CacheKey.Shop.VisitStatistics(userId), ct);
+            }
+            await cache.RemoveByPatternAsync(CacheKey.Shop.ListPattern(), ct);
             await cache.RemoveAsync(CacheKey.Shop.PublicPlatformStats(), ct);
             await cache.RemoveByPatternAsync(CacheKey.Shop.SearchPattern(), ct);
         }

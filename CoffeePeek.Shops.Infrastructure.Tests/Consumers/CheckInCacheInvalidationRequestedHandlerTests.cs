@@ -1,3 +1,4 @@
+using System.Text.Json;
 using CoffeePeek.Shared.Domain.Interfaces.Infrastructure;
 using CoffeePeek.Shared.Persistence.Cache.Redis;
 using CoffeePeek.Shops.Application.Features.CheckIn;
@@ -43,5 +44,35 @@ public class CheckInCacheInvalidationRequestedHandlerTests
             TestContext.Current.CancellationToken);
 
         await action.Should().ThrowAsync<InvalidOperationException>();
+    }
+
+    [Fact]
+    public async Task Handle_WithOwnerIdentifiers_InvalidatesDetailAndVisitKeys()
+    {
+        var cache = new Mock<IStrictCacheInvalidator>();
+        var shopId = Guid.NewGuid();
+        var ownerId = Guid.NewGuid();
+        await CheckInCacheInvalidationRequestedHandler.Handle(
+            new CheckInCacheInvalidationRequested(Guid.NewGuid(), shopId, ownerId), cache.Object,
+            NullLogger<CheckInCacheInvalidationRequestedHandler>.Instance,
+            TestContext.Current.CancellationToken);
+
+        cache.Verify(c => c.RemoveAsync(CacheKey.Shop.Detail(shopId), It.IsAny<CancellationToken>()), Times.Once);
+        cache.Verify(c => c.RemoveAsync(CacheKey.Shop.Visited(ownerId), It.IsAny<CancellationToken>()), Times.Once);
+        cache.Verify(c => c.RemoveAsync(CacheKey.Shop.VisitStatistics(ownerId), It.IsAny<CancellationToken>()), Times.Once);
+        cache.Verify(c => c.RemoveByPatternAsync(CacheKey.Shop.ListPattern(), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public void OldQueuedMessage_DeserializesWithoutOptionalIdentifiers()
+    {
+        var id = Guid.NewGuid();
+        var message = JsonSerializer.Deserialize<CheckInCacheInvalidationRequested>(
+            $$"""{"CheckInId":"{{id}}"}""");
+
+        Assert.NotNull(message);
+        Assert.Equal(id, message.CheckInId);
+        Assert.Null(message.ShopId);
+        Assert.Null(message.UserId);
     }
 }
