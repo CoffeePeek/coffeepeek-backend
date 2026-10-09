@@ -25,7 +25,9 @@ public sealed class ShopMenuPhoto : Entity<Guid>
     {
         return new ShopMenuPhoto
         {
-            Id = Guid.NewGuid(),
+            // The Media identity makes a retried attachment collide deterministically instead
+            // of creating two menu rows when concurrent requests used the same upload.
+            Id = mediaPhotoId ?? Guid.NewGuid(),
             FileName = fileName,
             ContentType = contentType,
             StorageKey = storageKey,

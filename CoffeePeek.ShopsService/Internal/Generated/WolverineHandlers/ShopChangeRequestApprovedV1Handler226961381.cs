@@ -3,7 +3,9 @@
 using CoffeePeek.Shared.Domain.Interfaces.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using System.Collections.Generic;
+using System.Net.Http;
 
 namespace Internal.Generated.WolverineHandlers
 {
@@ -11,31 +13,37 @@ namespace Internal.Generated.WolverineHandlers
     [global::System.CodeDom.Compiler.GeneratedCode("JasperFx", "1.0.0")]
     public sealed class ShopChangeRequestApprovedV1Handler226961381 : Wolverine.Runtime.Handlers.MessageHandler
     {
-        private readonly CoffeePeek.Shared.Domain.Interfaces.Infrastructure.ICacheService _cacheService;
         private readonly Microsoft.Extensions.DependencyInjection.IServiceScopeFactory _serviceScopeFactory;
         private readonly Microsoft.Extensions.Logging.ILogger<CoffeePeek.Shops.Infrastructure.Consumers.ShopChangeRequestApprovedHandler> _loggerOfShopChangeRequestApprovedHandler;
+        private readonly Microsoft.Extensions.Logging.ILogger<CoffeePeek.Shops.Infrastructure.Media.MediaUploadedPhotoLookup> _loggerOfMediaUploadedPhotoLookup;
+        private readonly Microsoft.Extensions.Options.IOptions<CoffeePeek.Shared.Auth.Options.GatewayAuthOptions> _optionsOfGatewayAuthOptions;
         private readonly System.Collections.Generic.IEnumerable<Wolverine.EntityFrameworkCore.IDomainEventScraper> _domainEventScraperIEnumerable;
+        private readonly System.Net.Http.IHttpClientFactory _httpClientFactory;
 
-        public ShopChangeRequestApprovedV1Handler226961381(CoffeePeek.Shared.Domain.Interfaces.Infrastructure.ICacheService cacheService, Microsoft.Extensions.DependencyInjection.IServiceScopeFactory serviceScopeFactory, Microsoft.Extensions.Logging.ILogger<CoffeePeek.Shops.Infrastructure.Consumers.ShopChangeRequestApprovedHandler> loggerOfShopChangeRequestApprovedHandler, System.Collections.Generic.IEnumerable<Wolverine.EntityFrameworkCore.IDomainEventScraper> domainEventScraperIEnumerable)
+        public ShopChangeRequestApprovedV1Handler226961381(Microsoft.Extensions.DependencyInjection.IServiceScopeFactory serviceScopeFactory, Microsoft.Extensions.Logging.ILogger<CoffeePeek.Shops.Infrastructure.Consumers.ShopChangeRequestApprovedHandler> loggerOfShopChangeRequestApprovedHandler, Microsoft.Extensions.Logging.ILogger<CoffeePeek.Shops.Infrastructure.Media.MediaUploadedPhotoLookup> loggerOfMediaUploadedPhotoLookup, Microsoft.Extensions.Options.IOptions<CoffeePeek.Shared.Auth.Options.GatewayAuthOptions> optionsOfGatewayAuthOptions, System.Collections.Generic.IEnumerable<Wolverine.EntityFrameworkCore.IDomainEventScraper> domainEventScraperIEnumerable, System.Net.Http.IHttpClientFactory httpClientFactory)
         {
-            _cacheService = cacheService;
             _serviceScopeFactory = serviceScopeFactory;
             _loggerOfShopChangeRequestApprovedHandler = loggerOfShopChangeRequestApprovedHandler;
+            _loggerOfMediaUploadedPhotoLookup = loggerOfMediaUploadedPhotoLookup;
+            _optionsOfGatewayAuthOptions = optionsOfGatewayAuthOptions;
             _domainEventScraperIEnumerable = domainEventScraperIEnumerable;
+            _httpClientFactory = httpClientFactory;
         }
 
 
 
         public override async System.Threading.Tasks.Task HandleAsync(Wolverine.Runtime.MessageContext context, System.Threading.CancellationToken cancellation)
         {
+            var mediaUploadedPhotoLookup = new CoffeePeek.Shops.Infrastructure.Media.MediaUploadedPhotoLookup(_httpClientFactory, _optionsOfGatewayAuthOptions, _loggerOfMediaUploadedPhotoLookup);
             await using var serviceScope = _serviceScopeFactory.CreateAsyncScope();
             Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<Wolverine.Runtime.ScopedMessageContextHolder>(serviceScope.ServiceProvider).Context = context;
             // This service has been marked as requiring service location independent of Wolverine's ability to use constructor injection of everything else
             var shopsDbContext = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<CoffeePeek.Shops.Persistance.Configuration.ShopsDbContext>(serviceScope.ServiceProvider);
+            var applyApprovedShopMenuChangeService = new CoffeePeek.Shops.Persistance.Menu.ApplyApprovedShopMenuChangeService(shopsDbContext, mediaUploadedPhotoLookup, context);
             // The actual message body
             var shopChangeRequestApprovedV1 = (CoffeePeek.Contract.Events.Moderation.ShopChangeRequestApprovedV1)context.Envelope.Message;
 
-            
+
             // Enroll the DbContext & IMessagingContext in the outgoing Wolverine outbox transaction
             var efCoreEnvelopeTransaction = new Wolverine.EntityFrameworkCore.Internals.EfCoreEnvelopeTransaction(shopsDbContext, context, _domainEventScraperIEnumerable);
             await context.EnlistInOutboxAsync(efCoreEnvelopeTransaction).ConfigureAwait(false);
@@ -49,16 +57,16 @@ namespace Internal.Generated.WolverineHandlers
             {
                 System.Diagnostics.Activity.Current?.SetTag("message.handler", "CoffeePeek.Shops.Infrastructure.Consumers.ShopChangeRequestApprovedHandler");
                 System.Diagnostics.Activity.Current?.SetTag("handler.type", "CoffeePeek.Shops.Infrastructure.Consumers.ShopChangeRequestApprovedHandler");
-                var shopChangeRequestApprovedHandler = new CoffeePeek.Shops.Infrastructure.Consumers.ShopChangeRequestApprovedHandler(shopsDbContext, _cacheService, _loggerOfShopChangeRequestApprovedHandler);
-                
+                var shopChangeRequestApprovedHandler = new CoffeePeek.Shops.Infrastructure.Consumers.ShopChangeRequestApprovedHandler(shopsDbContext, _loggerOfShopChangeRequestApprovedHandler, applyApprovedShopMenuChangeService, mediaUploadedPhotoLookup, context);
+
                 // The actual message execution
                 var outgoing1 = await shopChangeRequestApprovedHandler.Handle(shopChangeRequestApprovedV1, cancellation).ConfigureAwait(false);
 
-                
+
                 // Outgoing, cascaded message
                 await context.EnqueueCascadingAsync(outgoing1).ConfigureAwait(false);
 
-                
+
                 // Added by EF Core Transaction Middleware
                 var result_of_SaveChangesAsync = await shopsDbContext.SaveChangesAsync(cancellation).ConfigureAwait(false);
 
@@ -77,7 +85,6 @@ namespace Internal.Generated.WolverineHandlers
     }
 
     // END: ShopChangeRequestApprovedV1Handler226961381
-    
-    
-}
 
+
+}

@@ -25,9 +25,37 @@ env:
 jobs:
   build_and_test:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
 
     services:
+      rabbitmq:
+        image: rabbitmq:4.1-alpine
+        env:
+          RABBITMQ_DEFAULT_USER: coffee-fault
+          RABBITMQ_DEFAULT_PASS: coffee-fault-test-only
+        ports:
+          - 5672:5672
+        options: >-
+          --health-cmd "rabbitmq-diagnostics -q ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 24
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+      toxiproxy:
+        image: ghcr.io/shopify/toxiproxy:2.12.0
+        ports:
+          - 8474:8474
+          - 26379:26379
+          - 25672:25672
+          - 15432:15432
       postgres:
         image: postgres:17-alpine
         env:
@@ -96,20 +124,102 @@ jobs:
           done
           exit 1
 
-      - name: Verify discovery with real PostgreSQL 17
+      - name: Verify Shops write and discovery contracts with real PostgreSQL 17
         run: |
           set -euo pipefail
           pgpass_file="$(mktemp "${RUNNER_TEMP}/coffeepeek-pgpass.XXXXXX")"
           trap 'rm -f "$pgpass_file"' EXIT
           chmod 600 "$pgpass_file"
-          printf '%s\n' '127.0.0.1:5432:*:postgres:coffeepeek-ci-only-postgres' > "$pgpass_file"
-          COFFEEPEEK_LIVE_PG='Host=127.0.0.1;Port=5432;Username=postgres;Database=postgres;SslMode=Disable' \
-          COFFEEPEEK_LIVE_PG_ALLOW_SUPERUSER=1 \
-          PGPASSFILE="$pgpass_file" \
-            dotnet test CoffeePeek.Shops.Infrastructure.Tests/CoffeePeek.Shops.Infrastructure.Tests.csproj \
-              --configuration Release --no-build -p:AllowMissingPrunePackageData=true \
-              --filter 'FullyQualifiedName~DiscoveryClassificationLiveTests|FullyQualifiedName~DiscoveryQueryLiveTests' \
-              --verbosity normal
+          printf '%s\n' '127.0.0.1:5432:*:postgres:coffeepeek-ci-only-postgres' '127.0.0.1:15432:*:postgres:coffeepeek-ci-only-postgres' > "$pgpass_file"
+          export COFFEEPEEK_LIVE_PG='Host=127.0.0.1;Port=5432;Username=postgres;Database=postgres;SslMode=Disable'
+          export COFFEEPEEK_LIVE_PG_ALLOW_SUPERUSER=1
+          export COFFEEPEEK_LIVE_FAULTS=1
+          export COFFEEPEEK_LIVE_MINIO=http://127.0.0.1:9000
+          export COFFEEPEEK_FAULT_RESULTS="$PWD/.test-results/shops-faults"
+          export COFFEEPEEK_PERF_RESULTS="$PWD/.test-results/shops-performance"
+          curl --fail --silent --show-error -X POST -H 'Content-Type: application/json' \
+            http://127.0.0.1:8474/populate \
+            -d '[{"name":"shops-redis","listen":"0.0.0.0:26379","upstream":"redis:6379"},{"name":"shops-rabbit","listen":"0.0.0.0:25672","upstream":"rabbitmq:5672"},{"name":"shops-postgres","listen":"0.0.0.0:15432","upstream":"postgres:5432"}]'
+          export PGPASSFILE="$pgpass_file"
+          mkdir -p .test-results/shops-live
+          assembly='CoffeePeek.Shops.Infrastructure.Tests/bin/Release/net10.0/CoffeePeek.Shops.Infrastructure.Tests.dll'
+          for class in \
+            DiscoveryClassificationLiveTests \
+            DiscoveryQueryLiveTests \
+            CoffeeImportRecoveryLiveTests \
+            ShopProfileWolverineLiveTests \
+            ShopProfileRevisionLiveTests \
+            ShopVisibilityWolverineLiveTests \
+            ShopProfileOutboxLiveTests \
+            DrinkCatalogWriteProtocolLiveTests \
+            AppDownloadRedirectDurabilityLiveTests \
+            ShopMenuManualWriteLiveTests \
+            MenuOcrJobLiveTests \
+            ShopEquipmentLiveTests \
+            ShopChangeRequestMenuLiveTests \
+            ShopChangeRequestOutboxLiveTests \
+            CheckInModerationRaceLiveTests \
+            CheckInPhotoMigrationLiveTests \
+            ShopsSchemaUpgradeLiveTests \
+            CheckInLimitsLiveTests \
+            CheckInHelpfulOutboxLiveTests \
+            ReviewReportCommitLiveTests \
+            CoffeeZonePolygonLiveTests \
+            CoffeeZoneWriteProtocolLiveTests \
+            ShopsDirectWriteBoundaryLiveTests \
+            CoffeeChildConcurrencyLiveTests \
+            ShopsReadPerformanceLiveTests \
+            ShopsWritePerformanceLiveTests \
+            ShopsFaultRecoveryLiveTests \
+            CityReferenceLiveTests \
+            CityCatalogFreshReadLiveTests; do
+            result=".test-results/shops-live/${class}.trx"
+            dotnet "$assembly" \
+              -class "CoffeePeek.Shops.Infrastructure.Tests.LivePostgres.${class}" \
+              -failSkips -noAutoReporters -trx "$result"
+            python3 - "$result" "$class" <<'PY'
+          import sys
+          import xml.etree.ElementTree as ET
+
+          path, class_name = sys.argv[1:]
+          root = ET.parse(path).getroot()
+          counters = next((node for node in root.iter() if node.tag.endswith('Counters')), None)
+          if counters is None:
+              raise SystemExit(f'{class_name}: TRX counters missing')
+          total = int(counters.attrib.get('total', 0))
+          passed = int(counters.attrib.get('passed', 0))
+          executed = int(counters.attrib.get('executed', 0))
+          skipped = int(counters.attrib.get('notExecuted', 0))
+          if total == 0 or passed != total or executed != total or skipped:
+              raise SystemExit(f'{class_name}: required live tests did not all pass: '
+                               f'total={total}, executed={executed}, passed={passed}, skipped={skipped}')
+          print(f'{class_name}: {passed} required live tests passed')
+          PY
+          done
+
+      - name: Upload Shops PostgreSQL test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: shops-live-postgres-trx
+          path: .test-results/shops-live/*.trx
+          if-no-files-found: ignore
+
+      - name: Upload Shops fault worker logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: shops-fault-worker-logs
+          path: .test-results/shops-faults/*.log
+          if-no-files-found: ignore
+
+      - name: Upload Shops experimental performance report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: shops-read-performance
+          path: .test-results/shops-performance/*.json
+          if-no-files-found: ignore
 
       - name: Rehearse legacy transfer and cleanup with PostgreSQL and MinIO
         run: |

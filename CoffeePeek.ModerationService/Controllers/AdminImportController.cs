@@ -257,7 +257,7 @@ public class AdminImportController(IMessageBus bus, IUserContext userContext) : 
     {
         var response = await bus.InvokeAsync<Response<ShopImportCandidateDto>>(
             new UpdateImportCandidateMenuCommand(
-                id, request.Items, request.ApplySuggestedPriceRange, userContext.GetUserIdOrThrow()),
+                id, request.Items, request.ApplySuggestedPriceRange, userContext.GetUserIdOrThrow(), request.ExpectedInputRevision),
             ct);
         return MenuActionResult(response);
     }

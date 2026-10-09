@@ -31,7 +31,7 @@ namespace Internal.Generated.WolverineHandlers
             // The actual message body
             var getAdminDrinksQuery = (CoffeePeek.Shops.Application.Features.Catalogs.Drinks.GetAdminDrinksQuery)context.Envelope.Message;
 
-
+            
             // Enroll the DbContext & IMessagingContext in the outgoing Wolverine outbox transaction
             var efCoreEnvelopeTransaction = new Wolverine.EntityFrameworkCore.Internals.EfCoreEnvelopeTransaction(shopsDbContext, context, _domainEventScraperIEnumerable);
             await context.EnlistInOutboxAsync(efCoreEnvelopeTransaction).ConfigureAwait(false);
@@ -45,15 +45,15 @@ namespace Internal.Generated.WolverineHandlers
             {
                 System.Diagnostics.Activity.Current?.SetTag("message.handler", "CoffeePeek.Shops.Application.Features.Catalogs.Drinks.GetAdminDrinksHandler");
                 System.Diagnostics.Activity.Current?.SetTag("handler.type", "CoffeePeek.Shops.Application.Features.Catalogs.Drinks.GetAdminDrinksHandler");
-
+                
                 // The actual message execution
                 var outgoing1 = await CoffeePeek.Shops.Application.Features.Catalogs.Drinks.GetAdminDrinksHandler.Handle(getAdminDrinksQuery, coffeeDrinkRepository, cancellation).ConfigureAwait(false);
 
-
+                
                 // Outgoing, cascaded message
                 await context.EnqueueCascadingAsync(outgoing1).ConfigureAwait(false);
 
-
+                
                 // Added by EF Core Transaction Middleware
                 var result_of_SaveChangesAsync = await shopsDbContext.SaveChangesAsync(cancellation).ConfigureAwait(false);
 
@@ -72,6 +72,7 @@ namespace Internal.Generated.WolverineHandlers
     }
 
     // END: GetAdminDrinksQueryHandler960341986
-
-
+    
+    
 }
+

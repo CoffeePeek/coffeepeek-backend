@@ -1,13 +1,13 @@
 using CoffeePeek.Contract.Constants;
 using CoffeePeek.Contract.Events.Moderation;
 using CoffeePeek.Shared.Domain.Interfaces.Infrastructure;
-using CoffeePeek.Shared.Kernel;
 using CoffeePeek.Shared.Kernel.Exceptions;
-using CoffeePeek.Shops.Application.Features.Public.Stats;
+using CoffeePeek.Shops.Application.Features.CoffeeShop.ShopProfile;
 using CoffeePeek.Shops.Domain;
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
 using CoffeePeek.Shops.Domain.Aggregates.ShopTagAggregate;
 using Microsoft.Extensions.Logging;
+using Wolverine;
 
 namespace CoffeePeek.Shops.Application.Services;
 
@@ -16,8 +16,7 @@ public class CreateShopFromImportService(
     IQueryShopTagRepository tagRepository,
     IQueryCityRepository cityRepository,
     IApplyShopMenuService applyMenu,
-    IUnitOfWork unitOfWork,
-    ICacheService cacheService,
+    IMessageBus bus,
     ILogger<CreateShopFromImportService> logger) : ICreateShopFromImportService
 {
     public async Task<Guid> CreateShopFromImportAsync(
@@ -72,14 +71,10 @@ public class CreateShopFromImportService(
                 cancellationToken);
         }
 
-        await unitOfWork.SaveChangesAsync(cancellationToken);
-
-        await cacheService.RemoveByPattern(CacheKey.Shop.SearchPattern(), cancellationToken);
-        await cacheService.RemoveAsync(CacheKey.Shop.Detail(shop.Id));
-        await PublicStatsCacheInvalidator.InvalidateAsync(cacheService, cancellationToken);
+        await bus.PublishAsync(new ShopProfileCacheInvalidationRequested(shop.Id));
 
         logger.LogInformation(
-            "Shop {ShopId} created from import candidate {CandidateId}",
+            "Prepared shop {ShopId} from import candidate {CandidateId} for transaction commit",
             shop.Id,
             item.CandidateId);
 

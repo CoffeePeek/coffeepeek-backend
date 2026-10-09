@@ -8,6 +8,7 @@ using CoffeePeek.Contract.Dtos.Schedule;
 using CoffeePeek.Shared.Domain.Interfaces.Infrastructure;
 using CoffeePeek.Shared.Kernel;
 using CoffeePeek.Shared.Kernel.Options;
+using CoffeePeek.Shared.Kernel.Exceptions;
 using CoffeePeek.Shops.Application.Features.Admin.Shops;
 using CoffeePeek.Shops.Application.Features.CoffeeShop.ShopProfile;
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
@@ -15,6 +16,7 @@ using CoffeePeek.Shops.Domain.Entities;
 using FluentAssertions;
 using Microsoft.Extensions.Options;
 using Moq;
+using Wolverine;
 using DomainCoffeeShop = CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate.CoffeeShop;
 using DomainCoffeeShopStatus = CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate.CoffeeShopStatus;
 using DomainPriceRange = CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate.PriceRange;
@@ -32,6 +34,7 @@ public class UpdateAdminCoffeeShopHandlerTests
     private readonly Mock<IQueryBrewMethodRepository> _brew = new Mock<IQueryBrewMethodRepository>();
     private readonly Mock<IUnitOfWork> _uow = new Mock<IUnitOfWork>();
     private readonly Mock<ICacheService> _cache = new Mock<ICacheService>();
+    private readonly Mock<IMessageBus> _bus = new();
     private readonly CancellationToken _ct = CancellationToken.None;
     private readonly IOptions<MediaPublicUrlOptions> _media = Options.Create(new MediaPublicUrlOptions
     {
@@ -123,7 +126,7 @@ public class UpdateAdminCoffeeShopHandlerTests
                 ],
                 new ShopCatalogsPatch([equipment.Id], [], [], [])),
             _shops.Object, _cities.Object, _equipment.Object, _beans.Object, _roasters.Object, _brew.Object,
-            _uow.Object, _cache.Object, _media, _ct);
+            _bus.Object, _media, _ct);
 
         result.IsSuccess.Should().BeTrue();
         shop.Name.Should().Be("New name");
@@ -135,8 +138,9 @@ public class UpdateAdminCoffeeShopHandlerTests
         result.Data!.Location!.Address.Should().Be("Немига 5");
         result.Data.Contacts!.PhoneNumber.Should().Be("+375291112233");
         result.Data.TagIds.Should().ContainSingle().Which.Should().Be(tagId);
-        _uow.Verify(u => u.SaveChangesAsync(_ct), Times.Once);
-        _cache.Verify(c => c.RemoveAsync(It.Is<CacheKey>(k => k.Key == CacheKey.Shop.Detail(shop.Id).Key)), Times.Once);
+        _bus.Verify(b => b.PublishAsync(It.Is<ShopProfileCacheInvalidationRequested>(e => e.ShopId == shop.Id)), Times.Once);
+        _uow.Verify(u => u.SaveChangesAsync(_ct), Times.Never);
+        _cache.VerifyNoOtherCalls();
     }
 
     [Fact]
@@ -147,17 +151,17 @@ public class UpdateAdminCoffeeShopHandlerTests
         _shops.Setup(r => r.GetByIdWithCatalogsAsync(shop.Id, _ct)).ReturnsAsync(shop);
         _cities.Setup(r => r.Exists(cityId, _ct)).ReturnsAsync(false);
 
-        var result = await UpdateAdminCoffeeShopHandler.Handle(
+        var action = () => UpdateAdminCoffeeShopHandler.Handle(
             new UpdateAdminCoffeeShopCommand(
                 shop.Id, "Shop", null, ContractPriceRange.Cheap, null,
                 new ShopLocationPatch(cityId, "Addr", 53m, 27m),
                 null, null, null),
             _shops.Object, _cities.Object, _equipment.Object, _beans.Object, _roasters.Object, _brew.Object,
-            _uow.Object, _cache.Object, _media, _ct);
+            _bus.Object, _media, _ct);
 
-        result.IsSuccess.Should().BeFalse();
-        result.StatusCode.Should().Be((int)HttpStatusCode.BadRequest);
+        await action.Should().ThrowAsync<ValidationException>();
         _uow.Verify(u => u.SaveChangesAsync(_ct), Times.Never);
+        _bus.Verify(b => b.PublishAsync(It.IsAny<ShopProfileCacheInvalidationRequested>()), Times.Never);
     }
 
     [Fact]
@@ -167,21 +171,21 @@ public class UpdateAdminCoffeeShopHandlerTests
         _shops.Setup(r => r.GetByIdWithCatalogsAsync(shop.Id, _ct)).ReturnsAsync(shop);
         _equipment.Setup(r => r.GetByIds(It.IsAny<List<Guid>>(), _ct)).ReturnsAsync([]);
 
-        var result = await UpdateAdminCoffeeShopHandler.Handle(
+        var action = () => UpdateAdminCoffeeShopHandler.Handle(
             new UpdateAdminCoffeeShopCommand(
                 shop.Id, "Shop", null, ContractPriceRange.Cheap, null,
                 null, null, null,
                 new ShopCatalogsPatch([Guid.NewGuid()], null, null, null)),
             _shops.Object, _cities.Object, _equipment.Object, _beans.Object, _roasters.Object, _brew.Object,
-            _uow.Object, _cache.Object, _media, _ct);
+            _bus.Object, _media, _ct);
 
-        result.IsSuccess.Should().BeFalse();
-        result.StatusCode.Should().Be((int)HttpStatusCode.BadRequest);
-        result.Message.Should().Contain("equipment");
+        var error = await action.Should().ThrowAsync<ValidationException>();
+        error.Which.Message.Should().Contain("equipment");
+        _bus.Verify(b => b.PublishAsync(It.IsAny<ShopProfileCacheInvalidationRequested>()), Times.Never);
     }
 
     [Fact]
-    public async Task SetVisibility_InvalidatesSearchCache()
+    public async Task SetVisibility_BumpsRevisionAndEnqueuesPostCommitInvalidation()
     {
         var shop = new DomainCoffeeShop(Guid.NewGuid(), "Shop", null, DomainPriceRange.Cheap, Guid.NewGuid());
         _shops.Setup(r => r.GetByIdAsync(shop.Id, _ct)).ReturnsAsync(shop);
@@ -189,15 +193,33 @@ public class UpdateAdminCoffeeShopHandlerTests
         var result = await SetAdminCoffeeShopVisibilityHandler.Handle(
             new SetAdminCoffeeShopVisibilityCommand(shop.Id, Hidden: true),
             _shops.Object,
-            _uow.Object,
-            _cache.Object,
+            _bus.Object,
             _media,
             _ct);
 
         result.IsSuccess.Should().BeTrue();
-        _cache.Verify(
-            c => c.RemoveByPattern(CacheKey.Shop.SearchPattern(), _ct),
-            Times.Once);
+        shop.IsHidden.Should().BeTrue();
+        result.Data!.ProfileRevision.Should().Be(1);
+        _bus.Verify(b => b.PublishAsync(It.Is<ShopProfileCacheInvalidationRequested>(
+            e => e.ShopId == shop.Id)), Times.Once);
+        _uow.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        _cache.VerifyNoOtherCalls();
+    }
+
+    [Fact]
+    public async Task SetVisibility_Unchanged_DoesNotBumpOrInvalidate()
+    {
+        var shop = new DomainCoffeeShop(Guid.NewGuid(), "Shop", null, DomainPriceRange.Cheap, Guid.NewGuid());
+        _shops.Setup(r => r.GetByIdAsync(shop.Id, _ct)).ReturnsAsync(shop);
+
+        var result = await SetAdminCoffeeShopVisibilityHandler.Handle(
+            new SetAdminCoffeeShopVisibilityCommand(shop.Id, Hidden: false),
+            _shops.Object, _bus.Object, _media, _ct);
+
+        result.IsSuccess.Should().BeTrue();
+        result.Data!.ProfileRevision.Should().Be(0);
+        _bus.Verify(b => b.PublishAsync(It.IsAny<ShopProfileCacheInvalidationRequested>()), Times.Never);
+        _uow.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Theory]
@@ -216,105 +238,31 @@ public class UpdateAdminCoffeeShopHandlerTests
 
         var result = await SetAdminCoffeeShopFocusHandler.Handle(
             new SetAdminCoffeeShopFocusCommand(shop.Id, type, Guid.NewGuid()),
-            _shops.Object, _uow.Object, _cache.Object, _media, _ct);
+            _shops.Object, _bus.Object, _media, _ct);
 
         result.IsSuccess.Should().BeTrue();
         shop.Type.Should().Be((CoffeeFocusType)(int)type);
         shop.ShopTags.Should().ContainSingle().Which.Should().BeSameAs(originalTag);
         result.Data!.TagIds.Should().ContainSingle().Which.Should().Be(tagId);
-        _uow.Verify(u => u.SaveChangesAsync(_ct), Times.Once);
-    }
-}
-
-public class PublishedShopPhotosHandlerTests
-{
-    private readonly Mock<ICoffeeShopRepository> _shops = new Mock<ICoffeeShopRepository>();
-    private readonly Mock<IUnitOfWork> _uow = new Mock<IUnitOfWork>();
-    private readonly Mock<ICacheService> _cache = new Mock<ICacheService>();
-    private readonly CancellationToken _ct = CancellationToken.None;
-    private readonly IOptions<MediaPublicUrlOptions> _media = Options.Create(new MediaPublicUrlOptions
-    {
-        PublicEndpoint = "https://cdn.example.com",
-        ShopBucketName = "shops"
-    });
-
-    public PublishedShopPhotosHandlerTests()
-    {
-        _cache.Setup(c => c.RemoveAsync(It.IsAny<CacheKey>())).Returns(Task.CompletedTask);
-        _cache.Setup(c => c.RemoveByPattern(It.IsAny<string>(), _ct)).ReturnsAsync(1);
-        _uow.Setup(u => u.SaveChangesAsync(_ct)).ReturnsAsync(1);
-    }
-
-    [Fact]
-    public async Task AddPhotos_AppendsToGallery()
-    {
-        var shop = new DomainCoffeeShop(Guid.NewGuid(), "Shop", null, DomainPriceRange.Cheap, Guid.NewGuid());
-        var actorId = Guid.NewGuid();
-        _shops.Setup(r => r.TryAttachGalleryPhotosAsync(
-                shop.Id, null, It.IsAny<IReadOnlyList<ShopPhoto>>(), _ct))
-            .ReturnsAsync(true)
-            .Callback<Guid, Guid?, IReadOnlyList<ShopPhoto>, CancellationToken>(
-                (_, _, photos, _) => shop.AddPhotos(photos));
-        _shops.Setup(r => r.GetByIdAsync(shop.Id, _ct)).ReturnsAsync(shop);
-
-        var result = await AddPublishedShopPhotosHandler.Handle(
-            new AddPublishedShopPhotosCommand(shop.Id, actorId, null, [
-                new UploadedPhotoDto("a.jpg", "image/jpeg", "key-a", 12)
-            ]),
-            _shops.Object, _uow.Object, _cache.Object, _media, _ct);
-
-        result.IsSuccess.Should().BeTrue();
-        shop.ShopPhotos.Should().ContainSingle(p => p.StorageKey == "key-a" && p.OwnerId == actorId);
-        result.Data!.Photos.Should().ContainSingle(p => p.StorageKey == "key-a" && p.SortIndex == 0);
-        _uow.Verify(u => u.SaveChangesAsync(_ct), Times.Once);
-    }
-
-    [Fact]
-    public async Task AddPhotos_EmptyList_ReturnsBadRequest()
-    {
-        var result = await AddPublishedShopPhotosHandler.Handle(
-            new AddPublishedShopPhotosCommand(Guid.NewGuid(), Guid.NewGuid(), null, []),
-            _shops.Object, _uow.Object, _cache.Object, _media, _ct);
-
-        result.IsSuccess.Should().BeFalse();
-        result.StatusCode.Should().Be((int)HttpStatusCode.BadRequest);
-        _shops.Verify(
-            r => r.TryAttachGalleryPhotosAsync(
-                It.IsAny<Guid>(), It.IsAny<Guid?>(), It.IsAny<IReadOnlyList<ShopPhoto>>(), _ct),
-            Times.Never);
-    }
-
-    [Fact]
-    public async Task AddPhotos_UnknownShop_ReturnsNotFound()
-    {
-        var shopId = Guid.NewGuid();
-        _shops.Setup(r => r.TryAttachGalleryPhotosAsync(
-                shopId, null, It.IsAny<IReadOnlyList<ShopPhoto>>(), _ct))
-            .ReturnsAsync(false);
-
-        var result = await AddPublishedShopPhotosHandler.Handle(
-            new AddPublishedShopPhotosCommand(shopId, Guid.NewGuid(), null, [
-                new UploadedPhotoDto("a.jpg", "image/jpeg", "key-a", 12)
-            ]),
-            _shops.Object, _uow.Object, _cache.Object, _media, _ct);
-
-        result.IsSuccess.Should().BeFalse();
-        result.StatusCode.Should().Be((int)HttpStatusCode.NotFound);
+        result.Data.ProfileRevision.Should().Be(1);
+        _bus.Verify(b => b.PublishAsync(It.Is<ShopProfileCacheInvalidationRequested>(
+            message => message.ShopId == shop.Id)), Times.Once);
         _uow.Verify(u => u.SaveChangesAsync(_ct), Times.Never);
     }
 
     [Fact]
-    public async Task RemovePhotos_OwnerUnknownShop_ReturnsNotFound()
+    public async Task SetFocus_AlreadySelected_DoesNotAdvanceRevisionOrInvalidateCache()
     {
-        var ownerId = Guid.NewGuid();
-        var shopId = Guid.NewGuid();
-        _shops.Setup(r => r.GetByIdForOwnerAsync(shopId, ownerId, _ct)).ReturnsAsync((DomainCoffeeShop?)null);
+        var shop = new DomainCoffeeShop(Guid.NewGuid(), "Shop", null, DomainPriceRange.Cheap, Guid.NewGuid());
+        shop.SetCoffeeFocus(CoffeeFocusType.Cafe);
+        _shops.Setup(r => r.GetByIdAsync(shop.Id, _ct)).ReturnsAsync(shop);
 
-        var result = await RemovePublishedShopPhotosHandler.Handle(
-            new RemovePublishedShopPhotosCommand(shopId, ownerId, [Guid.NewGuid()]),
-            _shops.Object, _uow.Object, _cache.Object, _media, _ct);
+        var result = await SetAdminCoffeeShopFocusHandler.Handle(
+            new SetAdminCoffeeShopFocusCommand(shop.Id, CoffeePeek.Contract.Enums.CoffeeShopType.Cafe, Guid.NewGuid()),
+            _shops.Object, _bus.Object, _media, _ct);
 
-        result.IsSuccess.Should().BeFalse();
-        result.StatusCode.Should().Be((int)HttpStatusCode.NotFound);
+        result.IsSuccess.Should().BeTrue();
+        result.Data!.ProfileRevision.Should().Be(0);
+        _bus.Verify(b => b.PublishAsync(It.IsAny<ShopProfileCacheInvalidationRequested>()), Times.Never);
     }
 }

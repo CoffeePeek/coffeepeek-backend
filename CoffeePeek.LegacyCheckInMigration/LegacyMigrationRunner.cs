@@ -38,6 +38,7 @@ public static class LegacyMigrationRunner
         Console.WriteLine("Preparing canonical schema in four databases.");
         await PrepareAsync(accountContext, "20261007132511_RetireReviewCountOnMain", "20261007160000_RemoveLegacyReviewCounter");
         await PrepareAsync(shopsContext, "20261007133435_CanonicalCheckInsOnMain", "20261007160000_RemoveLegacyCheckInArchives");
+        await CheckInPhotoSchema.ExpandAsync(shopsContext);
         await PrepareAsync(moderationContext, "20261007133453_CanonicalCheckInSnapshotsOnMain", "20261007160000_RemoveLegacyReviewSnapshots");
         await mediaContext.Database.MigrateAsync();
 

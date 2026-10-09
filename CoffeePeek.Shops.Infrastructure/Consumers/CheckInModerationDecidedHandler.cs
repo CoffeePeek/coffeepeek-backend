@@ -1,17 +1,16 @@
 using CoffeePeek.Contract.Enums;
 using CoffeePeek.Contract.Events.Moderation;
-using CoffeePeek.Contract.Events.Shops;
-using CoffeePeek.Shared.Domain.Interfaces.Infrastructure;
 using CoffeePeek.Shared.Kernel;
 using CoffeePeek.Shops.Application.Features.CheckIn;
 using CoffeePeek.Shops.Domain.Aggregates.CheckInAggregate;
+using Wolverine;
 
 namespace CoffeePeek.Shops.Infrastructure.Consumers;
 
 public static class CheckInModerationDecidedHandler
 {
     public static async Task Handle(CheckInModerationDecidedEvent message,
-        IQueryCheckInRepository repository, IUnitOfWork unitOfWork, ICacheService cache, CancellationToken ct)
+        IQueryCheckInRepository repository, IUnitOfWork unitOfWork, IMessageBus bus, CancellationToken ct)
     {
         var checkIn = await repository.GetTrackedByIdAsync(message.CheckInId, ct);
         if (checkIn == null) return;
@@ -27,6 +26,6 @@ public static class CheckInModerationDecidedHandler
         // The independent concurrency token rejects an edit/hide that won after this aggregate was loaded.
         // Wolverine retries on a fresh context and rechecks revision, visibility and decision order.
         await unitOfWork.SaveChangesAsync(ct);
-        await CheckInCacheInvalidator.InvalidateAsync(cache, checkIn.ShopId, checkIn.UserId, ct);
+        await bus.PublishAsync(new CheckInCacheInvalidationRequested(checkIn.Id, checkIn.ShopId, checkIn.UserId));
     }
 }

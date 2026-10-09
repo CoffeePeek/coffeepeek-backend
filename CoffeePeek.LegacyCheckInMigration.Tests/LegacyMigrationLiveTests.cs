@@ -39,6 +39,7 @@ public class LegacyMigrationLiveTests
             await using var mediaContext = new MediaDbContext(new DbContextOptionsBuilder<MediaDbContext>().UseNpgsql(settings.Media).Options);
             await accountContext.GetService<IMigrator>().MigrateAsync("20261007132511_RetireReviewCountOnMain", ct);
             await shopsContext.GetService<IMigrator>().MigrateAsync("20261007133435_CanonicalCheckInsOnMain", ct);
+            await CheckInPhotoSchema.ExpandAsync(shopsContext, ct);
             await moderationContext.GetService<IMigrator>().MigrateAsync("20261007133453_CanonicalCheckInSnapshotsOnMain", ct);
             await mediaContext.Database.MigrateAsync(ct);
             var author = User.CreateExternal("legacy@example.com", "test", "author", "legacy_author");
@@ -49,8 +50,17 @@ public class LegacyMigrationLiveTests
             var city = new City("Legacy city");
             shopsContext.Cities.Add(city);
             shop.SetDraftLocation(city.Id, "Legacy address");
-            shopsContext.Shops.Add(shop);
             await shopsContext.SaveChangesAsync(ct);
+            // This database deliberately stops before AddShopProfileRevision. Seed the
+            // legacy Shops row with its historical columns rather than the current EF model.
+            await shopsContext.Database.ExecuteSqlInterpolatedAsync($"""
+                INSERT INTO "Shops"
+                    ("Id", "Name", "Address", "CityId", "IsAddressValidated", "CreatedAtUtc",
+                     "IsHidden", "PriceRange", "SlugRevision", "Status")
+                VALUES
+                    ({shop.Id}, {shop.Name}, {"Legacy address"}, {city.Id}, {false}, {DateTime.UtcNow},
+                     {false}, {(int)PriceRange.Moderate}, {0L}, {(int)CoffeeShopStatus.Active})
+                """, ct);
             var open = new List<NpgsqlConnection>();
             try
             {
@@ -182,7 +192,7 @@ public class LegacyMigrationLiveTests
                 else Assert.Equal(visit.Id(), Assert.Single(await moderation.RowsAsync("ModerationCheckIns")).Id("CheckInId"));
                 var claimed = Assert.Single(await media.RowsAsync("Photos"), x => x.Text("BucketType") == "CheckIn");
                 Assert.Equal("CheckIn", claimed.Text("BucketType")); Assert.Equal(visit.Id(), claimed.Id("CheckInId"));
-                var canonicalPhoto = Assert.Single(await shops.RowsAsync("ShopPhotos"), x => x.Id("CanonicalCheckInId") != Guid.Empty);
+                var canonicalPhoto = Assert.Single(await shops.RowsAsync("CheckInPhotos"), x => x.Id("CanonicalCheckInId") != Guid.Empty);
                 Assert.Equal(claimed.Id(), canonicalPhoto.Id());
                 if (minio != null) await minio.VerifyPrivateAsync(key, claimed.Text("StorageKey")!, sharedGalleryPhoto);
                 else { Assert.Equal(sharedGalleryPhoto, objects.ContainsKey((BucketType.Shop, key))); Assert.True(objects.ContainsKey((BucketType.CheckIn, claimed.Text("StorageKey")!))); }
@@ -193,7 +203,8 @@ public class LegacyMigrationLiveTests
                 Assert.False(await shops.ExistsAsync("Reviews")); Assert.False(await shops.ExistsAsync("CheckIns")); Assert.False(await shops.ExistsAsync("ReviewHelpfulVotes"));
                 Assert.False(await moderation.ExistsAsync("ModerationReviews"));
                 Assert.DoesNotContain("ReviewCount", (await account.RowsAsync("Users"))[0].Select(x => x.Key));
-                Assert.Equal(sharedGalleryPhoto ? 2 : 1, (await shops.RowsAsync("ShopPhotos")).Count);
+                Assert.Equal(sharedGalleryPhoto ? 1 : 0, (await shops.RowsAsync("ShopPhotos")).Count);
+                Assert.Single(await shops.RowsAsync("CheckInPhotos"));
                 Assert.Equal(changedSnapshotPhoto ? 0 : 1, (await moderation.RowsAsync("ShopPhotos")).Count);
                 Assert.Equal(10 + (changedSnapshotPhoto ? 0 : 10) + (sharedGalleryPhoto ? 15 : 0),
                     (await shops.RowsAsync("Shops")).Single(x => x.Id() == shop.Id).Number("DataCompletenessScore"));

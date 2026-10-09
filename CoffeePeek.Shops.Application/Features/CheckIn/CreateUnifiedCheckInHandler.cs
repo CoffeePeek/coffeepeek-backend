@@ -22,7 +22,7 @@ public static class CreateUnifiedCheckInHandler
 {
     public static async Task<Response<UnifiedCheckInDto>> Handle(CreateUnifiedCheckInCommand command,
         IQueryCheckInRepository repository, IQueryCoffeeShopRepository shops, CoffeePeek.Shared.Kernel.Drinks.IDrinkCatalog drinks,
-        IUploadedPhotoLookup photos, IUnitOfWork unitOfWork, IMessageBus bus, ICacheService cache, CancellationToken ct)
+        IUploadedPhotoLookup photos, IUnitOfWork unitOfWork, IMessageBus bus, CancellationToken ct)
     {
         var request = command.Request;
         if (request.Rating == null) throw new ValidationException("Rating is required.");
@@ -58,7 +58,7 @@ public static class CreateUnifiedCheckInHandler
             {
                 throw new ValidationException("One or more photos were not found, do not belong to you, or were already used.");
             }
-            checkIn.AddPhotos(keys.Select((k, i) => new ShopPhoto(trusted[k].FileName, trusted[k].ContentType,
+            checkIn.AddPhotos(keys.Select((k, i) => new CheckInPhoto(trusted[k].FileName, trusted[k].ContentType,
                 trusted[k].StorageKey, trusted[k].SizeBytes, command.UserId, i, trusted[k].PhotoId)));
         }
         repository.Add(checkIn);
@@ -68,7 +68,7 @@ public static class CreateUnifiedCheckInHandler
         await bus.PublishAsync(new CoffeePeek.Contract.Events.Shops.CheckinCreatedEvent
             { UserId = command.UserId, ShopId = checkIn.ShopId, CheckInId = checkIn.Id, CreatedAt = checkIn.CreatedAtUtc });
         // A failed/ambiguous commit must retain reservations: freeing them could attach committed bytes elsewhere.
-        await bus.PublishAsync(new CheckInCacheInvalidationRequested(checkIn.Id));
+        await bus.PublishAsync(new CheckInCacheInvalidationRequested(checkIn.Id, checkIn.ShopId, checkIn.UserId));
         await unitOfWork.SaveChangesAsync(ct);
         var names = await shops.GetShopNamesByIdsAsync([checkIn.ShopId], ct);
         return Response<UnifiedCheckInDto>.Success(CheckInMapping.ToDto(checkIn, names.GetValueOrDefault(checkIn.ShopId) ?? ""));

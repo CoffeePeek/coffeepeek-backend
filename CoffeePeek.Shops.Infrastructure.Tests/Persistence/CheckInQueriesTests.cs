@@ -52,7 +52,7 @@ public class CheckInQueriesTests
 
         var checkIn = Create(userId, Guid.NewGuid(), Utc(9, 15));
         checkIn.SetDrink(new("other", "Эспрессо-тоник", "Эспрессо-тоник", "Espresso tonic"));
-        checkIn.AddPhotos([new ShopPhoto("p.jpg", "image/jpeg", "checkins/p.jpg", 1024, userId)]);
+        checkIn.AddPhotos([new CheckInPhoto("p.jpg", "image/jpeg", "checkins/p.jpg", 1024, userId)]);
         db.CheckIns.Add(checkIn);
         await db.SaveChangesAsync(_ct);
 

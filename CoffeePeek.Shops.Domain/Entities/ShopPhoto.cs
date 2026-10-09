@@ -15,7 +15,7 @@ public sealed class ShopPhoto : Entity<Guid>
     public long SizeBytes { get; private set; }
     public Guid OwnerId { get; private set; }
 
-    /// <summary>0-based display order within the parent gallery (shop / check-in / review).</summary>
+    /// <summary>0-based display order within the shop gallery or historical Community archive.</summary>
     public int SortIndex { get; private set; }
 
     // ReSharper disable once UnusedMember.Local
@@ -33,7 +33,7 @@ public sealed class ShopPhoto : Entity<Guid>
     }
 
     /// <summary>Sets display order. Callers must pass a non-negative index (validated).</summary>
-    public void SetSortIndex(int sortIndex)
+    internal void SetSortIndex(int sortIndex)
     {
         if (sortIndex < 0)
             throw new ArgumentOutOfRangeException(nameof(sortIndex), "SortIndex cannot be negative.");

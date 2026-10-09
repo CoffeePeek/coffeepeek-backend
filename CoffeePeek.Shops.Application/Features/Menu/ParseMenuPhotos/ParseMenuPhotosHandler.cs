@@ -12,17 +12,6 @@ using ContractPriceRange = CoffeePeek.Contract.Enums.PriceRange;
 
 namespace CoffeePeek.Shops.Application.Features.Menu.ParseMenuPhotos;
 
-public record ParseMenuPhotoInput(string StorageKey, string ContentType, string? PublicUrl);
-
-public record ParseMenuPhotosCommand(IReadOnlyList<ParseMenuPhotoInput> Photos);
-
-public record ParseMenuPhotosResponse(
-    bool Success,
-    string? Error,
-    ContractPriceRange? SuggestedPriceRange,
-    IReadOnlyList<ParsedMenuItemDto> Items,
-    IReadOnlyList<UnmatchedMenuItemDto> Unmatched);
-
 public static class ParseMenuPhotosHandler
 {
     public static async Task<Response<ParseMenuPhotosResponse>> Handle(
@@ -76,19 +65,14 @@ public static class ParseMenuPhotosHandler
 
             if (matched.TryGetValue(drink.Slug, out var existing))
             {
-                var minPrice = MinPrice(existing.Price, line.Price);
-                matched[drink.Slug] = existing with { Price = minPrice };
+                // Price and volume describe one offer. Replacing only the price would
+                // invent a portion that was never present in the source photo.
+                if (line.Price!.Value < existing.Price!.Value)
+                    matched[drink.Slug] = Matched(drink, line);
                 continue;
             }
 
-            matched[drink.Slug] = new ParsedMenuItemDto(
-                drink.Slug,
-                line.Price,
-                line.VolumeMl,
-                line.RawName,
-                drink.NameRu,
-                drink.NameEn,
-                (ContractCategory)(int)drink.Category);
+            matched[drink.Slug] = Matched(drink, line);
         }
 
         var items = matched.Values.ToArray();
@@ -129,15 +113,19 @@ public static class ParseMenuPhotosHandler
                 Price = l.Price is > 0 and <= MaxPrice ? l.Price : null,
                 VolumeMl = l.VolumeMl is > 0 and <= MaxVolumeMl ? l.VolumeMl : null,
                 Confidence = l.Confidence is { } c ? Math.Clamp(c, 0, 1) : null
-            });
+            })
+            // A partially known OCR offer cannot become a Present domain item.
+            .Where(l => l.Price.HasValue && l.VolumeMl.HasValue);
 
     private static ParseMenuPhotosResponse Failed(string error) =>
         new(false, error, null, [], []);
 
-    private static decimal? MinPrice(decimal? left, decimal? right)
-    {
-        if (left is null) return right;
-        if (right is null) return left;
-        return Math.Min(left.Value, right.Value);
-    }
+    private static ParsedMenuItemDto Matched(CoffeeDrinkDefinition drink, VisionDrinkLine line) => new(
+        drink.Slug,
+        line.Price,
+        line.VolumeMl,
+        line.RawName,
+        drink.NameRu,
+        drink.NameEn,
+        (ContractCategory)(int)drink.Category);
 }

@@ -5,6 +5,7 @@ using CoffeePeek.Contract.Dtos.CoffeeShop;
 using CoffeePeek.Shared.Auth.Constants;
 using CoffeePeek.Shared.Kernel.Exceptions;
 using CoffeePeek.Shops.Application.Features.CheckIn;
+using CoffeePeek.Shops.Domain.Aggregates.CheckInAggregate;
 using CoffeePeek.Shops.Domain.Entities;
 using CoffeePeek.ShopsService.Controllers;
 using Microsoft.AspNetCore.Authorization;
@@ -88,7 +89,7 @@ public class RetiredCheckInApiTests
     {
         var visit = DomainCheckIn.CreateUnified(Guid.NewGuid(), Guid.NewGuid(), "author", "Good coffee",
             Rating.Create(4, 3, 5), DateTime.UtcNow);
-        var photo = new ShopPhoto("coffee.jpg", "image/jpeg", "private-object", 42, visit.UserId);
+        var photo = new CheckInPhoto("coffee.jpg", "image/jpeg", "private-object", 42, visit.UserId);
         visit.AddPhotos([photo]);
 
         var dto = CheckInMapping.ToDto(visit);

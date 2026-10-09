@@ -15,9 +15,6 @@ using Microsoft.Extensions.Options;
 namespace CoffeePeek.Shops.Infrastructure.Consumers;
 
 public class ParseMenuRequestedEventHandler(
-    IApplyShopMenuService applyMenu,
-    IQueryCoffeeShopRepository shopRepository,
-    IUnitOfWork unitOfWork,
     IOptions<MediaPublicUrlOptions> mediaOptions,
     IMenuVisionParser parser,
     IQueryCoffeeDrinkRepository drinks,
@@ -25,10 +22,23 @@ public class ParseMenuRequestedEventHandler(
     IOptions<MenuPriceRangeOptions> priceOptions,
     ILogger<ParseMenuRequestedEventHandler> logger)
 {
-    private const int MaxApplyAndSaveAttempts = 3;
-
-    public async Task<MenuParsedEvent> Handle(ParseMenuRequestedEvent message, CancellationToken ct)
+    public async Task<object> Handle(ParseMenuRequestedEvent message, CancellationToken ct)
     {
+        // P15 briefly emitted this legacy envelope with JobId. Forward it to the new
+        // short-transaction worker without paying for OCR in this eager EF transaction.
+        if (message.SourceKind == MenuParseSourceKind.PublishedShop && message.JobId is { } jobId)
+            return new ParseMenuOcrJobRequestedEvent(jobId, message.RequestedByUserId);
+
+        if (message.SourceKind == MenuParseSourceKind.PublishedShop)
+        {
+            var publishedShopId = message.PublishedShopId ?? message.SourceId;
+            logger.LogWarning("Quarantined legacy published menu OCR for shop {ShopId} without JobId", publishedShopId);
+            return new MenuParsedEvent(
+                message.SourceKind, message.SourceId, publishedShopId, false,
+                "Legacy published OCR requires an explicit migration to a persisted job.",
+                null, [], [], DateTime.UtcNow);
+        }
+
         logger.LogInformation(
             "Starting menu parse for {Kind} {SourceId} photos={PhotoCount} publishedShop={PublishedShopId}",
             message.SourceKind,
@@ -57,59 +67,8 @@ public class ParseMenuRequestedEventHandler(
 
             var data = parsed.Data ?? new ParseMenuPhotosResponse(false, "Parse failed.", null, [], []);
             var capturedAt = DateTime.UtcNow;
-            var shopId = message.PublishedShopId
-                         ?? await shopRepository.GetIdByModerationId(message.SourceId, ct);
-
-            if (shopId.HasValue)
-            {
-                var photoSnapshots = message.Photos.Select(p => new ShopMenuPhotoSnapshot(
-                    p.FileName, p.ContentType, p.StorageKey, p.SizeBytes, p.MediaPhotoId)).ToArray();
-
-                for (var attempt = 1; attempt <= MaxApplyAndSaveAttempts; attempt++)
-                {
-                    try
-                    {
-                        if (data.Success)
-                        {
-                            await applyMenu.ApplyParseResultAsync(
-                                shopId.Value,
-                                data.Items,
-                                data.Unmatched,
-                                data.SuggestedPriceRange,
-                                photoSnapshots,
-                                capturedAt,
-                                message.RequestedByUserId,
-                                ct);
-                        }
-                        else
-                        {
-                            await applyMenu.MarkParseFailedAsync(shopId.Value, data.Error ?? "Parse failed.", ct);
-                        }
-
-                        await unitOfWork.SaveChangesAsync(ct);
-                        break;
-                    }
-                    catch (ConflictException ex) when (ex.InnerException is DbUpdateConcurrencyException &&
-                                                        attempt < MaxApplyAndSaveAttempts)
-                    {
-                        logger.LogWarning(
-                            ex,
-                            "Concurrency conflict applying menu parse result for shop {ShopId}, attempt {Attempt}/{MaxAttempts}",
-                            shopId,
-                            attempt,
-                            MaxApplyAndSaveAttempts);
-                        unitOfWork.ClearTracking();
-                    }
-                    catch (ConflictException ex) when (ex.InnerException is DbUpdateConcurrencyException)
-                    {
-                        // Out of local retries. Rethrowing the conflict would let the Wolverine retry policy re-run the
-                        // whole handler, i.e. download the photos and bill another vision call per attempt.
-                        logger.LogError(ex, "Giving up applying menu parse result for shop {ShopId}", shopId);
-                        throw new InvalidOperationException(
-                            $"Menu parse result for shop {shopId} could not be saved after {MaxApplyAndSaveAttempts} attempts.");
-                    }
-                }
-            }
+            // Legacy draft OCR can update only its draft; published menus require a persisted job or revision.
+            var shopId = message.PublishedShopId;
 
             if (data.Success)
             {
@@ -149,32 +108,6 @@ public class ParseMenuRequestedEventHandler(
                 "Menu parse threw for {Kind} {SourceId}",
                 message.SourceKind,
                 message.SourceId);
-            throw;
-        }
-    }
-}
-
-public class ApplyShopMenuSnapshotEventHandler(
-    IApplyShopMenuService applyMenu,
-    IUnitOfWork unitOfWork,
-    ILogger<ApplyShopMenuSnapshotEventHandler> logger)
-{
-    public async Task Handle(ApplyShopMenuSnapshotEvent message, CancellationToken ct)
-    {
-        try
-        {
-            await applyMenu.ApplySnapshotAsync(
-                message.ShopId,
-                message.Snapshot,
-                message.ApplySuggestedPriceRange,
-                message.UserId,
-                ct);
-            await unitOfWork.SaveChangesAsync(ct);
-            logger.LogInformation("Applied menu snapshot to shop {ShopId}", message.ShopId);
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Failed to apply menu snapshot to shop {ShopId}", message.ShopId);
             throw;
         }
     }

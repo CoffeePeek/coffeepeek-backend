@@ -1,5 +1,4 @@
 using CoffeePeek.Contract.Dtos.Internal;
-using CoffeePeek.Shared.Domain.Interfaces.Infrastructure;
 using CoffeePeek.Shared.Kernel.Response;
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
 using MapsterMapper;
@@ -9,22 +8,13 @@ namespace CoffeePeek.Shops.Application.Features.Catalogs.GetAllCities;
 public class GetCitiesRequestHandler
 {
     public async Task<Response<GetCitiesResponse>> Handle(
-        GetCitiesCommand command, 
-        ICacheService redisService, 
+        GetCitiesCommand command,
         IMapper mapper,
-        IQueryCityRepository queryCityRepository, 
+        IQueryCityRepository queryCityRepository,
         CancellationToken cancellationToken)
     {
-        var cacheKey = CacheKey.City.ListAll();
-        
-        var result = await redisService.GetAsync<CityDto[]>(cacheKey);
-
-        if (result == null)
-        {
-            var cities = await queryCityRepository.GetAll(cancellationToken);
-            result = mapper.Map<CityDto[]>(cities);
-            await redisService.SetAsync(cacheKey, result);
-        }
+        var cities = await queryCityRepository.GetAll(cancellationToken);
+        var result = mapper.Map<CityDto[]>(cities);
 
         var response = new GetCitiesResponse(result);
 

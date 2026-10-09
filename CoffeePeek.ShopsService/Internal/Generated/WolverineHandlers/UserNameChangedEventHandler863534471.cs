@@ -29,7 +29,7 @@ namespace Internal.Generated.WolverineHandlers
             // The actual message body
             var userNameChangedEvent = (CoffeePeek.Contract.Events.Account.UserNameChangedEvent)context.Envelope.Message;
 
-            
+
             // Enroll the DbContext & IMessagingContext in the outgoing Wolverine outbox transaction
             var efCoreEnvelopeTransaction = new Wolverine.EntityFrameworkCore.Internals.EfCoreEnvelopeTransaction(shopsDbContext, context, _domainEventScraperIEnumerable);
             await context.EnlistInOutboxAsync(efCoreEnvelopeTransaction).ConfigureAwait(false);
@@ -44,11 +44,11 @@ namespace Internal.Generated.WolverineHandlers
                 System.Diagnostics.Activity.Current?.SetTag("message.handler", "CoffeePeek.Shops.Infrastructure.Consumers.UserNameChangedHandler");
                 System.Diagnostics.Activity.Current?.SetTag("handler.type", "CoffeePeek.Shops.Infrastructure.Consumers.UserNameChangedHandler");
                 var userNameChangedHandler = new CoffeePeek.Shops.Infrastructure.Consumers.UserNameChangedHandler(shopsDbContext);
-                
+
                 // The actual message execution
                 await userNameChangedHandler.Handle(userNameChangedEvent, cancellation).ConfigureAwait(false);
 
-                
+
                 // Added by EF Core Transaction Middleware
                 var result_of_SaveChangesAsync = await shopsDbContext.SaveChangesAsync(cancellation).ConfigureAwait(false);
 
@@ -67,7 +67,6 @@ namespace Internal.Generated.WolverineHandlers
     }
 
     // END: UserNameChangedEventHandler863534471
-    
-    
-}
 
+
+}

@@ -59,6 +59,13 @@ namespace CoffeePeek.MediaService.Migrations
                     b.Property<Guid>("OwnerId")
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("ShopAttachmentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ShopAttachmentKind")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
                     b.Property<string>("OwnerType")
                         .IsRequired()
                         .HasMaxLength(20)
@@ -97,9 +104,13 @@ namespace CoffeePeek.MediaService.Migrations
 
                     b.HasIndex("OwnerType", "OwnerId");
 
+                    b.HasIndex("ShopAttachmentId", "ShopAttachmentKind");
+
                     b.HasIndex("Status", "ScheduledDeletionAt");
 
-                    b.ToTable("Photos");
+                    b.ToTable("Photos", t =>
+                        t.HasCheckConstraint("CK_Photos_ShopAttachmentPair",
+                            "(\"ShopAttachmentId\" IS NULL) = (\"ShopAttachmentKind\" IS NULL)"));
                 });
 #pragma warning restore 612, 618
         }

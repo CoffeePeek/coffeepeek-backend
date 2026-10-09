@@ -4,6 +4,7 @@ using CoffeePeek.Shared.Web;
 using CoffeePeek.Shared.Web.Extensions;
 using CoffeePeek.Shared.Web.Handlers;
 using CoffeePeek.Shared.Web.Sentry;
+using CoffeePeek.ShopsService.Handlers;
 
 namespace CoffeePeek.ShopsService;
 
@@ -47,6 +48,8 @@ public static class DependencyInjection
             .AddPolicy(RoleConsts.Employee, policy => policy.RequireRole(RoleConsts.Employee))
             .AddPolicy(RoleConsts.Roaster, policy => policy.RequireRole(RoleConsts.Roaster));
 
+        services.AddExceptionHandler<CityReferenceExceptionHandler>();
+        services.AddExceptionHandler<ShopEquipmentExceptionHandler>();
         services.AddExceptionHandler<GlobalExceptionHandler>();
         services.AddProblemDetails();
 

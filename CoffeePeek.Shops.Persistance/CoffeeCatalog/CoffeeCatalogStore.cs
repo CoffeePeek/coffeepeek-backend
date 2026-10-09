@@ -19,7 +19,7 @@ namespace CoffeePeek.Shops.Persistance.CoffeeCatalog;
 
 public sealed partial class CoffeeCatalogStore(ShopsDbContext db, IOptions<MediaPublicUrlOptions> media,
     IOptions<CoffeeImportOptions> importOptions, IPublicAddressService addresses,
-    ILogger<CoffeeCatalogStore> logger) : ICoffeeCatalogStore
+    ILogger<CoffeeCatalogStore> logger) : IPublicCoffeeCatalogReader, IAdminCoffeeCatalogReader, ICoffeeCatalogTagWriter, ICoffeeProductWriter, ICoffeeImportWriter
 {
     public Task<CountryDto[]> CountriesAsync(CancellationToken ct) => db.Countries.AsNoTracking()
         .Where(c => c.IsActive).OrderBy(c => c.NameRu).Select(c => new CountryDto(c.Code, c.NameRu, c.NameEn)).ToArrayAsync(ct);
@@ -27,35 +27,12 @@ public sealed partial class CoffeeCatalogStore(ShopsDbContext db, IOptions<Media
     public async Task<RoasterTagDto[]> TagsAsync(bool admin, CancellationToken ct) =>
         (await db.RoasterTags.AsNoTracking().Where(t => admin || t.IsActive).OrderBy(t => t.SortOrder).ThenBy(t => t.Name).ToArrayAsync(ct))
         .Select(Tag).ToArray();
-    public async Task<RoasterTagDto> CreateTagAsync(CreateRoasterTagRequest request, CancellationToken ct)
-    {
-        if (await db.RoasterTags.AnyAsync(t => t.Slug == request.Slug, ct)) throw new CoffeeCatalogException("Tag slug is reserved.", 409);
-        var tag = new RoasterTag(request.Slug, request.Name, request.Description, request.SortOrder);
-        db.RoasterTags.Add(tag);
-        await db.SaveChangesAsync(ct);
-        return Tag(tag);
-    }
-    public async Task<RoasterTagDto?> EditTagAsync(Guid id, RoasterTagEdit request, CancellationToken ct)
-    {
-        var tag = await db.RoasterTags.FindAsync([id], ct);
-        if (tag is null) return null;
-        tag.Update(request.Name, request.Description, request.SortOrder, request.IsActive);
-        await db.SaveChangesAsync(ct);
-        return Tag(tag);
-    }
-    public async Task SetRoasterTagsAsync(Guid roasterId, Guid[] tagIds, Guid actorId, CancellationToken ct)
-    {
-        if (tagIds is null || tagIds.Length > 100) throw new CoffeeCatalogException("Invalid tag selection.");
-        if (!await db.Roasters.AnyAsync(r => r.Id == roasterId, ct)) throw new CoffeeCatalogException("Roaster not found.", 404);
-        var ids = tagIds.Distinct().ToArray();
-        if (await db.RoasterTags.CountAsync(t => ids.Contains(t.Id) && t.IsActive, ct) != ids.Length)
-            throw new CoffeeCatalogException("Unknown or inactive roaster tag.");
-        var existing = await db.RoasterTagAssignments.Where(a => a.RoasterId == roasterId).ToArrayAsync(ct);
-        db.RoasterTagAssignments.RemoveRange(existing.Where(a => !ids.Contains(a.TagId)));
-        foreach (var id in ids.Except(existing.Select(a => a.TagId)))
-            db.RoasterTagAssignments.Add(new RoasterTagAssignment(roasterId, id, actorId));
-        await db.SaveChangesAsync(ct);
-    }
+    public Task<RoasterTagDto[]> PublicTagsAsync(CancellationToken ct) => TagsAsync(false, ct);
+    public Task<RoasterTagDto[]> AdminTagsAsync(CancellationToken ct) => TagsAsync(true, ct);
+    public Task<RoasterTagDto> CreateTagAsync(CreateRoasterTagRequest request, CancellationToken ct) => TagWriter().CreateTagAsync(request, ct);
+    public Task<RoasterTagDto?> EditTagAsync(Guid id, RoasterTagEdit request, CancellationToken ct) => TagWriter().EditTagAsync(id, request, ct);
+    public Task SetRoasterTagsAsync(Guid roasterId, Guid[] tagIds, Guid actorId, CancellationToken ct) => TagWriter().SetRoasterTagsAsync(roasterId, tagIds, actorId, ct);
+    private CoffeeCatalogTagWriter TagWriter() => new(new CoffeeCatalogTagStorage(db));
     public Task<PublicTagDto[]> RoasterTagsAsync(Guid roasterId, CancellationToken ct) =>
         db.RoasterTagAssignments.AsNoTracking().Where(a => a.RoasterId == roasterId && a.Tag.IsActive)
             .OrderBy(a => a.Tag.SortOrder).ThenBy(a => a.Tag.Name)
@@ -74,14 +51,7 @@ public sealed partial class CoffeeCatalogStore(ShopsDbContext db, IOptions<Media
             p.Sources.Any(s => s.Variants.Any(v => v.Availability == CoffeeAvailability.InStock)), ct);
         return new(await RoasterTagsAsync(id, ct), count);
     }
-    public async Task<bool> ArchiveAsync(Guid id, CancellationToken ct)
-    {
-        var p = await db.CoffeeProducts.FindAsync([id], ct);
-        if (p is null) return false;
-        p.SetStatus(CoffeePublicationStatus.Archived);
-        await db.SaveChangesAsync(ct);
-        return true;
-    }
+    public Task<bool> ArchiveAsync(Guid id, CancellationToken ct) => ProductWriter().ArchiveAsync(id, ct);
 
     public async Task<PublicRoasterDto[]> RoastersAsync(string[] tags, CancellationToken ct)
     {
@@ -193,31 +163,10 @@ public sealed partial class CoffeeCatalogStore(ShopsDbContext db, IOptions<Media
         var row = await IncludeDetails(db.CoffeeProducts.AsNoTracking()).SingleOrDefaultAsync(p => p.Id == id, ct);
         return row is null ? null : Admin(row);
     }
-    public async Task<AdminCoffeeDto> CreateAsync(CreateCoffeeRequest request, CancellationToken ct)
-    {
-        if (!await db.Roasters.AnyAsync(r => r.Id == request.RoasterId, ct)) throw new CoffeeCatalogException("Roaster not found.", 404);
-        await ValidateCountriesAsync(request.CountryCodes, ct);
-        var p = new CoffeeProduct(request.RoasterId, ToContent(request.Content));
-        p.SetPublicSlug(PublicSlug.Candidate(p.Name, p.Id, 1));
-        p.ReplaceCountries(request.CountryCodes);
-        db.CoffeeProducts.Add(p);
-        await db.SaveChangesAsync(ct);
-        return (await AdminGetAsync(p.Id, ct))!;
-    }
-    public async Task<AdminCoffeeDto?> EditAsync(Guid id, CoffeeEditRequest request, CancellationToken ct)
-    {
-        var p = await IncludeDetails(db.CoffeeProducts).SingleOrDefaultAsync(p => p.Id == id, ct);
-        if (p is null) return null;
-        if (request.Version != p.Version) throw new CoffeeCatalogException("Coffee changed; reload before saving.", 409);
-        await ValidateCountriesAsync(request.CountryCodes, ct);
-        if (request.ProtectedFields is null || !Enum.TryParse<CoffeePublicationStatus>(request.Status, true, out var status) || !Enum.IsDefined(status))
-            throw new CoffeeCatalogException("Invalid status or protected fields.");
-        p.ApplyContent(ToContent(request.Content)); p.ProtectFields(request.ProtectedFields);
-        p.ReplaceCountries(request.CountryCodes); p.SetStatus(status);
-        try { await db.SaveChangesAsync(ct); }
-        catch (DbUpdateConcurrencyException) { throw new CoffeeCatalogException("Coffee changed; reload before saving.", 409); }
-        return await AdminGetAsync(id, ct);
-    }
+    public Task<AdminCoffeeDto> CreateAsync(CreateCoffeeRequest request, CancellationToken ct) => ProductWriter().CreateAsync(request, ct);
+    public Task<AdminCoffeeDto?> EditAsync(Guid id, CoffeeEditRequest request, CancellationToken ct) => ProductWriter().EditAsync(id, request, ct);
+
+    private CoffeeProductWriter ProductWriter() => new(new CoffeeProductStorage(db), this);
     public Task<CoffeeImportRunDto[]> RunsAsync(int limit, CancellationToken ct)
     {
         if (limit is < 1 or > 100) throw new CoffeeCatalogException("Limit must be 1–100.");
@@ -248,16 +197,6 @@ public sealed partial class CoffeeCatalogStore(ShopsDbContext db, IOptions<Media
     private static CoffeeContentDto Content(CoffeeProduct p) => new(p.Name, p.Description, p.ProductKind,
         p.ProductForm, p.CompositionKind, p.Processing, p.RoastLevel, p.Acidity, p.Body, p.QGraderScoreRaw,
         p.TasteDescriptors, p.BrewRecommendations, p.GrindOptions, p.Features);
-    private static CoffeeContent ToContent(CoffeeContentDto d)
-    {
-        if (d is null || new[] { d.TasteDescriptors, d.BrewRecommendations, d.GrindOptions, d.Features }
-            .Any(a => a is null || a.Length > 100 || a.Any(s => s is null || s.Length > 500)))
-            throw new CoffeeCatalogException("Invalid coffee content.");
-        if (new[] { d.Processing, d.RoastLevel, d.Acidity, d.Body, d.QGraderScoreRaw }.Any(s => s?.Length > 1000))
-            throw new CoffeeCatalogException("Coffee characteristic is too long.");
-        return new(d.Name, d.Description, d.ProductKind, d.ProductForm, d.CompositionKind, d.Processing,
-            d.RoastLevel, d.Acidity, d.Body, d.QGraderScoreRaw, d.TasteDescriptors, d.BrewRecommendations, d.GrindOptions, d.Features);
-    }
     private ShortPhotoMetadataDto[] Photos(CoffeeProduct p) => p.Sources.OrderBy(s => s.SourceKey)
         .SelectMany(s => s.Photos.OrderBy(p => p.SortIndex)).DistinctBy(p => p.StorageKey)
         .Select((p, i) => new ShortPhotoMetadataDto

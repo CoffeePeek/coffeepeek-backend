@@ -1,6 +1,8 @@
 using CoffeePeek.Shops.Application.Features.Feed;
 using CoffeePeek.Shops.Infrastructure.Tests.Persistence;
 using CoffeePeek.Shops.Persistance.Queries;
+using CoffeePeek.Shops.Domain.Entities;
+using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
 using CoffeePeek.Testing;
 using Microsoft.EntityFrameworkCore;
 
@@ -21,8 +23,9 @@ public sealed class CheckInFeedLiveTests : IClassFixture<ShopsLiveDatabase>
     {
         var ct = TestContext.Current.CancellationToken;
         await using var db = fixture.Context(false);
-        var shop = ShopsLiveDatabase.NewShop("Feed " + Guid.NewGuid().ToString("N"));
-        db.Shops.Add(shop); await db.SaveChangesAsync(ct);
+        var city = new City("Feed city " + Guid.NewGuid().ToString("N"));
+        var shop = ShopsLiveDatabase.NewShop("Feed " + Guid.NewGuid().ToString("N"), city.Id);
+        db.Cities.Add(city); db.Shops.Add(shop); await db.SaveChangesAsync(ct);
         var time = DateTime.UtcNow.AddDays(-1); var readerId = Guid.NewGuid();
         var rows = Enumerable.Range(1, 4).Select(i => CheckInFeedReaderTests.Published(Guid.NewGuid(), shop.Id, time,
             Guid.Parse($"11111111-1111-1111-1111-{i:D12}"))).ToArray();

@@ -21,7 +21,8 @@ public class CheckInPhotosAttachedHandler(
         var changed = false;
         foreach (var photo in photos)
         {
-            if (photo.OwnerId != message.UserId || photo.Status != PhotoStatus.Pending) continue;
+            if (photo.OwnerId != message.UserId || photo.Status != PhotoStatus.Pending
+                || photo.ShopAttachmentId != null) continue;
             if (photo.CheckInId is { } assignedId && assignedId != message.CheckInId) continue;
             // A released private reservation must not be resurrected by a delayed attachment event.
             if (photo.BucketType == BucketType.CheckIn && photo.CheckInId != message.CheckInId) continue;

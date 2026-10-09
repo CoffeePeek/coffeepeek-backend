@@ -33,13 +33,13 @@ public static class LegacyDataTransfer
                 SELECT EXISTS (SELECT 1 FROM "ModerationCheckIns" WHERE "Id"=@id AND "CheckInId"=@visit AND "ContentRevision"=1)
                 """, ("id", plan.ModerationId!.Value), ("visit", plan.CheckIn.Id()));
             if (!Equals(saved, true)) throw new InvalidOperationException("Conflicting canonical moderation snapshot.");
-            foreach (var photo in (await shops.RowsAsync("ShopPhotos")).Where(x => x.Id("CanonicalCheckInId") == plan.CheckIn.Id()))
+            foreach (var photo in (await shops.RowsAsync("CheckInPhotos")).Where(x => x.Id("CanonicalCheckInId") == plan.CheckIn.Id()))
                 await moderation.ExecuteAsync("UPDATE \"ShopPhotos\" SET \"ModerationCheckInId\"=@snapshot WHERE \"Id\"=@id",
                     ("snapshot", plan.ModerationId.Value), ("id", LegacyRow.StableId($"snapshot-photo:{plan.ModerationId}:{photo.Id()}")));
         }
         foreach (var plan in accepted.Where(x => x.Snapshot?.Flag("IsSoftDelete") == true))
         {
-            foreach (var photo in (await shops.RowsAsync("ShopPhotos")).Where(x => x.Id("CanonicalCheckInId") == plan.CheckIn.Id()))
+            foreach (var photo in (await shops.RowsAsync("CheckInPhotos")).Where(x => x.Id("CanonicalCheckInId") == plan.CheckIn.Id()))
                 await moderation.ExecuteAsync("DELETE FROM \"ShopPhotos\" WHERE \"Id\"=@id AND \"ModerationCheckInId\" IS NULL AND \"ModerationShopId\" IS NULL",
                     ("id", LegacyRow.StableId($"snapshot-photo:{plan.ModerationId}:{photo.Id()}")));
         }

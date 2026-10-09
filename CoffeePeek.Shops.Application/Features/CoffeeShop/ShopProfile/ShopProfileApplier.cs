@@ -8,7 +8,8 @@ namespace CoffeePeek.Shops.Application.Features.CoffeeShop.ShopProfile;
 
 /// <summary>
 /// Applies optional profile patches to a published shop. Failed <see cref="Result"/> messages
-/// are validation errors for the caller to map to HTTP 400.
+/// are validation errors for the caller to map to HTTP 400. A failed result leaves
+/// the tracked aggregate unchanged, including its owned values and catalog links.
 /// </summary>
 public static class ShopProfileApplier
 {
@@ -22,6 +23,10 @@ public static class ShopProfileApplier
         IQueryBrewMethodRepository brewMethods,
         CancellationToken ct)
     {
+        // Wolverine saves tracked changes even when a handler returns a failed Response.
+        // Resolve and validate the entire patch before executing any mutations.
+        var changes = new List<Action>();
+        List<ShopSchedule>? schedules = null;
         if (patch.Location is not null)
         {
             if (!await cities.Exists(patch.Location.CityId, ct))
@@ -29,11 +34,13 @@ public static class ShopProfileApplier
 
             try
             {
-                shop.SetLocation(
+                var location = Location.CreateValidated(
                     patch.Location.CityId,
                     patch.Location.Address,
                     patch.Location.Latitude,
                     patch.Location.Longitude);
+                changes.Add(() => shop.SetLocation(
+                    location.CityId, location.Address, location.Latitude!.Value, location.Longitude!.Value));
             }
             catch (DomainException ex)
             {
@@ -45,11 +52,13 @@ public static class ShopProfileApplier
         {
             try
             {
-                shop.SetContact(
+                var contact = ShopContact.Create(
                     patch.Contacts.InstagramLink,
                     patch.Contacts.Email,
                     patch.Contacts.SiteLink,
                     patch.Contacts.PhoneNumber);
+                changes.Add(() => shop.SetContact(
+                    contact.InstagramLink, contact.Email, contact.SiteLink, contact.PhoneNumber));
             }
             catch (DomainException ex)
             {
@@ -59,7 +68,7 @@ public static class ShopProfileApplier
 
         if (patch.Schedules is not null)
         {
-            var schedules = new List<ShopSchedule>();
+            schedules = new List<ShopSchedule>();
             foreach (var day in patch.Schedules)
             {
                 var intervals = (day.Intervals ?? [])
@@ -68,20 +77,34 @@ public static class ShopProfileApplier
                 schedules.Add(ShopSchedule.Create(day.DayOfWeek, day.IsClosed, intervals));
             }
 
+        }
+
+        if (patch.Catalogs is not null)
+        {
+            var catalogs = await PrepareCatalogsAsync(
+                shop, changes, patch.Catalogs, equipment, beans, roasters, brewMethods, ct);
+            if (catalogs.IsFailed)
+                return catalogs;
+        }
+
+        // ReplaceSchedules validates before touching the collection. Run this last
+        // fallible operation before the prepared, already validated setters.
+        if (schedules is not null)
+        {
             var replaced = shop.ReplaceSchedules(schedules);
             if (replaced.IsFailed)
                 return replaced;
         }
 
-        if (patch.Catalogs is not null)
-            return await ApplyCatalogsAsync(
-                shop, patch.Catalogs, equipment, beans, roasters, brewMethods, ct);
+        foreach (var change in changes)
+            change();
 
         return Result.Ok();
     }
 
-    private static async Task<Result> ApplyCatalogsAsync(
+    private static async Task<Result> PrepareCatalogsAsync(
         DomainCoffeeShop shop,
+        List<Action> changes,
         ShopCatalogsPatch catalogs,
         IQueryEquipmentRepository equipment,
         IQueryCoffeeBeanRepository beans,
@@ -97,7 +120,7 @@ public static class ShopProfileApplier
                 "equipment");
             if (loaded.IsFailed)
                 return loaded.ToResult();
-            shop.SetEquipment(loaded.Value);
+            changes.Add(() => shop.SetEquipment(loaded.Value));
         }
 
         if (catalogs.BeanIds is not null)
@@ -108,7 +131,7 @@ public static class ShopProfileApplier
                 "coffee beans");
             if (loaded.IsFailed)
                 return loaded.ToResult();
-            shop.SetBeans(loaded.Value);
+            changes.Add(() => shop.SetBeans(loaded.Value));
         }
 
         if (catalogs.RoasterIds is not null)
@@ -119,7 +142,7 @@ public static class ShopProfileApplier
                 "roasters");
             if (loaded.IsFailed)
                 return loaded.ToResult();
-            shop.SetRoasters(loaded.Value);
+            changes.Add(() => shop.SetRoasters(loaded.Value));
         }
 
         if (catalogs.BrewMethodIds is not null)
@@ -130,7 +153,7 @@ public static class ShopProfileApplier
                 "brew methods");
             if (loaded.IsFailed)
                 return loaded.ToResult();
-            shop.SetBrewMethods(loaded.Value);
+            changes.Add(() => shop.SetBrewMethods(loaded.Value));
         }
 
         return Result.Ok();

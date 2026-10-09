@@ -6,6 +6,12 @@ namespace CoffeePeek.Shops.Persistance.Repositories;
 
 public class AppDistributionRepository(ShopsDbContext dbContext) : IAppDistributionRepository
 {
+    public async Task<AppDistributionSettings> GetSettingsOrDefaultAsync(CancellationToken ct = default) =>
+        await dbContext.AppDistributionSettings
+            .AsNoTracking()
+            .FirstOrDefaultAsync(s => s.Id == AppDistributionSettings.SingletonId, ct)
+        ?? AppDistributionSettings.CreateDefault();
+
     public async Task<AppDistributionSettings> GetOrCreateSettingsAsync(CancellationToken ct = default)
     {
         var settings = await dbContext.AppDistributionSettings
@@ -43,6 +49,9 @@ public class AppDistributionRepository(ShopsDbContext dbContext) : IAppDistribut
             .ToArrayAsync(ct);
 
     public void AddAndroidRelease(AndroidRelease release) => dbContext.AndroidReleases.Add(release);
+
+    public Task<bool> HasRedirectEventAsync(Guid eventId, CancellationToken ct = default) =>
+        dbContext.AppDownloadRedirectEvents.AsNoTracking().AnyAsync(x => x.Id == eventId, ct);
 
     public void AddAuditLog(AppDistributionAuditLog auditLog) => dbContext.AppDistributionAuditLogs.Add(auditLog);
 

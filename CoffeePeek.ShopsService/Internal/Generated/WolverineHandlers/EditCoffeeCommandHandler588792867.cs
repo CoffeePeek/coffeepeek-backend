@@ -26,8 +26,9 @@ namespace Internal.Generated.WolverineHandlers
             Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<Wolverine.Runtime.ScopedMessageContextHolder>(serviceScope.ServiceProvider).Context = context;
             // This service has been marked as requiring service location independent of Wolverine's ability to use constructor injection of everything else
             var shopsDbContext = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<CoffeePeek.Shops.Persistance.Configuration.ShopsDbContext>(serviceScope.ServiceProvider);
+            var unitOfWorkOfShopsDbContext = new CoffeePeek.Shared.Persistence.Data.UnitOfWork<CoffeePeek.Shops.Persistance.Configuration.ShopsDbContext>(shopsDbContext);
             // This service has been marked as requiring service location independent of Wolverine's ability to use constructor injection of everything else
-            var coffeeCatalogStore = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<CoffeePeek.Shops.Application.Features.CoffeeCatalog.ICoffeeCatalogStore>(serviceScope.ServiceProvider);
+            var coffeeProductWriter = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<CoffeePeek.Shops.Application.Features.CoffeeCatalog.ICoffeeProductWriter>(serviceScope.ServiceProvider);
             // The actual message body
             var editCoffeeCommand = (CoffeePeek.Shops.Application.Features.CoffeeCatalog.EditCoffeeCommand)context.Envelope.Message;
 
@@ -47,7 +48,7 @@ namespace Internal.Generated.WolverineHandlers
                 System.Diagnostics.Activity.Current?.SetTag("handler.type", "CoffeePeek.Shops.Application.Features.CoffeeCatalog.CoffeeCatalogHandler");
 
                 // The actual message execution
-                var outgoing1 = await CoffeePeek.Shops.Application.Features.CoffeeCatalog.CoffeeCatalogHandler.Handle(editCoffeeCommand, coffeeCatalogStore, cancellation).ConfigureAwait(false);
+                var outgoing1 = await CoffeePeek.Shops.Application.Features.CoffeeCatalog.CoffeeCatalogHandler.Handle(editCoffeeCommand, coffeeProductWriter, unitOfWorkOfShopsDbContext, cancellation).ConfigureAwait(false);
 
 
                 // Outgoing, cascaded message

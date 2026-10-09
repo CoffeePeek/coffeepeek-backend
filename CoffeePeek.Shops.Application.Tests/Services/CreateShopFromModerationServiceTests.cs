@@ -3,7 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using CoffeePeek.Contract.Dtos.CoffeeShop;
 using CoffeePeek.Shared.Domain.Interfaces.Infrastructure;
-using CoffeePeek.Shared.Kernel;
+using CoffeePeek.Shops.Application.Features.CoffeeShop.ShopProfile;
 using CoffeePeek.Shops.Application.Services;
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
 using FluentAssertions;
@@ -20,8 +20,7 @@ public class CreateShopFromModerationServiceTests
     private readonly Mock<IQueryRoasterRepository> _roasterRepoMock = new();
     private readonly Mock<IQueryBrewMethodRepository> _brewMethodRepoMock = new();
     private readonly Mock<IApplyShopMenuService> _applyMenuMock = new();
-    private readonly Mock<IUnitOfWork> _unitOfWorkMock = new();
-    private readonly Mock<ICacheService> _cacheServiceMock = new();
+    private readonly Mock<Wolverine.IMessageBus> _bus = new();
     private readonly Mock<ILogger<CreateShopFromModerationService>> _loggerMock = new();
     private readonly CancellationToken _ct = CancellationToken.None;
 
@@ -33,8 +32,7 @@ public class CreateShopFromModerationServiceTests
             _roasterRepoMock.Object,
             _brewMethodRepoMock.Object,
             _applyMenuMock.Object,
-            _unitOfWorkMock.Object,
-            _cacheServiceMock.Object,
+            _bus.Object,
             _loggerMock.Object);
 
     private static ShopDto CreateMinimalShopDto() =>
@@ -56,7 +54,7 @@ public class CreateShopFromModerationServiceTests
         };
 
     [Fact]
-    public async Task CreateShopFromApprovedEventAsync_WhenModerationIdIsNew_AddsShopAndSavesExactlyOnce()
+    public async Task CreateShopFromApprovedEventAsync_WhenModerationIdIsNew_AddsShopAndQueuesInvalidation()
     {
         // Arrange
         _shopRepoMock
@@ -72,18 +70,11 @@ public class CreateShopFromModerationServiceTests
             Guid.NewGuid(),
             _ct);
 
-        // Assert — BUG-05 regression: SaveChangesAsync must be called exactly once after Add
+        // Wolverine's EF middleware saves the shop and outbox together after the handler returns.
         result.Should().NotBe(Guid.Empty);
         _shopRepoMock.Verify(r => r.Add(It.IsAny<CoffeeShop>()), Times.Once);
-        _unitOfWorkMock.Verify(u => u.SaveChangesAsync(_ct), Times.Once);
-        _cacheServiceMock.Verify(c => c.RemoveByPattern("shop:search:*", _ct), Times.Once);
-        // A new shop has no cached detail of its own; wiping every shop's detail cache (and the never-written
-        // shop:list:city:* keys) only cost full-keyspace SCANs.
-        _cacheServiceMock.Verify(c => c.RemoveByPattern("shop:list:city:*", _ct), Times.Never);
-        _cacheServiceMock.Verify(c => c.RemoveByPattern("shop:detail:*", _ct), Times.Never);
-        _cacheServiceMock.Verify(
-            c => c.RemoveAsync(CacheKey.Shop.PublicPlatformStats()),
-            Times.Once);
+        _bus.Verify(b => b.PublishAsync(It.Is<ShopProfileCacheInvalidationRequested>(
+            e => e.ShopId == result)), Times.Once);
     }
 
     [Fact]
@@ -107,7 +98,7 @@ public class CreateShopFromModerationServiceTests
         // Assert — duplicate guard returns the existing shop id without Add or SaveChangesAsync
         result.Should().Be(existingId);
         _shopRepoMock.Verify(r => r.Add(It.IsAny<CoffeeShop>()), Times.Never);
-        _unitOfWorkMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        _bus.Verify(b => b.PublishAsync(It.IsAny<ShopProfileCacheInvalidationRequested>()), Times.Never);
     }
 
     [Fact]

@@ -28,8 +28,10 @@ public sealed class PublicDiscoveryService(IPublicAddressService addresses, IPro
     {
         var config = new TypeAdapterConfig();
         config.NewConfig<ShortShopDto, PublicShopSummaryDto>()
+            .Map(x => x.IsOpen, src => src.IsOpen)
             .Ignore(x => x.Roasters, x => x.Beans, x => x.Equipments, x => x.BrewMethods);
         config.NewConfig<CoffeeShopDetailsDto, PublicShopDetailsDto>()
+            .Map(x => x.IsOpen, src => src.IsOpen)
             .Ignore(x => x.Roasters, x => x.Beans, x => x.Equipments, x => x.BrewMethods,
                 x => x.CheckIns, x => x.UserCheckIns, x => x.Tags);
         return config;

@@ -1,6 +1,7 @@
 using CoffeePeek.Shared.Domain.Interfaces.Infrastructure;
 using CoffeePeek.Shared.Persistence.Cache.Redis;
 using CoffeePeek.Shops.Application.Features.CheckIn;
+using CoffeePeek.Shops.Application.Observability;
 using Microsoft.Extensions.Logging;
 using StackExchange.Redis;
 using Wolverine.ErrorHandling;
@@ -25,15 +26,26 @@ public sealed class CheckInCacheInvalidationRequestedHandler
         ILogger<CheckInCacheInvalidationRequestedHandler> logger,
         CancellationToken ct)
     {
+        using var activity = ShopsTelemetry.ActivitySource.StartActivity("shops.cache.invalidate.check_in");
+        activity?.SetTag("check_in.id", message.CheckInId);
         try
         {
-            // Both operations are idempotent. A failed Redis command must make Wolverine retry
+            // Every removal is idempotent. A failed Redis command must make Wolverine retry
             // the durable local message instead of acknowledging a stale cache as invalidated.
+            if (message.ShopId is { } shopId)
+                await cache.RemoveAsync(CacheKey.Shop.Detail(shopId), ct);
+            if (message.UserId is { } userId)
+            {
+                await cache.RemoveAsync(CacheKey.Shop.Visited(userId), ct);
+                await cache.RemoveAsync(CacheKey.Shop.VisitStatistics(userId), ct);
+            }
+            await cache.RemoveByPatternAsync(CacheKey.Shop.ListPattern(), ct);
             await cache.RemoveAsync(CacheKey.Shop.PublicPlatformStats(), ct);
             await cache.RemoveByPatternAsync(CacheKey.Shop.SearchPattern(), ct);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
+            ShopsTelemetry.CheckInCacheInvalidationFailed();
             logger.LogError(ex, "Check-in cache invalidation failed for {CheckInId}; Wolverine will retry", message.CheckInId);
             throw;
         }

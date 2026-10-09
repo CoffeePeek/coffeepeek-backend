@@ -15,9 +15,9 @@ public sealed class AppDownloadRedirectEvent : Entity<Guid>
     {
     }
 
-    private AppDownloadRedirectEvent(string channel, string? userAgent, string? referer, string? country)
+    private AppDownloadRedirectEvent(Guid id, string channel, string? userAgent, string? referer, string? country)
     {
-        Id = Guid.NewGuid();
+        Id = id;
         Channel = TrimToLimit(channel, BusinessConstants.MaxRedirectChannelLength) ?? channel;
         UserAgent = TrimToLimit(userAgent, BusinessConstants.MaxRedirectUserAgentLength);
         Referer = TrimToLimit(referer, BusinessConstants.MaxRedirectRefererLength);
@@ -26,7 +26,10 @@ public sealed class AppDownloadRedirectEvent : Entity<Guid>
     }
 
     public static AppDownloadRedirectEvent Create(string channel, string? userAgent, string? referer, string? country) =>
-        new AppDownloadRedirectEvent(channel, userAgent, referer, country);
+        new AppDownloadRedirectEvent(Guid.NewGuid(), channel, userAgent, referer, country);
+
+    public static AppDownloadRedirectEvent Create(Guid id, string channel, string? userAgent, string? referer, string? country) =>
+        new AppDownloadRedirectEvent(id, channel, userAgent, referer, country);
 
     private static string? TrimToLimit(string? value, int maxLength)
     {

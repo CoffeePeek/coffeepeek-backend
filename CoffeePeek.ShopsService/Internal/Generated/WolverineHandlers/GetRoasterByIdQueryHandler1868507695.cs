@@ -31,11 +31,11 @@ namespace Internal.Generated.WolverineHandlers
             var shopsDbContext = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<CoffeePeek.Shops.Persistance.Configuration.ShopsDbContext>(serviceScope.ServiceProvider);
             var queryRoasterRepository = new CoffeePeek.Shops.Persistance.Repositories.QueryRoasterRepository(shopsDbContext);
             // This service has been marked as requiring service location independent of Wolverine's ability to use constructor injection of everything else
-            var coffeeCatalogStore = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<CoffeePeek.Shops.Application.Features.CoffeeCatalog.ICoffeeCatalogStore>(serviceScope.ServiceProvider);
+            var publicCoffeeCatalogReader = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<CoffeePeek.Shops.Application.Features.CoffeeCatalog.IPublicCoffeeCatalogReader>(serviceScope.ServiceProvider);
             // The actual message body
             var getRoasterByIdQuery = (CoffeePeek.Shops.Application.Features.Catalogs.GetRoasterById.GetRoasterByIdQuery)context.Envelope.Message;
 
-            
+
             // Enroll the DbContext & IMessagingContext in the outgoing Wolverine outbox transaction
             var efCoreEnvelopeTransaction = new Wolverine.EntityFrameworkCore.Internals.EfCoreEnvelopeTransaction(shopsDbContext, context, _domainEventScraperIEnumerable);
             await context.EnlistInOutboxAsync(efCoreEnvelopeTransaction).ConfigureAwait(false);
@@ -49,15 +49,15 @@ namespace Internal.Generated.WolverineHandlers
             {
                 System.Diagnostics.Activity.Current?.SetTag("message.handler", "CoffeePeek.Shops.Application.Features.Catalogs.GetRoasterById.GetRoasterByIdHandler");
                 System.Diagnostics.Activity.Current?.SetTag("handler.type", "CoffeePeek.Shops.Application.Features.Catalogs.GetRoasterById.GetRoasterByIdHandler");
-                
-                // The actual message execution
-                var outgoing1 = await CoffeePeek.Shops.Application.Features.Catalogs.GetRoasterById.GetRoasterByIdHandler.Handle(getRoasterByIdQuery, queryRoasterRepository, _optionsOfMediaPublicUrlOptions, coffeeCatalogStore, cancellation).ConfigureAwait(false);
 
-                
+                // The actual message execution
+                var outgoing1 = await CoffeePeek.Shops.Application.Features.Catalogs.GetRoasterById.GetRoasterByIdHandler.Handle(getRoasterByIdQuery, queryRoasterRepository, _optionsOfMediaPublicUrlOptions, publicCoffeeCatalogReader, cancellation).ConfigureAwait(false);
+
+
                 // Outgoing, cascaded message
                 await context.EnqueueCascadingAsync(outgoing1).ConfigureAwait(false);
 
-                
+
                 // Added by EF Core Transaction Middleware
                 var result_of_SaveChangesAsync = await shopsDbContext.SaveChangesAsync(cancellation).ConfigureAwait(false);
 
@@ -76,7 +76,6 @@ namespace Internal.Generated.WolverineHandlers
     }
 
     // END: GetRoasterByIdQueryHandler1868507695
-    
-    
-}
 
+
+}

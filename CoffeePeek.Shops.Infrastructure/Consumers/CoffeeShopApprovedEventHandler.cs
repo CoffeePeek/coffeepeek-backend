@@ -25,7 +25,7 @@ public class ModerationShopApproveHandler(
             ct);
 
         logger.LogInformation(
-            "Created published shop {ShopId} from moderation shop {ModerationShopId}",
+            "Prepared published shop {ShopId} from moderation shop {ModerationShopId} for transaction commit",
             shopId,
             message.Shop.Id);
 

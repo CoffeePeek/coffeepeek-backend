@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using CoffeePeek.MediaService.Configuration;
+using CoffeePeek.Contract.Dtos.ShopPhotos;
 
 namespace CoffeePeek.MediaService.Data;
 
@@ -29,6 +30,8 @@ public class PhotoMetadata
     public Guid OwnerId { get; set; }
 
     public Guid? CheckInId { get; set; }
+    public Guid? ShopAttachmentId { get; set; }
+    public ShopPhotoAttachmentKind? ShopAttachmentKind { get; set; }
     public DateTime? ClaimedAtUtc { get; set; }
     [MaxLength(255)]
     public string? OriginalStorageKey { get; set; }

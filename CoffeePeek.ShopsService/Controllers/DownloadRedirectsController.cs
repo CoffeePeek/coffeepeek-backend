@@ -1,5 +1,6 @@
 using CoffeePeek.Shared.Kernel.Response;
 using CoffeePeek.Shops.Application.Features.AppDownloads;
+using CoffeePeek.Shops.Application.Observability;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Wolverine;
@@ -12,7 +13,7 @@ namespace CoffeePeek.ShopsService.Controllers;
 [AllowAnonymous]
 [Tags("App Downloads")]
 [ProducesErrorResponseType(typeof(ErrorResponse))]
-public class DownloadRedirectsController(IMessageBus bus) : ControllerBase
+public class DownloadRedirectsController(IMessageBus bus, ILogger<DownloadRedirectsController> logger) : ControllerBase
 {
     [HttpGet("android")]
     public Task<IActionResult> Android(CancellationToken ct) => RedirectChannel("android", ct);
@@ -43,17 +44,50 @@ public class DownloadRedirectsController(IMessageBus bus) : ControllerBase
     {
         SetRedirectCacheHeaders();
 
+        var userAgent = Request.Headers.UserAgent.ToString();
+        var referer = Request.Headers.Referer.ToString();
+        var country = Request.Headers.TryGetValue("CF-IPCountry", out var countryHeader)
+            ? countryHeader.FirstOrDefault()
+            : null;
         var response = await bus.InvokeAsync<Response<string>>(
-            new GetAppDownloadRedirectQuery(
-                channel,
-                Request.Headers.UserAgent.ToString(),
-                Request.Headers.Referer.ToString(),
-                Request.Headers.TryGetValue("CF-IPCountry", out var country) ? country.FirstOrDefault() : null),
-            ct);
+            new GetAppDownloadRedirectQuery(channel), ct);
 
-        return response.IsSuccess
-            ? Redirect(response.Data)
-            : NotFound(response);
+        if (!response.IsSuccess)
+            return NotFound(response);
+
+        var analytics = new RecordAppDownloadRedirectCommand(
+            Guid.NewGuid(), channel, userAgent, referer, country);
+        try
+        {
+            // Production Wolverine configuration persists local queues in PostgreSQL.
+            await bus.PublishAsync(analytics);
+        }
+        catch (Exception queueException) when (!ct.IsCancellationRequested)
+        {
+            logger.LogWarning(queueException,
+                "Could not queue download redirect analytics {EventId} for {Channel}; trying a direct durable write",
+                analytics.EventId, channel);
+            try
+            {
+                // If queue persistence failed while PostgreSQL is still available, run the
+                // idempotent handler inline. The same EventId is safe if the first attempt
+                // actually queued but failed before acknowledging the enqueue.
+                await bus.InvokeAsync(analytics, ct);
+                ShopsTelemetry.RedirectAnalyticsFallbackUsed(channel);
+            }
+            catch (Exception writeException) when (!ct.IsCancellationRequested)
+            {
+                // This analytics sample is now unconfirmed. Keep the resolved redirect
+                // available, and surface the loss risk to operations instead of implying
+                // that a later retry is guaranteed.
+                ShopsTelemetry.RedirectAnalyticsUnconfirmed(channel);
+                logger.LogError(writeException,
+                    "Download redirect analytics {EventId} for {Channel} could not be confirmed after queue and direct write failures",
+                    analytics.EventId, channel);
+            }
+        }
+
+        return Redirect(response.Data);
     }
 
     private void SetRedirectCacheHeaders()
