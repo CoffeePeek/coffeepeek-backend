@@ -21,25 +21,20 @@ namespace CoffeePeek.Shops.Application.Tests.Features.Admin.ShopTags;
 public class CreateShopTagHandlerTests
 {
     private readonly Mock<IShopTagRepository> _repo = new();
-    private readonly Mock<IUnitOfWork> _uow = new();
-    private readonly Mock<ICacheService> _cache = new();
     private readonly CancellationToken _ct = CancellationToken.None;
 
     [Fact]
-    public async Task Handle_CreatesTagAndInvalidatesCache()
+    public async Task Handle_CreatesTag()
     {
         _repo.Setup(r => r.GetBySlugAsync("laptop_friendly", _ct)).ReturnsAsync((ShopTag)null);
-        _cache.Setup(c => c.RemoveByPattern(It.IsAny<string>(), _ct)).ReturnsAsync(1);
 
         var result = await CreateShopTagHandler.Handle(
             new CreateShopTagCommand("Laptop Friendly", "Laptop Friendly", null, 1),
-            _repo.Object, _uow.Object, _cache.Object, _ct);
+            _repo.Object, _ct);
 
         result.IsSuccess.Should().BeTrue();
         result.Data.Slug.Should().Be("laptop_friendly");
         _repo.Verify(r => r.Add(It.IsAny<ShopTag>()), Times.Once);
-        _uow.Verify(u => u.SaveChangesAsync(_ct), Times.Once);
-        _cache.Verify(c => c.RemoveByPattern(CacheKey.Shop.TagsCatalogPattern(), _ct), Times.Once);
     }
 
     [Fact]
@@ -50,7 +45,7 @@ public class CreateShopTagHandlerTests
 
         var result = await CreateShopTagHandler.Handle(
             new CreateShopTagCommand("specialty", "Specialty", null),
-            _repo.Object, _uow.Object, _cache.Object, _ct);
+            _repo.Object, _ct);
 
         result.IsSuccess.Should().BeFalse();
         result.StatusCode.Should().Be((int)HttpStatusCode.Conflict);
