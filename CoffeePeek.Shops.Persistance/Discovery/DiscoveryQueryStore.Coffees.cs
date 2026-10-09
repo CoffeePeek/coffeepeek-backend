@@ -1,5 +1,6 @@
 using CoffeePeek.Contract.Dtos.Discovery;
 using System.Linq.Expressions;
+using System.Text.RegularExpressions;
 using CoffeePeek.Shops.Application.Features.Discovery;
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeProductAggregate;
 using Microsoft.EntityFrameworkCore;
@@ -78,8 +79,9 @@ public sealed partial class DiscoveryQueryStore
                 p.Name.ToLower().Replace("ё", "е").Contains(q) ? 3 :
                 db.Roasters.Any(r => r.Id == p.RoasterId && r.Name.ToLower().Replace("ё", "е") == q) ? 4 :
                 db.Roasters.Any(r => r.Id == p.RoasterId && r.Name.ToLower().Replace("ё", "е").StartsWith(q)) ? 5 : 6),
-            _ => products.OrderBy(p => p.Name)
+            _ => products.OrderBy(p => Regex.IsMatch(p.Name, @"^\W|^_"))
         };
+        if (sort != "name_asc") ordered = ordered.ThenBy(p => Regex.IsMatch(p.Name, @"^\W|^_"));
         var rows = await CardDetails(ordered.ThenBy(p => p.Name).ThenBy(p => p.PublicSlug)
             .Skip((request.Page - 1) * request.PageSize).Take(request.PageSize)).ToArrayAsync(ct);
         return new()

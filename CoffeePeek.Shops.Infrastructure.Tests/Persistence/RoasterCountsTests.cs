@@ -105,13 +105,13 @@ public sealed class RoasterCountsTests
     }
 
     [Fact]
-    public async Task ListOrder_UsesVisibleShopsThenPublishedCatalogThenName()
+    public async Task ListOrder_UsesPublishedCatalogThenVisibleShopsThenName()
     {
         var ct = TestContext.Current.CancellationToken;
         await using var db = new ShopsDbContext(new DbContextOptionsBuilder<ShopsDbContext>()
             .UseInMemoryDatabase(Guid.NewGuid().ToString()).Options);
-        var cases = new[] { ("Z most shops", 2, 0), ("Z large catalog", 1, 3), ("A small catalog", 1, 1),
-            ("B same catalog", 1, 1), ("A unused catalog", 0, 5), ("C empty", 0, 0) };
+        var cases = new[] { ("A unused catalog", 0, 5), ("Z large catalog", 1, 3), ("Z more shops", 2, 1),
+            ("A small catalog", 1, 1), ("B same catalog", 1, 1), ("Z most shops", 3, 0), ("C empty", 0, 0) };
         foreach (var (name, shops, coffees) in cases)
         {
             var r = new Roaster(name); r.SetPublicSlug(name.ToLowerInvariant().Replace(' ', '-')); db.Roasters.Add(r);

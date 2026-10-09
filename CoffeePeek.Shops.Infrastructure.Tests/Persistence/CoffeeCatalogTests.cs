@@ -17,6 +17,42 @@ namespace CoffeePeek.Shops.Infrastructure.Tests.Persistence;
 public class CoffeeCatalogTests
 {
     [Fact]
+    public async Task Lists_PutSpecialPrefixesLast_BeforeStablePagination()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        await using var db = new ShopsDbContext(new DbContextOptionsBuilder<ShopsDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString()).Options);
+        var roaster = new Roaster("Roast"); roaster.SetPublicSlug("roast"); db.Roasters.Add(roaster);
+        string[] names = ["_Underscore", "*Special", "\"Quoted", "#Hash", "☕ Blend", "Alpha", "Арабика", "7 Blend", "Ёлка", "Éthiopie", "Alpha"];
+        var products = names.Select((name, i) =>
+        {
+            var product = new CoffeeProduct(roaster.Id, new(name, null, "roasted_beans", "whole_beans", "unknown",
+                null, null, null, null, null, [], [], [], []));
+            product.SetPublicSlug($"coffee-{i}"); product.SetStatus(CoffeePublicationStatus.Published);
+            return product;
+        }).ToArray();
+        db.CoffeeProducts.AddRange(products);
+        var draft = new CoffeeProduct(roaster.Id, new("A draft", null, "roasted_beans", "whole_beans", "unknown",
+            null, null, null, null, null, [], [], [], []));
+        var archived = new CoffeeProduct(roaster.Id, new("A archived", null, "roasted_beans", "whole_beans", "unknown",
+            null, null, null, null, null, [], [], [], []));
+        archived.SetStatus(CoffeePublicationStatus.Archived); db.CoffeeProducts.AddRange(draft, archived);
+        await db.SaveChangesAsync(ct);
+        var expected = products.OrderBy(p => !char.IsLetterOrDigit(p.Name[0])).ThenBy(p => p.Name).ThenBy(p => p.Id).ToArray();
+        var store = Store(db, roaster.Id);
+        var publicSlugs = new List<string>(); var adminIds = new List<Guid>();
+        for (var page = 1; page <= 4; page++)
+        {
+            var result = await store.ListAsync(new() { RoasterSlug = "roast", AvailableOnly = false, Page = page, PageSize = 3 }, ct);
+            Assert.Equal(products.Length, result.TotalItems); Assert.Equal(4, result.TotalPages);
+            publicSlugs.AddRange(result.Items.Select(p => p.Address.Slug));
+            adminIds.AddRange((await store.AdminListAsync(page, 3, "Published", ct)).Items.Select(p => p.Id));
+        }
+        Assert.Equal(expected.Select(p => p.PublicSlug), publicSlugs);
+        Assert.Equal(expected.Select(p => p.Id), adminIds);
+    }
+
+    [Fact]
     public async Task AllCapturedCatalogues_AreAcceptedByTheImportContract()
     {
         await using var db = new ShopsDbContext(new DbContextOptionsBuilder<ShopsDbContext>().UseInMemoryDatabase(Guid.NewGuid().ToString()).Options);

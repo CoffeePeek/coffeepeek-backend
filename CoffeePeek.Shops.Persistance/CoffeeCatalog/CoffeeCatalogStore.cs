@@ -14,6 +14,7 @@ using CoffeePeek.Shops.Persistance.Configuration;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using System.Text.RegularExpressions;
 
 namespace CoffeePeek.Shops.Persistance.CoffeeCatalog;
 
@@ -90,8 +91,8 @@ public sealed partial class CoffeeCatalogStore(ShopsDbContext db, IOptions<Media
         var q = db.Roasters.AsNoTracking();
         foreach (var slug in tags.Distinct())
             q = q.Where(r => db.RoasterTagAssignments.Any(a => a.RoasterId == r.Id && a.Tag.Slug == slug && a.Tag.IsActive));
-        var rows = await q.Include(r => r.Photos).OrderByDescending(r => r.CoffeeShops.Count(s => !s.IsHidden))
-            .ThenByDescending(r => db.CoffeeProducts.Count(p => p.RoasterId == r.Id && p.Status == CoffeePublicationStatus.Published))
+        var rows = await q.Include(r => r.Photos).OrderByDescending(r => db.CoffeeProducts.Count(p => p.RoasterId == r.Id && p.Status == CoffeePublicationStatus.Published))
+            .ThenByDescending(r => r.CoffeeShops.Count(s => !s.IsHidden))
             .ThenBy(r => r.Name).ThenBy(r => r.Id).ToArrayAsync(ct);
         if (rows.Length == 0) return [];
         var ids = rows.Select(r => r.Id).ToArray();
@@ -158,7 +159,9 @@ public sealed partial class CoffeeCatalogStore(ShopsDbContext db, IOptions<Media
                 (!filter.MinPrice.HasValue || v.Price >= filter.MinPrice) &&
                 (!filter.MaxPrice.HasValue || v.Price <= filter.MaxPrice))));
         var count = await q.CountAsync(ct);
-        var rows = await IncludeDetails(q).OrderBy(p => p.Name).ThenBy(p => p.Id).Skip((filter.Page - 1) * filter.PageSize).Take(filter.PageSize).ToArrayAsync(ct);
+        // shortcut: Unicode regex classes use the database locale, revisit if deployed with the C locale.
+        var rows = await IncludeDetails(q).OrderBy(p => Regex.IsMatch(p.Name, @"^\W|^_")).ThenBy(p => p.Name).ThenBy(p => p.Id)
+            .Skip((filter.Page - 1) * filter.PageSize).Take(filter.PageSize).ToArrayAsync(ct);
         return Page(await PublicAsync(rows, ct), count, filter.Page, filter.PageSize);
     }
 
@@ -185,7 +188,8 @@ public sealed partial class CoffeeCatalogStore(ShopsDbContext db, IOptions<Media
             q = q.Where(p => p.Status == value);
         }
         var count = await q.CountAsync(ct);
-        var rows = await IncludeDetails(q).OrderBy(p => p.Name).ThenBy(p => p.Id).Skip((page - 1) * pageSize).Take(pageSize).ToArrayAsync(ct);
+        var rows = await IncludeDetails(q).OrderBy(p => Regex.IsMatch(p.Name, @"^\W|^_")).ThenBy(p => p.Name).ThenBy(p => p.Id)
+            .Skip((page - 1) * pageSize).Take(pageSize).ToArrayAsync(ct);
         return Page(rows.Select(Admin).ToArray(), count, page, pageSize);
     }
     public async Task<AdminCoffeeDto?> AdminGetAsync(Guid id, CancellationToken ct)
