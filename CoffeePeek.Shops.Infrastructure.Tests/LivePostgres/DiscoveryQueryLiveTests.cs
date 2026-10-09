@@ -248,13 +248,19 @@ public sealed class DiscoveryQueryLiveTests : IClassFixture<ShopsLiveDatabase>
     {
         await using var db = fixture.Context(false);
         var r = AddRoaster(db, Key());
-        AddOffer(AddProduct(db, r, "Chocolate light", roast: "light", taste: ["chocolate"]), 250, 30);
+        var chocolate = AddProduct(db, r, "Chocolate light", roast: "light", taste: ["chocolate"]);
+        AddOffer(chocolate, 250, 30);
         AddOffer(AddProduct(db, r, "Berry light", roast: "light", taste: ["berry"]), 250, 60);
         AddOffer(AddProduct(db, r, "Chocolate dark", roast: "dark", taste: ["chocolate"]), 250, 70);
         await db.SaveChangesAsync(Ct); db.ChangeTracker.Clear();
+        // Legacy arrays can contain duplicate codes: a product still counts once per option.
+        await db.Database.ExecuteSqlInterpolatedAsync($"""
+            UPDATE "CoffeeProducts" SET "TasteGroupCodes" = ARRAY['chocolate','chocolate'] WHERE "Id" = {chocolate.Id}
+            """, Ct);
         var facets = await Store(db).CoffeeFacetsAsync(new() { Filters = new() { Roasters = [r.PublicSlug!], Roast = ["light"], Taste = ["chocolate"], Currency = "BYN", WeightGrams = 250 } }, Ct);
         Assert.Equal(1, facets.TotalItems);
         Assert.Equal(1, facets.Groups.Single(g => g.Code == "taste").Options.Single(v => v.Code == "berry").Count);
+        Assert.Equal(1, facets.Groups.Single(g => g.Code == "taste").Options.Single(v => v.Code == "chocolate").Count);
         Assert.Equal(1, facets.Groups.Single(g => g.Code == "roast").Options.Single(v => v.Code == "dark").Count);
         var price = await Store(db).CoffeeFacetsAsync(new() { Filters = new() { Roasters = [r.PublicSlug!], Roast = ["light"], Currency = "BYN", WeightGrams = 250, MaxPrice = 40 } }, Ct);
         Assert.Equal(1, price.TotalItems); Assert.Equal(30m, price.PriceRange!.Min); Assert.Equal(60m, price.PriceRange.Max);
