@@ -12,6 +12,7 @@ using CoffeePeek.ShopsService.Controllers;
 using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Hosting.Server.Features;
 using Moq;
+using Wolverine;
 
 namespace CoffeePeek.ShopsService.Tests;
 
@@ -24,6 +25,7 @@ public sealed class DiscoveryHttpContractTests : IAsyncLifetime
     private readonly Mock<IPublicCoffeeCatalogReader> catalog = new();
     private readonly Mock<IDiscoveryClassificationStore> classification = new();
     private readonly Mock<IDiscoveryFavoritesStore> favorites = new();
+    private readonly Mock<IMessageBus> bus = new();
 
     public async ValueTask InitializeAsync()
     {
@@ -36,7 +38,11 @@ public sealed class DiscoveryHttpContractTests : IAsyncLifetime
         builder.Services.AddSingleton(queries.Object);
         builder.Services.AddSingleton(classification.Object);
         builder.Services.AddSingleton(favorites.Object);
+        builder.Services.AddSingleton(bus.Object);
         builder.Services.AddSingleton(catalog.Object);
+        bus.Setup(b => b.InvokeAsync(It.IsAny<SetDiscoveryFavoriteCommand>(), It.IsAny<CancellationToken>(), It.IsAny<TimeSpan?>()))
+            .Returns((object command, CancellationToken ct, TimeSpan? _) =>
+                SetDiscoveryFavoriteHandler.Handle((SetDiscoveryFavoriteCommand)command, favorites.Object, ct));
         queries.Setup(q => q.SearchCoffeesAsync(It.IsAny<CoffeeSearchRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new CoffeePage { CurrentPage = 1, PageSize = 20 });
         classification.Setup(c => c.EditClassificationAsync(It.IsAny<Guid>(), It.IsAny<CoffeeClassificationEditRequest>(), It.IsAny<CancellationToken>()))
@@ -118,6 +124,7 @@ public sealed class DiscoveryHttpContractTests : IAsyncLifetime
         using var favorite = await client.PutAsync("/api/v1/favorites/roaster/sample-roaster", null);
         Assert.Equal(HttpStatusCode.Unauthorized, favorite.StatusCode);
         favorites.Verify(f => f.SetAsync(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
+        bus.Verify(b => b.InvokeAsync(It.IsAny<SetDiscoveryFavoriteCommand>(), It.IsAny<CancellationToken>(), It.IsAny<TimeSpan?>()), Times.Never);
     }
 
     [Fact]
@@ -130,14 +137,37 @@ public sealed class DiscoveryHttpContractTests : IAsyncLifetime
             r.Filters!.WeightGrams == 250 && r.Filters.MaxPrice == 25.5m), It.IsAny<CancellationToken>()), Times.Once);
     }
 
-    [Fact]
-    public async Task FavoriteOwnerIsTakenFromAuthenticatedPrincipal()
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task FavoriteOwnerIsTakenFromAuthenticatedPrincipal(bool favorite)
     {
+        var ct = TestContext.Current.CancellationToken;
         var id = Guid.NewGuid(); Authenticate(id, RoleConsts.User);
-        favorites.Setup(f => f.SetAsync(id, "roaster", "sample-roaster", true, It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
-        using var response = await client.PutAsync("/api/v1/favorites/roaster/sample-roaster", null);
+        favorites.Setup(f => f.SetAsync(id, "roaster", "sample-roaster", favorite, It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+        using var response = favorite
+            ? await client.PutAsync("/api/v1/favorites/roaster/sample-roaster", null, ct)
+            : await client.DeleteAsync("/api/v1/favorites/roaster/sample-roaster", ct);
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
-        favorites.Verify(f => f.SetAsync(id, "roaster", "sample-roaster", true, It.IsAny<CancellationToken>()), Times.Once);
+        bus.Verify(b => b.InvokeAsync(It.Is<SetDiscoveryFavoriteCommand>(c => c.UserId == id && c.Kind == "roaster" &&
+            c.Slug == "sample-roaster" && c.Favorite == favorite), It.IsAny<CancellationToken>(), It.IsAny<TimeSpan?>()), Times.Once);
+        favorites.Verify(f => f.SetAsync(id, "roaster", "sample-roaster", favorite, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Theory]
+    [InlineData(400, "INVALID_FILTER")]
+    [InlineData(404, "NOT_FOUND")]
+    public async Task FavoriteCommandFailure_PreservesHttpErrorContract(int status, string code)
+    {
+        var ct = TestContext.Current.CancellationToken;
+        Authenticate(Guid.NewGuid(), RoleConsts.User);
+        favorites.Setup(f => f.SetAsync(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<string>(), true, It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new DiscoveryException("Favorite rejected.", status, code));
+        using var response = await client.PutAsync("/api/v1/favorites/roaster/sample-roaster", null, ct);
+        Assert.Equal((HttpStatusCode)status, response.StatusCode);
+        using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync(ct));
+        Assert.Equal(code, body.RootElement.GetProperty("errorCode").GetString());
+        Assert.False(body.RootElement.GetProperty("isSuccess").GetBoolean());
     }
 
     [Fact]

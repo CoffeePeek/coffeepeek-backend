@@ -37,6 +37,7 @@ public static class InfrastructureExtensions
             [typeof(ShopsDbContext), typeof(CoffeePeek.Shared.Kernel.Drinks.IDrinkCatalog), typeof(CoffeePeek.Shops.Domain.Aggregates.MenuAggregate.ICoffeeDrinkRepository), typeof(CoffeePeek.Shops.Application.Features.CoffeeCatalog.ICoffeeCatalogStore),
                 typeof(CoffeePeek.Shops.Application.Features.CoffeeCatalog.ICoffeeProductWriter),
                 typeof(CoffeePeek.Shops.Application.Features.CoffeeCatalog.ICoffeeImportWriter),
+                typeof(CoffeePeek.Shops.Application.Features.Discovery.IDiscoveryFavoritesStore),
                 typeof(CoffeePeek.Shops.Application.Features.Feed.ICheckInFeedReader),
                 typeof(CoffeePeek.Shops.Application.PublicAddresses.IPublicCheckInProjector),
                 typeof(CoffeePeek.Shops.Application.PublicAddresses.IPublicAddressService),

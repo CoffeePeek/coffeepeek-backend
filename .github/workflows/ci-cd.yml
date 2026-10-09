@@ -127,6 +127,7 @@ jobs:
             ReviewReportCommitLiveTests \
             CoffeeZonePolygonLiveTests \
             CoffeeZoneWriteProtocolLiveTests \
+            ShopsDirectWriteBoundaryLiveTests \
             CityReferenceLiveTests \
             CityCatalogFreshReadLiveTests; do
             result=".test-results/shops-live/${class}.trx"

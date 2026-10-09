@@ -26,12 +26,6 @@ public class HostWriteBypassTests
                 "PublicAddresses coordinates entity owners; dispatch a command with one transaction in P20/P25.",
             ["CoffeePeek.ShopsService.Controllers.AdminPublicAddressesController+<Rename>d__4.MoveNext -> CoffeePeek.Shops.Application.PublicAddresses.IPublicAddressService.ChangeAsync"] =
                 "PublicAddresses coordinates entity owners; dispatch a command with one transaction in P20/P25.",
-            ["CoffeePeek.ShopsService.Controllers.DiscoveryFavoritesController+<Add>d__4.MoveNext -> CoffeePeek.Shops.Application.Features.Discovery.IDiscoveryFavoritesStore.SetAsync"] =
-                "Discovery owns favorites; move direct HTTP store write behind its command in P25.",
-            ["CoffeePeek.ShopsService.Controllers.DiscoveryFavoritesController+<Remove>d__5.MoveNext -> CoffeePeek.Shops.Application.Features.Discovery.IDiscoveryFavoritesStore.SetAsync"] =
-                "Discovery owns favorites; move direct HTTP store write behind its command in P25.",
-            ["CoffeePeek.ShopsService.Controllers.InternalCoffeeImportController+<Failure>d__4.MoveNext -> CoffeePeek.Shops.Application.Features.CoffeeCatalog.ICoffeeImportWriter.RecordFailureAsync"] =
-                "CoffeeCatalog now owns the narrow import writer port; direct HTTP write still needs a command boundary in P28.",
         };
 
     [Fact]

@@ -29,6 +29,7 @@ public sealed partial class CoffeeCatalogStore
         db.CoffeeImportRuns.Add(run);
         try
         {
+            // Flush here to handle a concurrent duplicate before Wolverine's final commit.
             await db.SaveChangesAsync(ct);
         }
         catch (DbUpdateException ex) when (ex.InnerException is PostgresException
