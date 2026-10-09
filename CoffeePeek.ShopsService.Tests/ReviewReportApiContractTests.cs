@@ -124,7 +124,7 @@ public class ReviewReportApiContractTests
         var bus = DispatchProxy.Create<IMessageBus, RecordingBus>();
         ((RecordingBus)(object)bus).Handler = message => message switch
         {
-            SubmitReviewReportCommand command => SubmitReviewReportHandler.Handle(command, reports.Object, checkIns.Object, uow.Object, ct),
+            SubmitReviewReportCommand command => SubmitReviewReportHandler.Handle(command, reports.Object, checkIns.Object, ct),
             GetReviewReportQuery query => GetReviewReportHandler.Handle(query, reports.Object, checkIns.Object, ct),
             ResolveReviewReportCommand command => ResolveReviewReportHandler.Handle(command, reports.Object, checkIns.Object, uow.Object, outbox.Object, ct),
             _ => throw new InvalidOperationException("Unexpected report message.")
@@ -189,7 +189,7 @@ public class ReviewReportApiContractTests
         deletedDetail.Report.Should().Be(resolvedAudit);
         deletedDetail.CheckIn!.Id.Should().Be(targetId);
         deletedDetail.CheckIn.DeletedAtUtc.Should().Be(deletion);
-        uow.Verify(x => x.SaveChangesAsync(ct), Times.Exactly(2));
+        uow.Verify(x => x.SaveChangesAsync(ct), Times.Once);
         outbox.Verify(x => x.PublishAsync(It.Is<CheckInCacheInvalidationRequested>(message =>
             message.CheckInId == target.Id && message.ShopId == target.ShopId)), Times.Once);
         await app.StopAsync(ct);

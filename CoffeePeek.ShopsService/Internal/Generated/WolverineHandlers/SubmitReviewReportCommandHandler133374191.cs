@@ -26,7 +26,6 @@ namespace Internal.Generated.WolverineHandlers
             Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<Wolverine.Runtime.ScopedMessageContextHolder>(serviceScope.ServiceProvider).Context = context;
             // This service has been marked as requiring service location independent of Wolverine's ability to use constructor injection of everything else
             var shopsDbContext = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<CoffeePeek.Shops.Persistance.Configuration.ShopsDbContext>(serviceScope.ServiceProvider);
-            var unitOfWorkOfShopsDbContext = new CoffeePeek.Shared.Persistence.Data.UnitOfWork<CoffeePeek.Shops.Persistance.Configuration.ShopsDbContext>(shopsDbContext);
             var queryCheckInRepository = new CoffeePeek.Shops.Persistance.Repositories.QueryCheckInRepository(shopsDbContext);
             var reviewReportRepository = new CoffeePeek.Shops.Persistance.Repositories.ReviewReportRepository(shopsDbContext);
             // The actual message body
@@ -48,7 +47,7 @@ namespace Internal.Generated.WolverineHandlers
                 System.Diagnostics.Activity.Current?.SetTag("handler.type", "CoffeePeek.Shops.Application.Features.Review.Reports.SubmitReviewReportHandler");
 
                 // The actual message execution
-                var outgoing1 = await CoffeePeek.Shops.Application.Features.Review.Reports.SubmitReviewReportHandler.Handle(submitReviewReportCommand, reviewReportRepository, queryCheckInRepository, unitOfWorkOfShopsDbContext, cancellation).ConfigureAwait(false);
+                var outgoing1 = await CoffeePeek.Shops.Application.Features.Review.Reports.SubmitReviewReportHandler.Handle(submitReviewReportCommand, reviewReportRepository, queryCheckInRepository, cancellation).ConfigureAwait(false);
 
 
                 // Outgoing, cascaded message
