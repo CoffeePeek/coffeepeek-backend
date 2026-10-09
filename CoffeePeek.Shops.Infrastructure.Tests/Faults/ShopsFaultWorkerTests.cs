@@ -46,12 +46,19 @@ public sealed class ShopsFaultWorkerTests
             await ShopsFaultControl.WaitMarkerAsync(root, "execute", ct);
             var bus = host.Services.GetRequiredService<IMessageBus>();
             var id = Guid.Parse(ShopsFaultControl.Required("CP_FAULT_ENTITY"));
-            if (role == "redis")
+            if (role is "redis" or "postgres")
             {
-                var response = await bus.InvokeAsync<Response<AdminPublishedShopDto>>(new UpdateAdminCoffeeShopCommand(
+                var command = new UpdateAdminCoffeeShopCommand(
                     id, "Committed fault profile", null, CoffeePeek.Contract.Enums.PriceRange.Moderate,
-                    null, null, null, null, null), ct);
-                Assert.True(response.IsSuccess);
+                    null, null, null, null, null) { ExpectedRevision = role == "postgres" ? 0L : null };
+                if (ShopsFaultControl.Required("CP_FAULT_CHECKPOINT") == "postgres-retry")
+                {
+                    var conflict = await Assert.ThrowsAsync<ConflictException>(() =>
+                        bus.InvokeAsync<Response<AdminPublishedShopDto>>(command, ct));
+                    Assert.Equal(409, conflict.StatusCode);
+                    File.WriteAllText(ShopsFaultControl.Marker(root, "retry-conflict"), "committed-revision-protected");
+                }
+                else Assert.True((await bus.InvokeAsync<Response<AdminPublishedShopDto>>(command, ct)).IsSuccess);
             }
             else if (role == "sender")
             {

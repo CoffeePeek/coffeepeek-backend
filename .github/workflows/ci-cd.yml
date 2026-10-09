@@ -55,6 +55,7 @@ jobs:
           - 8474:8474
           - 26379:26379
           - 25672:25672
+          - 15432:15432
       postgres:
         image: postgres:17-alpine
         env:
@@ -129,7 +130,7 @@ jobs:
           pgpass_file="$(mktemp "${RUNNER_TEMP}/coffeepeek-pgpass.XXXXXX")"
           trap 'rm -f "$pgpass_file"' EXIT
           chmod 600 "$pgpass_file"
-          printf '%s\n' '127.0.0.1:5432:*:postgres:coffeepeek-ci-only-postgres' > "$pgpass_file"
+          printf '%s\n' '127.0.0.1:5432:*:postgres:coffeepeek-ci-only-postgres' '127.0.0.1:15432:*:postgres:coffeepeek-ci-only-postgres' > "$pgpass_file"
           export COFFEEPEEK_LIVE_PG='Host=127.0.0.1;Port=5432;Username=postgres;Database=postgres;SslMode=Disable'
           export COFFEEPEEK_LIVE_PG_ALLOW_SUPERUSER=1
           export COFFEEPEEK_LIVE_FAULTS=1
@@ -138,7 +139,7 @@ jobs:
           export COFFEEPEEK_PERF_RESULTS="$PWD/.test-results/shops-performance"
           curl --fail --silent --show-error -X POST -H 'Content-Type: application/json' \
             http://127.0.0.1:8474/populate \
-            -d '[{"name":"shops-redis","listen":"0.0.0.0:26379","upstream":"redis:6379"},{"name":"shops-rabbit","listen":"0.0.0.0:25672","upstream":"rabbitmq:5672"}]'
+            -d '[{"name":"shops-redis","listen":"0.0.0.0:26379","upstream":"redis:6379"},{"name":"shops-rabbit","listen":"0.0.0.0:25672","upstream":"rabbitmq:5672"},{"name":"shops-postgres","listen":"0.0.0.0:15432","upstream":"postgres:5432"}]'
           export PGPASSFILE="$pgpass_file"
           mkdir -p .test-results/shops-live
           assembly='CoffeePeek.Shops.Infrastructure.Tests/bin/Release/net10.0/CoffeePeek.Shops.Infrastructure.Tests.dll'
@@ -167,8 +168,8 @@ jobs:
             CoffeeZoneWriteProtocolLiveTests \
             ShopsDirectWriteBoundaryLiveTests \
             CoffeeChildConcurrencyLiveTests \
-            ShopsFaultRecoveryLiveTests \
             ShopsReadPerformanceLiveTests \
+            ShopsFaultRecoveryLiveTests \
             CityReferenceLiveTests \
             CityCatalogFreshReadLiveTests; do
             result=".test-results/shops-live/${class}.trx"

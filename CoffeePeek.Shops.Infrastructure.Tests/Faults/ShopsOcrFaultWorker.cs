@@ -12,6 +12,7 @@ using CoffeePeek.Shops.Persistance.Menu;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
 using Npgsql;
@@ -49,7 +50,7 @@ public static class ShopsOcrFaultWorker
         await using var scope = provider.CreateAsyncScope();
         var handler = new ParseMenuOcrJobRequestedEventHandler(provider.GetRequiredService<IServiceScopeFactory>(), media,
             parser.Object, scope.ServiceProvider.GetRequiredService<IQueryCoffeeDrinkRepository>(), downloader.Object,
-            Options.Create(new MenuPriceRangeOptions()), NullLogger<ParseMenuOcrJobRequestedEventHandler>.Instance);
+            Options.Create(new MenuPriceRangeOptions()), provider.GetRequiredService<ILogger<ParseMenuOcrJobRequestedEventHandler>>());
         File.WriteAllText(ShopsFaultControl.Marker(root, "ocr-ready"), "ready");
         await ShopsFaultControl.WaitMarkerAsync(root, "execute", ct);
         var jobId = Guid.Parse(ShopsFaultControl.Required("CP_FAULT_ENTITY"));

@@ -16,6 +16,18 @@ public static class ShopsFaultControl
         response.EnsureSuccessStatusCode();
     }
 
+    public static async Task PostgresAckDelayAsync(bool enabled, CancellationToken ct)
+    {
+        using var http = new HttpClient();
+        const string url = "http://127.0.0.1:8474/proxies/shops-postgres/toxics";
+        using var response = enabled
+            ? await http.PostAsJsonAsync(url, new { name = "commit-ack", type = "latency", stream = "downstream",
+                toxicity = 1, attributes = new { latency = 30000, jitter = 0 } }, ct)
+            : await http.DeleteAsync(url + "/commit-ack", ct);
+        if (!enabled && response.StatusCode == System.Net.HttpStatusCode.NotFound) return;
+        response.EnsureSuccessStatusCode();
+    }
+
     public static async Task UntilAsync(Func<Task<bool>> condition, CancellationToken ct, Process? worker = null)
     {
         var deadline = Stopwatch.StartNew();

@@ -75,6 +75,67 @@ public sealed class ShopsFaultRecoveryLiveTests(ShopsLiveDatabase shops, MediaLi
     }
 
     [Fact]
+    public async Task PostgresCommitAcknowledgementLost_RestartRecoversEvent_AndExpectedRevisionProtectsCommandRetry()
+    {
+        Assert.SkipUnless(ShopsFaultControl.IsConfigured, "Requires the isolated PostgreSQL/proxy fault gate.");
+        var ct = TestContext.Current.CancellationToken;
+        var city = new City("Ack loss " + Guid.NewGuid().ToString("N"));
+        var shop = ShopsLiveDatabase.NewShop("Original ack profile", city.Id);
+        await using (var seed = shops.Context(false))
+        {
+            seed.Cities.Add(city); seed.Shops.Add(shop); await seed.SaveChangesAsync(ct);
+        }
+        var root = NewRoot();
+        var proxyConnection = new Npgsql.NpgsqlConnectionStringBuilder(shops.ConnectionString) { Port = 15432 }.ConnectionString;
+        using var redis = await ConnectionMultiplexer.ConnectAsync("127.0.0.1:6379,abortConnect=true");
+        var key = CacheKey.Shop.Detail(shop.Id).Key;
+        await redis.GetDatabase().StringSetAsync(key, "old profile");
+        await ShopsFaultControl.ProxyAsync("shops-postgres", true, ct);
+        try
+        {
+            await using var first = new ShopsFaultProcess("postgres", root, proxyConnection, shop.Id, "postgres-commit", execute: true);
+            await ShopsFaultControl.WaitMarkerAsync(root, "postgres-ready", ct, first.Process);
+            var baseline = await PendingEnvelopeIdsAsync(ct);
+            File.WriteAllText(ShopsFaultControl.Marker(root, "execute"), "execute");
+            await ShopsFaultControl.WaitMarkerAsync(root, "profile-flushed", ct, first.Process);
+            var envelope = Assert.Single(File.ReadAllLines(ShopsFaultControl.Marker(root, "private-envelopes"))
+                .Select(Guid.Parse).Except(baseline));
+            Assert.DoesNotContain(envelope, await PendingEnvelopeIdsAsync(ct));
+            // Delay only server replies after all business SQL, then observe commit through an independent connection.
+            await ShopsFaultControl.PostgresAckDelayAsync(true, ct);
+            File.WriteAllText(ShopsFaultControl.Marker(root, "allow-commit"), "commit");
+            await ShopsFaultControl.UntilAsync(async () =>
+            {
+                await using var read = shops.Context(false);
+                return await read.Shops.AnyAsync(s => s.Id == shop.Id && s.ProfileRevision == 1, ct);
+            }, ct, first.Process);
+            Assert.False(File.Exists(ShopsFaultControl.Marker(root, "committed")));
+            await ShopsFaultControl.ProxyAsync("shops-postgres", false, ct);
+            await first.DisposeAsync();
+            Assert.Contains(envelope, await PendingEnvelopeIdsAsync(ct));
+            await ShopsFaultControl.PostgresAckDelayAsync(false, ct);
+            await ShopsFaultControl.ProxyAsync("shops-postgres", true, ct);
+            File.Delete(ShopsFaultControl.Marker(root, "postgres-ready"));
+            await using var retry = new ShopsFaultProcess("postgres", root, shops.ConnectionString, shop.Id, "postgres-retry", execute: true);
+            await ShopsFaultControl.WaitMarkerAsync(root, "postgres-ready", ct, retry.Process);
+            await ShopsFaultControl.WaitMarkerAsync(root, "retry-conflict", ct, retry.Process);
+            await ShopsFaultControl.UntilAsync(async () => !await redis.GetDatabase().KeyExistsAsync(key)
+                && !(await PendingEnvelopeIdsAsync(ct)).Contains(envelope), ct, retry.Process);
+            await using var verify = shops.Context(false);
+            var persisted = await verify.Shops.SingleAsync(s => s.Id == shop.Id, ct);
+            Assert.Equal(1, persisted.ProfileRevision);
+            Assert.Equal("Committed fault profile", persisted.Name);
+        }
+        finally
+        {
+            await ShopsFaultControl.PostgresAckDelayAsync(false, CancellationToken.None);
+            await ShopsFaultControl.ProxyAsync("shops-postgres", true, CancellationToken.None);
+            await redis.GetDatabase().KeyDeleteAsync(key);
+            ArchiveLogsAndDelete(root);
+        }
+    }
+
+    [Fact]
     public async Task RealBrokerOutageAfterCommit_AndMediaCrashBeforeAck_RecoverPhotoExactlyOnce()
     {
         Assert.SkipUnless(ShopsFaultControl.IsConfigured, "Requires the isolated PostgreSQL/Redis/RabbitMQ/proxy fault gate.");
@@ -192,6 +253,12 @@ public sealed class ShopsFaultRecoveryLiveTests(ShopsLiveDatabase shops, MediaLi
         var root = NewRoot();
         try
         {
+            Guid[] baselineEnvelopes;
+            await using (var baseline = shops.Context(false))
+                baselineEnvelopes = await baseline.Database.SqlQueryRaw<Guid>("""
+                    SELECT id AS "Value" FROM wolverine.wolverine_incoming_envelopes WHERE status <> 'Handled'
+                    UNION SELECT id AS "Value" FROM wolverine.wolverine_outgoing_envelopes
+                    """).ToArrayAsync(ct);
             await using var first = new ShopsFaultProcess("ocr", root, shops.ConnectionString, job.Id, checkpoint);
             await ShopsFaultControl.WaitMarkerAsync(root, "ocr-ready", ct, first.Process);
             File.WriteAllText(ShopsFaultControl.Marker(root, "execute"), "execute");
@@ -201,11 +268,27 @@ public sealed class ShopsFaultRecoveryLiveTests(ShopsLiveDatabase shops, MediaLi
                 var stored = await db.MenuOcrJobs.SingleAsync(j => j.Id == job.Id, ct);
                 Assert.Equal(checkpoint == "before-ocr-store" ? MenuOcrJobStatus.Running
                     : MenuOcrJobStatus.ResultStored, stored.Status);
+                if (stored.ResultJson is not null)
+                {
+                    using var result = System.Text.Json.JsonDocument.Parse(stored.ResultJson);
+                    Assert.True(result.RootElement.GetProperty("items").GetArrayLength() == 1,
+                        "Synthetic provider result must contain one complete offer: " + stored.ResultJson);
+                }
                 Assert.Empty((await db.ShopMenus.Include(m => m.Items).SingleAsync(m => m.Id == menu.Id, ct)).Items);
             }
             Assert.False(File.Exists(ShopsFaultControl.Marker(root, "ocr-invalidated")));
-            Assert.Equal(0, await IncomingCountAsync(shops.Context(false), ct));
-            Assert.Equal(0, await OutgoingCountAsync(ct));
+            if (checkpoint == "before-ocr-apply-commit")
+            {
+                var privateIds = File.ReadAllLines(ShopsFaultControl.Marker(root, "private-envelopes"))
+                    .Select(Guid.Parse).Except(baselineEnvelopes).ToArray();
+                Assert.NotEmpty(privateIds);
+                await using var outside = shops.Context(false);
+                var visible = await outside.Database.SqlQueryRaw<Guid>("""
+                    SELECT id AS "Value" FROM wolverine.wolverine_incoming_envelopes WHERE status <> 'Handled'
+                    UNION SELECT id AS "Value" FROM wolverine.wolverine_outgoing_envelopes
+                    """).ToArrayAsync(ct);
+                Assert.Empty(privateIds.Intersect(visible));
+            }
             await first.DisposeAsync();
             File.Delete(ShopsFaultControl.Marker(root, "ocr-ready"));
             await using var recovery = new ShopsFaultProcess("ocr", root, shops.ConnectionString, job.Id);
@@ -243,6 +326,15 @@ public sealed class ShopsFaultRecoveryLiveTests(ShopsLiveDatabase shops, MediaLi
         return await db.Database.SqlQueryRaw<int>("""
             SELECT count(*)::integer AS "Value" FROM wolverine.wolverine_outgoing_envelopes
             """).SingleAsync(ct);
+    }
+
+    private async Task<Guid[]> PendingEnvelopeIdsAsync(CancellationToken ct)
+    {
+        await using var db = shops.Context(false);
+        return await db.Database.SqlQueryRaw<Guid>("""
+            SELECT id AS "Value" FROM wolverine.wolverine_incoming_envelopes WHERE status <> 'Handled'
+            UNION SELECT id AS "Value" FROM wolverine.wolverine_outgoing_envelopes
+            """).ToArrayAsync(ct);
     }
 
     private static async Task<int> IncomingCountAsync(DbContext db, CancellationToken ct)

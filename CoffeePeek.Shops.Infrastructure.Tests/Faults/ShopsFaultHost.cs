@@ -68,8 +68,9 @@ public static class ShopsFaultHost
                 services.AddScoped(_ => new ShopsDbContext(new DbContextOptionsBuilder<ShopsDbContext>()
                     .UseNpgsql(connection).AddInterceptors(new AuditInterceptor(),
                         new FaultOcrBeforeStoreInterceptor(root, checkpoint), new FaultOcrStoredInterceptor(root, checkpoint),
-                        new FaultOcrApplyFlushInterceptor(root, checkpoint)).Options));
+                        new FaultOcrApplyFlushInterceptor(root, checkpoint), new FaultProfileFlushInterceptor(root, checkpoint)).Options));
                 services.AddShopsModule().AddCoffeeCatalogModule();
+                services.AddHostedService<CoffeePeek.Shops.Infrastructure.Observability.ShopsDurabilityMetrics>();
                 services.AddSingleton(Options.Create(new MediaPublicUrlOptions { PublicEndpoint = "https://media.example.test" }));
                 var mapper = new Mock<IMapper>();
                 mapper.Setup(m => m.Map<CoffeePeek.Contract.Dtos.Shop.RoasterDto>(It.IsAny<CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate.Roaster>()))
@@ -91,7 +92,7 @@ public static class ShopsFaultHost
                         });
                     services.AddSingleton(cache.Object);
                 }
-                else if (role == "redis")
+                else if (role is "redis" or "postgres")
                 {
                     services.AddSingleton<IConnectionMultiplexer>(_ => ConnectionMultiplexer.Connect(
                         "127.0.0.1:26379,abortConnect=false,connectTimeout=1000,asyncTimeout=1000,syncTimeout=1000"));
@@ -106,7 +107,7 @@ public static class ShopsFaultHost
         {
             options.ApplicationAssembly = typeof(ShopsFaultHost).Assembly;
             options.Discovery.DisableConventionalDiscovery();
-            if (role is "redis" or "ocr")
+            if (role is "redis" or "ocr" or "postgres")
             {
                 options.Discovery.IncludeType(typeof(UpdateAdminCoffeeShopHandler));
                 options.Discovery.IncludeType(typeof(ShopProfileCacheInvalidationRequestedHandler));

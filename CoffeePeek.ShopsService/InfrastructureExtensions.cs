@@ -22,8 +22,8 @@ public static class InfrastructureExtensions
         builder.AddSerilogLogging();
         builder.AddServiceDefaults();
         builder.Services.AddOpenTelemetry()
-            .WithMetrics(metrics => metrics.AddMeter(ShopsTelemetry.InstrumentationName))
-            .WithTracing(tracing => tracing.AddSource(ShopsTelemetry.InstrumentationName));
+            .WithMetrics(metrics => metrics.AddMeter(ShopsTelemetry.InstrumentationName, "Wolverine*"))
+            .WithTracing(tracing => tracing.AddSource(ShopsTelemetry.InstrumentationName, "Wolverine"));
         builder.Services.AddHealthChecks()
             .AddCheck<ShopsDatabaseReadinessCheck>("shops_postgres", tags: ["ready"]);
         builder.WebHost

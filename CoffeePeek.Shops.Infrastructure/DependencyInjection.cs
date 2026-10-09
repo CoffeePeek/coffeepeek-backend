@@ -20,6 +20,7 @@ public static class DependencyInjection
         this IServiceCollection services,
         IConfiguration configuration)
     {
+        services.AddHostedService<CoffeePeek.Shops.Infrastructure.Observability.ShopsDurabilityMetrics>();
         services.AddHttpClient("account-user-lookup", client =>
         {
             client.BaseAddress = new Uri($"http://{AppResources.AccountService}");

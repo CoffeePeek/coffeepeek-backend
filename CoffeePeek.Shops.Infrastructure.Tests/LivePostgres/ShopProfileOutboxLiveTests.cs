@@ -17,6 +17,14 @@ using Npgsql;
 using Wolverine;
 using Wolverine.EntityFrameworkCore;
 using Wolverine.Postgresql;
+using System.Diagnostics.Metrics;
+using CoffeePeek.Shops.Infrastructure.Observability;
+using CoffeePeek.Shops.Infrastructure.Tests.Faults;
+using Moq;
+using Wolverine.Persistence.Durability;
+using Wolverine.Persistence.Durability.DeadLetterManagement;
+using CoffeePeek.Shared.Domain.Interfaces.Infrastructure;
+using Wolverine.ErrorHandling;
 
 namespace CoffeePeek.Shops.Infrastructure.Tests.LivePostgres;
 
@@ -106,6 +114,73 @@ public sealed class ShopProfileOutboxLiveTests : IClassFixture<ShopsLiveDatabase
         }
     }
 
+    [Fact]
+    public async Task DeadLetterGauge_AndSelectiveReplay_KeepCommittedProfileAndUnselectedFailure()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var first = await SeedAsync(ct);
+        var second = await SeedAsync(ct);
+        var unavailable = 1;
+        var firstRecoveries = 0;
+        var cache = new Mock<IStrictCacheInvalidator>();
+        cache.Setup(c => c.RemoveAsync(It.IsAny<CacheKey>(), It.IsAny<CancellationToken>()))
+            .Returns(async (CacheKey key, CancellationToken token) =>
+            {
+                if (Volatile.Read(ref unavailable) == 1) throw new InvalidOperationException("test-cache-unavailable");
+                if (key.Key == CacheKey.Shop.Detail(first.Id).Key)
+                {
+                    await using var read = fixture.Context();
+                    Assert.True(await read.Shops.AnyAsync(s => s.Id == first.Id && s.ProfileRevision == 1, token));
+                    Interlocked.Increment(ref firstRecoveries);
+                }
+            });
+        cache.Setup(c => c.RemoveByPatternAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(0);
+        double deadLetters = -1;
+        using var listener = new MeterListener();
+        listener.InstrumentPublished = (instrument, meterListener) =>
+        {
+            if (instrument.Meter.Name == "CoffeePeek.Shops" && instrument.Name == "shops.durability.dead_letters")
+                meterListener.EnableMeasurementEvents(instrument);
+        };
+        listener.SetMeasurementEventCallback<double>((_, value, _, _) => Volatile.Write(ref deadLetters, value));
+        listener.Start();
+        using var host = BuildHost(cache.Object, deadLetterGate: true);
+        await host.StartAsync(ct);
+        try
+        {
+            var bus = host.Services.GetRequiredService<IMessageBus>();
+            var letters = host.Services.GetRequiredService<IMessageStore>().DeadLetters;
+            var query = new DeadLetterEnvelopeQuery { ExceptionMessage = "test-cache-unavailable" };
+            await UpdateAsync(first.Id);
+            await ShopsFaultControl.UntilAsync(async () => (await letters.QueryAsync(query, ct)).TotalCount == 1, ct);
+            var selected = Assert.Single((await letters.QueryAsync(query, ct)).Envelopes).Id;
+            await UpdateAsync(second.Id);
+            await ShopsFaultControl.UntilAsync(async () => (await letters.QueryAsync(query, ct)).TotalCount == 2, ct);
+            var unselected = Assert.Single((await letters.QueryAsync(query, ct)).Envelopes, e => e.Id != selected).Id;
+            await ShopsFaultControl.UntilAsync(() =>
+            {
+                listener.RecordObservableInstruments();
+                return Task.FromResult(Volatile.Read(ref deadLetters) == 2);
+            }, ct);
+            Volatile.Write(ref unavailable, 0);
+            await letters.ReplayAsync(new DeadLetterEnvelopeQuery { MessageIds = [selected] }, ct);
+            await ShopsFaultControl.UntilAsync(async () => Volatile.Read(ref firstRecoveries) == 1
+                && await letters.DeadLetterEnvelopeByIdAsync(selected) is null, ct);
+            Assert.NotNull(await letters.DeadLetterEnvelopeByIdAsync(unselected));
+            await letters.ReplayAsync(new DeadLetterEnvelopeQuery { MessageIds = [selected] }, ct);
+            await using var verify = fixture.Context();
+            Assert.Equal(1, (await verify.Shops.SingleAsync(s => s.Id == first.Id, ct)).ProfileRevision);
+            Assert.Equal(1, (await verify.Shops.SingleAsync(s => s.Id == second.Id, ct)).ProfileRevision);
+            Assert.Equal(1, firstRecoveries);
+
+            async Task UpdateAsync(Guid id) => Assert.True((await bus.InvokeAsync<Response<AdminPublishedShopDto>>(
+                new UpdateAdminCoffeeShopCommand(id, "DLQ committed", null, Contract.Enums.PriceRange.Moderate,
+                    null, null, null, null, null), ct)).IsSuccess);
+        }
+        finally { await host.StopAsync(CancellationToken.None); }
+    }
+
     private async Task<CoffeeShop> SeedAsync(CancellationToken ct)
     {
         var shop = new CoffeeShop(null, "Original profile", null, PriceRange.Cheap, Guid.NewGuid());
@@ -118,7 +193,7 @@ public sealed class ShopProfileOutboxLiveTests : IClassFixture<ShopsLiveDatabase
         return shop;
     }
 
-    private IHost BuildHost(IStrictCacheInvalidator invalidator) => Host.CreateDefaultBuilder()
+    private IHost BuildHost(IStrictCacheInvalidator invalidator, bool deadLetterGate = false) => Host.CreateDefaultBuilder()
         .ConfigureServices(services =>
         {
             services.AddScoped(_ => fixture.Context());
@@ -129,6 +204,7 @@ public sealed class ShopProfileOutboxLiveTests : IClassFixture<ShopsLiveDatabase
             services.AddScoped<IQueryRoasterRepository, QueryRoasterRepository>();
             services.AddScoped<IQueryBrewMethodRepository, QueryBrewMethodRepository>();
             services.AddSingleton(invalidator);
+            if (deadLetterGate) services.AddHostedService<ShopsDurabilityMetrics>();
             services.AddSingleton<IOptions<MediaPublicUrlOptions>>(Options.Create(
                 new MediaPublicUrlOptions
                 {
@@ -143,6 +219,7 @@ public sealed class ShopProfileOutboxLiveTests : IClassFixture<ShopsLiveDatabase
             options.Discovery.IncludeType(typeof(UpdateAdminCoffeeShopHandler));
             options.Discovery.IncludeType(typeof(RollbackProfileOutboxProbeHandler));
             options.Discovery.IncludeType(typeof(ShopProfileCacheInvalidationRequestedHandler));
+            if (deadLetterGate) options.OnException<InvalidOperationException>().MoveToErrorQueue();
             options.UseRuntimeCompilation();
             options.CodeGeneration.TypeLoadMode = TypeLoadMode.Auto;
             options.CodeGeneration.AlwaysUseServiceLocationFor(typeof(ShopsDbContext));
