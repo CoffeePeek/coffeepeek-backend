@@ -39,6 +39,7 @@ public class LegacyMigrationLiveTests
             await using var mediaContext = new MediaDbContext(new DbContextOptionsBuilder<MediaDbContext>().UseNpgsql(settings.Media).Options);
             await accountContext.GetService<IMigrator>().MigrateAsync("20261007132511_RetireReviewCountOnMain", ct);
             await shopsContext.GetService<IMigrator>().MigrateAsync("20261007133435_CanonicalCheckInsOnMain", ct);
+            await CheckInPhotoSchema.ExpandAsync(shopsContext, ct);
             await moderationContext.GetService<IMigrator>().MigrateAsync("20261007133453_CanonicalCheckInSnapshotsOnMain", ct);
             await mediaContext.Database.MigrateAsync(ct);
             var author = User.CreateExternal("legacy@example.com", "test", "author", "legacy_author");
