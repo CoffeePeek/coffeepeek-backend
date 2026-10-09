@@ -1,6 +1,5 @@
 using CoffeePeek.Contract.Enums;
 using CoffeePeek.Contract.Events.Moderation;
-using CoffeePeek.Shared.Domain.Interfaces.Infrastructure;
 using CoffeePeek.Shared.Kernel;
 using CoffeePeek.Shops.Domain.Aggregates.CheckInAggregate;
 using CoffeePeek.Shops.Domain.Entities;
@@ -11,6 +10,7 @@ using CoffeePeek.Shops.Persistance.Repositories;
 using CoffeePeek.Testing;
 using Microsoft.EntityFrameworkCore;
 using Moq;
+using Wolverine;
 using DomainVisibility = CoffeePeek.Shops.Domain.Aggregates.CheckInAggregate.CheckInVisibility;
 
 namespace CoffeePeek.Shops.Infrastructure.Tests.LivePostgres;
@@ -61,14 +61,14 @@ public sealed class CheckInModerationRaceLiveTests : IClassFixture<ShopsLiveData
                 .Returns((CancellationToken token) => staleConsumer.SaveChangesAsync(token));
             await Assert.ThrowsAsync<DbUpdateConcurrencyException>(() =>
                 CheckInModerationDecidedHandler.Handle(decision, repository, unitOfWork.Object,
-                    Mock.Of<ICacheService>(), ct));
+                    Mock.Of<IMessageBus>(), ct));
         }
 
         await using (var retry = fixture.Context(false))
         {
             var unitOfWork = new Mock<IUnitOfWork>(MockBehavior.Strict);
             await CheckInModerationDecidedHandler.Handle(decision, new QueryCheckInRepository(retry),
-                unitOfWork.Object, Mock.Of<ICacheService>(), ct);
+                unitOfWork.Object, Mock.Of<IMessageBus>(), ct);
             unitOfWork.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
         }
 
