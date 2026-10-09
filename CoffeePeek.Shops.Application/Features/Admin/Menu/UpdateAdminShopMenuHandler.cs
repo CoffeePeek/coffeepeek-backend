@@ -10,6 +10,7 @@ using CoffeePeek.Shared.Kernel.Response;
 using CoffeePeek.Shared.Kernel.Exceptions;
 using CoffeePeek.Shops.Application.Features.Menu;
 using CoffeePeek.Shops.Application.Services;
+using CoffeePeek.Shops.Application.Features.CoffeeShop.ShopProfile;
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
 using CoffeePeek.Shops.Domain.Aggregates.MenuAggregate;
 using Microsoft.Extensions.Options;
@@ -23,6 +24,7 @@ public static class UpdateAdminShopMenuHandler
     public static async Task<Response<AdminShopMenuDto>> Handle(
         UpdateAdminShopMenuCommand command,
         ICoffeeShopRepository shops,
+        IShopPriceRangeWriter priceRangeWriter,
         IApplyShopMenuService applyMenu,
         IQueryCoffeeDrinkRepository drinks,
         IQueryShopMenuRepository queryMenu,
@@ -68,12 +70,7 @@ public static class UpdateAdminShopMenuHandler
 
         if (command.ApplySuggestedPriceRange && menu.SuggestedPriceRange.HasValue)
         {
-            var priceRange = (DomainPriceRange)(int)menu.SuggestedPriceRange.Value;
-            if (shop.PriceRange != priceRange)
-            {
-                shop.SetPriceRange(priceRange);
-                shop.AdvanceProfileRevision();
-            }
+            priceRangeWriter.Apply(shop, (DomainPriceRange)(int)menu.SuggestedPriceRange.Value);
         }
 
         await unitOfWork.SaveChangesAsync(ct);

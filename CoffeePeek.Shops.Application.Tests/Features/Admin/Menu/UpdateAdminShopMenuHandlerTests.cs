@@ -46,7 +46,7 @@ public class UpdateAdminShopMenuHandlerTests
         var result = await UpdateAdminShopMenuHandler.Handle(
             new UpdateAdminShopMenuCommand(shop.Id,
                 [new UpdateShopMenuItemRequest("latte", ContractAvailability.Present, 5m, 200)], true, Guid.NewGuid()),
-            shops.Object, applyMenu.Object, drinks.Object, query.Object,
+            shops.Object, new ShopPriceRangeWriter(), applyMenu.Object, drinks.Object, query.Object,
             new Mock<IUnitOfWork>().Object,
             Options.Create(new MediaPublicUrlOptions { PublicEndpoint = "https://media.example.com" }), ct);
 
@@ -75,7 +75,7 @@ public class UpdateAdminShopMenuHandlerTests
                 [new UpdateShopMenuItemRequest("latte", ContractAvailability.Present, 5m, 200),
                  new UpdateShopMenuItemRequest("LATTE", ContractAvailability.Present, 6m, 250)],
                 false, Guid.NewGuid()),
-            shops.Object, applyMenu.Object, drinks.Object, new Mock<IQueryShopMenuRepository>().Object,
+            shops.Object, new ShopPriceRangeWriter(), applyMenu.Object, drinks.Object, new Mock<IQueryShopMenuRepository>().Object,
             unitOfWork.Object,
             Options.Create(new MediaPublicUrlOptions { PublicEndpoint = "https://media.example.com" }),
             CancellationToken.None);
@@ -109,7 +109,7 @@ public class UpdateAdminShopMenuHandlerTests
                 new UpdateAdminShopMenuCommand(Guid.NewGuid(),
                     [new UpdateShopMenuItemRequest("latte", ContractAvailability.Present, 5m, 200), invalid],
                     false, Guid.NewGuid()),
-                shops.Object, applyMenu.Object, drinks.Object, new Mock<IQueryShopMenuRepository>().Object,
+                shops.Object, new ShopPriceRangeWriter(), applyMenu.Object, drinks.Object, new Mock<IQueryShopMenuRepository>().Object,
                 unitOfWork.Object,
                 Options.Create(new MediaPublicUrlOptions { PublicEndpoint = "https://media.example.com" }),
                 CancellationToken.None);
@@ -142,7 +142,7 @@ public class UpdateAdminShopMenuHandlerTests
                 [new UpdateShopMenuItemRequest("latte", ContractAvailability.Present, 5m, 200),
                  new UpdateShopMenuItemRequest("inactive", ContractAvailability.Present, 6m, 250)],
                 false, Guid.NewGuid()),
-            shops.Object, applyMenu.Object, drinks.Object, new Mock<IQueryShopMenuRepository>().Object,
+            shops.Object, new ShopPriceRangeWriter(), applyMenu.Object, drinks.Object, new Mock<IQueryShopMenuRepository>().Object,
             unitOfWork.Object,
             Options.Create(new MediaPublicUrlOptions { PublicEndpoint = "https://media.example.com" }),
             CancellationToken.None);
@@ -362,6 +362,7 @@ public class UpdateAdminShopMenuHandlerTests
                 false,
                 userId),
             shops.Object,
+            new ShopPriceRangeWriter(),
             applyMenu.Object,
             drinks.Object,
             queryMenu.Object,
@@ -458,6 +459,7 @@ public class UpdateAdminShopMenuHandlerTests
         var result = await UpdateAdminShopMenuHandler.Handle(
             command,
             shops.Object,
+            new ShopPriceRangeWriter(),
             applyMenu.Object,
             drinks.Object,
             queryMenu.Object,

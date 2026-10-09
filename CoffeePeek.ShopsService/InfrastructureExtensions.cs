@@ -34,7 +34,7 @@ public static class InfrastructureExtensions
         builder.AddWolverine(
             typeof(InfrastructureExtensions).Assembly,
             [applicationAssembly, infrastructureAssembly],
-            [typeof(ShopsDbContext), typeof(CoffeePeek.Shared.Kernel.Drinks.IDrinkCatalog), typeof(CoffeePeek.Shops.Domain.Aggregates.MenuAggregate.ICoffeeDrinkRepository), typeof(CoffeePeek.Shops.Application.Features.CoffeeCatalog.ICoffeeCatalogStore),
+            [typeof(ShopsDbContext), typeof(CoffeePeek.Shared.Kernel.Drinks.IDrinkCatalog), typeof(CoffeePeek.Shops.Domain.Aggregates.MenuAggregate.ICoffeeDrinkRepository), typeof(CoffeePeek.Shops.Application.Features.CoffeeCatalog.IPublicCoffeeCatalogReader), typeof(CoffeePeek.Shops.Application.Features.CoffeeCatalog.ICoffeeCatalogTagWriter),
                 typeof(CoffeePeek.Shops.Application.Features.CoffeeCatalog.ICoffeeProductWriter),
                 typeof(CoffeePeek.Shops.Application.Features.CoffeeCatalog.ICoffeeImportWriter),
                 typeof(CoffeePeek.Shops.Application.Features.Discovery.IDiscoveryFavoritesStore),

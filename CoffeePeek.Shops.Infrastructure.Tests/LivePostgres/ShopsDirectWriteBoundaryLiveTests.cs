@@ -10,6 +10,7 @@ using CoffeePeek.Shops.Application.Features.Discovery;
 using CoffeePeek.Shops.Application.PublicAddresses;
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeProductAggregate;
+using CoffeePeek.Shops.Domain.Aggregates.RoasterTagAggregate;
 using CoffeePeek.Shops.Persistance.CoffeeCatalog;
 using CoffeePeek.Shops.Persistance.Configuration;
 using CoffeePeek.Shops.Persistance.Discovery;
@@ -133,7 +134,7 @@ public sealed class ShopsDirectWriteBoundaryLiveTests : IClassFixture<ShopsLiveD
                 Options.Create(mapping), Mock.Of<IPublicAddressService>(), NullLogger<CoffeeCatalogStore>.Instance));
             services.AddScoped<ICoffeeImportWriter>(provider => provider.GetRequiredService<CoffeeCatalogStore>());
             services.AddScoped<ICoffeeProductWriter>(provider => provider.GetRequiredService<CoffeeCatalogStore>());
-            services.AddScoped<ICoffeeCatalogStore>(provider => provider.GetRequiredService<CoffeeCatalogStore>());
+            services.AddScoped<ICoffeeCatalogTagWriter>(provider => provider.GetRequiredService<CoffeeCatalogStore>());
         }, typeof(CoffeeCatalogHandler));
         await host.StartAsync(ct);
         try
@@ -327,6 +328,124 @@ public sealed class ShopsDirectWriteBoundaryLiveTests : IClassFixture<ShopsLiveD
         }
     }
 
+    [Theory]
+    [InlineData("create", false)]
+    [InlineData("create", true)]
+    [InlineData("edit", false)]
+    [InlineData("edit", true)]
+    [InlineData("archive", false)]
+    [InlineData("archive", true)]
+    [InlineData("create-tag", false)]
+    [InlineData("create-tag", true)]
+    [InlineData("edit-tag", false)]
+    [InlineData("edit-tag", true)]
+    [InlineData("set-tags", false)]
+    [InlineData("set-tags", true)]
+    public async Task CatalogWrite_CommitsBeforeResponse_AndLateFailureRollsBack(string operation, bool failAfterFlush)
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var key = Guid.NewGuid().ToString("N");
+        var roaster = new Roaster("Catalog boundary " + key);
+        var product = new CoffeeProduct(roaster.Id, new("Original", null, "roasted_beans", "whole_beans", "unknown",
+            null, null, null, null, null, [], [], [], []));
+        var tag = new RoasterTag("tag-" + key, "Original", null, 0);
+        await using (var seed = fixture.Context(false))
+        {
+            seed.Roasters.Add(roaster);
+            if (operation != "create") seed.CoffeeProducts.Add(product);
+            if (operation != "create-tag") seed.RoasterTags.Add(tag);
+            await seed.SaveChangesAsync(ct);
+        }
+        var content = new CoffeeContentDto("Changed", null, "roasted_beans", "whole_beans", "unknown",
+            null, null, null, null, null, [], [], [], []);
+        var actor = Guid.NewGuid();
+        object command = operation switch
+        {
+            "create" => new CreateCoffeeCommand(new(roaster.Id, content, [])),
+            "edit" => new EditCoffeeCommand(product.Id, new(content, [], ["name"], "Published", product.Version)),
+            "archive" => new ArchiveCoffeeCommand(product.Id),
+            "create-tag" => new CreateRoasterTagCommand(new(tag.Slug, "Changed", null)),
+            "edit-tag" => new EditRoasterTagCommand(tag.Id, new("Changed", null, 1, false)),
+            "set-tags" => new SetRoasterTagsCommand(roaster.Id, [tag.Id, tag.Id], actor),
+            _ => throw new ArgumentOutOfRangeException(nameof(operation))
+        };
+        var flushObserved = false;
+        var probe = new AfterSaveProbe(async db =>
+        {
+            Assert.NotNull(db.Database.CurrentTransaction);
+            await AssertStateAsync(false);
+            flushObserved = true;
+            if (failAfterFlush) throw new InvalidOperationException("Failure after catalog flush.");
+        });
+        using var host = CreateHost(services =>
+        {
+            services.AddScoped(_ => new ShopsDbContext(new DbContextOptionsBuilder<ShopsDbContext>()
+                .UseNpgsql(fixture.ConnectionString).AddInterceptors(probe).Options));
+            services.AddScoped<IUnitOfWork, UnitOfWork<ShopsDbContext>>();
+            services.AddScoped<CoffeeCatalogStore>(provider => new(
+                provider.GetRequiredService<ShopsDbContext>(),
+                Options.Create(new MediaPublicUrlOptions { PublicEndpoint = "https://media.example.test" }),
+                Options.Create(new CoffeeImportOptions()), Mock.Of<IPublicAddressService>(), NullLogger<CoffeeCatalogStore>.Instance));
+            services.AddScoped<ICoffeeImportWriter>(provider => provider.GetRequiredService<CoffeeCatalogStore>());
+            services.AddScoped<ICoffeeProductWriter>(provider => provider.GetRequiredService<CoffeeCatalogStore>());
+            services.AddScoped<ICoffeeCatalogTagWriter>(provider => provider.GetRequiredService<CoffeeCatalogStore>());
+        }, typeof(CoffeeCatalogHandler));
+        await host.StartAsync(ct);
+        try
+        {
+            var bus = host.Services.GetRequiredService<IMessageBus>();
+            async Task ExecuteAsync()
+            {
+                if (operation is "create" or "edit") Assert.Equal("Changed", (await bus.InvokeAsync<AdminCoffeeDto>(command, ct)).Content.Name);
+                else if (operation is "create-tag" or "edit-tag") Assert.Equal("Changed", (await bus.InvokeAsync<RoasterTagDto>(command, ct)).Name);
+                else if (operation == "archive") Assert.True(await bus.InvokeAsync<bool>(command, ct));
+                else await bus.InvokeAsync(command, ct);
+            }
+            if (failAfterFlush) await Assert.ThrowsAsync<InvalidOperationException>(ExecuteAsync);
+            else await ExecuteAsync();
+            Assert.True(flushObserved);
+            await AssertStateAsync(!failAfterFlush);
+            if (operation == "set-tags" && !failAfterFlush)
+            {
+                await ExecuteAsync();
+                await AssertStateAsync(true);
+            }
+        }
+        finally { await host.StopAsync(CancellationToken.None); }
+
+        async Task AssertStateAsync(bool changed)
+        {
+            await using var read = fixture.Context(false);
+            var storedProduct = await read.CoffeeProducts.SingleOrDefaultAsync(p => p.RoasterId == roaster.Id, ct);
+            if (operation == "create" && !changed) Assert.Null(storedProduct);
+            else
+            {
+                Assert.NotNull(storedProduct);
+                Assert.Equal(changed && operation is "create" or "edit" ? "Changed" : "Original", storedProduct.Name);
+                Assert.Equal(changed && operation == "archive" ? CoffeePublicationStatus.Archived :
+                    changed && operation == "edit" ? CoffeePublicationStatus.Published : product.Status, storedProduct.Status);
+                Assert.Equal(changed && operation == "edit" ? ["name"] : Array.Empty<string>(), storedProduct.ProtectedFields);
+                if (!changed) Assert.Equal(product.Version, storedProduct.Version);
+            }
+            var storedTag = await read.RoasterTags.SingleOrDefaultAsync(t => t.Slug == tag.Slug, ct);
+            if (operation == "create-tag" && !changed) Assert.Null(storedTag);
+            else
+            {
+                Assert.NotNull(storedTag);
+                Assert.Equal(changed && operation is "create-tag" or "edit-tag" ? "Changed" : "Original", storedTag.Name);
+                Assert.Equal(!(changed && operation == "edit-tag"), storedTag.IsActive);
+            }
+            var assignments = await read.RoasterTagAssignments.Where(a => a.RoasterId == roaster.Id).ToArrayAsync(ct);
+            if (changed && operation == "set-tags")
+            {
+                var assignment = Assert.Single(assignments);
+                Assert.Equal(tag.Id, assignment.TagId);
+                Assert.Equal(actor, assignment.AssignedByUserId);
+            }
+            else Assert.Empty(assignments);
+        }
+    }
+
     private IHost CreateHost(Action<IServiceCollection> configure, Type handler) => Host.CreateDefaultBuilder()
         .ConfigureServices(services =>
         {
@@ -346,7 +465,7 @@ public sealed class ShopsDirectWriteBoundaryLiveTests : IClassFixture<ShopsLiveD
             options.CodeGeneration.AlwaysUseServiceLocationFor(typeof(IPublicAddressService));
             options.CodeGeneration.AlwaysUseServiceLocationFor(typeof(ICoffeeImportWriter));
             options.CodeGeneration.AlwaysUseServiceLocationFor(typeof(ICoffeeProductWriter));
-            options.CodeGeneration.AlwaysUseServiceLocationFor(typeof(ICoffeeCatalogStore));
+            options.CodeGeneration.AlwaysUseServiceLocationFor(typeof(ICoffeeCatalogTagWriter));
             options.PersistMessagesWithPostgresql(fixture.ConnectionString, "wolverine");
             options.Policies.UseDurableOutboxOnAllSendingEndpoints();
             options.Policies.UseDurableInboxOnAllListeners();

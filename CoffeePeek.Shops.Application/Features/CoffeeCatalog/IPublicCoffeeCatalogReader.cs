@@ -5,6 +5,7 @@ namespace CoffeePeek.Shops.Application.Features.CoffeeCatalog;
 
 public interface IPublicCoffeeCatalogReader
 {
+    Task<Dictionary<Guid, (int CoffeeShopsCount, int CoffeeProductsCount)>> RoasterCountsAsync(Guid[] ids, CancellationToken ct);
     Task<CountryDto[]> CountriesAsync(CancellationToken ct);
     Task<RoasterTagDto[]> PublicTagsAsync(CancellationToken ct);
     Task<PublicRoasterDto[]> RoastersAsync(string[] tags, CancellationToken ct);

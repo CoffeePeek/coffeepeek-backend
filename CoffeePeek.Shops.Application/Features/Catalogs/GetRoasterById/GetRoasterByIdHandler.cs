@@ -16,7 +16,7 @@ public static class GetRoasterByIdHandler
         GetRoasterByIdQuery query,
         IQueryRoasterRepository repository,
         IOptions<MediaPublicUrlOptions> mediaOptions,
-        ICoffeeCatalogStore coffees,
+        IPublicCoffeeCatalogReader coffees,
         CancellationToken ct)
     {
         var roaster = await repository.GetByIdWithShopsAndPhotosAsync(query.Id, ct);

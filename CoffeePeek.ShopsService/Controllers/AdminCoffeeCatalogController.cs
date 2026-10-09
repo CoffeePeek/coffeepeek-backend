@@ -13,7 +13,7 @@ namespace CoffeePeek.ShopsService.Controllers;
 [ApiController]
 [Authorize(Policy = RoleConsts.Moderator)]
 [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
-public sealed class AdminCoffeeCatalogController(ICoffeeCatalogStore store, IMessageBus bus, IUserContext user) : ControllerBase
+public sealed class AdminCoffeeCatalogController(IAdminCoffeeCatalogReader store, IMessageBus bus, IUserContext user) : ControllerBase
 {
     [HttpGet("api/admin/coffees")]
     public async Task<IActionResult> List(CancellationToken ct, int page = 1, int pageSize = 20, string? status = null) =>
@@ -31,7 +31,7 @@ public sealed class AdminCoffeeCatalogController(ICoffeeCatalogStore store, IMes
         return item is null ? NotFound() : Ok(Response<AdminCoffeeDto>.Success(item));
     }
     [HttpGet("api/admin/roaster-tags")]
-    public async Task<IActionResult> Tags(CancellationToken ct) => Ok(Response<RoasterTagDto[]>.Success(await store.TagsAsync(true, ct)));
+    public async Task<IActionResult> Tags(CancellationToken ct) => Ok(Response<RoasterTagDto[]>.Success(await store.AdminTagsAsync(ct)));
     [HttpDelete("api/admin/coffees/{id:guid}")]
     public async Task<IActionResult> Archive(Guid id, CancellationToken ct) =>
         await bus.InvokeAsync<bool>(new ArchiveCoffeeCommand(id), ct) ? NoContent() : NotFound();
@@ -50,7 +50,7 @@ public sealed class AdminCoffeeCatalogController(ICoffeeCatalogStore store, IMes
     [HttpDelete("api/admin/roaster-tags/{id:guid}")]
     public async Task<IActionResult> DeactivateTag(Guid id, CancellationToken ct)
     {
-        var tag = (await store.TagsAsync(true, ct)).SingleOrDefault(t => t.Id == id);
+        var tag = (await store.AdminTagsAsync(ct)).SingleOrDefault(t => t.Id == id);
         if (tag is null) return NotFound();
         return await EditTag(id, new(tag.Name, tag.Description, tag.SortOrder, false), ct);
     }

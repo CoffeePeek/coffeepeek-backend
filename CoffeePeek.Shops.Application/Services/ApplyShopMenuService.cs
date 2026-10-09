@@ -15,6 +15,7 @@ public class ApplyShopMenuService(
     IShopMenuRepository menuRepository,
     IQueryCoffeeDrinkRepository drinkRepository,
     ICoffeeShopRepository shopRepository,
+    IShopPriceRangeWriter priceRangeWriter,
     IMessageBus bus) : IApplyShopMenuService
 {
     private static readonly JsonSerializerOptions JsonOpts = new(JsonSerializerDefaults.Web);
@@ -152,10 +153,6 @@ public class ApplyShopMenuService(
     private async Task ApplyPriceRangeAsync(Guid shopId, DomainPriceRange range, CancellationToken ct)
     {
         var shop = await shopRepository.GetByIdAsync(shopId, ct);
-        if (shop is not null && shop.PriceRange != range)
-        {
-            shop.SetPriceRange(range);
-            shop.AdvanceProfileRevision();
-        }
+        if (shop is not null) priceRangeWriter.Apply(shop, range);
     }
 }

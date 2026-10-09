@@ -12,7 +12,8 @@ public static class CoffeeCatalogModule
     public static IServiceCollection AddCoffeeCatalogModule(this IServiceCollection services)
     {
         services.AddScoped<CoffeeCatalogStore>();
-        services.AddScoped<ICoffeeCatalogStore>(provider => provider.GetRequiredService<CoffeeCatalogStore>());
+        services.AddScoped<IAdminCoffeeCatalogReader>(provider => provider.GetRequiredService<CoffeeCatalogStore>());
+        services.AddScoped<ICoffeeCatalogTagWriter>(provider => provider.GetRequiredService<CoffeeCatalogStore>());
         services.AddScoped<IPublicCoffeeCatalogReader>(provider => provider.GetRequiredService<CoffeeCatalogStore>());
         services.AddScoped<ICoffeeProductWriter>(provider => provider.GetRequiredService<CoffeeCatalogStore>());
         services.AddScoped<ICoffeeImportWriter>(provider => provider.GetRequiredService<CoffeeCatalogStore>());

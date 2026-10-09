@@ -12,7 +12,7 @@ public class GetAllRoastersHandler
         GetAllRoastersCommand request,
         IQueryRoasterRepository repository,
         IMapper mapper,
-        ICoffeeCatalogStore coffees,
+        IPublicCoffeeCatalogReader coffees,
         CancellationToken cancellationToken)
     {
         var roasters = await repository.GetAll();
