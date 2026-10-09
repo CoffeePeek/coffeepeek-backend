@@ -1,5 +1,5 @@
-using CoffeePeek.Shared.Domain.Interfaces.Infrastructure;
 using CoffeePeek.Shared.Kernel;
+using CoffeePeek.Shops.Application.Features.CheckIn;
 using CoffeePeek.Shops.Application.Features.Review.Reports;
 using CoffeePeek.Shops.Domain.Aggregates.CheckInAggregate;
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
@@ -10,6 +10,7 @@ using CoffeePeek.Shops.Persistance.Queries;
 using CoffeePeek.Shops.Persistance.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Moq;
+using Wolverine;
 
 namespace CoffeePeek.Shops.Infrastructure.Tests.Persistence;
 
@@ -45,11 +46,11 @@ public class ReviewReportRatingFallbackTests
         var checkIns = new QueryCheckInRepository(db);
         var uow = new Mock<IUnitOfWork>();
         uow.Setup(x => x.SaveChangesAsync(ct)).Returns(() => db.SaveChangesAsync(ct));
-        var cache = new Mock<ICacheService>();
+        var bus = new Mock<IMessageBus>();
         var admin = Guid.NewGuid();
         var command = new ResolveReviewReportCommand(report.Id, admin, true);
 
-        await ResolveReviewReportHandler.Handle(command, reports, checkIns, uow.Object, cache.Object, ct);
+        await ResolveReviewReportHandler.Handle(command, reports, checkIns, uow.Object, bus.Object, ct);
 
         Assert.Equal((3m, 2), await ratings.GetStatsByShopAsync(shop.Id, ct));
         var deletedAt = (await db.CheckIns.SingleAsync(c => c.Id == targetId, ct)).DeletedAtUtc;
@@ -68,7 +69,7 @@ public class ReviewReportRatingFallbackTests
         db.ChangeTracker.Clear();
 
         await ResolveReviewReportHandler.Handle(command with { AdminId = Guid.NewGuid() },
-            reports, checkIns, uow.Object, cache.Object, ct);
+            reports, checkIns, uow.Object, bus.Object, ct);
 
         Assert.Equal((3m, 2), await ratings.GetStatsByShopAsync(shop.Id, ct));
         Assert.Equal(deletedAt, (await db.CheckIns.SingleAsync(c => c.Id == targetId, ct)).DeletedAtUtc);
@@ -76,7 +77,8 @@ public class ReviewReportRatingFallbackTests
         Assert.True((await db.CheckIns.SingleAsync(c => c.Id == earlier.Id, ct)).IsPubliclyVisible);
         Assert.True((await db.CheckIns.SingleAsync(c => c.Id == other.Id, ct)).IsPubliclyVisible);
         uow.Verify(x => x.SaveChangesAsync(ct), Times.Once);
-        cache.Verify(x => x.RemoveAsync(CacheKey.Shop.Detail(shop.Id)), Times.Exactly(2));
+        bus.Verify(x => x.PublishAsync(It.Is<CheckInCacheInvalidationRequested>(message =>
+            message.CheckInId == targetId && message.ShopId == shop.Id)), Times.Once);
     }
 
     private static CheckIn Approved(Guid user, Guid shop, int score, DateTime visited, Guid? id = null)

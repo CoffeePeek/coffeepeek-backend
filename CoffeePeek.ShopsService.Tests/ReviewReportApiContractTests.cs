@@ -5,10 +5,10 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Security.Claims;
 using CoffeePeek.Shared.Auth;
-using CoffeePeek.Shared.Domain.Interfaces.Infrastructure;
 using CoffeePeek.Shared.Kernel;
 using CoffeePeek.Shared.Kernel.Exceptions;
 using CoffeePeek.Shared.Kernel.Response;
+using CoffeePeek.Shops.Application.Features.CheckIn;
 using CoffeePeek.Shops.Domain.Aggregates.CheckInAggregate;
 using CoffeePeek.Shops.Domain.Aggregates.ReviewAggregate;
 using CoffeePeek.Shops.Domain.Entities;
@@ -115,7 +115,7 @@ public class ReviewReportApiContractTests
         var reports = new Mock<IReviewReportRepository>();
         var checkIns = new Mock<IQueryCheckInRepository>();
         var uow = new Mock<IUnitOfWork>();
-        var cache = new Mock<ICacheService>();
+        var outbox = new Mock<IMessageBus>();
         reports.Setup(x => x.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Guid id, CancellationToken _) => rows.GetValueOrDefault(id));
         reports.Setup(x => x.Add(It.IsAny<ReviewReport>())).Callback<ReviewReport>(row => rows.Add(row.Id, row));
@@ -126,7 +126,7 @@ public class ReviewReportApiContractTests
         {
             SubmitReviewReportCommand command => SubmitReviewReportHandler.Handle(command, reports.Object, checkIns.Object, uow.Object, ct),
             GetReviewReportQuery query => GetReviewReportHandler.Handle(query, reports.Object, checkIns.Object, ct),
-            ResolveReviewReportCommand command => ResolveReviewReportHandler.Handle(command, reports.Object, checkIns.Object, uow.Object, cache.Object, ct),
+            ResolveReviewReportCommand command => ResolveReviewReportHandler.Handle(command, reports.Object, checkIns.Object, uow.Object, outbox.Object, ct),
             _ => throw new InvalidOperationException("Unexpected report message.")
         };
         var builder = WebApplication.CreateBuilder();
@@ -190,7 +190,8 @@ public class ReviewReportApiContractTests
         deletedDetail.CheckIn!.Id.Should().Be(targetId);
         deletedDetail.CheckIn.DeletedAtUtc.Should().Be(deletion);
         uow.Verify(x => x.SaveChangesAsync(ct), Times.Exactly(2));
-        cache.Verify(x => x.RemoveAsync(CacheKey.Shop.Detail(target.ShopId)), Times.Exactly(2));
+        outbox.Verify(x => x.PublishAsync(It.Is<CheckInCacheInvalidationRequested>(message =>
+            message.CheckInId == target.Id && message.ShopId == target.ShopId)), Times.Once);
         await app.StopAsync(ct);
     }
 

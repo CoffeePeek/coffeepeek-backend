@@ -1,15 +1,16 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using CoffeePeek.Shared.Domain.Interfaces.Infrastructure;
 using CoffeePeek.Shared.Kernel;
 using CoffeePeek.Shared.Kernel.Exceptions;
+using CoffeePeek.Shops.Application.Features.CheckIn;
 using CoffeePeek.Shops.Application.Features.Review.Reports;
 using CoffeePeek.Shops.Domain.Aggregates.CheckInAggregate;
 using CoffeePeek.Shops.Domain.Aggregates.ReviewAggregate;
 using CoffeePeek.Shops.Domain.Entities;
 using FluentAssertions;
 using Moq;
+using Wolverine;
 using DomainCheckIn = CoffeePeek.Shops.Domain.Aggregates.CheckInAggregate.CheckIn;
 
 namespace CoffeePeek.Shops.Application.Tests.Features.Review;
@@ -20,7 +21,7 @@ public class ReviewReportHandlerTests
     private readonly Mock<IReviewReportRepository> _reports = new();
     private readonly Mock<IQueryCheckInRepository> _checkIns = new();
     private readonly Mock<IUnitOfWork> _uow = new();
-    private readonly Mock<ICacheService> _cache = new();
+    private readonly Mock<IMessageBus> _bus = new();
     private readonly CancellationToken _ct = TestContext.Current.CancellationToken;
 
     private static DomainCheckIn PublishedCheckIn(Guid? preservedReviewId = null)
@@ -98,39 +99,38 @@ public class ReviewReportHandlerTests
         _reports.Setup(x => x.GetByIdAsync(report.Id, _ct)).ReturnsAsync(report);
         _checkIns.Setup(x => x.GetTrackedByIdAsync(checkIn.Id, _ct)).ReturnsAsync(checkIn);
         var command = new ResolveReviewReportCommand(report.Id, Guid.NewGuid(), delete);
-        await ResolveReviewReportHandler.Handle(command, _reports.Object, _checkIns.Object, _uow.Object, _cache.Object, _ct);
-        await ResolveReviewReportHandler.Handle(command, _reports.Object, _checkIns.Object, _uow.Object, _cache.Object, _ct);
+        await ResolveReviewReportHandler.Handle(command, _reports.Object, _checkIns.Object, _uow.Object, _bus.Object, _ct);
+        await ResolveReviewReportHandler.Handle(command, _reports.Object, _checkIns.Object, _uow.Object, _bus.Object, _ct);
         checkIn.DeletedAtUtc.HasValue.Should().Be(delete);
         report.Status.Should().Be(delete ? ReviewReportStatus.CheckInDeleted : ReviewReportStatus.Dismissed);
         _uow.Verify(x => x.SaveChangesAsync(_ct), Times.Once);
-        _cache.Verify(x => x.RemoveAsync(CacheKey.Shop.Detail(checkIn.ShopId)), delete ? Times.Exactly(2) : Times.Never());
-        _cache.Verify(x => x.RemoveByPattern(CacheKey.Shop.SearchPattern(), _ct), delete ? Times.Exactly(2) : Times.Never());
+        _bus.Verify(x => x.PublishAsync(It.Is<CheckInCacheInvalidationRequested>(message =>
+            message.CheckInId == checkIn.Id && message.ShopId == checkIn.ShopId && message.UserId == checkIn.UserId)),
+            delete ? Times.Once() : Times.Never());
         var conflicting = () => ResolveReviewReportHandler.Handle(command with { DeleteCheckIn = !delete },
-            _reports.Object, _checkIns.Object, _uow.Object, _cache.Object, _ct);
+            _reports.Object, _checkIns.Object, _uow.Object, _bus.Object, _ct);
         await conflicting.Should().ThrowAsync<ConflictException>();
     }
 
     [Fact]
-    public async Task Resolve_RetryRecoversCacheInvalidationAfterCommittedDeletion()
+    public async Task Resolve_ReplayDoesNotRepeatCommittedDeletionOrOutboxEvent()
     {
         var checkIn = PublishedCheckIn(LegacyReviewId);
         var report = ReviewReport.Create(checkIn.Id, Guid.NewGuid(), "abuse");
         _reports.Setup(x => x.GetByIdAsync(report.Id, _ct)).ReturnsAsync(report);
         _checkIns.Setup(x => x.GetTrackedByIdAsync(checkIn.Id, _ct)).ReturnsAsync(checkIn);
-        _cache.SetupSequence(x => x.RemoveAsync(CacheKey.Shop.Detail(checkIn.ShopId)))
-            .ThrowsAsync(new InvalidOperationException("cache unavailable"))
-            .Returns(Task.CompletedTask);
         var command = new ResolveReviewReportCommand(report.Id, Guid.NewGuid(), true);
-        var first = () => ResolveReviewReportHandler.Handle(command, _reports.Object, _checkIns.Object, _uow.Object, _cache.Object, _ct);
-        await first.Should().ThrowAsync<InvalidOperationException>();
+        await ResolveReviewReportHandler.Handle(command, _reports.Object, _checkIns.Object,
+            _uow.Object, _bus.Object, _ct);
         var deletedAt = checkIn.DeletedAtUtc;
         var reportAudit = ReviewReportDto.From(report);
         await ResolveReviewReportHandler.Handle(command with { AdminId = Guid.NewGuid() },
-            _reports.Object, _checkIns.Object, _uow.Object, _cache.Object, _ct);
+            _reports.Object, _checkIns.Object, _uow.Object, _bus.Object, _ct);
         checkIn.DeletedAtUtc.Should().Be(deletedAt);
         ReviewReportDto.From(report).Should().Be(reportAudit);
         _uow.Verify(x => x.SaveChangesAsync(_ct), Times.Once);
-        _cache.Verify(x => x.RemoveAsync(CacheKey.Shop.Detail(checkIn.ShopId)), Times.Exactly(2));
+        _bus.Verify(x => x.PublishAsync(It.Is<CheckInCacheInvalidationRequested>(message =>
+            message.CheckInId == checkIn.Id)), Times.Once);
     }
 
     [Theory]
@@ -171,7 +171,7 @@ public class ReviewReportHandlerTests
         detail.Data.CheckIn.Should().BeNull();
 
         await ResolveReviewReportHandler.Handle(new(report.Id, Guid.NewGuid(), true),
-            _reports.Object, _checkIns.Object, _uow.Object, _cache.Object, _ct);
+            _reports.Object, _checkIns.Object, _uow.Object, _bus.Object, _ct);
         report.CheckInId.Should().Be(LegacyReviewId);
         report.ReportedByUserId.Should().Be(audit.ReportedByUserId);
         report.Text.Should().Be(audit.Text);
@@ -202,12 +202,12 @@ public class ReviewReportHandlerTests
         _checkIns.Setup(x => x.GetTrackedByIdAsync(other.Id, _ct)).ReturnsAsync(other);
         var command = new ResolveReviewReportCommand(report.Id, Guid.NewGuid(), true);
 
-        await ResolveReviewReportHandler.Handle(command, _reports.Object, _checkIns.Object, _uow.Object, _cache.Object, _ct);
+        await ResolveReviewReportHandler.Handle(command, _reports.Object, _checkIns.Object, _uow.Object, _bus.Object, _ct);
         checkIn.DeletedAtUtc.Should().NotBeNull();
         var deletedAt = checkIn.DeletedAtUtc;
         var reportAudit = ReviewReportDto.From(report);
         await ResolveReviewReportHandler.Handle(command with { AdminId = Guid.NewGuid() },
-            _reports.Object, _checkIns.Object, _uow.Object, _cache.Object, _ct);
+            _reports.Object, _checkIns.Object, _uow.Object, _bus.Object, _ct);
 
         checkIn.DeletedAtUtc.Should().Be(deletedAt);
         checkIn.ApplyModerationDecision(oldRevision, oldSubmission, 99,
@@ -218,7 +218,8 @@ public class ReviewReportHandlerTests
         ReviewReportDto.From(report).Should().Be(reportAudit);
         _checkIns.Verify(x => x.GetTrackedByIdAsync(other.Id, It.IsAny<CancellationToken>()), Times.Never);
         _uow.Verify(x => x.SaveChangesAsync(_ct), Times.Once);
-        _cache.Verify(x => x.RemoveAsync(CacheKey.Shop.Detail(checkIn.ShopId)), Times.Exactly(2));
+        _bus.Verify(x => x.PublishAsync(It.Is<CheckInCacheInvalidationRequested>(message =>
+            message.CheckInId == checkIn.Id)), Times.Once);
     }
 
     [Theory]
