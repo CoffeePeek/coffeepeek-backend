@@ -124,6 +124,7 @@ jobs:
             ShopChangeRequestOutboxLiveTests \
             CheckInModerationRaceLiveTests \
             CheckInHelpfulOutboxLiveTests \
+            ReviewReportCommitLiveTests \
             CoffeeZonePolygonLiveTests \
             CityReferenceLiveTests \
             CityCatalogFreshReadLiveTests; do
