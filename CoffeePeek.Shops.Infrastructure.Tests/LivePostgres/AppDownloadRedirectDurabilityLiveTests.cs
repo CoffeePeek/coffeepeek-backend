@@ -1,5 +1,7 @@
 using CoffeePeek.Contract.Dtos.AppDownloads;
+using CoffeePeek.Shared.Kernel;
 using CoffeePeek.Shared.Kernel.Response;
+using CoffeePeek.Shared.Persistence.Data;
 using CoffeePeek.Shops.Application.Features.AppDownloads;
 using CoffeePeek.Shops.Domain.Aggregates.AppDistributionAggregate;
 using CoffeePeek.Shops.Persistance.Configuration;
@@ -180,6 +182,7 @@ public sealed class AppDownloadRedirectDurabilityLiveTests : IClassFixture<Shops
             {
                 services.AddScoped(_ => fixture.Context());
                 services.AddScoped<IAppDistributionRepository, AppDistributionRepository>();
+                services.AddScoped<IUnitOfWork, UnitOfWork<ShopsDbContext>>();
             })
             .UseWolverine(options =>
             {
