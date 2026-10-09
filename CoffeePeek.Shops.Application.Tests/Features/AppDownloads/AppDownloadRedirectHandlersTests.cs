@@ -1,7 +1,6 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using CoffeePeek.Shared.Kernel;
 using CoffeePeek.Shops.Application.Features.AppDownloads;
 using CoffeePeek.Shops.Domain.Aggregates.AppDistributionAggregate;
 using FluentAssertions;
@@ -36,7 +35,6 @@ public class AppDownloadRedirectHandlersTests
     {
         var ct = TestContext.Current.CancellationToken;
         var repository = new Mock<IAppDistributionRepository>();
-        var unitOfWork = new Mock<IUnitOfWork>();
         var eventId = Guid.NewGuid();
         var command = new RecordAppDownloadRedirectCommand(eventId, "android", "agent", null, null);
         AppDownloadRedirectEvent? saved = null;
@@ -45,14 +43,12 @@ public class AppDownloadRedirectHandlersTests
             .ReturnsAsync(true);
         repository.Setup(x => x.AddRedirectEvent(It.IsAny<AppDownloadRedirectEvent>()))
             .Callback<AppDownloadRedirectEvent>(value => saved = value);
-        unitOfWork.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
-        await RecordAppDownloadRedirectHandler.Handle(command, repository.Object, unitOfWork.Object, ct);
-        await RecordAppDownloadRedirectHandler.Handle(command, repository.Object, unitOfWork.Object, ct);
+        await RecordAppDownloadRedirectHandler.Handle(command, repository.Object, ct);
+        await RecordAppDownloadRedirectHandler.Handle(command, repository.Object, ct);
 
         saved.Should().NotBeNull();
         saved!.Id.Should().Be(eventId);
         repository.Verify(x => x.AddRedirectEvent(It.IsAny<AppDownloadRedirectEvent>()), Times.Once);
-        unitOfWork.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 }

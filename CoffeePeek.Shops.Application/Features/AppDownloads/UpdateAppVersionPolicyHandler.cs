@@ -1,6 +1,5 @@
 using System.Net;
 using CoffeePeek.Contract.Dtos.AppDownloads;
-using CoffeePeek.Shared.Kernel;
 using CoffeePeek.Shared.Kernel.Response;
 using CoffeePeek.Shops.Domain.Aggregates.AppDistributionAggregate;
 
@@ -11,7 +10,6 @@ public static class UpdateAppVersionPolicyHandler
     public static async Task<Response<AdminAppDownloadsDto>> Handle(
         UpdateAppVersionPolicyCommand command,
         IAppDistributionRepository repository,
-        IUnitOfWork unitOfWork,
         CancellationToken ct)
     {
         var platform = command.Platform.Trim().ToLowerInvariant();
@@ -33,7 +31,6 @@ public static class UpdateAppVersionPolicyHandler
             oldValue,
             DescribeVersionPolicy(settings, platform)));
 
-        await unitOfWork.SaveChangesAsync(ct);
 
         var activeRelease = await repository.GetActiveAndroidReleaseAsync(ct);
         return Response<AdminAppDownloadsDto>.Success(AppDownloadMappers.ToAdminDto(settings, activeRelease));

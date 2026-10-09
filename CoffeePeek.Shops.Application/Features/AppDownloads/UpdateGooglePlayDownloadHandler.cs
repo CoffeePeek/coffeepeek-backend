@@ -1,6 +1,5 @@
 using System.Net;
 using CoffeePeek.Contract.Dtos.AppDownloads;
-using CoffeePeek.Shared.Kernel;
 using CoffeePeek.Shared.Kernel.Response;
 using CoffeePeek.Shops.Domain.Aggregates.AppDistributionAggregate;
 
@@ -11,7 +10,6 @@ public static class UpdateGooglePlayDownloadHandler
     public static async Task<Response<AdminAppDownloadsDto>> Handle(
         UpdateGooglePlayDownloadCommand command,
         IAppDistributionRepository repository,
-        IUnitOfWork unitOfWork,
         CancellationToken ct)
     {
         var settings = await repository.GetOrCreateSettingsAsync(ct);
@@ -25,7 +23,6 @@ public static class UpdateGooglePlayDownloadHandler
             oldValue,
             $"enabled={settings.AndroidGooglePlayEnabled};url={settings.AndroidGooglePlayUrl}"));
 
-        await unitOfWork.SaveChangesAsync(ct);
 
         var activeRelease = await repository.GetActiveAndroidReleaseAsync(ct);
         return Response<AdminAppDownloadsDto>.Success(AppDownloadMappers.ToAdminDto(settings, activeRelease));

@@ -1,6 +1,5 @@
 using System.Net;
 using CoffeePeek.Contract.Dtos.AppDownloads;
-using CoffeePeek.Shared.Kernel;
 using CoffeePeek.Shared.Kernel.Response;
 using CoffeePeek.Shops.Domain.Aggregates.AppDistributionAggregate;
 
@@ -11,7 +10,6 @@ public static class CreateAndroidReleaseHandler
     public static async Task<Response<AndroidReleaseDto>> Handle(
         CreateAndroidReleaseCommand command,
         IAppDistributionRepository repository,
-        IUnitOfWork unitOfWork,
         CancellationToken ct)
     {
         var release = AndroidRelease.Create(
@@ -31,7 +29,6 @@ public static class CreateAndroidReleaseHandler
             null,
             $"version={release.Version};versionCode={release.VersionCode};fileUrl={release.FileUrl}"));
 
-        await unitOfWork.SaveChangesAsync(ct);
         return Response<AndroidReleaseDto>.Success(release.ToDto());
     }
 }

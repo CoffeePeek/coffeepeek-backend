@@ -3,7 +3,6 @@ using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using CoffeePeek.Contract.Dtos.AppDownloads;
-using CoffeePeek.Shared.Kernel;
 using CoffeePeek.Shops.Application.Features.AppDownloads;
 using CoffeePeek.Shops.Domain.Aggregates.AppDistributionAggregate;
 using FluentAssertions;
@@ -18,7 +17,6 @@ public class AppVersionHandlersTests
     private const string ApkUrl = "https://cdn.coffeepeek.by/android/coffeepeek-1.2.0.apk";
 
     private readonly Mock<IAppDistributionRepository> _repo = new();
-    private readonly Mock<IUnitOfWork> _uow = new();
     private readonly AppDistributionSettings _settings = AppDistributionSettings.CreateDefault();
     private readonly CancellationToken _ct = CancellationToken.None;
 
@@ -126,24 +124,22 @@ public class AppVersionHandlersTests
     }
 
     [Fact]
-    public async Task UpdatePolicy_Ios_SavesAndAudits()
+    public async Task UpdatePolicy_Ios_StagesChangesAndAudit()
     {
         var result = await UpdateAppVersionPolicyHandler.Handle(
-            new UpdateAppVersionPolicyCommand(Guid.NewGuid(), "ios", 30, 25), _repo.Object, _uow.Object, _ct);
+            new UpdateAppVersionPolicyCommand(Guid.NewGuid(), "ios", 30, 25), _repo.Object, _ct);
 
         result.Data.IosVersion.Should().Be(new AppVersionPolicyDto(30, 25));
         _repo.Verify(r => r.AddAuditLog(It.IsAny<AppDistributionAuditLog>()), Times.Once);
-        _uow.Verify(u => u.SaveChangesAsync(_ct), Times.Once);
     }
 
     [Fact]
     public async Task UpdatePolicy_UnknownPlatform_ReturnsBadRequestWithoutSaving()
     {
         var result = await UpdateAppVersionPolicyHandler.Handle(
-            new UpdateAppVersionPolicyCommand(Guid.NewGuid(), "windows", 30, 25), _repo.Object, _uow.Object, _ct);
+            new UpdateAppVersionPolicyCommand(Guid.NewGuid(), "windows", 30, 25), _repo.Object, _ct);
 
         result.StatusCode.Should().Be((int)HttpStatusCode.BadRequest);
-        _uow.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     private static AndroidRelease CreateRelease(int versionCode) => AndroidRelease.Create(
