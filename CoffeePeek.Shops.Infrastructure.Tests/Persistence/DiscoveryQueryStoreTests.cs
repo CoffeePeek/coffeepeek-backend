@@ -1,4 +1,5 @@
 using System.Reflection;
+using System.Text.RegularExpressions;
 using CoffeePeek.Contract.Dtos.Discovery;
 using CoffeePeek.Shared.Kernel.Options;
 using CoffeePeek.Shops.Application.Features.Discovery;
@@ -66,6 +67,70 @@ public class DiscoveryQueryStoreTests
         Assert.Equal(250, offer.WeightGrams); Assert.Equal("InStock", offer.Availability);
         Assert.DoesNotContain("ExternalVariant", offer.OfferKey);
         Assert.Equal(4, (await store.CoffeeDetailsAsync("one", Ct))!.Offers.Length);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("name_asc")]
+    [InlineData("relevance")]
+    [InlineData("price_asc")]
+    [InlineData("price_desc")]
+    [InlineData("newest")]
+    public async Task CoffeeNameSorting_PutsSpecialPrefixesLast_BeforeStablePagination(string? sort)
+    {
+        await using var db = Database(); await db.Database.EnsureCreatedAsync(Ct);
+        var roaster = Roaster(db, "roast");
+        string[] names = ["_Underscore", "*Special", "\"Quoted", "#Hash", "☕ Blend", "Alpha", "Арабика", "7 Blend", "Ёлка", "Éthiopie", "Alpha"];
+        var products = names.Select((name, i) =>
+        {
+            var product = new CoffeeProduct(roaster.Id, new(name, null, "roasted_beans", "whole_beans", "unknown",
+                null, null, null, null, null, [], [], [], []));
+            product.SetPublicSlug($"coffee-{i}"); product.SetStatus(CoffeePublicationStatus.Published);
+            product.CreatedAtUtc = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            Offer(product, 250, 30); db.CoffeeProducts.Add(product); return product;
+        }).ToArray();
+        Offer(Product(db, roaster, "Draft", published: false), 250, 10);
+        var archived = Product(db, roaster, "Archived"); archived.SetStatus(CoffeePublicationStatus.Archived); Offer(archived, 250, 10);
+        await db.SaveChangesAsync(Ct);
+        var expected = products.OrderBy(p => !char.IsLetterOrDigit(p.Name[0])).ThenBy(p => p.Name).ThenBy(p => p.PublicSlug);
+        var slugs = new List<string>();
+        for (var page = 1; page <= 4; page++)
+        {
+            var result = await Store(db).SearchCoffeesAsync(new()
+            {
+                Q = sort == "relevance" ? "roast" : string.Empty, Sort = sort, Page = page, PageSize = 3,
+                Filters = new() { Currency = "BYN", WeightGrams = 250 }
+            }, Ct);
+            Assert.Equal(products.Length, result.TotalItems); Assert.Equal(4, result.TotalPages);
+            slugs.AddRange(result.Items.Select(p => p.Address.Slug));
+        }
+        Assert.Equal(expected.Select(p => p.PublicSlug), slugs);
+    }
+
+    [Theory]
+    [InlineData("price_asc", 10)]
+    [InlineData("price_desc", 50)]
+    [InlineData("newest", 30)]
+    [InlineData("relevance", 30)]
+    public async Task SpecialPrefixSorting_PreservesExplicitSortPriority(string sort, decimal price)
+    {
+        await using var db = Database(); await db.Database.EnsureCreatedAsync(Ct);
+        var roaster = Roaster(db, "roast");
+        var regular = new CoffeeProduct(roaster.Id, new("Alpha _Special", null, "roasted_beans", "whole_beans", "unknown",
+            null, null, null, null, null, [], [], [], []));
+        regular.SetPublicSlug("regular"); regular.SetStatus(CoffeePublicationStatus.Published);
+        db.CoffeeProducts.Add(regular); Offer(regular, 250, 30);
+        var special = new CoffeeProduct(roaster.Id, new("_Special", null, "roasted_beans", "whole_beans", "unknown",
+            null, null, null, null, null, [], [], [], []));
+        special.SetPublicSlug("special"); special.SetStatus(CoffeePublicationStatus.Published);
+        special.CreatedAtUtc = DateTime.UtcNow.AddDays(1); Offer(special, 250, price); db.CoffeeProducts.Add(special);
+        await db.SaveChangesAsync(Ct);
+        var result = await Store(db).SearchCoffeesAsync(new()
+        {
+            Sort = sort, Q = sort == "relevance" ? "_special" : string.Empty,
+            Filters = new() { Currency = "BYN", WeightGrams = 250 }
+        }, Ct);
+        Assert.Equal("_Special", result.Items[0].Name);
     }
 
     [Fact]
@@ -148,7 +213,10 @@ public class DiscoveryQueryStoreTests
         var catalog = Activator.CreateInstance(catalogType, active, Array.Empty<CoffeeFilterValue>())!;
         var filters = new CoffeeFilters { Brew = ["filter"], Caffeine = ["decaf"], Roast = ["light"], Acidity = ["bright"], Processing = ["washed"], Fermentation = ["anaerobic"], Taste = ["berry"], Composition = ["blend"], Currency = "BYN", WeightGrams = 250, MinPrice = 10, MaxPrice = 30 };
         var products = (IQueryable<CoffeeProduct>)typeof(DiscoveryQueryStore).GetMethod("MatchingProducts", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(store, [filters, catalog, Array.Empty<Guid>(), "кофе"])!;
-        var sql = products.OrderBy(p => p.Name).Skip(20).Take(20).ToQueryString();
+        var sql = products.OrderBy(p => Regex.IsMatch(p.Name, @"^\W|^_")).ThenBy(p => p.Name).ThenBy(p => p.PublicSlug)
+            .Skip(20).Take(20).ToQueryString();
         Assert.Contains("EXISTS", sql); Assert.Contains("CoffeeVariants", sql); Assert.Contains("LIMIT", sql);
+        Assert.Contains("ORDER BY", sql); Assert.Contains("\"Name\" ~ ", sql); Assert.Contains(@"^\W|^_", sql);
+        Assert.True(sql.IndexOf("ORDER BY", StringComparison.Ordinal) < sql.IndexOf("LIMIT", StringComparison.Ordinal));
     }
 }
