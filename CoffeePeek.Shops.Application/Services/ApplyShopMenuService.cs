@@ -65,6 +65,8 @@ public class ApplyShopMenuService(
         }
 
         var menu = await GetOrCreateAsync(shopId, ct);
+        // Every accepted snapshot advances the concurrency token, including empty and parsed-only snapshots.
+        menu.MarkManuallyCaptured(snapshot.CapturedAtUtc ?? DateTime.UtcNow);
         if (snapshot.CapturedAtUtc.HasValue)
             menu.MarkParsePending(snapshot.CapturedAtUtc.Value);
 

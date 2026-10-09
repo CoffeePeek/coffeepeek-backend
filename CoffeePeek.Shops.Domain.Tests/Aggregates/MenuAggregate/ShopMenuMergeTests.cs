@@ -35,8 +35,11 @@ public class ShopMenuMergeTests
 
         menu.MergeParsedItems([Parsed(Espresso, 5), Parsed(Espresso, 6)], null, null, null);
         menu.ApplyParsedItems([Parsed(Latte, 5), Parsed(Latte, 6)], null, null, null);
+        var rowId = menu.Items.Single().Id;
+        menu.ApplyParsedItems([Parsed(Latte, 6)], null, null, null);
 
         menu.Items.Should().ContainSingle().Which.Price.Should().Be(6);
+        menu.Items.Single().Id.Should().Be(rowId);
     }
 
     [Fact]

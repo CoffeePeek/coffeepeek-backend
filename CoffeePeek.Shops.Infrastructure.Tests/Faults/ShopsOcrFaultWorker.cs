@@ -26,19 +26,10 @@ public static class ShopsOcrFaultWorker
         var checkpoint = ShopsFaultControl.Required("CP_FAULT_CHECKPOINT");
         var application = "cp-ocr-" + Path.GetFileName(root);
         var workerConnection = new NpgsqlConnectionStringBuilder(connection) { ApplicationName = application }.ConnectionString;
-        var services = new ServiceCollection().AddLogging();
-        services.AddScoped(_ => new ShopsDbContext(new DbContextOptionsBuilder<ShopsDbContext>().UseNpgsql(workerConnection)
-            .AddInterceptors(new AuditInterceptor(), new FaultOcrBeforeStoreInterceptor(root, checkpoint),
-                new FaultOcrStoredInterceptor(root, checkpoint)).Options));
-        services.AddShopsModule().AddMenuModule();
-        services.AddScoped<IApplyShopMenuService, ApplyShopMenuService>();
-        services.AddScoped<IShopPriceRangeWriter, ShopPriceRangeWriter>();
-        var bus = new Mock<IMessageBus>();
-        bus.Setup(b => b.PublishAsync(It.IsAny<object>())).Returns(ValueTask.CompletedTask);
-        services.AddSingleton(bus.Object);
+        using var host = ShopsFaultHost.Build("ocr", root, workerConnection);
+        await host.StartAsync(ct);
+        var provider = host.Services;
         var media = Options.Create(new MediaPublicUrlOptions { PublicEndpoint = "https://media.example.test", ShopBucketName = "shops" });
-        services.AddSingleton(media);
-        await using var provider = services.BuildServiceProvider();
         var parser = new Mock<IMenuVisionParser>();
         parser.Setup(p => p.ParseAsync(It.IsAny<IReadOnlyList<MenuVisionPhoto>>(), It.IsAny<CancellationToken>()))
             .Returns(async () =>
@@ -61,7 +52,11 @@ public static class ShopsOcrFaultWorker
             Options.Create(new MenuPriceRangeOptions()), NullLogger<ParseMenuOcrJobRequestedEventHandler>.Instance);
         File.WriteAllText(ShopsFaultControl.Marker(root, "ocr-ready"), "ready");
         await ShopsFaultControl.WaitMarkerAsync(root, "execute", ct);
-        await handler.Handle(new ParseMenuOcrJobRequestedEvent(Guid.Parse(ShopsFaultControl.Required("CP_FAULT_ENTITY")), null), ct);
+        var jobId = Guid.Parse(ShopsFaultControl.Required("CP_FAULT_ENTITY"));
+        if (checkpoint == "recover-ocr")
+            Assert.Equal(MenuOcrJobStatus.Failed, await scope.ServiceProvider.GetRequiredService<MenuOcrJobStore>()
+                .RecoverUnknownOutcomeAsync(jobId, DateTime.UtcNow, ct));
+        else await handler.Handle(new ParseMenuOcrJobRequestedEvent(jobId, null), ct);
         File.WriteAllText(ShopsFaultControl.Marker(root, "committed"), "handler-returned");
         await Task.Delay(Timeout.Infinite, ct);
     }

@@ -63,6 +63,14 @@ public sealed class ShopMenuItem : Entity<Guid>
         Source = MenuItemSource.Manual;
     }
 
+    internal void ApplySnapshot(ShopMenuItem item)
+    {
+        Availability = item.Availability;
+        Price = item.Price;
+        VolumeMl = item.VolumeMl;
+        Source = item.Source;
+    }
+
     public static void ValidateValues(MenuItemAvailability availability, decimal? price, int? volumeMl)
     {
         if (!Enum.IsDefined(availability))

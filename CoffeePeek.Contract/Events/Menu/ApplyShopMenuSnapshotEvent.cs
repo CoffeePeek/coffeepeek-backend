@@ -6,4 +6,5 @@ public record ApplyShopMenuSnapshotEvent(
     Guid ShopId,
     ShopMenuSnapshot Snapshot,
     bool ApplySuggestedPriceRange,
-    Guid? UserId);
+    Guid? UserId,
+    long? ExpectedInputRevision = null);

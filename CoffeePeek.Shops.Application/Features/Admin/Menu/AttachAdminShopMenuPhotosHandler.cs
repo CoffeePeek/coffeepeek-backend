@@ -41,13 +41,13 @@ public static class AttachAdminShopMenuPhotosHandler
         if (shop is null)
             return (Response<AdminShopMenuDto>.Error(HttpStatusCode.NotFound, "Shop not found."), null);
 
-        var menu = await applyMenu.GetOrCreateAsync(command.ShopId, ct);
-        var now = DateTime.UtcNow;
-        if (command.Photos.Count == 0)
+        if (command.Photos is null || command.Photos.Count == 0)
             return (Response<AdminShopMenuDto>.Error(HttpStatusCode.BadRequest, "At least one menu photo is required."), null);
         var verified = await TrustedUploadedShopPhotos.ClaimAsync(
             photoLookup, command.UserId, command.ShopId,
             ShopPhotoAttachmentKind.Menu, command.Photos, ct);
+        var menu = await applyMenu.GetOrCreateAsync(command.ShopId, ct);
+        var now = DateTime.UtcNow;
         var inputPhotos = verified.Select(p =>
             ShopMenuPhoto.Create(p.FileName, p.ContentType, p.StorageKey, p.SizeBytes,
                 p.PhotoId)).ToArray();

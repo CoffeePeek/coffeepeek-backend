@@ -33,9 +33,9 @@ namespace Internal.Generated.WolverineHandlers
 
         public override async System.Threading.Tasks.Task HandleAsync(Wolverine.Runtime.MessageContext context, System.Threading.CancellationToken cancellation)
         {
+            var shopPriceRangeWriter = new CoffeePeek.Shops.Application.Features.CoffeeShop.ShopProfile.ShopPriceRangeWriter();
             await using var serviceScope = _serviceScopeFactory.CreateAsyncScope();
             Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<Wolverine.Runtime.ScopedMessageContextHolder>(serviceScope.ServiceProvider).Context = context;
-            var shopPriceRangeWriter = new CoffeePeek.Shops.Application.Features.CoffeeShop.ShopProfile.ShopPriceRangeWriter();
             // This service has been marked as requiring service location independent of Wolverine's ability to use constructor injection of everything else
             var shopsDbContext = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<CoffeePeek.Shops.Persistance.Configuration.ShopsDbContext>(serviceScope.ServiceProvider);
             var shopMenuRepository = new CoffeePeek.Shops.Persistance.Repositories.ShopMenuRepository(shopsDbContext);
@@ -48,7 +48,7 @@ namespace Internal.Generated.WolverineHandlers
             // The actual message body
             var attachAdminShopMenuPhotosCommand = (CoffeePeek.Shops.Application.Features.Admin.Menu.AttachAdminShopMenuPhotosCommand)context.Envelope.Message;
 
-
+            
             // Enroll the DbContext & IMessagingContext in the outgoing Wolverine outbox transaction
             var efCoreEnvelopeTransaction = new Wolverine.EntityFrameworkCore.Internals.EfCoreEnvelopeTransaction(shopsDbContext, context, _domainEventScraperIEnumerable);
             await context.EnlistInOutboxAsync(efCoreEnvelopeTransaction).ConfigureAwait(false);
@@ -62,19 +62,19 @@ namespace Internal.Generated.WolverineHandlers
             {
                 System.Diagnostics.Activity.Current?.SetTag("message.handler", "CoffeePeek.Shops.Application.Features.Admin.Menu.AttachAdminShopMenuPhotosHandler");
                 System.Diagnostics.Activity.Current?.SetTag("handler.type", "CoffeePeek.Shops.Application.Features.Admin.Menu.AttachAdminShopMenuPhotosHandler");
-
+                
                 // The actual message execution
                 (var outgoing1, var outgoing2) = await CoffeePeek.Shops.Application.Features.Admin.Menu.AttachAdminShopMenuPhotosHandler.Handle(attachAdminShopMenuPhotosCommand, coffeeShopRepository, applyShopMenuService, queryShopMenuRepository, queryCoffeeDrinkRepository, unitOfWorkOfShopsDbContext, _optionsOfMediaPublicUrlOptions, mediaUploadedPhotoLookup, context, cancellation).ConfigureAwait(false);
 
-
+                
                 // Outgoing, cascaded message
                 await context.EnqueueCascadingAsync(outgoing1).ConfigureAwait(false);
 
-
+                
                 // Outgoing, cascaded message
                 await context.EnqueueCascadingAsync(outgoing2).ConfigureAwait(false);
 
-
+                
                 // Added by EF Core Transaction Middleware
                 var result_of_SaveChangesAsync = await shopsDbContext.SaveChangesAsync(cancellation).ConfigureAwait(false);
 
@@ -93,6 +93,7 @@ namespace Internal.Generated.WolverineHandlers
     }
 
     // END: AttachAdminShopMenuPhotosCommandHandler1524088328
-
-
+    
+    
 }
+

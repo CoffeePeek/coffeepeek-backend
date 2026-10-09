@@ -8,11 +8,13 @@ using CoffeePeek.Shared.Kernel.Exceptions;
 using CoffeePeek.Shops.Persistance.Configuration;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
+using Wolverine.EntityFrameworkCore;
+using CoffeePeek.Shops.Application.Features.CoffeeShop.ShopProfile;
 
 namespace CoffeePeek.Shops.Persistance.Menu;
 
 /// <summary>Each instance uses one short-lived DbContext; callers use a fresh DI scope for each phase.</summary>
-public sealed class MenuOcrJobStore(ShopsDbContext db, IApplyShopMenuService applyMenu)
+public sealed class MenuOcrJobStore(ShopsDbContext db, IApplyShopMenuService applyMenu, IDbContextOutbox? outbox = null)
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
     public static readonly TimeSpan OperatorRecoveryMinimumAge = TimeSpan.FromMinutes(15);
@@ -96,6 +98,8 @@ public sealed class MenuOcrJobStore(ShopsDbContext db, IApplyShopMenuService app
             {
                 job.MarkProviderOutcomeUnknown(nowUtc);
                 menu.MarkParseFailed(MenuOcrJob.ProviderOutcomeUnknownError);
+                if (outbox is not null)
+                    await outbox.PublishAsync(new ShopProfileCacheInvalidationRequested(menu.CoffeeShopId));
             }
             else
                 job.MarkStale(nowUtc);
@@ -180,5 +184,7 @@ public sealed class MenuOcrJobStore(ShopsDbContext db, IApplyShopMenuService app
         await db.SaveChangesAsync(ct);
         if (transaction is not null)
             await transaction.CommitAsync(ct);
+        if (outbox is not null)
+            await outbox.FlushOutgoingMessagesAsync();
     }
 }

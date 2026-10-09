@@ -38,6 +38,13 @@ using Moq;
 using Wolverine;
 using Wolverine.EntityFrameworkCore;
 using Wolverine.Postgresql;
+using CoffeePeek.Contract.Dtos.Menu;
+using CoffeePeek.Contract.Events.Menu;
+using CoffeePeek.Shops.Application.Features.Admin.Menu;
+using CoffeePeek.Shops.Application.Features.CoffeeShop.ShopProfile;
+using CoffeePeek.Shops.Application.Services;
+using CoffeePeek.Shops.Domain.Aggregates.MenuAggregate;
+using CoffeePeek.Shops.Infrastructure.Consumers;
 
 namespace CoffeePeek.Shops.Infrastructure.Tests.LivePostgres;
 
@@ -563,6 +570,109 @@ public sealed class ShopsDirectWriteBoundaryLiveTests : IClassFixture<ShopsLiveD
         duplicate.Roasters.Add(new Roaster("Second", id: roaster.Id));
         var error = await Assert.ThrowsAsync<ConflictException>(() => duplicate.SaveChangesAsync(ct));
         Assert.Equal(409, error.StatusCode);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task MenuEntryPoints_RejectEmptyWithoutCreatingMenu_AndInsertTrackedParentJob(bool parse)
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var city = new City("menu-entry-" + Guid.NewGuid().ToString("N"));
+        var shop = ShopsLiveDatabase.NewShop("Menu entry", city.Id);
+        await using (var seed = fixture.Context())
+        {
+            seed.Cities.Add(city); seed.Shops.Add(shop);
+            if (parse)
+            {
+                var menu = ShopMenu.Create(shop.Id);
+                menu.AddPhotos([ShopMenuPhoto.Create("menu.jpg", "image/jpeg", "menu/" + Guid.NewGuid(), 10)]);
+                seed.ShopMenus.Add(menu);
+            }
+            await seed.SaveChangesAsync(ct);
+        }
+        using var host = CreateHost(AddMenuServices, typeof(AttachAdminShopMenuPhotosHandler), typeof(ParseAdminShopMenuHandler));
+        await host.StartAsync(ct);
+        try
+        {
+            var bus = host.Services.GetRequiredService<IMessageBus>();
+            var response = parse
+                ? await bus.InvokeAsync<Response<AdminShopMenuDto>>(new ParseAdminShopMenuCommand(shop.Id, Guid.NewGuid()), ct)
+                : await bus.InvokeAsync<Response<AdminShopMenuDto>>(new AttachAdminShopMenuPhotosCommand(shop.Id, [], Guid.NewGuid()), ct);
+            Assert.Equal(parse, response.IsSuccess);
+            await using var read = fixture.Context();
+            if (parse)
+            {
+                var menu = await read.ShopMenus.Include(m => m.OcrJobs).SingleAsync(m => m.CoffeeShopId == shop.Id, ct);
+                Assert.Equal(Assert.Single(menu.OcrJobs).Id, menu.ActiveOcrJobId);
+            }
+            else
+            {
+                Assert.Equal(400, response.StatusCode);
+                Assert.False(await read.ShopMenus.AnyAsync(m => m.CoffeeShopId == shop.Id, ct));
+                Assert.False(await read.MenuOcrJobs.AnyAsync(j => j.SourceId == shop.Id, ct));
+            }
+        }
+        finally { await host.StopAsync(CancellationToken.None); }
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData(0L)]
+    [InlineData(1L)]
+    public async Task MenuSnapshot_RequiresObservedRevision_AndReplayCannotOverwriteLaterManualEdit(long? expected)
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var city = new City("menu-event-" + Guid.NewGuid().ToString("N"));
+        var shop = ShopsLiveDatabase.NewShop("Menu event", city.Id);
+        Guid drinkId; string slug;
+        await using (var seed = fixture.Context())
+        {
+            var drink = await seed.CoffeeDrinkDefinitions.OrderBy(d => d.Slug).FirstAsync(ct);
+            drinkId = drink.Id; slug = drink.Slug;
+            var menu = ShopMenu.Create(shop.Id);
+            menu.ApplyManualItem(drinkId, MenuItemAvailability.Present, 5m, 200, Guid.NewGuid());
+            seed.Cities.Add(city); seed.Shops.Add(shop); seed.ShopMenus.Add(menu);
+            await seed.SaveChangesAsync(ct);
+        }
+        using var host = CreateHost(AddMenuServices, typeof(ApplyShopMenuSnapshotEventHandler));
+        await host.StartAsync(ct);
+        try
+        {
+            var message = new ApplyShopMenuSnapshotEvent(shop.Id,
+                new ShopMenuSnapshot(DateTime.UtcNow, "BYN", null,
+                    [new ShopMenuItemSnapshot(slug, CoffeePeek.Contract.Enums.MenuItemAvailability.Present, 8m, 250,
+                        CoffeePeek.Contract.Enums.MenuItemSource.Manual)], []), false, Guid.NewGuid(), expected);
+            var bus = host.Services.GetRequiredService<IMessageBus>();
+            await bus.InvokeAsync(message, ct);
+            await using (var read = fixture.Context())
+            {
+                var menu = await read.ShopMenus.Include(m => m.Items).SingleAsync(m => m.CoffeeShopId == shop.Id, ct);
+                Assert.Equal(expected == 1 ? 8m : 5m, Assert.Single(menu.Items).Price);
+            }
+            await using (var manual = fixture.Context())
+            {
+                await new ShopMenuRepository(manual).ApplyManualItemsAsync(shop.Id,
+                    [new ManualShopMenuItemUpdate(drinkId, MenuItemAvailability.Present, 12m, 300)], Guid.NewGuid(), ct);
+                await manual.SaveChangesAsync(ct);
+            }
+            await bus.InvokeAsync(message, ct);
+            await using var verify = fixture.Context();
+            Assert.Equal(12m, Assert.Single((await verify.ShopMenus.Include(m => m.Items)
+                .SingleAsync(m => m.CoffeeShopId == shop.Id, ct)).Items).Price);
+        }
+        finally { await host.StopAsync(CancellationToken.None); }
+    }
+
+    private static void AddMenuServices(IServiceCollection services)
+    {
+        services.AddScoped<ICoffeeShopRepository, CoffeeShopRepository>();
+        services.AddScoped<IShopPriceRangeWriter, ShopPriceRangeWriter>();
+        services.AddScoped<IApplyShopMenuService, ApplyShopMenuService>();
+        services.AddScoped<IUnitOfWork, UnitOfWork<ShopsDbContext>>();
+        services.AddMenuModule();
+        services.AddSingleton(Mock.Of<IUploadedPhotoLookup>(MockBehavior.Strict));
+        services.AddSingleton(Options.Create(new MediaPublicUrlOptions { PublicEndpoint = "https://media.example.test" }));
     }
 
     private static void AddCatalogServices(IServiceCollection services, CoffeeImportOptions options)

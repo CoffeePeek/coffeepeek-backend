@@ -16,6 +16,7 @@ public sealed class MenuOcrJobConfiguration : IEntityTypeConfiguration<MenuOcrJo
             table.HasCheckConstraint("CK_MenuOcrJobs_MenuRevision", "\"MenuRevision\" IS NULL OR \"MenuRevision\" >= 0");
         });
         builder.HasKey(job => job.Id);
+        builder.Property(job => job.Id).ValueGeneratedNever();
         builder.Property(job => job.PhotoSetHash).IsRequired().HasMaxLength(64).IsFixedLength();
         builder.Property(job => job.InputPhotosJson).IsRequired().HasColumnType("jsonb");
         builder.Property(job => job.ResultJson).HasColumnType("jsonb");

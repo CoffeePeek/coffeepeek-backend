@@ -174,6 +174,7 @@ public sealed class ShopsFaultRecoveryLiveTests(ShopsLiveDatabase shops, MediaLi
     [Theory]
     [InlineData("before-ocr-store")]
     [InlineData("after-ocr-store")]
+    [InlineData("before-ocr-apply-commit")]
     public async Task OcrProcessCrash_RestartUsesStoredResultOrRequiresOperatorWithoutRepeatingProvider(string checkpoint)
     {
         Assert.SkipUnless(ShopsFaultControl.IsConfigured, "Requires the isolated process/PostgreSQL fault gate.");
@@ -202,6 +203,9 @@ public sealed class ShopsFaultRecoveryLiveTests(ShopsLiveDatabase shops, MediaLi
                     : MenuOcrJobStatus.ResultStored, stored.Status);
                 Assert.Empty((await db.ShopMenus.Include(m => m.Items).SingleAsync(m => m.Id == menu.Id, ct)).Items);
             }
+            Assert.False(File.Exists(ShopsFaultControl.Marker(root, "ocr-invalidated")));
+            Assert.Equal(0, await IncomingCountAsync(shops.Context(false), ct));
+            Assert.Equal(0, await OutgoingCountAsync(ct));
             await first.DisposeAsync();
             File.Delete(ShopsFaultControl.Marker(root, "ocr-ready"));
             await using var recovery = new ShopsFaultProcess("ocr", root, shops.ConnectionString, job.Id);
@@ -214,17 +218,20 @@ public sealed class ShopsFaultRecoveryLiveTests(ShopsLiveDatabase shops, MediaLi
             {
                 Assert.Equal(MenuOcrJobStatus.Running, final.Status);
                 Assert.Null(final.ResultJson); Assert.Empty(current.Items);
-                var store = new MenuOcrJobStore(verify,
-                    Mock.Of<IApplyShopMenuService>());
-                Assert.Equal(MenuOcrJobStatus.Failed,
-                    await store.RecoverUnknownOutcomeAsync(job.Id, DateTime.UtcNow.AddMinutes(16), ct));
-                Assert.False(await store.StoreResultAsync(job.Id, "{\"success\":true}", ct));
+                await verify.Database.ExecuteSqlRawAsync("UPDATE \"MenuOcrJobs\" SET \"StartedAtUtc\"=now()-interval '16 minutes' WHERE \"Id\"={0}", [job.Id], ct);
+                File.Delete(ShopsFaultControl.Marker(root, "committed"));
+                await using var operation = new ShopsFaultProcess("ocr", root, shops.ConnectionString, job.Id, "recover-ocr");
+                await ShopsFaultControl.WaitMarkerAsync(root, "committed", ct, operation.Process);
+                await ShopsFaultControl.WaitMarkerAsync(root, "ocr-invalidated", ct, operation.Process);
+                await using var late = shops.Context(false);
+                Assert.False(await new MenuOcrJobStore(late, Mock.Of<IApplyShopMenuService>()).StoreResultAsync(job.Id, "{\"success\":true}", ct));
             }
             else
             {
                 Assert.Equal(MenuOcrJobStatus.Applied, final.Status);
                 var item = Assert.Single(current.Items); Assert.Equal(8m, item.Price); Assert.Equal(200, item.VolumeMl);
                 Assert.Single(current.Photos);
+                await ShopsFaultControl.WaitMarkerAsync(root, "ocr-invalidated", ct, recovery.Process);
             }
         }
         finally { ArchiveLogsAndDelete(root); }

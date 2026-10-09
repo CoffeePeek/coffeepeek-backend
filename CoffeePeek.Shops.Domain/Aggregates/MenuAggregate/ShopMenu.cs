@@ -79,9 +79,15 @@ public sealed class ShopMenu : Entity<Guid>
         var prepared = items.ToArray();
         if (prepared.Any(i => i.Source == MenuItemSource.Manual))
             InputRevision++;
-        _items.Clear();
-        // One row per drink (unique index); a snapshot listing a drink twice used to fail the save with a 500.
-        _items.AddRange(prepared.GroupBy(i => i.DrinkDefinitionId).Select(g => g.Last()));
+        var byDrink = prepared.GroupBy(i => i.DrinkDefinitionId).ToDictionary(g => g.Key, g => g.Last());
+        // Preserve row IDs so a tracked snapshot update cannot collide with the unique drink index.
+        _items.RemoveAll(item => !byDrink.ContainsKey(item.DrinkDefinitionId));
+        foreach (var candidate in byDrink.Values)
+        {
+            var existing = _items.FirstOrDefault(item => item.DrinkDefinitionId == candidate.DrinkDefinitionId);
+            if (existing is null) _items.Add(candidate);
+            else existing.ApplySnapshot(candidate);
+        }
         UnmatchedJson = unmatchedJson;
         SuggestedPriceRange = suggestedPriceRange;
         UpdatedByUserId = updatedByUserId;

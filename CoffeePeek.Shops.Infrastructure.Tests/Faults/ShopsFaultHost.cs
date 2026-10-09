@@ -15,6 +15,9 @@ using CoffeePeek.Shops.Application.Features.Admin.Shops;
 using CoffeePeek.Shops.Infrastructure.Consumers;
 using CoffeePeek.Shops.Persistance.Configuration;
 using CoffeePeek.Shops.Persistance.Modules;
+using CoffeePeek.Shops.Application.Services;
+using CoffeePeek.Shops.Application.Features.CoffeeShop.ShopProfile;
+using CoffeePeek.Shops.Domain.Aggregates.MenuAggregate;
 using JasperFx;
 using JasperFx.CodeGeneration;
 using MapsterMapper;
@@ -63,14 +66,32 @@ public static class ShopsFaultHost
             else
             {
                 services.AddScoped(_ => new ShopsDbContext(new DbContextOptionsBuilder<ShopsDbContext>()
-                    .UseNpgsql(connection).AddInterceptors(new AuditInterceptor()).Options));
+                    .UseNpgsql(connection).AddInterceptors(new AuditInterceptor(),
+                        new FaultOcrBeforeStoreInterceptor(root, checkpoint), new FaultOcrStoredInterceptor(root, checkpoint),
+                        new FaultOcrApplyFlushInterceptor(root, checkpoint)).Options));
                 services.AddShopsModule().AddCoffeeCatalogModule();
                 services.AddSingleton(Options.Create(new MediaPublicUrlOptions { PublicEndpoint = "https://media.example.test" }));
                 var mapper = new Mock<IMapper>();
                 mapper.Setup(m => m.Map<CoffeePeek.Contract.Dtos.Shop.RoasterDto>(It.IsAny<CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate.Roaster>()))
                     .Returns((CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate.Roaster r) => new() { Id = r.Id, Name = r.Name });
                 services.AddSingleton(mapper.Object);
-                if (role == "redis")
+                if (role == "ocr")
+                {
+                    services.AddMenuModule();
+                    services.AddScoped<IShopPriceRangeWriter, ShopPriceRangeWriter>();
+                    var cache = new Mock<IStrictCacheInvalidator>();
+                    cache.Setup(c => c.RemoveAsync(It.IsAny<CacheKey>(), It.IsAny<CancellationToken>()))
+                        .Returns(async () =>
+                        {
+                            await using var db = new ShopsDbContext(new DbContextOptionsBuilder<ShopsDbContext>().UseNpgsql(connection).Options);
+                            var jobId = Guid.Parse(ShopsFaultControl.Required("CP_FAULT_ENTITY"));
+                            var job = await db.MenuOcrJobs.SingleAsync(j => j.Id == jobId);
+                            Assert.True(job.Status is MenuOcrJobStatus.Applied or MenuOcrJobStatus.Failed);
+                            File.WriteAllText(ShopsFaultControl.Marker(root, "ocr-invalidated"), "committed-state-observed");
+                        });
+                    services.AddSingleton(cache.Object);
+                }
+                else if (role == "redis")
                 {
                     services.AddSingleton<IConnectionMultiplexer>(_ => ConnectionMultiplexer.Connect(
                         "127.0.0.1:26379,abortConnect=false,connectTimeout=1000,asyncTimeout=1000,syncTimeout=1000"));
@@ -85,7 +106,7 @@ public static class ShopsFaultHost
         {
             options.ApplicationAssembly = typeof(ShopsFaultHost).Assembly;
             options.Discovery.DisableConventionalDiscovery();
-            if (role == "redis")
+            if (role is "redis" or "ocr")
             {
                 options.Discovery.IncludeType(typeof(UpdateAdminCoffeeShopHandler));
                 options.Discovery.IncludeType(typeof(ShopProfileCacheInvalidationRequestedHandler));
