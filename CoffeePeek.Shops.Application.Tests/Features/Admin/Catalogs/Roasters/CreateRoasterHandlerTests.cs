@@ -6,8 +6,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using CoffeePeek.Contract.Dtos;
 using CoffeePeek.Contract.Dtos.Shop;
-using CoffeePeek.Shared.Domain.Interfaces.Infrastructure;
-using CoffeePeek.Shared.Kernel;
 using CoffeePeek.Shops.Application.Features.Admin.Catalogs.Roasters;
 using CoffeePeek.Shops.Application.Abstractions;
 using CoffeePeek.Shared.Kernel.Exceptions;
@@ -22,29 +20,23 @@ public class CreateRoasterHandlerTests
 {
     private readonly Mock<IRoasterRepository> _repo = new();
     private readonly Mock<IMapper> _mapper = new();
-    private readonly Mock<IUnitOfWork> _uow = new();
-    private readonly Mock<ICacheService> _cache = new();
     private readonly Mock<IUploadedPhotoLookup> _photos = new();
     private readonly CancellationToken _ct = CancellationToken.None;
 
     [Fact]
-    public async Task Handle_NewName_CreatesRoasterAndInvalidatesCache()
+    public async Task Handle_NewName_TracksRoasterForCommit()
     {
         _repo.Setup(r => r.GetByNameAsync("Coffee Circus", _ct)).ReturnsAsync((Roaster)null);
         _mapper.Setup(m => m.Map<RoasterDto>(It.IsAny<Roaster>()))
             .Returns((Roaster r) => new RoasterDto { Id = r.Id, Name = r.Name });
-        _cache.Setup(c => c.RemoveByPattern(It.IsAny<string>(), _ct)).ReturnsAsync(1);
 
         var result = await CreateRoasterHandler.Handle(
             new CreateRoasterCommand("Coffee Circus"),
-            _repo.Object, _mapper.Object, _uow.Object, _cache.Object, _photos.Object, _ct);
+            _repo.Object, _mapper.Object, _photos.Object, _ct);
 
         result.IsSuccess.Should().BeTrue();
         result.Data.Name.Should().Be("Coffee Circus");
         _repo.Verify(r => r.Add(It.IsAny<Roaster>()), Times.Once);
-        _uow.Verify(u => u.SaveChangesAsync(_ct), Times.Once);
-        _cache.Verify(c => c.RemoveByPattern(CacheKey.Roaster.ListPattern(), _ct), Times.Once);
-        _cache.Verify(c => c.RemoveByPattern(CacheKey.Shop.SearchPattern(), _ct), Times.Once);
     }
 
     [Fact]
@@ -55,7 +47,7 @@ public class CreateRoasterHandlerTests
 
         var result = await CreateRoasterHandler.Handle(
             new CreateRoasterCommand("Coffee Circus"),
-            _repo.Object, _mapper.Object, _uow.Object, _cache.Object, _photos.Object, _ct);
+            _repo.Object, _mapper.Object, _photos.Object, _ct);
 
         result.IsSuccess.Should().BeFalse();
         result.StatusCode.Should().Be((int)HttpStatusCode.Conflict);
@@ -70,7 +62,6 @@ public class CreateRoasterHandlerTests
         _repo.Setup(r => r.Add(It.IsAny<Roaster>())).Callback<Roaster>(r => captured = r);
         _mapper.Setup(m => m.Map<RoasterDto>(It.IsAny<Roaster>()))
             .Returns((Roaster r) => new RoasterDto { Id = r.Id, Name = r.Name });
-        _cache.Setup(c => c.RemoveByPattern(It.IsAny<string>(), _ct)).ReturnsAsync(1);
 
         var cityId = Guid.NewGuid();
         var actorId = Guid.NewGuid();
@@ -90,7 +81,7 @@ public class CreateRoasterHandlerTests
             ActorUserId: actorId);
 
         var result = await CreateRoasterHandler.Handle(
-            command, _repo.Object, _mapper.Object, _uow.Object, _cache.Object, _photos.Object, _ct);
+            command, _repo.Object, _mapper.Object, _photos.Object, _ct);
 
         result.IsSuccess.Should().BeTrue();
         captured.About.Should().Be("Small-batch roaster.");
@@ -113,10 +104,9 @@ public class CreateRoasterHandlerTests
             ActorUserId: Guid.NewGuid());
 
         var act = () => CreateRoasterHandler.Handle(command,
-            _repo.Object, _mapper.Object, _uow.Object, _cache.Object, _photos.Object, _ct);
+            _repo.Object, _mapper.Object, _photos.Object, _ct);
 
         await act.Should().ThrowAsync<ValidationException>();
         _repo.Verify(r => r.Add(It.IsAny<Roaster>()), Times.Never);
-        _uow.Verify(u => u.SaveChangesAsync(_ct), Times.Never);
     }
 }

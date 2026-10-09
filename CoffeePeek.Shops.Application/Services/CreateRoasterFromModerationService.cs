@@ -1,6 +1,4 @@
 using CoffeePeek.Contract.Dtos.CoffeeShop;
-using CoffeePeek.Shared.Domain.Interfaces.Infrastructure;
-using CoffeePeek.Shared.Kernel;
 using CoffeePeek.Shops.Application.Abstractions;
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
 using CoffeePeek.Shops.Domain.Entities;
@@ -11,8 +9,6 @@ namespace CoffeePeek.Shops.Application.Services;
 public class CreateRoasterFromModerationService(
     IQueryRoasterRepository queryRoasterRepository,
     IRoasterRepository roasterRepository,
-    IUnitOfWork unitOfWork,
-    ICacheService cacheService,
     ILogger<CreateRoasterFromModerationService> logger) : ICreateRoasterFromModerationService
 {
     public async Task<Guid> CreateRoasterFromApprovedEventAsync(
@@ -54,9 +50,6 @@ public class CreateRoasterFromModerationService(
         }
 
         roasterRepository.Add(roaster);
-        await unitOfWork.SaveChangesAsync(ct);
-        await cacheService.RemoveByPattern(CacheKey.Roaster.ListPattern(), ct);
-        await cacheService.RemoveByPattern(CacheKey.Shop.SearchPattern(), ct);
 
         logger.LogInformation(
             "Roaster {RoasterId} successfully created from moderation event {ModerationId}",

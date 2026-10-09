@@ -2,8 +2,6 @@ using System.Net;
 using System.Text.Json.Serialization;
 using CoffeePeek.Contract.Dtos;
 using CoffeePeek.Contract.Dtos.Shop;
-using CoffeePeek.Shared.Domain.Interfaces.Infrastructure;
-using CoffeePeek.Shared.Kernel;
 using CoffeePeek.Shared.Kernel.Response;
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
 using CoffeePeek.Shops.Domain.Entities;
@@ -18,8 +16,6 @@ public static class CreateRoasterHandler
         CreateRoasterCommand command,
         IRoasterRepository repository,
         IMapper mapper,
-        IUnitOfWork unitOfWork,
-        ICacheService cacheService,
         IUploadedPhotoLookup photoLookup,
         CancellationToken ct)
     {
@@ -39,15 +35,7 @@ public static class CreateRoasterHandler
             roaster.ReplacePhotos(RoasterProfileFields.ToRoasterPhotos(trustedPhotos, command.ActorUserId));
 
         repository.Add(roaster);
-        await unitOfWork.SaveChangesAsync(ct);
-        await InvalidateRoasterCachesAsync(cacheService, ct);
 
         return Response<RoasterDto>.Success(mapper.Map<RoasterDto>(roaster));
-    }
-
-    internal static async Task InvalidateRoasterCachesAsync(ICacheService cacheService, CancellationToken ct)
-    {
-        await cacheService.RemoveByPattern(CacheKey.Roaster.ListPattern(), ct);
-        await cacheService.RemoveByPattern(CacheKey.Shop.SearchPattern(), ct);
     }
 }
