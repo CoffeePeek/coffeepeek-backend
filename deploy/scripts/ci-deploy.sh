@@ -21,13 +21,9 @@ until docker compose exec -T postgres pg_isready -U "${POSTGRES_USER}" >/dev/nul
 done
 
 if [[ "${SKIP_MIGRATIONS:-}" != "1" ]]; then
-  legacy_tables=$(docker compose exec -T postgres psql -U "${POSTGRES_USER}" -d cpshopsdb -Atc \
-    "SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name IN ('CheckIns','Reviews'))")
-  if [[ "${legacy_tables}" == "t" ]]; then
-    echo "==> Stopping application writers for legacy check-in transfer..."
-    docker compose stop gateway account shops moderation media
-    # On failure keep writers stopped; rerun ci-deploy.sh to finish and restart.
-  fi
+  echo "==> Stopping application writers for schema migrations..."
+  docker compose stop gateway account shops moderation media
+  # On failure keep writers stopped; rerun ci-deploy.sh to finish and restart.
   echo "==> Applying EF Core migrations via Docker..."
   docker run --rm \
     --network coffeepeek_default \

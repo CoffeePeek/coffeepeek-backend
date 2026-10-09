@@ -6,7 +6,7 @@
 
 1. Снять резервную копию Shops DB и зафиксировать точные версии работающих бинарников; выполнить восстановление копии в изолированном окружении для репетиции.
 2. Выполнить `dev/check-city-references.sql` для городов. Миграция `ProtectCityReferences` останавливается, если уже есть осиротевшие ссылки.
-3. Выполнить запрос поиска невалидных позиций из [правил меню](shops-menu-write-invariants.md). Миграция `EnforceShopMenuItemValues` сообщает число проблемных строк и останавливается. Удаление либо исправление этих строк требует отдельного решения по данным.
+3. Выполнить запрос поиска невалидных позиций из [правил меню](shops-menu-write-invariants.md). По согласованному решению миграция `EnforceShopMenuItemValues` сохраняет некорректные позиции, переводит их в `Unknown` и очищает цену и объём. Корректные позиции не меняются. `ci-deploy.sh` останавливает все application writers перед миграциями, в том числе при уже удалённых legacy check-in таблицах.
 4. Проверить осиротевшие связи оборудования:
 
 ```sql
@@ -36,9 +36,9 @@ menu workers, дождаться завершения их in-flight ручны�
 
 Публикация новых фотографий зависит от другой БД: сперва применить Media migration `20261008211500_ReserveShopPhotoAttachments`, затем запустить MediaService с новым внутренним claim endpoint и consumer, и только после этого ShopsService. Если новый ShopsService обратиться к прежнему MediaService, публикация фото должна получить отказ, а не сохранить непроверенный ключ. Повтор claim/finalization и lost reply/receiver restart выполнены с настоящими Media DB/MinIO/RabbitMQ в fault gate. Совместимость с фактически развёрнутыми прежними бинарниками и топологией всё ещё требует deployment inventory; повтор test composition этого не доказывает.
 
-Переходное окно для menu CHECK требует предварительного исправления старых строк. Новые записи до установки ограничения должны проходить доменную проверку; после установки обход приложения блокируется самой БД. Старые бинарники, которые создают нулевую цену или объём у присутствующего напитка, **несовместимы** с новым ограничением; их нужно вывести из записи до миграции. Для `ProfileRevision` API допускает запросы без `If-Match`, но EF concurrency token предотвращает незаметную потерю конкурентной правки.
+Menu CHECK устанавливается после согласованного исправления некорректных старых строк в той же транзакции. Новые записи до установки ограничения должны проходить доменную проверку; после установки обход приложения блокируется самой БД. Старые бинарники, которые создают нулевую цену или объём у присутствующего напитка, **несовместимы** с новым ограничением; их нужно вывести из записи до миграции. Для `ProfileRevision` API допускает запросы без `If-Match`, но EF concurrency token предотвращает незаметную потерю конкурентной правки.
 
-Photo expansion и порядок legacy transfer описаны в [Community transition](shops-community-photo-transition.md). Тест upgrade сохраняет сравнимые JSON archive values, старые menu offers/IDs и два shop assignments с неопределимым global primary=false. Invalid preflight не меняет archive/migration history; constraints получают SQLSTATE 23514/23503. Это old SQL writer window, не запуск прежнего binary.
+Photo expansion и порядок legacy transfer описаны в [Community transition](shops-community-photo-transition.md). Тест upgrade сохраняет сравнимые JSON archive values, старые menu offers/IDs и два shop assignments с неопределимым global primary=false. City preflight не меняет archive/migration history; menu repair меняет только доступность, цену, объём невалидных позиций и производный completeness score. Constraints получают SQLSTATE 23514/23503. Это old SQL writer window, не запуск прежнего binary.
 
 ## Ворота и откат
 

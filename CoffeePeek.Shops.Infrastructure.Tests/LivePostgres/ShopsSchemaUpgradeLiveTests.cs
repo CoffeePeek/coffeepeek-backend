@@ -1,3 +1,4 @@
+using System.Text.Json.Nodes;
 using CoffeePeek.Shops.Persistance.Configuration;
 using CoffeePeek.Testing;
 using Microsoft.EntityFrameworkCore;
@@ -16,7 +17,12 @@ public sealed class ShopsSchemaUpgradeLiveTests
     [InlineData("valid")]
     [InlineData("city-orphan")]
     [InlineData("menu-invalid")]
-    public async Task OldPopulatedSchema_UpgradesWithoutInventingEquipmentPrimary_OrStopsWithDataUnchanged(string scenario)
+    [InlineData("menu-missing-price")]
+    [InlineData("menu-missing-volume")]
+    [InlineData("menu-absent-values")]
+    [InlineData("menu-unknown-values")]
+    [InlineData("menu-invalid-availability")]
+    public async Task OldPopulatedSchemaPreservesValidDataRepairsMenuValuesAndRejectsCityOrphans(string scenario)
     {
         Assert.SkipUnless(LivePostgresServer.IsConfigured, LivePostgresServer.SkipReason);
         var ct = TestContext.Current.CancellationToken;
@@ -28,21 +34,39 @@ public sealed class ShopsSchemaUpgradeLiveTests
             await SeedAsync(db, ct);
             if (scenario == "city-orphan")
                 await db.Database.ExecuteSqlRawAsync("UPDATE \"Shops\" SET \"CityId\"=gen_random_uuid()", ct);
-            if (scenario == "menu-invalid")
-                await db.Database.ExecuteSqlRawAsync("UPDATE \"ShopMenuItems\" SET \"Price\"=0", ct);
+            var menuEdit = scenario switch
+            {
+                "menu-invalid" => "\"Price\"=0",
+                "menu-missing-price" => "\"Price\"=NULL",
+                "menu-missing-volume" => "\"VolumeMl\"=NULL",
+                "menu-absent-values" => "\"Availability\"=2",
+                "menu-unknown-values" => "\"Availability\"=0",
+                "menu-invalid-availability" => "\"Availability\"=99",
+                _ => null
+            };
+            if (menuEdit != null)
+                await db.Database.ExecuteSqlRawAsync("UPDATE \"ShopMenuItems\" SET " + menuEdit, ct);
             var before = await ArchiveAsync(db, ct);
-            if (scenario != "valid")
+            var expected = JsonNode.Parse(before)!;
+            if (menuEdit != null)
+            {
+                var item = expected["items"]![0]!;
+                item["Availability"] = 0;
+                item["Price"] = null;
+                item["VolumeMl"] = null;
+                expected["shops"]![0]!["DataCompletenessScore"] = 5;
+            }
+            if (scenario == "city-orphan")
             {
                 var error = await Assert.ThrowsAsync<PostgresException>(() => db.Database.MigrateAsync(ct));
-                Assert.Contains(scenario == "city-orphan" ? "City reference preflight failed" : "invalid value rows", error.MessageText);
-                Assert.Equal(before, await ArchiveAsync(db, ct));
-                Assert.DoesNotContain(scenario == "city-orphan" ? "20261008091000_ProtectCityReferences"
-                    : "20261008094000_EnforceShopMenuItemValues", await db.Database.GetAppliedMigrationsAsync(ct));
+                Assert.Contains("City reference preflight failed", error.MessageText);
+                Assert.True(JsonNode.DeepEquals(expected, JsonNode.Parse(await ArchiveAsync(db, ct))));
+                Assert.DoesNotContain("20261008091000_ProtectCityReferences", await db.Database.GetAppliedMigrationsAsync(ct));
                 return;
             }
             await db.Database.MigrateAsync(ct);
             Assert.False(db.Database.HasPendingModelChanges());
-            Assert.Equal(before, await ArchiveAsync(db, ct));
+            Assert.True(JsonNode.DeepEquals(expected, JsonNode.Parse(await ArchiveAsync(db, ct))));
             Assert.Equal(2, await db.ShopEquipments.CountAsync(ct));
             Assert.All(await db.ShopEquipments.ToArrayAsync(ct), a => { Assert.False(a.IsPrimary); Assert.Equal(500, a.CategoryId); });
             Assert.All(await db.Shops.ToArrayAsync(ct), s => Assert.Equal(0, s.ProfileRevision));
@@ -50,7 +74,7 @@ public sealed class ShopsSchemaUpgradeLiveTests
             var script = db.GetService<IMigrator>().GenerateScript(Previous, null, MigrationsSqlGenerationOptions.Idempotent);
             await db.Database.ExecuteSqlRawAsync(script, ct);
             await db.Database.ExecuteSqlRawAsync(script, ct);
-            Assert.Equal(before, await ArchiveAsync(db, ct));
+            Assert.True(JsonNode.DeepEquals(expected, JsonNode.Parse(await ArchiveAsync(db, ct))));
             var menuError = await Assert.ThrowsAsync<PostgresException>(() => db.Database.ExecuteSqlRawAsync("UPDATE \"ShopMenuItems\" SET \"Price\"=0", ct));
             Assert.Equal(PostgresErrorCodes.CheckViolation, menuError.SqlState);
             var cityError = await Assert.ThrowsAsync<PostgresException>(() => db.Database.ExecuteSqlRawAsync("DELETE FROM \"Cities\"", ct));
