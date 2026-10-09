@@ -9,9 +9,13 @@ public sealed class FaultOcrApplyFlushInterceptor(string root, string checkpoint
     public override async ValueTask<int> SavedChangesAsync(SaveChangesCompletedEventData eventData, int result,
         CancellationToken cancellationToken = default)
     {
-        if (checkpoint == "before-ocr-apply-commit" && eventData.Context!.ChangeTracker.Entries<MenuOcrJob>()
-                .Any(e => e.Entity.Status == MenuOcrJobStatus.Applied))
+        if (eventData.Context!.ChangeTracker.Entries<MenuOcrJob>().Any(e => e.Entity.Status == MenuOcrJobStatus.Applied))
         {
+            var menu = Assert.Single(eventData.Context.ChangeTracker.Entries<ShopMenu>());
+            var trackedItem = Assert.Single(menu.Entity.Items);
+            Assert.Equal(8m, trackedItem.Price);
+            Assert.Equal(1, await eventData.Context.Set<ShopMenuItem>().CountAsync(i => i.ShopMenuId == menu.Entity.Id, cancellationToken));
+            if (checkpoint != "before-ocr-apply-commit") return result;
             Assert.True(await eventData.Context.Database.SqlQueryRaw<int>("""
                 SELECT ((SELECT count(*) FROM wolverine.wolverine_incoming_envelopes WHERE status <> 'Handled')
                     + (SELECT count(*) FROM wolverine.wolverine_outgoing_envelopes))::integer AS "Value"

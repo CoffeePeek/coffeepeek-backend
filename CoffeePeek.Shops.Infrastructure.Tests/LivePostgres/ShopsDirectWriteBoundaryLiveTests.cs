@@ -684,7 +684,7 @@ public sealed class ShopsDirectWriteBoundaryLiveTests : IClassFixture<ShopsLiveD
         services.AddCoffeeCatalogModule();
     }
 
-    private IHost CreateHost(Action<IServiceCollection> configure, params Type[] handlers) => Host.CreateDefaultBuilder()
+    internal IHost CreateHost(Action<IServiceCollection> configure, params Type[] handlers) => Host.CreateDefaultBuilder()
         .ConfigureServices(services =>
         {
             services.AddScoped(_ => fixture.Context(false));

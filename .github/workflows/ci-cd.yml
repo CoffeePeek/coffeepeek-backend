@@ -169,6 +169,7 @@ jobs:
             ShopsDirectWriteBoundaryLiveTests \
             CoffeeChildConcurrencyLiveTests \
             ShopsReadPerformanceLiveTests \
+            ShopsWritePerformanceLiveTests \
             ShopsFaultRecoveryLiveTests \
             CityReferenceLiveTests \
             CityCatalogFreshReadLiveTests; do
