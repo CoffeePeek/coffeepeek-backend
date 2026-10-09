@@ -82,6 +82,8 @@ public sealed class ShopMenuManualWriteLiveTests : IClassFixture<ShopsLiveDataba
             {
                 services.AddScoped(_ => new ShopsDbContext(options));
                 services.AddScoped<ICoffeeShopRepository, CoffeeShopRepository>();
+                services.AddScoped<CoffeePeek.Shops.Application.Features.CoffeeShop.ShopProfile.IShopPriceRangeWriter,
+                    CoffeePeek.Shops.Application.Features.CoffeeShop.ShopProfile.ShopPriceRangeWriter>();
                 services.AddScoped<IShopMenuRepository, ShopMenuRepository>();
                 services.AddScoped<IQueryCoffeeDrinkRepository, QueryCoffeeDrinkRepository>();
                 services.AddScoped<IQueryShopMenuRepository, QueryShopMenuRepository>();
