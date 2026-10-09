@@ -160,6 +160,32 @@ public sealed class DiscoveryQueryLiveTests : IClassFixture<ShopsLiveDatabase>
     }
 
     [Fact]
+    public async Task CoffeeSpecialPrefixes_SortAfterLettersAndDigits_BeforePagination_ExecuteInPostgres()
+    {
+        await using var db = fixture.Context(false);
+        var roaster = AddRoaster(db, Key());
+        foreach (var name in new[] { "_Underscore", "*Special", "\"Quoted", "☕ Blend", "Alpha", "Alpha", "Арабика", "7 Blend" })
+            AddOffer(AddProduct(db, roaster, name), 250, 30);
+        await db.SaveChangesAsync(Ct); db.ChangeTracker.Clear();
+        var discovery = Store(db);
+        var first = await discovery.SearchCoffeesAsync(new() { Filters = new() { Roasters = [roaster.PublicSlug!] }, PageSize = 4 }, Ct);
+        var second = await discovery.SearchCoffeesAsync(new() { Filters = new() { Roasters = [roaster.PublicSlug!] }, Page = 2, PageSize = 4 }, Ct);
+        Assert.Equal(8, first.TotalItems);
+        Assert.All(first.Items, p => Assert.True(char.IsLetterOrDigit(p.Name[0])));
+        Assert.All(second.Items, p => Assert.False(char.IsLetterOrDigit(p.Name[0])));
+        var all = await discovery.SearchCoffeesAsync(new() { Filters = new() { Roasters = [roaster.PublicSlug!] } }, Ct);
+        Assert.Equal(all.Items.Select(p => p.Address.Slug), first.Items.Concat(second.Items).Select(p => p.Address.Slug));
+        var catalog = new CoffeeCatalogStore(db, Options.Create(new MediaPublicUrlOptions { PublicEndpoint = "https://media.example" }),
+            Options.Create(new CoffeeImportOptions()), Mock.Of<IPublicAddressService>(), NullLogger<CoffeeCatalogStore>.Instance);
+        var catalogFirst = await catalog.ListAsync(new() { RoasterSlug = roaster.PublicSlug, PageSize = 4 }, Ct);
+        var catalogSecond = await catalog.ListAsync(new() { RoasterSlug = roaster.PublicSlug, Page = 2, PageSize = 4 }, Ct);
+        Assert.All(catalogFirst.Items, p => Assert.True(char.IsLetterOrDigit(p.Content.Name[0])));
+        Assert.All(catalogSecond.Items, p => Assert.False(char.IsLetterOrDigit(p.Content.Name[0])));
+        var catalogAll = await catalog.ListAsync(new() { RoasterSlug = roaster.PublicSlug }, Ct);
+        Assert.Equal(catalogAll.Items.Select(p => p.Address.Slug), catalogFirst.Items.Concat(catalogSecond.Items).Select(p => p.Address.Slug));
+    }
+
+    [Fact]
     public async Task MatchingOffers_PriceMinSortAndPagination_ExecuteInPostgres()
     {
         await using var db = fixture.Context(false);
@@ -218,10 +244,10 @@ public sealed class DiscoveryQueryLiveTests : IClassFixture<ShopsLiveDatabase>
         var store = new CoffeeCatalogStore(db, Options.Create(new MediaPublicUrlOptions { PublicEndpoint = "https://media.example" }),
             Options.Create(new CoffeeImportOptions()), Mock.Of<IPublicAddressService>(), NullLogger<CoffeeCatalogStore>.Instance);
         var result = await store.RoastersAsync([tag.Slug], Ct);
-        Assert.Equal(3, result.Length); Assert.Equal(popular.PublicSlug, result[0].Address!.Slug);
-        Assert.Equal(larger.PublicSlug, result[1].Address!.Slug); Assert.Equal(other.PublicSlug, result[2].Address!.Slug);
-        Assert.Equal((1, 1, 1), (result[0].CoffeeShopsCount, result[0].CoffeeProductsCount, result[0].AvailableCoffeeProducts));
-        Assert.Equal((0, 2, 0), (result[1].CoffeeShopsCount, result[1].CoffeeProductsCount, result[1].AvailableCoffeeProducts));
+        Assert.Equal(3, result.Length); Assert.Equal(larger.PublicSlug, result[0].Address!.Slug);
+        Assert.Equal(popular.PublicSlug, result[1].Address!.Slug); Assert.Equal(other.PublicSlug, result[2].Address!.Slug);
+        Assert.Equal((0, 2, 0), (result[0].CoffeeShopsCount, result[0].CoffeeProductsCount, result[0].AvailableCoffeeProducts));
+        Assert.Equal((1, 1, 1), (result[1].CoffeeShopsCount, result[1].CoffeeProductsCount, result[1].AvailableCoffeeProducts));
         Assert.Equal((0, 1, 0), (result[2].CoffeeShopsCount, result[2].CoffeeProductsCount, result[2].AvailableCoffeeProducts));
         Assert.All(result, r => Assert.Equal(tag.Slug, Assert.Single(r.Tags).Slug));
     }
