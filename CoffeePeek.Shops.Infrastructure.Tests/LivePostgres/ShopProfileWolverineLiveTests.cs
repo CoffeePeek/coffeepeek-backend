@@ -43,10 +43,11 @@ public sealed class ShopProfileWolverineLiveTests : IClassFixture<ShopsLiveDatab
     {
         var ct = TestContext.Current.CancellationToken;
         var intervals = new List<ShopScheduleInterval> { ShopScheduleInterval.Create(TimeSpan.FromHours(8), TimeSpan.FromHours(18)) };
-        var shop = new CoffeeShop(null, "Protected schedule", null, PriceRange.Moderate, Guid.NewGuid());
+        var city = new City("schedule-" + Guid.NewGuid().ToString("N"));
+        var shop = ShopsLiveDatabase.NewShop("Protected schedule", city.Id);
         shop.AddSchedule([ShopSchedule.Create(DayOfWeek.Monday, false, intervals)]);
         intervals.Clear();
-        await using (var seed = fixture.Context(false)) { seed.Shops.Add(shop); await seed.SaveChangesAsync(ct); }
+        await using (var seed = fixture.Context(false)) { seed.Cities.Add(city); seed.Shops.Add(shop); await seed.SaveChangesAsync(ct); }
         await using var read = fixture.Context(false);
         var loaded = await read.Shops.SingleAsync(s => s.Id == shop.Id, ct);
         var schedule = Assert.Single(loaded.Schedules);

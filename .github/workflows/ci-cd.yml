@@ -159,6 +159,7 @@ jobs:
             ShopChangeRequestOutboxLiveTests \
             CheckInModerationRaceLiveTests \
             CheckInPhotoMigrationLiveTests \
+            ShopsSchemaUpgradeLiveTests \
             CheckInLimitsLiveTests \
             CheckInHelpfulOutboxLiveTests \
             ReviewReportCommitLiveTests \
