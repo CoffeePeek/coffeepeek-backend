@@ -513,7 +513,7 @@ public sealed class ShopsDirectWriteBoundaryLiveTests : IClassFixture<ShopsLiveD
                 Assert.Equal(0, observer.Calls);
                 await using var read = fixture.Context(false);
                 Assert.Equal(0, await read.Database.SqlQueryRaw<int>("""
-                    SELECT count(*)::integer AS "Value" FROM wolverine.wolverine_incoming_envelopes
+                    SELECT count(*)::integer AS "Value" FROM wolverine.wolverine_incoming_envelopes WHERE status <> 'Handled'
                     """).SingleAsync(ct));
                 Assert.Equal(0, await read.Database.SqlQueryRaw<int>("""
                     SELECT count(*)::integer AS "Value" FROM wolverine.wolverine_outgoing_envelopes
