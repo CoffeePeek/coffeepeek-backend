@@ -362,7 +362,7 @@ public sealed class ShopsDirectWriteBoundaryLiveTests : IClassFixture<ShopsLiveD
         object command = operation switch
         {
             "create" => new CreateCoffeeCommand(new(roaster.Id, content, [])),
-            "edit" => new EditCoffeeCommand(product.Id, new(content, [], ["name"], "Published", product.Version)),
+            "edit" => new EditCoffeeCommand(product.Id, new(content, [], ["Name"], "Published", product.Version)),
             "archive" => new ArchiveCoffeeCommand(product.Id),
             "create-tag" => new CreateRoasterTagCommand(new(tag.Slug, "Changed", null)),
             "edit-tag" => new EditRoasterTagCommand(tag.Id, new("Changed", null, 1, false)),
@@ -424,7 +424,7 @@ public sealed class ShopsDirectWriteBoundaryLiveTests : IClassFixture<ShopsLiveD
                 Assert.Equal(changed && operation is "create" or "edit" ? "Changed" : "Original", storedProduct.Name);
                 Assert.Equal(changed && operation == "archive" ? CoffeePublicationStatus.Archived :
                     changed && operation == "edit" ? CoffeePublicationStatus.Published : product.Status, storedProduct.Status);
-                Assert.Equal(changed && operation == "edit" ? ["name"] : Array.Empty<string>(), storedProduct.ProtectedFields);
+                Assert.Equal(changed && operation == "edit" ? ["Name"] : Array.Empty<string>(), storedProduct.ProtectedFields);
                 if (!changed) Assert.Equal(product.Version, storedProduct.Version);
             }
             var storedTag = await read.RoasterTags.SingleOrDefaultAsync(t => t.Slug == tag.Slug, ct);
