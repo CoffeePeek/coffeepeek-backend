@@ -32,7 +32,7 @@ function Assert-LocalTarget([uri]$Target) {
         -not $Target.Fragment -and $Target.AbsolutePath -eq '/') 'Only an isolated loopback HTTP base URL is accepted.'
 }
 function New-Body([string]$Text, [int]$Score) {
-    @{ coffeeShopSlug = $CoffeeShopSlug; text = $Text; rating = @{ coffee = $Score; service = $Score; place = $Score } }
+    @{ coffeeShopSlug = $CoffeeShopSlug; visitedAt = [datetimeoffset]::UtcNow.ToString('o'); text = $Text; rating = @{ coffee = $Score; service = $Score; place = $Score } }
 }
 function Request([string]$Method, [string]$Path, [string]$Token = '', $Body = $null) {
     $requestArgs = @{ Uri = [uri]::new($BaseUrl, $Path); Method = $Method; SkipHttpErrorCheck = $true;
@@ -101,7 +101,7 @@ function Feed {
 }
 function Assert-Rating([guid]$ExpectedLatestId = [guid]::Empty) {
     $all = @(Feed)
-    $selected = @($all | Group-Object userId | ForEach-Object {
+    $selected = @($all | Where-Object { $null -ne $_.rating } | Group-Object userId | ForEach-Object {
         $_.Group | Sort-Object @{ Expression = { [datetime]$_.visitedAt }; Descending = $true },
             @{ Expression = { [datetime]$_.createdAtUtc }; Descending = $true },
             @{ Expression = { [string]$_.id }; Descending = $true } | Select-Object -First 1
@@ -137,7 +137,7 @@ if ($SelfTest) {
         Assert $rejected "Unsafe target accepted: $url"
     }
     $body = New-Body 'text' 3
-    Assert ($body.Count -eq 3 -and $body.rating.Count -eq 3 -and -not $body.ContainsKey('photos')) 'Minimal creation accidentally requires optional fields.'
+    Assert ($body.Count -eq 4 -and $body.ContainsKey('visitedAt') -and $body.rating.Count -eq 3 -and -not $body.ContainsKey('photos')) 'Creation body is missing its required visit date.'
     Assert ('Private' -in @(0, 'Private') -and 0 -in @(0, 'Private')) 'Both named and numeric enum responses must be supported.'
     $failed = $false
     try { Get-Data @{ Status = 200; Json = @{ isSuccess = $false } } } catch { $failed = $true }
@@ -160,8 +160,9 @@ $created = [System.Collections.Generic.List[object]]::new()
 $marker = 'checkin-smoke-' + [guid]::NewGuid().ToString('N')
 try {
     Assert ((Request GET '/api/v1/moderation/check-ins' $AuthorToken).Status -eq 403) 'Standard user could read the moderator queue.'
-    $invalid = New-Body ' ' 3
-    Assert ((Request POST '/api/v1/check-ins' $AuthorToken $invalid).Status -eq 400) 'Blank text was accepted.'
+    $invalid = New-Body $marker 3
+    $invalid.Remove('visitedAt')
+    Assert ((Request POST '/api/v1/check-ins' $AuthorToken $invalid).Status -eq 400) 'Missing visit date was accepted.'
     $invalid = New-Body $marker 3
     $invalid.rating.coffee = 0
     Assert ((Request POST '/api/v1/check-ins' $AuthorToken $invalid).Status -eq 400) 'Invalid score was accepted.'

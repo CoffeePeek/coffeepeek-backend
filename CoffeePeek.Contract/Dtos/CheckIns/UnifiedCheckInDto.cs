@@ -10,7 +10,7 @@ public record UnifiedCheckInDto
     public Guid ShopId { get; init; }
     public string ShopName { get; init; } = "";
     public string Text { get; init; }
-    public RatingDto Rating { get; init; }
+    public RatingDto? Rating { get; init; }
     public DateTime VisitedAt { get; init; }
     public DateTime CreatedAtUtc { get; init; }
     public CheckInVisibility Visibility { get; init; }

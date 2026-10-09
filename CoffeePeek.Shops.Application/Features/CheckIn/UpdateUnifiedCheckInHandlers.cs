@@ -19,11 +19,10 @@ public static class UpdateUnifiedCheckInHandler
         IMessageBus bus, ICacheService cache, CancellationToken ct)
     {
         var checkIn = await GetOwnedAsync(repository, command.Id, command.UserId, ct);
-        if (command.Request.Rating == null) throw new ValidationException("Rating is required.");
         var drink = await CoffeePeek.Shared.Kernel.Drinks.DrinkSelection.ResolveAsync(command.Request.DrinkSlug, command.Request.CustomDrinkName, drinks, ct);
         var rating = command.Request.Rating;
         if (checkIn.Visibility == CheckInVisibility.Public) await EnsurePhotoBindingsAsync(checkIn,photos,ct);
-        checkIn.UpdateContent(command.Request.Text, Rating.Create(rating.Place, rating.Service, rating.Coffee));
+        checkIn.UpdateContent(command.Request.Text, rating == null ? null : Rating.Create(rating.Place, rating.Service, rating.Coffee));
         checkIn.SetDrink(drink);
         return await SaveAsync(checkIn, unitOfWork, bus, cache, ct);
     }

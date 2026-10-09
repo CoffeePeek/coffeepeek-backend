@@ -30,11 +30,13 @@ public class CheckInModerationRequestedHandlerTests
     }
 
     [Theory]
-    [InlineData(" ", 3, 3, 3)]
     [InlineData("Y", 0, 3, 3)]
     [InlineData("Y", 3, 6, 3)]
     [InlineData("Y", 3, 3, 0)]
-    public void Snapshot_RejectsInvalidTextOrAnyScore(string text, int place, int service, int coffee)
+    [InlineData("Y", null, 3, 3)]
+    [InlineData("Y", 3, null, 3)]
+    [InlineData("Y", 3, 3, null)]
+    public void Snapshot_RejectsInvalidOrPartialRating(string text, int? place, int? service, int? coffee)
     {
         Action create = () => ModerationReview.CreateCheckInSnapshot(Guid.NewGuid(), 1, Guid.NewGuid(),
             Guid.NewGuid(), "alice", text, place, service, coffee, null, DateTime.UtcNow, []);

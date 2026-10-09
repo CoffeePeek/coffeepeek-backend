@@ -24,7 +24,7 @@ internal static class CheckInProjection
         {
             Id = c.Id, UserId = c.UserId, Username = c.Username, ShopId = c.ShopId,
             ShopName = shops.GetValueOrDefault(c.ShopId)?.Name ?? "", Text = c.Note,
-            Rating = new RatingDto { Place = c.Rating.Place, Service = c.Rating.Service, Coffee = c.Rating.Coffee },
+            Rating = c.Rating == null ? null : new RatingDto { Place = c.Rating.Place, Service = c.Rating.Service, Coffee = c.Rating.Coffee },
             VisitedAt = c.VisitedAt, CreatedAtUtc = c.CreatedAtUtc,
             Visibility = (Contract.Enums.CheckInVisibility)c.Visibility,
             ModerationState = (Contract.Enums.CheckInModerationState)c.ModerationState,

@@ -12,6 +12,36 @@ namespace CoffeePeek.Shops.Infrastructure.Tests.Persistence;
 
 public class CheckInFeedAndRatingTests
 {
+    [Fact]
+    public async Task UnratedVisitsRemainReadableAndCountedWithoutReplacingPreviousRating()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        await using var db = new ShopsDbContext(new DbContextOptionsBuilder<ShopsDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString()).Options);
+        var shop = new CoffeeShop(null, "shop", null, PriceRange.Moderate, Guid.NewGuid());
+        shop.SetLocation(Guid.NewGuid(), "address", 53m, 27m);
+        db.Shops.Add(shop);
+        var user = Guid.NewGuid();
+        var time = DateTime.UtcNow.AddDays(-1);
+        var rated = Approved(user, shop.Id, 4, time, time);
+        var unrated = CheckIn.CreateUnified(user, shop.Id, "author", null, null, time.AddHours(1), CheckInVisibility.Public);
+        var other = CheckIn.CreateUnified(Guid.NewGuid(), shop.Id, "other", null, null, time, CheckInVisibility.Public);
+        foreach (var row in new[] { unrated, other })
+            row.ApplyModerationDecision(1, Guid.NewGuid(), 1, CheckInModerationState.Approved, null, time);
+        db.CheckIns.AddRange(rated, unrated, other);
+        await db.SaveChangesAsync(ct);
+        db.ChangeTracker.Clear();
+        var queries = new CheckInQueries(db);
+        Assert.Equal((4m, 3), await queries.GetStatsByShopAsync(shop.Id, ct));
+        Assert.Null((await queries.GetUnifiedByIdAsync(unrated.Id, null, ct))!.Rating);
+        Assert.Equal(3, (await queries.GetPublicAsync(null, null, shop.Id, null, 20, null, ct)).Items.Length);
+        Assert.Equal(4m, (await new PublicStatsQueryRepository(db).GetStatsAsync(ct)).AverageRating);
+        (await db.CheckIns.SingleAsync(c => c.Id == rated.Id, ct)).ChangeVisibility(CheckInVisibility.Private);
+        await db.SaveChangesAsync(ct);
+        Assert.Equal((0m, 2), await queries.GetStatsByShopAsync(shop.Id, ct));
+        Assert.Equal(0m, (await new PublicStatsQueryRepository(db).GetStatsAsync(ct)).AverageRating);
+    }
+
     private static CheckIn Approved(Guid user,Guid shop,int score,DateTime visited,DateTime created,Guid? id=null)
     {
         var c=CheckIn.CreateUnified(user,shop,"author","x",Rating.Create(score,score,score),visited,CheckInVisibility.Public,id:id);

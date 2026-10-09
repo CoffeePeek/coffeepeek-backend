@@ -40,7 +40,7 @@ public sealed partial class CheckIn : AggregateRoot<Guid>
         && ModerationState == CheckInModerationState.Approved
         && ApprovedRevision == ContentRevision;
 
-    public Rating Rating { get; private set; }
+    public Rating? Rating { get; private set; }
 
     private readonly List<ShopPhoto> _shopPhotos = [];
     public IReadOnlyCollection<ShopPhoto> ShopPhotos => _shopPhotos.AsReadOnly();
@@ -48,7 +48,7 @@ public sealed partial class CheckIn : AggregateRoot<Guid>
     // ReSharper disable once UnusedMember.Local
     private CheckIn() { }
 
-    private CheckIn(Guid userId, Guid shopId, DateTime visitedAt, string text, Rating rating, Guid? id = null)
+    private CheckIn(Guid userId, Guid shopId, DateTime visitedAt, string? text, Rating? rating, Guid? id = null)
     {
         Id = id ?? Guid.NewGuid();
         UserId = userId;
@@ -56,7 +56,7 @@ public sealed partial class CheckIn : AggregateRoot<Guid>
         VisitedAt = visitedAt;
         CreatedAtUtc = DateTime.UtcNow;
 
-        Note = text.Trim();
+        Note = text?.Trim() ?? "";
         Rating = rating;
     }
 }

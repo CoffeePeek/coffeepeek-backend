@@ -26,6 +26,22 @@ public class CheckInModerationSnapshotTests
 {
     private readonly CancellationToken _ct = TestContext.Current.CancellationToken;
 
+    [Fact]
+    public async Task DateOnlySnapshotCanBePersistedAndMappedWithoutRating()
+    {
+        await using var db = new ModerationDbContext(new DbContextOptionsBuilder<ModerationDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString()).Options);
+        var request = Request(Guid.NewGuid(), 1, Guid.NewGuid(), Guid.NewGuid()) with { Text = "", Rating = null, Photos = [] };
+        await CheckInModerationRequestedHandler.Handle(request, new ModerationReviewRepository(db), new TestUnitOfWork(db), _ct);
+        db.ChangeTracker.Clear();
+        var snapshot = await db.ModerationReviews.SingleAsync(_ct);
+        var mapper = MapsterConfiguration.CreateMapper(new MediaPublicUrlOptions { PublicEndpoint = "https://media.example.com" });
+        var dto = mapper.Map<ModerationReviewDto>(snapshot);
+        Assert.Equal(request.VisitedAtUtc, dto.VisitedAtUtc);
+        Assert.Equal("", dto.Text);
+        Assert.Null(dto.Rating);
+    }
+
     private static CheckInModerationRequestedEvent Request(Guid id, int revision, Guid owner, Guid photoId) =>
         new(id, revision, owner, "alice", Guid.NewGuid(), "Y", new RatingDto { Coffee = 4, Service = 5, Place = 3 },
             null, null, null, null, DateTime.UtcNow, [new CheckInPhotoDto(photoId, "photo.jpg", "image/jpeg", "private-key", 32, 0, "")]);

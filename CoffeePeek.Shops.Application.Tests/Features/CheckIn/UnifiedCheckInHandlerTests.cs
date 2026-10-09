@@ -43,25 +43,73 @@ public class UnifiedCheckInHandlerTests
     }
 
     private CreateUnifiedCheckInRequest Request(Visibility visibility = Visibility.Private) =>
-        new(_shopId, "x", new RatingDto { Coffee = 3, Service = 4, Place = 5 }, visibility);
+        new(_shopId, "x", new RatingDto { Coffee = 3, Service = 4, Place = 5 }, visibility, VisitedAt: DateTimeOffset.UtcNow);
 
     private Task<CoffeePeek.Shared.Kernel.Response.Response<UnifiedCheckInDto>> Create(CreateUnifiedCheckInRequest request) =>
         CreateUnifiedCheckInHandler.Handle(new(request, _userId, "author"), _repository.Object, _shops.Object,
             _drinks.Object, _photos.Object, _unitOfWork.Object, _bus.Object, _cache.Object, CancellationToken.None);
 
     [Fact]
-    public async Task SmallestPrivateRequestUsesNowAndSkipsOptionalLookups()
+    public async Task DateOnlyPrivateRequestPreservesUtcVisitTimeAndSkipsOptionalLookups()
     {
-        var before = DateTime.UtcNow;
-        var result = await Create(Request());
+        var visitedAt = new DateTimeOffset(2026, 10, 1, 12, 0, 0, TimeSpan.FromHours(3));
+        var result = await Create(new(_shopId, VisitedAt: visitedAt));
         Assert.True(result.IsSuccess);
         Assert.Equal(Visibility.Private, result.Data.Visibility);
-        Assert.InRange(result.Data.VisitedAt, before, DateTime.UtcNow);
+        Assert.Equal(visitedAt.UtcDateTime, result.Data.VisitedAt);
+        Assert.Equal("", result.Data.Text);
+        Assert.Null(result.Data.Rating);
         Assert.Equal("shop", result.Data.ShopName);
         _photos.VerifyNoOtherCalls();
         _drinks.VerifyNoOtherCalls();
         _bus.Verify(b => b.PublishAsync(It.Is<CheckinCreatedEvent>(e => e.UserId == _userId && e.CheckInId == result.Data.Id)), Times.Once);
         _repository.Verify(r => r.Add(It.Is<DomainCheckIn>(c => c.Id == result.Data.Id)), Times.Once);
+    }
+
+    [Fact]
+    public async Task MissingVisitTimeFailsBeforeLookupsAndSave()
+    {
+        await Assert.ThrowsAsync<ValidationException>(() => Create(Request() with { VisitedAt = null }));
+        _shops.VerifyNoOtherCalls();
+        _repository.VerifyNoOtherCalls();
+        _unitOfWork.VerifyNoOtherCalls();
+        _bus.VerifyNoOtherCalls();
+    }
+
+    [Fact]
+    public async Task DateOnlyPublicCreationPublishesSnapshotWithoutRating()
+    {
+        var result = await Create(new(_shopId, Visibility: Visibility.Public, VisitedAt: DateTimeOffset.UtcNow.AddDays(-1)));
+        Assert.True(result.IsSuccess);
+        _bus.Verify(b => b.PublishAsync(It.Is<CheckInModerationRequestedEvent>(e => e.CheckInId == result.Data.Id
+            && e.Text == "" && e.Rating == null && e.VisitedAtUtc == result.Data.VisitedAt)), Times.Once);
+    }
+
+    [Theory]
+    [InlineData(0, 3, 3)]
+    [InlineData(3, 6, 3)]
+    [InlineData(3, 3, 0)]
+    public async Task SuppliedRatingsStillRequireAllThreeValidScores(int coffee, int service, int place)
+    {
+        await Assert.ThrowsAsync<DomainException>(() => Create(Request() with
+            { Rating = new RatingDto { Coffee = coffee, Service = service, Place = place } }));
+        _unitOfWork.VerifyNoOtherCalls();
+        _bus.VerifyNoOtherCalls();
+    }
+
+    [Fact]
+    public async Task EditCanClearOptionalContentAndPreservesVisitTime()
+    {
+        var visitedAt = DateTime.UtcNow.AddDays(-1);
+        var row = DomainCheckIn.CreateUnified(_userId, _shopId, "author", "visit", Rating.Create(4, 4, 4), visitedAt);
+        _repository.Setup(r => r.GetTrackedByIdAsync(row.Id, default)).ReturnsAsync(row);
+        var result = await UpdateUnifiedCheckInHandler.Handle(new UpdateUnifiedCheckInCommand(row.Id, _userId, new()),
+            _repository.Object, _drinks.Object, _photos.Object, _unitOfWork.Object, _bus.Object, _cache.Object, default);
+        Assert.True(result.IsSuccess);
+        Assert.Equal("", result.Data.Text);
+        Assert.Null(result.Data.Rating);
+        Assert.Equal(visitedAt, result.Data.VisitedAt);
+        Assert.Equal(2, result.Data.ContentRevision);
     }
 
     [Fact]

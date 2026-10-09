@@ -18,16 +18,15 @@ Minimal `POST /api/v1/check-ins` body:
 ```json
 {
   "coffeeShopSlug": "example-coffee",
-  "text": "A good visit.",
-  "rating": { "coffee": 5, "service": 4, "place": 4 }
+  "visitedAt": "2026-10-01T09:00:00Z"
 }
 ```
 
-Use the existing shop address slug from `data.coffeeShops[].address.slug` in `GET /api/CoffeeShops`, or `data.shopDto.address.slug` in `GET /api/CoffeeShops/{slug}`. The public boundary resolves that slug through the existing registry; callers do not need an aggregate UUID. Slug aliases use the existing registry behavior. Omitted visibility is Private; omitted visit time is now in UTC.
+Use the existing shop address slug from `data.coffeeShops[].address.slug` in `GET /api/CoffeeShops`, or `data.shopDto.address.slug` in `GET /api/CoffeeShops/{slug}`. The public boundary resolves that slug through the existing registry; callers do not need an aggregate UUID. Slug aliases use the existing registry behavior. Omitted visibility is Private. Visit time is required and normalized to UTC. Text and rating can be omitted; the response then contains `"text": ""` and `"rating": null`.
 
 To select a catalog drink, send its `slug` as `drinkSlug`, for example `"drinkSlug": "cappuccino"`. `GET /api/menu/drinks` exposes `slug`, `nameRu`, `nameEn`, `category` and `sortOrder`; the existing consumed-drink catalog at `GET /api/catalogs/drinks` also includes the Other choice. Send `"drinkSlug": "other", "customDrinkName": "Espresso tonic"` for a custom drink. Other requires a nonblank name of at most 100 characters; named catalog selections reject a custom name. Frozen drink names survive later catalog renames/deactivation. Omitting both drink fields is valid.
 
-Public creation adds `"visibility": "Public"`; text and all three scores stay mandatory. Optional photos are uploaded first using `POST /api/Photos/check-in`; submit their upload metadata in `photos`. Optional `visitedAt` must not be in the future. The complete pending response illustrates a catalog selection and one attached photo.
+Public creation adds `"visibility": "Public"`; text and rating remain optional. If rating is supplied, all three scores must be integers from 1 through 5. Optional photos are uploaded first using `POST /api/Photos/check-in`; submit their upload metadata in `photos`. Required `visitedAt` must not be in the future (the existing clock-skew tolerance applies). The complete pending response illustrates optional text, scores, a catalog selection and one attached photo.
 
 The public visit has flat `drinkSlug`, `customDrinkName`, `drinkNameRu`, `drinkNameEn` fields and `shop`/`author` public addresses. Use its operational `id` for read/edit/visibility/helpful/report routes; `photos[].id` selects protected bytes. Aggregate shop/author/drink UUIDs are absent.
 

@@ -14,6 +14,9 @@ using IQueryCheckInRepository = CoffeePeek.Shops.Domain.Aggregates.CheckInAggreg
 using CoffeePeek.ShopsService.Controllers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
+using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using Wolverine;
 
@@ -21,6 +24,32 @@ namespace CoffeePeek.ShopsService.Tests;
 
 public class CheckInControllerTests
 {
+    [Theory]
+    [InlineData("""{"coffeeShopSlug":"example-coffee","visitedAt":"2026-10-01T09:00:00Z"}""", true)]
+    [InlineData("""{"coffeeShopSlug":"example-coffee","visitedAt":null}""", false)]
+    [InlineData("""{"visitedAt":"2026-10-01T09:00:00Z"}""", false)]
+    public void PublicRequestRequiresOnlyShopAndVisitTime(string json, bool valid)
+    {
+        var request = JsonSerializer.Deserialize<PublicCreateUnifiedCheckInRequest>(json,
+            new JsonSerializerOptions(JsonSerializerDefaults.Web))!;
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddControllers();
+        using var provider = services.BuildServiceProvider();
+        var context = new ActionContext { HttpContext = new DefaultHttpContext { RequestServices = provider } };
+        provider.GetRequiredService<IObjectModelValidator>().Validate(context, null, "", request);
+        Assert.Equal(valid, context.ModelState.IsValid);
+        Assert.Null(request.Text);
+        Assert.Null(request.Rating);
+    }
+
+    [Fact]
+    public void PublicRequestRejectsMissingVisitTimeDuringJsonBinding()
+    {
+        Assert.Throws<JsonException>(() => JsonSerializer.Deserialize<PublicCreateUnifiedCheckInRequest>(
+            """{"coffeeShopSlug":"example-coffee"}""", new JsonSerializerOptions(JsonSerializerDefaults.Web)));
+    }
+
     [Fact]
     public void GatewayReachabilityAndMutationPoliciesMatchTheVersionedContract()
     {
@@ -44,9 +73,10 @@ public class CheckInControllerTests
     {
         var options = new JsonSerializerOptions(JsonSerializerDefaults.Web);
         var request = JsonSerializer.Deserialize<PublicCreateUnifiedCheckInRequest>("""
-            {"coffeeShopSlug":"example-coffee","text":"Good coffee","rating":{"coffee":4,"service":3,"place":5},"userId":"22222222-2222-2222-2222-222222222222","username":"spoof","coffeeShopId":"11111111-1111-1111-1111-111111111111"}
+            {"coffeeShopSlug":"example-coffee","visitedAt":"2026-10-01T09:00:00Z","text":"Good coffee","rating":{"coffee":4,"service":3,"place":5},"userId":"22222222-2222-2222-2222-222222222222","username":"spoof","coffeeShopId":"11111111-1111-1111-1111-111111111111"}
             """, options)!;
         Assert.Equal("example-coffee", request.CoffeeShopSlug);
+        Assert.NotNull(request.Rating);
         Assert.Equal(4, request.Rating.Coffee);
         Assert.Equal(3, request.Rating.Service);
         Assert.Equal(5, request.Rating.Place);
@@ -54,6 +84,7 @@ public class CheckInControllerTests
         Assert.Null(request.DrinkSlug);
         Assert.Null(request.CustomDrinkName);
         Assert.Null(request.Photos);
+        Assert.NotNull(request.VisitedAt);
         foreach (var identity in new[] { "UserId", "Username", "CoffeeShopId", "DrinkDefinitionId" })
             Assert.Null(typeof(PublicCreateUnifiedCheckInRequest).GetProperty(identity));
     }
@@ -81,13 +112,15 @@ public class CheckInControllerTests
         user.Setup(x => x.GetUserIdOrThrow()).Returns(authorId);
         user.Setup(x => x.GetUsernameOrThrow()).Returns("example_author");
         var request = new PublicCreateUnifiedCheckInRequest(shop.Slug, "Good coffee",
-            new RatingDto { Coffee = 5, Service = 4, Place = 3 }, DrinkSlug: drinkSlug, CustomDrinkName: customDrinkName);
+            new RatingDto { Coffee = 5, Service = 4, Place = 3 }, DrinkSlug: drinkSlug, CustomDrinkName: customDrinkName,
+            VisitedAt: DateTimeOffset.UtcNow.AddDays(-1));
+        if (drinkSlug is null && customDrinkName is null) request = request with { Text = null, Rating = null };
         var bus = DispatchProxy.Create<IMessageBus, ReviewReportApiContractTests.RecordingBus>();
         var recorder = (ReviewReportApiContractTests.RecordingBus)(object)bus;
         recorder.NextResponse = Response<UnifiedCheckInDto>.Success(new UnifiedCheckInDto
         {
             Id = checkInId, ShopId = shopId, UserId = authorId, Username = "example_author", ShopName = "Example Coffee",
-            Text = request.Text, Rating = request.Rating, Visibility = request.Visibility,
+            Text = request.Text ?? "", Rating = request.Rating, Visibility = request.Visibility,
             ModerationState = CheckInModerationState.NotSubmitted,
             Drink = drinkSlug is null && customDrinkName is null ? null : new CheckInDrinkDto(drinkSlug!, customDrinkName, "", "")
         });
@@ -103,12 +136,14 @@ public class CheckInControllerTests
         Assert.Equal("example_author", command.Username);
         Assert.Equal(drinkSlug, command.Request.DrinkSlug);
         Assert.Equal(customDrinkName, command.Request.CustomDrinkName);
+        Assert.Equal(request.VisitedAt, command.Request.VisitedAt);
         var response = Assert.IsType<Response<PublicCheckInDto>>(result.Value);
         Assert.Equal(checkInId, response.Data.Id);
         Assert.Equal(shop.Slug, response.Data.Shop!.Slug);
         Assert.Equal(author.Slug, response.Data.Author!.Slug);
         Assert.Equal(drinkSlug, response.Data.DrinkSlug);
         Assert.Equal(customDrinkName, response.Data.CustomDrinkName);
+        Assert.Equal(request.Rating, response.Data.Rating);
         var json = JsonSerializer.Serialize(response, new JsonSerializerOptions(JsonSerializerDefaults.Web));
         Assert.DoesNotContain(shopId.ToString(), json);
         Assert.DoesNotContain(authorId.ToString(), json);

@@ -61,13 +61,13 @@ public class AdminStatsQueryRepository(ShopsDbContext dbContext) : IAdminStatsQu
 
         // Group server-side on the integer sum (3..15); star bucketing happens in memory.
         var histogram = await visible
-            .GroupBy(r => r.Rating.Place + r.Rating.Service + r.Rating.Coffee)
+            .GroupBy(r => r.Rating!.Place + r.Rating.Service + r.Rating.Coffee)
             .Select(g => new { Sum = g.Key, Count = g.Count() })
             .ToListAsync(ct);
 
-        var averagePlace = await visible.AverageAsync(r => (decimal?)r.Rating.Place, ct) ?? 0m;
-        var averageService = await visible.AverageAsync(r => (decimal?)r.Rating.Service, ct) ?? 0m;
-        var averageCoffee = await visible.AverageAsync(r => (decimal?)r.Rating.Coffee, ct) ?? 0m;
+        var averagePlace = await visible.AverageAsync(r => (decimal?)r.Rating!.Place, ct) ?? 0m;
+        var averageService = await visible.AverageAsync(r => (decimal?)r.Rating!.Service, ct) ?? 0m;
+        var averageCoffee = await visible.AverageAsync(r => (decimal?)r.Rating!.Coffee, ct) ?? 0m;
 
         var total = histogram.Sum(x => x.Count);
         // Mean of per-review (P+S+C)/3 equals the grand sum over 3n — derived exactly from the histogram.

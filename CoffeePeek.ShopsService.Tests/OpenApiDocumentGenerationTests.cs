@@ -88,7 +88,7 @@ public class OpenApiDocumentGenerationTests
             var request = ResolveSchema(document.RootElement,
                 create.GetProperty("requestBody").GetProperty("content").GetProperty("application/json").GetProperty("schema"));
             request.GetProperty("required").EnumerateArray().Select(x => x.GetString())
-                .Should().Contain(new[] { "coffeeShopSlug", "text", "rating" });
+                .Should().BeEquivalentTo(new[] { "coffeeShopSlug", "visitedAt" });
             var requestProperties = request.GetProperty("properties");
             requestProperties.TryGetProperty("drinkSlug", out _).Should().BeTrue();
             requestProperties.TryGetProperty("customDrinkName", out _).Should().BeTrue();

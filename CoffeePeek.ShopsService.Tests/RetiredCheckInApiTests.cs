@@ -37,7 +37,7 @@ public class RetiredCheckInApiTests
     }
 
     [Fact]
-    public void ContractsAndAggregateHaveNoCompatibilityFieldsOrIncompleteFactory()
+    public void ContractsAndAggregateHaveNoCompatibilityFieldsOrLegacyFactory()
     {
         var assembly = typeof(UnifiedCheckInDto).Assembly;
         foreach (var retired in new[]
@@ -59,8 +59,8 @@ public class RetiredCheckInApiTests
         foreach (var method in new[] { "Create", "ImportHistorical", "UpdateNote", "AssignRating", "PreserveLegacyHeader" })
             Assert.Null(typeof(DomainCheckIn).GetMethod(method, BindingFlags.Public | BindingFlags.Static | BindingFlags.Instance));
 
-        Assert.Throws<DomainException>(() => DomainCheckIn.CreateUnified(Guid.NewGuid(), Guid.NewGuid(), "author",
-            " ", Rating.Create(3, 3, 3), DateTime.UtcNow));
+        Assert.Null(DomainCheckIn.CreateUnified(Guid.NewGuid(), Guid.NewGuid(), "author",
+            null, null, DateTime.UtcNow).Rating);
         Assert.Equal(typeof(Guid), typeof(ModerationReviewDto).GetProperty(nameof(ModerationReviewDto.CheckInId))!.PropertyType);
         Assert.Equal(typeof(int), typeof(ModerationReviewDto).GetProperty(nameof(ModerationReviewDto.ContentRevision))!.PropertyType);
         Assert.Equal(typeof(DateTime), typeof(ModerationReviewDto).GetProperty(nameof(ModerationReviewDto.VisitedAtUtc))!.PropertyType);
@@ -94,6 +94,7 @@ public class RetiredCheckInApiTests
         var dto = CheckInMapping.ToDto(visit);
         Assert.Equal($"/api/v1/check-ins/{visit.Id}/photos/{photo.Id}", Assert.Single(dto.Photos).Url);
         Assert.Equal(visit.Note, dto.Text);
+        Assert.NotNull(dto.Rating);
         Assert.Equal(5, dto.Rating.Coffee);
         var snapshot = CheckInMapping.ModerationRequest(visit);
         Assert.Equal(visit.Id, snapshot.CheckInId);

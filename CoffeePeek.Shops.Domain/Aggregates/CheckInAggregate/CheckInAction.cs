@@ -12,8 +12,8 @@ public partial class CheckIn
         Touch();
     }
 
-    public static CheckIn CreateUnified(Guid userId, Guid shopId, string username, string text,
-        Rating rating, DateTime visitedAt, CheckInVisibility visibility = CheckInVisibility.Private,
+    public static CheckIn CreateUnified(Guid userId, Guid shopId, string username, string? text,
+        Rating? rating, DateTime visitedAt, CheckInVisibility visibility = CheckInVisibility.Private,
         Guid? id = null)
     {
         ValidateContent(text, rating);
@@ -26,18 +26,18 @@ public partial class CheckIn
         if (id == Guid.Empty) throw new DomainException("CheckInId is required.");
         var checkIn = new CheckIn(userId, shopId, visitedAt, text, rating, id);
         checkIn.Username = username;
-        checkIn.Note = text.Trim();
+        checkIn.Note = text?.Trim() ?? "";
         checkIn.Rating = rating;
         checkIn.Visibility = visibility;
         checkIn.ResetModeration();
         return checkIn;
     }
 
-    public void UpdateContent(string text, Rating rating)
+    public void UpdateContent(string? text, Rating? rating)
     {
         EnsureNotDeleted();
         ValidateContent(text, rating);
-        Note = text.Trim();
+        Note = text?.Trim() ?? "";
         Rating = rating;
         ContentRevision++;
         ResetModeration();
@@ -90,12 +90,11 @@ public partial class CheckIn
         Touch();
     }
 
-    private static void ValidateContent(string text, Rating rating)
+    private static void ValidateContent(string? text, Rating? rating)
     {
-        if (string.IsNullOrWhiteSpace(text) || text.Trim().Length > BusinessConstants.MaxCheckInNoteLength)
-            throw new DomainException($"Text is required and must not exceed {BusinessConstants.MaxCheckInNoteLength} characters.");
-        if (rating == null) throw new DomainException("Rating is required.");
-        Rating.Create(rating.Place, rating.Service, rating.Coffee);
+        if (text?.Trim().Length > BusinessConstants.MaxCheckInNoteLength)
+            throw new DomainException($"Text must not exceed {BusinessConstants.MaxCheckInNoteLength} characters.");
+        if (rating != null) Rating.Create(rating.Place, rating.Service, rating.Coffee);
     }
 
     private static void ValidateVisibility(CheckInVisibility visibility)

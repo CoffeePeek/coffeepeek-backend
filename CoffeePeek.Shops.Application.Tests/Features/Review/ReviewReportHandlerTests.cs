@@ -34,6 +34,20 @@ public class ReviewReportHandlerTests
         return checkIn;
     }
 
+    [Fact]
+    public async Task ComplaintDetailCanReadVisitWithoutRating()
+    {
+        var checkIn = DomainCheckIn.CreateUnified(Guid.NewGuid(), Guid.NewGuid(), "tester", null, null, DateTime.UtcNow);
+        var report = ReviewReport.Create(checkIn.Id, Guid.NewGuid(), "complaint");
+        _reports.Setup(x => x.GetByIdAsync(report.Id, _ct)).ReturnsAsync(report);
+        _checkIns.Setup(x => x.GetTrackedByIdAsync(checkIn.Id, _ct)).ReturnsAsync(checkIn);
+        var detail = await GetReviewReportHandler.Handle(new(report.Id), _reports.Object, _checkIns.Object, _ct);
+        Assert.NotNull(detail.Data.CheckIn);
+        Assert.Null(detail.Data.CheckIn.RatingPlace);
+        Assert.Null(detail.Data.CheckIn.RatingService);
+        Assert.Null(detail.Data.CheckIn.RatingCoffee);
+    }
+
     private static void ChangeState(DomainCheckIn checkIn, string state)
     {
         switch (state)
