@@ -8,6 +8,9 @@ public class ShopPhotoConfiguration : IEntityTypeConfiguration<ShopPhoto>
 {
     public void Configure(EntityTypeBuilder<ShopPhoto> builder)
     {
+        // Keep the previous binary's nullable FK and data through the compatibility window.
+        builder.HasOne<Domain.Aggregates.CheckInAggregate.CheckIn>().WithMany()
+            .HasForeignKey("CanonicalCheckInId").IsRequired(false);
         builder.Property(p => p.SortIndex)
             .IsRequired()
             .HasDefaultValue(0);

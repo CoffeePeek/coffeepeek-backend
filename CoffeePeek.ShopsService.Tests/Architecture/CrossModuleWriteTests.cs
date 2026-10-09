@@ -14,8 +14,6 @@ public class CrossModuleWriteTests
     private static readonly IReadOnlyDictionary<string, string> KnownViolations =
         new Dictionary<string, string>(StringComparer.Ordinal)
         {
-            ["CoffeePeek.Shops.Application.Features.CheckIn.CreateUnifiedCheckInHandler.Handle::<lambda> -> CoffeePeek.Shops.Domain.Entities.ShopPhoto..ctor"] =
-                "Shops owns the shared ShopPhotos row; split Community check-in photos in P18/P29.",
             ["CoffeePeek.Shops.Persistance.PublicAddresses.PublicAddressService+<BackfillAsync>d__12`1.MoveNext -> CoffeePeek.Shared.Domain.PublicAddresses.IPublicSlugOwner.SetPublicSlug"] =
                 "Entity owners must change their own slugs; route PublicAddresses backfill through owner ports in P20/P25.",
             ["CoffeePeek.Shops.Persistance.PublicAddresses.PublicAddressService+<ChangeAsync>d__10`1.MoveNext -> CoffeePeek.Shared.Domain.PublicAddresses.IPublicSlugOwner.SetPublicSlug"] =

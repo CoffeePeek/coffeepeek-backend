@@ -191,7 +191,7 @@ public class LegacyMigrationLiveTests
                 else Assert.Equal(visit.Id(), Assert.Single(await moderation.RowsAsync("ModerationCheckIns")).Id("CheckInId"));
                 var claimed = Assert.Single(await media.RowsAsync("Photos"), x => x.Text("BucketType") == "CheckIn");
                 Assert.Equal("CheckIn", claimed.Text("BucketType")); Assert.Equal(visit.Id(), claimed.Id("CheckInId"));
-                var canonicalPhoto = Assert.Single(await shops.RowsAsync("ShopPhotos"), x => x.Id("CanonicalCheckInId") != Guid.Empty);
+                var canonicalPhoto = Assert.Single(await shops.RowsAsync("CheckInPhotos"), x => x.Id("CanonicalCheckInId") != Guid.Empty);
                 Assert.Equal(claimed.Id(), canonicalPhoto.Id());
                 if (minio != null) await minio.VerifyPrivateAsync(key, claimed.Text("StorageKey")!, sharedGalleryPhoto);
                 else { Assert.Equal(sharedGalleryPhoto, objects.ContainsKey((BucketType.Shop, key))); Assert.True(objects.ContainsKey((BucketType.CheckIn, claimed.Text("StorageKey")!))); }
@@ -202,7 +202,8 @@ public class LegacyMigrationLiveTests
                 Assert.False(await shops.ExistsAsync("Reviews")); Assert.False(await shops.ExistsAsync("CheckIns")); Assert.False(await shops.ExistsAsync("ReviewHelpfulVotes"));
                 Assert.False(await moderation.ExistsAsync("ModerationReviews"));
                 Assert.DoesNotContain("ReviewCount", (await account.RowsAsync("Users"))[0].Select(x => x.Key));
-                Assert.Equal(sharedGalleryPhoto ? 2 : 1, (await shops.RowsAsync("ShopPhotos")).Count);
+                Assert.Equal(sharedGalleryPhoto ? 1 : 0, (await shops.RowsAsync("ShopPhotos")).Count);
+                Assert.Single(await shops.RowsAsync("CheckInPhotos"));
                 Assert.Equal(changedSnapshotPhoto ? 0 : 1, (await moderation.RowsAsync("ShopPhotos")).Count);
                 Assert.Equal(10 + (changedSnapshotPhoto ? 0 : 10) + (sharedGalleryPhoto ? 15 : 0),
                     (await shops.RowsAsync("Shops")).Single(x => x.Id() == shop.Id).Number("DataCompletenessScore"));

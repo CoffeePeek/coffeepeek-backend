@@ -4,8 +4,6 @@
 
 | Текущий прямой путь | Владелец операции | Количество зафиксированных IL-вызовов | Устранение |
 | --- | --- | ---: | --- |
-| Menus → `CoffeeShop.SetPriceRange` | Shops | 2 | P28: узкий Shops-порт и общий протокол записи; обе ветки уже увеличивают `ProfileRevision` |
-| Community check-in → `ShopPhoto` | Shops сейчас; после разделения Community | 1 | P18/P29: отдельное фото посещения |
 | Общий PublicAddresses writer → `IPublicSlugOwner.SetPublicSlug` | Соответствующий entity module | 3 | P20/P25: вызов owner-порта, общий компонент оставляет reservation/audit |
 
 9 октября избранное, отчёты импорта, все пять записей классификации и initialize/rename/backfill PublicAddresses переведены в application commands. HTTP→store baseline пуст и заменён строгим `Assert.Empty`: новых исключений нет. Generated adapters держат общую EF/outbox-транзакцию до ответа; HTTP/auth и PostgreSQL commit/rollback проверяются отдельно. Межмодульные записи из таблицы выше ещё требуют устранения.

@@ -161,7 +161,7 @@ public static partial class LegacyReviewBackfill
                     ["ContentType"] = Text(original,"ContentType"), ["StorageKey"] = destination, ["SizeBytes"] = expectedSize,
                     ["OwnerId"] = Text(binding,"OwnerId"), ["SortIndex"] = Int(binding,"SortIndex"),
                     ["CanonicalCheckInId"] = Text(binding,"CheckInId"), ["CreatedAtUtc"] = original["UploadedAt"]!.DeepClone(), ["UpdatedAtUtc"] = null };
-                if (Flag(binding,"Current")) await InsertPhotoAsync(db["Shops"],shopRow,ct);
+                if (Flag(binding,"Current")) await InsertPhotoAsync(db["Shops"],"CheckInPhotos",shopRow,ct);
                 binding["ShopTarget"] = Flag(binding,"Current") ? shopRow.DeepClone() : null;
                 var snapshotRows = new JsonArray();
                 foreach (var snapshot in binding["Snapshots"]!.AsArray().OfType<JsonObject>())
@@ -170,7 +170,7 @@ public static partial class LegacyReviewBackfill
                     row["Id"] = StableId(Text(snapshot,"SnapshotId")+"/"+Text(binding,"MediaId")).ToString();
                     row["ModerationCheckInId"] = Text(snapshot,"SnapshotId"); row["CheckInPhotoId"] = Text(binding,"MediaId");
                     row["SortIndex"] = Int(snapshot,"SortIndex");
-                    await InsertPhotoAsync(db["Moderation"],row,ct); snapshotRows.Add(row);
+                    await InsertPhotoAsync(db["Moderation"],"ShopPhotos",row,ct); snapshotRows.Add(row);
                 }
                 binding["SnapshotTargets"] = snapshotRows; binding["Completed"] = true; Save(manifestPath,manifest);
             }
@@ -182,14 +182,14 @@ public static partial class LegacyReviewBackfill
             }
         }
     }
-    private static async Task InsertPhotoAsync(NpgsqlConnection connection,JsonObject row,CancellationToken ct)
+    private static async Task InsertPhotoAsync(NpgsqlConnection connection,string table,JsonObject row,CancellationToken ct)
     {
         await using var tx = await connection.BeginTransactionAsync(ct);
-        var actual = await FindAsync(connection,"ShopPhotos",Text(row,"Id")!,ct,tx);
+        var actual = await FindAsync(connection,table,Text(row,"Id")!,ct,tx);
         if (actual != null && !Matches(row,actual)) throw new InvalidOperationException("Retained/native photo UUID collision.");
         if (actual == null)
         {
-            await using var insert = InsertCommand("ShopPhotos",row,connection,tx);
+            await using var insert = InsertCommand(table,row,connection,tx);
             if (await insert.ExecuteNonQueryAsync(ct) != 1) throw new InvalidOperationException("Photo insertion collision.");
         }
         await tx.CommitAsync(ct);
@@ -205,7 +205,7 @@ public static partial class LegacyReviewBackfill
             if (actual == null || !Matches(binding["MediaTarget"]!.AsObject(),actual)) failures.Add("Media binding mismatch: "+Text(binding,"MediaId"));
             if (binding["ShopTarget"] is JsonObject shop)
             {
-                var row = await FindAsync(db["Shops"],"ShopPhotos",Text(shop,"Id")!,ct);
+                var row = await FindAsync(db["Shops"],"CheckInPhotos",Text(shop,"Id")!,ct);
                 if (row == null || !Matches(shop,row)) failures.Add("Shop photo mismatch: "+Text(shop,"Id"));
             }
             foreach (var snapshot in binding["SnapshotTargets"]!.AsArray().OfType<JsonObject>())

@@ -26,8 +26,12 @@ public sealed class CheckInModerationRaceLiveTests : IClassFixture<ShopsLiveData
         this.fixture = fixture;
     }
 
-    [Fact]
-    public async Task HideAfterConsumerRead_RejectsStaleApprovalAndKeepsEveryPublicProjectionClosed()
+    [Theory]
+    [InlineData("hide")]
+    [InlineData("delete")]
+    [InlineData("edit")]
+    [InlineData("photos")]
+    public async Task AuthorChangeAfterConsumerRead_RejectsStaleApprovalAndKeepsEveryPublicProjectionClosed(string change)
     {
         var ct = TestContext.Current.CancellationToken;
         var city = new City("mod-race-" + Guid.NewGuid().ToString("N"));
@@ -52,7 +56,15 @@ public sealed class CheckInModerationRaceLiveTests : IClassFixture<ShopsLiveData
             await using (var hide = fixture.Context(false))
             {
                 var current = await hide.CheckIns.SingleAsync(x => x.Id == checkIn.Id, ct);
-                current.ChangeVisibility(DomainVisibility.Private);
+                switch (change)
+                {
+                    case "hide": current.ChangeVisibility(DomainVisibility.Private); break;
+                    case "delete": current.Delete(); break;
+                    case "edit": current.UpdateContent("edited", Rating.Create(5, 5, 5)); break;
+                    default:
+                        current.AddPhotos([new CheckInPhoto("coffee.jpg", "image/jpeg", "check-ins/" + Guid.NewGuid(), 42, current.UserId)]);
+                        break;
+                }
                 await hide.SaveChangesAsync(ct);
             }
 
@@ -74,7 +86,7 @@ public sealed class CheckInModerationRaceLiveTests : IClassFixture<ShopsLiveData
 
         await using var verify = fixture.Context(false);
         var persisted = await verify.CheckIns.AsNoTracking().SingleAsync(x => x.Id == checkIn.Id, ct);
-        Assert.Equal(DomainVisibility.Private, persisted.Visibility);
+        Assert.Equal(change == "hide" ? DomainVisibility.Private : DomainVisibility.Public, persisted.Visibility);
         Assert.Equal(2, persisted.ContentRevision);
         Assert.False(persisted.IsPubliclyVisible);
         var queries = new CheckInQueries(verify);

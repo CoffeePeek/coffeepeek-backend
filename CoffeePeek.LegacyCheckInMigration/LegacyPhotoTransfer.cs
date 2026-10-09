@@ -16,7 +16,7 @@ public static class LegacyPhotoTransfer
         // Keys used by current entities must remain in their existing buckets.
         var retainedKeys = shopPhotos.Where(x => x.Id("CoffeeShopId") != Guid.Empty || x.Id("CanonicalCheckInId") != Guid.Empty)
             .Select(x => x.Text("StorageKey")!).ToHashSet();
-        foreach (var table in new[] { "RoasterPhotos", "ShopMenuPhotos", "CoffeeProductPhotos" })
+        foreach (var table in new[] { "CheckInPhotos", "RoasterPhotos", "ShopMenuPhotos", "CoffeeProductPhotos" })
             foreach (var photo in await shops.RowsAsync(table)) retainedKeys.Add(photo.Text("StorageKey")!);
         foreach (var photo in moderationPhotos.Where(x => x.Id("ModerationShopId") != Guid.Empty || x.Id("ModerationCheckInId") != Guid.Empty))
             retainedKeys.Add(photo.Text("StorageKey")!);
@@ -91,12 +91,9 @@ public static class LegacyPhotoTransfer
                 await media.InsertAsync("Photos", newMetadata);
                 var newPhoto = newMetadata.Pick("Id", "FileName", "ContentType", "StorageKey", "SizeBytes", "OwnerId");
                 newPhoto["CanonicalCheckInId"] = plan.CheckIn.Id().ToString();
-                newPhoto["CoffeeShopId"] = null;
-                newPhoto["CheckInId"] = null;
-                newPhoto["ReviewId"] = null;
                 newPhoto["SortIndex"] = sortIndex++;
                 newPhoto["CreatedAtUtc"] = photo["CreatedAtUtc"]?.DeepClone() ?? source["UploadedAt"]!.DeepClone();
-                await shops.InsertAsync("ShopPhotos", newPhoto);
+                await shops.InsertAsync("CheckInPhotos", newPhoto);
                 migratedKeys.Add(key);
                 if (plan.Snapshot != null)
                 {

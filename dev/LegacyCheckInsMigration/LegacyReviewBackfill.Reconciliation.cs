@@ -66,6 +66,7 @@ public static partial class LegacyReviewBackfill
                 ["CheckIns"] = ["Id","UserId","ShopId","ReviewId","VisitedAt","Note","Rating_Place","Rating_Service","Rating_Coffee"],
                 ["ReviewHelpfulVotes"] = ["ReviewId","UserId","CreatedAtUtc"], ["ReviewReports"] = ["Id","ReviewId"],
                 ["CanonicalCheckIns"] = ["Id","Note","ContentRevision","RowVersion","ApprovedRevision","DeletedAtUtc","FirstPublishedAtUtc"],
+                ["CheckInPhotos"] = ["Id","CanonicalCheckInId","OwnerId","StorageKey","SortIndex"],
                 ["ShopPhotos"] = ["Id","ReviewId","CheckInId","CanonicalCheckInId","OwnerId","StorageKey","SortIndex"] },
             ["Moderation"] = new() {
                 ["ModerationReviews"] = ["Id","UserId","ShopId","ModerationStatus","Comment","ModeratedBy","ModeratedAt","RejectedReason","IsSoftDelete"],

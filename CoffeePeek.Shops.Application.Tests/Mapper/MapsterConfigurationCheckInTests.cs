@@ -33,7 +33,7 @@ public class MapsterConfigurationCheckInTests
         var config = MapsterConfiguration.CreateConfig(mediaOptions);
 
         var checkIn = CheckIn.CreateUnified(Guid.NewGuid(), Guid.NewGuid(), "author", "visit", Rating.Create(5,4,3), DateTime.UtcNow.AddHours(-1));
-        checkIn.AddPhotos([new ShopPhoto("photo.jpg", "image/jpeg", "checkins/photo.jpg", 1024, checkIn.UserId)]);
+        checkIn.AddPhotos([new CheckInPhoto("photo.jpg", "image/jpeg", "checkins/photo.jpg", 1024, checkIn.UserId)]);
 
         var dto = CoffeePeek.Shops.Application.Features.CheckIn.CheckInMapping.ToDto(checkIn);
 

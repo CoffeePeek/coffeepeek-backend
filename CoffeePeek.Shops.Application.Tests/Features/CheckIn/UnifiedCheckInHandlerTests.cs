@@ -223,7 +223,7 @@ public class UnifiedCheckInHandlerTests
     public async Task HistoricalUnboundPhotoCannotBePromotedToPublic()
     {
         var row=DomainCheckIn.CreateUnified(_userId,_shopId,"author","visit",Rating.Create(4,4,4),DateTime.UtcNow.AddYears(-1));
-        row.AddPhotos([new ShopPhoto("old.jpg","image/jpeg","old-public-key",10,_userId)]);
+        row.AddPhotos([new CheckInPhoto("old.jpg","image/jpeg","old-public-key",10,_userId)]);
         _repository.Setup(r=>r.GetTrackedByIdAsync(row.Id,default)).ReturnsAsync(row);
         _photos.Setup(p=>p.ClaimForCheckInAsync(_userId,row.Id,It.IsAny<IReadOnlyCollection<string>>(),default)).ReturnsAsync(CheckInPhotoClaimResult.Failed);
         await Assert.ThrowsAsync<ConflictException>(()=>UpdateUnifiedCheckInHandler.Handle(new ChangeUnifiedCheckInVisibilityCommand(row.Id,_userId,Visibility.Public),

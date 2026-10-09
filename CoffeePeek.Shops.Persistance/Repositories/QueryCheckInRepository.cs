@@ -38,7 +38,8 @@ public class QueryCheckInRepository(ShopsDbContext dbContext) : IQueryCheckInRep
     }
 
     public async Task<bool> ArePhotoKeysUsedAsync(IReadOnlyCollection<string> keys, CancellationToken ct = default) =>
-        await dbContext.ShopPhotos.AnyAsync(p => keys.Contains(p.StorageKey), ct)
+        await dbContext.CheckInPhotos.AnyAsync(p => keys.Contains(p.StorageKey), ct)
+        || await dbContext.ShopPhotos.AnyAsync(p => keys.Contains(p.StorageKey), ct)
         || await dbContext.RoasterPhotos.AnyAsync(p => keys.Contains(p.StorageKey), ct)
         || await dbContext.Set<CoffeePeek.Shops.Domain.Aggregates.MenuAggregate.ShopMenuPhoto>()
             .AnyAsync(p => keys.Contains(p.StorageKey), ct);

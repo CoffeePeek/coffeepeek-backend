@@ -123,6 +123,8 @@ jobs:
             ShopChangeRequestMenuLiveTests \
             ShopChangeRequestOutboxLiveTests \
             CheckInModerationRaceLiveTests \
+            CheckInPhotoMigrationLiveTests \
+            CheckInLimitsLiveTests \
             CheckInHelpfulOutboxLiveTests \
             ReviewReportCommitLiveTests \
             CoffeeZonePolygonLiveTests \

@@ -58,7 +58,7 @@ public static class CreateUnifiedCheckInHandler
             {
                 throw new ValidationException("One or more photos were not found, do not belong to you, or were already used.");
             }
-            checkIn.AddPhotos(keys.Select((k, i) => new ShopPhoto(trusted[k].FileName, trusted[k].ContentType,
+            checkIn.AddPhotos(keys.Select((k, i) => new CheckInPhoto(trusted[k].FileName, trusted[k].ContentType,
                 trusted[k].StorageKey, trusted[k].SizeBytes, command.UserId, i, trusted[k].PhotoId)));
         }
         repository.Add(checkIn);

@@ -231,7 +231,7 @@ public static partial class LegacyReviewBackfill
     }
     public static NpgsqlCommand InsertCommand(string table, JsonObject row, NpgsqlConnection? connection = null, NpgsqlTransaction? transaction = null)
     {
-        if (!new[] { "CanonicalCheckIns", "ModerationCheckIns", "CheckInHelpfulVotes", "ShopPhotos" }.Contains(table))
+        if (!new[] { "CanonicalCheckIns", "ModerationCheckIns", "CheckInHelpfulVotes", "CheckInPhotos", "ShopPhotos" }.Contains(table))
             throw new ArgumentException("Not a migration target.", nameof(table));
         if (row.Any(kv => !System.Text.RegularExpressions.Regex.IsMatch(kv.Key, "\\A[A-Za-z][A-Za-z0-9_]*\\z")))
             throw new ArgumentException("Invalid column.");

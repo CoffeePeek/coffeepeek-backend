@@ -90,6 +90,7 @@ public class ShopsDbContext(DbContextOptions<ShopsDbContext> options, IOptions<P
 
     public virtual DbSet<CoffeePeek.Shops.Domain.Aggregates.ReviewAggregate.ReviewReport> ReviewReports { get; set; }
     public virtual DbSet<CheckIn> CheckIns { get; set; }
+    public DbSet<Domain.Aggregates.CheckInAggregate.CheckInPhoto> CheckInPhotos => Set<Domain.Aggregates.CheckInAggregate.CheckInPhoto>();
     public virtual DbSet<Domain.Aggregates.CheckInAggregate.CheckInHelpfulVote> CheckInHelpfulVotes { get; set; }
 
     public virtual DbSet<Roaster> Roasters { get; set; }
@@ -138,6 +139,7 @@ public class ShopsDbContext(DbContextOptions<ShopsDbContext> options, IOptions<P
         modelBuilder.ApplyConfiguration(new CoffeeZoneConfiguration());
         modelBuilder.ApplyConfiguration(new CoffeeZoneMembershipOverrideConfiguration());
         modelBuilder.ApplyConfiguration(new ShopPhotoConfiguration());
+        modelBuilder.ApplyConfiguration(new CheckInPhotoConfiguration());
         modelBuilder.ApplyConfiguration(new AppliedShopChangeRequestConfiguration());
         modelBuilder.ApplyConfiguration(new RoasterConfiguration());
         modelBuilder.ApplyConfiguration(new RoasterPhotoConfiguration());
@@ -193,7 +195,7 @@ public class ShopsDbContext(DbContextOptions<ShopsDbContext> options, IOptions<P
             entity.Property(c => c.CustomDrinkName).HasMaxLength(100);
             entity.Property(c => c.DrinkNameRu).HasMaxLength(100);
             entity.Property(c => c.DrinkNameEn).HasMaxLength(100);
-            entity.HasMany(c => c.ShopPhotos).WithOne().HasForeignKey("CanonicalCheckInId");
+            entity.HasMany(c => c.ShopPhotos).WithOne().HasForeignKey(p => p.CanonicalCheckInId);
             entity.Navigation(c => c.ShopPhotos).HasField("_shopPhotos")
                 .UsePropertyAccessMode(PropertyAccessMode.Field);
             entity.ToTable("CanonicalCheckIns", t => t.HasCheckConstraint("CK_CanonicalCheckIns_CompleteContent",
