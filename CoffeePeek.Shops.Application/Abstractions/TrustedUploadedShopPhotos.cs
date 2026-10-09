@@ -34,36 +34,7 @@ public static class TrustedUploadedShopPhotos
         return keys.Select(key => byKey[key][0]).ToArray();
     }
 
-    public static async Task<IReadOnlyList<ResolvedUploadedPhotoDto>> ResolveAsync(
-        IUploadedPhotoLookup lookup,
-        Guid ownerId,
-        IReadOnlyList<UploadedPhotoDto> input,
-        CancellationToken ct)
-    {
-        var keys = ValidateKeys(ownerId, input);
-        var resolved = await lookup.ResolveAsync(ownerId, keys, ct);
-        if (!resolved.Succeeded)
-        {
-            if (resolved.IsTransientFailure)
-                throw new ServiceUnavailableException("Media photo verification is unavailable. Please retry.");
-            throw new ValidationException("One or more photos were not found, owned or unused.");
-        }
-
-        var trusted = resolved.Photos
-            .Where(photo => photo is not null && photo.StorageKey is not null)
-            .GroupBy(photo => photo.StorageKey, StringComparer.Ordinal)
-            .ToDictionary(group => group.Key, group => group.ToArray(), StringComparer.Ordinal);
-        if (trusted.Count != keys.Length || keys.Any(key =>
-                !trusted.TryGetValue(key, out var matches) || matches.Length != 1
-                || string.IsNullOrWhiteSpace(matches[0].FileName)
-                || string.IsNullOrWhiteSpace(matches[0].ContentType)
-                || matches[0].SizeBytes <= 0))
-            throw new ValidationException("One or more photos were not found, owned or unused.");
-
-        return keys.Select(key => trusted[key][0]).ToArray();
-    }
-
-    private static string[] ValidateKeys(Guid ownerId, IReadOnlyList<UploadedPhotoDto> input)
+    internal static string[] ValidateKeys(Guid ownerId, IReadOnlyList<UploadedPhotoDto> input)
     {
         if (ownerId == Guid.Empty || input is null || input.Count is 0 or > 20
             || input.Any(photo => photo is null || string.IsNullOrWhiteSpace(photo.StorageKey)

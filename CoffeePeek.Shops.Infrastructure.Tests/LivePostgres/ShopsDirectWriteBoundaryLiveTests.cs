@@ -1,6 +1,15 @@
 using CoffeePeek.Contract.Dtos.Coffee;
 using CoffeePeek.Contract.Dtos.Discovery;
 using CoffeePeek.Contract.Dtos.PublicAddresses;
+using CoffeePeek.Contract.Dtos.Shop;
+using CoffeePeek.Contract.Dtos.ShopPhotos;
+using CoffeePeek.Contract.Events;
+using CoffeePeek.Shared.Kernel.Response;
+using CoffeePeek.Shared.Kernel.Exceptions;
+using CoffeePeek.Shops.Application.Abstractions;
+using CoffeePeek.Shops.Application.Features.Admin.Catalogs.Roasters;
+using CoffeePeek.Shops.Persistance.Repositories;
+using MapsterMapper;
 using CoffeePeek.Shared.Domain.PublicAddresses;
 using CoffeePeek.Shared.Kernel;
 using CoffeePeek.Shared.Kernel.Options;
@@ -431,6 +440,131 @@ public sealed class ShopsDirectWriteBoundaryLiveTests : IClassFixture<ShopsLiveD
         }
     }
 
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    [InlineData(true, true)]
+    public async Task RoasterPhotos_ClaimSurvivesRollback_AndFinalizationSeesOnlyCommittedData(bool update, bool failAfterFlush)
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var actor = Guid.NewGuid();
+        var key = "roasters/" + Guid.NewGuid().ToString("N");
+        var mediaId = Guid.NewGuid();
+        var roaster = new Roaster("Original " + key);
+        var existing = new CoffeePeek.Shops.Domain.Entities.RoasterPhoto("legacy.jpg", "image/jpeg", key + "-old", 10, actor);
+        roaster.ReplacePhotos([existing]);
+        if (update)
+        {
+            await using var seed = fixture.Context(false);
+            seed.Roasters.Add(roaster);
+            await seed.SaveChangesAsync(ct);
+        }
+        Guid destination = update ? roaster.Id : Guid.Empty;
+        var lookup = new Mock<IUploadedPhotoLookup>();
+        lookup.Setup(p => p.ClaimForShopAsync(actor, It.IsAny<Guid>(), ShopPhotoAttachmentKind.Roaster,
+                It.Is<IReadOnlyCollection<string>>(keys => keys.Count == 1 && keys.Contains(key)), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Guid _, Guid id, ShopPhotoAttachmentKind _, IReadOnlyCollection<string> _, CancellationToken _) =>
+            {
+                if (destination == Guid.Empty) destination = id;
+                Assert.Equal(destination, id);
+                return new ShopPhotoClaimResult(true, [new(mediaId, key, "trusted.jpg", "image/jpeg", 123)]);
+            });
+        var observer = new RoasterPhotoCommitObserver(async message =>
+        {
+            Assert.Equal(actor, message.OwnerId);
+            Assert.Equal(destination, message.ShopId);
+            Assert.Equal(ShopPhotoAttachmentKind.Roaster, message.Kind);
+            Assert.Equal([key], message.StorageKeys);
+            await AssertStateAsync(true);
+        });
+        var flushObserved = false;
+        var probe = new AfterSaveProbe(async db =>
+        {
+            Assert.NotNull(db.Database.CurrentTransaction);
+            await AssertStateAsync(false);
+            flushObserved = true;
+            if (failAfterFlush) throw new InvalidOperationException("Failure after roaster photo flush.");
+        });
+        using var host = CreateHost(services =>
+        {
+            services.AddScoped(_ => new ShopsDbContext(new DbContextOptionsBuilder<ShopsDbContext>()
+                .UseNpgsql(fixture.ConnectionString).AddInterceptors(probe).Options));
+            services.AddScoped<IRoasterRepository, RoasterRepository>();
+            services.AddSingleton(lookup.Object);
+            var mapper = new Mock<IMapper>();
+            mapper.Setup(m => m.Map<RoasterDto>(It.IsAny<Roaster>())).Returns((Roaster r) => new() { Id = r.Id, Name = r.Name });
+            services.AddSingleton(mapper.Object);
+            services.AddSingleton(observer);
+        }, update ? typeof(UpdateRoasterHandler) : typeof(CreateRoasterHandler), typeof(RoasterPhotoCommitProbeHandler));
+        List<CoffeePeek.Contract.Dtos.UploadedPhotoDto> photos = [new("untrusted", "untrusted", key, -1)];
+        if (update) photos.Add(new("untrusted", "untrusted", existing.StorageKey, -1));
+        object command = update
+            ? new UpdateRoasterCommand(roaster.Id, "Changed " + key, Photos: photos, ActorUserId: actor)
+            : new CreateRoasterCommand("Changed " + key, Photos: photos, ActorUserId: actor);
+        await host.StartAsync(ct);
+        try
+        {
+            var bus = host.Services.GetRequiredService<IMessageBus>();
+            if (failAfterFlush)
+            {
+                await Assert.ThrowsAsync<InvalidOperationException>(() => bus.InvokeAsync<Response<RoasterDto>>(command, ct));
+                await AssertStateAsync(false);
+                Assert.Equal(0, observer.Calls);
+                await using var read = fixture.Context(false);
+                Assert.Equal(0, await read.Database.SqlQueryRaw<int>("""
+                    SELECT count(*)::integer AS "Value" FROM wolverine.wolverine_incoming_envelopes
+                    """).SingleAsync(ct));
+                Assert.Equal(0, await read.Database.SqlQueryRaw<int>("""
+                    SELECT count(*)::integer AS "Value" FROM wolverine.wolverine_outgoing_envelopes
+                    """).SingleAsync(ct));
+            }
+            Assert.True((await bus.InvokeAsync<Response<RoasterDto>>(command, ct)).IsSuccess);
+            Assert.True(flushObserved);
+            await observer.Completed.WaitAsync(TimeSpan.FromSeconds(20), ct);
+            await AssertStateAsync(true);
+            var repeat = await bus.InvokeAsync<Response<RoasterDto>>(command, ct);
+            Assert.Equal(update, repeat.IsSuccess);
+            if (!update) Assert.Equal(409, repeat.StatusCode);
+            Assert.Equal(1, observer.Calls);
+        }
+        finally { await host.StopAsync(CancellationToken.None); }
+
+        async Task AssertStateAsync(bool committed)
+        {
+            await using var read = fixture.Context(false);
+            var stored = await read.Roasters.Include(r => r.Photos).SingleOrDefaultAsync(r => r.Id == destination, ct);
+            if (!committed && !update) { Assert.Null(stored); return; }
+            Assert.NotNull(stored);
+            Assert.Equal(committed ? "Changed " + key : roaster.Name, stored.Name);
+            if (committed)
+            {
+                var added = Assert.Single(stored.Photos, p => p.StorageKey == key);
+                Assert.Equal(mediaId, added.Id);
+                Assert.Equal("trusted.jpg", added.FileName);
+                Assert.Equal(123, added.SizeBytes);
+            }
+            else Assert.DoesNotContain(stored.Photos, p => p.Id == mediaId);
+            if (update) Assert.Contains(stored.Photos, p => p.Id == existing.Id && p.FileName == "legacy.jpg");
+        }
+    }
+
+    [Fact]
+    public async Task RoasterDuplicateDestination_AtFinalSave_MapsToConflict()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var roaster = new Roaster("First");
+        await using (var seed = fixture.Context(false))
+        {
+            seed.Roasters.Add(roaster);
+            await seed.SaveChangesAsync(ct);
+        }
+        await using var duplicate = fixture.Context(false);
+        duplicate.Roasters.Add(new Roaster("Second", id: roaster.Id));
+        var error = await Assert.ThrowsAsync<ConflictException>(() => duplicate.SaveChangesAsync(ct));
+        Assert.Equal(409, error.StatusCode);
+    }
+
     private static void AddCatalogServices(IServiceCollection services, CoffeeImportOptions options)
     {
         services.AddScoped<IUnitOfWork, UnitOfWork<ShopsDbContext>>();
@@ -440,7 +574,7 @@ public sealed class ShopsDirectWriteBoundaryLiveTests : IClassFixture<ShopsLiveD
         services.AddCoffeeCatalogModule();
     }
 
-    private IHost CreateHost(Action<IServiceCollection> configure, Type handler) => Host.CreateDefaultBuilder()
+    private IHost CreateHost(Action<IServiceCollection> configure, params Type[] handlers) => Host.CreateDefaultBuilder()
         .ConfigureServices(services =>
         {
             services.AddScoped(_ => fixture.Context(false));
@@ -450,10 +584,12 @@ public sealed class ShopsDirectWriteBoundaryLiveTests : IClassFixture<ShopsLiveD
         {
             options.ApplicationAssembly = typeof(ShopsDirectWriteBoundaryLiveTests).Assembly;
             options.Discovery.DisableConventionalDiscovery();
-            options.Discovery.IncludeType(handler);
+            foreach (var handler in handlers) options.Discovery.IncludeType(handler);
             options.UseRuntimeCompilation();
             options.CodeGeneration.TypeLoadMode = TypeLoadMode.Auto;
             options.CodeGeneration.AlwaysUseServiceLocationFor(typeof(ShopsDbContext));
+            options.CodeGeneration.AlwaysUseServiceLocationFor(typeof(IUploadedPhotoLookup));
+            options.CodeGeneration.AlwaysUseServiceLocationFor(typeof(RoasterPhotoCommitObserver));
             options.CodeGeneration.AlwaysUseServiceLocationFor(typeof(IDiscoveryFavoritesStore));
             options.CodeGeneration.AlwaysUseServiceLocationFor(typeof(IDiscoveryClassificationStore));
             options.CodeGeneration.AlwaysUseServiceLocationFor(typeof(IPublicAddressService));

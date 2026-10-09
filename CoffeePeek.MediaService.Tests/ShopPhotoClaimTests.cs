@@ -42,24 +42,27 @@ public sealed class ShopPhotoClaimTests
             It.IsAny<Guid>(), It.IsAny<ShopPhotoAttachmentKind>(), _ct), Times.Never);
     }
 
-    [Fact]
-    public async Task Claim_LostReplyRetryOnSameDestination_ReturnsClaimedMetadata()
+    [Theory]
+    [InlineData(ShopPhotoAttachmentKind.Gallery)]
+    [InlineData(ShopPhotoAttachmentKind.Menu)]
+    [InlineData(ShopPhotoAttachmentKind.Roaster)]
+    public async Task Claim_LostReplyRetryOnSameDestination_ReturnsClaimedMetadata(ShopPhotoAttachmentKind kind)
     {
         var photo = Photo();
         photo.ShopAttachmentId = _shopId;
-        photo.ShopAttachmentKind = ShopPhotoAttachmentKind.Menu;
+        photo.ShopAttachmentKind = kind;
         photo.Status = PhotoStatus.Confirmed;
         _repository.Setup(x => x.GetClaimPhotosAsync(_ownerId,
                 It.IsAny<IReadOnlyCollection<string>>(), _ct))
             .ReturnsAsync([photo]);
         _repository.Setup(x => x.TryClaimShopBatchAsync(It.Is<IReadOnlyList<Guid>>(ids =>
                     ids.Count == 1 && ids[0] == photo.Id), _ownerId, _shopId,
-                ShopPhotoAttachmentKind.Menu, _ct)).ReturnsAsync(true);
+                kind, _ct)).ReturnsAsync(true);
         _storage.Setup(x => x.GetObjectSize(photo.StorageKey, BucketType.Shop, _ct))
             .ReturnsAsync(128L);
 
         var result = await new ClaimShopPhotosHandler(_repository.Object, _storage.Object)
-            .ClaimAsync(new ClaimShopPhotosRequest(_shopId, ShopPhotoAttachmentKind.Menu,
+            .ClaimAsync(new ClaimShopPhotosRequest(_shopId, kind,
                 [photo.StorageKey]), _ownerId, _ct);
 
         Assert.True(result.IsSuccess);
@@ -106,19 +109,22 @@ public sealed class ShopPhotoClaimTests
         unitOfWork.VerifyNoOtherCalls();
     }
 
-    [Fact]
-    public async Task AttachedEvent_FinalizesMatchingClaimAndIsIdempotent()
+    [Theory]
+    [InlineData(ShopPhotoAttachmentKind.Gallery)]
+    [InlineData(ShopPhotoAttachmentKind.Menu)]
+    [InlineData(ShopPhotoAttachmentKind.Roaster)]
+    public async Task AttachedEvent_FinalizesMatchingClaimAndIsIdempotent(ShopPhotoAttachmentKind kind)
     {
         var photo = Photo();
         photo.ShopAttachmentId = _shopId;
-        photo.ShopAttachmentKind = ShopPhotoAttachmentKind.Gallery;
+        photo.ShopAttachmentKind = kind;
         _repository.Setup(x => x.GetByStorageKeysAsync(_ownerId,
                 It.IsAny<IReadOnlyCollection<string>>(), _ct))
             .ReturnsAsync([photo]);
         var unitOfWork = new Mock<IUnitOfWork>();
         var handler = new ShopPhotosAttachedHandler(_repository.Object, _storage.Object, unitOfWork.Object);
         var message = new ShopPhotosAttachedEvent(_ownerId, _shopId,
-            ShopPhotoAttachmentKind.Gallery, [photo.StorageKey]);
+            kind, [photo.StorageKey]);
 
         await handler.Handle(message, _ct);
         await handler.Handle(message, _ct);

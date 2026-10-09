@@ -24,9 +24,10 @@ public sealed class RoasterPhoto : Entity<Guid>
     // ReSharper disable once UnusedMember.Local
     private RoasterPhoto() { }
 
-    public RoasterPhoto(string fileName, string contentType, string storageKey, long sizeBytes, Guid ownerId, int sortIndex = 0)
+    public RoasterPhoto(string fileName, string contentType, string storageKey, long sizeBytes, Guid ownerId, int sortIndex = 0, Guid? id = null)
     {
-        Id = Guid.NewGuid();
+        if (id == Guid.Empty) throw new ArgumentException("Photo ID is required.", nameof(id));
+        Id = id ?? Guid.NewGuid();
         FileName = fileName;
         ContentType = contentType;
         StorageKey = storageKey;

@@ -84,6 +84,12 @@ public class ShopsDbContext(DbContextOptions<ShopsDbContext> options, IOptions<P
             // The database unique index remains authoritative at Wolverine's final save.
             throw new ConflictException("Drink slug already exists.", statusCode: 409);
         }
+        catch (DbUpdateException ex) when (ex.InnerException is PostgresException
+                   { SqlState: PostgresErrorCodes.UniqueViolation,
+                     ConstraintName: "PK_Roasters" or "PK_RoasterPhotos" })
+        {
+            throw new ConflictException("Roaster or photo was attached concurrently; reload and retry.", statusCode: 409);
+        }
     }
     //category
     public virtual DbSet<BrewMethod> BrewMethods { get; set; }

@@ -13,6 +13,9 @@ using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
 using FluentAssertions;
 using MapsterMapper;
 using Moq;
+using Wolverine;
+using CoffeePeek.Contract.Dtos.ShopPhotos;
+using CoffeePeek.Contract.Events;
 
 namespace CoffeePeek.Shops.Application.Tests.Features.Admin.Catalogs.Roasters;
 
@@ -32,7 +35,7 @@ public class CreateRoasterHandlerTests
 
         var result = await CreateRoasterHandler.Handle(
             new CreateRoasterCommand("Coffee Circus"),
-            _repo.Object, _mapper.Object, _photos.Object, _ct);
+            _repo.Object, _mapper.Object, _photos.Object, Mock.Of<IMessageBus>(), _ct);
 
         result.IsSuccess.Should().BeTrue();
         result.Data.Name.Should().Be("Coffee Circus");
@@ -47,7 +50,7 @@ public class CreateRoasterHandlerTests
 
         var result = await CreateRoasterHandler.Handle(
             new CreateRoasterCommand("Coffee Circus"),
-            _repo.Object, _mapper.Object, _photos.Object, _ct);
+            _repo.Object, _mapper.Object, _photos.Object, Mock.Of<IMessageBus>(), _ct);
 
         result.IsSuccess.Should().BeFalse();
         result.StatusCode.Should().Be((int)HttpStatusCode.Conflict);
@@ -65,9 +68,12 @@ public class CreateRoasterHandlerTests
 
         var cityId = Guid.NewGuid();
         var actorId = Guid.NewGuid();
-        _photos.Setup(p => p.ResolveAsync(actorId, It.IsAny<IReadOnlyCollection<string>>(), _ct))
-            .ReturnsAsync(new UploadedPhotoLookupResult(true,
-                [new ResolvedUploadedPhotoDto("key-a", "trusted.jpg", "image/jpeg", 150)]));
+        var photoId = Guid.NewGuid();
+        var bus = new Mock<IMessageBus>();
+        _photos.Setup(p => p.ClaimForShopAsync(actorId, It.IsAny<Guid>(), ShopPhotoAttachmentKind.Roaster,
+                It.IsAny<IReadOnlyCollection<string>>(), _ct))
+            .ReturnsAsync(new ShopPhotoClaimResult(true,
+                [new ClaimedShopPhotoDto(photoId, "key-a", "trusted.jpg", "image/jpeg", 150)]));
         var command = new CreateRoasterCommand(
             "Coffee Circus",
             About: "Small-batch roaster.",
@@ -81,7 +87,7 @@ public class CreateRoasterHandlerTests
             ActorUserId: actorId);
 
         var result = await CreateRoasterHandler.Handle(
-            command, _repo.Object, _mapper.Object, _photos.Object, _ct);
+            command, _repo.Object, _mapper.Object, _photos.Object, bus.Object, _ct);
 
         result.IsSuccess.Should().BeTrue();
         captured.About.Should().Be("Small-batch roaster.");
@@ -91,22 +97,55 @@ public class CreateRoasterHandlerTests
         captured.Photos.Should().ContainSingle(p => p.StorageKey == "key-a");
         captured.Photos.Single().FileName.Should().Be("trusted.jpg");
         captured.Photos.Single().SizeBytes.Should().Be(150);
+        captured.Photos.Single().Id.Should().Be(photoId);
+        bus.Verify(b => b.PublishAsync(It.Is<ShopPhotosAttachedEvent>(e => e.ShopId == captured.Id
+            && e.OwnerId == actorId && e.Kind == ShopPhotoAttachmentKind.Roaster
+            && e.StorageKeys.SequenceEqual(new[] { "key-a" }))), Times.Once);
     }
 
     [Fact]
     public async Task Handle_ForeignPhoto_DoesNotCreateRoaster()
     {
         _repo.Setup(r => r.GetByNameAsync("Coffee Circus", _ct)).ReturnsAsync((Roaster)null);
-        _photos.Setup(p => p.ResolveAsync(It.IsAny<Guid>(), It.IsAny<IReadOnlyCollection<string>>(), _ct))
-            .ReturnsAsync(new UploadedPhotoLookupResult(true, []));
+        _photos.Setup(p => p.ClaimForShopAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), ShopPhotoAttachmentKind.Roaster,
+                It.IsAny<IReadOnlyCollection<string>>(), _ct))
+            .ReturnsAsync(ShopPhotoClaimResult.Failed);
         var command = new CreateRoasterCommand("Coffee Circus",
             Photos: [new UploadedPhotoDto("a.jpg", "image/jpeg", "foreign-key", 10)],
             ActorUserId: Guid.NewGuid());
 
         var act = () => CreateRoasterHandler.Handle(command,
-            _repo.Object, _mapper.Object, _photos.Object, _ct);
+            _repo.Object, _mapper.Object, _photos.Object, Mock.Of<IMessageBus>(), _ct);
 
         await act.Should().ThrowAsync<ValidationException>();
         _repo.Verify(r => r.Add(It.IsAny<Roaster>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task LostClaimReply_RetryUsesSameDestinationDespiteNameAndOrderChanges()
+    {
+        var actor = Guid.NewGuid();
+        Guid destination = Guid.Empty;
+        var attempts = 0;
+        _photos.Setup(p => p.ClaimForShopAsync(actor, It.IsAny<Guid>(), ShopPhotoAttachmentKind.Roaster,
+                It.IsAny<IReadOnlyCollection<string>>(), _ct))
+            .ReturnsAsync((Guid _, Guid id, ShopPhotoAttachmentKind _, IReadOnlyCollection<string> keys, CancellationToken _) =>
+            {
+                if (++attempts == 1) { destination = id; return ShopPhotoClaimResult.Unreachable; }
+                id.Should().Be(destination);
+                return new ShopPhotoClaimResult(true, keys.Select(k =>
+                    new ClaimedShopPhotoDto(Guid.NewGuid(), k, "trusted.jpg", "image/jpeg", 10)).ToArray());
+            });
+        _mapper.Setup(m => m.Map<RoasterDto>(It.IsAny<Roaster>())).Returns(new RoasterDto());
+        var first = new CreateRoasterCommand("First", ActorUserId: actor,
+            Photos: [new("client.jpg", "image/jpeg", "a", 1), new("client.jpg", "image/jpeg", "b", 1)]);
+        var act = () => CreateRoasterHandler.Handle(first, _repo.Object, _mapper.Object, _photos.Object,
+            Mock.Of<IMessageBus>(), _ct);
+        await act.Should().ThrowAsync<ServiceUnavailableException>();
+        _repo.Verify(r => r.Add(It.IsAny<Roaster>()), Times.Never);
+
+        await CreateRoasterHandler.Handle(first with { Name = "Second", Photos = Enumerable.Reverse(first.Photos!).ToList() },
+            _repo.Object, _mapper.Object, _photos.Object, Mock.Of<IMessageBus>(), _ct);
+        _repo.Verify(r => r.Add(It.Is<Roaster>(r => r.Id == destination && r.Name == "Second")), Times.Once);
     }
 }

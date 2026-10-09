@@ -33,8 +33,8 @@ BEGIN
        'SHOPS_AND_MEDIA_STOPPED_ABSENCE_VERIFIED' THEN
         RAISE EXCEPTION 'Missing operator attestation; no claim was released.';
     END IF;
-    IF (SELECT kind FROM reconcile_expected) NOT IN ('Gallery', 'Menu') THEN
-        RAISE EXCEPTION 'Only Gallery and Menu claims can be reconciled here.';
+    IF (SELECT kind FROM reconcile_expected) NOT IN ('Gallery', 'Menu', 'Roaster') THEN
+        RAISE EXCEPTION 'Only Gallery, Menu and Roaster claims can be reconciled here.';
     END IF;
 END
 $$;
