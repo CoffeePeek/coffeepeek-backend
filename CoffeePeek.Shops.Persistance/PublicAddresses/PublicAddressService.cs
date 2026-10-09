@@ -152,7 +152,7 @@ public sealed class PublicAddressService(ShopsDbContext db) : IPublicAddressServ
         var slug = request.Slug ?? await PublicAddressWriter.FindCandidateAsync<T>(db, stem, id, null, ct);
         if (await db.Set<T>().AnyAsync(a => a.Id != id && a.PublicSlug == slug, ct))
             throw new PublicAddressException("This slug is already in use.", 409);
-        owner.SetPublicSlug(slug);
+        db.AddressOwners.Apply(owner, slug, request.ExpectedRevision);
         await db.SaveChangesAsync(ct);
         return Metadata(kind, owner);
     }
@@ -196,7 +196,7 @@ public sealed class PublicAddressService(ShopsDbContext db) : IPublicAddressServ
             var stem = string.IsNullOrWhiteSpace(owner.Address) ? owner.Name : $"{owner.Name} {owner.Address}";
             var slug = current.PublicSlug ?? await PublicAddressWriter.FindCandidateAsync<T>(db, stem, owner.Id, proposals, ct);
             proposals.Add(slug);
-            if (!dryRun && !initialized) current.SetPublicSlug(slug);
+            if (!dryRun && !initialized) db.AddressOwners.Apply(current, slug, current.SlugRevision);
             items.Add(new PublicAddressBackfillItem(owner.Id, slug, slug != PublicSlug.Generate(stem), initialized));
         }
         if (!dryRun) await db.SaveChangesAsync(ct);

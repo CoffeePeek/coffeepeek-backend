@@ -8,20 +8,6 @@ namespace CoffeePeek.ShopsService.Tests.Architecture;
 
 public class CrossModuleWriteTests
 {
-    // Each exception must name the caller, the owned domain operation, the responsible module,
-    // and the plan item that removes the direct write. Keep this list equal to current reality:
-    // adding a write or removing one without updating the reviewable baseline fails the test.
-    private static readonly IReadOnlyDictionary<string, string> KnownViolations =
-        new Dictionary<string, string>(StringComparer.Ordinal)
-        {
-            ["CoffeePeek.Shops.Persistance.PublicAddresses.PublicAddressService+<BackfillAsync>d__12`1.MoveNext -> CoffeePeek.Shared.Domain.PublicAddresses.IPublicSlugOwner.SetPublicSlug"] =
-                "Entity owners must change their own slugs; route PublicAddresses backfill through owner ports in P20/P25.",
-            ["CoffeePeek.Shops.Persistance.PublicAddresses.PublicAddressService+<ChangeAsync>d__10`1.MoveNext -> CoffeePeek.Shared.Domain.PublicAddresses.IPublicSlugOwner.SetPublicSlug"] =
-                "Entity owners must change their own slugs; route PublicAddresses rename through owner ports in P20/P25.",
-            ["CoffeePeek.Shops.Persistance.PublicAddresses.PublicAddressWriter+<InitializeAsync>d__4`1.MoveNext -> CoffeePeek.Shared.Domain.PublicAddresses.IPublicSlugOwner.SetPublicSlug"] =
-                "Entity owners must initialize their own slugs; narrow the shared writer to reservation/audit in P20/P25.",
-        };
-
     [Fact]
     public void ApplicationAndConsumers_OnlyWriteTheirOwnDomainOrUsePorts()
     {
@@ -46,12 +32,7 @@ public class CrossModuleWriteTests
             .OrderBy(value => value, StringComparer.Ordinal)
             .ToArray();
 
-        var expected = KnownViolations.Keys.OrderBy(value => value, StringComparer.Ordinal).ToArray();
-        Assert.True(actual.SequenceEqual(expected, StringComparer.Ordinal),
-            "Cross-module domain writes differ from the fixed, owner/task-annotated baseline. " +
-            "New writes must use a port; resolved violations must be removed from the baseline.\n" +
-            "New:\n" + string.Join("\n", actual.Except(expected, StringComparer.Ordinal)) +
-            "\nStale baseline:\n" + string.Join("\n", expected.Except(actual, StringComparer.Ordinal)));
+        Assert.Empty(actual);
     }
 
     [Fact]

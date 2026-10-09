@@ -1,12 +1,10 @@
 # P05: исполняемый baseline архитектурных границ ShopsService
 
-Дата: 9 октября 2026 года. Источник истины для точных IL-вызовов и задачи удаления — `CoffeePeek.ShopsService.Tests/Architecture/CrossModuleWriteTests.cs` и `HostWriteBypassTests.cs`. Реестр в тестах сравнивается с фактическими вызовами **на равенство**: новая запись ломает проверку, исчезнувшая требует удалить старое исключение. `ApplicationAdapterDependencyTests` не имеет исключений. `TableOwnershipTests` сравнивает список владельцев с EF-моделью.
+Дата: 9 октября 2026 года. `CrossModuleWriteTests` и `HostWriteBypassTests` требуют **пустой** список нарушений без baseline исключений. Новая прямая запись ломает проверку. `ApplicationAdapterDependencyTests` не имеет исключений. `TableOwnershipTests` сравнивает список владельцев с EF-моделью.
 
-| Текущий прямой путь | Владелец операции | Количество зафиксированных IL-вызовов | Устранение |
-| --- | --- | ---: | --- |
-| Общий PublicAddresses writer → `IPublicSlugOwner.SetPublicSlug` | Соответствующий entity module | 3 | P20/P25: вызов owner-порта, общий компонент оставляет reservation/audit |
+Menus обновляет профиль через `IShopPriceRangeWriter`; Community-фото принадлежат `CheckInPhotos`; PublicAddresses вызывает Application owner-порт для автоматической allocation, rename и backfill. Writer каждого модуля принимает только свои типы. Последние три общих `SetPublicSlug` вызова из Persistence устранены.
 
-9 октября избранное, отчёты импорта, все пять записей классификации и initialize/rename/backfill PublicAddresses переведены в application commands. HTTP→store baseline пуст и заменён строгим `Assert.Empty`: новых исключений нет. Generated adapters держат общую EF/outbox-транзакцию до ответа; HTTP/auth и PostgreSQL commit/rollback проверяются отдельно. Межмодульные записи из таблицы выше ещё требуют устранения.
+9 октября избранное, отчёты импорта, все пять записей классификации и initialize/rename/backfill PublicAddresses переведены в application commands. HTTP→store baseline пуст и заменён строгим `Assert.Empty`. Generated adapters держат общую EF/outbox-транзакцию до ответа; HTTP/auth и PostgreSQL commit/rollback проверяются отдельно.
 
 После P17 consumer делегирует применение меню сервису модуля Menus; прежние семь прямых вызовов удалены из baseline. Сканер также охватывает `Persistance.Menu.*`, чтобы новый Menus writer не мог незаметно менять агрегат Shops. Отдельный test-only fixture намеренно вызывает `CoffeeShop.SetPriceRange` из этого namespace и доказывает срабатывание детектора.
 

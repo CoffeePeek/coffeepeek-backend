@@ -30,6 +30,7 @@ public static class DependencyInjection
         services.Configure<PublicAddressOptions>(builder.Configuration.GetSection("PublicAddresses"));
         services.Configure<CoffeePeek.Shops.Application.Features.CoffeeCatalog.CoffeeImportOptions>(builder.Configuration.GetSection("CoffeeImportOptions"));
         services.AddScoped<IPublicAddressService, PublicAddressService>();
+        services.AddSingleton<IPublicAddressOwnerWriter, PublicAddressOwnerWriter>();
         if (builder.Environment.IsDevelopment())
         {
             builder.AddNpgsqlDbContext<ShopsDbContext>(

@@ -18,8 +18,10 @@ using CheckIn = CoffeePeek.Shops.Domain.Aggregates.CheckInAggregate.CheckIn;
 
 namespace CoffeePeek.Shops.Persistance.Configuration;
 
-public class ShopsDbContext(DbContextOptions<ShopsDbContext> options, IOptions<PublicAddressOptions>? addressOptions = null) : DbContext(options)
+public class ShopsDbContext(DbContextOptions<ShopsDbContext> options, IOptions<PublicAddressOptions>? addressOptions = null,
+    IPublicAddressOwnerWriter? addressOwners = null) : DbContext(options)
 {
+    internal IPublicAddressOwnerWriter AddressOwners { get; } = addressOwners ?? new PublicAddressOwnerWriter();
     public DbSet<CoffeePeek.Shops.Domain.Aggregates.CoffeeProductAggregate.CoffeeProduct> CoffeeProducts => Set<CoffeePeek.Shops.Domain.Aggregates.CoffeeProductAggregate.CoffeeProduct>();
     public DbSet<CoffeePeek.Shops.Domain.Aggregates.CoffeeProductAggregate.CoffeeFilterValue> CoffeeFilterValues => Set<CoffeePeek.Shops.Domain.Aggregates.CoffeeProductAggregate.CoffeeFilterValue>();
     public DbSet<CoffeePeek.Shops.Domain.Aggregates.DiscoveryAggregate.DiscoveryFavorite> DiscoveryFavorites => Set<CoffeePeek.Shops.Domain.Aggregates.DiscoveryAggregate.DiscoveryFavorite>();
