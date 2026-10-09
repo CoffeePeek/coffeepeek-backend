@@ -11,14 +11,12 @@ namespace Internal.Generated.WolverineHandlers
     [global::System.CodeDom.Compiler.GeneratedCode("JasperFx", "1.0.0")]
     public sealed class CreateCityCommandHandler1648572355 : Wolverine.Runtime.Handlers.MessageHandler
     {
-        private readonly CoffeePeek.Shared.Domain.Interfaces.Infrastructure.ICacheService _cacheService;
         private readonly MapsterMapper.IMapper _mapper;
         private readonly Microsoft.Extensions.DependencyInjection.IServiceScopeFactory _serviceScopeFactory;
         private readonly System.Collections.Generic.IEnumerable<Wolverine.EntityFrameworkCore.IDomainEventScraper> _domainEventScraperIEnumerable;
 
-        public CreateCityCommandHandler1648572355(CoffeePeek.Shared.Domain.Interfaces.Infrastructure.ICacheService cacheService, MapsterMapper.IMapper mapper, Microsoft.Extensions.DependencyInjection.IServiceScopeFactory serviceScopeFactory, System.Collections.Generic.IEnumerable<Wolverine.EntityFrameworkCore.IDomainEventScraper> domainEventScraperIEnumerable)
+        public CreateCityCommandHandler1648572355(MapsterMapper.IMapper mapper, Microsoft.Extensions.DependencyInjection.IServiceScopeFactory serviceScopeFactory, System.Collections.Generic.IEnumerable<Wolverine.EntityFrameworkCore.IDomainEventScraper> domainEventScraperIEnumerable)
         {
-            _cacheService = cacheService;
             _mapper = mapper;
             _serviceScopeFactory = serviceScopeFactory;
             _domainEventScraperIEnumerable = domainEventScraperIEnumerable;
@@ -32,7 +30,6 @@ namespace Internal.Generated.WolverineHandlers
             Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<Wolverine.Runtime.ScopedMessageContextHolder>(serviceScope.ServiceProvider).Context = context;
             // This service has been marked as requiring service location independent of Wolverine's ability to use constructor injection of everything else
             var shopsDbContext = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<CoffeePeek.Shops.Persistance.Configuration.ShopsDbContext>(serviceScope.ServiceProvider);
-            var unitOfWorkOfShopsDbContext = new CoffeePeek.Shared.Persistence.Data.UnitOfWork<CoffeePeek.Shops.Persistance.Configuration.ShopsDbContext>(shopsDbContext);
             var cityRepository = new CoffeePeek.Shops.Persistance.Repositories.CityRepository(shopsDbContext);
             var queryCityRepository = new CoffeePeek.Shops.Persistance.Repositories.QueryCityRepository(shopsDbContext);
             // The actual message body
@@ -54,7 +51,7 @@ namespace Internal.Generated.WolverineHandlers
                 System.Diagnostics.Activity.Current?.SetTag("handler.type", "CoffeePeek.Shops.Application.Features.Admin.Catalogs.Cities.CreateCityHandler");
 
                 // The actual message execution
-                var outgoing1 = await CoffeePeek.Shops.Application.Features.Admin.Catalogs.Cities.CreateCityHandler.Handle(createCityCommand, queryCityRepository, cityRepository, _mapper, unitOfWorkOfShopsDbContext, _cacheService, cancellation).ConfigureAwait(false);
+                var outgoing1 = await CoffeePeek.Shops.Application.Features.Admin.Catalogs.Cities.CreateCityHandler.Handle(createCityCommand, queryCityRepository, cityRepository, _mapper, cancellation).ConfigureAwait(false);
 
 
                 // Outgoing, cascaded message

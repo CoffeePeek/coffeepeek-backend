@@ -1,5 +1,3 @@
-using CoffeePeek.Shared.Domain.Interfaces.Infrastructure;
-using CoffeePeek.Shared.Kernel;
 using CoffeePeek.Shared.Kernel.Response;
 using CoffeePeek.Shops.Application.Features.Admin.Catalogs.Cities;
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
@@ -8,7 +6,6 @@ using CoffeePeek.Shops.Persistance.Configuration;
 using CoffeePeek.Shops.Persistance.Repositories;
 using CoffeePeek.Testing;
 using Microsoft.EntityFrameworkCore;
-using Moq;
 
 namespace CoffeePeek.Shops.Infrastructure.Tests.LivePostgres;
 
@@ -134,7 +131,7 @@ public sealed class CityReferenceLiveTests : IClassFixture<ShopsLiveDatabase>
                 {
                     await using var db = _fixture.Context(false);
                     return await DeleteCityHandler.Handle(new DeleteCityCommand(city.Id),
-                        new CityRepository(db), Mock.Of<IUnitOfWork>(), Mock.Of<ICacheService>(), Ct);
+                        new CityRepository(db), Ct);
                 }, Ct);
 
                 // The precheck cannot see the uncommitted reference. Wait until DELETE reaches the

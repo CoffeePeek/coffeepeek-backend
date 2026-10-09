@@ -1,6 +1,4 @@
 using System.Net;
-using CoffeePeek.Shared.Domain.Interfaces.Infrastructure;
-using CoffeePeek.Shared.Kernel;
 using CoffeePeek.Shared.Kernel.Response;
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
 
@@ -11,8 +9,6 @@ public static class DeleteCityHandler
     public static async Task<Response> Handle(
         DeleteCityCommand command,
         ICityRepository repository,
-        IUnitOfWork unitOfWork,
-        ICacheService cacheService,
         CancellationToken ct)
     {
         var result = await repository.DeleteIfUnusedAsync(command.Id, ct);
@@ -21,7 +17,6 @@ public static class DeleteCityHandler
         if (result == CityDeleteResult.Referenced)
             return Response.Error((int)HttpStatusCode.Conflict, "City is referenced by shops, roasters or zones.");
 
-        await CreateCityHandler.InvalidateCityCachesAsync(cacheService, ct);
         return Response.Success(message: "City deleted.");
     }
 }

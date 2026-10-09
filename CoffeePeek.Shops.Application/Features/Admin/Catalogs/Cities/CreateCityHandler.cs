@@ -1,7 +1,5 @@
 using System.Net;
 using CoffeePeek.Contract.Dtos.Internal;
-using CoffeePeek.Shared.Domain.Interfaces.Infrastructure;
-using CoffeePeek.Shared.Kernel;
 using CoffeePeek.Shared.Kernel.Response;
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
 using MapsterMapper;
@@ -15,8 +13,6 @@ public static class CreateCityHandler
         IQueryCityRepository queryRepository,
         ICityRepository repository,
         IMapper mapper,
-        IUnitOfWork unitOfWork,
-        ICacheService cacheService,
         CancellationToken ct)
     {
         var existing = await queryRepository.GetByName(command.Name, ct);
@@ -25,15 +21,6 @@ public static class CreateCityHandler
 
         var city = new City(command.Name);
         repository.Add(city);
-        await unitOfWork.SaveChangesAsync(ct);
-        await InvalidateCityCachesAsync(cacheService, ct);
-
         return Response<CityDto>.Success(mapper.Map<CityDto>(city));
-    }
-
-    internal static async Task InvalidateCityCachesAsync(ICacheService cacheService, CancellationToken ct)
-    {
-        await cacheService.RemoveByPattern(CacheKey.City.ListPattern(), ct);
-        await cacheService.RemoveByPattern(CacheKey.Shop.SearchPattern(), ct);
     }
 }

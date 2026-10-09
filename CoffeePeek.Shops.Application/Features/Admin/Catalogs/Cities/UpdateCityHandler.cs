@@ -1,7 +1,5 @@
 using System.Net;
 using CoffeePeek.Contract.Dtos.Internal;
-using CoffeePeek.Shared.Domain.Interfaces.Infrastructure;
-using CoffeePeek.Shared.Kernel;
 using CoffeePeek.Shared.Kernel.Response;
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
 using MapsterMapper;
@@ -14,8 +12,6 @@ public static class UpdateCityHandler
         UpdateCityCommand command,
         ICityRepository repository,
         IMapper mapper,
-        IUnitOfWork unitOfWork,
-        ICacheService cacheService,
         CancellationToken ct)
     {
         var city = await repository.GetByIdAsync(command.Id, ct);
@@ -23,9 +19,6 @@ public static class UpdateCityHandler
             return Response<CityDto>.Error(HttpStatusCode.NotFound, "City not found.");
 
         city.Update(command.Name);
-        await unitOfWork.SaveChangesAsync(ct);
-        await CreateCityHandler.InvalidateCityCachesAsync(cacheService, ct);
-
         return Response<CityDto>.Success(mapper.Map<CityDto>(city));
     }
 }
