@@ -8,8 +8,8 @@ using CoffeePeek.Contract.Dtos.Menu;
 using CoffeePeek.Contract.Enums;
 using CoffeePeek.Contract.Events.Moderation;
 using CoffeePeek.Shared.Domain.Interfaces.Infrastructure;
-using CoffeePeek.Shared.Kernel;
 using CoffeePeek.Shared.Kernel.Exceptions;
+using CoffeePeek.Shops.Application.Features.CoffeeShop.ShopProfile;
 using CoffeePeek.Shops.Application.Services;
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
 using CoffeePeek.Shops.Domain.Aggregates.ShopTagAggregate;
@@ -25,13 +25,12 @@ public class CreateShopFromImportServiceTests
     private readonly Mock<IQueryShopTagRepository> _tagRepo = new();
     private readonly Mock<IQueryCityRepository> _cityRepo = new();
     private readonly Mock<IApplyShopMenuService> _applyMenu = new();
-    private readonly Mock<IUnitOfWork> _uow = new();
-    private readonly Mock<ICacheService> _cache = new();
+    private readonly Mock<Wolverine.IMessageBus> _bus = new();
     private readonly Mock<ILogger<CreateShopFromImportService>> _logger = new();
     private readonly CancellationToken _ct = CancellationToken.None;
 
     private CreateShopFromImportService CreateSut() =>
-        new(_shopRepo.Object, _tagRepo.Object, _cityRepo.Object, _applyMenu.Object, _uow.Object, _cache.Object, _logger.Object);
+        new(_shopRepo.Object, _tagRepo.Object, _cityRepo.Object, _applyMenu.Object, _bus.Object, _logger.Object);
 
     public CreateShopFromImportServiceTests()
     {
@@ -87,7 +86,8 @@ public class CreateShopFromImportServiceTests
         added.ModerationId.Should().Be(candidateId);
         added.OwnerUserId.Should().BeNull();
         added.ImportedFromFileAt.Should().BeNull();
-        _uow.Verify(u => u.SaveChangesAsync(_ct), Times.Once);
+        _bus.Verify(b => b.PublishAsync(It.Is<ShopProfileCacheInvalidationRequested>(
+            e => e.ShopId == shopId)), Times.Once);
     }
 
     [Fact]
@@ -148,6 +148,7 @@ public class CreateShopFromImportServiceTests
 
         shopId.Should().Be(existing);
         _shopRepo.Verify(r => r.Add(It.IsAny<CoffeeShop>()), Times.Never);
+        _bus.Verify(b => b.PublishAsync(It.IsAny<ShopProfileCacheInvalidationRequested>()), Times.Never);
     }
 
     [Fact]

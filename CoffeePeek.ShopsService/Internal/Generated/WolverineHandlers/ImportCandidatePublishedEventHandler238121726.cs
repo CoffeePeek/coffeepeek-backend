@@ -11,17 +11,13 @@ namespace Internal.Generated.WolverineHandlers
     [global::System.CodeDom.Compiler.GeneratedCode("JasperFx", "1.0.0")]
     public sealed class ImportCandidatePublishedEventHandler238121726 : Wolverine.Runtime.Handlers.MessageHandler
     {
-        private readonly CoffeePeek.Shared.Domain.Interfaces.Infrastructure.ICacheService _cacheService1;
-        private readonly CoffeePeek.Shared.Domain.Interfaces.Infrastructure.ICacheService _cacheService2;
         private readonly Microsoft.Extensions.DependencyInjection.IServiceScopeFactory _serviceScopeFactory;
         private readonly Microsoft.Extensions.Logging.ILogger<CoffeePeek.Shops.Application.Services.CreateShopFromImportService> _loggerOfCreateShopFromImportService;
         private readonly Microsoft.Extensions.Logging.ILogger<CoffeePeek.Shops.Infrastructure.Consumers.ImportCandidatePublishedEventHandler> _loggerOfImportCandidatePublishedEventHandler;
         private readonly System.Collections.Generic.IEnumerable<Wolverine.EntityFrameworkCore.IDomainEventScraper> _domainEventScraperIEnumerable;
 
-        public ImportCandidatePublishedEventHandler238121726(CoffeePeek.Shared.Domain.Interfaces.Infrastructure.ICacheService __cacheService1, CoffeePeek.Shared.Domain.Interfaces.Infrastructure.ICacheService __cacheService2, Microsoft.Extensions.DependencyInjection.IServiceScopeFactory serviceScopeFactory, Microsoft.Extensions.Logging.ILogger<CoffeePeek.Shops.Application.Services.CreateShopFromImportService> loggerOfCreateShopFromImportService, Microsoft.Extensions.Logging.ILogger<CoffeePeek.Shops.Infrastructure.Consumers.ImportCandidatePublishedEventHandler> loggerOfImportCandidatePublishedEventHandler, System.Collections.Generic.IEnumerable<Wolverine.EntityFrameworkCore.IDomainEventScraper> domainEventScraperIEnumerable)
+        public ImportCandidatePublishedEventHandler238121726(Microsoft.Extensions.DependencyInjection.IServiceScopeFactory serviceScopeFactory, Microsoft.Extensions.Logging.ILogger<CoffeePeek.Shops.Application.Services.CreateShopFromImportService> loggerOfCreateShopFromImportService, Microsoft.Extensions.Logging.ILogger<CoffeePeek.Shops.Infrastructure.Consumers.ImportCandidatePublishedEventHandler> loggerOfImportCandidatePublishedEventHandler, System.Collections.Generic.IEnumerable<Wolverine.EntityFrameworkCore.IDomainEventScraper> domainEventScraperIEnumerable)
         {
-            _cacheService1 = __cacheService1;
-            _cacheService2 = __cacheService2;
             _serviceScopeFactory = serviceScopeFactory;
             _loggerOfCreateShopFromImportService = loggerOfCreateShopFromImportService;
             _loggerOfImportCandidatePublishedEventHandler = loggerOfImportCandidatePublishedEventHandler;
@@ -39,12 +35,11 @@ namespace Internal.Generated.WolverineHandlers
             var coffeeShopRepository = new CoffeePeek.Shops.Persistance.Repositories.CoffeeShopRepository(shopsDbContext);
             var queryCoffeeDrinkRepository = new CoffeePeek.Shops.Persistance.Repositories.QueryCoffeeDrinkRepository(shopsDbContext);
             var shopMenuRepository = new CoffeePeek.Shops.Persistance.Repositories.ShopMenuRepository(shopsDbContext);
-            var unitOfWorkOfShopsDbContext = new CoffeePeek.Shared.Persistence.Data.UnitOfWork<CoffeePeek.Shops.Persistance.Configuration.ShopsDbContext>(shopsDbContext);
             var applyShopMenuService = new CoffeePeek.Shops.Application.Services.ApplyShopMenuService(shopMenuRepository, queryCoffeeDrinkRepository, coffeeShopRepository, context);
             var queryCityRepository = new CoffeePeek.Shops.Persistance.Repositories.QueryCityRepository(shopsDbContext);
             var queryShopTagRepository = new CoffeePeek.Shops.Persistance.Repositories.QueryShopTagRepository(shopsDbContext);
             var queryCoffeeShopRepository = new CoffeePeek.Shops.Persistance.Repositories.QueryCoffeeShopRepository(shopsDbContext);
-            var createShopFromImportService = new CoffeePeek.Shops.Application.Services.CreateShopFromImportService(queryCoffeeShopRepository, queryShopTagRepository, queryCityRepository, applyShopMenuService, unitOfWorkOfShopsDbContext, _cacheService2, _loggerOfCreateShopFromImportService);
+            var createShopFromImportService = new CoffeePeek.Shops.Application.Services.CreateShopFromImportService(queryCoffeeShopRepository, queryShopTagRepository, queryCityRepository, applyShopMenuService, context, _loggerOfCreateShopFromImportService);
             // The actual message body
             var importCandidatePublishedEvent = (CoffeePeek.Contract.Events.Moderation.ImportCandidatePublishedEvent)context.Envelope.Message;
 

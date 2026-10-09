@@ -11,17 +11,13 @@ namespace Internal.Generated.WolverineHandlers
     [global::System.CodeDom.Compiler.GeneratedCode("JasperFx", "1.0.0")]
     public sealed class ModerationShopApprovedEventHandler1413519569 : Wolverine.Runtime.Handlers.MessageHandler
     {
-        private readonly CoffeePeek.Shared.Domain.Interfaces.Infrastructure.ICacheService _cacheService1;
-        private readonly CoffeePeek.Shared.Domain.Interfaces.Infrastructure.ICacheService _cacheService2;
         private readonly Microsoft.Extensions.DependencyInjection.IServiceScopeFactory _serviceScopeFactory;
         private readonly Microsoft.Extensions.Logging.ILogger<CoffeePeek.Shops.Application.Services.CreateShopFromModerationService> _loggerOfCreateShopFromModerationService;
         private readonly Microsoft.Extensions.Logging.ILogger<CoffeePeek.Shops.Infrastructure.Consumers.ModerationShopApproveHandler> _loggerOfModerationShopApproveHandler;
         private readonly System.Collections.Generic.IEnumerable<Wolverine.EntityFrameworkCore.IDomainEventScraper> _domainEventScraperIEnumerable;
 
-        public ModerationShopApprovedEventHandler1413519569(CoffeePeek.Shared.Domain.Interfaces.Infrastructure.ICacheService __cacheService1, CoffeePeek.Shared.Domain.Interfaces.Infrastructure.ICacheService __cacheService2, Microsoft.Extensions.DependencyInjection.IServiceScopeFactory serviceScopeFactory, Microsoft.Extensions.Logging.ILogger<CoffeePeek.Shops.Application.Services.CreateShopFromModerationService> loggerOfCreateShopFromModerationService, Microsoft.Extensions.Logging.ILogger<CoffeePeek.Shops.Infrastructure.Consumers.ModerationShopApproveHandler> loggerOfModerationShopApproveHandler, System.Collections.Generic.IEnumerable<Wolverine.EntityFrameworkCore.IDomainEventScraper> domainEventScraperIEnumerable)
+        public ModerationShopApprovedEventHandler1413519569(Microsoft.Extensions.DependencyInjection.IServiceScopeFactory serviceScopeFactory, Microsoft.Extensions.Logging.ILogger<CoffeePeek.Shops.Application.Services.CreateShopFromModerationService> loggerOfCreateShopFromModerationService, Microsoft.Extensions.Logging.ILogger<CoffeePeek.Shops.Infrastructure.Consumers.ModerationShopApproveHandler> loggerOfModerationShopApproveHandler, System.Collections.Generic.IEnumerable<Wolverine.EntityFrameworkCore.IDomainEventScraper> domainEventScraperIEnumerable)
         {
-            _cacheService1 = __cacheService1;
-            _cacheService2 = __cacheService2;
             _serviceScopeFactory = serviceScopeFactory;
             _loggerOfCreateShopFromModerationService = loggerOfCreateShopFromModerationService;
             _loggerOfModerationShopApproveHandler = loggerOfModerationShopApproveHandler;
@@ -39,14 +35,13 @@ namespace Internal.Generated.WolverineHandlers
             var coffeeShopRepository = new CoffeePeek.Shops.Persistance.Repositories.CoffeeShopRepository(shopsDbContext);
             var queryCoffeeDrinkRepository = new CoffeePeek.Shops.Persistance.Repositories.QueryCoffeeDrinkRepository(shopsDbContext);
             var shopMenuRepository = new CoffeePeek.Shops.Persistance.Repositories.ShopMenuRepository(shopsDbContext);
-            var unitOfWorkOfShopsDbContext = new CoffeePeek.Shared.Persistence.Data.UnitOfWork<CoffeePeek.Shops.Persistance.Configuration.ShopsDbContext>(shopsDbContext);
             var applyShopMenuService = new CoffeePeek.Shops.Application.Services.ApplyShopMenuService(shopMenuRepository, queryCoffeeDrinkRepository, coffeeShopRepository, context);
             var queryBrewMethodRepository = new CoffeePeek.Shops.Persistance.Repositories.QueryBrewMethodRepository(shopsDbContext);
             var queryRoasterRepository = new CoffeePeek.Shops.Persistance.Repositories.QueryRoasterRepository(shopsDbContext);
             var queryEquipmentRepository = new CoffeePeek.Shops.Persistance.Repositories.QueryEquipmentRepository(shopsDbContext);
             var queryCoffeeBeanRepository = new CoffeePeek.Shops.Persistance.Repositories.QueryCoffeeBeanRepository(shopsDbContext);
             var queryCoffeeShopRepository = new CoffeePeek.Shops.Persistance.Repositories.QueryCoffeeShopRepository(shopsDbContext);
-            var createShopFromModerationService = new CoffeePeek.Shops.Application.Services.CreateShopFromModerationService(queryCoffeeShopRepository, queryCoffeeBeanRepository, queryEquipmentRepository, queryRoasterRepository, queryBrewMethodRepository, applyShopMenuService, unitOfWorkOfShopsDbContext, _cacheService2, _loggerOfCreateShopFromModerationService);
+            var createShopFromModerationService = new CoffeePeek.Shops.Application.Services.CreateShopFromModerationService(queryCoffeeShopRepository, queryCoffeeBeanRepository, queryEquipmentRepository, queryRoasterRepository, queryBrewMethodRepository, applyShopMenuService, context, _loggerOfCreateShopFromModerationService);
             // The actual message body
             var moderationShopApprovedEvent = (CoffeePeek.Contract.Events.Moderation.ModerationShopApprovedEvent)context.Envelope.Message;
 
