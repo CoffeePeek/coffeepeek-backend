@@ -1,5 +1,5 @@
-using CoffeePeek.Shared.Kernel;
-using CoffeePeek.Shared.Persistence.Data;
+using CoffeePeek.Contract.Dtos.AppDownloads;
+using CoffeePeek.Shared.Kernel.Response;
 using CoffeePeek.Shops.Application.Features.AppDownloads;
 using CoffeePeek.Shops.Domain.Aggregates.AppDistributionAggregate;
 using CoffeePeek.Shops.Persistance.Configuration;
@@ -92,18 +92,62 @@ public sealed class AppDownloadRedirectDurabilityLiveTests : IClassFixture<Shops
         }
     }
 
+    [Fact]
+    public async Task ReleaseAndStoreSettings_AreCommittedBeforeWolverineReturns()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        using var host = BuildHost();
+        await host.StartAsync(ct);
+        try
+        {
+            var bus = host.Services.GetRequiredService<IMessageBus>();
+            var adminId = Guid.NewGuid();
+            var versionCode = Random.Shared.Next(1_000_000, int.MaxValue);
+            var created = await bus.InvokeAsync<Response<AndroidReleaseDto>>(
+                new CreateAndroidReleaseCommand(adminId, "1.0.0", versionCode,
+                    "https://example.com/coffeepeek.apk", "coffeepeek.apk", 1000,
+                    new string('a', 64), DateTime.UtcNow), ct);
+            Assert.True(created.IsSuccess);
+
+            await using (var readRelease = fixture.Context())
+            {
+                var committed = await readRelease.AndroidReleases.AsNoTracking()
+                    .SingleAsync(release => release.Id == created.Data.Id, ct);
+                Assert.Equal(versionCode, committed.VersionCode);
+                Assert.True(await readRelease.AppDistributionAuditLogs.AsNoTracking()
+                    .AnyAsync(log => log.EntityId == created.Data.Id, ct));
+            }
+
+            var updated = await bus.InvokeAsync<Response<AdminAppDownloadsDto>>(
+                new UpdateAppStoreDownloadCommand(adminId, "https://apps.apple.com/app/coffeepeek", true), ct);
+            Assert.True(updated.IsSuccess);
+
+            await using var readSettings = fixture.Context();
+            var settings = await readSettings.AppDistributionSettings.AsNoTracking().SingleAsync(ct);
+            Assert.True(settings.IosAppStoreEnabled);
+            Assert.Equal("https://apps.apple.com/app/coffeepeek", settings.IosAppStoreUrl);
+            Assert.True(await readSettings.AppDistributionAuditLogs.AsNoTracking()
+                .AnyAsync(log => log.EntityId == AppDistributionSettings.SingletonId, ct));
+        }
+        finally
+        {
+            await host.StopAsync(CancellationToken.None);
+        }
+    }
+
     private IHost BuildHost() => Host.CreateDefaultBuilder()
             .ConfigureServices(services =>
             {
                 services.AddScoped(_ => fixture.Context());
                 services.AddScoped<IAppDistributionRepository, AppDistributionRepository>();
-                services.AddScoped<IUnitOfWork, UnitOfWork<ShopsDbContext>>();
             })
             .UseWolverine(options =>
             {
                 options.ApplicationAssembly = typeof(AppDownloadRedirectDurabilityLiveTests).Assembly;
                 options.Discovery.DisableConventionalDiscovery();
                 options.Discovery.IncludeType(typeof(RecordAppDownloadRedirectHandler));
+                options.Discovery.IncludeType(typeof(CreateAndroidReleaseHandler));
+                options.Discovery.IncludeType(typeof(UpdateAppStoreDownloadHandler));
                 options.UseRuntimeCompilation();
                 options.CodeGeneration.TypeLoadMode = TypeLoadMode.Auto;
                 options.CodeGeneration.AlwaysUseServiceLocationFor(typeof(ShopsDbContext));
