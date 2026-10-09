@@ -26,10 +26,12 @@ public sealed class ShopProfileCacheInvalidationRequestedHandler
     {
         using var activity = ShopsTelemetry.ActivitySource.StartActivity("shops.cache.invalidate.profile");
         activity?.SetTag("shop.id", message.ShopId);
+        activity?.SetTag("shop.count", message.AdditionalShopIds.Count + 1);
         try
         {
             // Removing an already-absent key is safe when the durable queue redelivers.
-            await cache.RemoveAsync(CacheKey.Shop.Detail(message.ShopId), ct);
+            foreach (var shopId in message.AdditionalShopIds.Prepend(message.ShopId).Distinct())
+                await cache.RemoveAsync(CacheKey.Shop.Detail(shopId), ct);
             await cache.RemoveByPatternAsync(CacheKey.Shop.SearchPattern(), ct);
             await cache.RemoveByPatternAsync(CacheKey.Shop.ListPattern(), ct);
             await cache.RemoveAsync(CacheKey.Shop.PublicPlatformStats(), ct);

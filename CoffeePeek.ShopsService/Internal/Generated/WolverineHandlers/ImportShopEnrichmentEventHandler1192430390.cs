@@ -11,15 +11,13 @@ namespace Internal.Generated.WolverineHandlers
     [global::System.CodeDom.Compiler.GeneratedCode("JasperFx", "1.0.0")]
     public sealed class ImportShopEnrichmentEventHandler1192430390 : Wolverine.Runtime.Handlers.MessageHandler
     {
-        private readonly CoffeePeek.Shared.Domain.Interfaces.Infrastructure.ICacheService _cacheService;
         private readonly Microsoft.Extensions.DependencyInjection.IServiceScopeFactory _serviceScopeFactory;
         private readonly Microsoft.Extensions.Logging.ILogger<CoffeePeek.Shops.Application.Services.EnrichShopFromImportService> _loggerOfEnrichShopFromImportService;
         private readonly Microsoft.Extensions.Logging.ILogger<CoffeePeek.Shops.Infrastructure.Consumers.ImportShopEnrichmentEventHandler> _loggerOfImportShopEnrichmentEventHandler;
         private readonly System.Collections.Generic.IEnumerable<Wolverine.EntityFrameworkCore.IDomainEventScraper> _domainEventScraperIEnumerable;
 
-        public ImportShopEnrichmentEventHandler1192430390(CoffeePeek.Shared.Domain.Interfaces.Infrastructure.ICacheService cacheService, Microsoft.Extensions.DependencyInjection.IServiceScopeFactory serviceScopeFactory, Microsoft.Extensions.Logging.ILogger<CoffeePeek.Shops.Application.Services.EnrichShopFromImportService> loggerOfEnrichShopFromImportService, Microsoft.Extensions.Logging.ILogger<CoffeePeek.Shops.Infrastructure.Consumers.ImportShopEnrichmentEventHandler> loggerOfImportShopEnrichmentEventHandler, System.Collections.Generic.IEnumerable<Wolverine.EntityFrameworkCore.IDomainEventScraper> domainEventScraperIEnumerable)
+        public ImportShopEnrichmentEventHandler1192430390(Microsoft.Extensions.DependencyInjection.IServiceScopeFactory serviceScopeFactory, Microsoft.Extensions.Logging.ILogger<CoffeePeek.Shops.Application.Services.EnrichShopFromImportService> loggerOfEnrichShopFromImportService, Microsoft.Extensions.Logging.ILogger<CoffeePeek.Shops.Infrastructure.Consumers.ImportShopEnrichmentEventHandler> loggerOfImportShopEnrichmentEventHandler, System.Collections.Generic.IEnumerable<Wolverine.EntityFrameworkCore.IDomainEventScraper> domainEventScraperIEnumerable)
         {
-            _cacheService = cacheService;
             _serviceScopeFactory = serviceScopeFactory;
             _loggerOfEnrichShopFromImportService = loggerOfEnrichShopFromImportService;
             _loggerOfImportShopEnrichmentEventHandler = loggerOfImportShopEnrichmentEventHandler;
@@ -34,9 +32,8 @@ namespace Internal.Generated.WolverineHandlers
             Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<Wolverine.Runtime.ScopedMessageContextHolder>(serviceScope.ServiceProvider).Context = context;
             // This service has been marked as requiring service location independent of Wolverine's ability to use constructor injection of everything else
             var shopsDbContext = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<CoffeePeek.Shops.Persistance.Configuration.ShopsDbContext>(serviceScope.ServiceProvider);
-            var unitOfWorkOfShopsDbContext = new CoffeePeek.Shared.Persistence.Data.UnitOfWork<CoffeePeek.Shops.Persistance.Configuration.ShopsDbContext>(shopsDbContext);
             var queryCoffeeShopRepository = new CoffeePeek.Shops.Persistance.Repositories.QueryCoffeeShopRepository(shopsDbContext);
-            var enrichShopFromImportService = new CoffeePeek.Shops.Application.Services.EnrichShopFromImportService(queryCoffeeShopRepository, unitOfWorkOfShopsDbContext, _cacheService, _loggerOfEnrichShopFromImportService);
+            var enrichShopFromImportService = new CoffeePeek.Shops.Application.Services.EnrichShopFromImportService(queryCoffeeShopRepository, context, _loggerOfEnrichShopFromImportService);
             // The actual message body
             var importShopEnrichmentEvent = (CoffeePeek.Contract.Events.Moderation.ImportShopEnrichmentEvent)context.Envelope.Message;
 

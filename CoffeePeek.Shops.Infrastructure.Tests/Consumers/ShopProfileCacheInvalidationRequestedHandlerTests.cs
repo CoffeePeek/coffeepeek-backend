@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Diagnostics.Metrics;
+using System.Text.Json;
 using CoffeePeek.Shared.Domain.Interfaces.Infrastructure;
 using CoffeePeek.Shared.Persistence.Cache.Redis;
 using CoffeePeek.Shops.Application.Features.CoffeeShop.ShopProfile;
@@ -12,6 +13,18 @@ namespace CoffeePeek.Shops.Infrastructure.Tests.Consumers;
 
 public sealed class ShopProfileCacheInvalidationRequestedHandlerTests
 {
+    [Fact]
+    public void OlderQueuedMessageWithoutBatchField_RemainsReadable()
+    {
+        var shopId = Guid.NewGuid();
+        var message = JsonSerializer.Deserialize<ShopProfileCacheInvalidationRequested>(
+            JsonSerializer.Serialize(new { ShopId = shopId }), new JsonSerializerOptions(JsonSerializerDefaults.Web));
+
+        Assert.NotNull(message);
+        Assert.Equal(shopId, message.ShopId);
+        Assert.Empty(message.AdditionalShopIds);
+    }
+
     [Fact]
     public async Task RepeatDelivery_InvalidatesEveryAffectedCache()
     {
@@ -33,6 +46,33 @@ public sealed class ShopProfileCacheInvalidationRequestedHandlerTests
             It.IsAny<CancellationToken>()), Times.Exactly(2));
         cache.Verify(c => c.RemoveByPatternAsync(CacheKey.Shop.ListPattern(),
             It.IsAny<CancellationToken>()), Times.Exactly(2));
+    }
+
+    [Fact]
+    public async Task Batch_InvalidatesEachDetailOnceAndGlobalKeysOnce()
+    {
+        var first = Guid.NewGuid();
+        var second = Guid.NewGuid();
+        var message = new ShopProfileCacheInvalidationRequested(first)
+        {
+            AdditionalShopIds = [second, first]
+        };
+        var cache = new Mock<IStrictCacheInvalidator>();
+
+        await ShopProfileCacheInvalidationRequestedHandler.Handle(
+            message, cache.Object, NullLogger<ShopProfileCacheInvalidationRequestedHandler>.Instance,
+            TestContext.Current.CancellationToken);
+
+        cache.Verify(c => c.RemoveAsync(CacheKey.Shop.Detail(first),
+            It.IsAny<CancellationToken>()), Times.Once);
+        cache.Verify(c => c.RemoveAsync(CacheKey.Shop.Detail(second),
+            It.IsAny<CancellationToken>()), Times.Once);
+        cache.Verify(c => c.RemoveByPatternAsync(CacheKey.Shop.SearchPattern(),
+            It.IsAny<CancellationToken>()), Times.Once);
+        cache.Verify(c => c.RemoveByPatternAsync(CacheKey.Shop.ListPattern(),
+            It.IsAny<CancellationToken>()), Times.Once);
+        cache.Verify(c => c.RemoveAsync(CacheKey.Shop.PublicPlatformStats(),
+            It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]

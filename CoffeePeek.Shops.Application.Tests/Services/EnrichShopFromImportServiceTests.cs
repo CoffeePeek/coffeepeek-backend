@@ -3,7 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using CoffeePeek.Contract.Events.Moderation;
 using CoffeePeek.Shared.Domain.Interfaces.Infrastructure;
-using CoffeePeek.Shared.Kernel;
+using CoffeePeek.Shops.Application.Features.CoffeeShop.ShopProfile;
 using CoffeePeek.Shops.Application.Services;
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
 using FluentAssertions;
@@ -15,13 +15,12 @@ namespace CoffeePeek.Shops.Application.Tests.Services;
 public class EnrichShopFromImportServiceTests
 {
     private readonly Mock<IQueryCoffeeShopRepository> _shopRepo = new();
-    private readonly Mock<IUnitOfWork> _uow = new();
-    private readonly Mock<ICacheService> _cache = new();
+    private readonly Mock<Wolverine.IMessageBus> _bus = new();
     private readonly Mock<ILogger<EnrichShopFromImportService>> _logger = new();
     private readonly CancellationToken _ct = CancellationToken.None;
 
     private EnrichShopFromImportService CreateSut() =>
-        new(_shopRepo.Object, _uow.Object, _cache.Object, _logger.Object);
+        new(_shopRepo.Object, _bus.Object, _logger.Object);
 
     [Fact]
     public async Task Enrich_FillsMissingFieldsOnMatchingShop()
@@ -48,7 +47,8 @@ public class EnrichShopFromImportServiceTests
         shop.Contact.PhoneNumber.Should().Be("+375291112233");
         shop.Contact.SiteLink.Should().Be("https://coffejoy.by");
         shop.Location.Address.Should().Be("Немига 5, Минск");
-        _uow.Verify(u => u.SaveChangesAsync(_ct), Times.Once);
+        _bus.Verify(b => b.PublishAsync(It.Is<ShopProfileCacheInvalidationRequested>(
+            e => e.ShopId == shop.Id && e.AdditionalShopIds.Count == 0)), Times.Once);
     }
 
     [Fact]
@@ -64,7 +64,7 @@ public class EnrichShopFromImportServiceTests
         ], _ct);
 
         count.Should().Be(0);
-        _uow.Verify(u => u.SaveChangesAsync(_ct), Times.Never);
+        _bus.Verify(b => b.PublishAsync(It.IsAny<ShopProfileCacheInvalidationRequested>()), Times.Never);
     }
 
     [Fact]
@@ -90,5 +90,29 @@ public class EnrichShopFromImportServiceTests
 
         count.Should().Be(1);
         shop.Contact.PhoneNumber.Should().Be("+375291112233");
+    }
+
+    [Fact]
+    public async Task Enrich_TwoShops_PublishesOneBatchInsteadOfTwoGlobalInvalidations()
+    {
+        var first = new CoffeeShop(Guid.NewGuid(), "First", null, PriceRange.Moderate, Guid.NewGuid());
+        var second = new CoffeeShop(Guid.NewGuid(), "Second", null, PriceRange.Moderate, Guid.NewGuid());
+        first.SetLocation(Guid.NewGuid(), "Old 1", 53m, 27m);
+        second.SetLocation(Guid.NewGuid(), "Old 2", 54m, 28m);
+        _shopRepo.Setup(r => r.ListForEnrichmentAsync(
+            It.IsAny<System.Collections.Generic.IReadOnlyCollection<Guid>>(),
+            It.IsAny<decimal>(), It.IsAny<decimal>(), It.IsAny<decimal>(), It.IsAny<decimal>(), _ct))
+            .ReturnsAsync([first, second]);
+
+        var count = await CreateSut().EnrichShopsFromImportAsync([
+            new ImportShopEnrichmentItem(first.Id, "First", "New 1", 53m, 27m, "111", null, null),
+            new ImportShopEnrichmentItem(second.Id, "Second", "New 2", 54m, 28m, "222", null, null)
+        ], _ct);
+
+        count.Should().Be(2);
+        _bus.Verify(b => b.PublishAsync(It.Is<ShopProfileCacheInvalidationRequested>(
+            e => e.AdditionalShopIds.Count == 1 &&
+                ((e.ShopId == first.Id && e.AdditionalShopIds[0] == second.Id) ||
+                 (e.ShopId == second.Id && e.AdditionalShopIds[0] == first.Id)))), Times.Once);
     }
 }

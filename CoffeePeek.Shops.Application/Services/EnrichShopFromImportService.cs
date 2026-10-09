@@ -1,17 +1,16 @@
 using CoffeePeek.Contract.Events.Moderation;
 using CoffeePeek.Shared.Domain.Interfaces.Infrastructure;
 using CoffeePeek.Shared.Domain.Places;
-using CoffeePeek.Shared.Kernel;
-using CoffeePeek.Shops.Application.Features.Public.Stats;
+using CoffeePeek.Shops.Application.Features.CoffeeShop.ShopProfile;
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
 using Microsoft.Extensions.Logging;
+using Wolverine;
 
 namespace CoffeePeek.Shops.Application.Services;
 
 public class EnrichShopFromImportService(
     IQueryCoffeeShopRepository shopRepository,
-    IUnitOfWork unitOfWork,
-    ICacheService cacheService,
+    IMessageBus bus,
     ILogger<EnrichShopFromImportService> logger) : IEnrichShopFromImportService
 {
     public async Task<int> EnrichShopsFromImportAsync(
@@ -58,13 +57,12 @@ public class EnrichShopFromImportService(
         foreach (var shopId in enrichedIds)
             byId[shopId].AdvanceProfileRevision();
 
-        await unitOfWork.SaveChangesAsync(ct);
-
-        foreach (var shopId in enrichedIds)
-            await cacheService.RemoveAsync(CacheKey.Shop.Detail(shopId));
-
-        await cacheService.RemoveByPattern(CacheKey.Shop.SearchPattern(), ct);
-        await PublicStatsCacheInvalidator.InvalidateAsync(cacheService, ct);
+        // Bound the durable message size and avoid a global cache scan per shop.
+        foreach (var batch in enrichedIds.Chunk(256))
+            await bus.PublishAsync(new ShopProfileCacheInvalidationRequested(batch[0])
+            {
+                AdditionalShopIds = batch[1..]
+            });
 
         return enrichedIds.Count;
     }
