@@ -66,7 +66,7 @@ public sealed class ShopsWritePerformanceLiveTests(ShopsLiveDatabase fixture) : 
         using var host = new ShopsDirectWriteBoundaryLiveTests(fixture).CreateHost(services =>
         {
             services.AddScoped(_ => new ShopsDbContext(new DbContextOptionsBuilder<ShopsDbContext>()
-                .UseNpgsql(poolConnection).AddInterceptors(transactions).Options));
+                .UseNpgsql(poolConnection).AddInterceptors(new CheckInAuditInterceptor(), transactions).Options));
             services.AddShopsModule().AddCoffeeCatalogModule().AddMenuModule();
             services.AddScoped<IUnitOfWork, UnitOfWork<ShopsDbContext>>();
             services.AddScoped<IShopPriceRangeWriter, ShopPriceRangeWriter>();
@@ -85,7 +85,7 @@ public sealed class ShopsWritePerformanceLiveTests(ShopsLiveDatabase fixture) : 
                 Assert.True((await bus.InvokeAsync<Response<AdminPublishedShopDto>>(new UpdateAdminCoffeeShopCommand(
                     shops[i].Id, "Updated " + i, null, Contract.Enums.PriceRange.Moderate,
                     null, null, null, null, null) { ExpectedRevision = 0 }, token)).IsSuccess));
-            await MeasureAsync("import-100-products", 8, 1, async (i, token) =>
+            var imports = Enumerable.Range(0, 8).Select(i =>
             {
                 var request = CoffeeCatalogTests.Snapshot((char)('0' + i), DateTimeOffset.UtcNow.AddMinutes(-10 + i));
                 var template = request.Snapshot.Products[0]; template.ImageUrls = []; template.StoredPhotos = [];
@@ -97,8 +97,10 @@ public sealed class ShopsWritePerformanceLiveTests(ShopsLiveDatabase fixture) : 
                     return product;
                 }).ToArray();
                 request.Snapshot.Coverage[0].ExpectedProducts = 100; request.Snapshot.Coverage[0].DiscoveredProducts = 100;
-                Assert.Equal("Applied", (await bus.InvokeAsync<CoffeeImportResult>(new ImportCoffeeSnapshotCommand(request), token)).Status);
-            });
+                return request;
+            }).ToArray();
+            await MeasureAsync("import-100-products", 8, 1, async (i, token) =>
+                Assert.Equal("Applied", (await bus.InvokeAsync<CoffeeImportResult>(new ImportCoffeeSnapshotCommand(imports[i]), token)).Status));
             await MeasureAsync("ocr-stored-apply", 16, 4, async (i, token) =>
             {
                 await using var scope = host.Services.CreateAsyncScope();

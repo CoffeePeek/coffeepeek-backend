@@ -130,6 +130,17 @@ public sealed class AppDownloadRedirectDurabilityLiveTests : IClassFixture<Shops
             Assert.Equal("https://apps.apple.com/app/coffeepeek", settings.IosAppStoreUrl);
             Assert.True(await readSettings.AppDistributionAuditLogs.AsNoTracking()
                 .AnyAsync(log => log.EntityId == AppDistributionSettings.SingletonId, ct));
+            await host.StopAsync(ct);
+            using var restarted = BuildHost();
+            await restarted.StartAsync(ct);
+            try
+            {
+                var redirect = await restarted.Services.GetRequiredService<IMessageBus>()
+                    .InvokeAsync<Response<string>>(new GetAppDownloadRedirectQuery("ios"), ct);
+                Assert.True(redirect.IsSuccess);
+                Assert.Equal("https://apps.apple.com/app/coffeepeek", redirect.Data);
+            }
+            finally { await restarted.StopAsync(CancellationToken.None); }
         }
         finally
         {
@@ -170,6 +181,20 @@ public sealed class AppDownloadRedirectDurabilityLiveTests : IClassFixture<Shops
             Assert.True(await read.AppDistributionAuditLogs.AsNoTracking()
                 .AnyAsync(log => log.EntityId == second.Id &&
                                  log.Action == "AppDistribution.AndroidReleasePublished", ct));
+            await host.StopAsync(ct);
+            using var restarted = BuildHost();
+            await restarted.StartAsync(ct);
+            try
+            {
+                await using var scope = restarted.Services.CreateAsyncScope();
+                var restored = await scope.ServiceProvider.GetRequiredService<IAppDistributionRepository>()
+                    .GetActiveAndroidReleaseAsync(ct);
+                Assert.NotNull(restored);
+                Assert.Equal(second.Id, restored.Id);
+                Assert.Equal(second.VersionCode, restored.VersionCode);
+                Assert.Equal(second.FileUrl, restored.FileUrl);
+            }
+            finally { await restarted.StopAsync(CancellationToken.None); }
         }
         finally
         {
@@ -192,6 +217,7 @@ public sealed class AppDownloadRedirectDurabilityLiveTests : IClassFixture<Shops
                 options.Discovery.IncludeType(typeof(CreateAndroidReleaseHandler));
                 options.Discovery.IncludeType(typeof(UpdateAppStoreDownloadHandler));
                 options.Discovery.IncludeType(typeof(PublishAndroidReleaseHandler));
+                options.Discovery.IncludeType(typeof(GetAppDownloadRedirectHandler));
                 options.UseRuntimeCompilation();
                 options.CodeGeneration.TypeLoadMode = TypeLoadMode.Auto;
                 options.CodeGeneration.AlwaysUseServiceLocationFor(typeof(ShopsDbContext));

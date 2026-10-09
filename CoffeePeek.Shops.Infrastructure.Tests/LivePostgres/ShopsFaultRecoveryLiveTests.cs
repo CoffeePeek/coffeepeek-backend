@@ -296,7 +296,8 @@ public sealed class ShopsFaultRecoveryLiveTests(ShopsLiveDatabase shops, MediaLi
             Assert.Equal("1", File.ReadAllText(ShopsFaultControl.Marker(root, "provider-calls")));
             await using var verify = shops.Context(false);
             var final = await verify.MenuOcrJobs.SingleAsync(j => j.Id == job.Id, ct);
-            var current = await verify.ShopMenus.Include(m => m.Items).SingleAsync(m => m.Id == menu.Id, ct);
+            var current = await verify.ShopMenus.Include(m => m.Items).Include(m => m.Photos)
+                .SingleAsync(m => m.Id == menu.Id, ct);
             if (checkpoint == "before-ocr-store")
             {
                 Assert.Equal(MenuOcrJobStatus.Running, final.Status);
