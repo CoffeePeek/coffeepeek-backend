@@ -15,6 +15,7 @@ using CoffeePeek.Shops.Persistance.CoffeeCatalog;
 using CoffeePeek.Shops.Persistance.Configuration;
 using CoffeePeek.Shops.Persistance.Discovery;
 using CoffeePeek.Shops.Persistance.PublicAddresses;
+using CoffeePeek.Shops.Persistance.Modules;
 using CoffeePeek.Testing;
 using JasperFx;
 using JasperFx.CodeGeneration;
@@ -127,14 +128,7 @@ public sealed class ShopsDirectWriteBoundaryLiveTests : IClassFixture<ShopsLiveD
         {
             services.AddScoped(_ => new ShopsDbContext(new DbContextOptionsBuilder<ShopsDbContext>()
                 .UseNpgsql(fixture.ConnectionString).AddInterceptors(probe).Options));
-            services.AddScoped<IUnitOfWork, UnitOfWork<ShopsDbContext>>();
-            services.AddScoped<CoffeeCatalogStore>(provider => new(
-                provider.GetRequiredService<ShopsDbContext>(),
-                Options.Create(new MediaPublicUrlOptions { PublicEndpoint = "https://media.example.test" }),
-                Options.Create(mapping), Mock.Of<IPublicAddressService>(), NullLogger<CoffeeCatalogStore>.Instance));
-            services.AddScoped<ICoffeeImportWriter>(provider => provider.GetRequiredService<CoffeeCatalogStore>());
-            services.AddScoped<ICoffeeProductWriter>(provider => provider.GetRequiredService<CoffeeCatalogStore>());
-            services.AddScoped<ICoffeeCatalogTagWriter>(provider => provider.GetRequiredService<CoffeeCatalogStore>());
+            AddCatalogServices(services, mapping);
         }, typeof(CoffeeCatalogHandler));
         await host.StartAsync(ct);
         try
@@ -379,14 +373,7 @@ public sealed class ShopsDirectWriteBoundaryLiveTests : IClassFixture<ShopsLiveD
         {
             services.AddScoped(_ => new ShopsDbContext(new DbContextOptionsBuilder<ShopsDbContext>()
                 .UseNpgsql(fixture.ConnectionString).AddInterceptors(probe).Options));
-            services.AddScoped<IUnitOfWork, UnitOfWork<ShopsDbContext>>();
-            services.AddScoped<CoffeeCatalogStore>(provider => new(
-                provider.GetRequiredService<ShopsDbContext>(),
-                Options.Create(new MediaPublicUrlOptions { PublicEndpoint = "https://media.example.test" }),
-                Options.Create(new CoffeeImportOptions()), Mock.Of<IPublicAddressService>(), NullLogger<CoffeeCatalogStore>.Instance));
-            services.AddScoped<ICoffeeImportWriter>(provider => provider.GetRequiredService<CoffeeCatalogStore>());
-            services.AddScoped<ICoffeeProductWriter>(provider => provider.GetRequiredService<CoffeeCatalogStore>());
-            services.AddScoped<ICoffeeCatalogTagWriter>(provider => provider.GetRequiredService<CoffeeCatalogStore>());
+            AddCatalogServices(services, new());
         }, typeof(CoffeeCatalogHandler));
         await host.StartAsync(ct);
         try
@@ -442,6 +429,15 @@ public sealed class ShopsDirectWriteBoundaryLiveTests : IClassFixture<ShopsLiveD
             }
             else Assert.Empty(assignments);
         }
+    }
+
+    private static void AddCatalogServices(IServiceCollection services, CoffeeImportOptions options)
+    {
+        services.AddScoped<IUnitOfWork, UnitOfWork<ShopsDbContext>>();
+        services.AddSingleton(Options.Create(options));
+        services.AddSingleton(Options.Create(new MediaPublicUrlOptions { PublicEndpoint = "https://media.example.test" }));
+        services.AddSingleton(Mock.Of<IPublicAddressService>());
+        services.AddCoffeeCatalogModule();
     }
 
     private IHost CreateHost(Action<IServiceCollection> configure, Type handler) => Host.CreateDefaultBuilder()

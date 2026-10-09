@@ -102,17 +102,22 @@ public sealed class CoffeeProduct : Entity<Guid>, IPublicSlugOwner
     public void AdvanceVersion() => Version = checked(Version + 1);
     public void ProtectFields(string[] fields)
     {
+        ValidateProtectedFields(fields);
+        ProtectedFields = fields.Distinct(StringComparer.Ordinal).ToArray();
+        AdvanceVersion();
+    }
+
+    private static void ValidateProtectedFields(string[] fields)
+    {
         var allowed = new[] { nameof(Name), nameof(Description), nameof(ProductKind), nameof(ProductForm),
             nameof(CompositionKind), nameof(Processing), nameof(RoastLevel), nameof(Acidity), nameof(Body),
             nameof(QGraderScoreRaw), nameof(TasteDescriptors), nameof(BrewRecommendations), nameof(GrindOptions),
             nameof(Features), nameof(Countries), "Photos" };
         if (fields is null || fields.Any(f => !allowed.Contains(f, StringComparer.Ordinal)))
             throw new DomainException("Unknown protected coffee field.");
-        ProtectedFields = fields.Distinct(StringComparer.Ordinal).ToArray();
-        Version = checked(Version + 1);
     }
 
-    public void ApplyContent(CoffeeContent data, bool fromImport = false)
+    private static void ValidateContent(CoffeeContent data)
     {
         ArgumentNullException.ThrowIfNull(data);
         if (string.IsNullOrWhiteSpace(data.Name) || data.Name.Trim().Length > 250)
@@ -126,6 +131,18 @@ public sealed class CoffeeProduct : Entity<Guid>, IPublicSlugOwner
                 .Any(values => values is null || values.Length > 100 || values.Any(v => v is null || v.Length > 500)) ||
             new[] { data.Processing, data.RoastLevel, data.Acidity, data.Body, data.QGraderScoreRaw }.Any(v => v?.Length > 1000))
             throw new DomainException("Invalid coffee characteristics.");
+    }
+
+    public void ApplyManualEdit(CoffeeContent data, string[] countries, string[] protectedFields, CoffeePublicationStatus status)
+    {
+        ValidateContent(data); ValidateProtectedFields(protectedFields); ValidateCountries(countries);
+        if (!Enum.IsDefined(status)) throw new DomainException("Invalid publication status.");
+        ApplyContent(data); ProtectFields(protectedFields); ReplaceCountries(countries); SetStatus(status);
+    }
+
+    public void ApplyContent(CoffeeContent data, bool fromImport = false)
+    {
+        ValidateContent(data);
         bool Write(string field) => !fromImport || !IsProtected(field);
         if (Write(nameof(Name))) Name = data.Name.Trim();
         if (Write(nameof(Description)) && (!fromImport || data.Description is not null)) Description = data.Description;
@@ -152,14 +169,20 @@ public sealed class CoffeeProduct : Entity<Guid>, IPublicSlugOwner
     }
     public void ReplaceCountries(IEnumerable<string> codes)
     {
-        ArgumentNullException.ThrowIfNull(codes);
-        var values = codes.Distinct(StringComparer.Ordinal).ToArray();
-        if (values.Length > 30 || values.Any(c => c is null || c.Length != 2 || c.Any(x => x is < 'A' or > 'Z')))
-            throw new DomainException("Country codes must be ISO alpha-2 codes.");
+        var values = ValidateCountries(codes);
         _countries.RemoveAll(c => !values.Contains(c.CountryCode));
         foreach (var code in values.Except(_countries.Select(c => c.CountryCode)))
             _countries.Add(new CoffeeProductCountry(Id, code));
         Version = checked(Version + 1);
+    }
+
+    private static string[] ValidateCountries(IEnumerable<string> codes)
+    {
+        ArgumentNullException.ThrowIfNull(codes);
+        var values = codes.Distinct(StringComparer.Ordinal).ToArray();
+        if (values.Length > 30 || values.Any(c => c is null || c.Length != 2 || c.Any(x => x is < 'A' or > 'Z')))
+            throw new DomainException("Country codes must be ISO alpha-2 codes.");
+        return values;
     }
 
     public void ApplyImportedCountries(IEnumerable<string> codes)

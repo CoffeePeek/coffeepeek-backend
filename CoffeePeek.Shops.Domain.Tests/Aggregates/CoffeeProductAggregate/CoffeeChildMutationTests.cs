@@ -89,6 +89,20 @@ public sealed class CoffeeChildMutationTests
         Assert.Equal("Coffee", product.Name); Assert.Equal(version, product.Version);
     }
 
+    [Theory]
+    [InlineData("Unknown", "CO")]
+    [InlineData("Name", "invalid")]
+    public void InvalidLateManualEditDoesNotChangeContentCountriesOrVersion(string protectedField, string country)
+    {
+        var product = Source().Product; product.ReplaceCountries(["ET"]); var version = product.Version;
+        Assert.Throws<DomainException>(() => product.ApplyManualEdit(new("Changed", null, "roasted_beans",
+            "whole_beans", "unknown", null, null, null, null, null, [], [], [], []),
+            [country], [protectedField], CoffeePublicationStatus.Published));
+        Assert.Equal("Coffee", product.Name); Assert.Equal(CoffeePublicationStatus.Draft, product.Status);
+        Assert.Equal(["ET"], product.Countries.Select(c => c.CountryCode));
+        Assert.Empty(product.ProtectedFields); Assert.Equal(version, product.Version);
+    }
+
     private static CoffeeProductSource Source()
     {
         var product = new CoffeeProduct(Guid.NewGuid(), new("Coffee", null, "roasted_beans", "whole_beans",

@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 using CoffeePeek.Contract.Dtos.Coffee;
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeProductAggregate;
 
-namespace CoffeePeek.Shops.Persistance.CoffeeCatalog;
+namespace CoffeePeek.Shops.Application.Features.CoffeeCatalog;
 
 /// <summary>Uses explicit attributes, with product name/description evidence and a regular default for caffeine.</summary>
 public static class CoffeeClassificationNormalizer

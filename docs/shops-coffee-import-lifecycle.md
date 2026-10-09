@@ -4,6 +4,8 @@
 
 Состояние `CoffeeImportRun` меняется только через `MarkFailed`/`MarkApplied`; публичных setters нет. `Pending` существует внутри ещё не сохранённой операции, сохранённый run получает `Failed` или `Applied`. Конструктор проверяет hash identity, операции — UTC timestamp и counters. Повтор уже применённого payload сохраняет первоначальные counters и время применения; поздняя ошибка не может заменить подтверждённый успех.
 
+Прикладной `CoffeeImportService` определяет identity/order, coverage, manual priority, классификацию и применение снимка через `ICoffeeImportStorage`. Persistence adapter загружает tracked aggregate graph, добавляет/удаляет перечисленные дочерние записи и выполняет транзакцию; бизнес-решений о ручных полях и lifecycle в нём нет. После rollback tracker очищается до записи failed run. Concrete `CoffeeCatalogStore.ImportAsync` остаётся совместимым делегатом; production DI направляет `ICoffeeImportWriter` в Application service.
+
 `POST /internal/coffee-import/failures` может прийти до появления полного payload. Такой run имеет статус `Failed`, а его `PayloadHash` временно равен `SnapshotId`. При первом полном применении с тем же `(SourceKey, SnapshotId)` `CoffeeImportRun` распознаёт report по префиксу `collect:`, `photos:` или `apply:` и закрепляет вычисленный хеш payload. Следующие повторы требуют точного совпадения хеша. Failed run, созданный самим применением после отката транзакции, уже содержит фактический хеш и не разрешает другой payload.
 
 Повторные failure reports идемпотентны даже при одновременной вставке: уникальность `(SourceKey, SnapshotId)` сохраняет PostgreSQL, а проигравший запрос обрабатывает только конфликт этого конкретного индекса и удаляет неудачную запись из EF tracker.
