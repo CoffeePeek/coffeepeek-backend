@@ -12,7 +12,13 @@ PUT/DELETE избранного и `POST /internal/coffee-import/failures` те�
 
 Ранние `SaveChangesAsync` в двух stores оставлены как flush: они нужны для обработки конкурентного idempotent insert через EF savepoint. Favorites подавляет только конфликт `PK_DiscoveryFavorites` для одной записи избранного; другие unique violations больше не скрываются. `ShopsDirectWriteBoundaryLiveTests` проверяет четыре сценария PUT/DELETE и два сценария отчёта: отдельная SQL-сессия не видит flush, поздняя ошибка откатывает запись, успешный ответ означает commit, повторный отчёт не создаёт вторую строку. Все шесть сценариев прошли обязательный PostgreSQL 17 gate без пропусков в [CI commit 6f8f5f42](https://github.com/CoffeePeek/coffeepeek-backend/actions/runs/37896146032); локально без PostgreSQL они пропускаются.
 
-Таблицы ниже сохраняют историческую инвентаризацию 8 октября; актуальные изменения зон, избранного и import failure приведены выше. Остальные ранние flush и прямые controller→store записи остаются предметом P28.
+## Закрытие HTTP bypass, 9 октября 2026 года
+
+Пять записей классификации проходят `CoffeeClassificationHandler`, initialize/rename — `ChangePublicAddressCommand`, backfill — `BackfillPublicAddressesCommand`. Все семь generated adapters используют одну EF/outbox-транзакцию до ответа. PublicAddresses сохраняет advisory lock и savepoint, но не завершает внешнюю транзакцию. Dry-run не меняет owner rows. В `HostWriteBypassTests` больше нет разрешённых исключений: фактический список обязан быть пустым.
+
+`ShopsDirectWriteBoundaryLiveTests` расширен до 23 обязательных сценариев: десять классификации, шесть initialize/rename/backfill, один dry-run и шесть ранее подтверждённых сценариев избранного/import failure. Добавлены HTTP success/404/409 и controller request/actor/revision проверки. Локальный полный suite: 2019 passed, 118 infrastructure skips, 0 failed; новые 17 PostgreSQL-сценариев требуют CI.
+
+Таблицы ниже сохраняют историческую инвентаризацию 8 октября; актуальные изменения зон и HTTP-путей приведены выше. Остальные ранние flush остаются предметом P28.
 
 Срез рабочего дерева: 8 октября 2026 года, после профильного P06/P10 и узкой правки visibility. Это инвентаризация **вхождений вызовов**, а не утверждение, что каждое раннее `SaveChangesAsync` уже приводит к частичному commit: generated Wolverine adapter может держать внешнюю EF-транзакцию. Контрольный поиск по production C# (без миграций и Generated):
 

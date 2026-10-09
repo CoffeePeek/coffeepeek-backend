@@ -1,4 +1,7 @@
 using CoffeePeek.Contract.Dtos.Coffee;
+using CoffeePeek.Contract.Dtos.Discovery;
+using CoffeePeek.Contract.Dtos.PublicAddresses;
+using CoffeePeek.Shared.Domain.PublicAddresses;
 using CoffeePeek.Shared.Kernel;
 using CoffeePeek.Shared.Kernel.Options;
 using CoffeePeek.Shared.Persistence.Data;
@@ -6,9 +9,11 @@ using CoffeePeek.Shops.Application.Features.CoffeeCatalog;
 using CoffeePeek.Shops.Application.Features.Discovery;
 using CoffeePeek.Shops.Application.PublicAddresses;
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
+using CoffeePeek.Shops.Domain.Aggregates.CoffeeProductAggregate;
 using CoffeePeek.Shops.Persistance.CoffeeCatalog;
 using CoffeePeek.Shops.Persistance.Configuration;
 using CoffeePeek.Shops.Persistance.Discovery;
+using CoffeePeek.Shops.Persistance.PublicAddresses;
 using CoffeePeek.Testing;
 using JasperFx;
 using JasperFx.CodeGeneration;
@@ -161,6 +166,167 @@ public sealed class ShopsDirectWriteBoundaryLiveTests : IClassFixture<ShopsLiveD
         }
     }
 
+    [Theory]
+    [InlineData("create", false)]
+    [InlineData("create", true)]
+    [InlineData("edit", false)]
+    [InlineData("edit", true)]
+    [InlineData("deactivate", false)]
+    [InlineData("deactivate", true)]
+    [InlineData("product", false)]
+    [InlineData("product", true)]
+    [InlineData("variant", false)]
+    [InlineData("variant", true)]
+    public async Task ClassificationWrite_CommitsBeforeResponse_AndLateFailureRollsBack(string operation, bool failAfterFlush)
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var code = "test-" + Guid.NewGuid().ToString("N");
+        var value = new CoffeeFilterValue("taste", code, "Original", null, 0);
+        var roaster = new Roaster("Classification boundary " + code);
+        var product = new CoffeeProduct(roaster.Id, new("Boundary coffee", null, "roasted_beans", "whole_beans", "unknown",
+            null, null, null, null, null, [], [], [], []));
+        var source = new CoffeeProductSource { Product = product, CoffeeProductId = product.Id,
+            SourceKey = "boundary.example", ExternalProductId = code, SourceUrl = "https://boundary.example/coffee" };
+        var variant = new CoffeeVariant { Source = source, CoffeeProductSourceId = source.Id,
+            SourceKey = source.SourceKey, ExternalVariantId = code, Currency = "BYN", Price = 10 };
+        source.AttachVariant(variant); product.AttachSource(source);
+        await using (var seed = fixture.Context(false))
+        {
+            seed.Roasters.Add(roaster); seed.CoffeeProducts.Add(product);
+            if (operation != "create") seed.CoffeeFilterValues.Add(value);
+            await seed.SaveChangesAsync(ct);
+        }
+        var version = product.Version;
+        object command = operation switch
+        {
+            "create" => new CreateCoffeeFilterValueCommand(new() { GroupCode = "taste", Code = code, Name = "Changed" }),
+            "edit" => new EditCoffeeFilterValueCommand(value.Id, new() { Name = "Changed", IsActive = true }),
+            "deactivate" => new DeactivateCoffeeFilterValueCommand(value.Id),
+            "product" => new EditCoffeeClassificationCommand(product.Id, new()
+                { Version = version, Classification = new() { Caffeine = "decaf" }, ProtectedFields = ["caffeine"] }),
+            "variant" => new EditCoffeeVariantClassificationCommand(product.Id, variant.Id, new()
+                { Version = version, BrewPurpose = "espresso", ProtectFromImport = true }),
+            _ => throw new ArgumentOutOfRangeException(nameof(operation))
+        };
+        var flushObserved = false;
+        var probe = new AfterSaveProbe(async db =>
+        {
+            Assert.NotNull(db.Database.CurrentTransaction);
+            await AssertStateAsync(false);
+            flushObserved = true;
+            if (failAfterFlush) throw new InvalidOperationException("Failure after classification flush.");
+        });
+        using var host = CreateHost(services =>
+        {
+            services.AddScoped(_ => new ShopsDbContext(new DbContextOptionsBuilder<ShopsDbContext>()
+                .UseNpgsql(fixture.ConnectionString).AddInterceptors(probe).Options));
+            services.AddScoped<IDiscoveryClassificationStore, DiscoveryClassificationStore>();
+        }, typeof(CoffeeClassificationHandler));
+        await host.StartAsync(ct);
+        try
+        {
+            var bus = host.Services.GetRequiredService<IMessageBus>();
+            async Task ExecuteAsync()
+            {
+                if (operation is "product" or "variant") Assert.NotNull(await bus.InvokeAsync<AdminCoffeeClassification>(command, ct));
+                else Assert.NotNull(await bus.InvokeAsync<AdminCoffeeFilterValue>(command, ct));
+            }
+            if (failAfterFlush) await Assert.ThrowsAsync<InvalidOperationException>(ExecuteAsync);
+            else await ExecuteAsync();
+            Assert.True(flushObserved);
+            await AssertStateAsync(!failAfterFlush);
+        }
+        finally { await host.StopAsync(CancellationToken.None); }
+
+        async Task AssertStateAsync(bool changed)
+        {
+            await using var read = fixture.Context(false);
+            var storedValue = await read.CoffeeFilterValues.SingleOrDefaultAsync(v => v.GroupCode == "taste" && v.Code == code, ct);
+            if (operation == "create" && !changed) Assert.Null(storedValue);
+            else
+            {
+                Assert.NotNull(storedValue);
+                Assert.Equal(changed && operation is "create" or "edit" ? "Changed" : "Original", storedValue.Name);
+                Assert.Equal(!(changed && operation == "deactivate"), storedValue.IsActive);
+            }
+            var storedProduct = await read.CoffeeProducts.SingleAsync(p => p.Id == product.Id, ct);
+            Assert.Equal(changed && operation == "product" ? "decaf" : null, storedProduct.CaffeineCode);
+            Assert.Equal(changed && operation == "product" ? ["caffeine"] : Array.Empty<string>(), storedProduct.ClassificationProtectedFields);
+            Assert.Equal(version + (changed ? operation == "product" ? 2 : operation == "variant" ? 1 : 0 : 0), storedProduct.Version);
+            var storedVariant = await read.Set<CoffeeVariant>().SingleAsync(v => v.Id == variant.Id, ct);
+            Assert.Equal(changed && operation == "variant" ? "espresso" : null, storedVariant.BrewPurposeCode);
+            Assert.Equal(changed && operation == "variant", storedVariant.BrewPurposeProtected);
+        }
+    }
+
+    [Theory]
+    [InlineData("initialize", false)]
+    [InlineData("initialize", true)]
+    [InlineData("rename", false)]
+    [InlineData("rename", true)]
+    [InlineData("backfill", false)]
+    [InlineData("backfill", true)]
+    [InlineData("dry-run", false)]
+    public async Task PublicAddressWrite_UsesOneCommit_AndLateFailureRollsBack(string operation, bool failAfterFlush)
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var roaster = new Roaster("Address " + Guid.NewGuid().ToString("N"));
+        if (operation == "rename") roaster.SetPublicSlug("original-" + Guid.NewGuid().ToString("N"));
+        var originalSlug = roaster.PublicSlug; var revision = roaster.SlugRevision;
+        await using (var seed = fixture.Context(false))
+        { seed.Roasters.Add(roaster); await seed.SaveChangesAsync(ct); }
+        var slug = operation is "backfill" or "dry-run" ? PublicSlug.Generate(roaster.Name) : "changed-" + Guid.NewGuid().ToString("N");
+        var flushObserved = false;
+        var probe = new AfterSaveProbe(async db =>
+        {
+            Assert.NotNull(db.Database.CurrentTransaction);
+            await AssertStateAsync(false);
+            flushObserved = true;
+            if (failAfterFlush) throw new InvalidOperationException("Failure after address flush.");
+        });
+        using var host = CreateHost(services =>
+        {
+            services.AddScoped(_ => new ShopsDbContext(new DbContextOptionsBuilder<ShopsDbContext>()
+                .UseNpgsql(fixture.ConnectionString).AddInterceptors(probe).Options,
+                Options.Create(new PublicAddressOptions { Enabled = true })));
+            services.AddScoped<IPublicAddressService, PublicAddressService>();
+        }, typeof(PublicAddressHandler));
+        await host.StartAsync(ct);
+        try
+        {
+            var bus = host.Services.GetRequiredService<IMessageBus>();
+            async Task ExecuteAsync()
+            {
+                if (operation is "backfill" or "dry-run")
+                {
+                    var result = await bus.InvokeAsync<PublicAddressBackfillResult>(new BackfillPublicAddressesCommand(
+                        PublicAddressKind.Roaster, null, 100, operation == "dry-run", Guid.NewGuid()), ct);
+                    Assert.Contains(result.Items, i => i.EntityId == roaster.Id && i.Slug == slug);
+                }
+                else
+                {
+                    var result = await bus.InvokeAsync<PublicAddressMetadata>(new ChangePublicAddressCommand(
+                        PublicAddressKind.Roaster, roaster.Id, new(slug, revision, "Boundary test"), Guid.NewGuid()), ct);
+                    Assert.Equal(slug, result.Slug);
+                    Assert.Equal(revision + 1, result.Revision);
+                }
+            }
+            if (failAfterFlush) await Assert.ThrowsAsync<InvalidOperationException>(ExecuteAsync);
+            else await ExecuteAsync();
+            Assert.True(flushObserved);
+            await AssertStateAsync(!failAfterFlush && operation != "dry-run");
+        }
+        finally { await host.StopAsync(CancellationToken.None); }
+
+        async Task AssertStateAsync(bool changed)
+        {
+            await using var read = fixture.Context(false);
+            var stored = await read.Roasters.SingleAsync(r => r.Id == roaster.Id, ct);
+            Assert.Equal(changed ? slug : originalSlug, stored.PublicSlug);
+            Assert.Equal(revision + (changed ? 1 : 0), stored.SlugRevision);
+        }
+    }
+
     private IHost CreateHost(Action<IServiceCollection> configure, Type handler) => Host.CreateDefaultBuilder()
         .ConfigureServices(services =>
         {
@@ -176,6 +342,8 @@ public sealed class ShopsDirectWriteBoundaryLiveTests : IClassFixture<ShopsLiveD
             options.CodeGeneration.TypeLoadMode = TypeLoadMode.Auto;
             options.CodeGeneration.AlwaysUseServiceLocationFor(typeof(ShopsDbContext));
             options.CodeGeneration.AlwaysUseServiceLocationFor(typeof(IDiscoveryFavoritesStore));
+            options.CodeGeneration.AlwaysUseServiceLocationFor(typeof(IDiscoveryClassificationStore));
+            options.CodeGeneration.AlwaysUseServiceLocationFor(typeof(IPublicAddressService));
             options.CodeGeneration.AlwaysUseServiceLocationFor(typeof(ICoffeeImportWriter));
             options.CodeGeneration.AlwaysUseServiceLocationFor(typeof(ICoffeeProductWriter));
             options.CodeGeneration.AlwaysUseServiceLocationFor(typeof(ICoffeeCatalogStore));

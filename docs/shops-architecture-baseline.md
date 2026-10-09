@@ -7,10 +7,8 @@
 | Menus → `CoffeeShop.SetPriceRange` | Shops | 2 | P28: узкий Shops-порт и общий протокол записи; обе ветки уже увеличивают `ProfileRevision` |
 | Community check-in → `ShopPhoto` | Shops сейчас; после разделения Community | 1 | P18/P29: отдельное фото посещения |
 | Общий PublicAddresses writer → `IPublicSlugOwner.SetPublicSlug` | Соответствующий entity module | 3 | P20/P25: вызов owner-порта, общий компонент оставляет reservation/audit |
-| HTTP-контроллер → store/сервис записи классификации | CoffeeCatalog | 5 | P25: application command |
-| HTTP-контроллер → PublicAddresses write-сервис | Entity owner + технический registry | 3 | P20/P25: application command/единый commit |
 
-9 октября PUT/DELETE избранного и отчёт об ошибке импорта переведены в `SetDiscoveryFavoriteCommand` и `RecordCoffeeImportFailureCommand`. Три прямых HTTP→store вызова удалены из baseline; осталось восемь HTTP bypass: пять классификации и три PublicAddresses. Generated adapters держат общую EF/outbox-транзакцию до ответа; HTTP/auth и PostgreSQL commit/rollback проверяются отдельно.
+9 октября избранное, отчёты импорта, все пять записей классификации и initialize/rename/backfill PublicAddresses переведены в application commands. HTTP→store baseline пуст и заменён строгим `Assert.Empty`: новых исключений нет. Generated adapters держат общую EF/outbox-транзакцию до ответа; HTTP/auth и PostgreSQL commit/rollback проверяются отдельно. Межмодульные записи из таблицы выше ещё требуют устранения.
 
 После P17 consumer делегирует применение меню сервису модуля Menus; прежние семь прямых вызовов удалены из baseline. Сканер также охватывает `Persistance.Menu.*`, чтобы новый Menus writer не мог незаметно менять агрегат Shops. Отдельный test-only fixture намеренно вызывает `CoffeeShop.SetPriceRange` из этого namespace и доказывает срабатывание детектора.
 
