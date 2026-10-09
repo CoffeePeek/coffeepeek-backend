@@ -207,7 +207,10 @@ public class ShopsDbContext(DbContextOptions<ShopsDbContext> options, IOptions<P
             entity.Navigation(c => c.ShopPhotos).HasField("_shopPhotos")
                 .UsePropertyAccessMode(PropertyAccessMode.Field);
             entity.ToTable("CanonicalCheckIns", t => t.HasCheckConstraint("CK_CanonicalCheckIns_CompleteContent",
-                "(\"Note\" IS NOT NULL AND length(btrim(\"Note\")) BETWEEN 1 AND 1000 AND \"Rating_Place\" BETWEEN 1 AND 5 AND \"Rating_Service\" BETWEEN 1 AND 5 AND \"Rating_Coffee\" BETWEEN 1 AND 5)"));
+                "\"Note\" IS NOT NULL AND length(btrim(\"Note\")) <= 1000 AND " +
+                "((\"Rating_Place\" IS NULL AND \"Rating_Service\" IS NULL AND \"Rating_Coffee\" IS NULL AND \"Rating_AverageRating\" IS NULL) OR " +
+                "(\"Rating_Place\" IS NOT NULL AND \"Rating_Service\" IS NOT NULL AND \"Rating_Coffee\" IS NOT NULL AND \"Rating_AverageRating\" IS NOT NULL AND " +
+                "\"Rating_Place\" BETWEEN 1 AND 5 AND \"Rating_Service\" BETWEEN 1 AND 5 AND \"Rating_Coffee\" BETWEEN 1 AND 5))"));
             entity.ToTable("CanonicalCheckIns", t => t.HasCheckConstraint("CK_CanonicalCheckIns_Visibility", "\"Visibility\" IN (0, 1)"));
 
             // Foreign keys without navigation properties (DDD aggregate separation)
@@ -217,6 +220,7 @@ public class ShopsDbContext(DbContextOptions<ShopsDbContext> options, IOptions<P
                 .OnDelete(DeleteBehavior.Cascade);
 
             entity.OwnsOne<Rating>(r => r.Rating);
+            entity.Navigation(c => c.Rating).IsRequired(false);
         });
 
         modelBuilder.Entity<Equipment>(entity =>

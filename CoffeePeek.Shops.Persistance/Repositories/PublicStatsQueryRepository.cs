@@ -22,7 +22,7 @@ public class PublicStatsQueryRepository(ShopsDbContext dbContext) : IPublicStats
             ? 0m
             : Math.Round(
                 await selectedRatings.AverageAsync(
-                    r => (r.Rating.Place + r.Rating.Coffee + r.Rating.Service) / 3m,
+                    r => (r.Rating!.Place + r.Rating.Coffee + r.Rating.Service) / 3m,
                     cancellationToken),
                 1,
                 MidpointRounding.AwayFromZero);

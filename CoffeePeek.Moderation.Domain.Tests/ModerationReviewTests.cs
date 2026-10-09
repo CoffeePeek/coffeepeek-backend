@@ -49,10 +49,9 @@ public class ModerationReviewTests
     [InlineData(null)]
     [InlineData("")]
     [InlineData("   ")]
-    public void Snapshot_BlankText_ThrowsDomainException(string? text)
+    public void Snapshot_BlankText_IsStoredAsEmpty(string? text)
     {
-        Action create = () => Snapshot(text!);
-        create.Should().Throw<DomainException>();
+        Snapshot(text!).Comment.Should().BeEmpty();
     }
 
     [Fact]

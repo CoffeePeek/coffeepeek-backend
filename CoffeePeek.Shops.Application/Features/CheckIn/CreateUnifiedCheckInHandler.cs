@@ -25,15 +25,15 @@ public static class CreateUnifiedCheckInHandler
         IUploadedPhotoLookup photos, IUnitOfWork unitOfWork, IMessageBus bus, CancellationToken ct)
     {
         var request = command.Request;
-        if (request.Rating == null) throw new ValidationException("Rating is required.");
+        if (request.VisitedAt == null) throw new ValidationException("VisitedAt is required.");
         var keys = request.Photos?.Select(p => p?.StorageKey ?? "").ToArray() ?? [];
         if (keys.Length > BusinessConstants.MaxCheckInPhotos || keys.Any(k => string.IsNullOrWhiteSpace(k)
             || k.Length > BusinessConstants.MaxCheckInPhotoStorageKeyLength)
             || keys.Distinct(StringComparer.Ordinal).Count() != keys.Length)
             throw new ValidationException("Photos must be distinct, valid storage keys; at most five photos are allowed.");
         var checkIn = DomainCheckIn.CreateUnified(command.UserId, request.CoffeeShopId, command.Username,
-            request.Text, Rating.Create(request.Rating.Place, request.Rating.Service, request.Rating.Coffee),
-            (request.VisitedAt ?? DateTimeOffset.UtcNow).UtcDateTime,
+            request.Text, request.Rating == null ? null : Rating.Create(request.Rating.Place, request.Rating.Service, request.Rating.Coffee),
+            request.VisitedAt.Value.UtcDateTime,
             (CheckInVisibility)request.Visibility, CreateId(command.UserId, keys));
         if (!await shops.Exists(request.CoffeeShopId, ct)) throw new NotFoundException("Coffee shop not found.");
         var drink = await CoffeePeek.Shared.Kernel.Drinks.DrinkSelection.ResolveAsync(request.DrinkSlug, request.CustomDrinkName, drinks, ct);

@@ -20,7 +20,7 @@ public record ModerationReviewDto
     public string UserName { get; init; }
     public Guid ShopId { get;init; }
 
-    public RatingDto Rating { get; init; }
+    public RatingDto? Rating { get; init; }
 
     public string? RejectedReason  { get; init; }
     public Guid? ModeratedBy  { get; init; }

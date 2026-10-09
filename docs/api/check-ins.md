@@ -5,25 +5,23 @@ Full current response files and slug examples are in [check-ins-examples.md](che
 The application-wide chronological publication feed is [GET /api/v1/feed](feed.md).
 It reuses check-in cards and actions, with a separate publication-time cursor.
 
-`/api/v1/check-ins` is the sole supported visit API. Text is required (1–1,000 nonblank characters after trimming), together with three integer scores from 1 through 5: coffee, service and place. Author identity comes from the authenticated account. Drink and photos are optional.
+`/api/v1/check-ins` is the sole supported visit API. Only the selected coffee shop (`coffeeShopSlug`) and visit date (`visitedAt`) are required. Text, rating, drink and photos are optional for both Private and Public visits. Author identity comes from the authenticated account.
 
 ```json
 {
   "coffeeShopSlug": "example-coffee",
-  "text": "A good visit",
-  "rating": { "coffee": 4, "service": 5, "place": 3 },
-  "visibility": 0
+  "visitedAt": "2026-10-01T09:00:00Z"
 }
 ```
 
-Visibility defaults to `0` (`Private`, author only); `1` (`Public`) requests moderation before publication. Optional `visitedAt` defaults to now and is normalized to UTC. Optional `drinkSlug` selects an active catalog drink and freezes its Russian/English names. `drinkSlug: "other"` requires a trimmed `customDrinkName` of at most 100 characters; other selections must omit the custom name. Omitting both leaves the drink empty. Optional `photos` contains at most five distinct `UploadedPhotoDto` objects from the private `/api/Photos/check-in` upload flow. Media verifies ownership, actual uploaded bytes, supported raster MIME and unused metadata; client filename, MIME and size fields do not authorize attachment.
+Visibility defaults to `0` (`Private`, author only); `1` (`Public`) requests moderation before publication. Required `visitedAt` is normalized to UTC; missing/null, invalid or future dates are rejected (the existing clock-skew tolerance applies). Optional text is trimmed and limited to 1,000 characters; missing/null or blank text is stored as an empty string. Omitted/null rating is returned as `null`; when supplied, it must contain all three integer scores (`coffee`, `service`, `place`) from 1 through 5. Optional `drinkSlug` selects an active catalog drink and freezes its Russian/English names. `drinkSlug: "other"` requires a trimmed `customDrinkName` of at most 100 characters; other selections must omit the custom name. Omitting both leaves the drink empty. Optional `photos` contains at most five distinct `UploadedPhotoDto` objects from the private `/api/Photos/check-in` upload flow. Media verifies ownership, actual uploaded bytes, supported raster MIME and unused metadata; client filename, MIME and size fields do not authorize attachment.
 
 | Method and path | Behavior |
 | --- | --- |
-| `POST /api/v1/check-ins` | Create a complete visit with either visibility. |
+| `POST /api/v1/check-ins` | Create a visit with either visibility; only shop and date are required. |
 | `GET /api/v1/check-ins/mine` | Author history; `pageNumber`, `pageSize` (max 100), optional half-open UTC visit range `from`/`to`; pagination headers included. |
 | `GET /api/v1/check-ins/{id}` | Author reads their current visit; other readers see only current approved public content. Inaccessible and deleted IDs return 404. |
-| `PUT /api/v1/check-ins/{id}` | Replace text, all scores and optional drink; preserve identity, visit time and ordered photos. Advance the revision and withdraw previous public approval. |
+| `PUT /api/v1/check-ins/{id}` | Replace optional text, rating and drink; omitted/null values clear those fields. Preserve identity, visit time and ordered photos. Advance the revision and withdraw previous public approval. |
 | `PUT /api/v1/check-ins/{id}/visibility` | Body `{"visibility":0}` or `{"visibility":1}`. Public visibility submits the current revision; repeating the current visibility is a no-op. |
 | `DELETE /api/v1/check-ins/{id}` | Author soft deletion; remove public eligibility and rating contribution immediately. |
 | `GET /api/v1/check-ins` | Public cursor feed; optional `citySlug`, `coffeeShopSlug`, `authorSlug`, `pageSize` (1–100) and opaque `cursor`. |
@@ -34,13 +32,15 @@ Visibility defaults to `0` (`Private`, author only); `1` (`Public`) requests mod
 
 Responses use the existing `Response<T>` envelope. Enums serialize by name (`Private`/`Public`, `NotSubmitted`/`Pending`/`Approved`/`Rejected`); numeric request values are also accepted. A visit exposes `id`, `contentRevision`, visibility, moderation state, text, scores, optional frozen drink names, shop/author public addresses, ordered protected photo URLs, helpful count and current reader vote. Rejection details are author-only. Mutable content and byte responses use no-store caching.
 
+Apply the `OptionalCheckInContent` migrations to both Shops and Moderation before deploying this contract. Existing text and scores are preserved. Clients must accept `rating: null` and include `visitedAt` on creation. Rolling back to mandatory content requires every stored visit and snapshot to have nonblank text and all scores; the rollback does not invent missing scores.
+
 Creation enforces a three-hour cooldown per author and coffee shop: a recent check-in does not prevent visiting a different shop. The daily limit of six visits applies per author across all shops. Each successful canonical creation emits one persisted creation notification for Account `CheckInCount`; rejected creation does not emit it. There is no separate review counter. A photo set is single use: retrying exactly the same upload keys retains the canonical reservation identity after a lost Media reply. An already committed reservation returns 409. Ambiguous saves retain the reservation so compensation cannot release another concurrent attempt's bytes.
 
-Only approval of the current public revision publishes a visit. Stale, duplicate or reordered decisions cannot publish hidden, deleted or edited content. The shop rating selects the latest eligible public score per author/shop by `VisitedAt`, then `CreatedAtUtc`, then canonical ID, descending. Public `CheckIns` and `CheckInCount` include every eligible visit; hiding or deleting the latest score falls back to the previous eligible score.
+Only approval of the current public revision publishes a visit. Stale, duplicate or reordered decisions cannot publish hidden, deleted or edited content. The shop rating selects the latest eligible public score per author/shop by `VisitedAt`, then `CreatedAtUtc`, then canonical ID, descending. Visits without a rating do not affect averages or replace an earlier score. Public `CheckIns` and `CheckInCount` include every eligible visit, including visits without text or scores; hiding, deleting or clearing the latest score falls back to the previous eligible score.
 
 ## Moderation
 
-The moderator policy protects every `/api/v1/moderation/check-ins` action. Snapshot records have a required canonical `checkInId`, `contentRevision`, text, three scores and visit time. Snapshots are immutable; moderators change their status.
+The moderator policy protects every `/api/v1/moderation/check-ins` action. Snapshot records have a required canonical `checkInId`, `contentRevision` and visit time. Text can be empty and rating can be null. Snapshots are immutable; moderators change their status.
 
 | Method and path | Behavior |
 | --- | --- |

@@ -10,7 +10,7 @@ public sealed record PublicCheckInDto
     public string Username { get; init; } = "";
     public string ShopName { get; init; } = "";
     public string Text { get; init; } = "";
-    public RatingDto Rating { get; init; } = new();
+    public RatingDto? Rating { get; init; }
     public DateTime VisitedAt { get; init; }
     public DateTime CreatedAtUtc { get; init; }
     public CheckInVisibility Visibility { get; init; }

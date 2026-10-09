@@ -16,7 +16,7 @@ public static class CheckInEligibility
     // NOT EXISTS selects the deterministic latest eligible score without client grouping or N+1 queries.
     public static IQueryable<CheckIn> LatestRatings(ShopsDbContext db)
     {
-        var eligible = Public(db);
+        var eligible = Public(db).Where(c => c.Rating != null);
         return eligible.Where(c => !eligible.Any(n => n.UserId == c.UserId && n.ShopId == c.ShopId
             && (n.VisitedAt > c.VisitedAt || (n.VisitedAt == c.VisitedAt && n.CreatedAtUtc > c.CreatedAtUtc)
                 || (n.VisitedAt == c.VisitedAt && n.CreatedAtUtc == c.CreatedAtUtc && n.Id.CompareTo(c.Id) > 0))));

@@ -14,11 +14,18 @@ public class UnifiedCheckInTests
     [InlineData("")]
     [InlineData("  ")]
     [InlineData(null)]
-    public void BlankTextIsRejectedForBothVisibilities(string? text)
+    public void DateOnlyContentIsAcceptedForBothVisibilities(string? text)
     {
         foreach (var visibility in Enum.GetValues<CheckInVisibility>())
-            Assert.Throws<DomainException>(() => CheckIn.CreateUnified(Guid.NewGuid(), Guid.NewGuid(),
-                "author", text!, Rating.Create(1, 1, 1), DateTime.UtcNow, visibility));
+        {
+            var checkIn = CheckIn.CreateUnified(Guid.NewGuid(), Guid.NewGuid(), "author", text, null,
+                DateTime.UtcNow, visibility);
+            Assert.Equal("", checkIn.Note);
+            Assert.Null(checkIn.Rating);
+            checkIn.UpdateContent(null, null);
+            Assert.Equal("", checkIn.Note);
+            Assert.Null(checkIn.Rating);
+        }
     }
 
     [Fact]
@@ -49,7 +56,7 @@ public class UnifiedCheckInTests
         Assert.Throws<DomainException>(() => Rating.Create(1, 6, 1));
         Assert.Throws<DomainException>(() => Rating.Create(1, 1, 0));
         Assert.Throws<DomainException>(() => CheckIn.CreateUnified(Guid.NewGuid(), Guid.NewGuid(), "author",
-            "x", null!, DateTime.UtcNow));
+            null, null, default));
         Assert.Throws<DomainException>(() => CheckIn.CreateUnified(Guid.NewGuid(), Guid.NewGuid(), "author",
             "x", Rating.Create(1, 1, 1), DateTime.UtcNow, (CheckInVisibility)2));
         Assert.Throws<DomainException>(() => CheckIn.CreateUnified(Guid.NewGuid(), Guid.NewGuid(), "author",

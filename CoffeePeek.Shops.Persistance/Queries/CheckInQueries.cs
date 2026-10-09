@@ -22,7 +22,7 @@ public class CheckInQueries(ShopsDbContext dbContext) : ICheckInQueries
     public async Task<(decimal AverageRating, int Count)> GetStatsByShopAsync(Guid shopId, CancellationToken ct = default)
     {
         var average = await CheckInEligibility.LatestRatings(dbContext).Where(c => c.ShopId == shopId)
-            .AverageAsync(c => (decimal?)c.Rating.AverageRating, ct) ?? 0m;
+            .AverageAsync(c => (decimal?)c.Rating!.AverageRating, ct) ?? 0m;
         var count = await CheckInEligibility.Public(dbContext).CountAsync(c => c.ShopId == shopId, ct);
         return (Math.Round(average, 2), count);
     }

@@ -112,7 +112,7 @@ public sealed partial class DiscoveryQueryStore
         {
             Shop = s,
             Rating = CheckInEligibility.LatestRatings(db).Where(r => r.ShopId == s.Id)
-                .Select(r => (decimal?)((r.Rating.Place + r.Rating.Coffee + r.Rating.Service) / 3m)).Average() ?? 0,
+                .Select(r => (decimal?)((r.Rating!.Place + r.Rating.Coffee + r.Rating.Service) / 3m)).Average() ?? 0,
             Distance = hasOrigin && s.Location.Latitude.HasValue && s.Location.Longitude.HasValue ?
                 12742000 * Math.Asin(Math.Sqrt(Math.Min(1.0,
                     Math.Pow(Math.Sin(((double)s.Location.Latitude.Value - latitude) * Math.PI / 360), 2) +

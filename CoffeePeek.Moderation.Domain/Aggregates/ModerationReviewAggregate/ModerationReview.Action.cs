@@ -8,13 +8,13 @@ namespace CoffeePeek.Moderation.Domain.Aggregates.ModerationReviewAggregate;
 public partial class ModerationReview
 {
     public static ModerationReview CreateCheckInSnapshot(Guid checkInId, int contentRevision,
-        Guid userId, Guid shopId, string userName, string text, int place, int service, int coffee,
+        Guid userId, Guid shopId, string userName, string? text, int? place, int? service, int? coffee,
         DrinkSelection? drink, DateTime visitedAtUtc, List<PhotoMetadata> photos)
     {
         if (checkInId == Guid.Empty || userId == Guid.Empty || shopId == Guid.Empty || contentRevision < 1)
             throw new DomainException("A check-in snapshot requires valid identity and revision.");
-        if (string.IsNullOrWhiteSpace(text) || text.Trim().Length > BusinessConstants.MaxCheckInTextLength)
-            throw new DomainException($"Check-in text is required and must not exceed {BusinessConstants.MaxCheckInTextLength} characters.");
+        if (text?.Trim().Length > BusinessConstants.MaxCheckInTextLength)
+            throw new DomainException($"Check-in text must not exceed {BusinessConstants.MaxCheckInTextLength} characters.");
         if (drink is not null && (string.IsNullOrWhiteSpace(drink.Slug) || drink.Slug.Length > DrinkSelection.MaxSlugLength ||
             string.IsNullOrWhiteSpace(drink.NameRu) || drink.NameRu.Length > DrinkSelection.MaxNameLength ||
             string.IsNullOrWhiteSpace(drink.NameEn) || drink.NameEn.Length > DrinkSelection.MaxNameLength ||
@@ -27,8 +27,10 @@ public partial class ModerationReview
         if (photos is null || photos.Any(p => p.CheckInPhotoId is null || p.CheckInPhotoId == Guid.Empty || p.OwnerId != userId))
             throw new DomainException("Snapshot photos require canonical identities and the check-in author.");
 
-        return new ModerationReview(checkInId, contentRevision, userId, shopId, userName, text.Trim(),
-            Rating.Create(place, service, coffee), drink, visitedAtUtc, photos);
+        var rating = place == null && service == null && coffee == null
+            ? null : Rating.Create(place ?? 0, service ?? 0, coffee ?? 0);
+        return new ModerationReview(checkInId, contentRevision, userId, shopId, userName, text?.Trim() ?? "",
+            rating, drink, visitedAtUtc, photos);
     }
 
     public bool Approve(Guid moderatorId)

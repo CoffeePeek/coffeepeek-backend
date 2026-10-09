@@ -20,7 +20,7 @@ public partial class ModerationReview : Entity<Guid>
     public DateTime VisitedAtUtc { get; private set; }
     public long DecisionSequence { get; private set; }
 
-    public Rating Rating { get; private set; }
+    public Rating? Rating { get; private set; }
 
     public string? RejectedReason { get; private set; }
     public Guid? ModeratedBy { get; private set; }
@@ -40,7 +40,7 @@ public partial class ModerationReview : Entity<Guid>
     }
 
     private ModerationReview(Guid checkInId, int contentRevision, Guid userId, Guid shopId, string userName,
-        string comment, Rating rating, DrinkSelection? drink, DateTime visitedAtUtc, List<PhotoMetadata> photos)
+        string comment, Rating? rating, DrinkSelection? drink, DateTime visitedAtUtc, List<PhotoMetadata> photos)
     {
         Id = Guid.NewGuid();
         UserId = userId;

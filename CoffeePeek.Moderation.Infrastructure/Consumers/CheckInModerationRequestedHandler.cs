@@ -20,7 +20,7 @@ public static class CheckInModerationRequestedHandler
             return;
         }
 
-        if (message.Rating is null || message.Photos is null ||
+        if (message.Photos is null ||
             message.Photos.Select(p => p.Id).Distinct().Count() != message.Photos.Length ||
             message.Photos.Select(p => p.SortIndex).Distinct().Count() != message.Photos.Length ||
             message.Photos.Select(p => p.StorageKey).Distinct(StringComparer.Ordinal).Count() != message.Photos.Length)
@@ -35,7 +35,7 @@ public static class CheckInModerationRequestedHandler
                 p.StorageKey, p.SizeBytes, message.UserId)).ToList();
         var review = ModerationReview.CreateCheckInSnapshot(message.CheckInId, message.ContentRevision,
             message.UserId, message.ShopId, message.Username, message.Text,
-            message.Rating.Place, message.Rating.Service, message.Rating.Coffee,
+            message.Rating?.Place, message.Rating?.Service, message.Rating?.Coffee,
             drink, message.VisitedAtUtc, photos);
         repository.Add(review);
         // Existing xmin concurrency + durable EF outbox retry the entire handler after unique-key races.
