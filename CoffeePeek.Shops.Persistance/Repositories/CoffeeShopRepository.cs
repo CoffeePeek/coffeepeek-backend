@@ -82,10 +82,11 @@ public class CoffeeShopRepository(ShopsDbContext dbContext) : ICoffeeShopReposit
         var existingKeys = alreadyAttached.ToHashSet(StringComparer.Ordinal);
 
         var nextIndex = maxSort + 1;
-        foreach (var photo in photos)
+        foreach (var input in photos)
         {
-            if (existingKeys.Contains(photo.StorageKey)) continue;
-            photo.SetSortIndex(nextIndex++);
+            if (!existingKeys.Add(input.StorageKey)) continue;
+            var photo = new ShopPhoto(input.FileName, input.ContentType, input.StorageKey, input.SizeBytes,
+                input.OwnerId, nextIndex++, input.Id);
             dbContext.ShopPhotos.Add(photo);
             dbContext.Entry(photo).Property(CoffeeShopIdShadow).CurrentValue = shopId;
         }

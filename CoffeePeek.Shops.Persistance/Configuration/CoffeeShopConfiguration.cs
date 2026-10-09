@@ -117,6 +117,7 @@ public class CoffeeShopConfiguration : IEntityTypeConfiguration<CoffeeShop>
                 intervals.Property(i => i.OpenTime).HasColumnName(nameof(ShopScheduleInterval.OpenTime)).IsRequired();
                 intervals.Property(i => i.CloseTime).HasColumnName(nameof(ShopScheduleInterval.CloseTime)).IsRequired();
             });
+            schedules.Navigation(sc => sc.Intervals).HasField("_intervals").UsePropertyAccessMode(PropertyAccessMode.Field);
         });
 
         #endregion

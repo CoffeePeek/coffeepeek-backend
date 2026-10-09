@@ -275,11 +275,20 @@ public sealed class CoffeeShop : Entity<Guid>, IPublicSlugOwner
     
     public void AddPhotos(IEnumerable<ShopPhoto> photos)
     {
+        ArgumentNullException.ThrowIfNull(photos);
+        var additions = photos.ToArray();
+        var combined = _shopPhotos.Concat(additions).ToArray();
+        if (additions.Any(p => p is null || p.Id == Guid.Empty) ||
+            combined.Select(p => p.Id).Distinct().Count() != combined.Length ||
+            combined.Select(p => p.StorageKey).Distinct(StringComparer.Ordinal).Count() != combined.Length)
+            throw new DomainException("Gallery photos must have distinct IDs and storage keys.");
+        if (additions.Length == 0) return;
         var nextIndex = _shopPhotos.Count == 0
             ? 0
-            : _shopPhotos.Max(p => p.SortIndex) + 1;
+            : checked(_shopPhotos.Max(p => p.SortIndex) + 1);
+        _ = checked(nextIndex + additions.Length - 1);
 
-        foreach (var photo in photos)
+        foreach (var photo in additions)
         {
             photo.SetSortIndex(nextIndex++);
             _shopPhotos.Add(photo);
@@ -424,7 +433,8 @@ public sealed class CoffeeShop : Entity<Guid>, IPublicSlugOwner
     
     public void AddSchedule(List<ShopSchedule> schedule)
     {
-        _schedules.AddRange(schedule);
+        ArgumentNullException.ThrowIfNull(schedule);
+        ThrowIfInvalid(ReplaceSchedules([.. _schedules, .. schedule]));
     }
 
     /// <summary>
@@ -437,6 +447,8 @@ public sealed class CoffeeShop : Entity<Guid>, IPublicSlugOwner
             return Result.Fail("Schedule is required.");
 
         var replacement = schedules.ToArray();
+        if (replacement.Any(s => s is null || !Enum.IsDefined(s.DayOfWeek) || s.Intervals.Any(i => i is null)))
+            return Result.Fail("Schedule contains an invalid day or interval.");
         var days = replacement.Select(s => s.DayOfWeek).ToList();
         if (days.Distinct().Count() != days.Count)
             return Result.Fail("Schedule contains duplicate days of week.");

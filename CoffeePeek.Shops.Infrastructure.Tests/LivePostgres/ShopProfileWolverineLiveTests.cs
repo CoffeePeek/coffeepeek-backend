@@ -38,6 +38,25 @@ public sealed class ShopProfileWolverineLiveTests : IClassFixture<ShopsLiveDatab
         this.fixture = fixture;
     }
 
+    [Fact]
+    public async Task ScheduleIntervals_RoundTripThroughBackingField_AndRemainDetachedAndReadOnly()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var intervals = new List<ShopScheduleInterval> { ShopScheduleInterval.Create(TimeSpan.FromHours(8), TimeSpan.FromHours(18)) };
+        var shop = new CoffeeShop(null, "Protected schedule", null, PriceRange.Moderate, Guid.NewGuid());
+        shop.AddSchedule([ShopSchedule.Create(DayOfWeek.Monday, false, intervals)]);
+        intervals.Clear();
+        await using (var seed = fixture.Context(false)) { seed.Shops.Add(shop); await seed.SaveChangesAsync(ct); }
+        await using var read = fixture.Context(false);
+        var loaded = await read.Shops.SingleAsync(s => s.Id == shop.Id, ct);
+        var schedule = Assert.Single(loaded.Schedules);
+        Assert.Equal(TimeSpan.FromHours(8), Assert.Single(schedule.Intervals).OpenTime);
+        Assert.Throws<NotSupportedException>(() => schedule.Intervals.Clear());
+        await read.SaveChangesAsync(ct);
+        await using var verify = fixture.Context(false);
+        Assert.Single(Assert.Single((await verify.Shops.SingleAsync(s => s.Id == shop.Id, ct)).Schedules).Intervals);
+    }
+
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
