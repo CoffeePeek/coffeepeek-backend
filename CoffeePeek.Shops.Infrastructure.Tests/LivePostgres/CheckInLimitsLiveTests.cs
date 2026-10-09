@@ -1,4 +1,3 @@
-using CoffeePeek.Contract.Dtos;
 using CoffeePeek.Contract.Dtos.CheckIns;
 using CoffeePeek.Shared.Kernel;
 using CoffeePeek.Shared.Kernel.Drinks;
@@ -80,7 +79,7 @@ public sealed class CheckInLimitsLiveTests : IClassFixture<ShopsLiveDatabase>
                 .Returns((CancellationToken token) => db.SaveChangesAsync(token));
             try
             {
-                var request = new CreateUnifiedCheckInRequest(shopId, "new", new RatingDto { Place = 4, Service = 4, Coffee = 4 });
+                var request = new CreateUnifiedCheckInRequest(shopId, VisitedAt: DateTimeOffset.UtcNow);
                 var response = await CreateUnifiedCheckInHandler.Handle(new(request, user, "author"),
                     new QueryCheckInRepository(db), shopReader.Object, Mock.Of<IDrinkCatalog>(),
                     Mock.Of<IUploadedPhotoLookup>(), uow.Object, Mock.Of<IMessageBus>(), ct);

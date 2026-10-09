@@ -5,6 +5,7 @@ using CoffeePeek.Shared.Kernel.Options;
 using CoffeePeek.Shops.Persistance.Configuration;
 using CoffeeShop.Moderation.Persistence.Configuration;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.Extensions.Options;
@@ -31,10 +32,10 @@ public static class LegacyMigrationRunner
         var media = new MigrationDatabase(mediaConnection);
         // Serializes migration runners. Writers must additionally be stopped by the deploy script.
         await shops.ExecuteAsync("SELECT pg_advisory_lock(76291007)");
-        await using var accountContext = new AccountDbContext(new DbContextOptionsBuilder<AccountDbContext>().UseNpgsql(settings.Account).Options);
-        await using var shopsContext = new ShopsDbContext(new DbContextOptionsBuilder<ShopsDbContext>().UseNpgsql(settings.Shops).Options);
-        await using var moderationContext = new ModerationDbContext(new DbContextOptionsBuilder<ModerationDbContext>().UseNpgsql(settings.Moderation).Options);
-        await using var mediaContext = new MediaDbContext(new DbContextOptionsBuilder<MediaDbContext>().UseNpgsql(settings.Media).Options);
+        await using var accountContext = new AccountDbContext(new DbContextOptionsBuilder<AccountDbContext>().UseNpgsql(settings.Account).LogTo(Console.WriteLine, [RelationalEventId.MigrationApplying]).Options);
+        await using var shopsContext = new ShopsDbContext(new DbContextOptionsBuilder<ShopsDbContext>().UseNpgsql(settings.Shops).LogTo(Console.WriteLine, [RelationalEventId.MigrationApplying]).Options);
+        await using var moderationContext = new ModerationDbContext(new DbContextOptionsBuilder<ModerationDbContext>().UseNpgsql(settings.Moderation).LogTo(Console.WriteLine, [RelationalEventId.MigrationApplying]).Options);
+        await using var mediaContext = new MediaDbContext(new DbContextOptionsBuilder<MediaDbContext>().UseNpgsql(settings.Media).LogTo(Console.WriteLine, [RelationalEventId.MigrationApplying]).Options);
         Console.WriteLine("Preparing canonical schema in four databases.");
         await PrepareAsync(accountContext, "20261007132511_RetireReviewCountOnMain", "20261007160000_RemoveLegacyReviewCounter");
         await PrepareAsync(shopsContext, "20261007133435_CanonicalCheckInsOnMain", "20261007160000_RemoveLegacyCheckInArchives");
