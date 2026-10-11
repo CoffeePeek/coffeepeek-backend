@@ -287,6 +287,8 @@ services:
       MinIOOptions__BucketName: coffeepeek.shops
       YandexApiOptions__ApiKey: ${YANDEX_GEOCODER_API_KEY:-}
       GooglePlaces__ApiKey: ${GOOGLE_PLACES_API_KEY:-}
+      TelegramModeration__BotToken: ${TELEGRAM_MODERATION_BOT_TOKEN:-}
+      TelegramModeration__ChatId: ${TELEGRAM_MODERATION_CHAT_ID:-}
       Sentry__Dsn: ${SENTRY_DSN_MODERATION:-}
     mem_limit: 1536m
     memswap_limit: 1536m

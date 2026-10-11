@@ -1,4 +1,5 @@
 using CoffeePeek.Contract.Events.Shops;
+using CoffeePeek.Contract.Events.Moderation;
 using CoffeePeek.Moderation.Domain.Aggregates.ModerationReviewAggregate;
 using CoffeePeek.Moderation.Domain.Entities;
 using CoffeePeek.Shared.Kernel;
@@ -9,7 +10,7 @@ namespace CoffeePeek.Moderation.Infrastructure.Consumers;
 
 public static class CheckInModerationRequestedHandler
 {
-    public static async Task Handle(CheckInModerationRequestedEvent message,
+    public static async Task<ModerationSubmissionCreated?> Handle(CheckInModerationRequestedEvent message,
         IModerationReviewRepository repository, IUnitOfWork unitOfWork, CancellationToken ct)
     {
         var existing = await repository.GetByCheckInRevision(message.CheckInId, message.ContentRevision, ct);
@@ -17,7 +18,7 @@ public static class CheckInModerationRequestedHandler
         {
             if (existing.UserId != message.UserId || existing.ShopId != message.ShopId)
                 throw new DomainException("The check-in revision has conflicting ownership.");
-            return;
+            return null;
         }
 
         if (message.Photos is null ||
@@ -40,5 +41,7 @@ public static class CheckInModerationRequestedHandler
         repository.Add(review);
         // Existing xmin concurrency + durable EF outbox retry the entire handler after unique-key races.
         await unitOfWork.SaveChangesAsync(ct);
+        return new ModerationSubmissionCreated(ModerationSubmissionKind.CheckIn, review.Id, message.UserId,
+            message.Username, message.ShopId, message.Text);
     }
 }

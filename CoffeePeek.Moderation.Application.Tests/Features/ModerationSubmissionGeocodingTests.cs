@@ -1,4 +1,5 @@
 using CoffeePeek.Moderation.Application.Abstractions;
+using CoffeePeek.Contract.Events.Moderation;
 using CoffeePeek.Moderation.Application.Features.Geocoding;
 using CoffeePeek.Moderation.Application.Features.Roaster.SubmitRoaster;
 using CoffeePeek.Moderation.Application.Features.Shop.CreateShop;
@@ -26,7 +27,7 @@ public class ModerationSubmissionGeocodingTests
             Name = "Cafe", Address = "Exact address", CityId = Guid.NewGuid()
         };
 
-        var (response, parseMenu, geocode) = await SendCoffeeShopToModerationHandler.Handle(
+        var (response, parseMenu, geocode, notification) = await SendCoffeeShopToModerationHandler.Handle(
             command, repository.Object, creation.Object,
             NullLogger<SendCoffeeShopToModerationCommand>.Instance, _ct);
 
@@ -35,6 +36,8 @@ public class ModerationSubmissionGeocodingTests
         response.Message.Should().Contain("pending");
         parseMenu.Should().BeNull();
         geocode.Should().Be(new ModerationGeocodingRequested(ModerationGeocodingKind.Shop, id, command.Address));
+        notification.Should().Be(new ModerationSubmissionCreated(ModerationSubmissionKind.Shop, id,
+            command.UserId, command.Name, Details: command.Address));
         creation.Verify(x => x.Create(command, _ct), Times.Once);
     }
 
@@ -48,11 +51,12 @@ public class ModerationSubmissionGeocodingTests
         var uow = new Mock<IUnitOfWork>();
         var command = new SubmitRoasterCommand { Name = "Roaster", Address = address, CityId = Guid.NewGuid() };
 
-        var (response, request) = await SubmitRoasterHandler.Handle(command, repository.Object,
+        var (response, request, notification) = await SubmitRoasterHandler.Handle(command, repository.Object,
             lookup.Object, uow.Object, NullLogger<SubmitRoasterCommand>.Instance, _ct);
 
         response.Data!.IsAddressValidated.Should().BeFalse();
         request.Should().BeNull();
+        notification.Should().NotBeNull();
     }
 
     [Fact]
@@ -67,7 +71,7 @@ public class ModerationSubmissionGeocodingTests
         var uow = new Mock<IUnitOfWork>();
         var command = new SubmitRoasterCommand { Name = "Roaster", Address = "Exact address", CityId = Guid.NewGuid() };
 
-        var (response, request) = await SubmitRoasterHandler.Handle(command, repository.Object,
+        var (response, request, notification) = await SubmitRoasterHandler.Handle(command, repository.Object,
             lookup.Object, uow.Object, NullLogger<SubmitRoasterCommand>.Instance, _ct);
 
         saved!.Location!.IsAddressValidated.Should().BeFalse();
@@ -75,5 +79,7 @@ public class ModerationSubmissionGeocodingTests
         response.Message.Should().Contain("pending");
         request.Should().Be(new ModerationGeocodingRequested(
             ModerationGeocodingKind.Roaster, saved.Id, command.Address!));
+        notification.Should().Be(new ModerationSubmissionCreated(ModerationSubmissionKind.Roaster,
+            saved.Id, command.UserId, command.Name, Details: command.Address));
     }
 }

@@ -59,7 +59,7 @@ namespace Internal.Generated.WolverineHandlers
                 System.Diagnostics.Activity.Current?.SetTag("handler.type", "CoffeePeek.Moderation.Application.Features.Roaster.SubmitRoaster.SubmitRoasterHandler");
 
                 // The actual message execution
-                (var outgoing1, var outgoing2) = await CoffeePeek.Moderation.Application.Features.Roaster.SubmitRoaster.SubmitRoasterHandler.Handle(submitRoasterCommand, moderationRoasterRepository, shopsRoasterExistenceLookup, unitOfWorkOfModerationDbContext, _loggerForMessage, cancellation).ConfigureAwait(false);
+                (var outgoing1, var outgoing2, var outgoing3) = await CoffeePeek.Moderation.Application.Features.Roaster.SubmitRoaster.SubmitRoasterHandler.Handle(submitRoasterCommand, moderationRoasterRepository, shopsRoasterExistenceLookup, unitOfWorkOfModerationDbContext, _loggerForMessage, cancellation).ConfigureAwait(false);
 
 
                 // Outgoing, cascaded message
@@ -68,6 +68,10 @@ namespace Internal.Generated.WolverineHandlers
 
                 // Outgoing, cascaded message
                 await context.EnqueueCascadingAsync(outgoing2).ConfigureAwait(false);
+
+
+                // Outgoing, cascaded message
+                await context.EnqueueCascadingAsync(outgoing3).ConfigureAwait(false);
 
 
                 // Added by EF Core Transaction Middleware

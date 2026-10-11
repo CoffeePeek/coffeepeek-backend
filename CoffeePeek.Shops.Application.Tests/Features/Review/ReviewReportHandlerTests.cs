@@ -75,11 +75,13 @@ public class ReviewReportHandlerTests
         var checkIn = PublishedCheckIn(migrated ? LegacyReviewId : null);
         var user = Guid.NewGuid();
         _checkIns.Setup(x => x.GetTrackedByIdAsync(checkIn.Id, _ct)).ReturnsAsync(checkIn);
-        var result = await SubmitReviewReportHandler.Handle(new(checkIn.Id, user, "  abuse  "),
+        var (result, notification) = await SubmitReviewReportHandler.Handle(new(checkIn.Id, user, "  abuse  "),
             _reports.Object, _checkIns.Object, _ct);
         result.Data.Text.Should().Be("abuse");
         result.Data.ReportedByUserId.Should().Be(user);
         result.Data.CheckInId.Should().Be(checkIn.Id);
+        notification.SubmissionId.Should().Be(result.Data.Id);
+        notification.RelatedId.Should().Be(checkIn.Id);
         _reports.Verify(x => x.Add(It.Is<ReviewReport>(r => r.CheckInId == checkIn.Id)), Times.Once);
     }
 

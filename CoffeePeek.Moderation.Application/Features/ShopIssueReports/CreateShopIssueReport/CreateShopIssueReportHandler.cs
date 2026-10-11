@@ -1,3 +1,4 @@
+using CoffeePeek.Contract.Events.Moderation;
 using CoffeePeek.Moderation.Domain.Aggregates.ShopIssueReportAggregate;
 using CoffeePeek.Moderation.Domain.Common.Enums;
 using CoffeePeek.Shared.Kernel;
@@ -7,7 +8,7 @@ namespace CoffeePeek.Moderation.Application.Features.ShopIssueReports.CreateShop
 
 public static class CreateShopIssueReportHandler
 {
-    public static async Task<CreateEntityResponse> Handle(
+    public static async Task<(CreateEntityResponse, ModerationSubmissionCreated)> Handle(
         CreateShopIssueReportCommand command,
         IShopIssueReportRepository repository,
         IUnitOfWork unitOfWork,
@@ -23,6 +24,8 @@ public static class CreateShopIssueReportHandler
 
         await unitOfWork.SaveChangesAsync(ct);
 
-        return CreateEntityResponse.Success(entityId: report.Id);
+        return (CreateEntityResponse.Success(entityId: report.Id),
+            new ModerationSubmissionCreated(ModerationSubmissionKind.ShopIssue, report.Id, command.UserId,
+                command.Category.ToString(), command.ShopId, command.Description));
     }
 }

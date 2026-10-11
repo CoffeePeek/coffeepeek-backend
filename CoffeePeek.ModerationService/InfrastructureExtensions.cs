@@ -3,6 +3,7 @@ using CoffeePeek.Moderation.Application.Abstractions;
 using CoffeePeek.Moderation.Application.Features.Shop.CreateShop;
 using CoffeePeek.Moderation.Infrastructure;
 using CoffeePeek.Moderation.Infrastructure.Consumers;
+using CoffeePeek.Moderation.Infrastructure.Notifications;
 using CoffeePeek.Shared.Persistence.Extensions;
 using CoffeePeek.Shared.Web.Logging;
 using CoffeeShop.Moderation.Persistence;
@@ -25,7 +26,7 @@ public static class InfrastructureExtensions
         builder.AddWolverine(
             typeof(InfrastructureExtensions).Assembly,
             [applicationAssembly, infrastructureAssembly],
-            [typeof(ModerationDbContext), typeof(IYandexGeocodingService), typeof(IGooglePlacesLookup), typeof(IOverpassClient)]);
+            [typeof(ModerationDbContext), typeof(IYandexGeocodingService), typeof(IGooglePlacesLookup), typeof(IOverpassClient), typeof(TelegramModerationClient)]);
 
         builder.Services
             .AddApplication()

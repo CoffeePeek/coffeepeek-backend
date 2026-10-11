@@ -47,11 +47,15 @@ namespace Internal.Generated.WolverineHandlers
                 System.Diagnostics.Activity.Current?.SetTag("handler.type", "CoffeePeek.Shops.Application.Features.Review.Reports.SubmitReviewReportHandler");
 
                 // The actual message execution
-                var outgoing1 = await CoffeePeek.Shops.Application.Features.Review.Reports.SubmitReviewReportHandler.Handle(submitReviewReportCommand, reviewReportRepository, queryCheckInRepository, cancellation).ConfigureAwait(false);
+                (var outgoing1, var outgoing2) = await CoffeePeek.Shops.Application.Features.Review.Reports.SubmitReviewReportHandler.Handle(submitReviewReportCommand, reviewReportRepository, queryCheckInRepository, cancellation).ConfigureAwait(false);
 
 
                 // Outgoing, cascaded message
                 await context.EnqueueCascadingAsync(outgoing1).ConfigureAwait(false);
+
+
+                // Outgoing, cascaded message
+                await context.EnqueueCascadingAsync(outgoing2).ConfigureAwait(false);
 
 
                 // Added by EF Core Transaction Middleware

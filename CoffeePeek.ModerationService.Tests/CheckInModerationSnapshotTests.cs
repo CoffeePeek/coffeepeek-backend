@@ -55,9 +55,9 @@ public class CheckInModerationSnapshotTests
         var unitOfWork = new TestUnitOfWork(db);
         var request = Request(Guid.NewGuid(), 1, Guid.NewGuid(), Guid.NewGuid());
 
-        await CheckInModerationRequestedHandler.Handle(request, repository, unitOfWork, _ct);
-        await CheckInModerationRequestedHandler.Handle(request, repository, unitOfWork, _ct);
-        await CheckInModerationRequestedHandler.Handle(request with { ContentRevision = 2, Text = "Second" },
+        var firstNotification = await CheckInModerationRequestedHandler.Handle(request, repository, unitOfWork, _ct);
+        var duplicateNotification = await CheckInModerationRequestedHandler.Handle(request, repository, unitOfWork, _ct);
+        var revisedNotification = await CheckInModerationRequestedHandler.Handle(request with { ContentRevision = 2, Text = "Second" },
             repository, unitOfWork, _ct);
         var snapshots = await db.ModerationReviews.Include(r => r.ReviewPhotos).ToArrayAsync(_ct);
 
@@ -66,6 +66,9 @@ public class CheckInModerationSnapshotTests
             .OnlyContain(id => id == request.Photos[0].Id);
         snapshots.SelectMany(r => r.ReviewPhotos).Select(p => p.Id).Distinct().Should().HaveCount(2);
         unitOfWork.Saves.Should().Be(2);
+        firstNotification!.Kind.Should().Be(CoffeePeek.Contract.Events.Moderation.ModerationSubmissionKind.CheckIn);
+        duplicateNotification.Should().BeNull();
+        revisedNotification!.SubmissionId.Should().NotBe(firstNotification.SubmissionId);
 
         Func<Task> conflict = () => CheckInModerationRequestedHandler.Handle(request with { UserId = Guid.NewGuid() },
             repository, unitOfWork, _ct);

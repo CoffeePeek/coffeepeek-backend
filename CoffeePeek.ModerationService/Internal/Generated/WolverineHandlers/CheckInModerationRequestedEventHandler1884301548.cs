@@ -47,7 +47,11 @@ namespace Internal.Generated.WolverineHandlers
                 System.Diagnostics.Activity.Current?.SetTag("handler.type", "CoffeePeek.Moderation.Infrastructure.Consumers.CheckInModerationRequestedHandler");
 
                 // The actual message execution
-                await CoffeePeek.Moderation.Infrastructure.Consumers.CheckInModerationRequestedHandler.Handle(checkInModerationRequestedEvent, moderationReviewRepository, unitOfWorkOfModerationDbContext, cancellation).ConfigureAwait(false);
+                var outgoing1 = await CoffeePeek.Moderation.Infrastructure.Consumers.CheckInModerationRequestedHandler.Handle(checkInModerationRequestedEvent, moderationReviewRepository, unitOfWorkOfModerationDbContext, cancellation).ConfigureAwait(false);
+
+
+                // Outgoing, cascaded message
+                await context.EnqueueCascadingAsync(outgoing1).ConfigureAwait(false);
 
 
                 // Added by EF Core Transaction Middleware

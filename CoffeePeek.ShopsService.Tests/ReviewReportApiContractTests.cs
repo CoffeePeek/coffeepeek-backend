@@ -120,11 +120,13 @@ public class ReviewReportApiContractTests
             .ReturnsAsync((Guid id, CancellationToken _) => rows.GetValueOrDefault(id));
         reports.Setup(x => x.Add(It.IsAny<ReviewReport>())).Callback<ReviewReport>(row => rows.Add(row.Id, row));
         checkIns.Setup(x => x.GetTrackedByIdAsync(targetId, It.IsAny<CancellationToken>())).ReturnsAsync(target);
+        async Task<Response<ReviewReportDto>> Submit(SubmitReviewReportCommand command) =>
+            (await SubmitReviewReportHandler.Handle(command, reports.Object, checkIns.Object, ct)).Item1;
         var user = new ReportUserContext();
         var bus = DispatchProxy.Create<IMessageBus, RecordingBus>();
         ((RecordingBus)(object)bus).Handler = message => message switch
         {
-            SubmitReviewReportCommand command => SubmitReviewReportHandler.Handle(command, reports.Object, checkIns.Object, ct),
+            SubmitReviewReportCommand command => Submit(command),
             GetReviewReportQuery query => GetReviewReportHandler.Handle(query, reports.Object, checkIns.Object, ct),
             ResolveReviewReportCommand command => ResolveReviewReportHandler.Handle(command, reports.Object, checkIns.Object, uow.Object, outbox.Object, ct),
             _ => throw new InvalidOperationException("Unexpected report message.")
