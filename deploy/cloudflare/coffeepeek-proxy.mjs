@@ -9,12 +9,15 @@ export default {
         return new Response("Unauthorized", { status: 401 });
 
       try {
-        return await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+        const response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
           method: "POST",
           headers: { "content-type": "application/json" },
           body: request.body,
-          redirect: "error",
+          redirect: "manual",
         });
+        if (response.status >= 300 && response.status < 400)
+          return new Response("Telegram upstream redirect refused", { status: 502 });
+        return response;
       } catch {
         // Upstream errors can contain the Bot API URL and its secret token.
         return new Response("Telegram upstream unavailable", { status: 502 });
@@ -27,12 +30,15 @@ export default {
         return new Response("Unauthorized", { status: 401 });
 
       try {
-        return await fetch("https://api.openai.com/v1/chat/completions", {
+        const response = await fetch("https://api.openai.com/v1/chat/completions", {
           method: "POST",
           headers: { "content-type": "application/json", authorization },
           body: request.body,
-          redirect: "error",
+          redirect: "manual",
         });
+        if (response.status >= 300 && response.status < 400)
+          return new Response("OpenAI upstream redirect refused", { status: 502 });
+        return response;
       } catch {
         return new Response("OpenAI upstream unavailable", { status: 502 });
       }

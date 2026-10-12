@@ -35,7 +35,7 @@ test("authenticated Telegram POST forwards only to the fixed Bot API endpoint", 
   const upstream = t.mock.method(globalThis, "fetch", async (url, options) => {
     assert.equal(url, `https://api.telegram.org/bot${token}/sendMessage`);
     assert.equal(options.method, "POST");
-    assert.equal(options.redirect, "error");
+    assert.equal(options.redirect, "manual");
     assert.deepEqual(options.headers, { "content-type": "application/json" });
     assert.deepEqual(await new Response(options.body).json(), { chat_id: "-123", text: "Test notification" });
     return Response.json({ ok: true, result: { message_id: 1 } });
@@ -56,7 +56,7 @@ test("GPT menu parsing forwards authorization, model, photos and structured outp
   t.mock.method(globalThis, "fetch", async (url, options) => {
     assert.equal(url, "https://api.openai.com/v1/chat/completions");
     assert.equal(options.method, "POST");
-    assert.equal(options.redirect, "error");
+    assert.equal(options.redirect, "manual");
     assert.deepEqual(options.headers, { "content-type": "application/json", authorization: "Bearer sk-test" });
     assert.deepEqual(await new Response(options.body).json(), payload);
     return Response.json(result);
@@ -125,4 +125,20 @@ test("network failures do not expose the bot token", async (t) => {
   const response = await worker.fetch(telegramRequest(), env);
   assert.equal(response.status, 502);
   assert.equal(await response.text(), "Telegram upstream unavailable");
+});
+
+test("upstream redirects are neither followed nor returned to credential-bearing clients", async (t) => {
+  const upstream = t.mock.method(globalThis, "fetch", async (_, options) => {
+    assert.equal(options.redirect, "manual");
+    return new Response(null, { status: 307, headers: { location: "https://untrusted.example/" } });
+  });
+  for (const request of [telegramRequest(), new Request(`${origin}/v1/chat/completions`, {
+    method: "POST", headers: { authorization: "Bearer sk-test" }, body: "{}",
+  })]) {
+    const response = await worker.fetch(request, env);
+    assert.equal(response.status, 502);
+    assert.equal(response.headers.get("location"), null);
+    assert.match(await response.text(), /upstream redirect refused$/);
+  }
+  assert.equal(upstream.mock.callCount(), 2);
 });
