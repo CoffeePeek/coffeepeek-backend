@@ -4,7 +4,8 @@ public record ShopSchedule
 {
     public DayOfWeek DayOfWeek { get; private set; }
     public bool IsClosed { get; private set; }
-    public ICollection<ShopScheduleInterval> Intervals { get; private set; }
+    private List<ShopScheduleInterval> _intervals = [];
+    public ICollection<ShopScheduleInterval> Intervals => _intervals.AsReadOnly();
 
     // ReSharper disable once UnusedMember.Local
     private ShopSchedule()
@@ -18,7 +19,8 @@ public record ShopSchedule
     {
         DayOfWeek = dayOfWeek;
         IsClosed = isClosed;
-        Intervals = intervals;
+        ArgumentNullException.ThrowIfNull(intervals);
+        _intervals = intervals.ToList();
     }
 
     public static ShopSchedule Create(DayOfWeek dayOfWeek, bool isClosed, ICollection<ShopScheduleInterval> intervals)

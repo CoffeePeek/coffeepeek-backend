@@ -29,7 +29,10 @@ public sealed class CoffeeZone : Entity<Guid>, IPublicSlugOwner
     public decimal CenterLongitude { get; private set; }
     /// <summary>Bounding circle of <see cref="Polygon"/>; derived, used for viewport filtering and primary-zone ordering.</summary>
     public int RadiusMeters { get; private set; }
-    public List<CoffeeZonePoint> Polygon { get; private set; } = [];
+    private List<CoffeeZonePoint> _polygon = [];
+    // EF Core complex collections require List<T>. Expose a detached copy so callers
+    // cannot change the stored geometry without recalculating its derived fields.
+    public List<CoffeeZonePoint> Polygon => [.. _polygon];
     public CoffeeZoneStatus Status { get; private set; }
 
     private CoffeeZone()
@@ -96,11 +99,11 @@ public sealed class CoffeeZone : Entity<Guid>, IPublicSlugOwner
         CenterLatitude = centerLatitude;
         CenterLongitude = centerLongitude;
         RadiusMeters = Math.Max(boundingRadius, BusinessConstants.MinCoffeeZoneRadiusMeters);
-        Polygon = vertices;
+        _polygon = vertices;
     }
 
     public bool Contains(decimal latitude, decimal longitude) =>
-        CoffeeZonePoint.PolygonContains(Polygon, latitude, longitude);
+        CoffeeZonePoint.PolygonContains(_polygon, latitude, longitude);
 
     public void Publish() => Status = CoffeeZoneStatus.Published;
 

@@ -41,7 +41,7 @@ Each service follows **layered DDD**:
 | Concern | Technology |
 |---|---|
 | Runtime | .NET 10, C# 14 |
-| CQRS / Messaging | Wolverine 5.30 + RabbitMQ |
+| CQRS / Messaging | Wolverine 6.35.0 + RabbitMQ |
 | ORM | EF Core 10 + Npgsql (PostgreSQL 17) |
 | Reverse Proxy | YARP 2.3 |
 | Caching / Sessions | Redis (StackExchange.Redis) |

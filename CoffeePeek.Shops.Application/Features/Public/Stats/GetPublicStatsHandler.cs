@@ -10,7 +10,6 @@ public static class GetPublicStatsHandler
     public static async Task<Response<PublicPlatformStatsDto>> Handle(
         GetPublicStatsQuery _,
         IPublicStatsQueryRepository repository,
-        ICacheService cacheService,
         CancellationToken ct)
     {
         var stats = await repository.GetStatsAsync(ct);

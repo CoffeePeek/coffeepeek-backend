@@ -31,7 +31,6 @@ public class UnifiedCheckInHandlerTests
     private readonly Mock<IUploadedPhotoLookup> _photos = new();
     private readonly Mock<IUnitOfWork> _unitOfWork = new();
     private readonly Mock<IMessageBus> _bus = new();
-    private readonly Mock<ICacheService> _cache = new();
     private readonly Guid _userId = Guid.NewGuid();
     private readonly Guid _shopId = Guid.NewGuid();
 
@@ -47,7 +46,7 @@ public class UnifiedCheckInHandlerTests
 
     private Task<CoffeePeek.Shared.Kernel.Response.Response<UnifiedCheckInDto>> Create(CreateUnifiedCheckInRequest request) =>
         CreateUnifiedCheckInHandler.Handle(new(request, _userId, "author"), _repository.Object, _shops.Object,
-            _drinks.Object, _photos.Object, _unitOfWork.Object, _bus.Object, _cache.Object, CancellationToken.None);
+            _drinks.Object, _photos.Object, _unitOfWork.Object, _bus.Object, CancellationToken.None);
 
     [Fact]
     public async Task CutoutIsClaimedWithFiveOriginalsAndKeptOutOfGalleryButIncludedInModeration()
@@ -78,7 +77,7 @@ public class UnifiedCheckInHandlerTests
         stored.ChangeVisibility(Domain.Aggregates.CheckInAggregate.CheckInVisibility.Private);
         _repository.Setup(r => r.GetTrackedByIdAsync(stored.Id, default)).ReturnsAsync(stored);
         var edited = await UpdateUnifiedCheckInHandler.Handle(new UpdateUnifiedCheckInCommand(stored.Id, _userId, new("edited")),
-            _repository.Object, _drinks.Object, _photos.Object, _unitOfWork.Object, _bus.Object, _cache.Object, default);
+            _repository.Object, _drinks.Object, _photos.Object, _unitOfWork.Object, _bus.Object, default);
         Assert.Equal(result.Data.DrinkPhoto, edited.Data.DrinkPhoto);
         Assert.Equal(result.Data.Photos, edited.Data.Photos);
     }
@@ -125,6 +124,8 @@ public class UnifiedCheckInHandlerTests
         _photos.VerifyNoOtherCalls();
         _drinks.VerifyNoOtherCalls();
         _bus.Verify(b => b.PublishAsync(It.Is<CheckinCreatedEvent>(e => e.UserId == _userId && e.CheckInId == result.Data.Id)), Times.Once);
+        _bus.Verify(b => b.PublishAsync(It.Is<CheckInCacheInvalidationRequested>(e =>
+            e.CheckInId == result.Data.Id && e.ShopId == _shopId && e.UserId == _userId)), Times.Once);
         _repository.Verify(r => r.Add(It.Is<DomainCheckIn>(c => c.Id == result.Data.Id)), Times.Once);
     }
 
@@ -166,7 +167,7 @@ public class UnifiedCheckInHandlerTests
         var row = DomainCheckIn.CreateUnified(_userId, _shopId, "author", "visit", Rating.Create(4, 4, 4), visitedAt);
         _repository.Setup(r => r.GetTrackedByIdAsync(row.Id, default)).ReturnsAsync(row);
         var result = await UpdateUnifiedCheckInHandler.Handle(new UpdateUnifiedCheckInCommand(row.Id, _userId, new()),
-            _repository.Object, _drinks.Object, _photos.Object, _unitOfWork.Object, _bus.Object, _cache.Object, default);
+            _repository.Object, _drinks.Object, _photos.Object, _unitOfWork.Object, _bus.Object, default);
         Assert.True(result.IsSuccess);
         Assert.Equal("", result.Data.Text);
         Assert.Null(result.Data.Rating);
@@ -181,6 +182,60 @@ public class UnifiedCheckInHandlerTests
         _bus.Verify(b => b.PublishAsync(It.Is<CheckInModerationRequestedEvent>(e => e.CheckInId == result.Data.Id
             && e.ContentRevision == 1 && e.Text == "x" && e.Rating.Coffee == 3)), Times.Once);
         _bus.Verify(b => b.PublishAsync(It.Is<CheckinCreatedEvent>(e => e.CheckInId == result.Data.Id)), Times.Once);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task CreationCooldownAppliesToRequestedShop(bool recentVisitAtSameShop)
+    {
+        _repository.Setup(r => r.ExistsSinceAsync(_userId, It.IsAny<Guid>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+        _repository.Setup(r => r.ExistsSinceAsync(_userId, _shopId, It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(recentVisitAtSameShop);
+
+        if (recentVisitAtSameShop)
+        {
+            var error = await Assert.ThrowsAsync<ValidationException>(() => Create(Request()));
+            Assert.Contains("same coffee shop", error.Message);
+            _repository.Verify(r => r.Add(It.IsAny<DomainCheckIn>()), Times.Never);
+            _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+            _bus.Verify(b => b.PublishAsync(It.IsAny<CheckinCreatedEvent>()), Times.Never);
+        }
+        else
+        {
+            Assert.True((await Create(Request())).IsSuccess);
+            _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        _repository.Verify(r => r.ExistsSinceAsync(_userId, _shopId, It.IsAny<DateTime>(), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task SixthDailyCheckInIsAllowed()
+    {
+        _repository.Setup(r => r.CountSinceAsync(_userId, It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(5);
+
+        Assert.True((await Create(Request())).IsSuccess);
+        _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Theory]
+    [InlineData(6)]
+    [InlineData(7)]
+    public async Task DailyLimitStillAppliesAcrossShops(int todayCount)
+    {
+        _repository.Setup(r => r.CountSinceAsync(_userId, It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(todayCount);
+
+        var error = await Assert.ThrowsAsync<ValidationException>(() => Create(Request()));
+
+        Assert.Contains("6 per day", error.Message);
+        _repository.Verify(r => r.Add(It.IsAny<DomainCheckIn>()), Times.Never);
+        _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        _bus.Verify(b => b.PublishAsync(It.IsAny<CheckinCreatedEvent>()), Times.Never);
+        _bus.Verify(b => b.PublishAsync(It.IsAny<CheckInCacheInvalidationRequested>()), Times.Never);
     }
 
     [Fact]
@@ -209,10 +264,10 @@ public class UnifiedCheckInHandlerTests
         var checkIn = DomainCheckIn.CreateUnified(Guid.NewGuid(), _shopId, "other", "x", Rating.Create(1, 1, 1), DateTime.UtcNow);
         _repository.Setup(r => r.GetTrackedByIdAsync(checkIn.Id, It.IsAny<CancellationToken>())).ReturnsAsync(checkIn);
         await Assert.ThrowsAsync<NotFoundException>(() => UpdateUnifiedCheckInHandler.Handle(
-            new DeleteUnifiedCheckInCommand(checkIn.Id, _userId), _repository.Object, _unitOfWork.Object, _cache.Object, CancellationToken.None));
+            new DeleteUnifiedCheckInCommand(checkIn.Id, _userId), _repository.Object, _unitOfWork.Object, _bus.Object, CancellationToken.None));
         await Assert.ThrowsAsync<NotFoundException>(() => UpdateUnifiedCheckInHandler.Handle(
             new UpdateUnifiedCheckInCommand(checkIn.Id, _userId, new("updated", Request().Rating)), _repository.Object,
-            _drinks.Object, _photos.Object, _unitOfWork.Object, _bus.Object, _cache.Object, CancellationToken.None));
+            _drinks.Object, _photos.Object, _unitOfWork.Object, _bus.Object, CancellationToken.None));
         _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
         _bus.Verify(b => b.PublishAsync(It.IsAny<CheckinCreatedEvent>()), Times.Never);
     }
@@ -250,19 +305,39 @@ public class UnifiedCheckInHandlerTests
         Assert.Equal(new CheckInDrinkDto("latte",null,"Латте","Latte"),result.Data.Drink);
         var row=DomainCheckIn.CreateUnified(_userId,_shopId,"author","x",Rating.Create(3,4,5),DateTime.UtcNow);
         _repository.Setup(r=>r.GetTrackedByIdAsync(row.Id,default)).ReturnsAsync(row);
-        var edited=await UpdateUnifiedCheckInHandler.Handle(new UpdateUnifiedCheckInCommand(row.Id,_userId,new("edited",Request().Rating,"latte")),_repository.Object,_drinks.Object,_photos.Object,_unitOfWork.Object,_bus.Object,_cache.Object,default);
+        var edited=await UpdateUnifiedCheckInHandler.Handle(new UpdateUnifiedCheckInCommand(row.Id,_userId,new("edited",Request().Rating,"latte")),_repository.Object,_drinks.Object,_photos.Object,_unitOfWork.Object,_bus.Object,default);
         Assert.Equal(result.Data.Drink,edited.Data.Drink);
+        _bus.Verify(b => b.PublishAsync(It.Is<CheckInCacheInvalidationRequested>(message =>
+            message.CheckInId == row.Id && message.ShopId == _shopId && message.UserId == _userId)), Times.Once);
+    }
+
+    [Fact]
+    public async Task DeletingOwnCheckInPublishesPostCommitInvalidation()
+    {
+        var row = DomainCheckIn.CreateUnified(_userId, _shopId, "author", "visit",
+            Rating.Create(4, 4, 4), DateTime.UtcNow);
+        _repository.Setup(r => r.GetTrackedByIdAsync(row.Id, default)).ReturnsAsync(row);
+
+        var result = await UpdateUnifiedCheckInHandler.Handle(
+            new DeleteUnifiedCheckInCommand(row.Id, _userId), _repository.Object,
+            _unitOfWork.Object, _bus.Object, default);
+
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(row.DeletedAtUtc);
+        _unitOfWork.Verify(u => u.SaveChangesAsync(default), Times.Once);
+        _bus.Verify(b => b.PublishAsync(It.Is<CheckInCacheInvalidationRequested>(message =>
+            message.CheckInId == row.Id && message.ShopId == _shopId && message.UserId == _userId)), Times.Once);
     }
 
     [Fact]
     public async Task HistoricalUnboundPhotoCannotBePromotedToPublic()
     {
         var row=DomainCheckIn.CreateUnified(_userId,_shopId,"author","visit",Rating.Create(4,4,4),DateTime.UtcNow.AddYears(-1));
-        row.AddPhotos([new ShopPhoto("old.jpg","image/jpeg","old-public-key",10,_userId)]);
+        row.AddPhotos([new CheckInPhoto("old.jpg","image/jpeg","old-public-key",10,_userId)]);
         _repository.Setup(r=>r.GetTrackedByIdAsync(row.Id,default)).ReturnsAsync(row);
         _photos.Setup(p=>p.ClaimForCheckInAsync(_userId,row.Id,It.IsAny<IReadOnlyCollection<string>>(),default,null)).ReturnsAsync(CheckInPhotoClaimResult.Failed);
         await Assert.ThrowsAsync<ConflictException>(()=>UpdateUnifiedCheckInHandler.Handle(new ChangeUnifiedCheckInVisibilityCommand(row.Id,_userId,Visibility.Public),
-            _repository.Object,_drinks.Object,_photos.Object,_unitOfWork.Object,_bus.Object,_cache.Object,default));
+            _repository.Object,_photos.Object,_unitOfWork.Object,_bus.Object,default));
         Assert.False(row.IsPubliclyVisible);Assert.Equal(Domain.Aggregates.CheckInAggregate.CheckInVisibility.Private,row.Visibility);
         _bus.Verify(b=>b.PublishAsync(It.IsAny<object>()),Times.Never());
     }

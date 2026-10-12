@@ -19,8 +19,8 @@ public class UnifiedCheckInQueriesTests
             CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate.PriceRange.Moderate, Guid.NewGuid());
         db.Shops.Add(shop);
         var row = CheckIn.CreateUnified(Guid.NewGuid(), shop.Id, "author", null, null, DateTime.UtcNow.AddDays(-1));
-        var original = new ShopPhoto("full.jpg", "image/jpeg", "private/full", 10, row.UserId);
-        var cup = new ShopPhoto("cup.png", "image/png", "private/cup", 10, row.UserId);
+        var original = new CheckInPhoto("full.jpg", "image/jpeg", "private/full", 10, row.UserId);
+        var cup = new CheckInPhoto("cup.png", "image/png", "private/cup", 10, row.UserId);
         row.AddPhotos([original]); row.AddDrinkPhoto(cup); db.CheckIns.Add(row);
         await db.SaveChangesAsync(); db.ChangeTracker.Clear();
         row = await db.CheckIns.Include(c => c.ShopPhotos).SingleAsync();

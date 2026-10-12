@@ -13,4 +13,7 @@ public record MenuParsedEvent(
     IReadOnlyList<ParsedMenuItemDto> Items,
     IReadOnlyList<UnmatchedMenuItemDto> Unmatched,
     DateTime CapturedAtUtc,
-    Guid? ParseRequestId = null);
+    Guid? ParseRequestId = null)
+{
+    public Guid? JobId { get; init; }
+}

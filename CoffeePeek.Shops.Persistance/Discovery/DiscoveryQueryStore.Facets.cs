@@ -42,11 +42,15 @@ public sealed partial class DiscoveryQueryStore
         foreach (var group in Groups)
         {
             var options = new List<FacetOption>();
+            // InMemory cannot translate primitive-array unnest; retain the same predicate semantics there.
+            var counts = group == "brew" || !db.Database.IsRelational() ? null : await ProductFacetCountsAsync(
+                MatchingProducts(WithGroup(f, group, []), c, roasterIds, q), group, ct);
             foreach (var v in c.Values.Where(v => v.GroupCode == group))
             {
-                var filter = WithGroup(f, group, [v.Code]);
                 options.Add(new() { Code = v.Code, Name = v.Name, Selected = Selection(f, group).Contains(v.Code),
-                    Count = await MatchingProducts(filter, c, roasterIds, q).CountAsync(ct) });
+                    // Brew selection must still match the same variant as price/weight/stock.
+                    Count = counts?.GetValueOrDefault(v.Code)
+                        ?? await MatchingProducts(WithGroup(f, group, [v.Code]), c, roasterIds, q).CountAsync(ct) });
             }
             groups.Add(new() { Code = group, Name = GroupNames[group], Selection = "or", Options = options.ToArray() });
         }
@@ -60,5 +64,23 @@ public sealed partial class DiscoveryQueryStore
             if (range is not null) result.PriceRange = new() { Currency = f.Currency, WeightGrams = f.WeightGrams.Value, Min = range.Min, Max = range.Max };
         }
         return result;
+    }
+
+    private static async Task<Dictionary<string, int>> ProductFacetCountsAsync(
+        IQueryable<Domain.Aggregates.CoffeeProductAggregate.CoffeeProduct> products, string group, CancellationToken ct)
+    {
+        var values = group switch
+        {
+            "caffeine" => products.Select(p => new { ProductId = p.Id, Code = p.CaffeineCode }),
+            "roast" => products.Select(p => new { ProductId = p.Id, Code = p.RoastLevelCode }),
+            "acidity" => products.Select(p => new { ProductId = p.Id, Code = p.AcidityCode }),
+            "composition" => products.Select(p => new { ProductId = p.Id, Code = p.CompositionCode }),
+            "processing" => products.SelectMany(p => p.ProcessingCodes, (p, code) => new { ProductId = p.Id, Code = (string?)code }),
+            "fermentation" => products.SelectMany(p => p.FermentationCodes, (p, code) => new { ProductId = p.Id, Code = (string?)code }),
+            "taste" => products.SelectMany(p => p.TasteGroupCodes, (p, code) => new { ProductId = p.Id, Code = (string?)code }),
+            _ => throw new ArgumentOutOfRangeException(nameof(group))
+        };
+        return await values.Where(v => v.Code != null).Distinct().GroupBy(v => v.Code!)
+            .Select(g => new { Code = g.Key, Count = g.Count() }).ToDictionaryAsync(v => v.Code, v => v.Count, ct);
     }
 }

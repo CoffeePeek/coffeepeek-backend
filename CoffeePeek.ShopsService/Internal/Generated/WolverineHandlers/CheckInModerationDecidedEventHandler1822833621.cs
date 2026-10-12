@@ -10,13 +10,11 @@ namespace Internal.Generated.WolverineHandlers
     [global::System.CodeDom.Compiler.GeneratedCode("JasperFx", "1.0.0")]
     public sealed class CheckInModerationDecidedEventHandler1822833621 : Wolverine.Runtime.Handlers.MessageHandler
     {
-        private readonly CoffeePeek.Shared.Domain.Interfaces.Infrastructure.ICacheService _cacheService;
         private readonly Microsoft.Extensions.DependencyInjection.IServiceScopeFactory _serviceScopeFactory;
         private readonly System.Collections.Generic.IEnumerable<Wolverine.EntityFrameworkCore.IDomainEventScraper> _domainEventScraperIEnumerable;
 
-        public CheckInModerationDecidedEventHandler1822833621(CoffeePeek.Shared.Domain.Interfaces.Infrastructure.ICacheService cacheService, Microsoft.Extensions.DependencyInjection.IServiceScopeFactory serviceScopeFactory, System.Collections.Generic.IEnumerable<Wolverine.EntityFrameworkCore.IDomainEventScraper> domainEventScraperIEnumerable)
+        public CheckInModerationDecidedEventHandler1822833621(Microsoft.Extensions.DependencyInjection.IServiceScopeFactory serviceScopeFactory, System.Collections.Generic.IEnumerable<Wolverine.EntityFrameworkCore.IDomainEventScraper> domainEventScraperIEnumerable)
         {
-            _cacheService = cacheService;
             _serviceScopeFactory = serviceScopeFactory;
             _domainEventScraperIEnumerable = domainEventScraperIEnumerable;
         }
@@ -50,7 +48,7 @@ namespace Internal.Generated.WolverineHandlers
                 System.Diagnostics.Activity.Current?.SetTag("handler.type", "CoffeePeek.Shops.Infrastructure.Consumers.CheckInModerationDecidedHandler");
 
                 // The actual message execution
-                await CoffeePeek.Shops.Infrastructure.Consumers.CheckInModerationDecidedHandler.Handle(checkInModerationDecidedEvent, queryCheckInRepository, unitOfWorkOfShopsDbContext, _cacheService, cancellation).ConfigureAwait(false);
+                await CoffeePeek.Shops.Infrastructure.Consumers.CheckInModerationDecidedHandler.Handle(checkInModerationDecidedEvent, queryCheckInRepository, unitOfWorkOfShopsDbContext, context, cancellation).ConfigureAwait(false);
 
 
                 // Added by EF Core Transaction Middleware

@@ -94,6 +94,36 @@ public class ResolveUploadedPhotosHandlerTests
     }
 
     [Fact]
+    public async Task Handle_CheckInBucketPhoto_IsOmittedFromShopUploadResolution()
+    {
+        var photo = Photo("check-ins/private");
+        photo.BucketType = BucketType.CheckIn;
+        SetupRepo(photo);
+        SetupAnySize(10);
+
+        var result = await Run(photo.StorageKey);
+
+        result.IsSuccess.Should().BeTrue();
+        result.Data.Should().BeEmpty();
+        _storageMock.VerifyNoOtherCalls();
+    }
+
+    [Fact]
+    public async Task Handle_NonImageContentType_IsOmitted()
+    {
+        var photo = Photo("shop/file");
+        photo.ContentType = "application/pdf";
+        SetupRepo(photo);
+        SetupAnySize(10);
+
+        var result = await Run(photo.StorageKey);
+
+        result.IsSuccess.Should().BeTrue();
+        result.Data.Should().BeEmpty();
+        _storageMock.VerifyNoOtherCalls();
+    }
+
+    [Fact]
     public async Task Handle_ExpiredPhoto_IsOmitted()
     {
         SetupRepo(Photo("reviews/old", uploadedAt: DateTime.UtcNow.AddHours(-25)));

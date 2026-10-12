@@ -14,24 +14,21 @@ public class MenuParsedEventHandler(
     IUnitOfWork unitOfWork,
     ILogger<MenuParsedEventHandler> logger)
 {
-    public async Task<ApplyShopMenuSnapshotEvent?> Handle(MenuParsedEvent message, CancellationToken ct)
+    public async Task Handle(MenuParsedEvent message, CancellationToken ct)
     {
         MenuDraft? menu;
-        Guid? publishedShopId;
         switch (message.SourceKind)
         {
             case MenuParseSourceKind.ImportCandidate:
                 var candidate = await candidateRepository.GetByIdAsync(message.SourceId, ct);
                 menu = candidate?.Menu;
-                publishedShopId = candidate?.ResultingShopId;
                 break;
             case MenuParseSourceKind.ModerationShop:
                 var shop = await moderationShopRepository.GetByIdAsync(message.SourceId, ct);
                 menu = shop?.Menu;
-                publishedShopId = shop?.ShopId;
                 break;
             default:
-                return null;
+                return;
         }
 
         if (menu is null || !menu.ApplyParseResult(message.Success, message.Error,
@@ -40,13 +37,9 @@ public class MenuParsedEventHandler(
                 message.CapturedAtUtc, message.ParseRequestId))
         {
             logger.LogInformation("Skipping stale menu parse result for {Kind} {SourceId}", message.SourceKind, message.SourceId);
-            return null;
+            return;
         }
 
         await unitOfWork.SaveChangesAsync(ct);
-        return message.Success && publishedShopId.HasValue && publishedShopId != Guid.Empty
-            ? new ApplyShopMenuSnapshotEvent(publishedShopId.Value, MenuDraftMapper.ToSnapshot(menu)!, false, null,
-                PreserveManualItems: true)
-            : null;
     }
 }

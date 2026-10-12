@@ -12,15 +12,13 @@ namespace Internal.Generated.WolverineHandlers
     [global::System.CodeDom.Compiler.GeneratedCode("JasperFx", "1.0.0")]
     public sealed class SearchCoffeeShopsQueryHandler1753829777 : Wolverine.Runtime.Handlers.MessageHandler
     {
-        private readonly CoffeePeek.Shared.Domain.Interfaces.Infrastructure.ICacheService _cacheService;
         private readonly MapsterMapper.IMapper _mapper;
         private readonly Microsoft.Extensions.DependencyInjection.IServiceScopeFactory _serviceScopeFactory;
         private readonly Microsoft.Extensions.Options.IOptions<CoffeePeek.Shared.Kernel.Options.MediaPublicUrlOptions> _optionsOfMediaPublicUrlOptions;
         private readonly System.Collections.Generic.IEnumerable<Wolverine.EntityFrameworkCore.IDomainEventScraper> _domainEventScraperIEnumerable;
 
-        public SearchCoffeeShopsQueryHandler1753829777(CoffeePeek.Shared.Domain.Interfaces.Infrastructure.ICacheService cacheService, MapsterMapper.IMapper mapper, Microsoft.Extensions.DependencyInjection.IServiceScopeFactory serviceScopeFactory, Microsoft.Extensions.Options.IOptions<CoffeePeek.Shared.Kernel.Options.MediaPublicUrlOptions> optionsOfMediaPublicUrlOptions, System.Collections.Generic.IEnumerable<Wolverine.EntityFrameworkCore.IDomainEventScraper> domainEventScraperIEnumerable)
+        public SearchCoffeeShopsQueryHandler1753829777(MapsterMapper.IMapper mapper, Microsoft.Extensions.DependencyInjection.IServiceScopeFactory serviceScopeFactory, Microsoft.Extensions.Options.IOptions<CoffeePeek.Shared.Kernel.Options.MediaPublicUrlOptions> optionsOfMediaPublicUrlOptions, System.Collections.Generic.IEnumerable<Wolverine.EntityFrameworkCore.IDomainEventScraper> domainEventScraperIEnumerable)
         {
-            _cacheService = cacheService;
             _mapper = mapper;
             _serviceScopeFactory = serviceScopeFactory;
             _optionsOfMediaPublicUrlOptions = optionsOfMediaPublicUrlOptions;
@@ -42,7 +40,7 @@ namespace Internal.Generated.WolverineHandlers
             // The actual message body
             var searchCoffeeShopsQuery = (CoffeePeek.Shops.Application.Features.CoffeeShop.SearchCoffeeShops.SearchCoffeeShopsQuery)context.Envelope.Message;
 
-            
+
             // Enroll the DbContext & IMessagingContext in the outgoing Wolverine outbox transaction
             var efCoreEnvelopeTransaction = new Wolverine.EntityFrameworkCore.Internals.EfCoreEnvelopeTransaction(shopsDbContext, context, _domainEventScraperIEnumerable);
             await context.EnlistInOutboxAsync(efCoreEnvelopeTransaction).ConfigureAwait(false);
@@ -56,15 +54,15 @@ namespace Internal.Generated.WolverineHandlers
             {
                 System.Diagnostics.Activity.Current?.SetTag("message.handler", "CoffeePeek.Shops.Application.Features.CoffeeShop.SearchCoffeeShops.SearchCoffeeShopsHandler");
                 System.Diagnostics.Activity.Current?.SetTag("handler.type", "CoffeePeek.Shops.Application.Features.CoffeeShop.SearchCoffeeShops.SearchCoffeeShopsHandler");
-                
-                // The actual message execution
-                var outgoing1 = await CoffeePeek.Shops.Application.Features.CoffeeShop.SearchCoffeeShops.SearchCoffeeShopsHandler.Handle(searchCoffeeShopsQuery, coffeeShopQueries, queryCheckInRepository, _cacheService, cancellation).ConfigureAwait(false);
 
-                
+                // The actual message execution
+                var outgoing1 = await CoffeePeek.Shops.Application.Features.CoffeeShop.SearchCoffeeShops.SearchCoffeeShopsHandler.Handle(searchCoffeeShopsQuery, coffeeShopQueries, queryCheckInRepository, cancellation).ConfigureAwait(false);
+
+
                 // Outgoing, cascaded message
                 await context.EnqueueCascadingAsync(outgoing1).ConfigureAwait(false);
 
-                
+
                 // Added by EF Core Transaction Middleware
                 var result_of_SaveChangesAsync = await shopsDbContext.SaveChangesAsync(cancellation).ConfigureAwait(false);
 
@@ -83,7 +81,6 @@ namespace Internal.Generated.WolverineHandlers
     }
 
     // END: SearchCoffeeShopsQueryHandler1753829777
-    
-    
-}
 
+
+}

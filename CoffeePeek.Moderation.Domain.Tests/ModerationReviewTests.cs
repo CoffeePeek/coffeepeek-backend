@@ -54,6 +54,39 @@ public class ModerationReviewTests
         Snapshot(text!).Comment.Should().BeEmpty();
     }
 
+    [Theory]
+    [InlineData(null, false, false, ModerationStatus.Approved)]
+    [InlineData("", false, true, ModerationStatus.Approved)]
+    [InlineData(" \t\n", false, true, ModerationStatus.Approved)]
+    [InlineData("Y", false, false, ModerationStatus.Pending)]
+    [InlineData("", true, false, ModerationStatus.Pending)]
+    [InlineData("Y", true, true, ModerationStatus.Pending)]
+    public void Snapshot_AutoApprovesOnlyWithoutTextAndPhotos(string? text, bool hasPhoto,
+        bool hasRating, ModerationStatus expected)
+    {
+        var author = Guid.NewGuid();
+        var review = ModerationReview.CreateCheckInSnapshot(Guid.NewGuid(), 2, author, Guid.NewGuid(),
+            "user", text, hasRating ? 3 : null, hasRating ? 4 : null, hasRating ? 5 : null, null,
+            DateTime.UtcNow, hasPhoto
+                ? [PhotoMetadata.CreateCheckInPhoto(Guid.NewGuid(), 0, "a.jpg", "image/jpeg", "a", 10, author)] : []);
+
+        review.ModerationStatus.Should().Be(expected);
+        review.ModeratedBy.Should().BeNull();
+        review.DecisionSequence.Should().Be(expected == ModerationStatus.Approved ? 1 : 0);
+        review.ModeratedAt.Should().Be(expected == ModerationStatus.Approved ? review.CreatedAtUtc : null);
+    }
+
+    [Fact]
+    public void AutoApprovedSnapshot_StillAllowsSequencedModeratorDecisions()
+    {
+        var review = Snapshot("");
+        var moderator = Guid.NewGuid();
+        review.Reject("Rejected by moderator", moderator).Should().BeTrue();
+        review.DecisionSequence.Should().Be(2);
+        review.ModeratedBy.Should().Be(moderator);
+        review.ModerationStatus.Should().Be(ModerationStatus.Rejected);
+    }
+
     [Fact]
     public void Snapshot_MissingVisitTime_ThrowsDomainException()
     {

@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using System.Buffers.Binary;
 using Npgsql;
+using CoffeePeek.Contract.Dtos.ShopPhotos;
 
 namespace CoffeePeek.MediaService.Repositories;
 
@@ -39,10 +40,34 @@ public class PhotoRepository(MediaDbContext dbContext) : IPhotoRepository
     {
         var expiry = DateTime.UtcNow.AddHours(-24);
         return await _repository.Where(p => p.Id == photoId && p.OwnerId == ownerId
+                && p.ShopAttachmentId == null
                 && ((p.CheckInId == null && p.Status == PhotoStatus.Pending && p.UploadedAt >= expiry)
                     || (p.CheckInId == checkInId && (p.Status == PhotoStatus.Pending || p.Status == PhotoStatus.Confirmed))))
             .ExecuteUpdateAsync(setters => setters.SetProperty(p => p.CheckInId, checkInId)
                 .SetProperty(p => p.ClaimedAtUtc, DateTime.UtcNow), ct) == 1;
+    }
+
+    public async Task<bool> TryClaimShopBatchAsync(IReadOnlyList<Guid> photoIds, Guid ownerId, Guid shopId,
+        ShopPhotoAttachmentKind kind, CancellationToken ct = default)
+    {
+        var expiry = DateTime.UtcNow.AddHours(-24);
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(ct);
+        foreach (var photoId in photoIds)
+        {
+            var affected = await _repository.Where(p => p.Id == photoId && p.OwnerId == ownerId
+                && p.BucketType == Configuration.BucketType.Shop && p.CheckInId == null
+                && ((p.ShopAttachmentId == null && p.Status == PhotoStatus.Pending && p.UploadedAt >= expiry)
+                    || (p.ShopAttachmentId == shopId && p.ShopAttachmentKind == kind
+                        && (p.Status == PhotoStatus.Pending || p.Status == PhotoStatus.Confirmed))))
+                .ExecuteUpdateAsync(setters => setters.SetProperty(p => p.ShopAttachmentId, shopId)
+                    .SetProperty(p => p.ShopAttachmentKind, kind)
+                    .SetProperty(p => p.ClaimedAtUtc, DateTime.UtcNow), ct);
+            if (affected == 1) continue;
+            await transaction.RollbackAsync(ct);
+            return false;
+        }
+        await transaction.CommitAsync(ct);
+        return true;
     }
 
     public async Task<IAsyncDisposable> AcquireClaimLocksAsync(Guid ownerId, IReadOnlyCollection<string> storageKeys, CancellationToken ct = default)

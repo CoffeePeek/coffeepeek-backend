@@ -1,4 +1,5 @@
 using System.Net;
+using CoffeePeek.Contract.Events.Moderation;
 using CoffeePeek.Moderation.Application.Abstractions;
 using CoffeePeek.Moderation.Application.Features.Geocoding;
 using CoffeePeek.Moderation.Domain.Aggregates;
@@ -11,7 +12,7 @@ namespace CoffeePeek.Moderation.Application.Features.Roaster.SubmitRoaster;
 
 public static class SubmitRoasterHandler
 {
-    public static async Task<(Response<SubmitRoasterResponse>, ModerationGeocodingRequested?)> Handle(
+    public static async Task<(Response<SubmitRoasterResponse>, ModerationGeocodingRequested?, ModerationSubmissionCreated?)> Handle(
         SubmitRoasterCommand command,
         IModerationRoasterRepository repository,
         IRoasterExistenceLookup roasterExistenceLookup,
@@ -21,14 +22,14 @@ public static class SubmitRoasterHandler
     {
         if (command.CityId.HasValue != !string.IsNullOrWhiteSpace(command.Address))
             return (Response<SubmitRoasterResponse>.Error(HttpStatusCode.BadRequest,
-                "City and address must be supplied together."), null);
+                "City and address must be supplied together."), null, null);
 
         if (await WriteStageTrace.MeasureAsync("roaster_submit", "duplicate_validation",
                 () => roasterExistenceLookup.ExistsByNameAsync(command.Name, ct)))
         {
             logger.LogWarning("Duplicate roaster submission detected: {Name}", command.Name);
             return (Response<SubmitRoasterResponse>.Error(
-                HttpStatusCode.Conflict, "A roaster with this name already exists."), null);
+                HttpStatusCode.Conflict, "A roaster with this name already exists."), null, null);
         }
 
         var roaster = ModerationRoaster.Create(command.Name, command.UserId, command.About);
@@ -62,6 +63,8 @@ public static class SubmitRoasterHandler
 
         return (Response<SubmitRoasterResponse>.Success(
             new SubmitRoasterResponse(roaster.Id, "Pending", false),
-            message), geocodingRequest);
+            message), geocodingRequest,
+            new ModerationSubmissionCreated(ModerationSubmissionKind.Roaster, roaster.Id, command.UserId,
+                command.Name, Details: command.Address));
     }
 }

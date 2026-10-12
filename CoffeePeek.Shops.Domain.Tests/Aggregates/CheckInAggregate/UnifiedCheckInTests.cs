@@ -14,9 +14,9 @@ public class UnifiedCheckInTests
     public void CutoutMustBeSeparateOwnedPngWithAnOriginalAndCanOnlyBeAddedOnce()
     {
         var row = Create();
-        var cup = new ShopPhoto("cup.png", "image/png", "cup", 10, row.UserId);
+        var cup = new CheckInPhoto("cup.png", "image/png", "cup", 10, row.UserId, 1);
         Assert.Throws<DomainException>(() => row.AddDrinkPhoto(cup));
-        var original = new ShopPhoto("full.jpg", "image/jpeg", "full", 10, row.UserId);
+        var original = new CheckInPhoto("full.jpg", "image/jpeg", "full", 10, row.UserId);
         row.AddPhotos([original]);
         Assert.Throws<DomainException>(() => row.AddDrinkPhoto(original));
         Assert.Throws<DomainException>(() => row.AddDrinkPhoto(new("foreign.png", "image/png", "foreign", 10, Guid.NewGuid())));
@@ -25,6 +25,29 @@ public class UnifiedCheckInTests
         Assert.Throws<DomainException>(() => row.AddDrinkPhoto(new("second.png", "image/png", "second", 10, row.UserId)));
         row.UpdateContent("updated", null); row.ChangeVisibility(CheckInVisibility.Public);
         Assert.Equal(cup.Id, row.DrinkPhotoId);
+    }
+
+    [Fact]
+    public void CutoutCannotBeSharedAndAddingItInvalidatesApproval()
+    {
+        var row = Create(CheckInVisibility.Public);
+        row.AddPhotos([new("full.jpg", "image/jpeg", "full", 10, row.UserId)]);
+        row.ApplyModerationDecision(row.ContentRevision, Guid.NewGuid(), 1,
+            CheckInModerationState.Approved, null, DateTime.UtcNow);
+        var revision = row.ContentRevision;
+        var cup = new CheckInPhoto("cup.png", "image/png", "cup", 10, row.UserId, 1);
+        row.AddDrinkPhoto(cup);
+        Assert.Equal(row.Id, cup.CanonicalCheckInId);
+        Assert.Equal(revision + 1, row.ContentRevision);
+        Assert.False(row.IsPubliclyVisible);
+        Assert.Equal(CheckInModerationState.Pending, row.ModerationState);
+        var other = CheckIn.CreateUnified(row.UserId, row.ShopId, "author", null, null, DateTime.UtcNow);
+        other.AddPhotos([new("other.jpg", "image/jpeg", "other", 10, row.UserId)]);
+        Assert.Throws<DomainException>(() => other.AddDrinkPhoto(cup));
+        row.AddPhotos(Enumerable.Range(1, 4).Select(i =>
+            new CheckInPhoto($"{i}.jpg", "image/jpeg", $"extra-{i}", 10, row.UserId, i)));
+        Assert.Equal(6, row.ShopPhotos.Count);
+        Assert.Throws<DomainException>(() => row.AddPhotos([new("six.jpg", "image/jpeg", "six", 10, row.UserId)]));
     }
 
     [Theory]

@@ -6,7 +6,8 @@ public record ModerationShopSchedule
 {
     public DayOfWeek DayOfWeek { get; private set; }
     public bool IsClosed { get; private set; }
-    public IReadOnlyCollection<ModerationShopScheduleInterval> Intervals { get; private set; } = [];
+    private readonly List<ModerationShopScheduleInterval> _intervals = [];
+    public IReadOnlyCollection<ModerationShopScheduleInterval> Intervals => _intervals.AsReadOnly();
 
     // ReSharper disable once UnusedMember.Local
     private ModerationShopSchedule() { }
@@ -26,6 +27,6 @@ public record ModerationShopSchedule
             throw new DomainException("Invalid schedule interval.");
         DayOfWeek = dayOfWeek;
         IsClosed = isClosed;
-        Intervals = intervals;
+        _intervals.AddRange(intervals);
     }
 }

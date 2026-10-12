@@ -1,11 +1,15 @@
+using System.Collections.Concurrent;
+using System.Diagnostics.Metrics;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using CoffeePeek.Contract.Dtos;
+using CoffeePeek.Contract.Dtos.ShopPhotos;
 using CoffeePeek.Shared.Auth.Constants;
 using CoffeePeek.Shared.Auth.Options;
 using CoffeePeek.Shared.Kernel.Response;
 using CoffeePeek.Shops.Infrastructure.Media;
+using CoffeePeek.Shops.Application.Observability;
 using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
@@ -28,6 +32,77 @@ public class MediaUploadedPhotoLookupTests
             factory.Object,
             Options.Create(new GatewayAuthOptions { SecretKey = Secret }),
             NullLogger<MediaUploadedPhotoLookup>.Instance);
+    }
+
+    [Fact]
+    public async Task ClaimForShopAsync_UsesTrustedHeadersAndReturnsMediaMetadata()
+    {
+        var userId = Guid.NewGuid();
+        var shopId = Guid.NewGuid();
+        var photoId = Guid.NewGuid();
+        string? body = null;
+        HttpRequestMessage? captured = null;
+        var lookup = CreateLookup(async request =>
+        {
+            captured = request;
+            body = await request.Content!.ReadAsStringAsync();
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = JsonContent.Create(Response<List<ClaimedShopPhotoDto>>.Success(
+                    [new ClaimedShopPhotoDto(photoId, "shops/a.jpg", "trusted.jpg", "image/jpeg", 64)]))
+            };
+        });
+
+        var result = await lookup.ClaimForShopAsync(userId, shopId,
+            ShopPhotoAttachmentKind.Gallery, ["shops/a.jpg"], TestContext.Current.CancellationToken);
+
+        result.Succeeded.Should().BeTrue();
+        result.Photos.Should().ContainSingle().Which.PhotoId.Should().Be(photoId);
+        captured!.RequestUri!.AbsolutePath.Should().Be("/internal/shop-photos/claim");
+        captured.Headers.GetValues(GatewayHeaderConsts.XGatewayAuth).Should().ContainSingle().Which.Should().Be(Secret);
+        captured.Headers.GetValues(GatewayHeaderConsts.XUserId).Should().ContainSingle().Which.Should().Be(userId.ToString());
+        using var json = JsonDocument.Parse(body!);
+        json.RootElement.GetProperty("shopId").GetGuid().Should().Be(shopId);
+        json.RootElement.GetProperty("storageKeys")[0].GetString().Should().Be("shops/a.jpg");
+    }
+
+    [Fact]
+    public async Task ClaimForShopAsync_LostResponse_IsTransientAndRetryUsesSameClaim()
+    {
+        var lookup = CreateLookup(_ => throw new TaskCanceledException("lost reply"));
+
+        var result = await lookup.ClaimForShopAsync(Guid.NewGuid(), Guid.NewGuid(),
+            ShopPhotoAttachmentKind.Menu, ["menus/a.jpg"], TestContext.Current.CancellationToken);
+
+        result.Succeeded.Should().BeFalse();
+        result.IsTransientFailure.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task ClaimForShopAsync_MediaUnavailable_EmitsBoundedFailureMetric()
+    {
+        var observed = new ConcurrentQueue<KeyValuePair<string, object?>[]>();
+        using var listener = new MeterListener();
+        listener.InstrumentPublished = (instrument, subscriber) =>
+        {
+            if (instrument.Meter.Name == ShopsTelemetry.InstrumentationName)
+                subscriber.EnableMeasurementEvents(instrument);
+        };
+        listener.SetMeasurementEventCallback<long>((instrument, _, tags, _) =>
+        {
+            if (instrument.Name == "shops.media.claim.failures")
+                observed.Enqueue(tags.ToArray());
+        });
+        listener.Start();
+        var lookup = CreateLookup(_ => Task.FromResult(new HttpResponseMessage(HttpStatusCode.ServiceUnavailable)));
+
+        var result = await lookup.ClaimForShopAsync(Guid.NewGuid(), Guid.NewGuid(),
+            ShopPhotoAttachmentKind.Gallery, ["shops/private-key"], TestContext.Current.CancellationToken);
+
+        result.IsTransientFailure.Should().BeTrue();
+        Assert.Contains(observed, tags => tags.Length == 2 &&
+            tags.Any(tag => tag.Key == "kind" && Equals(tag.Value, "shop")) &&
+            tags.Any(tag => tag.Key == "reason" && Equals(tag.Value, "unavailable")));
     }
 
     [Fact]

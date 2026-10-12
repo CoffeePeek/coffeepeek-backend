@@ -32,6 +32,9 @@ public class EquipmentRepository(ShopsDbContext dbContext) : IEquipmentRepositor
     public Task<EquipmentCategory?> GetCategoryByIdAsync(int categoryId, CancellationToken ct = default) =>
         dbContext.EquipmentCategories.FirstOrDefaultAsync(c => c.Id == categoryId, ct);
 
+    public Task<bool> HasShopAssignmentsAsync(Guid equipmentId, CancellationToken ct = default) =>
+        dbContext.ShopEquipments.AnyAsync(a => a.EquipmentId == equipmentId, ct);
+
     public void Add(Equipment equipment) => dbContext.Equipments.Add(equipment);
 
     public void Remove(Equipment equipment) => dbContext.Equipments.Remove(equipment);

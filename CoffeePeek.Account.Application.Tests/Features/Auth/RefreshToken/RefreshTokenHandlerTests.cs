@@ -49,11 +49,12 @@ public class RefreshTokenHandlerTests
         _jwtMock.Setup(j => j.GenerateRefreshToken()).Returns("new_refresh");
         _jwtMock.Setup(j => j.GenerateAccessToken(user)).Returns("new_access");
 
-        var response = await RefreshTokenHandler.Handle(new RefreshTokenCommand("valid_refresh"), _userRepoMock.Object, _jwtMock.Object, _jwtOptions, _revokedUserStoreMock.Object, _unitOfWorkMock.Object, _ct);
+        var response = await RefreshTokenHandler.Handle(new RefreshTokenCommand("valid_refresh", "Android", "203.0.113.7"), _userRepoMock.Object, _jwtMock.Object, _jwtOptions, _revokedUserStoreMock.Object, _unitOfWorkMock.Object, _ct);
 
         response.IsSuccess.Should().BeTrue();
         response.Data!.AccessToken.Should().Be("new_access");
         response.Data.RefreshToken.Should().Be("new_refresh");
+        user.RefreshTokens.Should().ContainSingle(t => t.IsActive && t.DeviceName == "Android" && t.IpAddress == "203.0.113.7");
         response.Data.AccessTokenExpiresAt.Should().BeCloseTo(DateTime.UtcNow.AddMinutes(15), TimeSpan.FromSeconds(2));
     }
 

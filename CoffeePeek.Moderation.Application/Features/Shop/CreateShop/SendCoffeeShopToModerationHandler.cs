@@ -1,4 +1,5 @@
 using CoffeePeek.Contract.Events.Menu;
+using CoffeePeek.Contract.Events.Moderation;
 using CoffeePeek.Moderation.Application.ErrorCodes;
 using CoffeePeek.Moderation.Application.Features.Geocoding;
 using CoffeePeek.Moderation.Application.Features.Menu;
@@ -14,7 +15,7 @@ namespace CoffeePeek.Moderation.Application.Features.Shop.CreateShop;
 
 public static class SendCoffeeShopToModerationHandler
 {
-    public static async Task<(Response<SendCoffeeShopToModerationResponse>, ParseMenuRequestedEvent?, ModerationGeocodingRequested)> Handle(
+    public static async Task<(Response<SendCoffeeShopToModerationResponse>, ParseMenuRequestedEvent?, ModerationGeocodingRequested, ModerationSubmissionCreated)> Handle(
         SendCoffeeShopToModerationCommand command,
         IModerationShopRepository repository,
         IModerationShopCreationService creationService,
@@ -58,6 +59,8 @@ public static class SendCoffeeShopToModerationHandler
         }
 
         return (Response<SendCoffeeShopToModerationResponse>.Success(responseData, message), parseEvent,
-            new ModerationGeocodingRequested(ModerationGeocodingKind.Shop, shopId, command.Address));
+            new ModerationGeocodingRequested(ModerationGeocodingKind.Shop, shopId, command.Address),
+            new ModerationSubmissionCreated(ModerationSubmissionKind.Shop, shopId, command.UserId,
+                command.Name, Details: command.Address));
     }
 }

@@ -52,11 +52,7 @@ namespace Internal.Generated.WolverineHandlers
                 var menuParsedEventHandler = new CoffeePeek.Moderation.Infrastructure.Consumers.MenuParsedEventHandler(shopImportCandidateRepository, moderationShopRepository, unitOfWorkOfModerationDbContext, _loggerOfMenuParsedEventHandler);
 
                 // The actual message execution
-                var outgoing1 = await menuParsedEventHandler.Handle(menuParsedEvent, cancellation).ConfigureAwait(false);
-
-
-                // Outgoing, cascaded message
-                await context.EnqueueCascadingAsync(outgoing1).ConfigureAwait(false);
+                await menuParsedEventHandler.Handle(menuParsedEvent, cancellation).ConfigureAwait(false);
 
 
                 // Added by EF Core Transaction Middleware

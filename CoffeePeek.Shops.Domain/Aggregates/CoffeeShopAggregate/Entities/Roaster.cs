@@ -32,19 +32,19 @@ public class Roaster : Entity<Guid>, IPublicSlugOwner
     // ReSharper disable once UnusedMember.Local
     private Roaster() { }
 
-    public Roaster(string name, Guid? moderationId = null)
+    public Roaster(string name, Guid? moderationId = null, Guid? id = null)
     {
         ValidateName(name);
+        if (id == Guid.Empty) throw new DomainException("Roaster ID is required.");
 
-        Id = Guid.NewGuid();
+        Id = id ?? Guid.NewGuid();
         Name = name.Trim();
         ModerationId = moderationId;
     }
 
     public void Update(string name, string? about)
     {
-        ValidateName(name);
-        ValidateAbout(about);
+        ValidateDetails(name, about);
 
         Name = name.Trim();
         About = about?.Trim();
@@ -68,8 +68,20 @@ public class Roaster : Entity<Guid>, IPublicSlugOwner
 
     public void ReplacePhotos(IEnumerable<RoasterPhoto> photos)
     {
+        ArgumentNullException.ThrowIfNull(photos);
+        var replacements = photos.ToArray();
+        if (replacements.Length > 20 || replacements.Any(p => p == null)
+            || replacements.Select(p => p.Id).Distinct().Count() != replacements.Length
+            || replacements.Select(p => p.StorageKey).Distinct(StringComparer.Ordinal).Count() != replacements.Length)
+            throw new DomainException("Roaster photos must be distinct; at most twenty are allowed.");
         _photos.Clear();
-        _photos.AddRange(photos);
+        _photos.AddRange(replacements);
+    }
+
+    public static void ValidateDetails(string name, string? about)
+    {
+        ValidateName(name);
+        ValidateAbout(about);
     }
 
     private static void ValidateName(string name)

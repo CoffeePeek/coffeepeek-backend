@@ -15,7 +15,7 @@ namespace CoffeePeek.ModerationService.Tests;
 public class MenuPublicationTests
 {
     [Fact]
-    public async Task ParseWhilePublicationIsInFlight_IsForwardedWhenShopIdArrives()
+    public async Task ParseWhilePublicationIsInFlight_UpdatesDraftWithoutUnversionedCatalogWrite()
     {
         await using var db = NewDb();
         var shop = NewShop();
@@ -25,18 +25,17 @@ public class MenuPublicationTests
 
         var parsed = Parsed(shop);
         var parser = Parser(db);
-        (await parser.Handle(parsed, TestContext.Current.CancellationToken)).Should().BeNull();
+        await parser.Handle(parsed, TestContext.Current.CancellationToken);
 
         var completion = new ModerationShopApproveCompleteHandler(new ModerationShopRepository(db),
             new UnitOfWork<ModerationDbContext>(db), NullLogger<ModerationShopApproveCompleteHandler>.Instance);
         var shopId = Guid.NewGuid();
         var reply = new ModerationShopApproveCompleteResponse(shop.Id, shopId);
-        var outbound = await completion.Handle(reply, TestContext.Current.CancellationToken);
+        await completion.Handle(reply, TestContext.Current.CancellationToken);
 
-        outbound.Should().NotBeNull();
-        outbound!.ShopId.Should().Be(shopId);
-        outbound.Snapshot.Items.Should().ContainSingle().Which.Price.Should().Be(5);
-        (await completion.Handle(reply, TestContext.Current.CancellationToken)).Should().BeNull();
+        shop.ShopId.Should().Be(shopId);
+        shop.Menu!.Items.Should().ContainSingle().Which.Price.Should().Be(5);
+        await completion.Handle(reply, TestContext.Current.CancellationToken);
     }
 
     [Fact]
@@ -50,13 +49,13 @@ public class MenuPublicationTests
         await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         db.ChangeTracker.Clear();
 
-        (await Parser(db).Handle(message, TestContext.Current.CancellationToken)).Should().BeNull();
+        await Parser(db).Handle(message, TestContext.Current.CancellationToken);
         var saved = await new ModerationShopRepository(db).GetByIdAsync(shop.Id, TestContext.Current.CancellationToken);
         saved!.Menu!.Items.Should().ContainSingle().Which.Price.Should().Be(9);
     }
 
     [Fact]
-    public async Task CorrelatedParseForPublishedShop_IsForwardedOnce()
+    public async Task CorrelatedParseForPublishedShop_IsAppliedToDraftOnce()
     {
         await using var db = NewDb();
         var shop = NewShop();
@@ -67,11 +66,10 @@ public class MenuPublicationTests
         var message = Parsed(shop);
         var parser = Parser(db);
 
-        var outbound = await parser.Handle(message, TestContext.Current.CancellationToken);
-        outbound!.ShopId.Should().Be(shop.ShopId);
-        outbound.PreserveManualItems.Should().BeTrue();
-        outbound.Snapshot.Items.Should().ContainSingle().Which.Price.Should().Be(5);
-        (await parser.Handle(message, TestContext.Current.CancellationToken)).Should().BeNull();
+        await parser.Handle(message, TestContext.Current.CancellationToken);
+        shop.Menu!.Items.Should().ContainSingle().Which.Price.Should().Be(5);
+        await parser.Handle(message with { Items = [] }, TestContext.Current.CancellationToken);
+        shop.Menu.Items.Should().ContainSingle().Which.Price.Should().Be(5);
     }
 
     private static MenuParsedEvent Parsed(ModerationShop shop) => new(

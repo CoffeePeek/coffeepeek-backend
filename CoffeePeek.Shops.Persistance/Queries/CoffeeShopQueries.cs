@@ -43,7 +43,7 @@ public class CoffeeShopQueries(
 
         if (request.Equipments is { Length: > 0 })
         {
-            query = query.Where(s => s.Equipments.Any(se => request.Equipments.Contains(se.Id)));
+            query = query.Where(s => s.ShopEquipments.Any(se => request.Equipments.Contains(se.EquipmentId)));
         }
 
         if (request.Beans is { Length: > 0 })
@@ -127,7 +127,6 @@ public class CoffeeShopQueries(
             if (request.IsOpen.Value)
             {
                 query = query.Where(s =>
-                    !s.Schedules.Any() ||
                     s.Schedules.Any(sch =>
                         sch.DayOfWeek == dow &&
                         !sch.IsClosed &&
@@ -207,7 +206,7 @@ public class CoffeeShopQueries(
 
         var now = DateTime.UtcNow;
         var isNew = state is not null && state.CreatedAtUtc >= now.AddDays(-BusinessConstants.ItNewEntityInDays);
-        var isOpen = state is null || ComputeIsOpen(state.Status, state.Schedules, now);
+        var isOpen = state is null ? null : ComputeIsOpen(state.Status, state.Schedules, now);
 
         var catalog = await drinkRepository.GetActiveAsync(ct);
         var menu = await menuRepository.GetByShopIdAsync(id, ct);
@@ -241,8 +240,11 @@ public class CoffeeShopQueries(
         // truncation); cluster zooms get a hard ceiling.
         // ponytail: in-memory clustering capped at MaxClusterSourcePoints; move to SQL grid GROUP BY if the catalog outgrows it.
         var points = await baseQuery
-            .Take(zoom > options.ZoneMaxZoom ? options.MaxResponseItems + 1 : MaxClusterSourcePoints)
+            .Take(zoom > options.ZoneMaxZoom ? options.MaxResponseItems + 1 : MaxClusterSourcePoints + 1)
             .ToArrayAsync(ct);
+        var sourceTruncated = zoom <= options.ZoneMaxZoom && points.Length > MaxClusterSourcePoints;
+        if (sourceTruncated)
+            points = points[..MaxClusterSourcePoints];
         if (zoom <= options.ClusterMaxZoom)
         {
             var clusters = MapClusterBuilder.Build(
@@ -253,7 +255,7 @@ public class CoffeeShopQueries(
             {
                 Clusters = clusters.Take(options.MaxResponseItems).ToArray(),
                 Zones = [],
-                IsTruncated = clusters.Length > options.MaxResponseItems
+                IsTruncated = sourceTruncated || clusters.Length > options.MaxResponseItems
             };
         }
 
@@ -311,7 +313,7 @@ public class CoffeeShopQueries(
             {
                 Zones = zoneDtos.Take(options.MaxResponseItems).ToArray(),
                 Clusters = clusters.Take(availableClusterSlots).ToArray(),
-                IsTruncated = zoneDtos.Length + clusters.Length > options.MaxResponseItems
+                IsTruncated = sourceTruncated || zoneDtos.Length + clusters.Length > options.MaxResponseItems
             };
         }
 
@@ -469,7 +471,7 @@ public class CoffeeShopQueries(
         }
     }
 
-    private static bool ComputeIsOpen(
+    private static bool? ComputeIsOpen(
         CoffeeShopStatus status,
         IEnumerable<ShopSchedule> schedules,
         DateTime utcNow)

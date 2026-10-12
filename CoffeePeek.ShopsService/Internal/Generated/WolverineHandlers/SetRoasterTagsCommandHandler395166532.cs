@@ -25,9 +25,10 @@ namespace Internal.Generated.WolverineHandlers
             await using var serviceScope = _serviceScopeFactory.CreateAsyncScope();
             Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<Wolverine.Runtime.ScopedMessageContextHolder>(serviceScope.ServiceProvider).Context = context;
             // This service has been marked as requiring service location independent of Wolverine's ability to use constructor injection of everything else
-            var coffeeCatalogStore = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<CoffeePeek.Shops.Application.Features.CoffeeCatalog.ICoffeeCatalogStore>(serviceScope.ServiceProvider);
-            // This service has been marked as requiring service location independent of Wolverine's ability to use constructor injection of everything else
             var shopsDbContext = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<CoffeePeek.Shops.Persistance.Configuration.ShopsDbContext>(serviceScope.ServiceProvider);
+            var unitOfWorkOfShopsDbContext = new CoffeePeek.Shared.Persistence.Data.UnitOfWork<CoffeePeek.Shops.Persistance.Configuration.ShopsDbContext>(shopsDbContext);
+            // This service has been marked as requiring service location independent of Wolverine's ability to use constructor injection of everything else
+            var coffeeCatalogTagWriter = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<CoffeePeek.Shops.Application.Features.CoffeeCatalog.ICoffeeCatalogTagWriter>(serviceScope.ServiceProvider);
             // The actual message body
             var setRoasterTagsCommand = (CoffeePeek.Shops.Application.Features.CoffeeCatalog.SetRoasterTagsCommand)context.Envelope.Message;
 
@@ -47,7 +48,7 @@ namespace Internal.Generated.WolverineHandlers
                 System.Diagnostics.Activity.Current?.SetTag("handler.type", "CoffeePeek.Shops.Application.Features.CoffeeCatalog.CoffeeCatalogHandler");
 
                 // The actual message execution
-                await CoffeePeek.Shops.Application.Features.CoffeeCatalog.CoffeeCatalogHandler.Handle(setRoasterTagsCommand, coffeeCatalogStore, cancellation).ConfigureAwait(false);
+                await CoffeePeek.Shops.Application.Features.CoffeeCatalog.CoffeeCatalogHandler.Handle(setRoasterTagsCommand, coffeeCatalogTagWriter, unitOfWorkOfShopsDbContext, cancellation).ConfigureAwait(false);
 
 
                 // Added by EF Core Transaction Middleware

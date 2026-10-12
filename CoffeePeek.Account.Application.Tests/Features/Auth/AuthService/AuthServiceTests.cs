@@ -65,6 +65,7 @@ public class AuthServiceTests
         // Assert
         result.AccessToken.Should().Be("access_token");
         result.RefreshToken.Should().Be("refresh_token");
+        user.RefreshTokens.Should().ContainSingle(t => t.DeviceName == "device" && t.IpAddress == "ip");
         result.ExpiredAt.Should().BeCloseTo(DateTime.UtcNow.AddMinutes(15), TimeSpan.FromSeconds(5));
     }
 

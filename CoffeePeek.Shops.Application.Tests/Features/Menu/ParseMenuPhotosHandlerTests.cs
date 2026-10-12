@@ -37,15 +37,17 @@ public class ParseMenuPhotosHandlerTests
     }
 
     [Fact]
-    public async Task Handle_MapsAliases_TakesMinPrice_AndLeavesUnmatched()
+    public async Task Handle_KeepsCheapestCompleteOffer_AndSkipsPartialOcrLines()
     {
         _parser.Setup(p => p.ParseAsync(It.IsAny<IReadOnlyList<MenuVisionPhoto>>(), _ct))
             .ReturnsAsync(new MenuVisionParseResult(true, null,
             [
-                new VisionDrinkLine("Капучино", 9m, 250, 0.9),
-                new VisionDrinkLine("Cappuccino", 8m, null, 0.8),
-                new VisionDrinkLine("Воронка", 7m, null, 0.7),
-                new VisionDrinkLine("Авторский раф-банан", 12m, null, 0.4)
+                new VisionDrinkLine("Капучино", 12m, 300, 0.9),
+                new VisionDrinkLine("Cappuccino", 8m, 200, 0.8),
+                new VisionDrinkLine("Cappuccino", 1m, null, 0.8),
+                new VisionDrinkLine("Воронка", 7m, 250, 0.7),
+                new VisionDrinkLine("Авторский раф-банан", 12m, 350, 0.4),
+                new VisionDrinkLine("Без цены", null, 200, 0.4)
             ]));
 
         var result = await ParseMenuPhotosHandler.Handle(
@@ -59,9 +61,10 @@ public class ParseMenuPhotosHandlerTests
 
         result.IsSuccess.Should().BeTrue();
         result.Data!.Success.Should().BeTrue();
-        result.Data.Items.Should().Contain(i => i.Slug == "cappuccino" && i.Price == 8m);
-        result.Data.Items.Should().Contain(i => i.Slug == "v60" && i.Price == 7m);
+        result.Data.Items.Should().ContainSingle(i => i.Slug == "cappuccino" && i.Price == 8m && i.VolumeMl == 200);
+        result.Data.Items.Should().Contain(i => i.Slug == "v60" && i.Price == 7m && i.VolumeMl == 250);
         result.Data.Unmatched.Should().Contain(u => u.RawName.Contains("раф-банан"));
+        result.Data.Unmatched.Should().NotContain(u => u.RawName == "Без цены");
         result.Data.SuggestedPriceRange.Should().Be(CoffeePeek.Contract.Enums.PriceRange.Moderate);
     }
 

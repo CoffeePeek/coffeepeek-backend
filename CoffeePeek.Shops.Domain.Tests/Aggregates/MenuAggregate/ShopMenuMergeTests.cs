@@ -10,7 +10,7 @@ public class ShopMenuMergeTests
     private static readonly Guid Raf = Guid.NewGuid();
 
     private static ShopMenuItem Parsed(Guid drink, decimal price) =>
-        ShopMenuItem.Create(drink, MenuItemAvailability.Present, price, null, MenuItemSource.Parsed);
+        ShopMenuItem.Create(drink, MenuItemAvailability.Present, price, 250, MenuItemSource.Parsed);
 
     [Fact]
     public void ReParse_KeepsManualPricesAndItemsFromEarlierPhotos()
@@ -18,7 +18,7 @@ public class ShopMenuMergeTests
         // Regression: each parse cleared the whole menu, dropping earlier photos' drinks and manual edits.
         var menu = ShopMenu.Create(Guid.NewGuid());
         menu.MergeParsedItems([Parsed(Espresso, 5), Parsed(Latte, 7)], null, null, null);
-        menu.ApplyManualItem(Latte, MenuItemAvailability.Present, 8, null, Guid.NewGuid());
+        menu.ApplyManualItem(Latte, MenuItemAvailability.Present, 8, 250, Guid.NewGuid());
 
         menu.MergeParsedItems([Parsed(Latte, 6), Parsed(Raf, 9)], null, null, null);
 
@@ -35,8 +35,11 @@ public class ShopMenuMergeTests
 
         menu.MergeParsedItems([Parsed(Espresso, 5), Parsed(Espresso, 6)], null, null, null);
         menu.ApplyParsedItems([Parsed(Latte, 5), Parsed(Latte, 6)], null, null, null);
+        var rowId = menu.Items.Single().Id;
+        menu.ApplyParsedItems([Parsed(Latte, 6)], null, null, null);
 
         menu.Items.Should().ContainSingle().Which.Price.Should().Be(6);
+        menu.Items.Single().Id.Should().Be(rowId);
     }
 
     [Fact]
@@ -48,5 +51,31 @@ public class ShopMenuMergeTests
         menu.CompleteParse("[]", null, null);
 
         menu.ParseStatus.Should().Be(MenuParseStatus.Ready);
+    }
+
+    [Fact]
+    public void ManualBatch_AdvancesRevisionOnceAndRejectsWholeInvalidBatch()
+    {
+        var menu = ShopMenu.Create(Guid.NewGuid());
+        var userId = Guid.NewGuid();
+
+        menu.ApplyManualItems([
+            new ManualShopMenuItemUpdate(Espresso, MenuItemAvailability.Present, 5, 200),
+            new ManualShopMenuItemUpdate(Latte, MenuItemAvailability.Present, 8, 300)
+        ], userId);
+
+        menu.InputRevision.Should().Be(1);
+        menu.UpdatedByUserId.Should().Be(userId);
+        menu.Items.Should().HaveCount(2);
+
+        var act = () => menu.ApplyManualItems([
+            new ManualShopMenuItemUpdate(Espresso, MenuItemAvailability.Present, 7, 200),
+            new ManualShopMenuItemUpdate(Raf, MenuItemAvailability.Present, 0, 250)
+        ], userId);
+
+        act.Should().Throw<CoffeePeek.Shared.Kernel.Exceptions.DomainException>();
+        menu.InputRevision.Should().Be(1);
+        menu.Items.Single(item => item.DrinkDefinitionId == Espresso).Price.Should().Be(5);
+        menu.Items.Should().HaveCount(2);
     }
 }

@@ -1,4 +1,5 @@
 using CoffeePeek.Contract.Events;
+using CoffeePeek.Contract.Dtos.ShopPhotos;
 using CoffeePeek.MediaService.Configuration;
 using CoffeePeek.MediaService.Consumers;
 using CoffeePeek.MediaService.Data;
@@ -16,6 +17,22 @@ public class CheckInPhotosAttachedHandlerTests
     private readonly Mock<IUnitOfWork> _uowMock = new();
     private readonly Mock<IStorageService> _storageMock = new();
     private readonly Guid _userId = Guid.NewGuid();
+
+    [Fact]
+    public async Task Handle_StaleCheckInEvent_CannotConfirmShopReservedUpload()
+    {
+        var photo = Photo("shops/reserved");
+        photo.ShopAttachmentId = Guid.NewGuid();
+        photo.ShopAttachmentKind = ShopPhotoAttachmentKind.Gallery;
+        SetupRepo(photo);
+
+        await CreateHandler().Handle(Event(photo.StorageKey), TestContext.Current.CancellationToken);
+
+        photo.Status.Should().Be(PhotoStatus.Pending);
+        photo.CheckInId.Should().BeNull();
+        _storageMock.VerifyNoOtherCalls();
+        _uowMock.VerifyNoOtherCalls();
+    }
 
     [Fact]
     public async Task CanonicalAttachments_UseOwnerScopedIdempotentConfirmation()

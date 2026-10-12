@@ -1,6 +1,7 @@
 using CoffeePeek.Moderation.Application.Abstractions;
 using CoffeePeek.Moderation.Infrastructure.Services;
 using CoffeePeek.Moderation.Infrastructure.Shops;
+using CoffeePeek.Moderation.Infrastructure.Notifications;
 using CoffeePeek.Shared.Kernel;
 using CoffeePeek.Shared.Kernel.Extentions;
 using Microsoft.Extensions.DependencyInjection;
@@ -12,6 +13,19 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddInfrastructure(this IServiceCollection services)
     {
+        services.AddOptions<TelegramModerationOptions>()
+            .BindConfiguration("TelegramModeration")
+            .Validate(options => string.IsNullOrWhiteSpace(options.BotToken) == string.IsNullOrWhiteSpace(options.ChatId),
+                "Telegram moderation bot token and chat ID must be configured together.")
+            .ValidateOnStart();
+        services.AddHttpClient<TelegramModerationClient>(client =>
+            {
+                client.BaseAddress = new Uri("https://api.telegram.org/");
+                client.Timeout = TimeSpan.FromSeconds(10);
+            })
+            .RemoveAllLoggers()
+            .RemoveAllResilienceHandlers();
+
         var yandexOptions = services.AddValidateOptions<YandexApiOptions>();
         services.AddHttpClient<IYandexGeocodingService, YandexGeocodingService>(client =>
         {

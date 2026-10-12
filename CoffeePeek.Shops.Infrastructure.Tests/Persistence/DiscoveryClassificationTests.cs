@@ -98,11 +98,9 @@ public class DiscoveryClassificationTests
         var roaster = new Roaster("Roaster"); db.Roasters.Add(roaster);
         var product = Product(roaster.Id);
         product.ApplyClassification(new(["filter"], null, null, null, [], [], [], null));
-        var source = new CoffeeProductSource { Product = product, CoffeeProductId = product.Id,
-            SourceKey = "roast.by", ExternalProductId = "p1", SourceUrl = "https://roast.by/product" };
-        var variant = new CoffeeVariant { SourceKey = "roast.by", ExternalVariantId = "v1", Price = 30,
-            Currency = "BYN", Source = source, CoffeeProductSourceId = source.Id };
-        source.Variants.Add(variant); product.Sources.Add(source);
+        var source = new CoffeeProductSource(product, "roast.by", "p1", "https://roast.by/product");
+        var variant = new CoffeeVariant(source, "v1", null, 30, "BYN");
+        source.AttachVariant(variant); product.AttachSource(source);
         db.CoffeeProducts.Add(product); await db.SaveChangesAsync(Ct);
         var store = new DiscoveryClassificationStore(db); var version = product.Version;
         var edited = (await store.EditVariantClassificationAsync(product.Id, variant.Id,

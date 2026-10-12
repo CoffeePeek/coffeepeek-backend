@@ -10,6 +10,6 @@ try
 catch (Exception exception)
 {
     // Never echo connection strings, user content or object keys.
-    Console.Error.WriteLine($"Migration stopped ({exception.GetType().Name}). Legacy cleanup was not completed. Fix the cause and rerun.");
+    Console.Error.WriteLine(MigrationFailure.Describe(exception));
     return 1;
 }

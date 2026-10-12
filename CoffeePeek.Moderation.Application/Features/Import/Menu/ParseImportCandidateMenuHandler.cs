@@ -1,4 +1,6 @@
+using CoffeePeek.Contract.Dtos;
 using CoffeePeek.Contract.Dtos.Import;
+using CoffeePeek.Contract.Dtos.Menu;
 using CoffeePeek.Contract.Events.Menu;
 using CoffeePeek.Moderation.Application.Features.Menu;
 using CoffeePeek.Moderation.Domain.Aggregates.ShopImportCandidateAggregate;

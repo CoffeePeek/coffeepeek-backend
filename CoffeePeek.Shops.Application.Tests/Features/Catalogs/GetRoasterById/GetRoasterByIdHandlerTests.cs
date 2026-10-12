@@ -23,7 +23,7 @@ public class GetRoasterByIdHandlerTests
         ShopBucketName = "coffeepeek.shops"
     });
     private readonly CancellationToken _ct = CancellationToken.None;
-    private readonly Mock<ICoffeeCatalogStore> _coffees = new();
+    private readonly Mock<IPublicCoffeeCatalogReader> _coffees = new();
 
     public GetRoasterByIdHandlerTests()
     {

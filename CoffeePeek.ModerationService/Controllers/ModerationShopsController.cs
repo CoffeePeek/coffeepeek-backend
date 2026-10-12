@@ -186,7 +186,7 @@ public class ModerationShopsController(IMessageBus bus, IUserContext userContext
     {
         var response = await bus.InvokeAsync<Response<ModerationShopDto>>(
             new UpdateModerationShopMenuCommand(
-                id, request.Items, request.ApplySuggestedPriceRange, userContext.GetUserIdOrThrow()),
+                id, request.Items, request.ApplySuggestedPriceRange, userContext.GetUserIdOrThrow(), request.ExpectedInputRevision),
             ct);
         return MenuActionResult(response);
     }

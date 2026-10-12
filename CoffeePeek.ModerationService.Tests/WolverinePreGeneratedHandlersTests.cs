@@ -47,6 +47,8 @@ public class WolverinePreGeneratedHandlersTests
         builder.AddApplication();
 
         await using var app = builder.Build();
+        Assert.True(app.Services.GetRequiredService<Microsoft.Extensions.Options.IOptions<Sentry.AspNetCore.SentryAspNetCoreOptions>>()
+            .Value.DisableSentryHttpMessageHandler);
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
 
         try

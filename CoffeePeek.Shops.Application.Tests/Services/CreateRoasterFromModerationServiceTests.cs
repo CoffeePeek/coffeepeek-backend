@@ -2,8 +2,6 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using CoffeePeek.Contract.Dtos.CoffeeShop;
-using CoffeePeek.Shared.Domain.Interfaces.Infrastructure;
-using CoffeePeek.Shared.Kernel;
 using CoffeePeek.Shops.Application.Services;
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
 using FluentAssertions;
@@ -15,12 +13,10 @@ namespace CoffeePeek.Shops.Application.Tests.Services;
 public class CreateRoasterFromModerationServiceTests
 {
     [Fact]
-    public async Task CreateRoasterFromApprovedEventAsync_NewRoaster_InvalidatesAffectedCaches()
+    public async Task CreateRoasterFromApprovedEventAsync_NewRoaster_IsTrackedForConsumerCommit()
     {
         var queryRepository = new Mock<IQueryRoasterRepository>();
         var repository = new Mock<IRoasterRepository>();
-        var unitOfWork = new Mock<IUnitOfWork>();
-        var cacheService = new Mock<ICacheService>();
         var logger = new Mock<ILogger<CreateRoasterFromModerationService>>();
         var moderationId = Guid.NewGuid();
         var ct = CancellationToken.None;
@@ -31,8 +27,6 @@ public class CreateRoasterFromModerationServiceTests
         var service = new CreateRoasterFromModerationService(
             queryRepository.Object,
             repository.Object,
-            unitOfWork.Object,
-            cacheService.Object,
             logger.Object);
 
         var result = await service.CreateRoasterFromApprovedEventAsync(
@@ -41,13 +35,29 @@ public class CreateRoasterFromModerationServiceTests
             ct);
 
         result.Should().NotBeEmpty();
-        repository.Verify(r => r.Add(It.IsAny<Roaster>()), Times.Once);
-        unitOfWork.Verify(u => u.SaveChangesAsync(ct), Times.Once);
-        cacheService.Verify(
-            c => c.RemoveByPattern(CacheKey.Roaster.ListPattern(), ct),
-            Times.Once);
-        cacheService.Verify(
-            c => c.RemoveByPattern(CacheKey.Shop.SearchPattern(), ct),
-            Times.Once);
+        repository.Verify(r => r.Add(It.Is<Roaster>(roaster => roaster.Id == result && roaster.ModerationId == moderationId)), Times.Once);
+    }
+
+    [Fact]
+    public async Task CreateRoasterFromApprovedEventAsync_ReplayedEvent_ReturnsExistingRoaster()
+    {
+        var queryRepository = new Mock<IQueryRoasterRepository>();
+        var repository = new Mock<IRoasterRepository>();
+        var existingId = Guid.NewGuid();
+        var moderationId = Guid.NewGuid();
+        queryRepository.Setup(r => r.GetIdByModerationId(moderationId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existingId);
+
+        var service = new CreateRoasterFromModerationService(
+            queryRepository.Object,
+            repository.Object,
+            Mock.Of<ILogger<CreateRoasterFromModerationService>>());
+
+        var result = await service.CreateRoasterFromApprovedEventAsync(
+            new ModerationRoasterDto { Id = moderationId, Name = "Coffee Circus" },
+            moderationId);
+
+        result.Should().Be(existingId);
+        repository.Verify(r => r.Add(It.IsAny<Roaster>()), Times.Never);
     }
 }

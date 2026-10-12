@@ -182,6 +182,10 @@ services:
           memory: 512M
 
   account:
+    networks:
+      default:
+      proxy:
+        aliases: [account-proxy]
     healthcheck: *app-healthcheck
     image: ${DOCKER_IMAGE_PREFIX}/coffeepeek.accountservice:${IMAGE_TAG}
     build:
@@ -202,6 +206,7 @@ services:
       <<: [*dotnet-common, *rabbitmq-env, *redis-env, *jwt-env, *media-public-env, *gateway-auth-env, *aspire-service-discovery]
       PostgresCpOptions__ConnectionString: Host=postgres;Port=5432;Database=cpaccountdb;Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD};SslMode=Disable;GSS Encryption Mode=Disable
       PublicAddresses__Enabled: "${ACCOUNT_PUBLIC_ADDRESSES_ENABLED:-false}"
+      ForwardedHeaders__KnownProxies__0: ${PROXY_NETWORK_PREFIX:-172.30.42}.3
       MinIOOptions__Endpoint: http://minio:9000
       MinIOOptions__AccessKey: ${MINIO_ROOT_USER}
       MinIOOptions__SecretKey: ${MINIO_ROOT_PASSWORD}
@@ -287,6 +292,8 @@ services:
       MinIOOptions__BucketName: coffeepeek.shops
       YandexApiOptions__ApiKey: ${YANDEX_GEOCODER_API_KEY:-}
       GooglePlaces__ApiKey: ${GOOGLE_PLACES_API_KEY:-}
+      TelegramModeration__BotToken: ${TELEGRAM_MODERATION_BOT_TOKEN:-}
+      TelegramModeration__ChatId: ${TELEGRAM_MODERATION_CHAT_ID:-}
       Sentry__Dsn: ${SENTRY_DSN_MODERATION:-}
     mem_limit: 1536m
     memswap_limit: 1536m
@@ -322,6 +329,11 @@ services:
     memswap_limit: 512m
 
   gateway:
+    networks:
+      default:
+      proxy:
+        ipv4_address: ${PROXY_NETWORK_PREFIX:-172.30.42}.3
+        aliases: [gateway-proxy]
     healthcheck: *app-healthcheck
     image: ${DOCKER_IMAGE_PREFIX}/gateway:${IMAGE_TAG}
     build:
@@ -344,7 +356,8 @@ services:
       - "127.0.0.1:${GATEWAY_PORT:-8080}:8080"
     environment:
       <<: [*dotnet-common, *jwt-env, *redis-env, *gateway-auth-env]
-      ReverseProxy__Clusters__account-cluster__Destinations__destination1__Address: http://account:8080
+      ForwardedHeaders__KnownProxies__0: ${PROXY_NETWORK_PREFIX:-172.30.42}.2
+      ReverseProxy__Clusters__account-cluster__Destinations__destination1__Address: http://account-proxy:8080
       ReverseProxy__Clusters__shops-cluster__Destinations__destination1__Address: http://shops:8080
       ReverseProxy__Clusters__moderation-cluster__Destinations__destination1__Address: http://moderation:8080
       ReverseProxy__Clusters__media-cluster__Destinations__destination1__Address: http://media:8080
@@ -356,6 +369,10 @@ services:
     memswap_limit: 1024m
 
   caddy:
+    networks:
+      default:
+      proxy:
+        ipv4_address: ${PROXY_NETWORK_PREFIX:-172.30.42}.2
     profiles: [https]
     image: public.ecr.aws/docker/library/caddy:2-alpine
     restart: unless-stopped
@@ -377,6 +394,15 @@ services:
       DOMAIN: ${DOMAIN}
       MEDIA_DOMAIN: ${MEDIA_DOMAIN}
       ACME_EMAIL: ${ACME_EMAIL}
+
+# Stable proxy IPs without trusting the default network or other application containers.
+networks:
+  default:
+  proxy:
+    ipam:
+      config:
+        - subnet: ${PROXY_NETWORK_PREFIX:-172.30.42}.0/24
+          ip_range: ${PROXY_NETWORK_PREFIX:-172.30.42}.128/25
 
 volumes:
   postgres_data:

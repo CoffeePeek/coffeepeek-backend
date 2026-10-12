@@ -13,7 +13,7 @@ public sealed class CheckInAuditInterceptor : AuditInterceptor
         InterceptionResult<int> result, CancellationToken ct = default)
     {
         var timestamps = eventData.Context!.ChangeTracker.Entries()
-            .Where(e => e.State == EntityState.Added && e.Entity is CheckIn or ShopPhoto)
+            .Where(e => e.State == EntityState.Added && e.Entity is CheckIn or CheckInPhoto or ShopPhoto)
             .Select(e => (Entry: e, Created: (DateTime)e.Property("CreatedAtUtc").CurrentValue!))
             .Where(e => e.Created != default).ToArray();
         var outcome = await base.SavingChangesAsync(eventData, result, ct);

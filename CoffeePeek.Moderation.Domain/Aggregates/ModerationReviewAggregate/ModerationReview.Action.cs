@@ -29,8 +29,15 @@ public partial class ModerationReview
 
         var rating = place == null && service == null && coffee == null
             ? null : Rating.Create(place ?? 0, service ?? 0, coffee ?? 0);
-        return new ModerationReview(checkInId, contentRevision, userId, shopId, userName, text?.Trim() ?? "",
+        var review = new ModerationReview(checkInId, contentRevision, userId, shopId, userName, text?.Trim() ?? "",
             rating, drink, visitedAtUtc, photos);
+        if (review.Comment.Length == 0 && photos.Count == 0)
+        {
+            review.ModerationStatus = ModerationStatus.Approved;
+            review.ModeratedAt = review.CreatedAtUtc;
+            review.DecisionSequence = 1;
+        }
+        return review;
     }
 
     public bool Approve(Guid moderatorId)

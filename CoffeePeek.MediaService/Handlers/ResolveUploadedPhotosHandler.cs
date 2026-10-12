@@ -37,10 +37,12 @@ public static class ResolveUploadedPhotosHandler
         // The in-memory filter repeats the owner check as defense in depth.
         var candidates = photos.Where(p =>
             p.OwnerId == query.OwnerId
-            && p.BucketType is BucketType.Shop or BucketType.CheckIn
+            && p.BucketType == BucketType.Shop
             && p.CheckInId == null
+            && p.ShopAttachmentId == null
             && p.Status == PhotoStatus.Pending
-            && !p.IsExpired);
+            && !p.IsExpired
+            && GenerateShopPhotoHandler.IsSafePhotoContentType(p.ContentType));
 
         var result = new List<ResolvedUploadedPhotoDto>();
         foreach (var photo in candidates)

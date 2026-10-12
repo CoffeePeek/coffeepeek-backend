@@ -43,22 +43,10 @@ public static class RateLimitingExtensions
     }
 
     /// <summary>
-    /// Client IP for rate-limit partitioning. Uses the right-most X-Forwarded-For entry — the one appended by the
-    /// proxy directly in front of the gateway (Caddy). Left-most entries are client-controlled and trivially spoofed.
+    /// Client IP after trusted forwarded-header processing, shared with YARP's outgoing X-Forwarded-For.
     /// </summary>
-    public static string GetClientKey(HttpContext context)
-    {
-        var forwardedFor = context.Request.Headers["X-Forwarded-For"].ToString();
-        if (!string.IsNullOrWhiteSpace(forwardedFor))
-        {
-            var last = forwardedFor.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-                .LastOrDefault();
-            if (!string.IsNullOrEmpty(last))
-                return last;
-        }
-
-        return context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
-    }
+    public static string GetClientKey(HttpContext context) =>
+        context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
 
     private static RateLimitPartition<string> PerClient(HttpContext context, TimeSpan window, int segments, int permits) =>
         RateLimitPartition.GetSlidingWindowLimiter(GetClientKey(context), _ => new SlidingWindowRateLimiterOptions

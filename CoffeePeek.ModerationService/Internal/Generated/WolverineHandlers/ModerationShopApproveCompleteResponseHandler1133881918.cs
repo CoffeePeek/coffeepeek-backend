@@ -51,11 +51,7 @@ namespace Internal.Generated.WolverineHandlers
                 var moderationShopApproveCompleteHandler = new CoffeePeek.Moderation.Infrastructure.Consumers.ModerationShopApproveCompleteHandler(moderationShopRepository, unitOfWorkOfModerationDbContext, _loggerOfModerationShopApproveCompleteHandler);
 
                 // The actual message execution
-                var outgoing1 = await moderationShopApproveCompleteHandler.Handle(moderationShopApproveCompleteResponse, cancellation).ConfigureAwait(false);
-
-
-                // Outgoing, cascaded message
-                await context.EnqueueCascadingAsync(outgoing1).ConfigureAwait(false);
+                await moderationShopApproveCompleteHandler.Handle(moderationShopApproveCompleteResponse, cancellation).ConfigureAwait(false);
 
 
                 // Added by EF Core Transaction Middleware

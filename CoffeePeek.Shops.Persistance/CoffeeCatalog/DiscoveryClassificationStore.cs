@@ -101,7 +101,6 @@ public sealed class DiscoveryClassificationStore(ShopsDbContext db) : IDiscovery
                 v.GroupCode == "brew" && v.Code == request.BrewPurpose && v.IsActive, ct))
             throw new DiscoveryException("Unknown or inactive brew purpose.");
         variant.SetBrewPurpose(request.BrewPurpose, request.ProtectFromImport);
-        product.AdvanceVersion();
         await SaveClassificationAsync(ct);
         return MapProduct(product);
     }

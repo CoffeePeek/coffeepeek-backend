@@ -38,7 +38,8 @@ public static class DependencyInjection
     public static IWebHostBuilder ConfigureWebhost(this IWebHostBuilder builder)
     {
         builder.ConfigureEnvironment();
-        builder.UseCoffeePeekSentry();
+        // OpenTelemetry filters Telegram URLs; Sentry's separate HTTP handler would expose the bot token.
+        builder.UseCoffeePeekSentry(options => options.DisableSentryHttpMessageHandler = true);
 
         return builder;
     }

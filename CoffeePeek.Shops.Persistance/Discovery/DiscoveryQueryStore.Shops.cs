@@ -59,7 +59,7 @@ public sealed partial class DiscoveryQueryStore
             shops = shops.Where(s => cityIds.Contains(s.Location.CityId));
         }
         if (roasters.Length > 0) shops = shops.Where(s => s.Roasters.Any(r => roasters.Contains(r.Id)));
-        if (equipment.Length > 0) shops = shops.Where(s => s.Equipments.Any(e => equipment.Contains(e.Id)));
+        if (equipment.Length > 0) shops = shops.Where(s => s.ShopEquipments.Any(e => equipment.Contains(e.EquipmentId)));
         if (beans.Length > 0) shops = shops.Where(s => s.CoffeeBeans.Any(b => beans.Contains(b.Id)));
         if (methods.Length > 0) shops = shops.Where(s => s.BrewMethods.Any(b => methods.Contains(b.Id)));
         foreach (var tag in tags) shops = shops.Where(s => s.ShopTags.Any(t => t.TagId == tag));
@@ -79,7 +79,7 @@ public sealed partial class DiscoveryQueryStore
             var cutoff = now.AddDays(-BusinessConstants.ItNewEntityInDays);
             shops = f.IsNew.Value ? shops.Where(s => s.CreatedAtUtc >= cutoff) : shops.Where(s => s.CreatedAtUtc < cutoff);
         }
-        if (f.VisitedOnly) shops = shops.Where(s => db.CheckIns.Any(c => c.ShopId == s.Id && c.UserId == userId));
+        if (f.VisitedOnly) shops = shops.Where(s => db.CheckIns.Any(c => c.ShopId == s.Id && c.UserId == userId && c.DeletedAtUtc == null));
         if (f.FavoritesOnly) shops = shops.Where(s => db.DiscoveryFavorites.Any(c => c.Kind == "coffee_shop" && c.EntityId == s.Id && c.UserId == userId));
         if (f.IsOpen.HasValue)
         {
@@ -160,7 +160,7 @@ public sealed partial class DiscoveryQueryStore
                     City = city?.PublicSlug is null ? null : Address(city.PublicSlug, "cities", city.SlugRevision),
                     AddressLine = s.Location.Address, CoverPhoto = Photo(s.ShopPhotos.OrderBy(p => p.SortIndex).FirstOrDefault()?.StorageKey),
                     Rating = Math.Round(h.Rating, 2), CheckInCount = checkInCounts.GetValueOrDefault(s.Id),
-                    IsOpen = s.Schedules.Count == 0 ? null : s.IsOpenAtUtc(now),
+                    IsOpen = s.IsOpenAtUtc(now),
                     IsVisited = userId.HasValue ? visited.Contains(s.Id) : null,
                     IsFavorite = userId.HasValue ? favorites.Contains(s.Id) : null,
                     DistanceMeters = h.Distance.HasValue ? (int)Math.Round(h.Distance.Value) : null,

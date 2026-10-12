@@ -1,5 +1,4 @@
 using CoffeePeek.Contract.Dtos.CheckIns;
-using CoffeePeek.Shared.Domain.Interfaces.Infrastructure;
 using CoffeePeek.Shared.Kernel;
 using CoffeePeek.Shared.Kernel.Exceptions;
 using CoffeePeek.Shared.Kernel.Response;
@@ -16,7 +15,7 @@ public static class UpdateUnifiedCheckInHandler
 {
     public static async Task<Response<UnifiedCheckInDto>> Handle(UpdateUnifiedCheckInCommand command,
         IQueryCheckInRepository repository, CoffeePeek.Shared.Kernel.Drinks.IDrinkCatalog drinks, IUploadedPhotoLookup photos, IUnitOfWork unitOfWork,
-        IMessageBus bus, ICacheService cache, CancellationToken ct)
+        IMessageBus bus, CancellationToken ct)
     {
         var checkIn = await GetOwnedAsync(repository, command.Id, command.UserId, ct);
         var drink = await CoffeePeek.Shared.Kernel.Drinks.DrinkSelection.ResolveAsync(command.Request.DrinkSlug, command.Request.CustomDrinkName, drinks, ct);
@@ -24,27 +23,27 @@ public static class UpdateUnifiedCheckInHandler
         if (checkIn.Visibility == CheckInVisibility.Public) await EnsurePhotoBindingsAsync(checkIn,photos,ct);
         checkIn.UpdateContent(command.Request.Text, rating == null ? null : Rating.Create(rating.Place, rating.Service, rating.Coffee));
         checkIn.SetDrink(drink);
-        return await SaveAsync(checkIn, unitOfWork, bus, cache, ct);
+        return await SaveAsync(checkIn, unitOfWork, bus, ct);
     }
 
     public static async Task<Response<UnifiedCheckInDto>> Handle(ChangeUnifiedCheckInVisibilityCommand command,
-        IQueryCheckInRepository repository, CoffeePeek.Shared.Kernel.Drinks.IDrinkCatalog drinks, IUploadedPhotoLookup photos, IUnitOfWork unitOfWork, IMessageBus bus, ICacheService cache, CancellationToken ct)
+        IQueryCheckInRepository repository, IUploadedPhotoLookup photos, IUnitOfWork unitOfWork, IMessageBus bus, CancellationToken ct)
     {
         var checkIn = await GetOwnedAsync(repository, command.Id, command.UserId, ct);
         var revision = checkIn.ContentRevision;
         if ((CheckInVisibility)command.Visibility == CheckInVisibility.Public) await EnsurePhotoBindingsAsync(checkIn,photos,ct);
         checkIn.ChangeVisibility((CheckInVisibility)command.Visibility);
         if (revision == checkIn.ContentRevision) return Response<UnifiedCheckInDto>.Success(CheckInMapping.ToDto(checkIn));
-        return await SaveAsync(checkIn, unitOfWork, bus, cache, ct);
+        return await SaveAsync(checkIn, unitOfWork, bus, ct);
     }
 
     public static async Task<Response> Handle(DeleteUnifiedCheckInCommand command, IQueryCheckInRepository repository,
-        IUnitOfWork unitOfWork, ICacheService cache, CancellationToken ct)
+        IUnitOfWork unitOfWork, IMessageBus bus, CancellationToken ct)
     {
         var checkIn = await GetOwnedAsync(repository, command.Id, command.UserId, ct);
         checkIn.Delete();
         await unitOfWork.SaveChangesAsync(ct);
-        await CheckInCacheInvalidator.InvalidateAsync(cache, checkIn.ShopId, checkIn.UserId, ct);
+        await bus.PublishAsync(new CheckInCacheInvalidationRequested(checkIn.Id, checkIn.ShopId, checkIn.UserId));
         return Response.Success();
     }
 
@@ -67,11 +66,11 @@ public static class UpdateUnifiedCheckInHandler
     }
 
     private static async Task<Response<UnifiedCheckInDto>> SaveAsync(DomainCheckIn checkIn, IUnitOfWork unitOfWork,
-        IMessageBus bus, ICacheService cache, CancellationToken ct, CheckInDrinkDto? drink = null)
+        IMessageBus bus, CancellationToken ct)
     {
         if (checkIn.Visibility == CheckInVisibility.Public) await bus.PublishAsync(CheckInMapping.ModerationRequest(checkIn));
         await unitOfWork.SaveChangesAsync(ct);
-        await CheckInCacheInvalidator.InvalidateAsync(cache, checkIn.ShopId, checkIn.UserId, ct);
+        await bus.PublishAsync(new CheckInCacheInvalidationRequested(checkIn.Id, checkIn.ShopId, checkIn.UserId));
         return Response<UnifiedCheckInDto>.Success(CheckInMapping.ToDto(checkIn));
     }
 }

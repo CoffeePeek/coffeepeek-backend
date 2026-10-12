@@ -18,7 +18,7 @@ public class ShopChangeRequestPayloadTests
         { ShopChangeSection.Roasters, new ShopChangePayloadDto(RoasterIds: []) },
         { ShopChangeSection.Equipment, new ShopChangePayloadDto(EquipmentIds: [Guid.NewGuid()]) },
         { ShopChangeSection.Menu, new ShopChangePayloadDto(Menu: new(
-            [new UpdateShopMenuItemRequest("espresso", MenuItemAvailability.Present, 5, 30)], [], [Photo()])) },
+            [new UpdateShopMenuItemRequest("espresso", MenuItemAvailability.Present, 5, 30)], [], [Photo()], 0)) },
         { ShopChangeSection.BrewMethods, new ShopChangePayloadDto(BrewMethodIds: [Guid.NewGuid()]) }
     };
 
@@ -64,6 +64,16 @@ public class ShopChangeRequestPayloadTests
         var act = () => ShopChangeRequestPayload.Serialize(ShopChangeSection.Photos, payload);
 
         act.Should().Throw<ArgumentException>();
+    }
+
+    [Fact]
+    public void Serialize_RejectsMenuWithoutRevision()
+    {
+        var payload = new ShopChangePayloadDto(Menu: new([], [], []));
+
+        var act = () => ShopChangeRequestPayload.Serialize(ShopChangeSection.Menu, payload);
+
+        act.Should().Throw<ArgumentException>().WithMessage("*revision*");
     }
 
     private static UploadedPhotoDto Photo() => new("photo.jpg", "image/jpeg", Guid.NewGuid().ToString(), 42);

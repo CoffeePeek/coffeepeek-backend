@@ -31,7 +31,7 @@ namespace Internal.Generated.WolverineHandlers
             // The actual message body
             var createShopChangeRequestCommand = (CoffeePeek.Moderation.Application.Features.ShopChangeRequests.CreateShopChangeRequestCommand)context.Envelope.Message;
 
-            
+
             // Enroll the DbContext & IMessagingContext in the outgoing Wolverine outbox transaction
             var efCoreEnvelopeTransaction = new Wolverine.EntityFrameworkCore.Internals.EfCoreEnvelopeTransaction(moderationDbContext, context, _domainEventScraperIEnumerable);
             await context.EnlistInOutboxAsync(efCoreEnvelopeTransaction).ConfigureAwait(false);
@@ -45,15 +45,19 @@ namespace Internal.Generated.WolverineHandlers
             {
                 System.Diagnostics.Activity.Current?.SetTag("message.handler", "CoffeePeek.Moderation.Application.Features.ShopChangeRequests.CreateShopChangeRequestHandler");
                 System.Diagnostics.Activity.Current?.SetTag("handler.type", "CoffeePeek.Moderation.Application.Features.ShopChangeRequests.CreateShopChangeRequestHandler");
-                
-                // The actual message execution
-                var outgoing1 = await CoffeePeek.Moderation.Application.Features.ShopChangeRequests.CreateShopChangeRequestHandler.Handle(createShopChangeRequestCommand, shopChangeRequestRepository, unitOfWorkOfModerationDbContext, cancellation).ConfigureAwait(false);
 
-                
+                // The actual message execution
+                (var outgoing1, var outgoing2) = await CoffeePeek.Moderation.Application.Features.ShopChangeRequests.CreateShopChangeRequestHandler.Handle(createShopChangeRequestCommand, shopChangeRequestRepository, unitOfWorkOfModerationDbContext, cancellation).ConfigureAwait(false);
+
+
                 // Outgoing, cascaded message
                 await context.EnqueueCascadingAsync(outgoing1).ConfigureAwait(false);
 
-                
+
+                // Outgoing, cascaded message
+                await context.EnqueueCascadingAsync(outgoing2).ConfigureAwait(false);
+
+
                 // Added by EF Core Transaction Middleware
                 var result_of_SaveChangesAsync = await moderationDbContext.SaveChangesAsync(cancellation).ConfigureAwait(false);
 
@@ -72,7 +76,6 @@ namespace Internal.Generated.WolverineHandlers
     }
 
     // END: CreateShopChangeRequestCommandHandler579915638
-    
-    
-}
 
+
+}

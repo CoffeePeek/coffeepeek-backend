@@ -13,7 +13,7 @@ namespace CoffeePeek.ShopsService.Controllers;
 [Route("api/roasters")]
 [ProducesErrorResponseType(typeof(ErrorResponse))]
 [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
-public class RoastersController(PublicDiscoveryService discovery, CoffeePeek.Shops.Application.Features.CoffeeCatalog.ICoffeeCatalogStore coffees) : ControllerBase
+public class RoastersController(PublicDiscoveryService discovery, CoffeePeek.Shops.Application.Features.CoffeeCatalog.IPublicCoffeeCatalogReader coffees) : ControllerBase
 {
     [HttpGet("{slug}")]
     [HttpGet("by-slug/{slug}")]

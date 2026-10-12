@@ -22,7 +22,7 @@ public static class CreateUnifiedCheckInHandler
 {
     public static async Task<Response<UnifiedCheckInDto>> Handle(CreateUnifiedCheckInCommand command,
         IQueryCheckInRepository repository, IQueryCoffeeShopRepository shops, CoffeePeek.Shared.Kernel.Drinks.IDrinkCatalog drinks,
-        IUploadedPhotoLookup photos, IUnitOfWork unitOfWork, IMessageBus bus, ICacheService cache, CancellationToken ct)
+        IUploadedPhotoLookup photos, IUnitOfWork unitOfWork, IMessageBus bus, CancellationToken ct)
     {
         var request = command.Request;
         if (request.VisitedAt == null) throw new ValidationException("VisitedAt is required.");
@@ -45,8 +45,9 @@ public static class CreateUnifiedCheckInHandler
         checkIn.SetDrink(drink);
         await repository.LockUserForCheckInAsync(command.UserId, ct);
         var now = DateTime.UtcNow;
-        if (await repository.ExistsSinceAsync(command.UserId, now.AddHours(-BusinessConstants.MinHoursBetweenUserCheckIns), ct))
-            throw new ValidationException($"Check-ins can be created once every {BusinessConstants.MinHoursBetweenUserCheckIns} hours.");
+        if (await repository.ExistsSinceAsync(command.UserId, request.CoffeeShopId,
+            now.AddHours(-BusinessConstants.MinHoursBetweenUserCheckIns), ct))
+            throw new ValidationException($"Check-ins at the same coffee shop can be created once every {BusinessConstants.MinHoursBetweenUserCheckIns} hours.");
         if (await repository.CountSinceAsync(command.UserId, now.Date, ct) >= BusinessConstants.MaxUserCheckInsPerDay)
             throw new ValidationException($"Check-ins are limited to {BusinessConstants.MaxUserCheckInsPerDay} per day.");
         if (keys.Length > 0)
@@ -62,13 +63,13 @@ public static class CreateUnifiedCheckInHandler
             {
                 throw new ValidationException("One or more photos were not found, do not belong to you, or were already used.");
             }
-            checkIn.AddPhotos(keys.Select((k, i) => new ShopPhoto(trusted[k].FileName, trusted[k].ContentType,
+            checkIn.AddPhotos(keys.Select((k, i) => new CheckInPhoto(trusted[k].FileName, trusted[k].ContentType,
                 trusted[k].StorageKey, trusted[k].SizeBytes, command.UserId, i, trusted[k].PhotoId)));
             if (drinkKey != null)
             {
                 var cutout = trusted[drinkKey];
-                checkIn.AddDrinkPhoto(new ShopPhoto(cutout.FileName, cutout.ContentType, cutout.StorageKey,
-                    cutout.SizeBytes, command.UserId, id: cutout.PhotoId));
+                checkIn.AddDrinkPhoto(new CheckInPhoto(cutout.FileName, cutout.ContentType, cutout.StorageKey,
+                    cutout.SizeBytes, command.UserId, keys.Length, id: cutout.PhotoId));
             }
         }
         repository.Add(checkIn);
@@ -78,7 +79,7 @@ public static class CreateUnifiedCheckInHandler
         await bus.PublishAsync(new CoffeePeek.Contract.Events.Shops.CheckinCreatedEvent
             { UserId = command.UserId, ShopId = checkIn.ShopId, CheckInId = checkIn.Id, CreatedAt = checkIn.CreatedAtUtc });
         // A failed/ambiguous commit must retain reservations: freeing them could attach committed bytes elsewhere.
-        await bus.PublishAsync(new CheckInCacheInvalidationRequested(checkIn.Id));
+        await bus.PublishAsync(new CheckInCacheInvalidationRequested(checkIn.Id, checkIn.ShopId, checkIn.UserId));
         await unitOfWork.SaveChangesAsync(ct);
         var names = await shops.GetShopNamesByIdsAsync([checkIn.ShopId], ct);
         return Response<UnifiedCheckInDto>.Success(CheckInMapping.ToDto(checkIn, names.GetValueOrDefault(checkIn.ShopId) ?? ""));

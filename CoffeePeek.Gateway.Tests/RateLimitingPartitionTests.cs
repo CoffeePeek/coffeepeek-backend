@@ -1,3 +1,4 @@
+using System.Net;
 using CoffeePeek.Gateway.Extensions;
 using FluentAssertions;
 using Microsoft.AspNetCore.Builder;
@@ -34,12 +35,13 @@ public class RateLimitingPartitionTests
     }
 
     [Fact]
-    public void ClientKey_IgnoresClientSuppliedLeftMostForwardedFor()
+    public void ClientKey_IgnoresUnprocessedForwardedFor()
     {
         var context = new DefaultHttpContext();
+        context.Connection.RemoteIpAddress = IPAddress.Parse("198.51.100.9");
         context.Request.Headers["X-Forwarded-For"] = "1.2.3.4, 203.0.113.7";
 
-        RateLimitingExtensions.GetClientKey(context).Should().Be("203.0.113.7");
+        RateLimitingExtensions.GetClientKey(context).Should().Be("198.51.100.9");
     }
 
     private static RequestDelegate BuildPipeline()
@@ -60,7 +62,7 @@ public class RateLimitingPartitionTests
     {
         var context = new DefaultHttpContext();
         context.Request.Method = method;
-        context.Request.Headers["X-Forwarded-For"] = ip;
+        context.Connection.RemoteIpAddress = IPAddress.Parse(ip);
         context.SetEndpoint(new Endpoint(_ => Task.CompletedTask,
             new EndpointMetadataCollection(new EnableRateLimitingAttribute(policy)), "test"));
         await pipeline(context);

@@ -44,8 +44,8 @@ public sealed partial class CheckIn : AggregateRoot<Guid>
 
     public Guid? DrinkPhotoId { get; private set; }
 
-    private readonly List<ShopPhoto> _shopPhotos = [];
-    public IReadOnlyCollection<ShopPhoto> ShopPhotos => _shopPhotos.AsReadOnly();
+    private readonly List<CheckInPhoto> _shopPhotos = [];
+    public IReadOnlyCollection<CheckInPhoto> ShopPhotos => _shopPhotos.AsReadOnly();
 
     // ReSharper disable once UnusedMember.Local
     private CheckIn() { }

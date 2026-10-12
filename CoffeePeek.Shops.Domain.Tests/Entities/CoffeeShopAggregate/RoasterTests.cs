@@ -120,4 +120,19 @@ public class RoasterTests
 
         roaster.Photos.Should().ContainSingle(p => p.FileName == "b.jpg");
     }
+
+    [Fact]
+    public void ReplacePhotos_ValidatesBeforeClearingAndSupportsOwnNavigation()
+    {
+        var roaster = new Roaster("Original");
+        var photo = new RoasterPhoto("old.jpg", "image/jpeg", "old-key", 10, Guid.NewGuid(), 3);
+        roaster.ReplacePhotos([photo]);
+        var duplicate = new RoasterPhoto("other.jpg", "image/jpeg", "old-key", 10, Guid.NewGuid());
+        var act = () => roaster.ReplacePhotos([photo, duplicate]);
+        act.Should().Throw<DomainException>();
+        roaster.Photos.Should().ContainSingle(p => ReferenceEquals(p, photo));
+
+        roaster.ReplacePhotos(roaster.Photos);
+        roaster.Photos.Should().ContainSingle(p => ReferenceEquals(p, photo) && p.SortIndex == 3);
+    }
 }

@@ -11,15 +11,13 @@ namespace Internal.Generated.WolverineHandlers
     [global::System.CodeDom.Compiler.GeneratedCode("JasperFx", "1.0.0")]
     public sealed class ModerationRoasterApprovedEventHandler1022998669 : Wolverine.Runtime.Handlers.MessageHandler
     {
-        private readonly CoffeePeek.Shared.Domain.Interfaces.Infrastructure.ICacheService _cacheService;
         private readonly Microsoft.Extensions.DependencyInjection.IServiceScopeFactory _serviceScopeFactory;
         private readonly Microsoft.Extensions.Logging.ILogger<CoffeePeek.Shops.Application.Services.CreateRoasterFromModerationService> _loggerOfCreateRoasterFromModerationService;
         private readonly Microsoft.Extensions.Logging.ILogger<CoffeePeek.Shops.Infrastructure.Consumers.ModerationRoasterApproveHandler> _loggerOfModerationRoasterApproveHandler;
         private readonly System.Collections.Generic.IEnumerable<Wolverine.EntityFrameworkCore.IDomainEventScraper> _domainEventScraperIEnumerable;
 
-        public ModerationRoasterApprovedEventHandler1022998669(CoffeePeek.Shared.Domain.Interfaces.Infrastructure.ICacheService cacheService, Microsoft.Extensions.DependencyInjection.IServiceScopeFactory serviceScopeFactory, Microsoft.Extensions.Logging.ILogger<CoffeePeek.Shops.Application.Services.CreateRoasterFromModerationService> loggerOfCreateRoasterFromModerationService, Microsoft.Extensions.Logging.ILogger<CoffeePeek.Shops.Infrastructure.Consumers.ModerationRoasterApproveHandler> loggerOfModerationRoasterApproveHandler, System.Collections.Generic.IEnumerable<Wolverine.EntityFrameworkCore.IDomainEventScraper> domainEventScraperIEnumerable)
+        public ModerationRoasterApprovedEventHandler1022998669(Microsoft.Extensions.DependencyInjection.IServiceScopeFactory serviceScopeFactory, Microsoft.Extensions.Logging.ILogger<CoffeePeek.Shops.Application.Services.CreateRoasterFromModerationService> loggerOfCreateRoasterFromModerationService, Microsoft.Extensions.Logging.ILogger<CoffeePeek.Shops.Infrastructure.Consumers.ModerationRoasterApproveHandler> loggerOfModerationRoasterApproveHandler, System.Collections.Generic.IEnumerable<Wolverine.EntityFrameworkCore.IDomainEventScraper> domainEventScraperIEnumerable)
         {
-            _cacheService = cacheService;
             _serviceScopeFactory = serviceScopeFactory;
             _loggerOfCreateRoasterFromModerationService = loggerOfCreateRoasterFromModerationService;
             _loggerOfModerationRoasterApproveHandler = loggerOfModerationRoasterApproveHandler;
@@ -34,14 +32,13 @@ namespace Internal.Generated.WolverineHandlers
             Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<Wolverine.Runtime.ScopedMessageContextHolder>(serviceScope.ServiceProvider).Context = context;
             // This service has been marked as requiring service location independent of Wolverine's ability to use constructor injection of everything else
             var shopsDbContext = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<CoffeePeek.Shops.Persistance.Configuration.ShopsDbContext>(serviceScope.ServiceProvider);
-            var unitOfWorkOfShopsDbContext = new CoffeePeek.Shared.Persistence.Data.UnitOfWork<CoffeePeek.Shops.Persistance.Configuration.ShopsDbContext>(shopsDbContext);
             var roasterRepository = new CoffeePeek.Shops.Persistance.Repositories.RoasterRepository(shopsDbContext);
             var queryRoasterRepository = new CoffeePeek.Shops.Persistance.Repositories.QueryRoasterRepository(shopsDbContext);
-            var createRoasterFromModerationService = new CoffeePeek.Shops.Application.Services.CreateRoasterFromModerationService(queryRoasterRepository, roasterRepository, unitOfWorkOfShopsDbContext, _cacheService, _loggerOfCreateRoasterFromModerationService);
+            var createRoasterFromModerationService = new CoffeePeek.Shops.Application.Services.CreateRoasterFromModerationService(queryRoasterRepository, roasterRepository, _loggerOfCreateRoasterFromModerationService);
             // The actual message body
             var moderationRoasterApprovedEvent = (CoffeePeek.Contract.Events.Moderation.ModerationRoasterApprovedEvent)context.Envelope.Message;
 
-            
+
             // Enroll the DbContext & IMessagingContext in the outgoing Wolverine outbox transaction
             var efCoreEnvelopeTransaction = new Wolverine.EntityFrameworkCore.Internals.EfCoreEnvelopeTransaction(shopsDbContext, context, _domainEventScraperIEnumerable);
             await context.EnlistInOutboxAsync(efCoreEnvelopeTransaction).ConfigureAwait(false);
@@ -56,11 +53,11 @@ namespace Internal.Generated.WolverineHandlers
                 System.Diagnostics.Activity.Current?.SetTag("message.handler", "CoffeePeek.Shops.Infrastructure.Consumers.ModerationRoasterApproveHandler");
                 System.Diagnostics.Activity.Current?.SetTag("handler.type", "CoffeePeek.Shops.Infrastructure.Consumers.ModerationRoasterApproveHandler");
                 var moderationRoasterApproveHandler = new CoffeePeek.Shops.Infrastructure.Consumers.ModerationRoasterApproveHandler(createRoasterFromModerationService, _loggerOfModerationRoasterApproveHandler);
-                
+
                 // The actual message execution
                 await moderationRoasterApproveHandler.Handle(moderationRoasterApprovedEvent, cancellation).ConfigureAwait(false);
 
-                
+
                 // Added by EF Core Transaction Middleware
                 var result_of_SaveChangesAsync = await shopsDbContext.SaveChangesAsync(cancellation).ConfigureAwait(false);
 
@@ -79,7 +76,6 @@ namespace Internal.Generated.WolverineHandlers
     }
 
     // END: ModerationRoasterApprovedEventHandler1022998669
-    
-    
-}
 
+
+}

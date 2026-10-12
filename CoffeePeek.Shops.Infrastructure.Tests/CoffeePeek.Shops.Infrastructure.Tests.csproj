@@ -12,6 +12,7 @@
         <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" />
         <PackageReference Include="Microsoft.NET.Test.Sdk"/>
         <PackageReference Include="Moq" />
+        <PackageReference Include="WolverineFx.RuntimeCompilation" />
         <PackageReference Include="xunit.v3" />
         <PackageReference Include="xunit.runner.visualstudio" >
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -29,6 +30,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\CoffeePeek.Shops.Infrastructure\CoffeePeek.Shops.Infrastructure.csproj" />
+      <ProjectReference Include="..\CoffeePeek.MediaService\CoffeePeek.MediaService.csproj" />
       <ProjectReference Include="../dev/LegacyCheckInsMigration/LegacyCheckInsMigration.csproj" />
       <Content Include="../dev/imports/**/coffees.json" Link="CoffeeSnapshots/%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     </ItemGroup>

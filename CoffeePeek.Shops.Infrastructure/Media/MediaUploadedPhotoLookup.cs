@@ -1,11 +1,13 @@
 using System.Net.Http.Json;
 using CoffeePeek.Contract.Dtos.CheckIns;
 using CoffeePeek.Contract.Dtos;
+using CoffeePeek.Contract.Dtos.ShopPhotos;
 using CoffeePeek.Shared.Auth;
 using CoffeePeek.Shared.Auth.Constants;
 using CoffeePeek.Shared.Auth.Options;
 using CoffeePeek.Shared.Kernel.Response;
 using CoffeePeek.Shops.Application.Abstractions;
+using CoffeePeek.Shops.Application.Observability;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -24,6 +26,42 @@ public class MediaUploadedPhotoLookup(
     public const string HttpClientName = "media-photo-lookup";
     public const string ResolvePath = "/api/Photos/resolve";
 
+    public async Task<ShopPhotoClaimResult> ClaimForShopAsync(Guid userId, Guid shopId,
+        ShopPhotoAttachmentKind kind, IReadOnlyCollection<string> storageKeys,
+        CancellationToken ct = default)
+    {
+        if (userId == Guid.Empty || shopId == Guid.Empty || storageKeys.Count == 0)
+            return ShopPhotoClaimResult.Failed;
+        using var request = new HttpRequestMessage(HttpMethod.Post, "/internal/shop-photos/claim");
+        request.AddGatewayAuthHeader(gatewayAuthOptions.Value.SecretKey);
+        request.Headers.TryAddWithoutValidation(GatewayHeaderConsts.XUserId, userId.ToString());
+        request.Content = JsonContent.Create(new ClaimShopPhotosRequest(shopId, kind, storageKeys.ToArray()));
+        try
+        {
+            using var response = await httpClientFactory.CreateClient(HttpClientName).SendAsync(request, ct);
+            if (!response.IsSuccessStatusCode)
+            {
+                var unavailable = (int)response.StatusCode >= 500;
+                ShopsTelemetry.ShopPhotoClaimFailed(unavailable);
+                logger.LogWarning("Shop photo claim returned {StatusCode} for {ShopId} ({Kind})",
+                    (int)response.StatusCode, shopId, kind);
+                return unavailable ? ShopPhotoClaimResult.Unreachable : ShopPhotoClaimResult.Failed;
+            }
+            var payload = await response.Content.ReadFromJsonAsync<Response<List<ClaimedShopPhotoDto>>>(cancellationToken: ct);
+            if (payload is { IsSuccess: true, Data: not null })
+                return new ShopPhotoClaimResult(true, payload.Data);
+            ShopsTelemetry.ShopPhotoClaimFailed(false);
+            logger.LogWarning("Shop photo claim returned an unsuccessful payload for {ShopId} ({Kind})", shopId, kind);
+            return ShopPhotoClaimResult.Failed;
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or System.Text.Json.JsonException)
+        {
+            ShopsTelemetry.ShopPhotoClaimFailed(true);
+            logger.LogWarning(ex, "Shop photo claim failed for {ShopId} ({Kind})", shopId, kind);
+            return ShopPhotoClaimResult.Unreachable;
+        }
+    }
+
     public async Task<CheckInPhotoClaimResult> ClaimForCheckInAsync(Guid userId, Guid checkInId,
         IReadOnlyCollection<string> storageKeys, CancellationToken ct = default, string? drinkPhotoStorageKey = null)
     {
@@ -36,13 +74,24 @@ public class MediaUploadedPhotoLookup(
         try
         {
             using var response = await httpClientFactory.CreateClient(HttpClientName).SendAsync(request, ct);
-            if (!response.IsSuccessStatusCode) return CheckInPhotoClaimResult.Failed;
+            if (!response.IsSuccessStatusCode)
+            {
+                var unavailable = (int)response.StatusCode >= 500;
+                ShopsTelemetry.CheckInPhotoClaimFailed(unavailable);
+                logger.LogWarning("Check-in photo claim returned {StatusCode} for {CheckInId}",
+                    (int)response.StatusCode, checkInId);
+                return CheckInPhotoClaimResult.Failed;
+            }
             var payload = await response.Content.ReadFromJsonAsync<Response<List<ClaimedCheckInPhotoDto>>>(cancellationToken: ct);
-            return payload is { IsSuccess: true, Data: not null }
-                ? new CheckInPhotoClaimResult(true, payload.Data) : CheckInPhotoClaimResult.Failed;
+            if (payload is { IsSuccess: true, Data: not null })
+                return new CheckInPhotoClaimResult(true, payload.Data);
+            ShopsTelemetry.CheckInPhotoClaimFailed(false);
+            logger.LogWarning("Check-in photo claim returned an unsuccessful payload for {CheckInId}", checkInId);
+            return CheckInPhotoClaimResult.Failed;
         }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
         {
+            ShopsTelemetry.CheckInPhotoClaimFailed(true);
             logger.LogWarning(ex, "Check-in photo claim failed for {CheckInId}", checkInId);
             return CheckInPhotoClaimResult.Failed;
         }

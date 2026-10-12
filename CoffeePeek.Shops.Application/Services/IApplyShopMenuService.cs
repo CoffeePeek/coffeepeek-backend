@@ -1,5 +1,12 @@
+using System.Text.Json;
 using CoffeePeek.Contract.Dtos.Menu;
+using CoffeePeek.Shared.Domain.Interfaces.Infrastructure;
+using CoffeePeek.Shared.Kernel;
+using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
 using CoffeePeek.Shops.Domain.Aggregates.MenuAggregate;
+using DomainPriceRange = CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate.PriceRange;
+using DomainAvailability = CoffeePeek.Shops.Domain.Aggregates.MenuAggregate.MenuItemAvailability;
+using DomainSource = CoffeePeek.Shops.Domain.Aggregates.MenuAggregate.MenuItemSource;
 
 namespace CoffeePeek.Shops.Application.Services;
 
@@ -16,8 +23,7 @@ public interface IApplyShopMenuService
         ShopMenuSnapshot snapshot,
         bool applySuggestedPriceRange,
         Guid? userId,
-        CancellationToken ct,
-        bool preserveManualItems = false);
+        CancellationToken ct);
 
     Task ApplyParseResultAsync(
         Guid shopId,

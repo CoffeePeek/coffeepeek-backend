@@ -25,7 +25,7 @@ public static class CheckInMapping
         c.UserId, c.Username, c.ShopId, c.Note, ToDto(c).Rating, c.DrinkSlug, c.CustomDrinkName, c.DrinkNameRu, c.DrinkNameEn, c.VisitedAt,
         c.ShopPhotos.OrderBy(p => p.SortIndex).Select(p => Photo(c.Id, p)).ToArray());
 
-    private static CheckInPhotoDto Photo(Guid checkInId, CoffeePeek.Shops.Domain.Entities.ShopPhoto p) =>
+    private static CheckInPhotoDto Photo(Guid checkInId, CoffeePeek.Shops.Domain.Aggregates.CheckInAggregate.CheckInPhoto p) =>
         new(p.Id, p.FileName, p.ContentType, p.StorageKey, p.SizeBytes, p.SortIndex,
             $"/api/v1/check-ins/{checkInId}/photos/{p.Id}");
 

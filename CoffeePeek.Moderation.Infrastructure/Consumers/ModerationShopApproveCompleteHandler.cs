@@ -1,6 +1,4 @@
 using CoffeePeek.Contract.Responses;
-using CoffeePeek.Contract.Events.Menu;
-using CoffeePeek.Moderation.Application.Features.Menu;
 using CoffeePeek.Moderation.Domain.Aggregates;
 using CoffeePeek.Shared.Kernel;
 using Microsoft.Extensions.Logging;
@@ -12,7 +10,7 @@ public class ModerationShopApproveCompleteHandler(
     IUnitOfWork unitOfWork,
     ILogger<ModerationShopApproveCompleteHandler> logger)
 {
-    public async Task<ApplyShopMenuSnapshotEvent?> Handle(ModerationShopApproveCompleteResponse message, CancellationToken ct)
+    public async Task Handle(ModerationShopApproveCompleteResponse message, CancellationToken ct)
     {
         var moderationShop = await repository.GetByIdWithOutDetails(message.ModerationShopId, ct);
 
@@ -22,17 +20,14 @@ public class ModerationShopApproveCompleteHandler(
                 "Moderation shop {ModerationShopId} not found when completing approve for published shop {ShopId}",
                 message.ModerationShopId,
                 message.ShopId);
-            return null;
+            return;
         }
 
         if (moderationShop.ShopId == message.ShopId)
-            return null;
+            return;
 
         moderationShop.AddShopId(message.ShopId);
 
         await unitOfWork.SaveChangesAsync(ct);
-        return MenuDraftMapper.ToSnapshot(moderationShop.Menu) is { } snapshot
-            ? new ApplyShopMenuSnapshotEvent(message.ShopId, snapshot, false, null)
-            : null;
     }
 }

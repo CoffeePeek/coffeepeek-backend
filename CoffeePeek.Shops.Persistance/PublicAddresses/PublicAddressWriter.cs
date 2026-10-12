@@ -55,7 +55,7 @@ internal static class PublicAddressWriter
         where T : class, IPublicSlugOwner
     {
         if (owner.PublicSlug is not null) return;
-        owner.SetPublicSlug(await FindCandidateAsync<T>(db, stem, owner.Id, null, ct));
+        db.AddressOwners.Apply(owner, await FindCandidateAsync<T>(db, stem, owner.Id, null, ct));
     }
 
     public static async Task<string> FindCandidateAsync<T>(ShopsDbContext db, string stem, Guid ownerId,

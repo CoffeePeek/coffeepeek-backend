@@ -6,8 +6,12 @@ using CoffeePeek.Shared.Web.Logging;
 using CoffeePeek.Shops.Application.Features.CoffeeShop.GetCoffeeShop;
 using CoffeePeek.Shops.Infrastructure.Consumers;
 using CoffeePeek.Shops.Persistance.Configuration;
+using CoffeePeek.Shops.Application.Observability;
+using CoffeePeek.ShopsService.Health;
 using CoffePeek.ServiceDefaults;
 using Serilog;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Trace;
 
 namespace CoffeePeek.ShopsService;
 
@@ -17,6 +21,11 @@ public static class InfrastructureExtensions
     {
         builder.AddSerilogLogging();
         builder.AddServiceDefaults();
+        builder.Services.AddOpenTelemetry()
+            .WithMetrics(metrics => metrics.AddMeter(ShopsTelemetry.InstrumentationName, "Wolverine*"))
+            .WithTracing(tracing => tracing.AddSource(ShopsTelemetry.InstrumentationName, "Wolverine"));
+        builder.Services.AddHealthChecks()
+            .AddCheck<ShopsDatabaseReadinessCheck>("shops_postgres", tags: ["ready"]);
         builder.WebHost
             .ConfigureWebhost();
 
@@ -25,7 +34,11 @@ public static class InfrastructureExtensions
         builder.AddWolverine(
             typeof(InfrastructureExtensions).Assembly,
             [applicationAssembly, infrastructureAssembly],
-            [typeof(ShopsDbContext), typeof(CoffeePeek.Shared.Kernel.Drinks.IDrinkCatalog), typeof(CoffeePeek.Shops.Domain.Aggregates.MenuAggregate.ICoffeeDrinkRepository), typeof(CoffeePeek.Shops.Application.Features.CoffeeCatalog.ICoffeeCatalogStore),
+            [typeof(ShopsDbContext), typeof(CoffeePeek.Shared.Kernel.Drinks.IDrinkCatalog), typeof(CoffeePeek.Shops.Domain.Aggregates.MenuAggregate.ICoffeeDrinkRepository), typeof(CoffeePeek.Shops.Application.Features.CoffeeCatalog.IPublicCoffeeCatalogReader), typeof(CoffeePeek.Shops.Application.Features.CoffeeCatalog.ICoffeeCatalogTagWriter),
+                typeof(CoffeePeek.Shops.Application.Features.CoffeeCatalog.ICoffeeProductWriter),
+                typeof(CoffeePeek.Shops.Application.Features.CoffeeCatalog.ICoffeeImportWriter),
+                typeof(CoffeePeek.Shops.Application.Features.Discovery.IDiscoveryFavoritesStore),
+                typeof(CoffeePeek.Shops.Application.Features.Discovery.IDiscoveryClassificationStore),
                 typeof(CoffeePeek.Shops.Application.Features.Feed.ICheckInFeedReader),
                 typeof(CoffeePeek.Shops.Application.PublicAddresses.IPublicCheckInProjector),
                 typeof(CoffeePeek.Shops.Application.PublicAddresses.IPublicAddressService),

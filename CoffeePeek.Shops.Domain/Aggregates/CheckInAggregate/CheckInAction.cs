@@ -5,23 +5,41 @@ namespace CoffeePeek.Shops.Domain.Aggregates.CheckInAggregate;
 
 public partial class CheckIn
 {
-    public void AddPhotos(IEnumerable<ShopPhoto> photos)
+    public void AddPhotos(IEnumerable<CheckInPhoto> photos)
     {
         EnsureNotDeleted();
-        _shopPhotos.AddRange(photos);
+        ArgumentNullException.ThrowIfNull(photos);
+        var additions = photos.ToArray();
+        if (additions.Length == 0) return;
+        if (_shopPhotos.Count(p => p.Id != DrinkPhotoId) + additions.Length > BusinessConstants.MaxCheckInPhotos
+            || additions.Any(p => p == null || p.OwnerId != UserId
+                || p.CanonicalCheckInId != Guid.Empty && p.CanonicalCheckInId != Id))
+            throw new DomainException("Check-in photos must belong to the author and cannot be shared or exceed five.");
+        var all = _shopPhotos.Concat(additions).ToArray();
+        if (all.Select(p => p.Id).Distinct().Count() != all.Length
+            || all.Select(p => p.StorageKey).Distinct(StringComparer.Ordinal).Count() != all.Length)
+            throw new DomainException("Check-in photos must be distinct.");
+        foreach (var photo in additions) photo.AttachTo(Id);
+        _shopPhotos.AddRange(additions);
+        ContentRevision++;
+        ResetModeration();
         Touch();
     }
 
-    public void AddDrinkPhoto(ShopPhoto photo)
+    public void AddDrinkPhoto(CheckInPhoto photo)
     {
         EnsureNotDeleted();
+        ArgumentNullException.ThrowIfNull(photo);
         if (DrinkPhotoId != null || _shopPhotos.Count == 0 || photo.OwnerId != UserId
+            || photo.CanonicalCheckInId != Guid.Empty && photo.CanonicalCheckInId != Id
             || !string.Equals(photo.ContentType, "image/png", StringComparison.OrdinalIgnoreCase)
             || _shopPhotos.Any(p => p.Id == photo.Id || p.StorageKey == photo.StorageKey))
             throw new DomainException("A drink cutout requires its own PNG and an original photo.");
-        photo.SetSortIndex(_shopPhotos.Max(p => p.SortIndex) + 1);
+        photo.AttachTo(Id);
         _shopPhotos.Add(photo);
         DrinkPhotoId = photo.Id;
+        ContentRevision++;
+        ResetModeration();
         Touch();
     }
 

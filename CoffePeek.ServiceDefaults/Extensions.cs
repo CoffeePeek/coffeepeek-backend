@@ -66,7 +66,12 @@ public static class Extensions
                                 !context.Request.Path.StartsWithSegments(HealthEndpointPath) &&
                                 !context.Request.Path.StartsWithSegments(AlivenessEndpointPath);
                         })
-                        .AddHttpClientInstrumentation();
+                        .AddHttpClientInstrumentation(options =>
+                        {
+                            // The Bot API carries the secret token in the path; never export that URL in traces.
+                            options.FilterHttpRequestMessage = request =>
+                                !string.Equals(request.RequestUri?.Host, "api.telegram.org", StringComparison.OrdinalIgnoreCase);
+                        });
                 });
 
             builder.AddOpenTelemetryExporters();

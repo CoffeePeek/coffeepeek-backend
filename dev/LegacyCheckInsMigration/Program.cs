@@ -3,6 +3,8 @@ using CoffeePeek.LegacyCheckInsMigration;
 using CoffeePeek.MediaService.Configuration;
 using CoffeePeek.MediaService.Services;
 using CoffeePeek.Shared.Kernel.Options;
+using CoffeePeek.Shops.Persistance.Configuration;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Npgsql;
 
@@ -72,6 +74,8 @@ try
         Options.Create(new MediaPublicUrlOptions { PublicEndpoint = storageOptions.Endpoint }));
     if (mode == "apply")
     {
+        await using var schema = new ShopsDbContext(new DbContextOptionsBuilder<ShopsDbContext>().UseNpgsql(db["Shops"]).Options);
+        await CheckInPhotoSchema.ExpandAsync(schema, ct);
         manifest["CacheInvalidationPending"] = true; LegacyReviewBackfill.Save(path,manifest);
         foreach (var entry in manifest["Mappings"]!.AsArray().OfType<JsonObject>())
             if (!LegacyReviewBackfill.Flag(entry,"PhotoPlanningUnresolved")) entry["PhotosUnresolved"] = false;

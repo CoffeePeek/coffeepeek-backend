@@ -33,6 +33,7 @@ builder.Services.AddGatewayOpenApi();
 // Routes and clusters are loaded from appsettings.json "ReverseProxy" section.
 // To add a new service or route, edit appsettings.json — no code change required.
 builder.Services.AddGatewayProxy(builder.Configuration);
+builder.Services.AddTrustedProxyForwarding(builder.Configuration);
 
 // ── Security ──────────────────────────────────────────────────────────────────
 builder.Services.AddGatewayAuth(builder.Environment, builder.Configuration);
@@ -48,6 +49,7 @@ builder.Services.AddProblemDetails();
 // ═════════════════════════════════════════════════════════════════════════════
 var app = builder.Build();
 // ═════════════════════════════════════════════════════════════════════════════
+app.UseForwardedHeaders();
 
 // ── API Documentation ─────────────────────────────────────────────────────────
 app.UseGatewayScalarUi();

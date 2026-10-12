@@ -237,3 +237,18 @@ deploy/scripts/update.sh              # subsequent updates
 
 `deploy/scripts/ensure-secrets.sh` (run by both scripts) generates missing secrets such as `GATEWAY_AUTH_SECRET` and
 `ACCOUNT_DELETION_TOKEN_PEPPER` without overwriting existing values. Containers run as a non-root user.
+
+Client IPs follow Caddy → Gateway → AccountService. The dedicated `proxy` network gives Caddy and
+Gateway fixed addresses; network-specific aliases keep both hops on that network. Each .NET host
+accepts one `X-Forwarded-For` hop only from its configured `ForwardedHeaders__KnownProxies__0`.
+Gateway trusts Caddy, AccountService trusts Gateway, and YARP replaces the outgoing header with the
+verified client IP. Caddy remains the public edge and discards client-supplied forwarding headers.
+User-Agent passes through unchanged. With no configured proxies, forwarding is disabled.
+
+Deploy the Gateway/Account images, Compose file and Caddyfile together using `update.sh`; no database
+migration is needed. `PROXY_NETWORK_PREFIX` defaults to `172.30.42` (a private /24); change it before
+deployment if it overlaps an existing network. Other hosting setups must configure the exact proxy
+addresses explicitly, including loopback proxies for local development. Do not enable blanket trust
+with `ASPNETCORE_FORWARDEDHEADERS_ENABLED`. A CDN before Caddy needs its own explicit trust configuration.
+Existing session IPs cannot be recovered; a new login or refresh records the corrected IP in the new
+session, which is returned by `GET /api/admin/users/{id}/sessions`.

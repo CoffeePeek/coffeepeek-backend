@@ -1,5 +1,6 @@
 using CoffeePeek.Contract.Dtos;
 using CoffeePeek.Contract.Dtos.CheckIns;
+using CoffeePeek.Contract.Dtos.ShopPhotos;
 
 namespace CoffeePeek.Shops.Application.Abstractions;
 
@@ -9,6 +10,10 @@ namespace CoffeePeek.Shops.Application.Abstractions;
 /// </summary>
 public interface IUploadedPhotoLookup
 {
+    Task<ShopPhotoClaimResult> ClaimForShopAsync(Guid userId, Guid shopId,
+        ShopPhotoAttachmentKind kind, IReadOnlyCollection<string> storageKeys,
+        CancellationToken ct = default);
+
     Task<UploadedPhotoLookupResult> ResolveAsync(
         Guid userId,
         IReadOnlyCollection<string> storageKeys,

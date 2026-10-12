@@ -48,13 +48,15 @@ public sealed class DiscoveryFavoritesStore(ShopsDbContext db, IPublicAddressSer
         var row = await db.DiscoveryFavorites.FindAsync([userId, kind, id], ct);
         if (favorite && row is null) db.DiscoveryFavorites.Add(new DiscoveryFavorite(userId, kind, id));
         if (!favorite && row is not null) db.DiscoveryFavorites.Remove(row);
+        // Flush inside Wolverine's transaction so idempotent races can use EF's savepoint before final commit.
         try { await db.SaveChangesAsync(ct); }
         catch (DbUpdateConcurrencyException ex) when (!favorite && ex.Entries.Count == 1 && ex.Entries[0].Entity == row)
         {
             // A concurrent DELETE already removed this user's favorite.
             ex.Entries[0].State = EntityState.Detached;
         }
-        catch (DbUpdateException ex) when (favorite && ex.InnerException is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation })
+        catch (DbUpdateException ex) when (favorite && ex.Entries.Count == 1 && ex.Entries[0].Entity is DiscoveryFavorite &&
+                                          ex.InnerException is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation, ConstraintName: "PK_DiscoveryFavorites" })
         {
             // A concurrent idempotent PUT has already inserted the same user's favorite.
             foreach (var entry in ex.Entries) entry.State = EntityState.Detached;

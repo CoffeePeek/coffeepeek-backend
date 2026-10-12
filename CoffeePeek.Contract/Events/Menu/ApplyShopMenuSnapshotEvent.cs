@@ -7,4 +7,4 @@ public record ApplyShopMenuSnapshotEvent(
     ShopMenuSnapshot Snapshot,
     bool ApplySuggestedPriceRange,
     Guid? UserId,
-    bool PreserveManualItems = false);
+    long? ExpectedInputRevision = null);

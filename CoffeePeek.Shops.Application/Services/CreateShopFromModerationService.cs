@@ -2,11 +2,11 @@ using CoffeePeek.Contract.Dtos.CoffeeShop;
 using CoffeePeek.Contract.Dtos.Menu;
 using CoffeePeek.Contract.Enums;
 using CoffeePeek.Shared.Domain.Interfaces.Infrastructure;
-using CoffeePeek.Shared.Kernel;
-using CoffeePeek.Shops.Application.Features.Public.Stats;
+using CoffeePeek.Shops.Application.Features.CoffeeShop.ShopProfile;
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
 using CoffeePeek.Shops.Domain.Entities;
 using Microsoft.Extensions.Logging;
+using Wolverine;
 using DomainPriceRange = CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate.PriceRange;
 
 namespace CoffeePeek.Shops.Application.Services;
@@ -18,8 +18,7 @@ public class CreateShopFromModerationService(
     IQueryRoasterRepository roasterRepository,
     IQueryBrewMethodRepository brewMethodRepository,
     IApplyShopMenuService applyMenu,
-    IUnitOfWork unitOfWork,
-    ICacheService cacheService,
+    IMessageBus bus,
     ILogger<CreateShopFromModerationService> logger) : ICreateShopFromModerationService
 {
     public async Task<Guid> CreateShopFromApprovedEventAsync(ShopDto shopDto, Guid? creatorId, Guid moderationId, CancellationToken cancellationToken = default)
@@ -124,13 +123,9 @@ public class CreateShopFromModerationService(
                 cancellationToken);
         }
 
-        await unitOfWork.SaveChangesAsync(cancellationToken);
+        await bus.PublishAsync(new ShopProfileCacheInvalidationRequested(shop.Id));
 
-        await cacheService.RemoveByPattern(CacheKey.Shop.SearchPattern(), cancellationToken);
-        await cacheService.RemoveAsync(CacheKey.Shop.Detail(shop.Id));
-        await PublicStatsCacheInvalidator.InvalidateAsync(cacheService, cancellationToken);
-
-        logger.LogInformation("Shop {ShopId} successfully created from moderation event {ModerationId}", shop.Id,
+        logger.LogInformation("Prepared shop {ShopId} from moderation event {ModerationId} for transaction commit", shop.Id,
             moderationId);
 
         return shop.Id;

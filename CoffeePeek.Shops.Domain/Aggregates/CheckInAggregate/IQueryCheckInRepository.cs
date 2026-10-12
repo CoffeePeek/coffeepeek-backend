@@ -13,7 +13,7 @@ public interface IQueryCheckInRepository
     Task<Dictionary<Guid, int>> GetCheckInCountsByShopIdsAsync(IEnumerable<Guid> shopIds,
         CancellationToken ct = default);
     Task<bool> Exists(Guid userId, Guid shopDtoId, CancellationToken cancellationToken);
-    Task<bool> ExistsSinceAsync(Guid userId, DateTime sinceUtc, CancellationToken ct = default);
+    Task<bool> ExistsSinceAsync(Guid userId, Guid shopId, DateTime sinceUtc, CancellationToken ct = default);
     Task<int> CountSinceAsync(Guid userId, DateTime sinceUtc, CancellationToken ct = default);
     Task<IReadOnlyList<CheckIn>> GetByUserAndShopAsync(
         Guid userId,
