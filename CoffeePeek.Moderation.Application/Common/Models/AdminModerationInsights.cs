@@ -1,4 +1,4 @@
-namespace CoffeePeek.Moderation.Domain.Aggregates;
+namespace CoffeePeek.Moderation.Application.Common.Models;
 
 /// <param name="CheckInsModerated">Check-ins approved/rejected in the window.</param>
 /// <param name="AvgCheckInModerationHours">Unrounded mean submission-to-decision hours; null when nothing was moderated.</param>

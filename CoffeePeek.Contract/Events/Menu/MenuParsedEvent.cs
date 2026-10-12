@@ -12,7 +12,8 @@ public record MenuParsedEvent(
     PriceRange? SuggestedPriceRange,
     IReadOnlyList<ParsedMenuItemDto> Items,
     IReadOnlyList<UnmatchedMenuItemDto> Unmatched,
-    DateTime CapturedAtUtc)
+    DateTime CapturedAtUtc,
+    Guid? ParseRequestId = null)
 {
     public Guid? JobId { get; init; }
 }

@@ -1,6 +1,8 @@
 using CoffeePeek.Moderation.Domain.Common.Enums;
 
-namespace CoffeePeek.Moderation.Domain.Aggregates;
+using CoffeePeek.Moderation.Domain.Aggregates;
+
+namespace CoffeePeek.Moderation.Application.Abstractions;
 
 public interface IQueryModerationRoasterRepository
 {

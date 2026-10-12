@@ -605,6 +605,12 @@ namespace CoffeeShop.Moderation.Persistence.Migrations
                     b.Property<DateTime?>("UpdatedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
                     b.HasKey("Id");
 
                     b.HasIndex("Score");
@@ -904,6 +910,8 @@ namespace CoffeeShop.Moderation.Persistence.Migrations
 
                             b1.Property<string>("ParseError");
 
+                            b1.Property<Guid?>("ParseRequestId");
+
                             b1.Property<int>("ParseStatus");
 
                             b1.Property<int?>("SuggestedPriceRange");
@@ -1152,6 +1160,8 @@ namespace CoffeeShop.Moderation.Persistence.Migrations
                                 .IsRequired();
 
                             b1.Property<string>("ParseError");
+
+                            b1.Property<Guid?>("ParseRequestId");
 
                             b1.Property<int>("ParseStatus");
 

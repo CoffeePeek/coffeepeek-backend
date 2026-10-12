@@ -1,3 +1,4 @@
+using CoffeePeek.Moderation.Application.Abstractions;
 using CoffeePeek.Moderation.Domain.Aggregates;
 using CoffeePeek.Moderation.Domain.Common.Enums;
 using CoffeeShop.Moderation.Persistence.Configuration;
@@ -30,6 +31,7 @@ public class QueryModerationRoasterRepository(ModerationDbContext dbContext) : I
         var totalCount = await query.CountAsync(ct);
         var items = await query
             .OrderByDescending(r => r.CreatedAtUtc)
+            .ThenBy(r => r.Id)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync(ct);

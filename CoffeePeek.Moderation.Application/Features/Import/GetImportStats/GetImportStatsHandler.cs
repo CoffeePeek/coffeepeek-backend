@@ -4,8 +4,6 @@ using CoffeePeek.Shared.Kernel.Response;
 
 namespace CoffeePeek.Moderation.Application.Features.Import.GetImportStats;
 
-public record GetImportStatsQuery;
-
 public static class GetImportStatsHandler
 {
     public static async Task<Response<ImportStatsDto>> Handle(

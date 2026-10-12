@@ -6,8 +6,6 @@ using CoffeePeek.Shared.Kernel.Response;
 
 namespace CoffeePeek.Moderation.Application.Features.Import.RefreshGoogleStatus;
 
-public record RefreshGoogleStatusCommand(Guid Id, bool Force = false);
-
 public static class RefreshGoogleStatusHandler
 {
     public static async Task<Response<ShopImportCandidateDto>> Handle(

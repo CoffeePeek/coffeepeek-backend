@@ -1,6 +1,6 @@
+using CoffeePeek.Moderation.Application.Common.Models;
+using CoffeePeek.Moderation.Application.Abstractions;
 using CoffeePeek.Moderation.Domain.Common.Enums;
-using CoffeePeek.Moderation.Domain.Aggregates;
-using CoffeePeek.Moderation.Domain.Aggregates.ModerationReviewAggregate;
 using CoffeePeek.Moderation.Domain.Entities;
 using CoffeeShop.Moderation.Persistence.Configuration;
 using Microsoft.EntityFrameworkCore;

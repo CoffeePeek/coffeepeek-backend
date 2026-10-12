@@ -1,5 +1,4 @@
 using CoffeePeek.Moderation.Domain.Aggregates.ShopImportCandidateAggregate;
-using CoffeePeek.Moderation.Domain.Import;
 using CoffeeShop.Moderation.Persistence.Configuration;
 using Microsoft.EntityFrameworkCore;
 
@@ -94,6 +93,7 @@ public class ShopImportCandidateRepository(ModerationDbContext dbContext) : ISho
         var items = await query
             .OrderBy(c => c.CollectorBucket)
             .ThenBy(c => c.Name)
+            .ThenBy(c => c.Id)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync(ct);

@@ -28,7 +28,7 @@ public class ShopsRoasterExistenceLookup(
             response.EnsureSuccessStatusCode();
             return await response.Content.ReadFromJsonAsync<bool>(cancellationToken: ct);
         }
-        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
+        catch (Exception ex) when (!ct.IsCancellationRequested && ex is HttpRequestException or TaskCanceledException)
         {
             logger.LogWarning(ex, "Roaster existence lookup for {Name} failed", name);
             return false;

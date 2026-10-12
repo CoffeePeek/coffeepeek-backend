@@ -1,4 +1,4 @@
-﻿using CoffeePeek.Contract.Responses;
+using CoffeePeek.Contract.Responses;
 using CoffeePeek.Moderation.Domain.Aggregates;
 using CoffeePeek.Shared.Kernel;
 using Microsoft.Extensions.Logging;
@@ -22,6 +22,9 @@ public class ModerationShopApproveCompleteHandler(
                 message.ShopId);
             return;
         }
+
+        if (moderationShop.ShopId == message.ShopId)
+            return;
 
         moderationShop.AddShopId(message.ShopId);
 

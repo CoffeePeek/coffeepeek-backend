@@ -36,10 +36,11 @@ public class ParseMenuRequestedEventHandlerTests
             .ReturnsAsync([new MenuVisionPhoto([1, 2, 3], "image/jpeg")]);
         parser.Setup(p => p.ParseAsync(It.IsAny<IReadOnlyList<MenuVisionPhoto>>(), ct))
             .ReturnsAsync(new MenuVisionParseResult(true, null, [new("Cappuccino", 8m, 250, .9)]));
-        var message = Message(kind);
+        var message = Message(kind) with { ParseRequestId = Guid.NewGuid() };
         var result = Assert.IsType<MenuParsedEvent>(await Handler().Handle(message, ct));
         Assert.True(result.Success);
         Assert.Equal(message.SourceId, result.SourceId);
+        Assert.Equal(message.ParseRequestId, result.ParseRequestId);
         Assert.Equal(message.PublishedShopId, result.PublishedShopId);
         Assert.Equal("cappuccino", Assert.Single(result.Items).Slug);
         parser.Verify(p => p.ParseAsync(It.IsAny<IReadOnlyList<MenuVisionPhoto>>(), ct), Times.Once);

@@ -11,6 +11,13 @@ public class ShopIssueReportTests
     private static readonly Guid ValidUserId = Guid.NewGuid();
 
     [Fact]
+    public void Create_UnknownCategory_IsRejected()
+    {
+        Action create = () => ShopIssueReport.Create(ValidUserId, ValidShopId, (ShopIssueCategory)99, "Description");
+        create.Should().Throw<DomainException>();
+    }
+
+    [Fact]
     public void Create_WithNonOtherCategoryAndNoDescription_Succeeds()
     {
         var report = CreateReport(ShopIssueCategory.ShopClosed, description: null);

@@ -1,6 +1,6 @@
 using System.Text.Json;
 using CoffeePeek.Moderation.Domain.Aggregates.ShopImportCandidateAggregate;
-using CoffeePeek.Moderation.Domain.Import;
+using CoffeePeek.Moderation.Application.Features.Import.IngestImportFile;
 using FluentAssertions;
 
 namespace CoffeePeek.Moderation.Domain.Tests.Import;

@@ -1,6 +1,4 @@
-using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Hosting;
+using Npgsql;
 using Wolverine.Runtime.Handlers;
 
 namespace CoffeePeek.ModerationService.Tests;
@@ -10,7 +8,7 @@ namespace CoffeePeek.ModerationService.Tests;
 // and that directory silently fell out of sync whenever a new handler was added without re-running
 // `dotnet run -- codegen write`. WolverineRuntime.StartAsync asserts pre-built types exist before
 // touching Postgres/RabbitMQ, so pointing at unreachable infra still exercises the real check without
-// needing live services — any exception other than MissingPreBuiltTypesException means we got past it.
+// needing live services; only the expected Npgsql failure is accepted after that check.
 public class WolverinePreGeneratedHandlersTests
 {
     [Fact]
@@ -62,10 +60,9 @@ public class WolverinePreGeneratedHandlersTests
                 "Internal/Generated/WolverineHandlers/ is out of sync with the current handlers. " +
                 $"Run 'dotnet run -- codegen write' in CoffeePeek.ModerationService and commit the output. {ex.Message}");
         }
-        catch
+        catch (NpgsqlException)
         {
-            // Any other failure (e.g. unreachable Postgres/RabbitMQ) means Wolverine's pre-built
-            // type check already passed — that's all this test verifies.
+            // Storage migration runs after the handler check; other startup errors must fail this test.
         }
     }
 }

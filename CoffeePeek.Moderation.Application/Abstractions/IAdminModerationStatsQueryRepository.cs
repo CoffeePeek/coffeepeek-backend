@@ -1,4 +1,6 @@
-namespace CoffeePeek.Moderation.Domain.Aggregates;
+using CoffeePeek.Moderation.Application.Common.Models;
+
+namespace CoffeePeek.Moderation.Application.Abstractions;
 
 public interface IAdminModerationStatsQueryRepository
 {

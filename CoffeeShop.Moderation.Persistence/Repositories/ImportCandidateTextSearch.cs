@@ -1,4 +1,4 @@
-namespace CoffeePeek.Moderation.Domain.Import;
+namespace CoffeeShop.Moderation.Persistence.Repositories;
 
 /// <summary>
 /// Visible-field match for the import queue "Name" box: name and address only.

@@ -8,7 +8,7 @@ public record SubmitRoasterCommand
 {
     [JsonIgnore] public Guid? UserId { get; init; }
 
-    [Required, MaxLength(100)] public string Name { get; init; }
+    [Required, MaxLength(100)] public string Name { get; init; } = null!;
 
     public string? About { get; init; }
     public Guid? CityId { get; init; }

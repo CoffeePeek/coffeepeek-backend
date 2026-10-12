@@ -6,7 +6,8 @@ public record ParseMenuRequestedEvent(
     Guid SourceId,
     Guid? PublishedShopId,
     IReadOnlyList<MenuPhotoRef> Photos,
-    Guid? RequestedByUserId)
+    Guid? RequestedByUserId,
+    Guid? ParseRequestId = null)
 {
     public Guid? JobId { get; init; }
     public long? MenuRevision { get; init; }

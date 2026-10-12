@@ -1,5 +1,4 @@
-using CoffeePeek.Moderation.Domain.Aggregates.ShopImportCandidateAggregate;
-using CoffeePeek.Moderation.Domain.Import;
+using CoffeeShop.Moderation.Persistence.Repositories;
 using FluentAssertions;
 
 namespace CoffeePeek.Moderation.Domain.Tests.Import;

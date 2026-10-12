@@ -1,3 +1,4 @@
+using CoffeePeek.Moderation.Application.Common.Models;
 using CoffeePeek.Moderation.Application.Features.Admin.Stats;
 using CoffeePeek.Moderation.Domain.Aggregates;
 using CoffeePeek.Moderation.Domain.Aggregates.ShopChangeRequestAggregate;

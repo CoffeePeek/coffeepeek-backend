@@ -1,5 +1,5 @@
+using CoffeePeek.Moderation.Application.Abstractions;
 using CoffeePeek.Contract.Dtos.CoffeeShop;
-using CoffeePeek.Moderation.Domain.Aggregates.ModerationReviewAggregate;
 using CoffeePeek.Shared.Kernel.Response;
 using MapsterMapper;
 

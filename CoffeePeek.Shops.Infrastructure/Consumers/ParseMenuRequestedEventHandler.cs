@@ -99,7 +99,8 @@ public class ParseMenuRequestedEventHandler(
                 data.SuggestedPriceRange,
                 data.Items,
                 data.Unmatched,
-                capturedAt);
+                capturedAt,
+                message.ParseRequestId);
         }
         catch (Exception ex)
         {

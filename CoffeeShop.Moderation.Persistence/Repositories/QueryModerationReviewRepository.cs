@@ -1,6 +1,6 @@
-﻿using CoffeePeek.Moderation.Domain.Aggregates.ModerationReviewAggregate;
+using CoffeePeek.Moderation.Application.Abstractions;
+using CoffeePeek.Moderation.Domain.Aggregates.ModerationReviewAggregate;
 using CoffeePeek.Moderation.Domain.Common.Enums;
-using CoffeePeek.Moderation.Domain.Import;
 using CoffeeShop.Moderation.Persistence.Configuration;
 using Microsoft.EntityFrameworkCore;
 
@@ -44,6 +44,7 @@ public class QueryModerationReviewRepository(ModerationDbContext dbContext) : IQ
         var totalCount = await query.CountAsync(ct);
         var items = await query
             .OrderByDescending(r => r.CreatedAtUtc)
+            .ThenBy(r => r.Id)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .ToArrayAsync(ct);

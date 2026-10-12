@@ -32,12 +32,10 @@ namespace Internal.Generated.WolverineHandlers
             var unitOfWorkOfModerationDbContext = new CoffeePeek.Shared.Persistence.Data.UnitOfWork<CoffeeShop.Moderation.Persistence.Configuration.ModerationDbContext>(moderationDbContext);
             var outgoingMessages = new Wolverine.OutgoingMessages();
             var moderationShopRepository = new CoffeeShop.Moderation.Persistence.Repositories.ModerationShopRepository(moderationDbContext);
-            // This service has been marked as requiring service location independent of Wolverine's ability to use constructor injection of everything else
-            var yandexGeocodingService = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<CoffeePeek.Moderation.Application.Abstractions.IYandexGeocodingService>(serviceScope.ServiceProvider);
             // The actual message body
             var updateModerationCoffeeShopCommand = (CoffeePeek.Moderation.Application.Features.Shop.UpdateShop.UpdateModerationCoffeeShopCommand)context.Envelope.Message;
 
-            
+
             // Enroll the DbContext & IMessagingContext in the outgoing Wolverine outbox transaction
             var efCoreEnvelopeTransaction = new Wolverine.EntityFrameworkCore.Internals.EfCoreEnvelopeTransaction(moderationDbContext, context, _domainEventScraperIEnumerable);
             await context.EnlistInOutboxAsync(efCoreEnvelopeTransaction).ConfigureAwait(false);
@@ -51,15 +49,15 @@ namespace Internal.Generated.WolverineHandlers
             {
                 System.Diagnostics.Activity.Current?.SetTag("message.handler", "CoffeePeek.Moderation.Application.Features.Shop.UpdateShop.UpdateModerationCoffeeShopHandler");
                 System.Diagnostics.Activity.Current?.SetTag("handler.type", "CoffeePeek.Moderation.Application.Features.Shop.UpdateShop.UpdateModerationCoffeeShopHandler");
-                
-                // The actual message execution
-                var outgoing1 = await CoffeePeek.Moderation.Application.Features.Shop.UpdateShop.UpdateModerationCoffeeShopHandler.Handle(updateModerationCoffeeShopCommand, moderationShopRepository, yandexGeocodingService, _mapper, outgoingMessages, unitOfWorkOfModerationDbContext, cancellation).ConfigureAwait(false);
 
-                
+                // The actual message execution
+                var outgoing1 = await CoffeePeek.Moderation.Application.Features.Shop.UpdateShop.UpdateModerationCoffeeShopHandler.Handle(updateModerationCoffeeShopCommand, moderationShopRepository, _mapper, outgoingMessages, unitOfWorkOfModerationDbContext, cancellation).ConfigureAwait(false);
+
+
                 // Outgoing, cascaded message
                 await context.EnqueueCascadingAsync(outgoing1).ConfigureAwait(false);
 
-                
+
                 // Added by EF Core Transaction Middleware
                 var result_of_SaveChangesAsync = await moderationDbContext.SaveChangesAsync(cancellation).ConfigureAwait(false);
 
@@ -78,7 +76,6 @@ namespace Internal.Generated.WolverineHandlers
     }
 
     // END: UpdateModerationCoffeeShopCommandHandler1066230891
-    
-    
-}
 
+
+}

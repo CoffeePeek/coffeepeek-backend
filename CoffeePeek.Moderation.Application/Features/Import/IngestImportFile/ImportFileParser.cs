@@ -5,12 +5,9 @@ using System.Text.Json;
 using CoffeePeek.Moderation.Domain.Aggregates.ShopImportCandidateAggregate;
 using CoffeePeek.Shared.Domain.Places;
 
-namespace CoffeePeek.Moderation.Domain.Import;
+using CoffeePeek.Moderation.Domain.Import;
 
-public sealed record ParsedImportPlace(
-    OsmCandidateSnapshot Snapshot,
-    ImportSource Source,
-    string? GoogleMapsUri);
+namespace CoffeePeek.Moderation.Application.Features.Import.IngestImportFile;
 
 public static class ImportFileParser
 {

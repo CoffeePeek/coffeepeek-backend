@@ -1,5 +1,4 @@
-using CoffeePeek.Moderation.Domain.Entities;
-using CoffeePeek.Shared.Domain.Entities;
+using CoffeePeek.Shared.Kernel.Exceptions;
 
 namespace CoffeePeek.Moderation.Domain.Aggregates;
 
@@ -7,7 +6,7 @@ public record ModerationShopSchedule
 {
     public DayOfWeek DayOfWeek { get; private set; }
     public bool IsClosed { get; private set; }
-    public IReadOnlyCollection<ModerationShopScheduleInterval> Intervals { get; private set; }
+    public IReadOnlyCollection<ModerationShopScheduleInterval> Intervals { get; private set; } = [];
 
     // ReSharper disable once UnusedMember.Local
     private ModerationShopSchedule() { }
@@ -17,6 +16,14 @@ public record ModerationShopSchedule
         bool isClosed,
         IReadOnlyCollection<ModerationShopScheduleInterval> intervals)
     {
+        if (!Enum.IsDefined(dayOfWeek))
+            throw new DomainException("Unknown schedule day.");
+        if (isClosed && intervals.Count != 0 || !isClosed && intervals.Count == 0)
+            throw new DomainException("Open days require intervals and closed days cannot have intervals.");
+        if (intervals.Any(i => i.OpenTime < TimeSpan.Zero || i.OpenTime >= TimeSpan.FromDays(1)
+                              || i.CloseTime < TimeSpan.Zero || i.CloseTime > TimeSpan.FromDays(1)
+                              || i.OpenTime == i.CloseTime))
+            throw new DomainException("Invalid schedule interval.");
         DayOfWeek = dayOfWeek;
         IsClosed = isClosed;
         Intervals = intervals;

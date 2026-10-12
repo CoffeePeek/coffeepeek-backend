@@ -19,7 +19,8 @@ public static class ImportCandidatePublishCompleteHandler
 
         foreach (var result in message.Results)
         {
-            if (result.ShopId == Guid.Empty || !candidates.TryGetValue(result.CandidateId, out var candidate))
+            if (result.ShopId == Guid.Empty || !candidates.TryGetValue(result.CandidateId, out var candidate)
+                || candidate.ResultingShopId == result.ShopId)
                 continue;
 
             candidate.AttachPublishedShop(result.ShopId);

@@ -11,11 +11,11 @@ namespace CoffeePeek.Moderation.Application.Features.Shop.CreateShop;
 public record SendCoffeeShopToModerationCommand
 {
     [JsonIgnore] public Guid? UserId { get; init; }
-    
-    [Required, MaxLength(BusinessConstants.MaxShopNameLength)] public string Name { get; init; }
-    [Required] public string Address { get; init; }
+
+    [Required, MaxLength(BusinessConstants.MaxShopNameLength)] public string Name { get; init; } = null!;
+    [Required] public string Address { get; init; } = null!;
     [Required] public Guid CityId { get; init; }
-    
+
     public string? Description { get; init; }
     public PriceRange? PriceRange { get; init; }
     public CoffeeShopType? Type { get; init; }

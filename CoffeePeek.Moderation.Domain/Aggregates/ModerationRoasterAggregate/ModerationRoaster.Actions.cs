@@ -30,17 +30,22 @@ public sealed partial class ModerationRoaster
 
     public void SetLocation(Guid cityId, ModerationLocation location)
     {
+        EnsureEditable();
+        if (cityId == Guid.Empty)
+            throw new DomainException("CityId is required.");
         CityId = cityId;
         Location = location;
     }
 
     public void UpdateContact(string? instagramLink, string? siteLink)
     {
+        EnsureEditable();
         Contact = ModerationRoasterContact.Create(instagramLink, siteLink);
     }
 
     public void AddPhoto(string fileName, string contentType, string storageKey, long length)
     {
+        EnsureEditable();
         var photo = ModerationRoasterPhoto.Create(fileName, contentType, storageKey, length, UserId, Id);
         _photos.Add(photo);
     }
@@ -54,10 +59,11 @@ public sealed partial class ModerationRoaster
             throw new DomainException("Cannot approve roaster with unvalidated address.");
 
         ModerationStatus = ModerationStatus.Approved;
+        RejectedReason = null;
         return true;
     }
 
-    public void Reject(string reason)
+    public bool Reject(string reason)
     {
         // An approved roaster is already published to the catalog; rejecting it here would leave it live.
         if (ModerationStatus == ModerationStatus.Approved)
@@ -66,11 +72,21 @@ public sealed partial class ModerationRoaster
         if (string.IsNullOrWhiteSpace(reason))
             throw new DomainException("Reject reason is required.");
 
+        reason = reason.Trim();
         if (reason.Length is < BusinessConstants.MinRejectReasonCommentLength or > BusinessConstants.MaxRejectReasonCommentLength)
             throw new DomainException(
                 $"{nameof(reason)} must be between {BusinessConstants.MinRejectReasonCommentLength} and {BusinessConstants.MaxRejectReasonCommentLength} characters.");
 
+        if (ModerationStatus == ModerationStatus.Rejected && RejectedReason == reason)
+            return false;
         ModerationStatus = ModerationStatus.Rejected;
         RejectedReason = reason;
+        return true;
+    }
+
+    private void EnsureEditable()
+    {
+        if (ModerationStatus == ModerationStatus.Approved)
+            throw new DomainException("Approved roaster is already published and cannot be edited.");
     }
 }

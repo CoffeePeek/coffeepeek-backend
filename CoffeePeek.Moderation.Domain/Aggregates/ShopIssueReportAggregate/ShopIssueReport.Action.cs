@@ -12,6 +12,8 @@ public partial class ShopIssueReport
 
         if (reportedByUserId == Guid.Empty)
             throw new DomainException($"{nameof(reportedByUserId)} cannot be empty.");
+        if (!Enum.IsDefined(category))
+            throw new DomainException("Unknown issue category.");
 
         var normalizedDescription = string.IsNullOrWhiteSpace(description) ? null : description.Trim();
 

@@ -343,21 +343,3 @@ public class AdminImportController(IMessageBus bus, IUserContext userContext) : 
         };
     }
 }
-
-public record DecideImportCandidateRequest(
-    ImportQueueStatus Status,
-    CoffeeShopType? Type,
-    string[]? TagSlugs,
-    bool OverrideClosed = false,
-    ImportRejectReason? RejectReason = null);
-
-public record DecideImportDuplicateRequest(bool Accept);
-
-/// <summary>
-/// Null / omitted field is left unchanged. Empty string clears the field.
-/// </summary>
-public record PatchImportContactsRequest(
-    string? Instagram = null,
-    string? Phone = null,
-    string? Website = null,
-    string? OpeningHours = null);

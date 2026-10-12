@@ -7,9 +7,9 @@ namespace CoffeePeek.Moderation.Domain.Aggregates.ModerationReviewAggregate;
 
 public partial class ModerationReview : Entity<Guid>
 {
-    public string Comment { get; private set; }
+    public string Comment { get; private set; } = null!;
     public Guid UserId { get; private set; }
-    public string UserName { get; private set; }
+    public string UserName { get; private set; } = null!;
     public Guid ShopId { get; private set; }
     public Guid CheckInId { get; private set; }
     public int ContentRevision { get; private set; }

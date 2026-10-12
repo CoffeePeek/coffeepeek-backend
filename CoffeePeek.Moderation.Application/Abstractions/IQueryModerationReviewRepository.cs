@@ -1,6 +1,8 @@
-﻿using CoffeePeek.Moderation.Domain.Common.Enums;
+using CoffeePeek.Moderation.Domain.Common.Enums;
 
-namespace CoffeePeek.Moderation.Domain.Aggregates.ModerationReviewAggregate;
+using CoffeePeek.Moderation.Domain.Aggregates.ModerationReviewAggregate;
+
+namespace CoffeePeek.Moderation.Application.Abstractions;
 
 public interface IQueryModerationReviewRepository
 {

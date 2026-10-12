@@ -6,8 +6,6 @@ using Microsoft.Extensions.Options;
 
 namespace CoffeePeek.Moderation.Application.Features.Import.GetImportCandidateById;
 
-public record GetImportCandidateByIdQuery(Guid Id);
-
 public static class GetImportCandidateByIdHandler
 {
     public static async Task<Response<ShopImportCandidateDto>> Handle(

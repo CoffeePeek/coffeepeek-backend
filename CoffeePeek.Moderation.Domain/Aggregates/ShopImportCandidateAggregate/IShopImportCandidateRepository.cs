@@ -36,20 +36,3 @@ public interface IShopImportCandidateRepository
 
     Task<List<ShopImportCandidate>> ListForDuplicateScanAsync(CancellationToken ct = default);
 }
-
-public sealed record ImportCandidateStats(
-    int Pending,
-    int Skipped,
-    int Published,
-    int Rejected,
-    int InFeed,
-    IReadOnlyDictionary<ImportCoffeeFocus, int> ByFocus,
-    IReadOnlyDictionary<ImportCollectorBucket, int> ByBucket,
-    ImportRejectedByReasonStats RejectedByReason);
-
-public sealed record ImportRejectedByReasonStats(
-    int Closed,
-    int Invalid,
-    int NotCoffee,
-    int Duplicate,
-    int Unspecified);

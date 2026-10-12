@@ -6,8 +6,6 @@ using CoffeePeek.Shared.Kernel.Response;
 
 namespace CoffeePeek.Moderation.Application.Features.Import.RefreshOsmImport;
 
-public record RefreshOsmImportCommand;
-
 public static class RefreshOsmImportHandler
 {
     public static async Task<Response<OsmRefreshResultDto>> Handle(
@@ -22,7 +20,7 @@ public static class RefreshOsmImportHandler
         {
             snapshots = await overpassClient.FetchMinskCafesAsync(ct);
         }
-        catch (Exception ex) when (ex is InvalidOperationException or HttpRequestException or TaskCanceledException)
+        catch (Exception ex) when (!ct.IsCancellationRequested && ex is InvalidOperationException or HttpRequestException or TaskCanceledException)
         {
             return Response<OsmRefreshResultDto>.Error(
                 System.Net.HttpStatusCode.GatewayTimeout,

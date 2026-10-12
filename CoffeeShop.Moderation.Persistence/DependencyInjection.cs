@@ -1,4 +1,5 @@
-﻿using CoffeePeek.Moderation.Domain.Aggregates;
+using CoffeePeek.Moderation.Application.Abstractions;
+using CoffeePeek.Moderation.Domain.Aggregates;
 using CoffeePeek.Moderation.Domain.Aggregates.ModerationReviewAggregate;
 using CoffeePeek.Moderation.Domain.Aggregates.ShopImportCandidateAggregate;
 using CoffeePeek.Moderation.Domain.Aggregates.ShopIssueReportAggregate;
@@ -39,7 +40,7 @@ public static class DependencyInjection
         }
 
         services.AddScoped<IUnitOfWork, UnitOfWork<ModerationDbContext>>();
-        
+
         services.AddScoped<IQueryModerationReviewRepository, QueryModerationReviewRepository>();
         services.AddScoped<IQueryModerationShopRepository, QueryModerationShopRepository>();
         services.AddScoped<IModerationShopRepository, ModerationShopRepository>();

@@ -16,12 +16,11 @@ public class ModerationShopConfiguration : IEntityTypeConfiguration<ModerationSh
         // Optimistic concurrency on PostgreSQL xmin: two moderators deciding the same item at once must not both win.
         entity.Property<uint>("Version").IsRowVersion();
         entity.Property(e => e.Name).HasMaxLength(BusinessConstants.MaxShopNameLength);
-        entity.Property(e => e.Description).HasMaxLength(1000);
+        entity.Property(e => e.Description).HasMaxLength(BusinessConstants.MaxShopDescriptionLength);
         entity.Property(e => e.RejectedReason).HasMaxLength(BusinessConstants.MaxRejectReasonCommentLength);
         entity.HasIndex(e => e.UserId);
         // Queue pages filter by status and order by newest; the composite also serves status-only filters.
         entity.HasIndex(e => new { e.ModerationStatus, e.CreatedAtUtc });
-        // Looked up on every review submission (GetByPublishedShopId).
         entity.HasIndex(e => e.ShopId);
         entity.HasIndex(e => e.CityId);
         entity.HasIndex(e => e.CoffeeFocus);

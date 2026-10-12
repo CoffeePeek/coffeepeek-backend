@@ -4,18 +4,6 @@ using CoffeePeek.Shared.Kernel.Exceptions;
 
 namespace CoffeePeek.Moderation.Domain.Aggregates.ShopChangeRequestAggregate;
 
-public enum ShopChangeSection
-{
-    Photos = 0,
-    Contacts = 1,
-    Description = 2,
-    Tags = 3,
-    Roasters = 4,
-    Equipment = 5,
-    Menu = 6,
-    BrewMethods = 7
-}
-
 public sealed class ShopChangeRequest : Entity<Guid>
 {
     public Guid ShopId { get; private set; }
@@ -33,6 +21,7 @@ public sealed class ShopChangeRequest : Entity<Guid>
     {
         if (shopId == Guid.Empty) throw new DomainException("ShopId is required.");
         if (submittedByUserId == Guid.Empty) throw new DomainException("SubmittedByUserId is required.");
+        if (!Enum.IsDefined(section)) throw new DomainException("Unknown change section.");
         if (string.IsNullOrWhiteSpace(payloadJson)) throw new DomainException("Change payload is required.");
 
         return new ShopChangeRequest
@@ -50,6 +39,7 @@ public sealed class ShopChangeRequest : Entity<Guid>
     public void Edit(ShopChangeSection section, string payloadJson)
     {
         EnsurePending();
+        if (!Enum.IsDefined(section)) throw new DomainException("Unknown change section.");
         if (string.IsNullOrWhiteSpace(payloadJson)) throw new DomainException("Change payload is required.");
         Section = section;
         PayloadJson = payloadJson;

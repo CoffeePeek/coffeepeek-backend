@@ -34,7 +34,7 @@ namespace Internal.Generated.WolverineHandlers
             // The actual message body
             var moderationShopApproveCompleteResponse = (CoffeePeek.Contract.Responses.ModerationShopApproveCompleteResponse)context.Envelope.Message;
 
-            
+
             // Enroll the DbContext & IMessagingContext in the outgoing Wolverine outbox transaction
             var efCoreEnvelopeTransaction = new Wolverine.EntityFrameworkCore.Internals.EfCoreEnvelopeTransaction(moderationDbContext, context, _domainEventScraperIEnumerable);
             await context.EnlistInOutboxAsync(efCoreEnvelopeTransaction).ConfigureAwait(false);
@@ -49,11 +49,11 @@ namespace Internal.Generated.WolverineHandlers
                 System.Diagnostics.Activity.Current?.SetTag("message.handler", "CoffeePeek.Moderation.Infrastructure.Consumers.ModerationShopApproveCompleteHandler");
                 System.Diagnostics.Activity.Current?.SetTag("handler.type", "CoffeePeek.Moderation.Infrastructure.Consumers.ModerationShopApproveCompleteHandler");
                 var moderationShopApproveCompleteHandler = new CoffeePeek.Moderation.Infrastructure.Consumers.ModerationShopApproveCompleteHandler(moderationShopRepository, unitOfWorkOfModerationDbContext, _loggerOfModerationShopApproveCompleteHandler);
-                
+
                 // The actual message execution
                 await moderationShopApproveCompleteHandler.Handle(moderationShopApproveCompleteResponse, cancellation).ConfigureAwait(false);
 
-                
+
                 // Added by EF Core Transaction Middleware
                 var result_of_SaveChangesAsync = await moderationDbContext.SaveChangesAsync(cancellation).ConfigureAwait(false);
 
@@ -72,7 +72,6 @@ namespace Internal.Generated.WolverineHandlers
     }
 
     // END: ModerationShopApproveCompleteResponseHandler1133881918
-    
-    
-}
 
+
+}

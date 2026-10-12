@@ -293,6 +293,9 @@ public sealed class ShopImportCandidate : Entity<Guid>
     {
         if (reviewerId == Guid.Empty)
             throw new DomainException("Reviewer is required.");
+        if (!Enum.IsDefined(status) || focus.HasValue && !Enum.IsDefined(focus.Value)
+            || rejectReason.HasValue && !Enum.IsDefined(rejectReason.Value))
+            throw new DomainException("Unknown import decision.");
 
         if (ResultingShopId is not null)
             throw new DomainException("Candidate is already published to the catalog.");
@@ -333,6 +336,8 @@ public sealed class ShopImportCandidate : Entity<Guid>
     {
         if (shopId == Guid.Empty)
             throw new DomainException("ShopId cannot be empty.");
+        if (ResultingShopId.HasValue && ResultingShopId != shopId)
+            throw new DomainException("Candidate is already linked to another published shop.");
 
         ResultingShopId = shopId;
         QueueStatus = ImportQueueStatus.Published;
@@ -360,17 +365,20 @@ public sealed class ShopImportCandidate : Entity<Guid>
         string? openingHours,
         bool patchOpeningHours)
     {
-        if (ResultingShopId is not null)
+        if (QueueStatus == ImportQueueStatus.Published)
             throw new DomainException("Cannot edit contacts after the candidate is published to the catalog.");
 
+        // Validate the whole edit before mutating a tracked aggregate.
+        var normalizedInstagram = patchInstagram ? Clip(ImportContactNormalizer.Instagram(instagram), MaxInstagramLength) : Instagram;
+        var normalizedWebsite = patchWebsite ? Clip(ImportContactNormalizer.Website(website, MaxWebsiteLength), MaxWebsiteLength) : Website;
         if (patchInstagram)
-            Instagram = Clip(ImportContactNormalizer.Instagram(instagram), MaxInstagramLength);
+            Instagram = normalizedInstagram;
 
         if (patchPhone)
             Phone = Clip(phone, MaxPhoneLength);
 
         if (patchWebsite)
-            Website = Clip(ImportContactNormalizer.Website(website, MaxWebsiteLength), MaxWebsiteLength);
+            Website = normalizedWebsite;
 
         if (patchOpeningHours)
             OpeningHours = Clip(openingHours, MaxOpeningHoursLength);
@@ -417,36 +425,45 @@ public sealed class ShopImportCandidate : Entity<Guid>
         IReadOnlyList<(string FileName, string ContentType, string StorageKey, long SizeBytes)> photos,
         DateTime utcNow)
     {
+        EnsureMenuEditable();
         Menu ??= MenuDraft.CreateEmpty();
         Menu.AttachPhotos(photos, utcNow);
     }
 
     public void RequestMenuParse()
     {
+        EnsureMenuEditable();
         if (Menu is null || Menu.Photos.Count == 0)
             throw new DomainException("Attach menu photos before parsing.");
 
         Menu.MarkParsePending();
     }
 
-    public void ApplyMenuParseResult(
+    public bool ApplyMenuParseResult(
         bool success,
         string? error,
         int? suggestedPriceRange,
         IReadOnlyList<MenuDraftItem> items,
         IReadOnlyList<MenuDraftUnmatched> unmatched,
-        DateTime utcNow)
+        DateTime utcNow,
+        Guid? requestId = null)
     {
-        Menu ??= MenuDraft.CreateEmpty();
-        Menu.ApplyParseResult(success, error, suggestedPriceRange, items, unmatched, utcNow);
+        return Menu?.ApplyParseResult(success, error, suggestedPriceRange, items, unmatched, utcNow, requestId) == true;
     }
 
     public void ReplaceMenuItems(
         IReadOnlyList<MenuDraftItem> items,
         DateTime utcNow)
     {
+        EnsureMenuEditable();
         Menu ??= MenuDraft.CreateEmpty();
         Menu.ApplyManualItems(items, utcNow);
+    }
+
+    private void EnsureMenuEditable()
+    {
+        if (QueueStatus == ImportQueueStatus.Published && ResultingShopId is null)
+            throw new DomainException("Wait for shop publication to complete before editing its menu.");
     }
 
     private void ApplyOsmFields(OsmCandidateSnapshot snapshot, DateTimeOffset now)

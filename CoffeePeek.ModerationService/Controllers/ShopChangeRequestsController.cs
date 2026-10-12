@@ -15,9 +15,6 @@ using Microsoft.Extensions.Options;
 
 namespace CoffeePeek.ModerationService.Controllers;
 
-public record UpdateShopChangeRequestBody(ShopChangeSection Section, ShopChangePayloadDto Payload);
-public record DecideShopChangeRequestBody(ModerationStatus Status, string? Comment);
-
 [ApiController]
 [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
 [Route("api/ShopChangeRequests")]

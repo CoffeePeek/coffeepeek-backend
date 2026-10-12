@@ -44,7 +44,7 @@ public class ModerationShopRepository(ModerationDbContext context) : IModeration
 
     public Task<bool> IsAwaitingGeocodingAsync(Guid id, string submittedAddress, CancellationToken ct = default) =>
         ShopRepository.AsNoTracking().AnyAsync(shop =>
-            shop.Id == id && shop.ModerationStatus == ModerationStatus.Pending &&
+            shop.Id == id && shop.ModerationStatus != ModerationStatus.Approved &&
             shop.Location != null && shop.Location.Address == submittedAddress &&
             !shop.Location.IsAddressValidated, ct);
 
@@ -60,7 +60,7 @@ public class ModerationShopRepository(ModerationDbContext context) : IModeration
                 "Location_IsAddressValidated" = TRUE,
                 "UpdatedAtUtc" = {DateTime.UtcNow}
             WHERE "Id" = {id}
-              AND "ModerationStatus" = {(int)ModerationStatus.Pending}
+              AND "ModerationStatus" <> {(int)ModerationStatus.Approved}
               AND "Location_Address" = {submittedAddress}
               AND "Location_IsAddressValidated" IS FALSE
             """, ct);
@@ -68,4 +68,3 @@ public class ModerationShopRepository(ModerationDbContext context) : IModeration
     }
 
 }
-

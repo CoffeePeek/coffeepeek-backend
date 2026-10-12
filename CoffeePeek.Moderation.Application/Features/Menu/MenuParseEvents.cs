@@ -1,4 +1,3 @@
-using CoffeePeek.Contract.Dtos.Menu;
 using CoffeePeek.Contract.Events.Menu;
 using CoffeePeek.Moderation.Domain.Aggregates.MenuDraftAggregate;
 
@@ -22,6 +21,7 @@ public static class MenuParseEvents
             publishedShopId,
             draft.Photos.Select(p => new MenuPhotoRef(
                 p.FileName, p.ContentType, p.StorageKey, p.SizeBytes, p.MediaPhotoId)).ToArray(),
-            requestedByUserId);
+            requestedByUserId,
+            draft.ParseRequestId);
     }
 }

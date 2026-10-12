@@ -41,9 +41,11 @@ public static class UpdateModerationRoasterStatusHandler
             var rejectReason = string.IsNullOrWhiteSpace(command.Comment)
                 ? "Rejected by moderator"
                 : command.Comment.Trim();
-            roaster.Reject(rejectReason);
-            auditAction = ModerationAuditAction.Rejected;
-            auditComment = rejectReason;
+            if (roaster.Reject(rejectReason))
+            {
+                auditAction = ModerationAuditAction.Rejected;
+                auditComment = roaster.RejectedReason;
+            }
         }
         else
         {

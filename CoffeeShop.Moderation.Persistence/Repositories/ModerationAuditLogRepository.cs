@@ -1,4 +1,3 @@
-using CoffeePeek.Moderation.Domain;
 using CoffeePeek.Moderation.Domain.Aggregates;
 using CoffeePeek.Moderation.Domain.Entities;
 using CoffeeShop.Moderation.Persistence.Configuration;
@@ -32,6 +31,7 @@ public class ModerationAuditLogRepository(ModerationDbContext dbContext) : IMode
         var totalCount = await query.CountAsync(ct);
         var items = await query
             .OrderByDescending(x => x.CreatedAtUtc)
+            .ThenBy(x => x.Id)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync(ct);
