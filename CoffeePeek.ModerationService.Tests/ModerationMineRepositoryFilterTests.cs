@@ -1,5 +1,8 @@
 using CoffeePeek.Moderation.Domain.Aggregates;
 using CoffeePeek.Moderation.Domain.Common.Enums;
+using CoffeePeek.Moderation.Application.Features.Shop.GetAllModerationShops;
+using CoffeePeek.Moderation.Application.Mapper;
+using CoffeePeek.Shared.Kernel.Options;
 using CoffeeShop.Moderation.Persistence.Configuration;
 using CoffeeShop.Moderation.Persistence.Repositories;
 using FluentAssertions;
@@ -143,6 +146,32 @@ public class ModerationMineRepositoryFilterTests
 
         total.Should().Be(1);
         items.Should().ContainSingle().Which.Id.Should().Be(a1.Id);
+    }
+
+    [Fact]
+    public async Task Shops_ReviewList_ReadsAndMapsSubmissionWithMenuAndCollections()
+    {
+        var options = NewOptions();
+        var shop = ModerationShop.Create("Cafe", null, Guid.NewGuid(), null);
+        shop.SetLocation(new ModerationLocation("Main street 1"));
+        shop.UpdateSchedules([(DayOfWeek.Monday, false,
+            new List<(TimeSpan OpenTime, TimeSpan CloseTime)> { (TimeSpan.FromHours(9), TimeSpan.FromHours(18)) })]);
+        shop.UpdateRelations([Guid.NewGuid()], [], [], []);
+        shop.AttachMenuPhotos([("menu.jpg", "image/jpeg", "menus/a", 10)], DateTime.UtcNow);
+        await Seed(options, db => db.ModerationShops.Add(shop));
+
+        await using var db = new ModerationDbContext(options);
+        var result = await GetAllModerationShopsHandler.Handle(new GetAllModerationShopsQuery(PageSize: 15),
+            new QueryModerationShopRepository(db),
+            MapsterConfiguration.CreateMapper(new MediaPublicUrlOptions { PublicEndpoint = "https://media.example.test" }),
+            TestContext.Current.CancellationToken);
+
+        result.Data!.ModerationShops.Should().ContainSingle().Which.Menu!.Photos.Should().ContainSingle();
+        result.Data.ModerationShops[0].Schedules.Should().ContainSingle().Which.Intervals.Should().ContainSingle();
+
+        await using var editDb = new ModerationDbContext(options);
+        var tracked = await new ModerationShopRepository(editDb).GetByIdAsync(shop.Id, TestContext.Current.CancellationToken);
+        tracked!.Schedules.Should().ContainSingle().Which.Intervals.Should().ContainSingle();
     }
 
     private static ModerationReview NewReview(Guid userId) =>
