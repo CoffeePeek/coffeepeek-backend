@@ -46,6 +46,54 @@ test("authenticated Telegram POST forwards only to the fixed Bot API endpoint", 
   assert.equal(upstream.mock.callCount(), 1);
 });
 
+test("GPT menu parsing forwards authorization, model, photos and structured output unchanged", async (t) => {
+  const payload = {
+    model: "gpt-4.1-mini", temperature: 0,
+    messages: [{ role: "user", content: [{ type: "image_url", image_url: { url: "data:image/jpeg;base64,AQID", detail: "high" } }] }],
+    response_format: { type: "json_schema", json_schema: { name: "cafe_menu", strict: true, schema: { type: "object" } } },
+  };
+  const result = { choices: [{ message: { content: '{"drinks":[]}' } }] };
+  t.mock.method(globalThis, "fetch", async (url, options) => {
+    assert.equal(url, "https://api.openai.com/v1/chat/completions");
+    assert.equal(options.method, "POST");
+    assert.equal(options.redirect, "error");
+    assert.deepEqual(options.headers, { "content-type": "application/json", authorization: "Bearer sk-test" });
+    assert.deepEqual(await new Response(options.body).json(), payload);
+    return Response.json(result);
+  });
+  const response = await worker.fetch(new Request(`${origin}/v1/chat/completions`, {
+    method: "POST", headers: { authorization: "Bearer sk-test", "x-private": "do-not-forward" },
+    body: JSON.stringify(payload),
+  }), env);
+  assert.deepEqual(await response.json(), result);
+});
+
+test("GPT route requires a key and does not accept unrelated OpenAI endpoints", async (t) => {
+  const upstream = t.mock.method(globalThis, "fetch", () => assert.fail("unexpected upstream request"));
+  for (const authorization of ["", "Basic invalid", "Bearer "]) {
+    const response = await worker.fetch(new Request(`${origin}/v1/chat/completions`, {
+      method: "POST", headers: { authorization }, body: "{}",
+    }), env);
+    assert.equal(response.status, 401);
+  }
+  assert.equal((await worker.fetch(new Request(`${origin}/v1/models`), env)).status, 404);
+  assert.equal(upstream.mock.callCount(), 0);
+});
+
+test("GPT route preserves API errors and sanitizes network failures", async (t) => {
+  const makeRequest = () => new Request(`${origin}/v1/chat/completions`, {
+    method: "POST", headers: { authorization: "Bearer sk-test" }, body: "{}",
+  });
+  const upstream = t.mock.method(globalThis, "fetch", async () => Response.json({ error: { code: "rate_limit_exceeded" } }, { status: 429 }));
+  const response = await worker.fetch(makeRequest(), env);
+  assert.equal(response.status, 429);
+  assert.deepEqual(await response.json(), { error: { code: "rate_limit_exceeded" } });
+  upstream.mock.mockImplementation(async () => { throw new Error("private details sk-test"); });
+  const failed = await worker.fetch(makeRequest(), env);
+  assert.equal(failed.status, 502);
+  assert.equal(await failed.text(), "OpenAI upstream unavailable");
+});
+
 test("missing or wrong credentials never call Telegram", async (t) => {
   const upstream = t.mock.method(globalThis, "fetch", () => assert.fail("unexpected upstream request"));
   for (const authorization of ["", "Bearer wrong-token"]) {

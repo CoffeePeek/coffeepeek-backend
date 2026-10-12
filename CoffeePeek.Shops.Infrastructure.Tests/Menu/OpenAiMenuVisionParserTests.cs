@@ -25,8 +25,11 @@ public class OpenAiMenuVisionParserTests
         factory.Verify(f => f.CreateClient(It.IsAny<string>()), Times.Never);
     }
 
-    [Fact]
-    public async Task ParseAsync_MapsStructuredDrinkJson()
+    [Theory]
+    [InlineData("https://api.openai.com/v1")]
+    [InlineData("https://coffeepeek-proxy.goloologo.workers.dev/v1")]
+    [InlineData("https://coffeepeek-proxy.goloologo.workers.dev/v1/")]
+    public async Task ParseAsync_MapsStructuredDrinkJson(string baseUrl)
     {
         HttpRequestMessage? captured = null;
         var handler = new StubHandler(request =>
@@ -56,7 +59,7 @@ public class OpenAiMenuVisionParserTests
         {
             ApiKey = "sk-test",
             Model = "gpt-4.1-mini",
-            BaseUrl = "https://api.openai.com/v1"
+            BaseUrl = baseUrl
         });
 
         var result = await parser.ParseAsync([new MenuVisionPhoto([1, 2, 3], "image/jpeg")]);
@@ -67,7 +70,7 @@ public class OpenAiMenuVisionParserTests
         result.Drinks[0].Price.Should().Be(6.5m);
         result.Drinks[0].VolumeMl.Should().Be(250);
         captured.Should().NotBeNull();
-        captured!.RequestUri!.AbsoluteUri.Should().Be("https://api.openai.com/v1/chat/completions");
+        captured!.RequestUri!.AbsoluteUri.Should().Be($"{baseUrl.TrimEnd('/')}/chat/completions");
         captured.Headers.Authorization!.Scheme.Should().Be("Bearer");
         captured.Headers.Authorization.Parameter.Should().Be("sk-test");
     }
