@@ -18,6 +18,7 @@ public record UnifiedCheckInDto
     public int ContentRevision { get; init; }
     public string? RejectionReason { get; init; }
     public CheckInDrinkDto? Drink { get; init; }
+    public CheckInPhotoDto? DrinkPhoto { get; init; }
     public CheckInPhotoDto[] Photos { get; init; } = [];
     public int HelpfulCount { get; init; }
     public bool IsHelpfulByCurrentUser { get; init; }

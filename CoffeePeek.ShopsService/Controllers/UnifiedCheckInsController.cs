@@ -23,7 +23,7 @@ public class UnifiedCheckInsController(IMessageBus bus, IUserContext userContext
     {
         var shopId = await discovery.ResolveIdAsync(PublicAddressKind.CoffeeShop, request.CoffeeShopSlug, ct);
         var internalRequest = new CreateUnifiedCheckInRequest(shopId, request.Text, request.Rating,
-            request.Visibility, request.DrinkSlug, request.CustomDrinkName, request.Photos, request.VisitedAt);
+            request.Visibility, request.DrinkSlug, request.CustomDrinkName, request.Photos, request.VisitedAt, request.DrinkPhoto);
         return await ResultAsync(await bus.InvokeAsync<Response<UnifiedCheckInDto>>(new CreateUnifiedCheckInCommand(
             internalRequest, userContext.GetUserIdOrThrow(), userContext.GetUsernameOrThrow()), ct), ct);
     }

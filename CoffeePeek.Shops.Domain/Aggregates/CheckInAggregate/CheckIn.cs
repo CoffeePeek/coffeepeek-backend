@@ -42,6 +42,8 @@ public sealed partial class CheckIn : AggregateRoot<Guid>
 
     public Rating? Rating { get; private set; }
 
+    public Guid? DrinkPhotoId { get; private set; }
+
     private readonly List<ShopPhoto> _shopPhotos = [];
     public IReadOnlyCollection<ShopPhoto> ShopPhotos => _shopPhotos.AsReadOnly();
 

@@ -50,6 +50,68 @@ public class UnifiedCheckInHandlerTests
             _drinks.Object, _photos.Object, _unitOfWork.Object, _bus.Object, _cache.Object, CancellationToken.None);
 
     [Fact]
+    public async Task CutoutIsClaimedWithFiveOriginalsAndKeptOutOfGalleryButIncludedInModeration()
+    {
+        var originals = Enumerable.Range(0, 5).Select(i => new UploadedPhotoDto("a.jpg", "image/jpeg", $"original-{i}", 1)).ToArray();
+        var request = Request(Visibility.Public) with
+        {
+            Photos = originals, DrinkPhoto = new UploadedPhotoDto("untrusted.jpg", "untrusted", "cup", 1)
+        };
+        DomainCheckIn? stored = null;
+        _repository.Setup(r => r.Add(It.IsAny<DomainCheckIn>())).Callback<DomainCheckIn>(row => stored = row);
+        _photos.Setup(p => p.ClaimForCheckInAsync(_userId, It.IsAny<Guid>(), It.IsAny<IReadOnlyCollection<string>>(), default, "cup"))
+            .Returns((Guid _, Guid _, IReadOnlyCollection<string> keys, CancellationToken _, string? _) =>
+                Task.FromResult(new CheckInPhotoClaimResult(true, keys.Select(k =>
+                    new ClaimedCheckInPhotoDto(Guid.NewGuid(), k, $"private/{k}", k == "cup" ? "cup.png" : "full.jpg",
+                        k == "cup" ? "image/png" : "image/jpeg", 100)).ToArray())));
+        var result = await Create(request);
+        Assert.True(result.IsSuccess);
+        Assert.Equal(5, result.Data.Photos.Length);
+        Assert.Equal("image/png", result.Data.DrinkPhoto!.ContentType);
+        Assert.Equal("cup.png", result.Data.DrinkPhoto.FileName);
+        Assert.Equal($"/api/v1/check-ins/{result.Data.Id}/photos/{result.Data.DrinkPhoto.Id}", result.Data.DrinkPhoto.Url);
+        Assert.Equal(6, stored!.ShopPhotos.Count);
+        _bus.Verify(b => b.PublishAsync(It.Is<CheckInModerationRequestedEvent>(e => e.Photos.Length == 6
+            && e.Photos.Any(p => p.Id == stored.DrinkPhotoId))), Times.Once);
+        _bus.Verify(b => b.PublishAsync(It.Is<CoffeePeek.Contract.Events.CheckInPhotosAttachedEvent>(e => e.StorageKeys.Count == 6)), Times.Once);
+
+        stored.ChangeVisibility(Domain.Aggregates.CheckInAggregate.CheckInVisibility.Private);
+        _repository.Setup(r => r.GetTrackedByIdAsync(stored.Id, default)).ReturnsAsync(stored);
+        var edited = await UpdateUnifiedCheckInHandler.Handle(new UpdateUnifiedCheckInCommand(stored.Id, _userId, new("edited")),
+            _repository.Object, _drinks.Object, _photos.Object, _unitOfWork.Object, _bus.Object, _cache.Object, default);
+        Assert.Equal(result.Data.DrinkPhoto, edited.Data.DrinkPhoto);
+        Assert.Equal(result.Data.Photos, edited.Data.Photos);
+    }
+
+    [Theory]
+    [InlineData(false, "cup")]
+    [InlineData(true, "original")]
+    [InlineData(true, "")]
+    public async Task InvalidCutoutReferenceFailsBeforeClaimOrSave(bool withOriginal, string key)
+    {
+        var request = Request() with
+        {
+            Photos = withOriginal ? [new UploadedPhotoDto("full.jpg", "image/jpeg", "original", 1)] : [],
+            DrinkPhoto = new UploadedPhotoDto("cup.png", "image/png", key, 1)
+        };
+        await Assert.ThrowsAsync<ValidationException>(() => Create(request));
+        _photos.VerifyNoOtherCalls();
+        _unitOfWork.VerifyNoOtherCalls();
+    }
+
+    [Fact]
+    public async Task MissingOrRejectedCutoutNeverCreatesAPartialCheckIn()
+    {
+        var request = Request() with { Photos = [new("full.jpg", "image/jpeg", "original", 1)], DrinkPhoto = new("cup.png", "image/png", "cup", 1) };
+        _photos.Setup(p => p.ClaimForCheckInAsync(_userId, It.IsAny<Guid>(), It.IsAny<IReadOnlyCollection<string>>(), default, "cup"))
+            .ReturnsAsync(new CheckInPhotoClaimResult(true, [new(Guid.NewGuid(), "original", "private/original", "full.jpg", "image/jpeg", 1)]));
+        await Assert.ThrowsAsync<ValidationException>(() => Create(request));
+        _repository.Verify(r => r.Add(It.IsAny<DomainCheckIn>()), Times.Never);
+        _unitOfWork.VerifyNoOtherCalls();
+        _bus.VerifyNoOtherCalls();
+    }
+
+    [Fact]
     public async Task DateOnlyPrivateRequestPreservesUtcVisitTimeAndSkipsOptionalLookups()
     {
         var visitedAt = new DateTimeOffset(2026, 10, 1, 12, 0, 0, TimeSpan.FromHours(3));
@@ -161,8 +223,8 @@ public class UnifiedCheckInHandlerTests
         var request=Request() with {Photos=[new UploadedPhotoDto("a.jpg","image/jpeg","upload-key",1)]};
         Guid reserved=Guid.Empty;
         var attempts=0;
-        _photos.Setup(p=>p.ClaimForCheckInAsync(_userId,It.IsAny<Guid>(),It.IsAny<IReadOnlyCollection<string>>(),default))
-            .Returns((Guid _,Guid id,IReadOnlyCollection<string> keys,CancellationToken _) =>
+        _photos.Setup(p=>p.ClaimForCheckInAsync(_userId,It.IsAny<Guid>(),It.IsAny<IReadOnlyCollection<string>>(),default,null))
+            .Returns((Guid _,Guid id,IReadOnlyCollection<string> keys,CancellationToken _,string? _) =>
             {
                 if (reserved==Guid.Empty) reserved=id;
                 Assert.Equal(reserved,id);
@@ -175,7 +237,7 @@ public class UnifiedCheckInHandlerTests
         _photos.Verify(p=>p.ReleaseCheckInClaimAsync(It.IsAny<Guid>(),It.IsAny<Guid>(),It.IsAny<CancellationToken>()),Times.Never());
         _repository.Setup(r=>r.GetTrackedByIdAsync(reserved,default)).ReturnsAsync(DomainCheckIn.CreateUnified(_userId,_shopId,"author","x",Rating.Create(3,4,5),DateTime.UtcNow,id:reserved));
         await Assert.ThrowsAsync<ConflictException>(()=>Create(request));
-        _photos.Verify(p=>p.ClaimForCheckInAsync(_userId,reserved,It.IsAny<IReadOnlyCollection<string>>(),default),Times.Exactly(2));
+        _photos.Verify(p=>p.ClaimForCheckInAsync(_userId,reserved,It.IsAny<IReadOnlyCollection<string>>(),default,null),Times.Exactly(2));
         _bus.Verify(b=>b.PublishAsync(It.IsAny<CheckinCreatedEvent>()),Times.Once);
     }
 
@@ -198,7 +260,7 @@ public class UnifiedCheckInHandlerTests
         var row=DomainCheckIn.CreateUnified(_userId,_shopId,"author","visit",Rating.Create(4,4,4),DateTime.UtcNow.AddYears(-1));
         row.AddPhotos([new ShopPhoto("old.jpg","image/jpeg","old-public-key",10,_userId)]);
         _repository.Setup(r=>r.GetTrackedByIdAsync(row.Id,default)).ReturnsAsync(row);
-        _photos.Setup(p=>p.ClaimForCheckInAsync(_userId,row.Id,It.IsAny<IReadOnlyCollection<string>>(),default)).ReturnsAsync(CheckInPhotoClaimResult.Failed);
+        _photos.Setup(p=>p.ClaimForCheckInAsync(_userId,row.Id,It.IsAny<IReadOnlyCollection<string>>(),default,null)).ReturnsAsync(CheckInPhotoClaimResult.Failed);
         await Assert.ThrowsAsync<ConflictException>(()=>UpdateUnifiedCheckInHandler.Handle(new ChangeUnifiedCheckInVisibilityCommand(row.Id,_userId,Visibility.Public),
             _repository.Object,_drinks.Object,_photos.Object,_unitOfWork.Object,_bus.Object,_cache.Object,default));
         Assert.False(row.IsPubliclyVisible);Assert.Equal(Domain.Aggregates.CheckInAggregate.CheckInVisibility.Private,row.Visibility);

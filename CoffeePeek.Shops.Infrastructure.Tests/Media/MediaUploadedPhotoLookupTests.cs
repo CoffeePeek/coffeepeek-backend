@@ -31,6 +31,30 @@ public class MediaUploadedPhotoLookupTests
     }
 
     [Fact]
+    public async Task ClaimPassesCutoutRoleAndBothKeysToMediaAsTheOwner()
+    {
+        var user = Guid.NewGuid(); var checkIn = Guid.NewGuid();
+        var lookup = CreateLookup(async request =>
+        {
+            Assert.Equal("/internal/check-in-photos/claim", request.RequestUri!.AbsolutePath);
+            Assert.Equal(user.ToString(), request.Headers.GetValues(GatewayHeaderConsts.XUserId).Single());
+            Assert.Equal(Secret, request.Headers.GetValues(GatewayHeaderConsts.XGatewayAuth).Single());
+            var body = await request.Content!.ReadFromJsonAsync<CoffeePeek.Contract.Dtos.CheckIns.ClaimCheckInPhotosRequest>(TestContext.Current.CancellationToken);
+            Assert.Equal(checkIn, body!.CheckInId);
+            Assert.Equal("cup", body.DrinkPhotoStorageKey);
+            Assert.Equal(new[] { "original", "cup" }, body.StorageKeys);
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = JsonContent.Create(Response<List<CoffeePeek.Contract.Dtos.CheckIns.ClaimedCheckInPhotoDto>>.Success([
+                    new(Guid.NewGuid(), "original", "private/original", "full.jpg", "image/jpeg", 10),
+                    new(Guid.NewGuid(), "cup", "private/cup", "cup.png", "image/png", 10)]))
+            };
+        });
+        var result = await lookup.ClaimForCheckInAsync(user, checkIn, ["original", "cup"], TestContext.Current.CancellationToken, "cup");
+        Assert.True(result.Succeeded); Assert.Equal(2, result.Photos.Count);
+    }
+
+    [Fact]
     public async Task ResolveAsync_PostsToResolveWithGatewayAndUserHeaders_AndReturnsPhotos()
     {
         var userId = Guid.NewGuid();

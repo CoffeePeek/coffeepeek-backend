@@ -13,7 +13,10 @@ public class ClaimCheckInPhotosHandler(IPhotoRepository repository, IStorageServ
     public async Task<Response<List<ClaimedCheckInPhotoDto>>> ClaimAsync(
         ClaimCheckInPhotosRequest request, Guid ownerId, CancellationToken ct)
     {
-        if (ownerId == Guid.Empty || request.CheckInId == Guid.Empty || request.StorageKeys is not { Length: > 0 and <= 5 }
+        if (ownerId == Guid.Empty || request.CheckInId == Guid.Empty || request.StorageKeys is not { Length: > 0 }
+            || request.StorageKeys.Length > (request.DrinkPhotoStorageKey == null ? 5 : 6)
+            || (request.DrinkPhotoStorageKey != null && (request.StorageKeys.Length < 2
+                || !request.StorageKeys.Contains(request.DrinkPhotoStorageKey, StringComparer.Ordinal)))
             || request.StorageKeys.Any(k => string.IsNullOrWhiteSpace(k) || k.Length > 255)
             || request.StorageKeys.Distinct(StringComparer.Ordinal).Count() != request.StorageKeys.Length)
             return Response<List<ClaimedCheckInPhotoDto>>.Error("Invalid check-in photo claim.");
@@ -57,6 +60,12 @@ public class ClaimCheckInPhotosHandler(IPhotoRepository repository, IStorageServ
                 }
                 var size = await storage.GetObjectSize(photo.StorageKey, BucketType.CheckIn, ct)
                     ?? throw new InvalidOperationException("Photo was not uploaded.");
+                if (request.StorageKeys[i] == request.DrinkPhotoStorageKey)
+                {
+                    // Validate the immutable copy, not a live upload URL that can still replace bytes.
+                    if (!await DrinkPhotoValidation.IsValidAsync(photo, size, storage, ct))
+                        return Response<List<ClaimedCheckInPhotoDto>>.Error("DrinkPhoto must be a transparent PNG up to 768px and 4 MiB.");
+                }
                 photo.SizeBytes = size;
                 result.Add(new ClaimedCheckInPhotoDto(photo.Id, request.StorageKeys[i], photo.StorageKey,
                     photo.FileName, photo.ContentType, size));

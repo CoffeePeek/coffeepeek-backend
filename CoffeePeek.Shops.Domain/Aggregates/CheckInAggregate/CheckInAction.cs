@@ -12,6 +12,19 @@ public partial class CheckIn
         Touch();
     }
 
+    public void AddDrinkPhoto(ShopPhoto photo)
+    {
+        EnsureNotDeleted();
+        if (DrinkPhotoId != null || _shopPhotos.Count == 0 || photo.OwnerId != UserId
+            || !string.Equals(photo.ContentType, "image/png", StringComparison.OrdinalIgnoreCase)
+            || _shopPhotos.Any(p => p.Id == photo.Id || p.StorageKey == photo.StorageKey))
+            throw new DomainException("A drink cutout requires its own PNG and an original photo.");
+        photo.SetSortIndex(_shopPhotos.Max(p => p.SortIndex) + 1);
+        _shopPhotos.Add(photo);
+        DrinkPhotoId = photo.Id;
+        Touch();
+    }
+
     public static CheckIn CreateUnified(Guid userId, Guid shopId, string username, string? text,
         Rating? rating, DateTime visitedAt, CheckInVisibility visibility = CheckInVisibility.Private,
         Guid? id = null)

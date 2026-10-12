@@ -10,6 +10,23 @@ public class UnifiedCheckInTests
         CheckIn.CreateUnified(Guid.NewGuid(), Guid.NewGuid(), "author", " coffee ",
             Rating.Create(4, 3, 5), DateTime.UtcNow, visibility);
 
+    [Fact]
+    public void CutoutMustBeSeparateOwnedPngWithAnOriginalAndCanOnlyBeAddedOnce()
+    {
+        var row = Create();
+        var cup = new ShopPhoto("cup.png", "image/png", "cup", 10, row.UserId);
+        Assert.Throws<DomainException>(() => row.AddDrinkPhoto(cup));
+        var original = new ShopPhoto("full.jpg", "image/jpeg", "full", 10, row.UserId);
+        row.AddPhotos([original]);
+        Assert.Throws<DomainException>(() => row.AddDrinkPhoto(original));
+        Assert.Throws<DomainException>(() => row.AddDrinkPhoto(new("foreign.png", "image/png", "foreign", 10, Guid.NewGuid())));
+        row.AddDrinkPhoto(cup);
+        Assert.Equal(cup.Id, row.DrinkPhotoId); Assert.Equal(1, cup.SortIndex);
+        Assert.Throws<DomainException>(() => row.AddDrinkPhoto(new("second.png", "image/png", "second", 10, row.UserId)));
+        row.UpdateContent("updated", null); row.ChangeVisibility(CheckInVisibility.Public);
+        Assert.Equal(cup.Id, row.DrinkPhotoId);
+    }
+
     [Theory]
     [InlineData("")]
     [InlineData("  ")]

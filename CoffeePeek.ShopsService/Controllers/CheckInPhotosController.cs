@@ -26,7 +26,8 @@ public class CheckInPhotosController(ICheckInQueries queries, MediaCheckInPhotoC
     private async Task<IActionResult> StreamAsync(UnifiedCheckInDto? checkIn, Guid photoId, CancellationToken ct)
     {
         if (checkIn == null) return NotFound();
-        var photo = checkIn.Photos.FirstOrDefault(p => p.Id == photoId);
+        var photo = checkIn.DrinkPhoto?.Id == photoId ? checkIn.DrinkPhoto
+            : checkIn.Photos.FirstOrDefault(p => p.Id == photoId);
         if (photo == null) return NotFound();
         using var response = await media.DownloadAsync(checkIn.UserId, checkIn.Id, photoId, ct);
         if (!response.IsSuccessStatusCode)

@@ -15,7 +15,7 @@ public interface IUploadedPhotoLookup
         CancellationToken ct = default);
 
     Task<CheckInPhotoClaimResult> ClaimForCheckInAsync(Guid userId, Guid checkInId,
-        IReadOnlyCollection<string> storageKeys, CancellationToken ct = default);
+        IReadOnlyCollection<string> storageKeys, CancellationToken ct = default, string? drinkPhotoStorageKey = null);
 
     Task ReleaseCheckInClaimAsync(Guid userId, Guid checkInId, CancellationToken ct = default);
 }

@@ -113,7 +113,7 @@ public class CheckInControllerTests
         user.Setup(x => x.GetUsernameOrThrow()).Returns("example_author");
         var request = new PublicCreateUnifiedCheckInRequest(shop.Slug, "Good coffee",
             new RatingDto { Coffee = 5, Service = 4, Place = 3 }, DrinkSlug: drinkSlug, CustomDrinkName: customDrinkName,
-            VisitedAt: DateTimeOffset.UtcNow.AddDays(-1));
+            VisitedAt: DateTimeOffset.UtcNow.AddDays(-1), DrinkPhoto: new("cup.png", "image/png", "cup", 10));
         if (drinkSlug is null && customDrinkName is null) request = request with { Text = null, Rating = null };
         var bus = DispatchProxy.Create<IMessageBus, ReviewReportApiContractTests.RecordingBus>();
         var recorder = (ReviewReportApiContractTests.RecordingBus)(object)bus;
@@ -137,6 +137,7 @@ public class CheckInControllerTests
         Assert.Equal(drinkSlug, command.Request.DrinkSlug);
         Assert.Equal(customDrinkName, command.Request.CustomDrinkName);
         Assert.Equal(request.VisitedAt, command.Request.VisitedAt);
+        Assert.Equal(request.DrinkPhoto, command.Request.DrinkPhoto);
         var response = Assert.IsType<Response<PublicCheckInDto>>(result.Value);
         Assert.Equal(checkInId, response.Data.Id);
         Assert.Equal(shop.Slug, response.Data.Shop!.Slug);

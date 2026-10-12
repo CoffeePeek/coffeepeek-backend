@@ -34,6 +34,29 @@ public class CheckInPhotoAccessTests
         return (controller, queries, handler);
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task CutoutDownloadUsesSameAuthorizationAndStreamsPngWithoutAddingItToGallery(bool moderator)
+    {
+        var (controller, queries, media) = Setup(Author);
+        var cup = new CheckInPhotoDto(Guid.NewGuid(), "cup.png", "image/png", "private/cup", 5, 1, "protected-url");
+        queries.Detail = Visible with { DrinkPhoto = cup }; queries.Snapshot = queries.Detail;
+        media.ContentType = "image/png";
+        var result = moderator
+            ? await controller.DownloadModeration(CheckInId, cup.Id, 1, TestContext.Current.CancellationToken)
+            : await controller.Download(CheckInId, cup.Id, TestContext.Current.CancellationToken);
+        result.Should().BeOfType<EmptyResult>();
+        controller.Response.ContentType.Should().Be("image/png");
+        media.Path.Should().Be($"/internal/check-in-photos/{CheckInId}/{cup.Id}");
+        queries.Detail = null; queries.Snapshot = null;
+        var denied = moderator
+            ? await controller.DownloadModeration(CheckInId, cup.Id, 1, TestContext.Current.CancellationToken)
+            : await controller.Download(CheckInId, cup.Id, TestContext.Current.CancellationToken);
+        denied.Should().BeOfType<NotFoundResult>();
+        media.Calls.Should().Be(1);
+    }
+
     [Fact]
     public async Task EveryDownload_RechecksCurrentVisibilityBeforeReadingBytes()
     {
