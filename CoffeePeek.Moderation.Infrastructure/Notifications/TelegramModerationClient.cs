@@ -1,3 +1,4 @@
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using CoffeePeek.Contract.Events.Moderation;
@@ -13,9 +14,17 @@ public sealed class TelegramModerationClient(HttpClient httpClient, IOptions<Tel
         if (string.IsNullOrWhiteSpace(settings.BotToken) || string.IsNullOrWhiteSpace(settings.ChatId))
             throw new InvalidOperationException("Telegram moderation bot token and chat ID must be configured.");
 
-        // Telegram requires the token in the URL. This client has HTTP request logging disabled.
-        using var response = await httpClient.PostAsJsonAsync($"/bot{settings.BotToken}/sendMessage",
-            new { chat_id = settings.ChatId, text = Format(submission) }, ct);
+        var useRelay = !string.IsNullOrWhiteSpace(settings.RelayUrl);
+        using var request = new HttpRequestMessage(HttpMethod.Post,
+            useRelay ? settings.RelayUrl : $"/bot{settings.BotToken}/sendMessage")
+        {
+            Content = JsonContent.Create(new { chat_id = settings.ChatId, text = Format(submission) })
+        };
+        // Keep the bot token out of the relay URL and its access logs.
+        if (useRelay)
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", settings.BotToken);
+
+        using var response = await httpClient.SendAsync(request, ct);
         if (!response.IsSuccessStatusCode)
             throw new HttpRequestException($"Telegram sendMessage failed with HTTP {(int)response.StatusCode}.");
 

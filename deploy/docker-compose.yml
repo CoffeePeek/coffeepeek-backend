@@ -294,6 +294,7 @@ services:
       GooglePlaces__ApiKey: ${GOOGLE_PLACES_API_KEY:-}
       TelegramModeration__BotToken: ${TELEGRAM_MODERATION_BOT_TOKEN:-}
       TelegramModeration__ChatId: ${TELEGRAM_MODERATION_CHAT_ID:-}
+      TelegramModeration__RelayUrl: ${TELEGRAM_MODERATION_RELAY_URL:-}
       Sentry__Dsn: ${SENTRY_DSN_MODERATION:-}
     mem_limit: 1536m
     memswap_limit: 1536m

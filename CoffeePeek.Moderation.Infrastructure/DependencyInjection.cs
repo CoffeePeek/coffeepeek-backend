@@ -17,12 +17,17 @@ public static class DependencyInjection
             .BindConfiguration("TelegramModeration")
             .Validate(options => string.IsNullOrWhiteSpace(options.BotToken) == string.IsNullOrWhiteSpace(options.ChatId),
                 "Telegram moderation bot token and chat ID must be configured together.")
+            .Validate(options => string.IsNullOrWhiteSpace(options.RelayUrl) ||
+                (Uri.TryCreate(options.RelayUrl, UriKind.Absolute, out var uri) && uri.Scheme == Uri.UriSchemeHttps &&
+                 string.IsNullOrEmpty(uri.UserInfo) && string.IsNullOrEmpty(uri.Query) && string.IsNullOrEmpty(uri.Fragment)),
+                "Telegram moderation relay URL must be an absolute HTTPS URL without credentials, query, or fragment.")
             .ValidateOnStart();
         services.AddHttpClient<TelegramModerationClient>(client =>
             {
                 client.BaseAddress = new Uri("https://api.telegram.org/");
                 client.Timeout = TimeSpan.FromSeconds(10);
             })
+            .ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler { AllowAutoRedirect = false })
             .RemoveAllLoggers()
             .RemoveAllResilienceHandlers();
 

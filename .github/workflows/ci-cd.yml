@@ -75,6 +75,9 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Test Cloudflare relay
+        run: node --test deploy/cloudflare/coffeepeek-proxy.test.mjs
+
       - name: Setup .NET SDK
         uses: actions/setup-dotnet@v4
         with:
