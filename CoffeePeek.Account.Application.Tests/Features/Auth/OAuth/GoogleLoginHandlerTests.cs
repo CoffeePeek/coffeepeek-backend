@@ -105,7 +105,8 @@ public class GoogleLoginHandlerTests
         response.Data!.AccessToken.Should().Be("access");
         response.Data.RefreshToken.Should().Be("refresh");
         response.Data.User.Email.Should().Be("user@gmail.com");
-        user.RefreshTokens.Should().ContainSingle(t => t.IsActive && t.Token == "refresh");
+        user.RefreshTokens.Should().ContainSingle(t => t.IsActive && t.Token == "refresh"
+            && t.DeviceName == "Chrome" && t.IpAddress == "127.0.0.1");
         _unitOfWorkMock.Verify(u => u.SaveChangesAsync(_ct), Times.Once);
     }
 

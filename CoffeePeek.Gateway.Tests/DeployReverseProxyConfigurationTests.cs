@@ -32,8 +32,26 @@ public class DeployReverseProxyConfigurationTests
     {
         var caddyfile = File.ReadAllText(GetDeployPath("Caddyfile"));
 
-        caddyfile.Should().Contain("reverse_proxy gateway:8080");
-        Regex.IsMatch(caddyfile, @"gateway:80(?!\d)").Should().BeFalse();
+        caddyfile.Should().Contain("reverse_proxy gateway-proxy:8080");
+        Regex.IsMatch(caddyfile, @"gateway-proxy:80(?!\d)").Should().BeFalse();
+    }
+
+    [Fact]
+    public void ProductionCompose_PinsTrustedProxyAddressesAndUsesNetworkSpecificAliases()
+    {
+        var compose = File.ReadAllText(GetDeployPath("docker-compose.yml"));
+        var account = compose.Split("  account:")[1].Split("  shops:")[0];
+        var gateway = compose.Split("  gateway:")[1].Split("  caddy:")[0];
+        var caddy = compose.Split("  caddy:")[1];
+
+        account.Should().Contain("ForwardedHeaders__KnownProxies__0: ${PROXY_NETWORK_PREFIX:-172.30.42}.3");
+        account.Should().Contain("aliases: [account-proxy]");
+        gateway.Should().Contain("ipv4_address: ${PROXY_NETWORK_PREFIX:-172.30.42}.3");
+        gateway.Should().Contain("ForwardedHeaders__KnownProxies__0: ${PROXY_NETWORK_PREFIX:-172.30.42}.2");
+        gateway.Should().Contain("aliases: [gateway-proxy]");
+        gateway.Should().Contain("ReverseProxy__Clusters__account-cluster__Destinations__destination1__Address: http://account-proxy:8080");
+        caddy.Should().Contain("ipv4_address: ${PROXY_NETWORK_PREFIX:-172.30.42}.2");
+        compose.Should().Contain("ip_range: ${PROXY_NETWORK_PREFIX:-172.30.42}.128/25");
     }
 
     [Fact]

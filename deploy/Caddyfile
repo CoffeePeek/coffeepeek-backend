@@ -16,7 +16,7 @@
 	}
 
 	handle {
-		reverse_proxy gateway:8080
+		reverse_proxy gateway-proxy:8080
 	}
 }
 

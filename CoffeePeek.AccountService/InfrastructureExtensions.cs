@@ -40,6 +40,7 @@ public static class InfrastructureExtensions
 
     public static void UseApplication(this WebApplication app)
     {
+        app.UseForwardedHeaders();
         app.UseCoffeePeekRequestLogging();
         
         app.UseExceptionHandler();
