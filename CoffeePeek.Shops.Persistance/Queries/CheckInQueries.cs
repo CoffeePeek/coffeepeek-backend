@@ -9,38 +9,42 @@ using Microsoft.EntityFrameworkCore;
 
 namespace CoffeePeek.Shops.Persistance.Queries;
 
-public class CheckInQueries(ShopsDbContext dbContext) : ICheckInQueries
+public partial class CheckInQueries(ShopsDbContext dbContext) : ICheckInQueries
 {
+    private readonly ShopsDbContext _db = dbContext;
+
     public async Task<UnifiedCheckInDto?> GetUnifiedByIdAsync(Guid id, Guid? readerId, CancellationToken ct = default)
     {
-        var eligible = CheckInEligibility.Public(dbContext);
-        var query = dbContext.CheckIns.Where(c => c.Id == id && c.DeletedAtUtc == null
+        var eligible = CheckInEligibility.Public(_db);
+        var query = _db.CheckIns.Where(c => c.Id == id && c.Kind == CheckInKind.Shop && c.DeletedAtUtc == null
             && (c.UserId == readerId || eligible.Any(p => p.Id == c.Id)));
         return (await ProjectAsync(query, readerId, ct)).SingleOrDefault();
     }
 
     public async Task<(decimal AverageRating, int Count)> GetStatsByShopAsync(Guid shopId, CancellationToken ct = default)
     {
-        var average = await CheckInEligibility.LatestRatings(dbContext).Where(c => c.ShopId == shopId)
+        var average = await CheckInEligibility.LatestRatings(_db).Where(c => c.ShopId == shopId)
             .AverageAsync(c => (decimal?)c.Rating!.AverageRating, ct) ?? 0m;
-        var count = await CheckInEligibility.Public(dbContext).CountAsync(c => c.ShopId == shopId, ct);
+        var count = await CheckInEligibility.Public(_db).CountAsync(c => c.ShopId == shopId, ct);
         return (Math.Round(average, 2), count);
     }
 
     public Task<UnifiedCheckInDto[]> GetByUserAndShopAsync(Guid userId, Guid shopId, int page = 1, int pageSize = 10, CancellationToken ct = default) =>
-        ProjectAsync(dbContext.CheckIns.Where(c => c.UserId == userId && c.ShopId == shopId && c.DeletedAtUtc == null)
+        ProjectAsync(_db.CheckIns.Where(c => c.UserId == userId && c.Kind == CheckInKind.Shop
+            && c.ShopId == shopId && c.DeletedAtUtc == null)
             .OrderByDescending(c => c.CreatedAtUtc).ThenByDescending(c => c.Id)
             .Skip((Math.Clamp(page, 1, 10000) - 1) * Math.Clamp(pageSize, 1, 100)).Take(Math.Clamp(pageSize, 1, 100)), userId, ct);
 
     public async Task<UnifiedCheckInDto?> GetModerationSnapshotAsync(Guid id, int revision, CancellationToken ct = default) =>
-        (await ProjectAsync(dbContext.CheckIns.Where(c => c.Id == id && c.ContentRevision == revision
+        (await ProjectAsync(_db.CheckIns.Where(c => c.Id == id && c.Kind == CheckInKind.Shop && c.ContentRevision == revision
             && c.DeletedAtUtc == null && c.Visibility == CheckInVisibility.Public), null, ct))
         .SingleOrDefault();
 
     public async Task<CheckInPage> GetUnifiedByUserAsync(Guid userId, int pageNumber, int pageSize,
         DateTime? from = null, DateTime? to = null, CancellationToken ct = default)
     {
-        var query = dbContext.CheckIns.Where(c => c.UserId == userId && c.DeletedAtUtc == null);
+        var query = _db.CheckIns.Where(c => c.UserId == userId && c.Kind == CheckInKind.Shop
+            && c.DeletedAtUtc == null);
         if (from.HasValue) query = query.Where(c => c.VisitedAt >= from.Value);
         if (to.HasValue) query = query.Where(c => c.VisitedAt < to.Value);
         var total = await query.CountAsync(ct);
@@ -54,8 +58,8 @@ public class CheckInQueries(ShopsDbContext dbContext) : ICheckInQueries
         int pageSize, string? cursor, CancellationToken ct = default)
     {
         if (pageSize is < 1 or > 100) throw new ValidationException("PageSize must be between 1 and 100.");
-        var query = CheckInEligibility.Public(dbContext);
-        if (cityId.HasValue) query = query.Where(c => dbContext.Shops.Any(s => s.Id == c.ShopId && s.Location.CityId == cityId));
+        var query = CheckInEligibility.Public(_db);
+        if (cityId.HasValue) query = query.Where(c => _db.Shops.Any(s => s.Id == c.ShopId && s.Location.CityId == cityId));
         if (shopId.HasValue) query = query.Where(c => c.ShopId == shopId);
         if (authorId.HasValue) query = query.Where(c => c.UserId == authorId);
         if (cursor != null)
@@ -74,7 +78,7 @@ public class CheckInQueries(ShopsDbContext dbContext) : ICheckInQueries
     private async Task<UnifiedCheckInDto[]> ProjectAsync(IQueryable<CheckIn> query, Guid? readerId, CancellationToken ct)
     {
         var rows = await query.AsNoTracking().Include(c => c.ShopPhotos).ToArrayAsync(ct);
-        return await CheckInProjection.FromRowsAsync(dbContext, rows, readerId, ct);
+        return await CheckInProjection.FromRowsAsync(_db, rows, readerId, ct);
     }
 
     public static string EncodeCursor(DateTime createdAt, Guid id) => Convert.ToBase64String(

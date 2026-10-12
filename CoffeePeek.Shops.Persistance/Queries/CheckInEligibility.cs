@@ -7,7 +7,8 @@ namespace CoffeePeek.Shops.Persistance.Queries;
 public static class CheckInEligibility
 {
     public static readonly Expression<Func<CheckIn, bool>> CurrentPublic = c =>
-        c.DeletedAtUtc == null && c.Visibility == CheckInVisibility.Public
+        c.Kind == CheckInKind.Shop && c.ShopId != null && c.DeletedAtUtc == null
+        && c.Visibility == CheckInVisibility.Public
         && c.ModerationState == CheckInModerationState.Approved && c.ApprovedRevision == c.ContentRevision;
 
     public static IQueryable<CheckIn> Public(ShopsDbContext db) => db.CheckIns.AsQueryable().Where(CurrentPublic)

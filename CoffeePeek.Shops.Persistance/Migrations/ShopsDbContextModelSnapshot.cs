@@ -256,6 +256,20 @@ namespace CoffeePeek.Shops.Persistance.Migrations
                     b.Property<int?>("ApprovedRevision")
                         .HasColumnType("integer");
 
+                    b.Property<string>("BeanNameSnapshot")
+                        .HasMaxLength(250)
+                        .HasColumnType("character varying(250)");
+
+                    b.Property<int?>("BrewDurationSeconds")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("BrewMethodCode")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<Guid?>("CoffeeProductId")
+                        .HasColumnType("uuid");
+
                     b.Property<int>("ContentRevision")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
@@ -270,6 +284,10 @@ namespace CoffeePeek.Shops.Persistance.Migrations
 
                     b.Property<DateTime?>("DeletedAtUtc")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal?>("DoseGrams")
+                        .HasPrecision(8, 2)
+                        .HasColumnType("numeric(8,2)");
 
                     b.Property<string>("DrinkNameEn")
                         .HasMaxLength(100)
@@ -292,6 +310,11 @@ namespace CoffeePeek.Shops.Persistance.Migrations
                     b.Property<int>("HelpfulCount")
                         .HasColumnType("integer");
 
+                    b.Property<int>("Kind")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
                     b.Property<long>("ModerationDecisionSequence")
                         .HasColumnType("bigint");
 
@@ -308,6 +331,9 @@ namespace CoffeePeek.Shops.Persistance.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
 
+                    b.Property<DateOnly?>("PreparedOn")
+                        .HasColumnType("date");
+
                     b.Property<string>("RejectionReason")
                         .HasColumnType("text");
 
@@ -315,8 +341,11 @@ namespace CoffeePeek.Shops.Persistance.Migrations
                         .IsConcurrencyToken()
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("ShopId")
+                    b.Property<Guid?>("ShopId")
                         .HasColumnType("uuid");
+
+                    b.Property<int?>("TasteScore")
+                        .HasColumnType("integer");
 
                     b.Property<DateTime?>("UpdatedAtUtc")
                         .HasColumnType("timestamp with time zone");
@@ -341,6 +370,8 @@ namespace CoffeePeek.Shops.Persistance.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CoffeeProductId");
+
                     b.HasIndex("ShopId");
 
                     b.HasIndex("UserId");
@@ -351,13 +382,21 @@ namespace CoffeePeek.Shops.Persistance.Migrations
 
                     b.HasIndex("UserId", "ShopId");
 
+                    b.HasIndex("UserId", "Kind", "CoffeeProductId");
+
                     b.HasIndex("Visibility", "ModerationState", "CreatedAtUtc", "Id");
+
+                    b.HasIndex("UserId", "Kind", "PreparedOn", "VisitedAt", "Id");
 
                     b.HasIndex("UserId", "ShopId", "VisitedAt", "CreatedAtUtc", "Id");
 
                     b.ToTable("CanonicalCheckIns", null, t =>
                         {
                             t.HasCheckConstraint("CK_CanonicalCheckIns_CompleteContent", "\"Note\" IS NOT NULL AND length(btrim(\"Note\")) <= 1000 AND ((\"Rating_Place\" IS NULL AND \"Rating_Service\" IS NULL AND \"Rating_Coffee\" IS NULL AND \"Rating_AverageRating\" IS NULL) OR (\"Rating_Place\" IS NOT NULL AND \"Rating_Service\" IS NOT NULL AND \"Rating_Coffee\" IS NOT NULL AND \"Rating_AverageRating\" IS NOT NULL AND \"Rating_Place\" BETWEEN 1 AND 5 AND \"Rating_Service\" BETWEEN 1 AND 5 AND \"Rating_Coffee\" BETWEEN 1 AND 5))");
+
+                            t.HasCheckConstraint("CK_CanonicalCheckIns_HomeDetails", "(\"BrewMethodCode\" IS NULL OR \"BrewMethodCode\" IN ('espresso', 'pour_over', 'batch_drip', 'moka_pot', 'cezve', 'aeropress', 'french_press', 'other')) AND (\"CoffeeProductId\" IS NULL OR \"BeanNameSnapshot\" IS NOT NULL AND length(btrim(\"BeanNameSnapshot\")) > 0) AND (\"DoseGrams\" IS NULL OR \"DoseGrams\" > 0 AND \"DoseGrams\" <= 10000) AND (\"BrewDurationSeconds\" IS NULL OR \"BrewDurationSeconds\" BETWEEN 1 AND 604800) AND (\"TasteScore\" IS NULL OR \"TasteScore\" BETWEEN 1 AND 5)");
+
+                            t.HasCheckConstraint("CK_CanonicalCheckIns_KindShape", "(\"Kind\" = 0 AND \"ShopId\" IS NOT NULL AND \"PreparedOn\" IS NULL AND \"BrewMethodCode\" IS NULL AND \"CoffeeProductId\" IS NULL AND \"BeanNameSnapshot\" IS NULL AND \"DoseGrams\" IS NULL AND \"BrewDurationSeconds\" IS NULL AND \"TasteScore\" IS NULL) OR (\"Kind\" = 1 AND \"ShopId\" IS NULL AND \"PreparedOn\" IS NOT NULL AND \"Rating_Place\" IS NULL AND \"Rating_Service\" IS NULL AND \"Rating_Coffee\" IS NULL AND \"Rating_AverageRating\" IS NULL AND \"Visibility\" = 0 AND \"ModerationState\" = 0 AND \"ApprovedRevision\" IS NULL AND \"ModerationSubmissionId\" IS NULL AND \"FirstPublishedAtUtc\" IS NULL AND \"HelpfulCount\" = 0)");
 
                             t.HasCheckConstraint("CK_CanonicalCheckIns_Visibility", "\"Visibility\" IN (0, 1)");
                         });
@@ -2610,11 +2649,15 @@ namespace CoffeePeek.Shops.Persistance.Migrations
 
             modelBuilder.Entity("CoffeePeek.Shops.Domain.Aggregates.CheckInAggregate.CheckIn", b =>
                 {
+                    b.HasOne("CoffeePeek.Shops.Domain.Aggregates.CoffeeProductAggregate.CoffeeProduct", null)
+                        .WithMany()
+                        .HasForeignKey("CoffeeProductId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate.CoffeeShop", null)
                         .WithMany()
                         .HasForeignKey("ShopId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Cascade);
 
                     b.OwnsOne("CoffeePeek.Shops.Domain.Entities.Rating", "Rating", b1 =>
                         {

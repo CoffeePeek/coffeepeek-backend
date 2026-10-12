@@ -80,7 +80,7 @@ public class CoffeeShopQueries(
         {
             var minRating = request.MinRating.Value;
             var ratingSubquery = CheckInEligibility.LatestRatings(context)
-                .GroupBy(r => r.ShopId)
+                .GroupBy(r => r.ShopId!.Value)
                 .Select(g => new { CoffeeShopId = g.Key, Avg = g.Average(r => r.Rating!.AverageRating) });
             // INNER JOIN: shops with no reviews are excluded when MinRating filter is active — consistent with previous behavior
             query = query
@@ -420,16 +420,16 @@ public class CoffeeShopQueries(
         var ids = items.Select(i => i.Id).ToArray();
         var stats = await CheckInEligibility.LatestRatings(context)
             .AsNoTracking()
-            .Where(r => ids.Contains(r.ShopId))
-            .GroupBy(r => r.ShopId)
+            .Where(r => r.ShopId != null && ids.Contains(r.ShopId.Value))
+            .GroupBy(r => r.ShopId!.Value)
             .Select(g => new
             {
                 ShopId = g.Key,
                 Average = g.Average(r => (r.Rating!.Place + r.Rating.Coffee + r.Rating.Service) / 3m)
             })
             .ToDictionaryAsync(x => x.ShopId, ct);
-        var counts = await CheckInEligibility.Public(context).Where(c => ids.Contains(c.ShopId))
-            .GroupBy(c => c.ShopId).Select(g => new { ShopId = g.Key, Count = g.Count() })
+        var counts = await CheckInEligibility.Public(context).Where(c => c.ShopId != null && ids.Contains(c.ShopId.Value))
+            .GroupBy(c => c.ShopId!.Value).Select(g => new { ShopId = g.Key, Count = g.Count() })
             .ToDictionaryAsync(x => x.ShopId, ct);
 
         foreach (var item in items)

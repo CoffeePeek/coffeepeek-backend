@@ -168,7 +168,7 @@ public class ReviewReportHandlerTests
         var detail = await GetReviewReportHandler.Handle(new(report.Id), _reports.Object, _checkIns.Object, _ct);
 
         detail.Data.Report.Should().Be(audit);
-        detail.Data.CheckIn.Should().Be(new ReportedCheckInDto(LegacyReviewId, checkIn.ShopId, checkIn.UserId,
+        detail.Data.CheckIn.Should().Be(new ReportedCheckInDto(LegacyReviewId, checkIn.ShopId!.Value, checkIn.UserId,
             checkIn.Username, checkIn.Note, checkIn.Rating.Place, checkIn.Rating.Service, checkIn.Rating.Coffee,
             checkIn.VisitedAt, checkIn.DeletedAtUtc, checkIn.IsPubliclyVisible));
         _uow.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
@@ -203,7 +203,7 @@ public class ReviewReportHandlerTests
     public async Task Resolve_RemovesExactHistoricalTargetEvenWhenNoLongerPublicAndCannotRepublish(string state)
     {
         var checkIn = PublishedCheckIn(LegacyReviewId);
-        var other = DomainCheckIn.CreateUnified(checkIn.UserId, checkIn.ShopId, "tester", "another visit",
+        var other = DomainCheckIn.CreateUnified(checkIn.UserId, checkIn.ShopId!.Value, "tester", "another visit",
             Rating.Create(2, 3, 4), checkIn.VisitedAt.AddDays(-1), CheckInVisibility.Public);
         other.ApplyModerationDecision(other.ContentRevision, Guid.NewGuid(), 1,
             CheckInModerationState.Approved, null, DateTime.UtcNow);

@@ -16,7 +16,8 @@ public static class GetReviewReportHandler
         var report = await reports.GetByIdAsync(query.ReportId, ct)
             ?? throw new NotFoundException("Complaint not found.");
         var checkIn = report.CheckInId is { } id ? await checkIns.GetTrackedByIdAsync(id, ct) : null;
-        var target = checkIn is null ? null : new ReportedCheckInDto(checkIn.Id, checkIn.ShopId, checkIn.UserId,
+        var target = checkIn is not { Kind: CheckInKind.Shop, ShopId: not null } ? null
+            : new ReportedCheckInDto(checkIn.Id, checkIn.ShopId.Value, checkIn.UserId,
             checkIn.Username, checkIn.Note, checkIn.Rating?.Place, checkIn.Rating?.Service, checkIn.Rating?.Coffee,
             checkIn.VisitedAt, checkIn.DeletedAtUtc, checkIn.IsPubliclyVisible);
         return Response<ReviewReportDetail>.Success(new(ReviewReportDto.From(report), target));

@@ -50,7 +50,7 @@ public static class UpdateUnifiedCheckInHandler
     internal static async Task<DomainCheckIn> GetOwnedAsync(IQueryCheckInRepository repository, Guid id, Guid userId, CancellationToken ct)
     {
         var checkIn = await repository.GetTrackedByIdAsync(id, ct);
-        if (checkIn == null || checkIn.UserId != userId || checkIn.DeletedAtUtc != null)
+        if (checkIn == null || checkIn.Kind != CheckInKind.Shop || checkIn.UserId != userId || checkIn.DeletedAtUtc != null)
             throw new NotFoundException("Check-in not found.");
         return checkIn;
     }

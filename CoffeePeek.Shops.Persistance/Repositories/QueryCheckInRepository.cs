@@ -1,4 +1,5 @@
 using CoffeePeek.Shops.Domain.Aggregates.CheckInAggregate;
+using CoffeePeek.Shops.Domain.Aggregates.CoffeeProductAggregate;
 using CoffeePeek.Shops.Persistance.Configuration;
 using Microsoft.EntityFrameworkCore;
 
@@ -46,7 +47,8 @@ public class QueryCheckInRepository(ShopsDbContext dbContext) : IQueryCheckInRep
 
     public Task<bool> Exists(Guid userId, Guid coffeeShopId, CancellationToken ct = default)
     {
-        return _repository.AnyAsync(x => x.UserId == userId && x.ShopId == coffeeShopId && x.DeletedAtUtc == null, ct);
+        return _repository.AnyAsync(x => x.UserId == userId && x.Kind == CheckInKind.Shop
+            && x.ShopId == coffeeShopId && x.DeletedAtUtc == null, ct);
     }
 
     public Task LockUserForCheckInAsync(Guid userId, CancellationToken ct = default) =>
@@ -56,12 +58,14 @@ public class QueryCheckInRepository(ShopsDbContext dbContext) : IQueryCheckInRep
 
     public Task<bool> ExistsSinceAsync(Guid userId, Guid shopId, DateTime sinceUtc, CancellationToken ct = default)
     {
-        return _repository.AnyAsync(x => x.UserId == userId && x.ShopId == shopId && x.CreatedAtUtc >= sinceUtc, ct);
+        return _repository.AnyAsync(x => x.UserId == userId && x.Kind == CheckInKind.Shop
+            && x.ShopId == shopId && x.CreatedAtUtc >= sinceUtc, ct);
     }
 
     public Task<int> CountSinceAsync(Guid userId, DateTime sinceUtc, CancellationToken ct = default)
     {
-        return _repository.CountAsync(x => x.UserId == userId && x.CreatedAtUtc >= sinceUtc, ct);
+        return _repository.CountAsync(x => x.UserId == userId && x.Kind == CheckInKind.Shop
+            && x.CreatedAtUtc >= sinceUtc, ct);
     }
 
     public async Task<IReadOnlyList<CheckIn>> GetByUserAndShopAsync(
@@ -73,7 +77,8 @@ public class QueryCheckInRepository(ShopsDbContext dbContext) : IQueryCheckInRep
     {
         return await _repository
             .AsNoTracking()
-            .Where(x => x.UserId == userId && x.ShopId == shopId && x.DeletedAtUtc == null)
+            .Where(x => x.UserId == userId && x.Kind == CheckInKind.Shop
+                && x.ShopId == shopId && x.DeletedAtUtc == null)
             .Include(x => x.ShopPhotos)
             .OrderByDescending(x => x.CreatedAtUtc)
             .Skip((page - 1) * pageSize)
@@ -90,8 +95,8 @@ public class QueryCheckInRepository(ShopsDbContext dbContext) : IQueryCheckInRep
     {
         return _repository
             .AsNoTracking()
-            .Where(x => x.UserId == userId && x.DeletedAtUtc == null)
-            .Select(x => x.ShopId)
+            .Where(x => x.UserId == userId && x.Kind == CheckInKind.Shop && x.ShopId != null && x.DeletedAtUtc == null)
+            .Select(x => x.ShopId!.Value)
             .ToListAsync(ct);
     }
 
@@ -108,8 +113,8 @@ public class QueryCheckInRepository(ShopsDbContext dbContext) : IQueryCheckInRep
 
         var counts = await Queries.CheckInEligibility.Public(dbContext)
             .AsNoTracking()
-            .Where(x => shopIdList.Contains(x.ShopId))
-            .GroupBy(x => x.ShopId)
+            .Where(x => x.Kind == CheckInKind.Shop && x.ShopId != null && shopIdList.Contains(x.ShopId.Value))
+            .GroupBy(x => x.ShopId!.Value)
             .Select(g => new { ShopId = g.Key, Count = g.Count() })
             .ToListAsync(ct);
 
@@ -125,4 +130,14 @@ public class QueryCheckInRepository(ShopsDbContext dbContext) : IQueryCheckInRep
             .Where(x => x.Id == checkInId)
             .Select(x => (Guid?)x.UserId)
             .FirstOrDefaultAsync(ct);
+
+    public async Task<(Guid Id, string Name)?> GetPublishedCoffeeProductBySlugAsync(string slug,
+        CancellationToken ct = default)
+    {
+        var product = await dbContext.CoffeeProducts.AsNoTracking()
+            .Where(p => p.PublicSlug == slug && p.Status == CoffeePublicationStatus.Published)
+            .Select(p => new { p.Id, p.Name })
+            .SingleOrDefaultAsync(ct);
+        return product is null ? null : (product.Id, product.Name);
+    }
 }

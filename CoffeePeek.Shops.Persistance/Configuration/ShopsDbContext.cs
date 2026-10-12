@@ -1,5 +1,6 @@
 using CoffeePeek.Shops.Domain;
 using CoffeePeek.Shops.Domain.Aggregates.BrewMethods;
+using CoffeePeek.Shops.Domain.Aggregates.CoffeeProductAggregate;
 using CoffeePeek.Shops.Domain.Aggregates.AppDistributionAggregate;
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeZoneAggregate;
@@ -186,7 +187,12 @@ public class ShopsDbContext(DbContextOptions<ShopsDbContext> options, IOptions<P
             entity.HasIndex(c => c.ShopId);
             entity.HasIndex(c => new { c.UserId, c.ShopId });
 
-            entity.Property(c => c.ShopId).IsRequired();
+            entity.Property(c => c.Kind).HasDefaultValue(Domain.Aggregates.CheckInAggregate.CheckInKind.Shop);
+            entity.HasIndex(c => new { c.UserId, c.Kind, c.PreparedOn, c.VisitedAt, c.Id });
+            entity.HasIndex(c => new { c.UserId, c.Kind, c.CoffeeProductId });
+            entity.Property(c => c.BrewMethodCode).HasMaxLength(20);
+            entity.Property(c => c.BeanNameSnapshot).HasMaxLength(250);
+            entity.Property(c => c.DoseGrams).HasPrecision(8, 2);
 
             entity.Property(c => c.Note).IsRequired().HasMaxLength(BusinessConstants.MaxCheckInNoteLength);
             entity.Property(c => c.Username).HasMaxLength(30).HasDefaultValue("");
@@ -212,12 +218,31 @@ public class ShopsDbContext(DbContextOptions<ShopsDbContext> options, IOptions<P
                 "(\"Rating_Place\" IS NOT NULL AND \"Rating_Service\" IS NOT NULL AND \"Rating_Coffee\" IS NOT NULL AND \"Rating_AverageRating\" IS NOT NULL AND " +
                 "\"Rating_Place\" BETWEEN 1 AND 5 AND \"Rating_Service\" BETWEEN 1 AND 5 AND \"Rating_Coffee\" BETWEEN 1 AND 5))"));
             entity.ToTable("CanonicalCheckIns", t => t.HasCheckConstraint("CK_CanonicalCheckIns_Visibility", "\"Visibility\" IN (0, 1)"));
+            entity.ToTable("CanonicalCheckIns", t => t.HasCheckConstraint("CK_CanonicalCheckIns_KindShape",
+                "(\"Kind\" = 0 AND \"ShopId\" IS NOT NULL AND \"PreparedOn\" IS NULL AND " +
+                "\"BrewMethodCode\" IS NULL AND \"CoffeeProductId\" IS NULL AND \"BeanNameSnapshot\" IS NULL AND " +
+                "\"DoseGrams\" IS NULL AND \"BrewDurationSeconds\" IS NULL AND \"TasteScore\" IS NULL) OR " +
+                "(\"Kind\" = 1 AND \"ShopId\" IS NULL AND \"PreparedOn\" IS NOT NULL AND " +
+                "\"Rating_Place\" IS NULL AND \"Rating_Service\" IS NULL AND \"Rating_Coffee\" IS NULL AND " +
+                "\"Rating_AverageRating\" IS NULL AND \"Visibility\" = 0 AND \"ModerationState\" = 0 AND " +
+                "\"ApprovedRevision\" IS NULL AND \"ModerationSubmissionId\" IS NULL AND " +
+                "\"FirstPublishedAtUtc\" IS NULL AND \"HelpfulCount\" = 0)"));
+            entity.ToTable("CanonicalCheckIns", t => t.HasCheckConstraint("CK_CanonicalCheckIns_HomeDetails",
+                "(\"BrewMethodCode\" IS NULL OR \"BrewMethodCode\" IN ('espresso', 'pour_over', 'batch_drip', 'moka_pot', 'cezve', 'aeropress', 'french_press', 'other')) AND " +
+                "(\"CoffeeProductId\" IS NULL OR \"BeanNameSnapshot\" IS NOT NULL AND length(btrim(\"BeanNameSnapshot\")) > 0) AND " +
+                "(\"DoseGrams\" IS NULL OR \"DoseGrams\" > 0 AND \"DoseGrams\" <= 10000) AND " +
+                "(\"BrewDurationSeconds\" IS NULL OR \"BrewDurationSeconds\" BETWEEN 1 AND 604800) AND " +
+                "(\"TasteScore\" IS NULL OR \"TasteScore\" BETWEEN 1 AND 5)"));
 
             // Foreign keys without navigation properties (DDD aggregate separation)
             entity.HasOne<CoffeeShop>()
                 .WithMany()
                 .HasForeignKey(c => c.ShopId)
                 .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne<CoffeeProduct>()
+                .WithMany()
+                .HasForeignKey(c => c.CoffeeProductId)
+                .OnDelete(DeleteBehavior.Restrict);
 
             entity.OwnsOne<Rating>(r => r.Rating);
             entity.Navigation(c => c.Rating).IsRequired(false);
