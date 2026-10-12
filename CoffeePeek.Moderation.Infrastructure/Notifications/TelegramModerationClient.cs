@@ -14,7 +14,7 @@ public sealed class TelegramModerationClient(HttpClient httpClient, IOptions<Tel
             throw new InvalidOperationException("Telegram moderation bot token and chat ID must be configured.");
 
         // Telegram requires the token in the URL. This client has HTTP request logging disabled.
-        using var response = await httpClient.PostAsJsonAsync($"bot{settings.BotToken}/sendMessage",
+        using var response = await httpClient.PostAsJsonAsync($"/bot{settings.BotToken}/sendMessage",
             new { chat_id = settings.ChatId, text = Format(submission) }, ct);
         if (!response.IsSuccessStatusCode)
             throw new HttpRequestException($"Telegram sendMessage failed with HTTP {(int)response.StatusCode}.");

@@ -7,3 +7,7 @@ Set `TELEGRAM_MODERATION_BOT_TOKEN` and `TELEGRAM_MODERATION_CHAT_ID` in `deploy
 Each submission emits a `ModerationSubmissionCreated` message through Wolverine's transactional outbox. The Moderation service consumes it and calls Telegram's [`sendMessage`](https://core.telegram.org/bots/api#sendmessage). A failed send throws so Wolverine retains the failure for retry/error-queue handling; it does not roll back the user's accepted submission. If delivery is retried after Telegram has accepted a message but before Wolverine records success, a duplicate Telegram message is possible. The submission ID in each message lets the moderator identify it.
 
 Both settings may be empty during development; in that state notifications cannot be delivered. Set both before relying on the feature. Setting only one is rejected at startup.
+
+The Bot API request path starts with `/bot`: real bot tokens contain `:`, so a path without the leading slash is interpreted as a URI scheme instead of a path on `api.telegram.org`. HTTP failures and timeouts are retried through the durable queue after 10, 60 and 300 seconds; exhausted failures remain in the error queue.
+
+New public check-in revisions without text (including whitespace) and without photos are approved automatically. The decision uses the normal revision-checked publication flow, and the Telegram notification identifies the automatic approval. Adding text or submitting photos still requires moderation. Existing submissions are not backfilled.

@@ -32,7 +32,8 @@ public class CheckInModerationSnapshotTests
         await using var db = new ModerationDbContext(new DbContextOptionsBuilder<ModerationDbContext>()
             .UseInMemoryDatabase(Guid.NewGuid().ToString()).Options);
         var request = Request(Guid.NewGuid(), 1, Guid.NewGuid(), Guid.NewGuid()) with { Text = "", Rating = null, Photos = [] };
-        await CheckInModerationRequestedHandler.Handle(request, new ModerationReviewRepository(db), new TestUnitOfWork(db), _ct);
+        var (decision, notification) = await CheckInModerationRequestedHandler.Handle(request,
+            new ModerationReviewRepository(db), new TestUnitOfWork(db), _ct);
         db.ChangeTracker.Clear();
         var snapshot = await db.ModerationReviews.SingleAsync(_ct);
         var mapper = MapsterConfiguration.CreateMapper(new MediaPublicUrlOptions { PublicEndpoint = "https://media.example.com" });
@@ -40,6 +41,20 @@ public class CheckInModerationSnapshotTests
         Assert.Equal(request.VisitedAtUtc, dto.VisitedAtUtc);
         Assert.Equal("", dto.Text);
         Assert.Null(dto.Rating);
+        snapshot.ModerationStatus.Should().Be(CoffeePeek.Moderation.Domain.Common.Enums.ModerationStatus.Approved);
+        decision.Should().NotBeNull();
+        decision!.CheckInId.Should().Be(request.CheckInId);
+        decision.ContentRevision.Should().Be(request.ContentRevision);
+        decision.SubmissionId.Should().Be(snapshot.Id);
+        decision.DecisionSequence.Should().Be(1);
+        decision.Status.Should().Be(CoffeePeek.Contract.Enums.ModerationStatus.Approved);
+        decision.DecidedAtUtc.Should().Be(snapshot.ModeratedAt);
+        notification!.Details.Should().Contain("Одобрен автоматически");
+
+        var duplicate = await CheckInModerationRequestedHandler.Handle(request,
+            new ModerationReviewRepository(db), new TestUnitOfWork(db), _ct);
+        duplicate.Item1.Should().BeNull();
+        duplicate.Item2.Should().BeNull();
     }
 
     private static CheckInModerationRequestedEvent Request(Guid id, int revision, Guid owner, Guid photoId) =>
@@ -55,9 +70,9 @@ public class CheckInModerationSnapshotTests
         var unitOfWork = new TestUnitOfWork(db);
         var request = Request(Guid.NewGuid(), 1, Guid.NewGuid(), Guid.NewGuid());
 
-        var firstNotification = await CheckInModerationRequestedHandler.Handle(request, repository, unitOfWork, _ct);
-        var duplicateNotification = await CheckInModerationRequestedHandler.Handle(request, repository, unitOfWork, _ct);
-        var revisedNotification = await CheckInModerationRequestedHandler.Handle(request with { ContentRevision = 2, Text = "Second" },
+        var (decision, firstNotification) = await CheckInModerationRequestedHandler.Handle(request, repository, unitOfWork, _ct);
+        var duplicate = await CheckInModerationRequestedHandler.Handle(request, repository, unitOfWork, _ct);
+        var (revisedDecision, revisedNotification) = await CheckInModerationRequestedHandler.Handle(request with { ContentRevision = 2, Text = "Second" },
             repository, unitOfWork, _ct);
         var snapshots = await db.ModerationReviews.Include(r => r.ReviewPhotos).ToArrayAsync(_ct);
 
@@ -67,7 +82,10 @@ public class CheckInModerationSnapshotTests
         snapshots.SelectMany(r => r.ReviewPhotos).Select(p => p.Id).Distinct().Should().HaveCount(2);
         unitOfWork.Saves.Should().Be(2);
         firstNotification!.Kind.Should().Be(CoffeePeek.Contract.Events.Moderation.ModerationSubmissionKind.CheckIn);
-        duplicateNotification.Should().BeNull();
+        decision.Should().BeNull();
+        revisedDecision.Should().BeNull();
+        duplicate.Item1.Should().BeNull();
+        duplicate.Item2.Should().BeNull();
         revisedNotification!.SubmissionId.Should().NotBe(firstNotification.SubmissionId);
 
         Func<Task> conflict = () => CheckInModerationRequestedHandler.Handle(request with { UserId = Guid.NewGuid() },
@@ -117,6 +135,26 @@ public class CheckInModerationSnapshotTests
         await act.Should().ThrowAsync<DomainException>();
         unitOfWork.Saves.Should().Be(0);
         db.ModerationReviews.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task NewRevisionWithText_AfterAutoApprovalRequiresModeration()
+    {
+        await using var db = new ModerationDbContext(new DbContextOptionsBuilder<ModerationDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString()).Options);
+        var repository = new ModerationReviewRepository(db);
+        var unitOfWork = new TestUnitOfWork(db);
+        var request = Request(Guid.NewGuid(), 1, Guid.NewGuid(), Guid.NewGuid()) with { Text = "", Photos = [] };
+        var first = await CheckInModerationRequestedHandler.Handle(request, repository, unitOfWork, _ct);
+        var edited = await CheckInModerationRequestedHandler.Handle(request with { ContentRevision = 2, Text = "New text" },
+            repository, unitOfWork, _ct);
+
+        first.Item1.Should().NotBeNull();
+        edited.Item1.Should().BeNull();
+        edited.Item2!.Details.Should().Be("New text");
+        var snapshots = await db.ModerationReviews.OrderBy(r => r.ContentRevision).ToArrayAsync(_ct);
+        snapshots[0].ModerationStatus.Should().Be(CoffeePeek.Moderation.Domain.Common.Enums.ModerationStatus.Approved);
+        snapshots[1].ModerationStatus.Should().Be(CoffeePeek.Moderation.Domain.Common.Enums.ModerationStatus.Pending);
     }
 
     [Fact]
