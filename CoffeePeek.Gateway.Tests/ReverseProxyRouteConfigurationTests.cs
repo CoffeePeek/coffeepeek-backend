@@ -47,7 +47,7 @@ public class ReverseProxyRouteConfigurationTests
     }
 
     [Fact]
-    public void AppReleaseAutomationRoute_IsLimitedToReleaseListAndCreate()
+    public void AppReleaseAutomationRoutes_AreLimitedToPublishingWorkflowRequests()
     {
         using var document = LoadGatewayAppsettings();
         var routes = document.RootElement.GetProperty("ReverseProxy").GetProperty("Routes");
@@ -61,6 +61,27 @@ public class ReverseProxyRouteConfigurationTests
         route.GetProperty("Match").GetProperty("Methods").EnumerateArray()
             .Select(method => method.GetString())
             .Should().Equal("GET", "POST");
+
+        var configRoute = routes.GetProperty("shops-admin-v1-app-downloads-automation-config-route");
+        configRoute.GetProperty("ClusterId").GetString().Should().Be("shops-cluster");
+        configRoute.GetProperty("AuthorizationPolicy").GetString().Should().Be("AppReleaseAutomationPolicy");
+        configRoute.GetProperty("Match").GetProperty("Path").GetString()
+            .Should().Be("/api/admin/v1/app-downloads");
+        configRoute.GetProperty("Match").GetProperty("Methods").EnumerateArray()
+            .Select(method => method.GetString())
+            .Should().Equal("GET");
+
+        var versionRoute = routes.GetProperty("shops-admin-v1-app-downloads-automation-version-route");
+        versionRoute.GetProperty("ClusterId").GetString().Should().Be("shops-cluster");
+        versionRoute.GetProperty("AuthorizationPolicy").GetString().Should().Be("AppReleaseAutomationPolicy");
+        versionRoute.GetProperty("Match").GetProperty("Path").GetString()
+            .Should().Be("/api/admin/v1/app-downloads/android/version");
+        versionRoute.GetProperty("Match").GetProperty("Methods").EnumerateArray()
+            .Select(method => method.GetString())
+            .Should().Equal("PUT");
+
+        routes.GetProperty("shops-admin-v1-app-downloads-route")
+            .GetProperty("AuthorizationPolicy").GetString().Should().Be("Admin");
     }
 
     [Fact]
