@@ -100,6 +100,9 @@ public class ApiExamplesContractTests
             ModerationState = CheckInModerationState.Pending,
             ContentRevision = 1,
             Drink = new CheckInDrinkDto(cappuccino.Slug, null, cappuccino.NameRu, cappuccino.NameEn),
+            DrinkPhoto = new(Guid.Parse("77777777-7777-4777-8777-777777777777"), "cup.png", "image/png",
+                "check-ins/example-cup.png", 100000, 1,
+                $"/api/v1/check-ins/{PendingId}/photos/77777777-7777-4777-8777-777777777777"),
             Photos = [new CheckInPhotoDto(photoId, "cappuccino.jpg", "image/jpeg",
                 "check-ins/example-cappuccino.jpg", 1200000, 0,
                 $"/api/v1/check-ins/{PendingId}/photos/{photoId}")]
@@ -114,6 +117,7 @@ public class ApiExamplesContractTests
             Visibility = CheckInVisibility.Private,
             ModerationState = CheckInModerationState.NotSubmitted,
             Drink = null,
+            DrinkPhoto = null,
             Photos = []
         };
         var approved = pending with
@@ -125,6 +129,7 @@ public class ApiExamplesContractTests
             CreatedAtUtc = new DateTime(2026, 10, 6, 21, 0, 0, DateTimeKind.Utc),
             ModerationState = CheckInModerationState.Approved,
             Drink = null,
+            DrinkPhoto = null,
             Photos = [],
             HelpfulCount = 2
         };

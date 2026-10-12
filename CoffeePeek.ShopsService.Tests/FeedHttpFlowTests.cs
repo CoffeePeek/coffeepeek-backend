@@ -29,7 +29,8 @@ public class FeedHttpFlowTests
             .ReturnsAsync(new CheckInFeedReadPage([new(new UnifiedCheckInDto
             {
                 Id = checkInId, ShopId = shopId, UserId = authorId, Text = "A public visit",
-                Visibility = CheckInVisibility.Public, ModerationState = CheckInModerationState.Approved
+                Visibility = CheckInVisibility.Public, ModerationState = CheckInModerationState.Approved,
+                DrinkPhoto = new(Guid.NewGuid(), "cup.png", "image/png", "private/cup", 100, 1, "/protected-cup")
             }, published)], false));
         var addresses = new Mock<IPublicAddressService>();
         addresses.Setup(x => x.GetForReadAsync(PublicAddressKind.CoffeeShop, It.IsAny<Guid[]>(), It.IsAny<CancellationToken>()))
@@ -75,6 +76,8 @@ public class FeedHttpFlowTests
             Assert.Equal(published, item.GetProperty("publishedAtUtc").GetDateTime());
             var card = item.GetProperty("checkIn");
             Assert.Equal(checkInId, card.GetProperty("id").GetGuid());
+            Assert.Equal("/protected-cup", card.GetProperty("drinkPhotoUrl").GetString());
+            Assert.Empty(card.GetProperty("photos").EnumerateArray());
             Assert.Equal("Approved", card.GetProperty("moderationState").GetString());
             Assert.Equal("example-shop", card.GetProperty("shop").GetProperty("slug").GetString());
             Assert.DoesNotContain(shopId.ToString(), json); Assert.DoesNotContain(authorId.ToString(), json);

@@ -22,7 +22,7 @@ public sealed class PublicCheckInProjector(IPublicAddressService addresses, IPro
             VisitedAt = x.VisitedAt, CreatedAtUtc = x.CreatedAtUtc,
             Visibility = x.Visibility, ModerationState = x.ModerationState, ContentRevision = x.ContentRevision,
             RejectionReason = x.RejectionReason, DrinkSlug = x.Drink?.Slug, CustomDrinkName = x.Drink?.CustomName,
-            DrinkNameRu = x.Drink?.NameRu, DrinkNameEn = x.Drink?.NameEn, Photos = x.Photos,
+            DrinkNameRu = x.Drink?.NameRu, DrinkNameEn = x.Drink?.NameEn, Photos = x.Photos, DrinkPhotoUrl = x.DrinkPhoto?.Url,
             HelpfulCount = x.HelpfulCount, IsHelpfulByCurrentUser = x.IsHelpfulByCurrentUser
         }).ToArray();
     }

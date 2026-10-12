@@ -41,6 +41,90 @@ public class CheckInPhotoClaimTests
         new ClaimCheckInPhotosHandler(_repo.Object, _storage.Object, _uow.Object)
             .ClaimAsync(new ClaimCheckInPhotosRequest(_checkIn, keys), _owner, Ct);
 
+    private static byte[] Cutout(int width = 2, byte backgroundAlpha = 0, byte cupAlpha = 255)
+    {
+        using var image = new SkiaSharp.SKBitmap(width, 2, SkiaSharp.SKColorType.Rgba8888, SkiaSharp.SKAlphaType.Unpremul);
+        image.Erase(new SkiaSharp.SKColor(0, 0, 0, backgroundAlpha));
+        image.SetPixel(0, 0, new SkiaSharp.SKColor(120, 60, 20, cupAlpha));
+        using var data = image.Encode(SkiaSharp.SKEncodedImageFormat.Png, 100);
+        return data.ToArray();
+    }
+
+    private void CutoutBytes(byte[] bytes, long? size = null)
+    {
+        _storage.Setup(s => s.GetObjectSize("cup", BucketType.CheckIn, It.IsAny<CancellationToken>())).ReturnsAsync(size ?? bytes.Length);
+        _storage.Setup(s => s.CopyToAsync("cup", BucketType.CheckIn, It.IsAny<Stream>(), It.IsAny<CancellationToken>()))
+            .Returns((string _, BucketType _, Stream target, CancellationToken ct) => target.WriteAsync(bytes, ct).AsTask());
+    }
+
+    private Task<CoffeePeek.Shared.Kernel.Response.Response<List<ClaimedCheckInPhotoDto>>> ClaimWithCutout(string[] keys) =>
+        new ClaimCheckInPhotosHandler(_repo.Object, _storage.Object, _uow.Object)
+            .ClaimAsync(new(_checkIn, keys, "cup"), _owner, Ct);
+
+    [Fact]
+    public async Task TransparentPngCanAccompanyFiveOriginalsAndIsNeverReencoded()
+    {
+        var originals = Enumerable.Range(0, 5).Select(i => Photo($"original-{i}")).ToArray();
+        var cup = Photo("cup"); cup.ContentType = "image/png"; cup.FileName = "cup.png";
+        Setup([.. originals, cup]); var bytes = Cutout(); CutoutBytes(bytes);
+        var result = await ClaimWithCutout([.. originals.Select(p => p.StorageKey), "cup"]);
+        Assert.True(result.IsSuccess);
+        Assert.Equal(6, result.Data.Count);
+        Assert.Equal(bytes.Length, result.Data[^1].SizeBytes);
+        _storage.Verify(s => s.Put(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Stream>(), It.IsAny<long>(),
+            It.IsAny<BucketType>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Theory]
+    [InlineData("opaque")]
+    [InlineData("empty")]
+    [InlineData("oversize")]
+    [InlineData("large-dimensions")]
+    [InlineData("truncated")]
+    [InlineData("fake-png")]
+    [InlineData("wrong-mime")]
+    [InlineData("size-mismatch")]
+    public async Task InvalidCutoutBytesFailClosed(string reason)
+    {
+        var cup = Photo("cup"); cup.ContentType = reason == "wrong-mime" ? "image/jpeg" : "image/png";
+        Setup(Photo("original"), cup);
+        var bytes = reason switch
+        {
+            "opaque" => Cutout(backgroundAlpha: 255),
+            "empty" => Cutout(cupAlpha: 0),
+            "large-dimensions" => Cutout(width: 769),
+            "truncated" => Cutout()[..40],
+            "fake-png" => new byte[] { 137, 80, 78, 71, 13, 10, 26, 10, 0 },
+            _ => Cutout()
+        };
+        CutoutBytes(bytes, reason == "oversize" ? 4 * 1024 * 1024 + 1 : reason == "size-mismatch" ? bytes.Length - 1 : null);
+        Assert.False((await ClaimWithCutout(["original", "cup"])).IsSuccess);
+    }
+
+    [Theory]
+    [InlineData("foreign")]
+    [InlineData("expired")]
+    [InlineData("claimed")]
+    public async Task IneligibleCutoutCannotClaimOriginalEither(string reason)
+    {
+        var cup = Photo("cup"); cup.ContentType = "image/png";
+        if (reason == "foreign") cup.OwnerId = Guid.NewGuid();
+        if (reason == "expired") cup.UploadedAt = DateTime.UtcNow.AddDays(-2);
+        if (reason == "claimed") cup.CheckInId = Guid.NewGuid();
+        Setup(Photo("original"), cup);
+        Assert.False((await ClaimWithCutout(["original", "cup"])).IsSuccess);
+        _storage.VerifyNoOtherCalls();
+        _repo.Verify(r => r.TryClaimAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task SixOrdinaryPhotosOrCutoutWithoutOriginalAreRejected()
+    {
+        Assert.False((await Claim("a", "b", "c", "d", "e", "f")).IsSuccess);
+        Assert.False((await ClaimWithCutout(["cup"])).IsSuccess);
+        _repo.VerifyNoOtherCalls();
+    }
+
     [Fact]
     public async Task OwnedUploads_PreserveRequestedOrderAndUseActualMetadata()
     {

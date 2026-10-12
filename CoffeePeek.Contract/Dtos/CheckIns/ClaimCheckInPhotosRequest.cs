@@ -1,3 +1,3 @@
 namespace CoffeePeek.Contract.Dtos.CheckIns;
 
-public record ClaimCheckInPhotosRequest(Guid CheckInId, string[] StorageKeys);
+public record ClaimCheckInPhotosRequest(Guid CheckInId, string[] StorageKeys, string? DrinkPhotoStorageKey = null);

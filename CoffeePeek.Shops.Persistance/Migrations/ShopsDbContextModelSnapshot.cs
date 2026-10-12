@@ -279,6 +279,9 @@ namespace CoffeePeek.Shops.Persistance.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
+                    b.Property<Guid?>("DrinkPhotoId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("DrinkSlug")
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");

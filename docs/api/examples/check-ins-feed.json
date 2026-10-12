@@ -17,7 +17,7 @@
         },
         "username": "example_author",
         "shopName": "Example Coffee",
-        "text": "Good coffee during yesterday\u0027s visit.",
+        "text": "Good coffee during yesterday's visit.",
         "rating": {
           "place": 3,
           "service": 5,
@@ -35,7 +35,8 @@
         "drinkNameEn": null,
         "photos": [],
         "helpfulCount": 2,
-        "isHelpfulByCurrentUser": false
+        "isHelpfulByCurrentUser": false,
+        "drinkPhotoUrl": null
       }
     ],
     "nextCursor": null

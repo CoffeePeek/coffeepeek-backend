@@ -63,14 +63,14 @@ public class MediaUploadedPhotoLookup(
     }
 
     public async Task<CheckInPhotoClaimResult> ClaimForCheckInAsync(Guid userId, Guid checkInId,
-        IReadOnlyCollection<string> storageKeys, CancellationToken ct = default)
+        IReadOnlyCollection<string> storageKeys, CancellationToken ct = default, string? drinkPhotoStorageKey = null)
     {
         if (userId == Guid.Empty || checkInId == Guid.Empty || storageKeys.Count == 0)
             return CheckInPhotoClaimResult.Failed;
         using var request = new HttpRequestMessage(HttpMethod.Post, "/internal/check-in-photos/claim");
         request.AddGatewayAuthHeader(gatewayAuthOptions.Value.SecretKey);
         request.Headers.TryAddWithoutValidation(GatewayHeaderConsts.XUserId, userId.ToString());
-        request.Content = JsonContent.Create(new ClaimCheckInPhotosRequest(checkInId, storageKeys.ToArray()));
+        request.Content = JsonContent.Create(new ClaimCheckInPhotosRequest(checkInId, storageKeys.ToArray(), drinkPhotoStorageKey));
         try
         {
             using var response = await httpClientFactory.CreateClient(HttpClientName).SendAsync(request, ct);

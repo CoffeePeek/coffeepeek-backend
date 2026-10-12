@@ -31,10 +31,15 @@ public static class CreateUnifiedCheckInHandler
             || k.Length > BusinessConstants.MaxCheckInPhotoStorageKeyLength)
             || keys.Distinct(StringComparer.Ordinal).Count() != keys.Length)
             throw new ValidationException("Photos must be distinct, valid storage keys; at most five photos are allowed.");
+        var drinkKey = request.DrinkPhoto?.StorageKey;
+        if (request.DrinkPhoto != null && (keys.Length == 0 || string.IsNullOrWhiteSpace(drinkKey)
+            || drinkKey.Length > BusinessConstants.MaxCheckInPhotoStorageKeyLength || keys.Contains(drinkKey, StringComparer.Ordinal)))
+            throw new ValidationException("DrinkPhoto requires an original photo and a separate valid storage key.");
+        var allKeys = drinkKey == null ? keys : keys.Append(drinkKey).ToArray();
         var checkIn = DomainCheckIn.CreateUnified(command.UserId, request.CoffeeShopId, command.Username,
             request.Text, request.Rating == null ? null : Rating.Create(request.Rating.Place, request.Rating.Service, request.Rating.Coffee),
             request.VisitedAt.Value.UtcDateTime,
-            (CheckInVisibility)request.Visibility, CreateId(command.UserId, keys));
+            (CheckInVisibility)request.Visibility, CreateId(command.UserId, allKeys));
         if (!await shops.Exists(request.CoffeeShopId, ct)) throw new NotFoundException("Coffee shop not found.");
         var drink = await CoffeePeek.Shared.Kernel.Drinks.DrinkSelection.ResolveAsync(request.DrinkSlug, request.CustomDrinkName, drinks, ct);
         checkIn.SetDrink(drink);
@@ -49,17 +54,23 @@ public static class CreateUnifiedCheckInHandler
         {
             if (await repository.GetTrackedByIdAsync(checkIn.Id, ct) != null)
                 throw new ConflictException("The uploads already belong to a committed check-in.");
-            if (await repository.ArePhotoKeysUsedAsync(keys, ct))
+            if (await repository.ArePhotoKeysUsedAsync(allKeys, ct))
                 throw new ValidationException("One or more photos are already attached to content.");
-            var claim = await photos.ClaimForCheckInAsync(command.UserId, checkIn.Id, keys, ct);
+            var claim = await photos.ClaimForCheckInAsync(command.UserId, checkIn.Id, allKeys, ct, drinkKey);
             if (!claim.Succeeded) throw new ValidationException("Photos could not be claimed, please retry with the same uploads.");
             var trusted = claim.Photos.ToDictionary(p => p.RequestedStorageKey, StringComparer.Ordinal);
-            if (trusted.Count != keys.Length || keys.Any(k => !trusted.ContainsKey(k)))
+            if (trusted.Count != allKeys.Length || allKeys.Any(k => !trusted.ContainsKey(k)))
             {
                 throw new ValidationException("One or more photos were not found, do not belong to you, or were already used.");
             }
             checkIn.AddPhotos(keys.Select((k, i) => new CheckInPhoto(trusted[k].FileName, trusted[k].ContentType,
                 trusted[k].StorageKey, trusted[k].SizeBytes, command.UserId, i, trusted[k].PhotoId)));
+            if (drinkKey != null)
+            {
+                var cutout = trusted[drinkKey];
+                checkIn.AddDrinkPhoto(new CheckInPhoto(cutout.FileName, cutout.ContentType, cutout.StorageKey,
+                    cutout.SizeBytes, command.UserId, keys.Length, id: cutout.PhotoId));
+            }
         }
         repository.Add(checkIn);
         if (keys.Length > 0) await bus.PublishAsync(new CheckInPhotosAttachedEvent(command.UserId, checkIn.Id,

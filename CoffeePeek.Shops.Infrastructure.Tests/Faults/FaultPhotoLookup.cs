@@ -27,7 +27,7 @@ public sealed class FaultPhotoLookup : IUploadedPhotoLookup
     public Task<UploadedPhotoLookupResult> ResolveAsync(Guid userId, IReadOnlyCollection<string> keys, CancellationToken ct = default) =>
         throw new NotSupportedException();
     public Task<CheckInPhotoClaimResult> ClaimForCheckInAsync(Guid userId, Guid checkInId, IReadOnlyCollection<string> keys,
-        CancellationToken ct = default) => throw new NotSupportedException();
+        CancellationToken ct = default, string? drinkPhotoStorageKey = null) => throw new NotSupportedException();
     public Task ReleaseCheckInClaimAsync(Guid userId, Guid checkInId, CancellationToken ct = default) =>
         throw new NotSupportedException();
 }

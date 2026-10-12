@@ -21,6 +21,7 @@ public sealed record PublicCheckInDto
     public string? CustomDrinkName { get; init; }
     public string? DrinkNameRu { get; init; }
     public string? DrinkNameEn { get; init; }
+    public string? DrinkPhotoUrl { get; init; }
     public CheckInPhotoDto[] Photos { get; init; } = [];
     public int HelpfulCount { get; init; }
     public bool IsHelpfulByCurrentUser { get; init; }
