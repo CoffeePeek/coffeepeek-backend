@@ -43,7 +43,10 @@ public sealed class CheckInPhotoMigrationDatabase : LiveDatabase<ShopsDbContext>
             db.Entry(photo).Property("CanonicalCheckInId").CurrentValue = parent.Id;
         }
         shop.AddPhotos([new ShopPhoto("gallery.jpg", "image/jpeg", "shops/gallery", 42, Guid.NewGuid())]);
+        // The current EF model writes this later column; remove it before rehearsing the historical migration.
+        await db.Database.ExecuteSqlRawAsync("ALTER TABLE \"CanonicalCheckIns\" ADD COLUMN \"DrinkPhotoId\" uuid", ct);
         await db.SaveChangesAsync(ct);
+        await db.Database.ExecuteSqlRawAsync("ALTER TABLE \"CanonicalCheckIns\" DROP COLUMN \"DrinkPhotoId\"", ct);
         await db.Database.ExecuteSqlRawAsync("UPDATE \"ShopPhotos\" SET \"CreatedAtUtc\"='2024-01-01T00:00:00Z'", ct);
     }
 
