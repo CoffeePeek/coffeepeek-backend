@@ -84,4 +84,27 @@ public class CheckInModerationRequestedHandlerTests
         audit.Verify(a => a.AddAsync(It.IsAny<CoffeePeek.Moderation.Domain.Entities.ModerationAuditLog>(),
             It.IsAny<CancellationToken>()), Times.Exactly(4));
     }
+
+    [Fact]
+    public async Task TelegramDecision_CannotReverseAnAlreadyDecidedCheckIn()
+    {
+        var snapshot = Snapshot();
+        snapshot.Approve(Guid.NewGuid());
+        var repository = new Mock<IModerationReviewRepository>();
+        repository.Setup(r => r.GetById(snapshot.Id, It.IsAny<CancellationToken>())).ReturnsAsync(snapshot);
+        var audit = new Mock<IModerationAuditLogRepository>();
+        var unitOfWork = new Mock<IUnitOfWork>();
+
+        var (response, outbound) = await ChangeStatusModerationReviewHandler.Handle(
+            new ChangeStatusModerationReviewCommand(Guid.NewGuid(), snapshot.Id, ModerationStatus.Rejected,
+                null, "Отклонено модератором Telegram", true),
+            repository.Object, audit.Object, unitOfWork.Object, _ct);
+
+        response.IsSuccess.Should().BeFalse();
+        outbound.Should().BeNull();
+        snapshot.ModerationStatus.Should().Be(CoffeePeek.Moderation.Domain.Common.Enums.ModerationStatus.Approved);
+        unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        audit.Verify(a => a.AddAsync(It.IsAny<CoffeePeek.Moderation.Domain.Entities.ModerationAuditLog>(),
+            It.IsAny<CancellationToken>()), Times.Never);
+    }
 }

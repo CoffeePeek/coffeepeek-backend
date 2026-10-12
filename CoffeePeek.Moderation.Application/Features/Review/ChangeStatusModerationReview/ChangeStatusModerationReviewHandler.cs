@@ -25,6 +25,9 @@ public static class ChangeStatusModerationReviewHandler
         if (review == null)
             throw new NotFoundException("Check-in moderation submission not found");
 
+        if (command.PendingOnly && review.ModerationStatus != Domain.Common.Enums.ModerationStatus.Pending)
+            return (UpdateEntityResponse<ModerationStatus>.Error("Submission already decided"), null);
+
         CheckInModerationDecidedEvent? outboundEvent = null;
 
         var oldStatus = review.ModerationStatus;

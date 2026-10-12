@@ -295,6 +295,9 @@ services:
       TelegramModeration__BotToken: ${TELEGRAM_MODERATION_BOT_TOKEN:-}
       TelegramModeration__ChatId: ${TELEGRAM_MODERATION_CHAT_ID:-}
       TelegramModeration__RelayUrl: ${TELEGRAM_MODERATION_RELAY_URL:-}
+      TelegramModeration__ModeratorUserId: ${TELEGRAM_MODERATION_MODERATOR_USER_ID:-f2d527fc-8135-42c5-a76b-da1f3e82bda0}
+      TelegramModeration__ApiBaseUrl: https://${DOMAIN}
+      TelegramModeration__AdminBaseUrl: https://platform-admin.coffeepeek.by
       Sentry__Dsn: ${SENTRY_DSN_MODERATION:-}
     mem_limit: 1536m
     memswap_limit: 1536m

@@ -2,6 +2,7 @@ using System.Net;
 using System.Text.Json;
 using CoffeePeek.Contract.Events.Moderation;
 using CoffeePeek.Moderation.Infrastructure.Notifications;
+using CoffeePeek.Shared.Auth.Options;
 using FluentAssertions;
 using Microsoft.Extensions.Options;
 
@@ -16,8 +17,7 @@ public class TelegramModerationClientTests
     {
         var handler = new ReplyHandler(HttpStatusCode.OK, "{\"ok\":true,\"result\":{}} ");
         using var http = new HttpClient(handler) { BaseAddress = new Uri("https://api.telegram.org/") };
-        var client = new TelegramModerationClient(http,
-            Options.Create(new TelegramModerationOptions { BotToken = token, ChatId = "-123" }));
+        var client = CreateClient(http, new TelegramModerationOptions { BotToken = token, ChatId = "-123" });
         var id = Guid.NewGuid();
 
         await client.SendAsync(new ModerationSubmissionCreated(ModerationSubmissionKind.Shop, id, null,
@@ -39,13 +39,13 @@ public class TelegramModerationClientTests
         const string relayUrl = "https://relay.example/telegram/sendMessage";
         var handler = new ReplyHandler(HttpStatusCode.OK, "{\"ok\":true}");
         using var http = new HttpClient(handler) { BaseAddress = new Uri("https://api.telegram.org/") };
-        var client = new TelegramModerationClient(http, Options.Create(new TelegramModerationOptions
+        var client = CreateClient(http, new TelegramModerationOptions
         {
             BotToken = token, ChatId = "-123", RelayUrl = relayUrl
-        }));
+        });
         var id = Guid.NewGuid();
 
-        await client.SendAsync(new ModerationSubmissionCreated(ModerationSubmissionKind.CheckIn, id, null),
+        await client.SendAsync(new ModerationSubmissionCreated(ModerationSubmissionKind.Shop, id, null),
             TestContext.Current.CancellationToken);
 
         handler.Url.Should().Be(relayUrl).And.NotContain(token);
@@ -72,19 +72,22 @@ public class TelegramModerationClientTests
     {
         var handler = new ReplyHandler(status, response);
         using var http = new HttpClient(handler) { BaseAddress = new Uri("https://api.telegram.org/") };
-        var client = new TelegramModerationClient(http,
-            Options.Create(new TelegramModerationOptions
+        var client = CreateClient(http, new TelegramModerationOptions
             {
                 BotToken = "test-token", ChatId = "123",
                 RelayUrl = useRelay ? "https://relay.example/telegram/sendMessage" : ""
-            }));
+            });
 
-        var send = () => client.SendAsync(new ModerationSubmissionCreated(ModerationSubmissionKind.CheckIn,
+        var send = () => client.SendAsync(new ModerationSubmissionCreated(ModerationSubmissionKind.Shop,
             Guid.NewGuid(), Guid.NewGuid()), TestContext.Current.CancellationToken);
 
         var error = await send.Should().ThrowAsync<HttpRequestException>();
         error.Which.ToString().Should().NotContain("test-token");
     }
+
+    private static TelegramModerationClient CreateClient(HttpClient http, TelegramModerationOptions settings) =>
+        new(http, Options.Create(settings), new StubModerationReviewRepository(),
+            new TelegramCheckInPhotoClient(new HttpClient(), Options.Create(new GatewayAuthOptions())));
 
     private sealed class ReplyHandler(HttpStatusCode status, string content) : HttpMessageHandler
     {

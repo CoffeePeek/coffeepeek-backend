@@ -25,11 +25,16 @@ public static class DependencyInjection
         services.AddHttpClient<TelegramModerationClient>(client =>
             {
                 client.BaseAddress = new Uri("https://api.telegram.org/");
-                client.Timeout = TimeSpan.FromSeconds(10);
+                client.Timeout = TimeSpan.FromSeconds(35);
             })
             .ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler { AllowAutoRedirect = false })
             .RemoveAllLoggers()
             .RemoveAllResilienceHandlers();
+        services.AddHttpClient<TelegramCheckInPhotoClient>(client =>
+        {
+            client.BaseAddress = new Uri($"http://{AppResources.MediaService}");
+            client.Timeout = TimeSpan.FromSeconds(20);
+        });
 
         var yandexOptions = services.AddValidateOptions<YandexApiOptions>();
         services.AddHttpClient<IYandexGeocodingService, YandexGeocodingService>(client =>

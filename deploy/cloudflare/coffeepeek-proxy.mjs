@@ -2,16 +2,19 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
-    if (request.method === "POST" && url.pathname === "/telegram/sendMessage") {
+    const telegramMethod = url.pathname.slice("/telegram/".length);
+    if (request.method === "POST" && url.pathname.startsWith("/telegram/") &&
+        ["sendMessage", "sendPhoto", "sendDocument", "getUpdates", "answerCallbackQuery",
+          "editMessageReplyMarkup"].includes(telegramMethod)) {
       const token = env.TELEGRAM_MODERATION_BOT_TOKEN;
       if (!token) return new Response("Telegram relay is not configured", { status: 503 });
       if (request.headers.get("authorization") !== `Bearer ${token}`)
         return new Response("Unauthorized", { status: 401 });
 
       try {
-        const response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+        const response = await fetch(`https://api.telegram.org/bot${token}/${telegramMethod}`, {
           method: "POST",
-          headers: { "content-type": "application/json" },
+          headers: { "content-type": request.headers.get("content-type") || "application/json" },
           body: request.body,
           redirect: "manual",
         });

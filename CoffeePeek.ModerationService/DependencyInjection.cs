@@ -4,6 +4,7 @@ using CoffeePeek.Shared.Web;
 using CoffeePeek.Shared.Web.Extensions;
 using CoffeePeek.Shared.Web.Handlers;
 using CoffeePeek.Shared.Web.Sentry;
+using CoffeePeek.ModerationService.Telegram;
 
 namespace CoffeePeek.ModerationService;
 
@@ -17,6 +18,7 @@ public static class DependencyInjection
         });
         
         services.AddControllersModule();
+        services.AddHostedService<TelegramModerationPoller>();
 
         services.AddHeaderUserContext(configuration);
 

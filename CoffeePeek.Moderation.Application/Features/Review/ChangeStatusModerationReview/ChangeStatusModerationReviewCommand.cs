@@ -10,4 +10,5 @@ public record ChangeStatusModerationReviewCommand(
     Guid SubmissionId,
     [property: JsonConverter(typeof(JsonStringEnumConverter))] ModerationStatus ModerationStatus,
     [MaxLength(BusinessConstants.MaxRejectReasonCommentLength)] string? Comment,
-    [MaxLength(BusinessConstants.MaxRejectReasonCommentLength)] string? RejectReason);
+    [MaxLength(BusinessConstants.MaxRejectReasonCommentLength)] string? RejectReason,
+    [property: JsonIgnore] bool PendingOnly = false);

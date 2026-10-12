@@ -46,6 +46,36 @@ test("authenticated Telegram POST forwards only to the fixed Bot API endpoint", 
   assert.equal(upstream.mock.callCount(), 1);
 });
 
+test("photo uploads and callback polling keep their bodies and media types", async (t) => {
+  const seen = [];
+  t.mock.method(globalThis, "fetch", async (url, options) => {
+    seen.push({ url, contentType: options.headers["content-type"],
+      body: await new Response(options.body).text() });
+    return Response.json({ ok: true, result: [] });
+  });
+  const photo = "--test-boundary\r\nphoto bytes\r\n--test-boundary--";
+  const photoResponse = await worker.fetch(new Request(`${origin}/telegram/sendPhoto`, {
+    method: "POST",
+    headers: { authorization: `Bearer ${token}`,
+      "content-type": "multipart/form-data; boundary=test-boundary" },
+    body: photo,
+  }), env);
+  const updatesResponse = await worker.fetch(new Request(`${origin}/telegram/getUpdates`, {
+    method: "POST",
+    headers: { authorization: `Bearer ${token}`, "content-type": "application/json" },
+    body: JSON.stringify({ offset: 42, timeout: 20, allowed_updates: ["callback_query"] }),
+  }), env);
+  assert.equal(photoResponse.status, 200);
+  assert.equal(updatesResponse.status, 200);
+  assert.equal(seen[0].url, `https://api.telegram.org/bot${token}/sendPhoto`);
+  assert.equal(seen[0].contentType, "multipart/form-data; boundary=test-boundary");
+  assert.equal(seen[0].body, photo);
+  assert.equal(seen[1].url, `https://api.telegram.org/bot${token}/getUpdates`);
+  assert.deepEqual(JSON.parse(seen[1].body), {
+    offset: 42, timeout: 20, allowed_updates: ["callback_query"],
+  });
+});
+
 test("GPT menu parsing forwards authorization, model, photos and structured output unchanged", async (t) => {
   const payload = {
     model: "gpt-4.1-mini", temperature: 0,
@@ -97,8 +127,12 @@ test("GPT route preserves API errors and sanitizes network failures", async (t) 
 test("missing or wrong credentials never call Telegram", async (t) => {
   const upstream = t.mock.method(globalThis, "fetch", () => assert.fail("unexpected upstream request"));
   for (const authorization of ["", "Bearer wrong-token"]) {
-    const response = await worker.fetch(telegramRequest(authorization), env);
-    assert.equal(response.status, 401);
+    for (const method of ["sendMessage", "sendPhoto", "getUpdates", "answerCallbackQuery"]) {
+      const response = await worker.fetch(new Request(`${origin}/telegram/${method}`, {
+        method: "POST", headers: { authorization }, body: "{}",
+      }), env);
+      assert.equal(response.status, 401);
+    }
   }
   assert.equal((await worker.fetch(telegramRequest(), {})).status, 503);
   assert.equal(upstream.mock.callCount(), 0);
