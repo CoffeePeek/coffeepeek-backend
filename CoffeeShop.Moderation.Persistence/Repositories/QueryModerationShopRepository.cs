@@ -1,7 +1,7 @@
+using CoffeePeek.Moderation.Application.Abstractions;
 using CoffeePeek.Moderation.Domain.Aggregates;
 using CoffeePeek.Moderation.Domain.Aggregates.Enums;
 using CoffeePeek.Moderation.Domain.Common.Enums;
-using CoffeePeek.Moderation.Domain.Import;
 using CoffeeShop.Moderation.Persistence.Configuration;
 using Microsoft.EntityFrameworkCore;
 
@@ -11,19 +11,9 @@ public class QueryModerationShopRepository(ModerationDbContext dbContext) : IQue
 {
     private readonly DbSet<ModerationShop> _repository = dbContext.ModerationShops;
 
-    public Task<ModerationShop?> GetByPublishedShopId(Guid publishedShopId, CancellationToken ct)
-    {
-        return _repository.FirstOrDefaultAsync(x => x.ShopId == publishedShopId, ct);
-    }
-
     public Task<ModerationShop?> GetById(Guid id, CancellationToken ct = default)
     {
         return BuildReviewQuery().FirstOrDefaultAsync(s => s.Id == id, ct);
-    }
-
-    public async Task<IReadOnlyList<ModerationShop>> GetAllForReviewAsync(CancellationToken cancellationToken = default)
-    {
-        return await BuildReviewQuery().ToListAsync(cancellationToken);
     }
 
     public async Task<(IReadOnlyList<ModerationShop> Items, int TotalCount)> GetPagedForReviewAsync(
@@ -57,6 +47,7 @@ public class QueryModerationShopRepository(ModerationDbContext dbContext) : IQue
         var totalCount = await query.CountAsync(ct);
         var items = await query
             .OrderByDescending(s => s.CreatedAtUtc)
+            .ThenBy(s => s.Id)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync(ct);

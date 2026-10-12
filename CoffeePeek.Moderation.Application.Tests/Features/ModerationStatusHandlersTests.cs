@@ -1,7 +1,7 @@
 using CoffeePeek.Contract.Dtos.CoffeeShop;
 using CoffeePeek.Contract.Enums;
 using CoffeePeek.Contract.Events.Moderation;
-using CoffeePeek.Moderation.Application.Abstractions;
+using CoffeePeek.Moderation.Application.Features.Geocoding;
 using CoffeePeek.Moderation.Application.Features.Review.ChangeStatusModerationReview;
 using CoffeePeek.Moderation.Application.Features.Shop.UpdateModerationShopStatus;
 using CoffeePeek.Moderation.Application.Features.Shop.UpdateShop;
@@ -60,6 +60,16 @@ public class ModerationStatusHandlersTests
     }
 
     [Fact]
+    public async Task ShopReject_RepeatedDecision_WritesAuditOnce()
+    {
+        var shop = ApprovableShop();
+        await ChangeShopStatus(shop, ModerationStatus.Rejected, "Duplicate shop");
+        await ChangeShopStatus(shop, ModerationStatus.Rejected, " Duplicate shop ");
+
+        _audit.Verify(x => x.AddAsync(It.IsAny<ModerationAuditLog>(), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
     public async Task ShopReject_AfterApprove_IsRefused()
     {
         var shop = ApprovableShop();
@@ -100,10 +110,29 @@ public class ModerationStatusHandlersTests
 
         var response = await UpdateModerationCoffeeShopHandler.Handle(
             new UpdateModerationCoffeeShopCommand(new ModerationShopDto { Id = shop.Id, Name = "Renamed" }, Guid.NewGuid(), true),
-            repo.Object, Mock.Of<IYandexGeocodingService>(), _mapper.Object, new OutgoingMessages(), _uow.Object, _ct);
+            repo.Object, _mapper.Object, new OutgoingMessages(), _uow.Object, _ct);
 
         response.IsSuccess.Should().BeFalse();
         shop.Name.Should().Be("Test Cafe");
         repo.Verify(r => r.GetByIdWithOutDetails(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task UpdateRejectedShop_QueuesGeocodingForNewAddress()
+    {
+        var shop = ApprovableShop();
+        shop.Reject("Wrong address");
+        var repo = new Mock<IModerationShopRepository>();
+        repo.Setup(r => r.GetByIdAsync(shop.Id, _ct)).ReturnsAsync(shop);
+        var outgoing = new OutgoingMessages();
+
+        var response = await UpdateModerationCoffeeShopHandler.Handle(
+            new(new ModerationShopDto { Id = shop.Id, Name = shop.Name, CityId = shop.CityId, Address = "New address" },
+                Guid.NewGuid(), true), repo.Object, _mapper.Object, outgoing, _uow.Object, _ct);
+
+        response.IsSuccess.Should().BeTrue();
+        shop.Location!.IsAddressValidated.Should().BeFalse();
+        outgoing.OfType<ModerationGeocodingRequested>().Should().ContainSingle()
+            .Which.Should().Be(new ModerationGeocodingRequested(ModerationGeocodingKind.Shop, shop.Id, "New address"));
     }
 }

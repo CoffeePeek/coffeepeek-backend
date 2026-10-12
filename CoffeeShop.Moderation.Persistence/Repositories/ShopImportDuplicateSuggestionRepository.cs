@@ -34,6 +34,7 @@ public class ShopImportDuplicateSuggestionRepository(ModerationDbContext dbConte
         var items = await query
             .OrderByDescending(s => s.Score)
             .ThenBy(s => s.DistanceMeters)
+            .ThenBy(s => s.Id)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync(ct);

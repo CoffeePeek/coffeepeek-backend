@@ -3,15 +3,12 @@ using System.Text.Json;
 using CoffeePeek.Contract.Dtos.Import;
 using CoffeePeek.Contract.Events.Moderation;
 using CoffeePeek.Moderation.Domain.Aggregates.ShopImportCandidateAggregate;
-using CoffeePeek.Moderation.Domain.Import;
 using CoffeePeek.Moderation.Application.Features.Import.SuggestImportDuplicates;
 using CoffeePeek.Shared.Domain.Places;
 using CoffeePeek.Shared.Kernel;
 using CoffeePeek.Shared.Kernel.Response;
 
 namespace CoffeePeek.Moderation.Application.Features.Import.IngestImportFile;
-
-public record IngestImportFileCommand(JsonElement Body);
 
 public static class IngestImportFileHandler
 {

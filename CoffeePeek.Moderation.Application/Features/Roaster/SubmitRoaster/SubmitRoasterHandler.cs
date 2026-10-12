@@ -19,6 +19,10 @@ public static class SubmitRoasterHandler
         ILogger<SubmitRoasterCommand> logger,
         CancellationToken ct)
     {
+        if (command.CityId.HasValue != !string.IsNullOrWhiteSpace(command.Address))
+            return (Response<SubmitRoasterResponse>.Error(HttpStatusCode.BadRequest,
+                "City and address must be supplied together."), null);
+
         if (await WriteStageTrace.MeasureAsync("roaster_submit", "duplicate_validation",
                 () => roasterExistenceLookup.ExistsByNameAsync(command.Name, ct)))
         {

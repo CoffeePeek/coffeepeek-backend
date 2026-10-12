@@ -14,6 +14,7 @@ public static class BusinessConstants
 
     /// <summary>Matches the catalog Shops.Name column so an approved shop always fits.</summary>
     public const int MaxShopNameLength = 100;
+    public const int MaxShopDescriptionLength = 1000;
 
     #region ShopContact
 

@@ -10,12 +10,6 @@ using CoffeePeek.Shared.Kernel.Response;
 
 namespace CoffeePeek.Moderation.Application.Features.Import.ApplyImportDecisions;
 
-public record ApplyImportDecisionsCommand(
-    Dictionary<string, string>? Decisions,
-    JsonElement? Raw,
-    bool OverrideClosed,
-    Guid ReviewerUserId);
-
 public static class ApplyImportDecisionsHandler
 {
     public static async Task<(Response<ApplyImportDecisionsResultDto>, object?)> Handle(

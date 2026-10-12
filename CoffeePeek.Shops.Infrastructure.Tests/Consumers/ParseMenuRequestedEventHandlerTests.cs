@@ -89,6 +89,24 @@ public class ParseMenuRequestedEventHandlerTests
             null);
 
     [Fact]
+    public async Task Handle_CorrelatedModerationParse_DelegatesApplicationToModeration()
+    {
+        var requestId = Guid.NewGuid();
+        var message = CreateMessage(Guid.NewGuid()) with
+        {
+            SourceKind = MenuParseSourceKind.ModerationShop,
+            ParseRequestId = requestId
+        };
+
+        var result = await CreateHandler().Handle(message, _ct);
+
+        result.Success.Should().BeTrue();
+        result.ParseRequestId.Should().Be(requestId);
+        _applyMenu.VerifyNoOtherCalls();
+        _unitOfWork.Verify(x => x.SaveChangesAsync(_ct), Times.Never);
+    }
+
+    [Fact]
     public async Task Handle_ConcurrencyConflictOnSave_ClearsTrackingAndRetriesWithoutReparsing()
     {
         var shopId = Guid.NewGuid();

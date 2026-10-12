@@ -1,25 +1,12 @@
-using CoffeePeek.Contract.Constants;
 using CoffeePeek.Contract.Dtos.Import;
-using CoffeePeek.Contract.Enums;
 using CoffeePeek.Contract.Events.Moderation;
-using CoffeePeek.Moderation.Application.Features.Menu;
 using CoffeePeek.Moderation.Domain.Aggregates.ShopImportCandidateAggregate;
 using ContractStatus = CoffeePeek.Contract.Enums.ImportQueueStatus;
-using ContractRejectReason = CoffeePeek.Contract.Enums.ImportRejectReason;
 using CoffeePeek.Shared.Kernel;
 using CoffeePeek.Shared.Kernel.Exceptions;
 using CoffeePeek.Shared.Kernel.Response;
 
 namespace CoffeePeek.Moderation.Application.Features.Import.DecideImportCandidate;
-
-public record DecideImportCandidateCommand(
-    Guid Id,
-    ContractStatus Status,
-    CoffeeShopType? Type,
-    string[]? TagSlugs,
-    bool OverrideClosed,
-    Guid ReviewerUserId,
-    ContractRejectReason? RejectReason = null);
 
 public static class DecideImportCandidateHandler
 {
@@ -65,31 +52,5 @@ public static class DecideImportCandidateHandler
         }
 
         return (Response<ShopImportCandidateDto>.Success(ShopImportCandidateMapper.ToDto(candidate)), outbound);
-    }
-}
-
-public static class ImportPublishFactory
-{
-    public static ImportCandidatePublishedItem FromCandidate(
-        ShopImportCandidate candidate,
-        Guid creatorId,
-        bool overrideClosed)
-    {
-        return new ImportCandidatePublishedItem(
-            candidate.Id,
-            creatorId,
-            candidate.Name!.Trim(),
-            candidate.PublishAddress(),
-            candidate.Latitude,
-            candidate.Longitude,
-            CitiesConsts.MinskId,
-            candidate.Phone,
-            candidate.Website,
-            candidate.Instagram,
-            (CoffeeShopType)(int)candidate.CoffeeFocus!.Value,
-            candidate.TagSlugs.ToArray(),
-            overrideClosed && candidate.GoogleBusinessStatus == ImportGoogleBusinessStatus.ClosedPermanently,
-            candidate.ImportedFromFile,
-            MenuDraftMapper.ToSnapshot(candidate.Menu));
     }
 }

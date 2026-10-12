@@ -8,6 +8,13 @@ namespace CoffeePeek.Moderation.Domain.Tests;
 public class ShopChangeRequestTests
 {
     [Fact]
+    public void Create_UnknownSection_IsRejected()
+    {
+        Action create = () => ShopChangeRequest.Create(Guid.NewGuid(), Guid.NewGuid(), (ShopChangeSection)99, "{}");
+        create.Should().Throw<DomainException>();
+    }
+
+    [Fact]
     public void Create_CreatesPendingRequest()
     {
         var request = ShopChangeRequest.Create(

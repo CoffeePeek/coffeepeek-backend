@@ -1,20 +1,5 @@
 namespace CoffeePeek.Moderation.Domain.Entities;
 
-public enum ModerationAuditEntityType
-{
-    Shop = 0,
-    Review = 1,
-    Roaster = 2,
-    ShopChangeRequest = 3
-}
-
-public enum ModerationAuditAction
-{
-    Pending = 0,
-    Approved = 1,
-    Rejected = 2
-}
-
 public class ModerationAuditLog
 {
     public Guid Id { get; private set; }

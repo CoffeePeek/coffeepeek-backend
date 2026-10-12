@@ -1,0 +1,3 @@
+namespace CoffeePeek.Moderation.Application.Features.Import.SuggestImportDuplicates;
+
+public record SuggestImportDuplicatesCommand;

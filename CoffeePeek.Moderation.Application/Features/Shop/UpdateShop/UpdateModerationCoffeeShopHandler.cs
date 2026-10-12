@@ -1,7 +1,6 @@
 using CoffeePeek.Contract.Dtos.CoffeeShop;
 using CoffeePeek.Contract.Events;
-using CoffeePeek.Moderation.Application.Abstractions;
-using CoffeePeek.Moderation.Application.Common.Models;
+using CoffeePeek.Moderation.Application.Features.Geocoding;
 using CoffeePeek.Moderation.Domain.Common.Enums;
 using CoffeePeek.Moderation.Domain.Aggregates;
 using CoffeePeek.Shared.Kernel;
@@ -18,7 +17,6 @@ public static class UpdateModerationCoffeeShopHandler
     public static async Task<UpdateEntityResponse<ModerationShopDto>> Handle(
         UpdateModerationCoffeeShopCommand command,
         IModerationShopRepository repository,
-        IYandexGeocodingService geocodingService,
         IMapper mapper,
         OutgoingMessages outgoingMessages,
         IUnitOfWork unitOfWork,
@@ -41,9 +39,10 @@ public static class UpdateModerationCoffeeShopHandler
                 "Approved shop is already published; submit a shop change request instead");
         }
 
-        var domainPriceRange = moderationShopDto.PriceRange != null
-            ? (DomainPriceRange?)moderationShopDto.PriceRange
-            : null;
+        // shortcut: the legacy DTO encodes an unspecified range as 0; make it nullable in a versioned API.
+        var domainPriceRange = moderationShopDto.PriceRange == 0
+            ? (DomainPriceRange?)null
+            : (DomainPriceRange)moderationShopDto.PriceRange;
         var domainCoffeeFocus = moderationShopDto.Type != null
             ? (DomainCoffeeFocus?)moderationShopDto.Type
             : null;
@@ -56,31 +55,9 @@ public static class UpdateModerationCoffeeShopHandler
 
         if (moderationShopDto.Address != null && moderationShopDto.Address != shop.Location?.Address)
         {
-            GeocodingResult? geo;
-            try
-            {
-                geo = await geocodingService.GeocodeAsync(moderationShopDto.Address, ct);
-            }
-            catch (Exception) when (!ct.IsCancellationRequested)
-            {
-                // Geocoder outage must not fail a moderator edit; the address is saved as unvalidated.
-                geo = null;
-            }
-            if (geo != null)
-            {
-                if (shop.Location is null)
-                {
-                    shop.SetLocation(new ModerationLocation(moderationShopDto.Address, geo.Latitude, geo.Longitude));
-                }
-                else
-                {
-                    shop.Location.SetLocation(geo.Latitude, geo.Longitude, moderationShopDto.Address);
-                }
-            }
-            else
-            {
-                shop.SetLocation(new ModerationLocation(moderationShopDto.Address));
-            }
+            shop.SetLocation(new ModerationLocation(moderationShopDto.Address));
+            outgoingMessages.Add(new ModerationGeocodingRequested(
+                ModerationGeocodingKind.Shop, shop.Id, moderationShopDto.Address));
         }
 
         if (moderationShopDto.ShopContact != null)
@@ -126,7 +103,7 @@ public static class UpdateModerationCoffeeShopHandler
         }
 
         await unitOfWork.SaveChangesAsync(ct);
-        
+
         var result = mapper.Map<ModerationShopDto>(shop);
 
         return UpdateEntityResponse<ModerationShopDto>.Success(result, "Shop updated successfully");

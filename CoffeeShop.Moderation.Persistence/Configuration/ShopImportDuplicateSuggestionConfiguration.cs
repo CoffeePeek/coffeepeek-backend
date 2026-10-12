@@ -11,6 +11,7 @@ public class ShopImportDuplicateSuggestionConfiguration : IEntityTypeConfigurati
     {
         entity.ToTable("ShopImportDuplicateSuggestions");
         entity.HasKey(e => e.Id);
+        entity.Property<uint>("Version").IsRowVersion();
 
         entity.PrimitiveCollection(e => e.Reasons)
             .HasColumnType("jsonb")

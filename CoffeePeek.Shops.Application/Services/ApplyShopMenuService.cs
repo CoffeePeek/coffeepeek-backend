@@ -10,36 +10,6 @@ using DomainSource = CoffeePeek.Shops.Domain.Aggregates.MenuAggregate.MenuItemSo
 
 namespace CoffeePeek.Shops.Application.Services;
 
-public interface IApplyShopMenuService
-{
-    Task<ShopMenu> ApplyManualItemsAsync(
-        Guid shopId,
-        IReadOnlyList<ManualShopMenuItemUpdate> items,
-        Guid? userId,
-        CancellationToken ct);
-
-    Task ApplySnapshotAsync(
-        Guid shopId,
-        ShopMenuSnapshot snapshot,
-        bool applySuggestedPriceRange,
-        Guid? userId,
-        CancellationToken ct);
-
-    Task ApplyParseResultAsync(
-        Guid shopId,
-        IReadOnlyList<ParsedMenuItemDto> items,
-        IReadOnlyList<UnmatchedMenuItemDto> unmatched,
-        Contract.Enums.PriceRange? suggestedPriceRange,
-        IReadOnlyList<ShopMenuPhotoSnapshot> photos,
-        DateTime capturedAtUtc,
-        Guid? userId,
-        CancellationToken ct);
-
-    Task MarkParseFailedAsync(Guid shopId, string error, CancellationToken ct);
-
-    Task<ShopMenu> GetOrCreateAsync(Guid shopId, CancellationToken ct);
-}
-
 public class ApplyShopMenuService(
     IShopMenuRepository menuRepository,
     IQueryCoffeeDrinkRepository drinkRepository,
@@ -64,7 +34,8 @@ public class ApplyShopMenuService(
         ShopMenuSnapshot snapshot,
         bool applySuggestedPriceRange,
         Guid? userId,
-        CancellationToken ct)
+        CancellationToken ct,
+        bool preserveManualItems = false)
     {
         var catalog = await drinkRepository.GetActiveAsync(ct);
         var bySlug = catalog.ToDictionary(d => d.Slug, StringComparer.OrdinalIgnoreCase);
@@ -92,7 +63,10 @@ public class ApplyShopMenuService(
                     (DomainSource)(int)row.Source));
             }
 
-            menu.ApplyParsedItems(items, snapshot.UnmatchedJson, suggested, userId);
+            if (preserveManualItems)
+                menu.MergeParsedItems(items, snapshot.UnmatchedJson, suggested, userId);
+            else
+                menu.ApplyParsedItems(items, snapshot.UnmatchedJson, suggested, userId);
         }
         else if (snapshot.CapturedAtUtc.HasValue)
         {
@@ -101,8 +75,12 @@ public class ApplyShopMenuService(
 
         if (snapshot.Photos.Count > 0)
         {
-            menu.ReplacePhotos(snapshot.Photos.Select(p => ShopMenuPhoto.Create(
-                p.FileName, p.ContentType, p.StorageKey, p.SizeBytes, p.MediaPhotoId)));
+            var photos = snapshot.Photos.Select(p => ShopMenuPhoto.Create(
+                p.FileName, p.ContentType, p.StorageKey, p.SizeBytes, p.MediaPhotoId));
+            if (preserveManualItems)
+                menu.AddPhotos(photos);
+            else
+                menu.ReplacePhotos(photos);
         }
 
         if (applySuggestedPriceRange && suggested.HasValue)

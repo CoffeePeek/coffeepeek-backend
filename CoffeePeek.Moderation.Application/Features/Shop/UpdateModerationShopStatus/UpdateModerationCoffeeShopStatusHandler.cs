@@ -4,7 +4,6 @@ using CoffeePeek.Contract.Events.Moderation;
 using CoffeePeek.Moderation.Application.Features.Admin.Audit;
 using CoffeePeek.Moderation.Domain.Aggregates;
 using CoffeePeek.Moderation.Domain.Entities;
-using CoffeePeek.Shared.Kernel;
 using CoffeePeek.Shared.Kernel.Response;
 using MapsterMapper;
 
@@ -44,9 +43,11 @@ public static class UpdateModerationCoffeeShopStatusHandler
             var rejectReason = string.IsNullOrWhiteSpace(command.Comment)
                 ? "Rejected by moderator"
                 : command.Comment.Trim();
-            shop.Reject(rejectReason);
-            auditAction = ModerationAuditAction.Rejected;
-            auditComment = rejectReason;
+            if (shop.Reject(rejectReason))
+            {
+                auditAction = ModerationAuditAction.Rejected;
+                auditComment = shop.RejectedReason;
+            }
         }
         else
         {

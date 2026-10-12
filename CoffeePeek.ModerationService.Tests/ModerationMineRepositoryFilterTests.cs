@@ -1,6 +1,5 @@
 using CoffeePeek.Moderation.Domain.Aggregates;
 using CoffeePeek.Moderation.Domain.Common.Enums;
-using CoffeePeek.Moderation.Domain.Entities;
 using CoffeeShop.Moderation.Persistence.Configuration;
 using CoffeeShop.Moderation.Persistence.Repositories;
 using FluentAssertions;
@@ -27,6 +26,26 @@ public class ModerationMineRepositoryFilterTests
         await using var seed = new ModerationDbContext(options);
         add(seed);
         await seed.SaveChangesAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
+    public async Task ShopGeocoding_AcceptsCorrectedRejectedAddress_ButNotPublishedOrStaleAddress()
+    {
+        var options = NewOptions();
+        var shop = ModerationShop.Create("Cafe", null, Guid.NewGuid(), null);
+        shop.SetLocation(new ModerationLocation("Corrected address"));
+        shop.Reject("Old address was incorrect");
+        await Seed(options, db => db.Add(shop));
+        await using var db = new ModerationDbContext(options);
+        var repository = new ModerationShopRepository(db);
+
+        (await repository.IsAwaitingGeocodingAsync(shop.Id, "Corrected address", TestContext.Current.CancellationToken)).Should().BeTrue();
+        (await repository.IsAwaitingGeocodingAsync(shop.Id, "Stale address", TestContext.Current.CancellationToken)).Should().BeFalse();
+        var tracked = await repository.GetByIdAsync(shop.Id, TestContext.Current.CancellationToken);
+        tracked!.SetLocation(new ModerationLocation("Corrected address", 53, 27));
+        tracked.Approve();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        (await repository.IsAwaitingGeocodingAsync(shop.Id, "Corrected address", TestContext.Current.CancellationToken)).Should().BeFalse();
     }
 
     [Fact]

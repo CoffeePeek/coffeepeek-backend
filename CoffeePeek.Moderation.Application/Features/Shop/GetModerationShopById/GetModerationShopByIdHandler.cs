@@ -1,11 +1,9 @@
+using CoffeePeek.Moderation.Application.Abstractions;
 using CoffeePeek.Contract.Dtos.CoffeeShop;
-using CoffeePeek.Moderation.Domain.Aggregates;
 using CoffeePeek.Shared.Kernel.Response;
 using MapsterMapper;
 
 namespace CoffeePeek.Moderation.Application.Features.Shop.GetModerationShopById;
-
-public record GetModerationShopByIdQuery(Guid Id);
 
 public static class GetModerationShopByIdHandler
 {

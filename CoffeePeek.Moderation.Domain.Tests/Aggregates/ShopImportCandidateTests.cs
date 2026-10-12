@@ -499,7 +499,7 @@ public class ShopImportCandidateTests
             [("menu.jpg", "image/jpeg", "menus/a.jpg", 12)],
             DateTime.UtcNow);
 
-        candidate.ApplyMenuParseResult(false, "boom", null, [], [], DateTime.UtcNow);
+        candidate.ApplyMenuParseResult(false, "boom", null, [], [], DateTime.UtcNow, candidate.Menu!.ParseRequestId);
 
         candidate.Menu!.ParseStatus.Should().Be((int)MenuDraftParseStatus.Failed);
         candidate.Menu.ParseError.Should().Be("boom");

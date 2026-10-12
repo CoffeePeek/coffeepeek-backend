@@ -37,6 +37,7 @@ public class ShopIssueReportRepository(ModerationDbContext dbContext) : IShopIss
         var totalCount = await query.CountAsync(ct);
         var items = await query
             .OrderByDescending(x => x.CreatedAtUtc)
+            .ThenBy(x => x.Id)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync(ct);

@@ -1,5 +1,5 @@
+using CoffeePeek.Moderation.Application.Abstractions;
 using CoffeePeek.Contract.Dtos.Admin;
-using CoffeePeek.Moderation.Domain.Aggregates;
 using CoffeePeek.Moderation.Domain.Aggregates.ShopImportCandidateAggregate;
 using CoffeePeek.Shared.Kernel.Response;
 

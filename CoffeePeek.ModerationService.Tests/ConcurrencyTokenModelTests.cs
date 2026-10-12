@@ -11,6 +11,15 @@ namespace CoffeePeek.ModerationService.Tests;
 
 public class ConcurrencyTokenModelTests
 {
+    [Fact]
+    public void Model_MatchesMigrationSnapshot()
+    {
+        using var db = new ModerationDbContext(
+            new DbContextOptionsBuilder<ModerationDbContext>().UseNpgsql("Host=unused").Options);
+
+        db.Database.HasPendingModelChanges().Should().BeFalse();
+    }
+
     public static TheoryData<Type> DecidedAggregates =>
     [
         typeof(ModerationShop),
@@ -18,6 +27,7 @@ public class ConcurrencyTokenModelTests
         typeof(ModerationReview),
         typeof(ShopChangeRequest),
         typeof(ShopImportCandidate),
+        typeof(ShopImportDuplicateSuggestion),
         typeof(ShopIssueReport)
     ];
 

@@ -2,20 +2,6 @@ using CoffeePeek.Moderation.Domain.Aggregates.ShopImportCandidateAggregate;
 
 namespace CoffeePeek.Moderation.Domain.Import;
 
-public readonly record struct ImportSuggestedTag(string Slug, string Why);
-
-public readonly record struct ImportGaps(
-    bool Instagram,
-    bool Phone,
-    bool Website,
-    bool Hours,
-    bool Photo);
-
-public readonly record struct ImportYandexTagHint(
-    string Label,
-    string? Slug,
-    ImportCoffeeFocus? Focus);
-
 public static class ImportDossierAdvisor
 {
     public static readonly IReadOnlyList<ImportYandexTagHint> YandexHints =

@@ -60,7 +60,8 @@ public class ParseMenuRequestedEventHandler(
             var shopId = message.PublishedShopId
                          ?? await shopRepository.GetIdByModerationId(message.SourceId, ct);
 
-            if (shopId.HasValue)
+            // Correlated moderation results are applied only after Moderation accepts their revision.
+            if (shopId.HasValue && message.ParseRequestId is null)
             {
                 var photoSnapshots = message.Photos.Select(p => new ShopMenuPhotoSnapshot(
                     p.FileName, p.ContentType, p.StorageKey, p.SizeBytes, p.MediaPhotoId)).ToArray();
@@ -140,7 +141,8 @@ public class ParseMenuRequestedEventHandler(
                 data.SuggestedPriceRange,
                 data.Items,
                 data.Unmatched,
-                capturedAt);
+                capturedAt,
+                message.ParseRequestId);
         }
         catch (Exception ex)
         {
@@ -149,32 +151,6 @@ public class ParseMenuRequestedEventHandler(
                 "Menu parse threw for {Kind} {SourceId}",
                 message.SourceKind,
                 message.SourceId);
-            throw;
-        }
-    }
-}
-
-public class ApplyShopMenuSnapshotEventHandler(
-    IApplyShopMenuService applyMenu,
-    IUnitOfWork unitOfWork,
-    ILogger<ApplyShopMenuSnapshotEventHandler> logger)
-{
-    public async Task Handle(ApplyShopMenuSnapshotEvent message, CancellationToken ct)
-    {
-        try
-        {
-            await applyMenu.ApplySnapshotAsync(
-                message.ShopId,
-                message.Snapshot,
-                message.ApplySuggestedPriceRange,
-                message.UserId,
-                ct);
-            await unitOfWork.SaveChangesAsync(ct);
-            logger.LogInformation("Applied menu snapshot to shop {ShopId}", message.ShopId);
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Failed to apply menu snapshot to shop {ShopId}", message.ShopId);
             throw;
         }
     }

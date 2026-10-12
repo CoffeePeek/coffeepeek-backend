@@ -46,13 +46,33 @@ public class ModerationSubmissionGeocodingTests
         var repository = new Mock<IModerationRoasterRepository>();
         var lookup = new Mock<IRoasterExistenceLookup>();
         var uow = new Mock<IUnitOfWork>();
-        var command = new SubmitRoasterCommand { Name = "Roaster", Address = address, CityId = Guid.NewGuid() };
+        var command = new SubmitRoasterCommand { Name = "Roaster", Address = address };
 
         var (response, request) = await SubmitRoasterHandler.Handle(command, repository.Object,
             lookup.Object, uow.Object, NullLogger<SubmitRoasterCommand>.Instance, _ct);
 
         response.Data!.IsAddressValidated.Should().BeFalse();
         request.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task RoasterWithPartialAddress_IsRejectedBeforeSaving()
+    {
+        var repository = new Mock<IModerationRoasterRepository>(MockBehavior.Strict);
+        var lookup = new Mock<IRoasterExistenceLookup>(MockBehavior.Strict);
+        var uow = new Mock<IUnitOfWork>(MockBehavior.Strict);
+
+        foreach (var command in new[]
+                 {
+                     new SubmitRoasterCommand { Name = "Roaster", CityId = Guid.NewGuid() },
+                     new SubmitRoasterCommand { Name = "Roaster", Address = "Street" }
+                 })
+        {
+            var (response, request) = await SubmitRoasterHandler.Handle(command, repository.Object,
+                lookup.Object, uow.Object, NullLogger<SubmitRoasterCommand>.Instance, _ct);
+            response.StatusCode.Should().Be(400);
+            request.Should().BeNull();
+        }
     }
 
     [Fact]

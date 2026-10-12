@@ -1,6 +1,7 @@
 using CoffeePeek.Contract.Events.Menu;
 using CoffeePeek.Moderation.Application.Features.Menu;
 using CoffeePeek.Moderation.Domain.Aggregates;
+using CoffeePeek.Moderation.Domain.Aggregates.MenuDraftAggregate;
 using CoffeePeek.Moderation.Domain.Aggregates.ShopImportCandidateAggregate;
 using CoffeePeek.Shared.Kernel;
 using Microsoft.Extensions.Logging;
@@ -13,72 +14,39 @@ public class MenuParsedEventHandler(
     IUnitOfWork unitOfWork,
     ILogger<MenuParsedEventHandler> logger)
 {
-    public async Task Handle(MenuParsedEvent message, CancellationToken ct)
+    public async Task<ApplyShopMenuSnapshotEvent?> Handle(MenuParsedEvent message, CancellationToken ct)
     {
-        try
+        MenuDraft? menu;
+        Guid? publishedShopId;
+        switch (message.SourceKind)
         {
-            var items = MenuDraftMapper.ToDraftItems(message.Items);
-            var unmatched = MenuDraftMapper.ToDraftUnmatched(message.Unmatched);
-            var suggested = message.SuggestedPriceRange is null ? (int?)null : (int)message.SuggestedPriceRange.Value;
-
-            switch (message.SourceKind)
-            {
-                case MenuParseSourceKind.ImportCandidate:
-                {
-                    var candidate = await candidateRepository.GetByIdAsync(message.SourceId, ct);
-                    if (candidate is null)
-                    {
-                        logger.LogWarning(
-                            "Menu parsed event skipped: import candidate {SourceId} was not found (success={Success})",
-                            message.SourceId,
-                            message.Success);
-                        return;
-                    }
-
-                    candidate.ApplyMenuParseResult(
-                        message.Success, message.Error, suggested, items, unmatched, message.CapturedAtUtc);
-                    break;
-                }
-                case MenuParseSourceKind.ModerationShop:
-                {
-                    var shop = await moderationShopRepository.GetByIdAsync(message.SourceId, ct);
-                    if (shop is null)
-                    {
-                        logger.LogWarning(
-                            "Menu parsed event skipped: moderation shop {SourceId} was not found (success={Success})",
-                            message.SourceId,
-                            message.Success);
-                        return;
-                    }
-
-                    shop.ApplyMenuParseResult(
-                        message.Success, message.Error, suggested, items, unmatched, message.CapturedAtUtc);
-                    break;
-                }
-                default:
-                    logger.LogInformation(
-                        "Menu parsed event ignored for published shop {SourceId}",
-                        message.SourceId);
-                    return;
-            }
-
-            await unitOfWork.SaveChangesAsync(ct);
-            logger.LogInformation(
-                "Applied menu parse result to {Kind} {SourceId} success={Success} items={ItemCount} unmatched={UnmatchedCount}",
-                message.SourceKind,
-                message.SourceId,
-                message.Success,
-                message.Items.Count,
-                message.Unmatched.Count);
+            case MenuParseSourceKind.ImportCandidate:
+                var candidate = await candidateRepository.GetByIdAsync(message.SourceId, ct);
+                menu = candidate?.Menu;
+                publishedShopId = candidate?.ResultingShopId;
+                break;
+            case MenuParseSourceKind.ModerationShop:
+                var shop = await moderationShopRepository.GetByIdAsync(message.SourceId, ct);
+                menu = shop?.Menu;
+                publishedShopId = shop?.ShopId;
+                break;
+            default:
+                return null;
         }
-        catch (Exception ex)
+
+        if (menu is null || !menu.ApplyParseResult(message.Success, message.Error,
+                message.SuggestedPriceRange is null ? null : (int)message.SuggestedPriceRange.Value,
+                MenuDraftMapper.ToDraftItems(message.Items), MenuDraftMapper.ToDraftUnmatched(message.Unmatched),
+                message.CapturedAtUtc, message.ParseRequestId))
         {
-            logger.LogError(
-                ex,
-                "Failed to apply menu parse result to {Kind} {SourceId}",
-                message.SourceKind,
-                message.SourceId);
-            throw;
+            logger.LogInformation("Skipping stale menu parse result for {Kind} {SourceId}", message.SourceKind, message.SourceId);
+            return null;
         }
+
+        await unitOfWork.SaveChangesAsync(ct);
+        return message.Success && publishedShopId.HasValue && publishedShopId != Guid.Empty
+            ? new ApplyShopMenuSnapshotEvent(publishedShopId.Value, MenuDraftMapper.ToSnapshot(menu)!, false, null,
+                PreserveManualItems: true)
+            : null;
     }
 }
