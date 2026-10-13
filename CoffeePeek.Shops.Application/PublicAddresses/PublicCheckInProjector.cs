@@ -11,13 +11,13 @@ public sealed class PublicCheckInProjector(IPublicAddressService addresses, IPro
     {
         if (items.Length == 0) return [];
         var shops = (await addresses.GetForReadAsync(PublicAddressKind.CoffeeShop,
-            items.Select(x => x.ShopId).Where(id => id != Guid.Empty).Distinct().ToArray(), ct))
+            items.Where(x => x.ShopId.HasValue).Select(x => x.ShopId!.Value).Where(id => id != Guid.Empty).Distinct().ToArray(), ct))
             .ToDictionary(x => x.EntityId, PublicAddressDto.From);
         var authors = (await profiles.GetByIdsAsync(items.Select(x => x.UserId).Distinct().ToArray(), ct))
             .ToDictionary(x => x.EntityId, PublicAddressDto.From);
         return items.Select(x => new PublicCheckInDto
         {
-            Id = x.Id, Shop = shops.GetValueOrDefault(x.ShopId), Author = authors.GetValueOrDefault(x.UserId),
+            Id = x.Id, Kind = x.Kind, Home = x.Home, Shop = x.ShopId.HasValue ? shops.GetValueOrDefault(x.ShopId.Value) : null, Author = authors.GetValueOrDefault(x.UserId),
             Username = x.Username, ShopName = x.ShopName, Text = x.Text, Rating = x.Rating,
             VisitedAt = x.VisitedAt, CreatedAtUtc = x.CreatedAtUtc,
             Visibility = x.Visibility, ModerationState = x.ModerationState, ContentRevision = x.ContentRevision,

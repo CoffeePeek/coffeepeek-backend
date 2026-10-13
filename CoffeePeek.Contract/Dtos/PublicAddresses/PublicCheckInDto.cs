@@ -4,6 +4,8 @@ using CoffeePeek.Contract.Enums;
 namespace CoffeePeek.Contract.Dtos.PublicAddresses;
 public sealed record PublicCheckInDto
 {
+    public CheckInKind Kind { get; init; }
+    public HomeCheckInDetailsDto? Home { get; init; }
     public Guid Id { get; init; }
     public PublicAddressDto? Shop { get; init; }
     public PublicAddressDto? Author { get; init; }

@@ -8,6 +8,21 @@ namespace CoffeePeek.Shops.Infrastructure.Tests.Persistence;
 public sealed class HomeCheckInMigrationTests
 {
     [Fact]
+    public void PublicationMigrationChangesOnlyShapeConstraintAndPreservesExistingVisibility()
+    {
+        using var db = new ShopsDbContext(new DbContextOptionsBuilder<ShopsDbContext>()
+            .UseNpgsql("Host=localhost;Database=shops;Username=postgres;Password=postgres").Options);
+        var sql = db.GetService<IMigrator>().GenerateScript(
+            "20261012205746_HomeCoffeeCheckIns", "20261013195744_PublicHomeCheckIns");
+        Assert.Contains("CK_CanonicalCheckIns_KindShape", sql);
+        Assert.DoesNotContain("UPDATE ", sql);
+        Assert.DoesNotContain("DELETE ", sql);
+        Assert.DoesNotContain("DROP TABLE", sql);
+        Assert.DoesNotContain("DROP COLUMN", sql);
+        Assert.False(db.Database.HasPendingModelChanges());
+    }
+
+    [Fact]
     public void MigrationKeepsExistingShopRowsAndConstrainsPrivateHomeShape()
     {
         using var db = new ShopsDbContext(new DbContextOptionsBuilder<ShopsDbContext>()

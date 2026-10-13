@@ -16,7 +16,7 @@ public partial class CheckInQueries(ShopsDbContext dbContext) : ICheckInQueries
     public async Task<UnifiedCheckInDto?> GetUnifiedByIdAsync(Guid id, Guid? readerId, CancellationToken ct = default)
     {
         var eligible = CheckInEligibility.Public(_db);
-        var query = _db.CheckIns.Where(c => c.Id == id && c.Kind == CheckInKind.Shop && c.DeletedAtUtc == null
+        var query = _db.CheckIns.Where(c => c.Id == id && c.DeletedAtUtc == null
             && (c.UserId == readerId || eligible.Any(p => p.Id == c.Id)));
         return (await ProjectAsync(query, readerId, ct)).SingleOrDefault();
     }
@@ -36,7 +36,7 @@ public partial class CheckInQueries(ShopsDbContext dbContext) : ICheckInQueries
             .Skip((Math.Clamp(page, 1, 10000) - 1) * Math.Clamp(pageSize, 1, 100)).Take(Math.Clamp(pageSize, 1, 100)), userId, ct);
 
     public async Task<UnifiedCheckInDto?> GetModerationSnapshotAsync(Guid id, int revision, CancellationToken ct = default) =>
-        (await ProjectAsync(_db.CheckIns.Where(c => c.Id == id && c.Kind == CheckInKind.Shop && c.ContentRevision == revision
+        (await ProjectAsync(_db.CheckIns.Where(c => c.Id == id && c.ContentRevision == revision
             && c.DeletedAtUtc == null && c.Visibility == CheckInVisibility.Public), null, ct))
         .SingleOrDefault();
 

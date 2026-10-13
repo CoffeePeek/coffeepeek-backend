@@ -35,7 +35,8 @@ public static class CreateHomeCheckInHandler
 
         var checkIn = DomainCheckIn.CreateHome(command.UserId, command.Username, request.Text, preparedAtUtc, preparedOn,
             request.BrewMethodCode, coffeeProductId, beanName, request.DoseGrams, request.BrewDurationSeconds,
-            request.TasteScore, CreateUnifiedCheckInHandler.CreateId(command.UserId, allKeys));
+            request.TasteScore, CreateUnifiedCheckInHandler.CreateId(command.UserId, allKeys),
+            (CheckInVisibility)request.Visibility);
         var drink = await CoffeePeek.Shared.Kernel.Drinks.DrinkSelection.ResolveAsync(
             request.DrinkSlug, request.CustomDrinkName, drinks, ct);
         checkIn.SetDrink(drink);
@@ -63,6 +64,8 @@ public static class CreateHomeCheckInHandler
         }
 
         repository.Add(checkIn);
+        if (checkIn.Visibility == CheckInVisibility.Public)
+            await bus.PublishAsync(CheckInMapping.ModerationRequest(checkIn));
         if (keys.Length > 0)
             await bus.PublishAsync(new CheckInPhotosAttachedEvent(command.UserId, checkIn.Id,
                 checkIn.ShopPhotos.OrderBy(p => p.SortIndex).Select(p => p.StorageKey).ToArray(), DateTime.UtcNow));

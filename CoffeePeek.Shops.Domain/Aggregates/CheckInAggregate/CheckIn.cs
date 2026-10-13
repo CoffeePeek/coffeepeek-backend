@@ -44,7 +44,7 @@ public sealed partial class CheckIn : AggregateRoot<Guid>
     public DateTime? FirstPublishedAtUtc { get; private set; }
     public Guid RowVersion { get; private set; } = Guid.NewGuid();
 
-    public bool IsPubliclyVisible => Kind == CheckInKind.Shop && ShopId.HasValue && DeletedAtUtc == null
+    public bool IsPubliclyVisible => DeletedAtUtc == null
         && Visibility == CheckInVisibility.Public
         && ModerationState == CheckInModerationState.Approved
         && ApprovedRevision == ContentRevision;

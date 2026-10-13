@@ -4,6 +4,9 @@ namespace CoffeePeek.Contract.Dtos.CheckIns;
 
 public sealed record HomeCheckInDto
 {
+    public CoffeePeek.Contract.Enums.CheckInVisibility Visibility { get; init; }
+    public CoffeePeek.Contract.Enums.CheckInModerationState ModerationState { get; init; }
+    public int ContentRevision { get; init; }
     public Guid Id { get; init; }
     public DateTime PreparedAtUtc { get; init; }
     public DateOnly PreparedOn { get; init; }

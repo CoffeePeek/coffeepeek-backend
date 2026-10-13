@@ -58,6 +58,19 @@ public class CheckInPhotoAccessTests
     }
 
     [Fact]
+    public async Task PublicHomePhotoUsesAuthorIdentityAndStopsStreamingWhenHidden()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var (controller, queries, media) = Setup(null);
+        queries.Detail = Visible with { Kind = CoffeePeek.Contract.Enums.CheckInKind.Home, ShopId = null };
+        (await controller.Download(CheckInId, PhotoId, ct)).Should().BeOfType<EmptyResult>();
+        media.OwnerHeader.Should().Be(Author.ToString());
+        queries.Detail = null;
+        (await controller.Download(CheckInId, PhotoId, ct)).Should().BeOfType<NotFoundResult>();
+        media.Calls.Should().Be(1);
+    }
+
+    [Fact]
     public async Task EveryDownload_RechecksCurrentVisibilityBeforeReadingBytes()
     {
         var (controller, queries, media) = Setup(Author); queries.Detail = Visible;
@@ -186,9 +199,9 @@ public class CheckInPhotoAccessTests
         public UnifiedCheckInDto? Snapshot { get; set; }
         public HomeCheckInDto? HomeDetail { get; set; }
         public List<Guid?> Readers { get; } = [];
-        public List<Guid> HomeReaders { get; } = [];
+        public List<Guid?> HomeReaders { get; } = [];
         public List<int> Revisions { get; } = [];
-        public Task<HomeCheckInDto?> GetHomeByIdAsync(Guid id, Guid userId, CancellationToken ct = default)
+        public Task<HomeCheckInDto?> GetHomeByIdAsync(Guid id, Guid? userId, CancellationToken ct = default)
         {
             HomeReaders.Add(userId);
             return Task.FromResult(id == CheckInId && userId == Author ? HomeDetail : null);

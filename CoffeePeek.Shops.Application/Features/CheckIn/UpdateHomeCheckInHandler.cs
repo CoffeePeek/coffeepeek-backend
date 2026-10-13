@@ -26,10 +26,13 @@ public static class UpdateHomeCheckInHandler
         var drink = await CoffeePeek.Shared.Kernel.Drinks.DrinkSelection.ResolveAsync(
             request.DrinkSlug, request.CustomDrinkName, drinks, ct);
         checkIn.UpdateHome(request.Text, preparedAtUtc, preparedOn, request.BrewMethodCode, coffeeProductId,
-            beanName, request.DoseGrams, request.BrewDurationSeconds, request.TasteScore);
+            beanName, request.DoseGrams, request.BrewDurationSeconds, request.TasteScore,
+            request.Visibility.HasValue ? (CheckInVisibility)request.Visibility.Value : null);
         checkIn.SetDrink(drink);
-        await unitOfWork.SaveChangesAsync(ct);
+        if (checkIn.Visibility == CheckInVisibility.Public)
+            await bus.PublishAsync(CheckInMapping.ModerationRequest(checkIn));
         await bus.PublishAsync(new CheckInCacheInvalidationRequested(checkIn.Id, null, checkIn.UserId));
+        await unitOfWork.SaveChangesAsync(ct);
         return Response<HomeCheckInDto>.Success(HomeCheckInMapping.ToDto(checkIn));
     }
 
@@ -41,8 +44,8 @@ public static class UpdateHomeCheckInHandler
             || checkIn.DeletedAtUtc != null)
             throw new NotFoundException("Home check-in not found.");
         checkIn.Delete();
-        await unitOfWork.SaveChangesAsync(ct);
         await bus.PublishAsync(new CheckInCacheInvalidationRequested(checkIn.Id, null, checkIn.UserId));
+        await unitOfWork.SaveChangesAsync(ct);
         return Response.Success();
     }
 }

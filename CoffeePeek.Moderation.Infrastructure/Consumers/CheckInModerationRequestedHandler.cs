@@ -37,7 +37,12 @@ public static class CheckInModerationRequestedHandler
         var review = ModerationReview.CreateCheckInSnapshot(message.CheckInId, message.ContentRevision,
             message.UserId, message.ShopId, message.Username, message.Text,
             message.Rating?.Place, message.Rating?.Service, message.Rating?.Coffee,
-            drink, message.VisitedAtUtc, photos);
+            drink, message.VisitedAtUtc, photos, message.Home is { } home ? new HomePreparationSnapshot
+            {
+                PreparedOn = home.PreparedOn, BrewMethodCode = home.BrewMethodCode,
+                CoffeeProductId = home.CoffeeProductId, BeanName = home.BeanName, DoseGrams = home.DoseGrams,
+                BrewDurationSeconds = home.BrewDurationSeconds, TasteScore = home.TasteScore
+            } : null);
         repository.Add(review);
         // Existing xmin concurrency + durable EF outbox retry the entire handler after unique-key races.
         await unitOfWork.SaveChangesAsync(ct);

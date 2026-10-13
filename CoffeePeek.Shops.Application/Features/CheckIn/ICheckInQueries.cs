@@ -5,7 +5,7 @@ namespace CoffeePeek.Shops.Application.Features.CheckIn;
 
 public interface ICheckInQueries
 {
-    Task<HomeCheckInDto?> GetHomeByIdAsync(Guid id, Guid userId, CancellationToken ct = default);
+    Task<HomeCheckInDto?> GetHomeByIdAsync(Guid id, Guid? readerId, CancellationToken ct = default);
     Task<HomeCheckInPage> GetHomeByUserAsync(Guid userId, int pageNumber, int pageSize,
         DateOnly? from = null, DateOnly? to = null, CancellationToken ct = default);
     Task<HomeCalendarDayDto[]> GetHomeCalendarAsync(Guid userId, DateOnly from, DateOnly to, CancellationToken ct = default);

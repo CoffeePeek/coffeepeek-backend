@@ -10,7 +10,8 @@ public partial class ModerationReview : Entity<Guid>
     public string Comment { get; private set; } = null!;
     public Guid UserId { get; private set; }
     public string UserName { get; private set; } = null!;
-    public Guid ShopId { get; private set; }
+    public Guid? ShopId { get; private set; }
+    public HomePreparationSnapshot? Home { get; private set; }
     public Guid CheckInId { get; private set; }
     public int ContentRevision { get; private set; }
     public string? DrinkSlug { get; private set; }
@@ -39,7 +40,7 @@ public partial class ModerationReview : Entity<Guid>
     {
     }
 
-    private ModerationReview(Guid checkInId, int contentRevision, Guid userId, Guid shopId, string userName,
+    private ModerationReview(Guid checkInId, int contentRevision, Guid userId, Guid? shopId, string userName,
         string comment, Rating? rating, DrinkSelection? drink, DateTime visitedAtUtc, List<PhotoMetadata> photos)
     {
         Id = Guid.NewGuid();

@@ -18,7 +18,9 @@ public record ModerationReviewDto
     public string Text { get; init; }
     public Guid UserId { get; init; }
     public string UserName { get; init; }
-    public Guid ShopId { get;init; }
+    public CoffeePeek.Contract.Dtos.CheckIns.HomeCheckInDetailsDto? Home { get; init; }
+    public CheckInKind Kind { get; init; }
+    public Guid? ShopId { get;init; }
 
     public RatingDto? Rating { get; init; }
 

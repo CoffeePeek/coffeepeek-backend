@@ -15,13 +15,13 @@ namespace CoffeePeek.ShopsService.Tests;
 public class HomeCheckInControllerTests
 {
     [Fact]
-    public void GatewayRouteRequiresAuthenticationAndDoesNotAcceptShopOrPublicScores()
+    public void OnlyDetailAllowsAnonymousAndHomeInputsDoNotAcceptShopScores()
     {
         var type = typeof(HomeCheckInsController);
         Assert.Equal("api/v1/check-ins/home", type.GetCustomAttribute<RouteAttribute>()!.Template);
         Assert.NotNull(type.GetCustomAttribute<AuthorizeAttribute>());
         Assert.True(type.GetCustomAttribute<ResponseCacheAttribute>()!.NoStore);
-        Assert.Empty(type.GetMethods().SelectMany(m => m.GetCustomAttributes<AllowAnonymousAttribute>()));
+        Assert.Equal("Get", Assert.Single(type.GetMethods().Where(m => m.GetCustomAttribute<AllowAnonymousAttribute>() != null)).Name);
         Assert.Contains(type.GetMethods(), m => m.GetCustomAttribute<HttpGetAttribute>()?.Template == "calendar");
         Assert.Contains(type.GetMethods(), m => m.GetCustomAttribute<HttpGetAttribute>()?.Template == "stats/beans");
         Assert.Contains(type.GetMethods(), m => m.GetCustomAttribute<HttpGetAttribute>()?.Template == "stats/methods");
@@ -33,7 +33,7 @@ public class HomeCheckInControllerTests
             .GetString() == "/api/v1/check-ins/{**remainder}"
             && route.Value.GetProperty("ClusterId").GetString() == "shops-cluster");
 
-        foreach (var name in new[] { "CoffeeShopSlug", "CoffeeShopId", "Rating", "Visibility", "PlaceScore", "ServiceScore", "ServingCount" })
+        foreach (var name in new[] { "CoffeeShopSlug", "CoffeeShopId", "Rating", "PlaceScore", "ServiceScore", "ServingCount" })
             Assert.Null(typeof(CreateHomeCheckInRequest).GetProperty(name));
     }
 
@@ -46,6 +46,7 @@ public class HomeCheckInControllerTests
         var day = new DateOnly(2026, 9, 21);
         var user = new Mock<IUserContext>();
         user.Setup(u => u.GetUserIdOrThrow()).Returns(owner);
+        user.Setup(u => u.GetUserId()).Returns(owner);
         var queries = new Mock<ICheckInQueries>();
         queries.Setup(q => q.GetHomeCalendarAsync(owner, day, day, ct))
             .ReturnsAsync([new HomeCalendarDayDto(day, 2)]);
@@ -79,6 +80,7 @@ public class HomeCheckInControllerTests
         var day = new DateOnly(2026, 9, 21);
         var user = new Mock<IUserContext>();
         user.Setup(u => u.GetUserIdOrThrow()).Returns(owner);
+        user.Setup(u => u.GetUserId()).Returns(owner);
         var queries = new Mock<ICheckInQueries>();
         queries.Setup(q => q.GetHomeByUserAsync(owner, 1, 20, day, day, ct))
             .ReturnsAsync(new HomeCheckInPage([], 2));

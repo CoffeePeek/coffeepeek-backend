@@ -104,15 +104,29 @@ public class HomeCheckInTests
     }
 
     [Fact]
-    public void HomeCannotBePublishedOrModeratedAndDeletionEndsEdits()
+    public void HomePublicationRequiresCurrentApprovalAndDeletionEndsEdits()
     {
         var checkIn = CheckIn.CreateHome(Guid.NewGuid(), "author", null, PreparedAtUtc,
             PreparedOn, "espresso", null, "Custom beans", 18m, 30, 5);
 
-        Assert.Throws<DomainException>(() => checkIn.ChangeVisibility(CheckInVisibility.Public));
-        Assert.False(checkIn.ApplyModerationDecision(1, Guid.NewGuid(), 1,
-            CheckInModerationState.Approved, null, DateTime.UtcNow));
+        checkIn.ChangeVisibility(CheckInVisibility.Public);
+        Assert.Equal(CheckInModerationState.Pending, checkIn.ModerationState);
         Assert.False(checkIn.IsPubliclyVisible);
+        var revision = checkIn.ContentRevision;
+        var submission = Guid.NewGuid();
+        Assert.True(checkIn.ApplyModerationDecision(revision, submission, 1,
+            CheckInModerationState.Approved, null, DateTime.UtcNow));
+        Assert.True(checkIn.IsPubliclyVisible);
+        checkIn.UpdateHome("edited", PreparedAtUtc, PreparedOn, "espresso", null, "Beans", 18m, 30, 4);
+        Assert.Equal(CheckInVisibility.Public, checkIn.Visibility);
+        Assert.False(checkIn.IsPubliclyVisible);
+        Assert.False(checkIn.ApplyModerationDecision(revision, submission, 2,
+            CheckInModerationState.Approved, null, DateTime.UtcNow));
+        var editedRevision = checkIn.ContentRevision;
+        checkIn.ChangeVisibility(CheckInVisibility.Private);
+        Assert.False(checkIn.ApplyModerationDecision(editedRevision, Guid.NewGuid(), 1,
+            CheckInModerationState.Approved, null, DateTime.UtcNow));
+        Assert.Equal(CheckInModerationState.NotSubmitted, checkIn.ModerationState);
 
         checkIn.Delete();
         Assert.NotNull(checkIn.DeletedAtUtc);

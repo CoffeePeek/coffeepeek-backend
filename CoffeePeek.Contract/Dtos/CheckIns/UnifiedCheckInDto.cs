@@ -4,10 +4,12 @@ namespace CoffeePeek.Contract.Dtos.CheckIns;
 
 public record UnifiedCheckInDto
 {
+    public CheckInKind Kind { get; init; }
+    public HomeCheckInDetailsDto? Home { get; init; }
     public Guid Id { get; init; }
     public Guid UserId { get; init; }
     public string Username { get; init; } = "";
-    public Guid ShopId { get; init; }
+    public Guid? ShopId { get; init; }
     public string ShopName { get; init; } = "";
     public string Text { get; init; }
     public RatingDto? Rating { get; init; }

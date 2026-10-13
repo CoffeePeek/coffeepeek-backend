@@ -104,7 +104,7 @@ namespace CoffeeShop.Moderation.Persistence.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
 
-                    b.Property<Guid>("ShopId")
+                    b.Property<Guid?>("ShopId")
                         .HasColumnType("uuid");
 
                     b.Property<DateTime?>("UpdatedAtUtc")
@@ -777,6 +777,43 @@ namespace CoffeeShop.Moderation.Persistence.Migrations
 
             modelBuilder.Entity("CoffeePeek.Moderation.Domain.Aggregates.ModerationReviewAggregate.ModerationReview", b =>
                 {
+                    b.OwnsOne("CoffeePeek.Moderation.Domain.Aggregates.ModerationReviewAggregate.HomePreparationSnapshot", "Home", b1 =>
+                        {
+                            b1.Property<Guid>("ModerationReviewId")
+                                .HasColumnType("uuid");
+
+                            b1.Property<string>("BeanName")
+                                .HasMaxLength(250)
+                                .HasColumnType("character varying(250)");
+
+                            b1.Property<int?>("BrewDurationSeconds")
+                                .HasColumnType("integer");
+
+                            b1.Property<string>("BrewMethodCode")
+                                .HasMaxLength(32)
+                                .HasColumnType("character varying(32)");
+
+                            b1.Property<Guid?>("CoffeeProductId")
+                                .HasColumnType("uuid");
+
+                            b1.Property<decimal?>("DoseGrams")
+                                .HasPrecision(8, 2)
+                                .HasColumnType("numeric(8,2)");
+
+                            b1.Property<DateOnly>("PreparedOn")
+                                .HasColumnType("date");
+
+                            b1.Property<int?>("TasteScore")
+                                .HasColumnType("integer");
+
+                            b1.HasKey("ModerationReviewId");
+
+                            b1.ToTable("ModerationCheckIns");
+
+                            b1.WithOwner()
+                                .HasForeignKey("ModerationReviewId");
+                        });
+
                     b.OwnsOne("CoffeePeek.Moderation.Domain.Aggregates.ModerationReviewAggregate.Rating", "Rating", b1 =>
                         {
                             b1.Property<Guid>("ModerationReviewId")
@@ -801,6 +838,8 @@ namespace CoffeeShop.Moderation.Persistence.Migrations
                             b1.WithOwner()
                                 .HasForeignKey("ModerationReviewId");
                         });
+
+                    b.Navigation("Home");
 
                     b.Navigation("Rating");
                 });

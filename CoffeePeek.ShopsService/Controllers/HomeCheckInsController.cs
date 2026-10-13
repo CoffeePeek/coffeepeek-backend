@@ -8,14 +8,14 @@ using Wolverine;
 
 namespace CoffeePeek.ShopsService.Controllers;
 
-/// <summary>Private diary of home and self-prepared coffee brews.</summary>
+/// <summary>Home preparations with author-controlled visibility.</summary>
 [ApiController]
 [Authorize]
 [Route("api/v1/check-ins/home")]
 [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
 public sealed class HomeCheckInsController(IMessageBus bus, IUserContext userContext, ICheckInQueries queries) : ControllerBase
 {
-    /// <summary>Create a private home preparation for the signed-in user.</summary>
+    /// <summary>Create a home preparation (private by default) for the signed-in user.</summary>
     [HttpPost]
     [ProducesResponseType(typeof(Response<HomeCheckInDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> Create([FromBody] CreateHomeCheckInRequest request, CancellationToken ct) =>
@@ -62,12 +62,13 @@ public sealed class HomeCheckInsController(IMessageBus bus, IUserContext userCon
     public async Task<IActionResult> MethodStats(CancellationToken ct) =>
         Ok(Response<HomeMethodStatsDto[]>.Success(await queries.GetHomeMethodStatsAsync(userContext.GetUserIdOrThrow(), ct)));
 
-    /// <summary>Read one home preparation owned by the signed-in user.</summary>
+    /// <summary>Read an owned home preparation or an approved public preparation.</summary>
     [HttpGet("{id:guid}")]
+    [AllowAnonymous]
     [ProducesResponseType(typeof(Response<HomeCheckInDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> Get(Guid id, CancellationToken ct)
     {
-        var entry = await queries.GetHomeByIdAsync(id, userContext.GetUserIdOrThrow(), ct);
+        var entry = await queries.GetHomeByIdAsync(id, userContext.GetUserId(), ct);
         return entry == null ? NotFound(new ErrorResponse("Home check-in not found."))
             : Ok(Response<HomeCheckInDto>.Success(entry));
     }

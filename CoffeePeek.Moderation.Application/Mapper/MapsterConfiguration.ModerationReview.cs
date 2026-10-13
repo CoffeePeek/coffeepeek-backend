@@ -12,6 +12,7 @@ public partial class MapsterConfiguration
         config.NewConfig<ModerationReview, ModerationReviewDto>()
             // DTO uses CreatedAt; entity audit field is CreatedAtUtc
             .Map(dest => dest.CreatedAt, src => src.CreatedAtUtc)
+            .Map(dest => dest.Kind, src => src.ShopId == null ? CoffeePeek.Contract.Enums.CheckInKind.Home : CoffeePeek.Contract.Enums.CheckInKind.Shop)
             .Map(dest => dest.Text, src => src.Comment)
             .Map(dest => dest.Photos, src => MapReviewPhotos(src));
     }

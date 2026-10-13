@@ -1,17 +1,18 @@
 # Admin handoff: home coffee check-ins
 
-Home check-ins are a private owner diary. The feature adds no administrator or moderator endpoint to read, edit, delete, publish, or moderate someone else's home entries. An Admin or Moderator JWT may use `/api/v1/check-ins/home` only for entries owned by that JWT's user ID. There is no request parameter for selecting another owner.
+Home check-ins are private by default and may be published by their author. Public submissions enter the existing check-in moderation queue. Roles do not grant access to private entries or permission to publish/edit another author's content. There is no request parameter for selecting another owner.
 
 ## Access matrix
 
 | Surface | Access and effect |
 | --- | --- |
-| `POST/GET /api/v1/check-ins/home`, `GET/PUT/DELETE /api/v1/check-ins/home/{id}` | Authenticated owner only, including when that owner has an admin role. Other owners receive `404` for detail, update, delete, and protected photos. |
+| `POST/GET /api/v1/check-ins/home`, `PUT/DELETE /api/v1/check-ins/home/{id}` | Authenticated owner only, including admins. |
+| `GET /api/v1/check-ins/home/{id}` | Owner or anyone when currently Public + Approved for the current revision. Otherwise 404. |
 | `GET /api/v1/check-ins/home/calendar?from=...&to=...` | Signed-in owner's local-date counts only. Both dates are required, inclusive, at most 366 days apart. |
 | `GET /api/v1/check-ins/home/stats/beans` and `/stats/methods` | Signed-in owner's statistics only; no `userId` override. |
-| `GET /api/v1/check-ins/{id}/photos/{photoId}` | Reuses the protected check-in byte route. A home photo is available to its author and inaccessible to moderators or other administrators on the basis of role alone. |
-| `GET /api/v1/moderation/check-ins` and `/api/v1/check-ins/{id}/moderation-photos/{photoId}` | Home entries never enter the moderation queue and have no moderation snapshot or moderation photo access. |
-| Public `/api/v1/check-ins`, `/api/v1/feed`, shop statistics, and public profile counts | Home entries contribute no cards, ratings, shop counts, locations, or public `CheckInCount` increments. |
+| `GET /api/v1/check-ins/{id}/photos/{photoId}` | Reuses the protected check-in byte route. A home photo is available to its author or anyone while the current revision is publicly approved. Roles alone do not unlock private photos. |
+| `GET /api/v1/moderation/check-ins` and `/api/v1/check-ins/{id}/moderation-photos/{photoId}` | Author-selected Public home entries use the existing queue; snapshots have `kind: Home`, `shopId: null`, and frozen `home` recipe fields. Moderator photo access requires the still-public, current revision. |
+| Public `/api/v1/check-ins`, `/api/v1/feed`, shop statistics, and public profile counts | Approved Public home entries appear in global/author feeds. They never contribute shop ratings, shop counts, locations, or the existing shop-visit `CheckInCount` event. |
 
 For example, a moderator querying another person's private entry receives the same not-found result as an unknown ID:
 
@@ -26,6 +27,19 @@ Content-Type: application/json
 The response body is the standard `ErrorResponse` with message `Home check-in not found.` and no owner details.
 
 An admin's own home history, calendar, and bean/method statistics use the [client contract](home-check-ins-client.md) exactly. `PUT` replaces editable values while keeping photos; `DELETE` removes the entry from personal reads and stats. A 401 means no valid JWT; invalid date, bean, method, score, dose, duration, drink, or photo input returns 400 as described in the client contract. Private IDs owned by another user remain 404. There is no admin override for these cases.
+
+## Rollout and migrations
+
+Apply `HomeCheckInModerationSnapshots` and deploy Moderation before enabling the
+updated Shops publisher. Apply `PublicHomeCheckIns` for Shops. Both are additive
+changes; historical home entries retain Private visibility. Durable queued messages
+may retry during a rolling deployment; do not report them as published before an
+approval reaches Shops. Migrations are part of the repository; a push alone does
+not verify the deployed schema.
+
+Rollback is blocked while home moderation snapshots or incompatible public home
+rows exist. Do not replace missing shop identities with Guid.Empty or silently
+delete published home history to force rollback.
 
 ## Coffee product catalog operations
 

@@ -31,6 +31,46 @@ public class HomeCheckInHandlerTests
             TestContext.Current.CancellationToken);
 
     [Fact]
+    public async Task PublicCreateEmitsHomeSnapshotAndReturnsActualPendingVisibility()
+    {
+        var result = await Create(new CreateHomeCheckInRequest
+        {
+            PreparedAt = "2026-09-20T22:15:00+03:00", CustomBeanName = "My beans",
+            Visibility = CoffeePeek.Contract.Enums.CheckInVisibility.Public
+        });
+        Assert.Equal(CoffeePeek.Contract.Enums.CheckInVisibility.Public, result.Data.Visibility);
+        Assert.Equal(CoffeePeek.Contract.Enums.CheckInModerationState.Pending, result.Data.ModerationState);
+        _bus.Verify(b => b.PublishAsync(It.Is<CheckInModerationRequestedEvent>(e =>
+            e.ShopId == null && e.Home != null && e.Home.BeanName == "My beans"
+            && e.ContentRevision == result.Data.ContentRevision)), Times.Once);
+    }
+
+    [Fact]
+    public async Task UpdatePreservesOmittedVisibilityAndExplicitHideInvalidatesApproval()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var row = DomainCheckIn.CreateHome(_owner, "author", "note", PreparedUtc,
+            new DateOnly(2026, 9, 20), null, null, null, null, null, null,
+            visibility: CheckInVisibility.Public);
+        row.ApplyModerationDecision(row.ContentRevision, Guid.NewGuid(), 1,
+            CheckInModerationState.Approved, null, DateTime.UtcNow);
+        _repository.Setup(r => r.GetTrackedByIdAsync(row.Id, ct)).ReturnsAsync(row);
+        var request = new UpdateHomeCheckInRequest { PreparedAt = "2026-09-20T22:15:00+03:00", Text = "edited" };
+        var result = await UpdateHomeCheckInHandler.Handle(new(row.Id, _owner, request),
+            _repository.Object, _drinks.Object, _unitOfWork.Object, _bus.Object, ct);
+        Assert.Equal(CoffeePeek.Contract.Enums.CheckInVisibility.Public, result.Data.Visibility);
+        Assert.Equal(CoffeePeek.Contract.Enums.CheckInModerationState.Pending, result.Data.ModerationState);
+        _bus.Verify(b => b.PublishAsync(It.IsAny<CheckInModerationRequestedEvent>()), Times.Once);
+        var hidden = await UpdateHomeCheckInHandler.Handle(new(row.Id, _owner,
+            request with { Visibility = CoffeePeek.Contract.Enums.CheckInVisibility.Private }),
+            _repository.Object, _drinks.Object, _unitOfWork.Object, _bus.Object, ct);
+        Assert.Equal(CoffeePeek.Contract.Enums.CheckInVisibility.Private, hidden.Data.Visibility);
+        Assert.Equal(CoffeePeek.Contract.Enums.CheckInModerationState.NotSubmitted, hidden.Data.ModerationState);
+        Assert.False(row.IsPubliclyVisible);
+        _bus.Verify(b => b.PublishAsync(It.IsAny<CheckInModerationRequestedEvent>()), Times.Once);
+    }
+
+    [Fact]
     public async Task QuickCreateNeedsOnlyTimestampAndDoesNotFabricateDoseScoreOrBean()
     {
         DomainCheckIn? saved = null;

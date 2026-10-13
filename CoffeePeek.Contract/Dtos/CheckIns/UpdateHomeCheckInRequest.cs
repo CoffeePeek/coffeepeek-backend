@@ -6,6 +6,7 @@ namespace CoffeePeek.Contract.Dtos.CheckIns;
 public sealed record UpdateHomeCheckInRequest
 {
     /// <summary>ISO 8601 timestamp with an explicit UTC offset or Z.</summary>
+    public CoffeePeek.Contract.Enums.CheckInVisibility? Visibility { get; init; }
     public string? PreparedAt { get; init; }
     public DateOnly? PreparedOn { get; init; }
     public string? Text { get; init; }

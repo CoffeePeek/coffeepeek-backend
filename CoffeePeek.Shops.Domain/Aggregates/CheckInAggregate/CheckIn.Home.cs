@@ -7,8 +7,10 @@ public sealed partial class CheckIn
 {
     public static CheckIn CreateHome(Guid userId, string username, string? note, DateTime preparedAtUtc,
         DateOnly preparedOn, string? brewMethodCode, Guid? coffeeProductId, string? beanNameSnapshot,
-        decimal? doseGrams, int? brewDurationSeconds, int? tasteScore, Guid? id = null)
+        decimal? doseGrams, int? brewDurationSeconds, int? tasteScore, Guid? id = null,
+        CheckInVisibility visibility = CheckInVisibility.Private)
     {
+        ValidateVisibility(visibility);
         if (userId == Guid.Empty) throw new DomainException("UserId is required.");
         if (id == Guid.Empty) throw new DomainException("CheckInId is required.");
         ValidateHome(note, preparedAtUtc, preparedOn, brewMethodCode, coffeeProductId,
@@ -24,7 +26,7 @@ public sealed partial class CheckIn
             VisitedAt = preparedAtUtc,
             PreparedOn = preparedOn,
             Note = note?.Trim() ?? "",
-            Visibility = CheckInVisibility.Private,
+            Visibility = visibility,
             CreatedAtUtc = DateTime.UtcNow
         };
         checkIn.AssignHomeDetails(brewMethodCode, coffeeProductId, beanNameSnapshot,
@@ -35,12 +37,14 @@ public sealed partial class CheckIn
 
     public void UpdateHome(string? note, DateTime preparedAtUtc, DateOnly preparedOn,
         string? brewMethodCode, Guid? coffeeProductId, string? beanNameSnapshot,
-        decimal? doseGrams, int? brewDurationSeconds, int? tasteScore)
+        decimal? doseGrams, int? brewDurationSeconds, int? tasteScore, CheckInVisibility? visibility = null)
     {
         EnsureNotDeleted();
+        if (visibility.HasValue) ValidateVisibility(visibility.Value);
         if (Kind != CheckInKind.Home) throw new DomainException("Only home check-ins can use the home update operation.");
         ValidateHome(note, preparedAtUtc, preparedOn, brewMethodCode, coffeeProductId,
             beanNameSnapshot, doseGrams, brewDurationSeconds, tasteScore);
+        if (visibility.HasValue) Visibility = visibility.Value;
         Note = note?.Trim() ?? "";
         VisitedAt = preparedAtUtc;
         PreparedOn = preparedOn;

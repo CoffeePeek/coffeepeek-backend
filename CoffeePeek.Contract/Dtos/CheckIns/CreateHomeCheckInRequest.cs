@@ -8,6 +8,7 @@ namespace CoffeePeek.Contract.Dtos.CheckIns;
 public sealed record CreateHomeCheckInRequest
 {
     /// <summary>ISO 8601 timestamp with an explicit UTC offset or Z.</summary>
+    public CoffeePeek.Contract.Enums.CheckInVisibility Visibility { get; init; } = CoffeePeek.Contract.Enums.CheckInVisibility.Private;
     public string? PreparedAt { get; init; }
     /// <summary>Preparation calendar date; defaults to the date in PreparedAt's offset.</summary>
     public DateOnly? PreparedOn { get; init; }

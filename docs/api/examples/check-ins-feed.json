@@ -36,7 +36,9 @@
         "photos": [],
         "helpfulCount": 2,
         "isHelpfulByCurrentUser": false,
-        "drinkPhotoUrl": null
+        "drinkPhotoUrl": null,
+        "kind": "Shop",
+        "home": null
       }
     ],
     "nextCursor": null

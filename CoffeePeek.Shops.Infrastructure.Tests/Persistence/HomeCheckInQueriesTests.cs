@@ -54,7 +54,7 @@ public class HomeCheckInQueriesTests
     }
 
     [Fact]
-    public async Task HomeRowsNeverAppearInPublicFeedsOrShopRatingAggregates()
+    public async Task PrivateHomeRowsStayOutOfPublicFeedsAndShopRatingAggregates()
     {
         var ct = TestContext.Current.CancellationToken;
         await using var db = Database();
@@ -72,7 +72,7 @@ public class HomeCheckInQueriesTests
 
         var queries = new CheckInQueries(db);
         Assert.Null(await queries.GetUnifiedByIdAsync(home.Id, Guid.NewGuid(), ct));
-        Assert.Null(await queries.GetUnifiedByIdAsync(home.Id, author, ct));
+        Assert.Equal(home.Id, (await queries.GetUnifiedByIdAsync(home.Id, author, ct))!.Id);
         Assert.Equal(shopVisit.Id, Assert.Single((await queries.GetPublicAsync(null, null, null,
             null, 20, null, ct)).Items).Id);
         Assert.Equal((4m, 1), await queries.GetStatsByShopAsync(shop.Id, ct));

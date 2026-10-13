@@ -38,6 +38,13 @@ public class ModerationReviewConfiguration : IEntityTypeConfiguration<Moderation
         entity.Property(mr => mr.RejectedReason).HasMaxLength(BusinessConstants.MaxRejectReasonCommentLength);
 
         entity.HasMany(mr => mr.ReviewPhotos).WithOne().HasForeignKey("ModerationCheckInId");
+        entity.OwnsOne(r => r.Home, home =>
+        {
+            home.Property(h => h.BeanName).HasMaxLength(250);
+            home.Property(h => h.BrewMethodCode).HasMaxLength(32);
+            home.Property(h => h.DoseGrams).HasPrecision(8, 2);
+        });
+        entity.Navigation(r => r.Home).IsRequired(false);
         entity.OwnsOne<Rating>(r => r.Rating);
         entity.Navigation(mr => mr.Rating).IsRequired(false);
     }

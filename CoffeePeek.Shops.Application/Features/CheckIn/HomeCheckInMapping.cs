@@ -13,7 +13,8 @@ public static class HomeCheckInMapping
         var shared = CheckInMapping.ToDto(checkIn);
         return new HomeCheckInDto
         {
-            Id = checkIn.Id,
+            Id = checkIn.Id, Visibility = shared.Visibility, ModerationState = shared.ModerationState,
+            ContentRevision = shared.ContentRevision,
             PreparedAtUtc = checkIn.VisitedAt,
             PreparedOn = checkIn.PreparedOn.Value,
             CreatedAtUtc = checkIn.CreatedAtUtc,

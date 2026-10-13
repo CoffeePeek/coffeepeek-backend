@@ -80,8 +80,6 @@ public partial class CheckIn
     {
         EnsureNotDeleted();
         ValidateVisibility(visibility);
-        if (Kind == CheckInKind.Home && visibility != CheckInVisibility.Private)
-            throw new DomainException("Home check-ins are private.");
         if (Visibility == visibility) return;
         if (visibility == CheckInVisibility.Public) ValidateContent(Note!, Rating);
         Visibility = visibility;
@@ -102,7 +100,7 @@ public partial class CheckIn
     public bool ApplyModerationDecision(int revision, Guid submissionId, long sequence,
         CheckInModerationState state, string? reason, DateTime decidedAt)
     {
-        if (Kind != CheckInKind.Shop || DeletedAtUtc != null || Visibility != CheckInVisibility.Public
+        if (DeletedAtUtc != null || Visibility != CheckInVisibility.Public
             || revision != ContentRevision || submissionId == Guid.Empty || sequence <= ModerationDecisionSequence
             || (ModerationSubmissionId != null && ModerationSubmissionId != submissionId)
             || state is not (CheckInModerationState.Pending or CheckInModerationState.Approved or CheckInModerationState.Rejected))
@@ -119,7 +117,6 @@ public partial class CheckIn
 
     public void SetHelpfulCount(int count)
     {
-        if (Kind != CheckInKind.Shop) throw new DomainException("Home check-ins cannot receive helpful votes.");
         if (count < 0) throw new DomainException("HelpfulCount cannot be negative.");
         HelpfulCount = count;
         Touch();

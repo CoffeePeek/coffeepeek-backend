@@ -224,9 +224,7 @@ public class ShopsDbContext(DbContextOptions<ShopsDbContext> options, IOptions<P
                 "\"DoseGrams\" IS NULL AND \"BrewDurationSeconds\" IS NULL AND \"TasteScore\" IS NULL) OR " +
                 "(\"Kind\" = 1 AND \"ShopId\" IS NULL AND \"PreparedOn\" IS NOT NULL AND " +
                 "\"Rating_Place\" IS NULL AND \"Rating_Service\" IS NULL AND \"Rating_Coffee\" IS NULL AND " +
-                "\"Rating_AverageRating\" IS NULL AND \"Visibility\" = 0 AND \"ModerationState\" = 0 AND " +
-                "\"ApprovedRevision\" IS NULL AND \"ModerationSubmissionId\" IS NULL AND " +
-                "\"FirstPublishedAtUtc\" IS NULL AND \"HelpfulCount\" = 0)"));
+                "\"Rating_AverageRating\" IS NULL)"));
             entity.ToTable("CanonicalCheckIns", t => t.HasCheckConstraint("CK_CanonicalCheckIns_HomeDetails",
                 "(\"BrewMethodCode\" IS NULL OR \"BrewMethodCode\" IN ('espresso', 'pour_over', 'batch_drip', 'moka_pot', 'cezve', 'aeropress', 'french_press', 'other')) AND " +
                 "(\"CoffeeProductId\" IS NULL OR \"BeanNameSnapshot\" IS NOT NULL AND length(btrim(\"BeanNameSnapshot\")) > 0) AND " +

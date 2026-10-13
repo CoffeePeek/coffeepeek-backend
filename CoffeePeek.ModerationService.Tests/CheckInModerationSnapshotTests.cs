@@ -27,6 +27,33 @@ public class CheckInModerationSnapshotTests
     private readonly CancellationToken _ct = TestContext.Current.CancellationToken;
 
     [Fact]
+    public async Task HomeSnapshotPersistsRecipeWithoutShopAndModeratesCustomBeanText()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        await using var db = new ModerationDbContext(new DbContextOptionsBuilder<ModerationDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString()).Options);
+        var request = Request(Guid.NewGuid(), 1, Guid.NewGuid(), Guid.NewGuid()) with
+        {
+            ShopId = null, Text = "", Rating = null, Photos = [],
+            Home = new HomeCheckInDetailsDto { PreparedOn = new DateOnly(2026, 9, 20),
+                BeanName = "User-supplied beans", BrewMethodCode = "aeropress", DoseGrams = 18m,
+                BrewDurationSeconds = 120, TasteScore = 5 }
+        };
+        var (decision, _) = await CheckInModerationRequestedHandler.Handle(request,
+            new ModerationReviewRepository(db), new TestUnitOfWork(db), ct);
+        Assert.Null(decision);
+        db.ChangeTracker.Clear();
+        var snapshot = await db.ModerationReviews.SingleAsync(ct);
+        Assert.Null(snapshot.ShopId);
+        Assert.Equal(request.Home.BeanName, snapshot.Home!.BeanName);
+        Assert.Equal(CoffeePeek.Moderation.Domain.Common.Enums.ModerationStatus.Pending, snapshot.ModerationStatus);
+        var mapper = MapsterConfiguration.CreateMapper(new MediaPublicUrlOptions { PublicEndpoint = "https://media.example.com" });
+        var dto = mapper.Map<ModerationReviewDto>(snapshot);
+        Assert.Equal(CoffeePeek.Contract.Enums.CheckInKind.Home, dto.Kind);
+        Assert.Equal(request.Home, dto.Home);
+    }
+
+    [Fact]
     public async Task DateOnlySnapshotCanBePersistedAndMappedWithoutRating()
     {
         await using var db = new ModerationDbContext(new DbContextOptionsBuilder<ModerationDbContext>()
