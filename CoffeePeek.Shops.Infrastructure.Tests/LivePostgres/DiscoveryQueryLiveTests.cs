@@ -314,10 +314,10 @@ public sealed class DiscoveryQueryLiveTests : IClassFixture<ShopsLiveDatabase>
         var store = new CoffeeCatalogStore(db, Options.Create(new MediaPublicUrlOptions { PublicEndpoint = "https://media.example" }),
             Options.Create(new CoffeeImportOptions()), Mock.Of<IPublicAddressService>(), NullLogger<CoffeeCatalogStore>.Instance);
         var result = await store.RoastersAsync([tag.Slug], Ct);
-        Assert.Equal(3, result.Length); Assert.Equal(larger.PublicSlug, result[0].Address!.Slug);
-        Assert.Equal(popular.PublicSlug, result[1].Address!.Slug); Assert.Equal(other.PublicSlug, result[2].Address!.Slug);
-        Assert.Equal((0, 2, 0), (result[0].CoffeeShopsCount, result[0].CoffeeProductsCount, result[0].AvailableCoffeeProducts));
-        Assert.Equal((1, 1, 1), (result[1].CoffeeShopsCount, result[1].CoffeeProductsCount, result[1].AvailableCoffeeProducts));
+        Assert.Equal(3, result.Length); Assert.Equal(popular.PublicSlug, result[0].Address!.Slug);
+        Assert.Equal(larger.PublicSlug, result[1].Address!.Slug); Assert.Equal(other.PublicSlug, result[2].Address!.Slug);
+        Assert.Equal((1, 1, 1), (result[0].CoffeeShopsCount, result[0].CoffeeProductsCount, result[0].AvailableCoffeeProducts));
+        Assert.Equal((0, 2, 0), (result[1].CoffeeShopsCount, result[1].CoffeeProductsCount, result[1].AvailableCoffeeProducts));
         Assert.Equal((0, 1, 0), (result[2].CoffeeShopsCount, result[2].CoffeeProductsCount, result[2].AvailableCoffeeProducts));
         Assert.All(result, r => Assert.Equal(tag.Slug, Assert.Single(r.Tags).Slug));
     }
