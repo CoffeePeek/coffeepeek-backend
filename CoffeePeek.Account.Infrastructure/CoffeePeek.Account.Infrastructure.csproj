@@ -8,6 +8,8 @@
 
     <ItemGroup>
       <PackageReference Include="Google.Apis.Auth" />
+      <PackageReference Include="Microsoft.IdentityModel.Protocols.OpenIdConnect" />
+      <PackageReference Include="StackExchange.Redis" />
     </ItemGroup>
 
     <ItemGroup>

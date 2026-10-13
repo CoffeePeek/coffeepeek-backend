@@ -48,6 +48,14 @@ public static class DependencyInjection
         services.AddOptions<OAuthGoogleOptions>()
             .BindConfiguration(nameof(OAuthGoogleOptions));
         services.AddScoped<IGoogleAuthService, GoogleAuthService>();
+        services.AddOptions<OAuthAppleOptions>().BindConfiguration(nameof(OAuthAppleOptions))
+            .Validate(o => !string.IsNullOrWhiteSpace(o.ClientId), "Apple ClientId is required").ValidateOnStart();
+        services.AddSingleton<Microsoft.IdentityModel.Protocols.IConfigurationManager<Microsoft.IdentityModel.Protocols.OpenIdConnect.OpenIdConnectConfiguration>>(
+            _ => new Microsoft.IdentityModel.Protocols.ConfigurationManager<Microsoft.IdentityModel.Protocols.OpenIdConnect.OpenIdConnectConfiguration>(
+                "https://appleid.apple.com/.well-known/openid-configuration",
+                new Microsoft.IdentityModel.Protocols.OpenIdConnect.OpenIdConnectConfigurationRetriever()));
+        services.AddScoped<IAppleAuthService, AppleAuthService>();
+        services.AddSingleton<IAppleLoginChallengeStore, AppleLoginChallengeStore>();
 
         services.AddOptions<AdminStatsOptions>()
             .BindConfiguration(nameof(AdminStatsOptions));
