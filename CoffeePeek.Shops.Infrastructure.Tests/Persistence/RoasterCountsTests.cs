@@ -104,7 +104,7 @@ public sealed class RoasterCountsTests
     }
 
     [Fact]
-    public async Task ListOrder_UsesPublishedCatalogThenVisibleShopsThenName()
+    public async Task ListOrder_UsesVisibleShopsThenPublishedCatalogThenName()
     {
         var ct = TestContext.Current.CancellationToken;
         await using var db = new ShopsDbContext(new DbContextOptionsBuilder<ShopsDbContext>()
@@ -134,8 +134,10 @@ public sealed class RoasterCountsTests
         var store = new CoffeeCatalogStore(db, Options.Create(new MediaPublicUrlOptions { PublicEndpoint = "https://media.example" }),
             Options.Create(new CoffeeImportOptions()), Mock.Of<IPublicAddressService>(), NullLogger<CoffeeCatalogStore>.Instance);
         var rows = await store.RoastersAsync([], ct);
-        Assert.Equal(cases.Select(c => c.Item1), rows.Select(r => r.Name));
-        Assert.Equal(cases.Select(c => c.Item3), rows.Select(r => r.CoffeeProductsCount));
+        Assert.Equal(new[] { "Z most shops", "Z more shops", "Z large catalog", "A small catalog",
+            "B same catalog", "A unused catalog", "C empty" }, rows.Select(r => r.Name));
+        Assert.Equal(new[] { 3, 2, 1, 1, 1, 0, 0 }, rows.Select(r => r.CoffeeShopsCount));
+        Assert.Equal(new[] { 0, 1, 3, 1, 1, 5, 0 }, rows.Select(r => r.CoffeeProductsCount));
         Assert.All(rows, r => Assert.Equal(0, r.AvailableCoffeeProducts));
     }
 

@@ -61,8 +61,8 @@ public sealed partial class CoffeeCatalogStore(ShopsDbContext db, IOptions<Media
         var q = db.Roasters.AsNoTracking();
         foreach (var slug in tags.Distinct())
             q = q.Where(r => db.RoasterTagAssignments.Any(a => a.RoasterId == r.Id && a.Tag.Slug == slug && a.Tag.IsActive));
-        var rows = await q.Include(r => r.Photos).OrderByDescending(r => db.CoffeeProducts.Count(p => p.RoasterId == r.Id && p.Status == CoffeePublicationStatus.Published))
-            .ThenByDescending(r => r.CoffeeShops.Count(s => !s.IsHidden))
+        var rows = await q.Include(r => r.Photos).OrderByDescending(r => r.CoffeeShops.Count(s => !s.IsHidden))
+            .ThenByDescending(r => db.CoffeeProducts.Count(p => p.RoasterId == r.Id && p.Status == CoffeePublicationStatus.Published))
             .ThenBy(r => r.Name).ThenBy(r => r.Id).ToArrayAsync(ct);
         if (rows.Length == 0) return [];
         var ids = rows.Select(r => r.Id).ToArray();
