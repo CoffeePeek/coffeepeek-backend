@@ -129,8 +129,8 @@ public sealed partial class CoffeeCatalogStore(ShopsDbContext db, IOptions<Media
                 (!filter.MinPrice.HasValue || v.Price >= filter.MinPrice) &&
                 (!filter.MaxPrice.HasValue || v.Price <= filter.MaxPrice))));
         var count = await q.CountAsync(ct);
-        // shortcut: Unicode regex classes use the database locale, revisit if deployed with the C locale.
-        var rows = await IncludeDetails(q).OrderBy(p => Regex.IsMatch(p.Name, @"^\W|^_")).ThenBy(p => p.Name).ThenBy(p => p.Id)
+        var rows = await IncludeDetails(q).OrderBy(p => Regex.IsMatch(p.Name, CoffeeProductRanking.NonLetterPrefix))
+            .ThenByDescending(CoffeeProductRanking.Completeness).ThenBy(p => p.Name).ThenBy(p => p.Id)
             .Skip((filter.Page - 1) * filter.PageSize).Take(filter.PageSize).ToArrayAsync(ct);
         return Page(await PublicAsync(rows, ct), count, filter.Page, filter.PageSize);
     }

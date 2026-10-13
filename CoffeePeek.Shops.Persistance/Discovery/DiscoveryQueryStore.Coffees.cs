@@ -3,6 +3,7 @@ using System.Linq.Expressions;
 using System.Text.RegularExpressions;
 using CoffeePeek.Shops.Application.Features.Discovery;
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeProductAggregate;
+using CoffeePeek.Shops.Persistance.CoffeeCatalog;
 using Microsoft.EntityFrameworkCore;
 
 namespace CoffeePeek.Shops.Persistance.Discovery;
@@ -67,21 +68,27 @@ public sealed partial class DiscoveryQueryStore
         var count = await products.CountAsync(ct);
         var sort = request.Sort ?? (q.Length > 0 ? "relevance" : "name_asc");
         var variants = MatchingVariants(f, c);
-        IOrderedQueryable<CoffeeProduct> ordered = sort switch
+        Expression<Func<CoffeeProduct, int>> relevance = p =>
+            p.Name.ToLower().Replace("ё", "е") == q ? 0 :
+            p.Name.ToLower().Replace("ё", "е").StartsWith(q) ? 1 :
+            p.Name.ToLower().Replace("ё", "е").Contains(" " + q) ? 2 :
+            p.Name.ToLower().Replace("ё", "е").Contains(q) ? 3 :
+            db.Roasters.Any(r => r.Id == p.RoasterId && r.Name.ToLower().Replace("ё", "е") == q) ? 4 :
+            db.Roasters.Any(r => r.Id == p.RoasterId && r.Name.ToLower().Replace("ё", "е").StartsWith(q)) ? 5 : 6;
+        IOrderedQueryable<CoffeeProduct> ordered = request.Sort is null
+            ? products.OrderBy(p => Regex.IsMatch(p.Name, CoffeeProductRanking.NonLetterPrefix))
+                .ThenByDescending(CoffeeProductRanking.Completeness)
+            : sort switch
         {
             "price_asc" => products.OrderBy(p => variants.Where(v => v.Source.CoffeeProductId == p.Id).Min(v => (decimal?)v.Price)),
             "price_desc" => products.OrderByDescending(p => variants.Where(v => v.Source.CoffeeProductId == p.Id).Min(v => (decimal?)v.Price)),
             "newest" => products.OrderByDescending(p => p.CreatedAtUtc),
-            "relevance" => products.OrderBy(p =>
-                p.Name.ToLower().Replace("ё", "е") == q ? 0 :
-                p.Name.ToLower().Replace("ё", "е").StartsWith(q) ? 1 :
-                p.Name.ToLower().Replace("ё", "е").Contains(" " + q) ? 2 :
-                p.Name.ToLower().Replace("ё", "е").Contains(q) ? 3 :
-                db.Roasters.Any(r => r.Id == p.RoasterId && r.Name.ToLower().Replace("ё", "е") == q) ? 4 :
-                db.Roasters.Any(r => r.Id == p.RoasterId && r.Name.ToLower().Replace("ё", "е").StartsWith(q)) ? 5 : 6),
-            _ => products.OrderBy(p => Regex.IsMatch(p.Name, @"^\W|^_"))
+            "relevance" => products.OrderBy(p => Regex.IsMatch(p.Name, CoffeeProductRanking.NonLetterPrefix)).ThenBy(relevance),
+            _ => products.OrderBy(p => Regex.IsMatch(p.Name, CoffeeProductRanking.NonLetterPrefix))
         };
-        if (sort != "name_asc") ordered = ordered.ThenBy(p => Regex.IsMatch(p.Name, @"^\W|^_"));
+        if (request.Sort is null && q.Length > 0) ordered = ordered.ThenBy(relevance);
+        if (request.Sort is not null && sort != "name_asc" && sort != "relevance")
+            ordered = ordered.ThenBy(p => Regex.IsMatch(p.Name, CoffeeProductRanking.NonLetterPrefix));
         var rows = await CardDetails(ordered.ThenBy(p => p.Name).ThenBy(p => p.PublicSlug)
             .Skip((request.Page - 1) * request.PageSize).Take(request.PageSize)).ToArrayAsync(ct);
         return new()

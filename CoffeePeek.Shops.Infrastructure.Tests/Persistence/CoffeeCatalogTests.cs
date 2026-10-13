@@ -38,7 +38,8 @@ public class CoffeeCatalogTests
             null, null, null, null, null, [], [], [], []));
         archived.SetStatus(CoffeePublicationStatus.Archived); db.CoffeeProducts.AddRange(draft, archived);
         await db.SaveChangesAsync(ct);
-        var expected = products.OrderBy(p => !char.IsLetterOrDigit(p.Name[0])).ThenBy(p => p.Name).ThenBy(p => p.Id).ToArray();
+        var expectedPublic = products.OrderBy(p => !char.IsLetter(p.Name[0])).ThenBy(p => p.Name).ThenBy(p => p.Id).ToArray();
+        var expectedAdmin = products.OrderBy(p => !char.IsLetterOrDigit(p.Name[0])).ThenBy(p => p.Name).ThenBy(p => p.Id).ToArray();
         var store = Store(db, roaster.Id);
         var publicSlugs = new List<string>(); var adminIds = new List<Guid>();
         for (var page = 1; page <= 4; page++)
@@ -48,8 +49,39 @@ public class CoffeeCatalogTests
             publicSlugs.AddRange(result.Items.Select(p => p.Address.Slug));
             adminIds.AddRange((await store.AdminListAsync(page, 3, "Published", ct)).Items.Select(p => p.Id));
         }
-        Assert.Equal(expected.Select(p => p.PublicSlug), publicSlugs);
-        Assert.Equal(expected.Select(p => p.Id), adminIds);
+        Assert.Equal(expectedPublic.Select(p => p.PublicSlug), publicSlugs);
+        Assert.Equal(expectedAdmin.Select(p => p.Id), adminIds);
+    }
+
+    [Fact]
+    public async Task PublicList_RanksFilledCoffeeBeforeSparseCoffee_AndNumberedNamesLast()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        await using var db = new ShopsDbContext(new DbContextOptionsBuilder<ShopsDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString()).Options);
+        var roaster = new Roaster("Roast"); roaster.SetPublicSlug("roast"); db.Roasters.Add(roaster);
+        CoffeeProduct Add(string name, string slug, bool filled)
+        {
+            var product = new CoffeeProduct(roaster.Id, new(name, filled ? "Description" : null,
+                "roasted_beans", "whole_beans", "unknown", filled ? "washed" : null,
+                filled ? "medium" : null, null, null, null, [], [], [], []));
+            product.SetPublicSlug(slug); product.SetStatus(CoffeePublicationStatus.Published);
+            db.CoffeeProducts.Add(product); return product;
+        }
+        Add("A Coffee", "a-coffee", false);
+        Add("Z Coffee", "z-coffee", true);
+        Add("7 Coffee", "7-coffee", true);
+        await db.SaveChangesAsync(ct);
+
+        var slugs = new List<string>();
+        for (var page = 1; page <= 3; page++)
+        {
+            var result = await Store(db, roaster.Id).ListAsync(new()
+            { RoasterSlug = "roast", Search = "Coffee", AvailableOnly = false, Page = page, PageSize = 1 }, ct);
+            Assert.Equal(3, result.TotalItems);
+            slugs.Add(Assert.Single(result.Items).Address.Slug);
+        }
+        Assert.Equal(new[] { "z-coffee", "a-coffee", "7-coffee" }, slugs);
     }
 
     [Fact]
