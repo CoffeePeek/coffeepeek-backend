@@ -11,6 +11,17 @@ namespace CoffeePeek.Gateway.Tests;
 public class RateLimitingPartitionTests
 {
     [Fact]
+    public async Task SupportSubmissionPolicy_LimitsEachClientToFivePerHour()
+    {
+        var pipeline = BuildPipeline();
+        for (var i = 0; i < 5; i++)
+            (await Send(pipeline, "10.0.0.3", "POST", RateLimitingExtensions.SupportSubmissionPolicy)).Should().Be(200);
+
+        (await Send(pipeline, "10.0.0.3", "POST", RateLimitingExtensions.SupportSubmissionPolicy)).Should().Be(429);
+        (await Send(pipeline, "10.0.0.4", "POST", RateLimitingExtensions.SupportSubmissionPolicy)).Should().Be(200);
+    }
+
+    [Fact]
     public async Task AuthPolicy_ExhaustedByOneClient_DoesNotBlockAnotherClient()
     {
         var pipeline = BuildPipeline();

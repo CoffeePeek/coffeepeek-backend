@@ -17,6 +17,27 @@ namespace CoffeePeek.Gateway.Tests;
 public class ReverseProxyRouteConfigurationTests
 {
     [Fact]
+    public void SupportRoutes_ArePublicAndSubmissionIsRateLimited()
+    {
+        using var document = LoadGatewayAppsettings();
+        var routes = document.RootElement.GetProperty("ReverseProxy").GetProperty("Routes");
+        foreach (var (id, path, method, policy) in new[]
+        {
+            ("account-support-page-route", "/support", "GET", "global"),
+            ("account-support-contact-route", "/api/support/contact", "GET", "global"),
+            ("account-support-submit-route", "/api/support/requests", "POST", "support-submission")
+        })
+        {
+            var route = routes.GetProperty(id);
+            route.GetProperty("ClusterId").GetString().Should().Be("account-cluster");
+            route.GetProperty("Match").GetProperty("Path").GetString().Should().Be(path);
+            route.GetProperty("Match").GetProperty("Methods").EnumerateArray().Select(x => x.GetString()).Should().Equal(method);
+            route.GetProperty("RateLimiterPolicy").GetString().Should().Be(policy);
+            route.TryGetProperty("AuthorizationPolicy", out _).Should().BeFalse();
+        }
+    }
+
+    [Fact]
     public void FeedRouteIsAnonymousAndTargetsShopsWithoutPathRewrite()
     {
         using var document = LoadGatewayAppsettings();

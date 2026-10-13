@@ -1,7 +1,10 @@
 ﻿using CoffeePeek.Account.Application;
 using CoffeePeek.Account.Application.Features.Auth.RegisterUser;
+using CoffeePeek.Account.Application.Common.Interfaces;
 using CoffeePeek.AccountService.Realtime;
 using CoffeePeek.Account.Infrastructure;
+using CoffeePeek.Account.Infrastructure.Options;
+using CoffeePeek.Account.Infrastructure.Support;
 using CoffeePeek.Account.Infrastructure.Consumers;
 using CoffeePeek.Account.Persistence;
 using CoffeePeek.Account.Persistence.Configuration;
@@ -34,6 +37,11 @@ public static class InfrastructureExtensions
             .AddInfrastructure()
             .AddPersistence(builder)
             .AddPresentation(builder.Configuration);
+        builder.Services.AddOptions<SupportOptions>()
+            .BindConfiguration("Support")
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+        builder.Services.AddScoped<ISupportEmailSender, SupportEmailSender>();
         
         return builder;
     }

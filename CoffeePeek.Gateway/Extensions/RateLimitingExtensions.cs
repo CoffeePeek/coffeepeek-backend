@@ -9,6 +9,7 @@ public static class RateLimitingExtensions
     public const string GlobalPolicy = "global";
     public const string AuthEndpointsPolicy = "auth-endpoints";
     public const string AccountDeletionPolicy = "account-deletion";
+    public const string SupportSubmissionPolicy = "support-submission";
     public const string MediaUploadPolicy = "media-upload";
     public const string ModerationSubmissionPolicy = "moderation-submission";
 
@@ -26,6 +27,8 @@ public static class RateLimitingExtensions
 
             // Capability-token and authenticated account deletion: limits confirmation-token probing and email abuse
             options.AddPolicy(AccountDeletionPolicy, ctx => PerClient(ctx, TimeSpan.FromHours(1), 12, 10));
+
+            options.AddPolicy(SupportSubmissionPolicy, ctx => PerClient(ctx, TimeSpan.FromHours(1), 12, 5));
 
             options.AddPolicy(MediaUploadPolicy, ctx => PerClient(ctx, TimeSpan.FromMinutes(1), 6, 10));
 
