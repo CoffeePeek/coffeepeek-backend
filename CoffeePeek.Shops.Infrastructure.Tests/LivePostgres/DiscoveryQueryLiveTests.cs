@@ -217,7 +217,7 @@ public sealed class DiscoveryQueryLiveTests : IClassFixture<ShopsLiveDatabase>
     }
 
     [Fact]
-    public async Task CoffeeSpecialPrefixes_SortAfterLettersAndDigits_BeforePagination_ExecuteInPostgres()
+    public async Task CoffeeNumberAndSpecialPrefixes_SortAfterLetters_BeforePagination_ExecuteInPostgres()
     {
         await using var db = fixture.Context(false);
         var roaster = AddRoaster(db, Key());
@@ -225,21 +225,25 @@ public sealed class DiscoveryQueryLiveTests : IClassFixture<ShopsLiveDatabase>
             AddOffer(AddProduct(db, roaster, name), 250, 30);
         await db.SaveChangesAsync(Ct); db.ChangeTracker.Clear();
         var discovery = Store(db);
-        var first = await discovery.SearchCoffeesAsync(new() { Filters = new() { Roasters = [roaster.PublicSlug!] }, PageSize = 4 }, Ct);
-        var second = await discovery.SearchCoffeesAsync(new() { Filters = new() { Roasters = [roaster.PublicSlug!] }, Page = 2, PageSize = 4 }, Ct);
+        var first = await discovery.SearchCoffeesAsync(new() { Filters = new() { Roasters = [roaster.PublicSlug!] }, PageSize = 3 }, Ct);
+        var second = await discovery.SearchCoffeesAsync(new() { Filters = new() { Roasters = [roaster.PublicSlug!] }, Page = 2, PageSize = 3 }, Ct);
+        var third = await discovery.SearchCoffeesAsync(new() { Filters = new() { Roasters = [roaster.PublicSlug!] }, Page = 3, PageSize = 3 }, Ct);
         Assert.Equal(8, first.TotalItems);
-        Assert.All(first.Items, p => Assert.True(char.IsLetterOrDigit(p.Name[0])));
-        Assert.All(second.Items, p => Assert.False(char.IsLetterOrDigit(p.Name[0])));
+        Assert.All(first.Items, p => Assert.True(char.IsLetter(p.Name[0])));
+        Assert.All(second.Items.Concat(third.Items), p => Assert.False(char.IsLetter(p.Name[0])));
+        Assert.Contains(second.Items.Concat(third.Items), p => char.IsDigit(p.Name[0]));
         var all = await discovery.SearchCoffeesAsync(new() { Filters = new() { Roasters = [roaster.PublicSlug!] } }, Ct);
-        Assert.Equal(all.Items.Select(p => p.Address.Slug), first.Items.Concat(second.Items).Select(p => p.Address.Slug));
+        Assert.Equal(all.Items.Select(p => p.Address.Slug), first.Items.Concat(second.Items).Concat(third.Items).Select(p => p.Address.Slug));
         var catalog = new CoffeeCatalogStore(db, Options.Create(new MediaPublicUrlOptions { PublicEndpoint = "https://media.example" }),
             Options.Create(new CoffeeImportOptions()), Mock.Of<IPublicAddressService>(), NullLogger<CoffeeCatalogStore>.Instance);
-        var catalogFirst = await catalog.ListAsync(new() { RoasterSlug = roaster.PublicSlug, PageSize = 4 }, Ct);
-        var catalogSecond = await catalog.ListAsync(new() { RoasterSlug = roaster.PublicSlug, Page = 2, PageSize = 4 }, Ct);
-        Assert.All(catalogFirst.Items, p => Assert.True(char.IsLetterOrDigit(p.Content.Name[0])));
-        Assert.All(catalogSecond.Items, p => Assert.False(char.IsLetterOrDigit(p.Content.Name[0])));
+        var catalogFirst = await catalog.ListAsync(new() { RoasterSlug = roaster.PublicSlug, PageSize = 3 }, Ct);
+        var catalogSecond = await catalog.ListAsync(new() { RoasterSlug = roaster.PublicSlug, Page = 2, PageSize = 3 }, Ct);
+        var catalogThird = await catalog.ListAsync(new() { RoasterSlug = roaster.PublicSlug, Page = 3, PageSize = 3 }, Ct);
+        Assert.All(catalogFirst.Items, p => Assert.True(char.IsLetter(p.Content.Name[0])));
+        Assert.All(catalogSecond.Items.Concat(catalogThird.Items), p => Assert.False(char.IsLetter(p.Content.Name[0])));
+        Assert.Contains(catalogSecond.Items.Concat(catalogThird.Items), p => char.IsDigit(p.Content.Name[0]));
         var catalogAll = await catalog.ListAsync(new() { RoasterSlug = roaster.PublicSlug }, Ct);
-        Assert.Equal(catalogAll.Items.Select(p => p.Address.Slug), catalogFirst.Items.Concat(catalogSecond.Items).Select(p => p.Address.Slug));
+        Assert.Equal(catalogAll.Items.Select(p => p.Address.Slug), catalogFirst.Items.Concat(catalogSecond.Items).Concat(catalogThird.Items).Select(p => p.Address.Slug));
     }
 
     [Fact]
