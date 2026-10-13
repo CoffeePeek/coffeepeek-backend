@@ -21,8 +21,16 @@ public sealed partial class CheckIn : AggregateRoot<Guid>
     public string Note { get; private set; }
 
     public Guid UserId { get; private set; }
-    public Guid ShopId { get; private set; }
+    public CheckInKind Kind { get; private set; }
+    public Guid? ShopId { get; private set; }
     public DateTime VisitedAt { get; private set; }
+    public DateOnly? PreparedOn { get; private set; }
+    public string? BrewMethodCode { get; private set; }
+    public Guid? CoffeeProductId { get; private set; }
+    public string? BeanNameSnapshot { get; private set; }
+    public decimal? DoseGrams { get; private set; }
+    public int? BrewDurationSeconds { get; private set; }
+    public int? TasteScore { get; private set; }
     public string Username { get; private set; } = "";
     public CheckInVisibility Visibility { get; private set; }
     public int ContentRevision { get; private set; } = 1;
@@ -36,7 +44,8 @@ public sealed partial class CheckIn : AggregateRoot<Guid>
     public DateTime? FirstPublishedAtUtc { get; private set; }
     public Guid RowVersion { get; private set; } = Guid.NewGuid();
 
-    public bool IsPubliclyVisible => DeletedAtUtc == null && Visibility == CheckInVisibility.Public
+    public bool IsPubliclyVisible => Kind == CheckInKind.Shop && ShopId.HasValue && DeletedAtUtc == null
+        && Visibility == CheckInVisibility.Public
         && ModerationState == CheckInModerationState.Approved
         && ApprovedRevision == ContentRevision;
 
@@ -54,6 +63,7 @@ public sealed partial class CheckIn : AggregateRoot<Guid>
     {
         Id = id ?? Guid.NewGuid();
         UserId = userId;
+        Kind = CheckInKind.Shop;
         ShopId = shopId;
         VisitedAt = visitedAt;
         CreatedAtUtc = DateTime.UtcNow;

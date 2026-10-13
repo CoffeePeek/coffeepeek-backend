@@ -70,6 +70,34 @@ public class CheckInPhotoAccessTests
     }
 
     [Fact]
+    public async Task HomePhotoStreamsOnlyForItsOwnerAndNeverForAnonymousOrAnotherUser()
+    {
+        var home = new HomeCheckInDto { Id = CheckInId,
+            Photos = [new(PhotoId, "home.jpg", "image/jpeg", "private/home", 5, 0,
+                $"/api/v1/check-ins/{CheckInId}/photos/{PhotoId}")] };
+        var (ownerController, ownerQueries, ownerMedia) = Setup(Author);
+        ownerQueries.HomeDetail = home;
+        (await ownerController.Download(CheckInId, PhotoId, TestContext.Current.CancellationToken))
+            .Should().BeOfType<EmptyResult>();
+        ownerQueries.HomeReaders.Should().Equal(Author);
+        ownerMedia.Calls.Should().Be(1);
+        ownerController.Response.Headers.CacheControl.ToString().Should().Be("private, no-store");
+
+        var (otherController, otherQueries, otherMedia) = Setup(Guid.NewGuid());
+        otherQueries.HomeDetail = home;
+        (await otherController.Download(CheckInId, PhotoId, TestContext.Current.CancellationToken))
+            .Should().BeOfType<NotFoundResult>();
+        otherMedia.Calls.Should().Be(0);
+
+        var (anonymousController, anonymousQueries, anonymousMedia) = Setup(null);
+        anonymousQueries.HomeDetail = home;
+        (await anonymousController.Download(CheckInId, PhotoId, TestContext.Current.CancellationToken))
+            .Should().BeOfType<NotFoundResult>();
+        anonymousQueries.HomeReaders.Should().BeEmpty();
+        anonymousMedia.Calls.Should().Be(0);
+    }
+
+    [Fact]
     public async Task EligibleAnonymousDownload_UsesTheCanonicalAuthorAndNeverRedirects()
     {
         var (controller, queries, media) = Setup(null); queries.Detail = Visible;
@@ -156,8 +184,21 @@ public class CheckInPhotoAccessTests
     {
         public UnifiedCheckInDto? Detail { get; set; }
         public UnifiedCheckInDto? Snapshot { get; set; }
+        public HomeCheckInDto? HomeDetail { get; set; }
         public List<Guid?> Readers { get; } = [];
+        public List<Guid> HomeReaders { get; } = [];
         public List<int> Revisions { get; } = [];
+        public Task<HomeCheckInDto?> GetHomeByIdAsync(Guid id, Guid userId, CancellationToken ct = default)
+        {
+            HomeReaders.Add(userId);
+            return Task.FromResult(id == CheckInId && userId == Author ? HomeDetail : null);
+        }
+        public Task<HomeCheckInPage> GetHomeByUserAsync(Guid userId, int pageNumber, int pageSize,
+            DateOnly? from = null, DateOnly? to = null, CancellationToken ct = default) => throw new NotSupportedException();
+        public Task<HomeCalendarDayDto[]> GetHomeCalendarAsync(Guid userId, DateOnly from, DateOnly to,
+            CancellationToken ct = default) => throw new NotSupportedException();
+        public Task<HomeBeanStatsDto[]> GetHomeBeanStatsAsync(Guid userId, CancellationToken ct = default) => throw new NotSupportedException();
+        public Task<HomeMethodStatsDto[]> GetHomeMethodStatsAsync(Guid userId, CancellationToken ct = default) => throw new NotSupportedException();
         public Task<UnifiedCheckInDto?> GetUnifiedByIdAsync(Guid id, Guid? readerId, CancellationToken ct = default) { Readers.Add(readerId); return Task.FromResult(Detail); }
         public Task<UnifiedCheckInDto?> GetModerationSnapshotAsync(Guid id, int revision, CancellationToken ct = default) { Revisions.Add(revision); return Task.FromResult(Snapshot); }
         public Task<CheckInPage> GetUnifiedByUserAsync(Guid userId, int pageNumber, int pageSize, DateTime? from = null, DateTime? to = null, CancellationToken ct = default) => throw new NotSupportedException();

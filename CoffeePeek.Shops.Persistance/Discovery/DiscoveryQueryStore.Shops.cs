@@ -139,10 +139,10 @@ public sealed partial class DiscoveryQueryStore
             .Include(s => s.ShopPhotos).Include(s => s.ShopTags).ThenInclude(t => t.Tag).AsSplitQuery().ToDictionaryAsync(s => s.Id, ct);
         var cityIdsOnPage = rows.Values.Select(s => s.Location.CityId).Distinct().ToArray();
         var cities = await db.Cities.AsNoTracking().Where(c => cityIdsOnPage.Contains(c.Id)).ToDictionaryAsync(c => c.Id, ct);
-        var visited = userId.HasValue ? await db.CheckIns.AsNoTracking().Where(c => c.UserId == userId && c.DeletedAtUtc == null && ids.Contains(c.ShopId)).Select(c => c.ShopId).Distinct().ToArrayAsync(ct) : [];
+        var visited = userId.HasValue ? await db.CheckIns.AsNoTracking().Where(c => c.UserId == userId && c.ShopId != null && c.DeletedAtUtc == null && ids.Contains(c.ShopId.Value)).Select(c => c.ShopId!.Value).Distinct().ToArrayAsync(ct) : [];
         var favorites = userId.HasValue ? await db.DiscoveryFavorites.AsNoTracking().Where(c => c.UserId == userId && c.Kind == "coffee_shop" && ids.Contains(c.EntityId)).Select(c => c.EntityId).ToArrayAsync(ct) : [];
-        var checkInCounts = await CheckInEligibility.Public(db).Where(r => ids.Contains(r.ShopId))
-            .GroupBy(r => r.ShopId).Select(g => new { Id = g.Key, Count = g.Count() }).ToDictionaryAsync(g => g.Id, g => g.Count, ct);
+        var checkInCounts = await CheckInEligibility.Public(db).Where(r => r.ShopId != null && ids.Contains(r.ShopId.Value))
+            .GroupBy(r => r.ShopId!.Value).Select(g => new { Id = g.Key, Count = g.Count() }).ToDictionaryAsync(g => g.Id, g => g.Count, ct);
         var matchedMenu = f.Menu is null ? null : MatchingMenuItems(f.Menu);
         var positions = matchedMenu is null ? [] : await (
             from m in db.ShopMenus.AsNoTracking() where ids.Contains(m.CoffeeShopId)

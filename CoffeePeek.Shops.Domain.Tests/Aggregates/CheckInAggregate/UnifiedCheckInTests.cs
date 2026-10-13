@@ -41,7 +41,7 @@ public class UnifiedCheckInTests
         Assert.Equal(revision + 1, row.ContentRevision);
         Assert.False(row.IsPubliclyVisible);
         Assert.Equal(CheckInModerationState.Pending, row.ModerationState);
-        var other = CheckIn.CreateUnified(row.UserId, row.ShopId, "author", null, null, DateTime.UtcNow);
+        var other = CheckIn.CreateUnified(row.UserId, row.ShopId!.Value, "author", null, null, DateTime.UtcNow);
         other.AddPhotos([new("other.jpg", "image/jpeg", "other", 10, row.UserId)]);
         Assert.Throws<DomainException>(() => other.AddDrinkPhoto(cup));
         row.AddPhotos(Enumerable.Range(1, 4).Select(i =>

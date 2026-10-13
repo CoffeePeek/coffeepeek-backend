@@ -77,12 +77,12 @@ public static class CreateUnifiedCheckInHandler
             checkIn.ShopPhotos.OrderBy(p => p.SortIndex).Select(p => p.StorageKey).ToArray(), now));
         if (checkIn.Visibility == CheckInVisibility.Public) await bus.PublishAsync(CheckInMapping.ModerationRequest(checkIn));
         await bus.PublishAsync(new CoffeePeek.Contract.Events.Shops.CheckinCreatedEvent
-            { UserId = command.UserId, ShopId = checkIn.ShopId, CheckInId = checkIn.Id, CreatedAt = checkIn.CreatedAtUtc });
+            { UserId = command.UserId, ShopId = request.CoffeeShopId, CheckInId = checkIn.Id, CreatedAt = checkIn.CreatedAtUtc });
         // A failed/ambiguous commit must retain reservations: freeing them could attach committed bytes elsewhere.
         await bus.PublishAsync(new CheckInCacheInvalidationRequested(checkIn.Id, checkIn.ShopId, checkIn.UserId));
         await unitOfWork.SaveChangesAsync(ct);
-        var names = await shops.GetShopNamesByIdsAsync([checkIn.ShopId], ct);
-        return Response<UnifiedCheckInDto>.Success(CheckInMapping.ToDto(checkIn, names.GetValueOrDefault(checkIn.ShopId) ?? ""));
+        var names = await shops.GetShopNamesByIdsAsync([request.CoffeeShopId], ct);
+        return Response<UnifiedCheckInDto>.Success(CheckInMapping.ToDto(checkIn, names.GetValueOrDefault(request.CoffeeShopId) ?? ""));
     }
 
     // Uploads are single use. A stable identity lets a retry recover a remote reservation whose reply was lost.

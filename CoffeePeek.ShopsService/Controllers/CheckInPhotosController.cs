@@ -15,21 +15,33 @@ public class CheckInPhotosController(ICheckInQueries queries, MediaCheckInPhotoC
 {
     [HttpGet("{id:guid}/photos/{photoId:guid}")]
     [AllowAnonymous]
-    public async Task<IActionResult> Download(Guid id, Guid photoId, CancellationToken ct) =>
-        await StreamAsync(await queries.GetUnifiedByIdAsync(id, user.GetUserId(), ct), photoId, ct);
+    public async Task<IActionResult> Download(Guid id, Guid photoId, CancellationToken ct)
+    {
+        var readerId = user.GetUserId();
+        var shop = await queries.GetUnifiedByIdAsync(id, readerId, ct);
+        if (shop != null)
+            return await StreamAsync(shop.Id, shop.UserId, shop.Photos, shop.DrinkPhoto, photoId, ct);
+        if (readerId == null) return NotFound();
+        var home = await queries.GetHomeByIdAsync(id, readerId.Value, ct);
+        return home == null ? NotFound() : await StreamAsync(home.Id, readerId.Value,
+            home.Photos, home.DrinkPhoto, photoId, ct);
+    }
 
     [HttpGet("{id:guid}/moderation-photos/{photoId:guid}")]
     [Authorize(Policy = RoleConsts.Moderator)]
-    public async Task<IActionResult> DownloadModeration(Guid id, Guid photoId, [FromQuery] int revision, CancellationToken ct) =>
-        await StreamAsync(await queries.GetModerationSnapshotAsync(id, revision, ct), photoId, ct);
-
-    private async Task<IActionResult> StreamAsync(UnifiedCheckInDto? checkIn, Guid photoId, CancellationToken ct)
+    public async Task<IActionResult> DownloadModeration(Guid id, Guid photoId, [FromQuery] int revision, CancellationToken ct)
     {
-        if (checkIn == null) return NotFound();
-        var photo = checkIn.DrinkPhoto?.Id == photoId ? checkIn.DrinkPhoto
-            : checkIn.Photos.FirstOrDefault(p => p.Id == photoId);
+        var shop = await queries.GetModerationSnapshotAsync(id, revision, ct);
+        return shop == null ? NotFound() : await StreamAsync(shop.Id, shop.UserId,
+            shop.Photos, shop.DrinkPhoto, photoId, ct);
+    }
+
+    private async Task<IActionResult> StreamAsync(Guid checkInId, Guid ownerId, CheckInPhotoDto[] photos,
+        CheckInPhotoDto? drinkPhoto, Guid photoId, CancellationToken ct)
+    {
+        var photo = drinkPhoto?.Id == photoId ? drinkPhoto : photos.FirstOrDefault(p => p.Id == photoId);
         if (photo == null) return NotFound();
-        using var response = await media.DownloadAsync(checkIn.UserId, checkIn.Id, photoId, ct);
+        using var response = await media.DownloadAsync(ownerId, checkInId, photoId, ct);
         if (!response.IsSuccessStatusCode)
             return StatusCode(response.StatusCode == System.Net.HttpStatusCode.NotFound ? 404 : 503);
         Response.Headers.CacheControl = "private, no-store";

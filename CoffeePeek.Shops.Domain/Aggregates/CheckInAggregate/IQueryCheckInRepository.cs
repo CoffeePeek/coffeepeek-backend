@@ -23,6 +23,7 @@ public interface IQueryCheckInRepository
         CancellationToken ct = default);
     Task<bool> ExistsByIdAsync(Guid checkInId, CancellationToken ct = default);
     Task<Guid?> GetUserIdByIdAsync(Guid checkInId, CancellationToken ct = default);
+    Task<(Guid Id, string Name)?> GetPublishedCoffeeProductBySlugAsync(string slug, CancellationToken ct = default);
 
     /// <summary>
     /// Serializes check-in creation per user until the current transaction ends, so the cooldown and daily-cap

@@ -5,7 +5,7 @@ Full current response files and slug examples are in [check-ins-examples.md](che
 The application-wide chronological publication feed is [GET /api/v1/feed](feed.md).
 It reuses check-in cards and actions, with a separate publication-time cursor.
 
-`/api/v1/check-ins` is the sole supported visit API. Only the selected coffee shop (`coffeeShopSlug`) and visit date (`visitedAt`) are required. Text, rating, drink and photos are optional for both Private and Public visits. Author identity comes from the authenticated account.
+`/api/v1/check-ins` is the supported coffee-shop visit API. Private home and self-prepared brews use the separate [home check-in client contract](home-check-ins-client.md); [admin access and catalog operations](home-check-ins-admin.md) are documented separately. Shop visits require only the selected coffee shop (`coffeeShopSlug`) and visit date (`visitedAt`). Text, rating, drink and photos are optional for both Private and Public shop visits. Author identity comes from the authenticated account.
 
 ```json
 {

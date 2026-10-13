@@ -1,4 +1,5 @@
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
+using CoffeePeek.Shops.Domain.Aggregates.CheckInAggregate;
 using CoffeePeek.Shops.Persistance.Configuration;
 using CoffeePeek.Shops.Persistance.Queries;
 using Microsoft.EntityFrameworkCore;
@@ -45,7 +46,7 @@ public class AdminStatsQueryRepository(ShopsDbContext dbContext) : IAdminStatsQu
 
         var checkIns = await dbContext.CheckIns
             .AsNoTracking()
-            .Where(c => c.CreatedAtUtc >= fromUtcDate && c.DeletedAtUtc == null)
+            .Where(c => c.Kind == CheckInKind.Shop && c.CreatedAtUtc >= fromUtcDate && c.DeletedAtUtc == null)
             .GroupBy(c => c.CreatedAtUtc.Date)
             .Select(g => new { Day = g.Key, Count = g.Count() })
             .ToListAsync(cancellationToken);
@@ -92,8 +93,9 @@ public class AdminStatsQueryRepository(ShopsDbContext dbContext) : IAdminStatsQu
     {
         var rows = await dbContext.CheckIns
             .AsNoTracking()
-            .Where(c => c.CreatedAtUtc >= sinceUtc && c.DeletedAtUtc == null)
-            .GroupBy(c => c.ShopId)
+            .Where(c => c.Kind == CheckInKind.Shop && c.ShopId != null
+                && c.CreatedAtUtc >= sinceUtc && c.DeletedAtUtc == null)
+            .GroupBy(c => c.ShopId!.Value)
             .Select(g => new { ShopId = g.Key, Count = g.Count() })
             .OrderByDescending(x => x.Count)
             .Take(TopLimit)

@@ -1,0 +1,179 @@
+using System;
+using System.Threading;
+using System.Threading.Tasks;
+using CoffeePeek.Contract.Dtos.CheckIns;
+using CoffeePeek.Contract.Events.Shops;
+using CoffeePeek.Shared.Kernel;
+using CoffeePeek.Shared.Kernel.Drinks;
+using CoffeePeek.Shared.Kernel.Exceptions;
+using CoffeePeek.Shops.Application.Abstractions;
+using CoffeePeek.Shops.Application.Features.CheckIn;
+using CoffeePeek.Shops.Domain.Aggregates.CheckInAggregate;
+using Moq;
+using Wolverine;
+using DomainCheckIn = CoffeePeek.Shops.Domain.Aggregates.CheckInAggregate.CheckIn;
+
+namespace CoffeePeek.Shops.Application.Tests.Features.CheckIn;
+
+public class HomeCheckInHandlerTests
+{
+    private readonly Guid _owner = Guid.NewGuid();
+    private readonly Mock<IQueryCheckInRepository> _repository = new();
+    private readonly Mock<IDrinkCatalog> _drinks = new();
+    private readonly Mock<IUploadedPhotoLookup> _photos = new();
+    private readonly Mock<IUnitOfWork> _unitOfWork = new();
+    private readonly Mock<IMessageBus> _bus = new();
+    private static readonly DateTime PreparedUtc = new(2026, 9, 20, 19, 15, 0, DateTimeKind.Utc);
+
+    private Task<CoffeePeek.Shared.Kernel.Response.Response<HomeCheckInDto>> Create(CreateHomeCheckInRequest request) =>
+        CreateHomeCheckInHandler.Handle(new(request, _owner, "author"), _repository.Object,
+            _drinks.Object, _photos.Object, _unitOfWork.Object, _bus.Object,
+            TestContext.Current.CancellationToken);
+
+    [Fact]
+    public async Task QuickCreateNeedsOnlyTimestampAndDoesNotFabricateDoseScoreOrBean()
+    {
+        DomainCheckIn? saved = null;
+        _repository.Setup(r => r.Add(It.IsAny<DomainCheckIn>())).Callback<DomainCheckIn>(row => saved = row);
+        var result = await Create(new CreateHomeCheckInRequest
+        {
+            PreparedAt = "2026-09-20T22:15:00+03:00"
+        });
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(PreparedUtc, result.Data.PreparedAtUtc);
+        Assert.Equal(new DateOnly(2026, 9, 20), result.Data.PreparedOn);
+        Assert.Null(result.Data.CoffeeProductId);
+        Assert.Null(result.Data.BeanName);
+        Assert.Null(result.Data.BrewMethodCode);
+        Assert.Null(result.Data.DoseGrams);
+        Assert.Null(result.Data.BrewDurationSeconds);
+        Assert.Null(result.Data.TasteScore);
+        Assert.Equal(CheckInKind.Home, saved!.Kind);
+        Assert.Null(saved.ShopId);
+        _repository.Verify(r => r.GetPublishedCoffeeProductBySlugAsync(It.IsAny<string>(),
+            It.IsAny<CancellationToken>()), Times.Never);
+        _repository.Verify(r => r.Add(It.IsAny<DomainCheckIn>()), Times.Once);
+        _photos.VerifyNoOtherCalls();
+        _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        _bus.Verify(b => b.PublishAsync(It.IsAny<CheckinCreatedEvent>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task PublishedProductSlugResolvesToStableIdentityAndNameSnapshot()
+    {
+        var productId = Guid.NewGuid();
+        _repository.Setup(r => r.GetPublishedCoffeeProductBySlugAsync("honey-bloom",
+            It.IsAny<CancellationToken>())).ReturnsAsync((productId, "Honey Bloom"));
+
+        var result = await Create(new CreateHomeCheckInRequest
+        {
+            PreparedAt = "2026-09-20T22:15:00Z",
+            CoffeeProductSlug = " HONEY-BLOOM ",
+            BrewMethodCode = "batch_drip",
+            DoseGrams = 75m,
+            BrewDurationSeconds = 360,
+            TasteScore = 4
+        });
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(productId, result.Data.CoffeeProductId);
+        Assert.Equal("Honey Bloom", result.Data.BeanName);
+        Assert.Equal(75m, result.Data.DoseGrams);
+        Assert.Equal(360, result.Data.BrewDurationSeconds);
+        Assert.Equal(4, result.Data.TasteScore);
+        _repository.Verify(r => r.GetPublishedCoffeeProductBySlugAsync("honey-bloom",
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Theory]
+    [InlineData("2026-09-20T22:15:00")]
+    [InlineData("2026-09-20")]
+    [InlineData(null)]
+    public async Task TimestampWithoutExplicitOffsetIsRejectedBeforeSaving(string? timestamp)
+    {
+        await Assert.ThrowsAsync<ValidationException>(() => Create(new CreateHomeCheckInRequest
+        {
+            PreparedAt = timestamp
+        }));
+        _repository.Verify(r => r.Add(It.IsAny<DomainCheckIn>()), Times.Never);
+        _unitOfWork.VerifyNoOtherCalls();
+    }
+
+    [Fact]
+    public async Task BeanSelectorsAreExclusiveAndUnpublishedSlugIsNotSelectable()
+    {
+        await Assert.ThrowsAsync<ValidationException>(() => Create(new CreateHomeCheckInRequest
+        {
+            PreparedAt = "2026-09-20T22:15:00Z",
+            CoffeeProductSlug = "honey-bloom",
+            CustomBeanName = "My beans"
+        }));
+        await Assert.ThrowsAsync<NotFoundException>(() => Create(new CreateHomeCheckInRequest
+        {
+            PreparedAt = "2026-09-20T22:15:00Z",
+            CoffeeProductSlug = "archived-product"
+        }));
+        _repository.Verify(r => r.Add(It.IsAny<DomainCheckIn>()), Times.Never);
+        _unitOfWork.VerifyNoOtherCalls();
+    }
+
+    [Fact]
+    public async Task ArchivedProductCanBeKeptOnEditWithoutRewritingHistoricalNameOrPhotos()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var productId = Guid.NewGuid();
+        var row = DomainCheckIn.CreateHome(_owner, "author", "original", PreparedUtc,
+            new DateOnly(2026, 9, 20), "espresso", productId, "Original bean name", 18m, 30, 5);
+        row.AddPhotos([new CheckInPhoto("cup.jpg", "image/jpeg", "private/cup.jpg", 100, _owner)]);
+        _repository.Setup(r => r.GetTrackedByIdAsync(row.Id, ct)).ReturnsAsync(row);
+
+        await Assert.ThrowsAsync<ValidationException>(() => UpdateHomeCheckInHandler.Handle(
+            new UpdateHomeCheckInCommand(row.Id, _owner, new UpdateHomeCheckInRequest
+            {
+                PreparedAt = "2026-09-20T19:15:00Z",
+                CoffeeProductId = Guid.NewGuid()
+            }), _repository.Object, _drinks.Object, _unitOfWork.Object, _bus.Object, ct));
+
+        var result = await UpdateHomeCheckInHandler.Handle(new UpdateHomeCheckInCommand(row.Id, _owner,
+            new UpdateHomeCheckInRequest
+            {
+                PreparedAt = "2026-09-20T19:15:00Z",
+                CoffeeProductId = productId,
+                Text = "new note"
+            }), _repository.Object, _drinks.Object, _unitOfWork.Object, _bus.Object, ct);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(productId, result.Data.CoffeeProductId);
+        Assert.Equal("Original bean name", result.Data.BeanName);
+        Assert.Equal("new note", result.Data.Text);
+        Assert.Null(result.Data.DoseGrams);
+        Assert.Null(result.Data.TasteScore);
+        Assert.Single(result.Data.Photos);
+        _repository.Verify(r => r.GetPublishedCoffeeProductBySlugAsync(It.IsAny<string>(),
+            It.IsAny<CancellationToken>()), Times.Never);
+        _unitOfWork.Verify(u => u.SaveChangesAsync(ct), Times.Once);
+    }
+
+    [Fact]
+    public async Task AnotherUserCannotUpdateOrDeleteOwnersPrivateHomeEntry()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var row = DomainCheckIn.CreateHome(_owner, "author", null, PreparedUtc,
+            new DateOnly(2026, 9, 20), null, null, null, null, null, null);
+        _repository.Setup(r => r.GetTrackedByIdAsync(row.Id, ct)).ReturnsAsync(row);
+        var stranger = Guid.NewGuid();
+
+        await Assert.ThrowsAsync<NotFoundException>(() => UpdateHomeCheckInHandler.Handle(
+            new UpdateHomeCheckInCommand(row.Id, stranger, new UpdateHomeCheckInRequest
+            {
+                PreparedAt = "2026-09-20T19:15:00Z"
+            }), _repository.Object, _drinks.Object, _unitOfWork.Object, _bus.Object, ct));
+        await Assert.ThrowsAsync<NotFoundException>(() => UpdateHomeCheckInHandler.Handle(
+            new DeleteHomeCheckInCommand(row.Id, stranger),
+            _repository.Object, _unitOfWork.Object, _bus.Object, ct));
+        Assert.Null(row.DeletedAtUtc);
+        _unitOfWork.VerifyNoOtherCalls();
+        _bus.VerifyNoOtherCalls();
+    }
+}
