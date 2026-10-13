@@ -43,10 +43,32 @@ public sealed class CheckInPhotoMigrationDatabase : LiveDatabase<ShopsDbContext>
             db.Entry(photo).Property("CanonicalCheckInId").CurrentValue = parent.Id;
         }
         shop.AddPhotos([new ShopPhoto("gallery.jpg", "image/jpeg", "shops/gallery", 42, Guid.NewGuid())]);
-        // The current EF model writes this later column; remove it before rehearsing the historical migration.
-        await db.Database.ExecuteSqlRawAsync("ALTER TABLE \"CanonicalCheckIns\" ADD COLUMN \"DrinkPhotoId\" uuid", ct);
+        // Seed with the current EF model, then restore the historical schema before running its migrations.
+        await db.Database.ExecuteSqlRawAsync("""
+            ALTER TABLE "CanonicalCheckIns"
+                ADD COLUMN "DrinkPhotoId" uuid,
+                ADD COLUMN "BeanNameSnapshot" varchar(250),
+                ADD COLUMN "BrewDurationSeconds" integer,
+                ADD COLUMN "BrewMethodCode" varchar(20),
+                ADD COLUMN "CoffeeProductId" uuid,
+                ADD COLUMN "DoseGrams" numeric(8,2),
+                ADD COLUMN "Kind" integer NOT NULL DEFAULT 0,
+                ADD COLUMN "PreparedOn" date,
+                ADD COLUMN "TasteScore" integer
+            """, ct);
         await db.SaveChangesAsync(ct);
-        await db.Database.ExecuteSqlRawAsync("ALTER TABLE \"CanonicalCheckIns\" DROP COLUMN \"DrinkPhotoId\"", ct);
+        await db.Database.ExecuteSqlRawAsync("""
+            ALTER TABLE "CanonicalCheckIns"
+                DROP COLUMN "DrinkPhotoId",
+                DROP COLUMN "BeanNameSnapshot",
+                DROP COLUMN "BrewDurationSeconds",
+                DROP COLUMN "BrewMethodCode",
+                DROP COLUMN "CoffeeProductId",
+                DROP COLUMN "DoseGrams",
+                DROP COLUMN "Kind",
+                DROP COLUMN "PreparedOn",
+                DROP COLUMN "TasteScore"
+            """, ct);
         await db.Database.ExecuteSqlRawAsync("UPDATE \"ShopPhotos\" SET \"CreatedAtUtc\"='2024-01-01T00:00:00Z'", ct);
     }
 
