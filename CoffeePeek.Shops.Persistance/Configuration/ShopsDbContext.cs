@@ -190,7 +190,7 @@ public class ShopsDbContext(DbContextOptions<ShopsDbContext> options, IOptions<P
             entity.Property(c => c.Kind).HasDefaultValue(Domain.Aggregates.CheckInAggregate.CheckInKind.Shop);
             entity.HasIndex(c => new { c.UserId, c.Kind, c.PreparedOn, c.VisitedAt, c.Id });
             entity.HasIndex(c => new { c.UserId, c.Kind, c.CoffeeProductId });
-            entity.Property(c => c.BrewMethodCode).HasMaxLength(20);
+            entity.Property(c => c.BrewMethodCode).HasMaxLength(100);
             entity.Property(c => c.BeanNameSnapshot).HasMaxLength(250);
             entity.Property(c => c.DoseGrams).HasPrecision(8, 2);
 
@@ -226,7 +226,7 @@ public class ShopsDbContext(DbContextOptions<ShopsDbContext> options, IOptions<P
                 "\"Rating_Place\" IS NULL AND \"Rating_Service\" IS NULL AND \"Rating_Coffee\" IS NULL AND " +
                 "\"Rating_AverageRating\" IS NULL)"));
             entity.ToTable("CanonicalCheckIns", t => t.HasCheckConstraint("CK_CanonicalCheckIns_HomeDetails",
-                "(\"BrewMethodCode\" IS NULL OR \"BrewMethodCode\" IN ('espresso', 'pour_over', 'batch_drip', 'moka_pot', 'cezve', 'aeropress', 'french_press', 'other')) AND " +
+                "(\"BrewMethodCode\" IS NULL OR length(\"BrewMethodCode\") BETWEEN 1 AND 100) AND " +
                 "(\"CoffeeProductId\" IS NULL OR \"BeanNameSnapshot\" IS NOT NULL AND length(btrim(\"BeanNameSnapshot\")) > 0) AND " +
                 "(\"DoseGrams\" IS NULL OR \"DoseGrams\" > 0 AND \"DoseGrams\" <= 10000) AND " +
                 "(\"BrewDurationSeconds\" IS NULL OR \"BrewDurationSeconds\" BETWEEN 1 AND 604800) AND " +

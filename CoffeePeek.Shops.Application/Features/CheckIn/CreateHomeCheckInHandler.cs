@@ -1,4 +1,5 @@
 using CoffeePeek.Contract.Dtos.CheckIns;
+using CoffeePeek.Shops.Application.PublicAddresses;
 using CoffeePeek.Contract.Events;
 using CoffeePeek.Shared.Domain.Interfaces.Infrastructure;
 using CoffeePeek.Shared.Kernel;
@@ -15,13 +16,14 @@ namespace CoffeePeek.Shops.Application.Features.CheckIn;
 public static class CreateHomeCheckInHandler
 {
     public static async Task<Response<HomeCheckInDto>> Handle(CreateHomeCheckInCommand command,
-        IQueryCheckInRepository repository, CoffeePeek.Shared.Kernel.Drinks.IDrinkCatalog drinks,
+        IQueryCheckInRepository repository, CoffeePeek.Shared.Kernel.Drinks.IDrinkCatalog drinks, IPublicAddressService addresses,
         IUploadedPhotoLookup photos, IUnitOfWork unitOfWork, IMessageBus bus, CancellationToken ct)
     {
         var request = command.Request;
         var (preparedAtUtc, preparedOn) = HomeCheckInInput.ParseTime(request.PreparedAt, request.PreparedOn);
         var (coffeeProductId, beanName) = await HomeCheckInInput.ResolveBeanAsync(
             request.CoffeeProductSlug, request.CustomBeanName, repository, ct);
+        var brewMethodCode = await HomeCheckInInput.ResolveBrewMethodAsync(request.BrewMethodCode, addresses, ct);
         var keys = request.Photos?.Select(p => p?.StorageKey ?? "").ToArray() ?? [];
         if (keys.Length > BusinessConstants.MaxCheckInPhotos || keys.Any(k => string.IsNullOrWhiteSpace(k)
             || k.Length > BusinessConstants.MaxCheckInPhotoStorageKeyLength)
@@ -34,7 +36,7 @@ public static class CreateHomeCheckInHandler
         var allKeys = drinkKey == null ? keys : keys.Append(drinkKey).ToArray();
 
         var checkIn = DomainCheckIn.CreateHome(command.UserId, command.Username, request.Text, preparedAtUtc, preparedOn,
-            request.BrewMethodCode, coffeeProductId, beanName, request.DoseGrams, request.BrewDurationSeconds,
+            brewMethodCode, coffeeProductId, beanName, request.DoseGrams, request.BrewDurationSeconds,
             request.TasteScore, CreateUnifiedCheckInHandler.CreateId(command.UserId, allKeys),
             (CheckInVisibility)request.Visibility);
         var drink = await CoffeePeek.Shared.Kernel.Drinks.DrinkSelection.ResolveAsync(

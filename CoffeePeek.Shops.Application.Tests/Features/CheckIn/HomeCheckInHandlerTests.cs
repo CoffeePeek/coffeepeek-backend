@@ -1,4 +1,6 @@
 using System;
+using CoffeePeek.Shops.Application.PublicAddresses;
+using CoffeePeek.Contract.Dtos.PublicAddresses;
 using System.Threading;
 using System.Threading.Tasks;
 using CoffeePeek.Contract.Dtos.CheckIns;
@@ -20,14 +22,71 @@ public class HomeCheckInHandlerTests
     private readonly Guid _owner = Guid.NewGuid();
     private readonly Mock<IQueryCheckInRepository> _repository = new();
     private readonly Mock<IDrinkCatalog> _drinks = new();
+    private readonly Mock<IPublicAddressService> _addresses = new();
     private readonly Mock<IUploadedPhotoLookup> _photos = new();
     private readonly Mock<IUnitOfWork> _unitOfWork = new();
     private readonly Mock<IMessageBus> _bus = new();
     private static readonly DateTime PreparedUtc = new(2026, 9, 20, 19, 15, 0, DateTimeKind.Utc);
 
+    [Theory]
+    [InlineData("cold-brew")]
+    [InlineData("chemex")]
+    [InlineData("hario-v60")]
+    [InlineData("cezve-turkish-coffee")]
+    public async Task CreateAcceptsMethodsFromTheShopCatalog(string slug)
+    {
+        _addresses.Setup(a => a.ResolveAsync(PublicAddressKind.BrewMethod, slug, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new PublicAddressMetadata(Guid.NewGuid(), slug, "/brew-methods/" + slug, 1));
+        var result = await Create(new CreateHomeCheckInRequest
+        {
+            PreparedAt = "2026-09-20T22:15:00Z", BrewMethodCode = slug,
+            DrinkSlug = "other", CustomDrinkName = "My coffee"
+        });
+        Assert.Equal(slug, result.Data.BrewMethodCode);
+        _repository.Verify(r => r.Add(It.IsAny<DomainCheckIn>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task UnknownCatalogMethodStopsBeforeSavingOrClaimingPhotos()
+    {
+        await Assert.ThrowsAsync<ValidationException>(() => Create(new CreateHomeCheckInRequest
+        {
+            PreparedAt = "2026-09-20T22:15:00Z", BrewMethodCode = "nonexistent-method"
+        }));
+        _repository.Verify(r => r.Add(It.IsAny<DomainCheckIn>()), Times.Never);
+        _unitOfWork.VerifyNoOtherCalls();
+        _photos.VerifyNoOtherCalls();
+    }
+
+    [Fact]
+    public async Task EditResolvesCatalogAliasesButCanKeepARemovedHistoricalMethod()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var row = DomainCheckIn.CreateHome(_owner, "author", "original", PreparedUtc,
+            new DateOnly(2026, 9, 20), "removed-method", null, null, null, null, null);
+        _repository.Setup(r => r.GetTrackedByIdAsync(row.Id, ct)).ReturnsAsync(row);
+        var request = new UpdateHomeCheckInRequest
+        {
+            PreparedAt = "2026-09-20T19:15:00Z", BrewMethodCode = "removed-method", Text = "edited"
+        };
+        var kept = await UpdateHomeCheckInHandler.Handle(new(row.Id, _owner, request),
+            _repository.Object, _drinks.Object, _addresses.Object, _unitOfWork.Object, _bus.Object, ct);
+        Assert.Equal("removed-method", kept.Data.BrewMethodCode);
+        _addresses.VerifyNoOtherCalls();
+        await Assert.ThrowsAsync<ValidationException>(() => UpdateHomeCheckInHandler.Handle(
+            new(row.Id, _owner, request with { BrewMethodCode = "nonexistent-method", Text = "invalid" }),
+            _repository.Object, _drinks.Object, _addresses.Object, _unitOfWork.Object, _bus.Object, ct));
+        Assert.Equal("edited", row.Note);
+        Assert.Equal("removed-method", row.BrewMethodCode);
+        _addresses.Setup(a => a.ResolveAsync(PublicAddressKind.BrewMethod, "old-name", ct))
+            .ReturnsAsync(new PublicAddressMetadata(Guid.NewGuid(), "cold-brew", "/brew-methods/cold-brew", 2, true));
+        var changed = await UpdateHomeCheckInHandler.Handle(new(row.Id, _owner, request with { BrewMethodCode = "old-name" }),
+            _repository.Object, _drinks.Object, _addresses.Object, _unitOfWork.Object, _bus.Object, ct);
+        Assert.Equal("cold-brew", changed.Data.BrewMethodCode);
+    }
     private Task<CoffeePeek.Shared.Kernel.Response.Response<HomeCheckInDto>> Create(CreateHomeCheckInRequest request) =>
         CreateHomeCheckInHandler.Handle(new(request, _owner, "author"), _repository.Object,
-            _drinks.Object, _photos.Object, _unitOfWork.Object, _bus.Object,
+            _drinks.Object, _addresses.Object, _photos.Object, _unitOfWork.Object, _bus.Object,
             TestContext.Current.CancellationToken);
 
     [Fact]
@@ -57,13 +116,13 @@ public class HomeCheckInHandlerTests
         _repository.Setup(r => r.GetTrackedByIdAsync(row.Id, ct)).ReturnsAsync(row);
         var request = new UpdateHomeCheckInRequest { PreparedAt = "2026-09-20T22:15:00+03:00", Text = "edited" };
         var result = await UpdateHomeCheckInHandler.Handle(new(row.Id, _owner, request),
-            _repository.Object, _drinks.Object, _unitOfWork.Object, _bus.Object, ct);
+            _repository.Object, _drinks.Object, _addresses.Object, _unitOfWork.Object, _bus.Object, ct);
         Assert.Equal(CoffeePeek.Contract.Enums.CheckInVisibility.Public, result.Data.Visibility);
         Assert.Equal(CoffeePeek.Contract.Enums.CheckInModerationState.Pending, result.Data.ModerationState);
         _bus.Verify(b => b.PublishAsync(It.IsAny<CheckInModerationRequestedEvent>()), Times.Once);
         var hidden = await UpdateHomeCheckInHandler.Handle(new(row.Id, _owner,
             request with { Visibility = CoffeePeek.Contract.Enums.CheckInVisibility.Private }),
-            _repository.Object, _drinks.Object, _unitOfWork.Object, _bus.Object, ct);
+            _repository.Object, _drinks.Object, _addresses.Object, _unitOfWork.Object, _bus.Object, ct);
         Assert.Equal(CoffeePeek.Contract.Enums.CheckInVisibility.Private, hidden.Data.Visibility);
         Assert.Equal(CoffeePeek.Contract.Enums.CheckInModerationState.NotSubmitted, hidden.Data.ModerationState);
         Assert.False(row.IsPubliclyVisible);
@@ -173,7 +232,7 @@ public class HomeCheckInHandlerTests
             {
                 PreparedAt = "2026-09-20T19:15:00Z",
                 CoffeeProductId = Guid.NewGuid()
-            }), _repository.Object, _drinks.Object, _unitOfWork.Object, _bus.Object, ct));
+            }), _repository.Object, _drinks.Object, _addresses.Object, _unitOfWork.Object, _bus.Object, ct));
 
         var result = await UpdateHomeCheckInHandler.Handle(new UpdateHomeCheckInCommand(row.Id, _owner,
             new UpdateHomeCheckInRequest
@@ -181,7 +240,7 @@ public class HomeCheckInHandlerTests
                 PreparedAt = "2026-09-20T19:15:00Z",
                 CoffeeProductId = productId,
                 Text = "new note"
-            }), _repository.Object, _drinks.Object, _unitOfWork.Object, _bus.Object, ct);
+            }), _repository.Object, _drinks.Object, _addresses.Object, _unitOfWork.Object, _bus.Object, ct);
 
         Assert.True(result.IsSuccess);
         Assert.Equal(productId, result.Data.CoffeeProductId);
@@ -208,7 +267,7 @@ public class HomeCheckInHandlerTests
             new UpdateHomeCheckInCommand(row.Id, stranger, new UpdateHomeCheckInRequest
             {
                 PreparedAt = "2026-09-20T19:15:00Z"
-            }), _repository.Object, _drinks.Object, _unitOfWork.Object, _bus.Object, ct));
+            }), _repository.Object, _drinks.Object, _addresses.Object, _unitOfWork.Object, _bus.Object, ct));
         await Assert.ThrowsAsync<NotFoundException>(() => UpdateHomeCheckInHandler.Handle(
             new DeleteHomeCheckInCommand(row.Id, stranger),
             _repository.Object, _unitOfWork.Object, _bus.Object, ct));

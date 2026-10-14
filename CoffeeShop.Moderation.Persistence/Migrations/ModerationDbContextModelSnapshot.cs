@@ -790,8 +790,8 @@ namespace CoffeeShop.Moderation.Persistence.Migrations
                                 .HasColumnType("integer");
 
                             b1.Property<string>("BrewMethodCode")
-                                .HasMaxLength(32)
-                                .HasColumnType("character varying(32)");
+                                .HasMaxLength(100)
+                                .HasColumnType("character varying(100)");
 
                             b1.Property<Guid?>("CoffeeProductId")
                                 .HasColumnType("uuid");

@@ -1,4 +1,6 @@
 using System.Globalization;
+using CoffeePeek.Shops.Application.PublicAddresses;
+using CoffeePeek.Contract.Dtos.PublicAddresses;
 using System.Text.RegularExpressions;
 using CoffeePeek.Shared.Kernel.Exceptions;
 using CoffeePeek.Shops.Domain.Aggregates.CheckInAggregate;
@@ -9,6 +11,18 @@ namespace CoffeePeek.Shops.Application.Features.CheckIn;
 internal static class HomeCheckInInput
 {
     private const string OffsetTimestampPattern = @"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,7})?(?:Z|[+-]\d{2}:\d{2})$";
+
+    public static async Task<string?> ResolveBrewMethodAsync(string? code, IPublicAddressService addresses,
+        CancellationToken ct, string? existingCode = null)
+    {
+        if (code is null) return null;
+        if (!HomeBrewMethodCode.IsValid(code))
+            throw new ValidationException("Invalid home brew method.");
+        // Existing snapshots and old clients remain editable after a catalog rename/removal.
+        if (code == existingCode || HomeBrewMethodCode.IsLegacy(code)) return code;
+        var address = await addresses.ResolveAsync(PublicAddressKind.BrewMethod, code, ct);
+        return address?.Slug ?? throw new ValidationException("Brew method not found in the catalog.");
+    }
 
     public static (DateTime PreparedAtUtc, DateOnly PreparedOn) ParseTime(string? preparedAt, DateOnly? preparedOn)
     {
