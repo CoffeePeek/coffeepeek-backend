@@ -1,3 +1,7 @@
+using System.Reflection;
+using CoffeePeek.Account.Application.Features.Auth.AppleLogin;
+using CoffeePeek.Account.Application.Features.Auth.RegisterUser;
+using CoffeePeek.Account.Infrastructure.Consumers;
 using CoffeePeek.AccountService;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
@@ -14,6 +18,67 @@ namespace CoffeePeek.Account.Infrastructure.Tests;
 // needing live services — any exception other than MissingPreBuiltTypesException means we got past it.
 public class WolverinePreGeneratedHandlersTests
 {
+    [Fact]
+    public void AppleLoginHandler_HasPreGeneratedCodeAndRegistryEntry()
+    {
+        var accountAssembly = typeof(InfrastructureExtensions).Assembly;
+        var registryType = accountAssembly.GetType("Internal.Generated.WolverineHandlers.GeneratedHandlerRegistry");
+        Assert.NotNull(registryType);
+        var registry = (HandlerRegistry)Activator.CreateInstance(registryType)!;
+        var handlerTypes = registry.HandlerTypes();
+        Assert.Contains(typeof(AppleLoginHandler), handlerTypes);
+
+        var generatedAdapterNames = accountAssembly.GetTypes()
+            .Where(t => t.Namespace == "Internal.Generated.WolverineHandlers")
+            .Select(t => t.Name);
+        Assert.Contains(generatedAdapterNames,
+            name => name.StartsWith(nameof(AppleLoginCommand) + "Handler", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void EveryDiscoveredHandler_HasPreGeneratedCode()
+    {
+        // Match the handler assemblies registered by AccountService.InfrastructureExtensions.
+        Assembly[] handlerAssemblies =
+        [
+            typeof(RegisterUserHandler).Assembly,
+            typeof(CheckinCreatedHandler).Assembly
+        ];
+
+        var handlerMethodNames = new HashSet<string>(StringComparer.Ordinal)
+        {
+            "Handle", "HandleAsync", "Handles", "Consume", "Consumes", "ConsumeAsync"
+        };
+
+        var discoveredMessageNames = handlerAssemblies
+            .SelectMany(a => a.GetTypes())
+            .Where(t => t.IsClass && (!t.IsAbstract || t.IsSealed)
+                        && (t.Name.EndsWith("Handler", StringComparison.Ordinal)
+                            || t.Name.EndsWith("Consumer", StringComparison.Ordinal)))
+            .SelectMany(t => t.GetMethods(BindingFlags.Public | BindingFlags.Static | BindingFlags.Instance | BindingFlags.DeclaredOnly))
+            .Where(m => handlerMethodNames.Contains(m.Name))
+            .Select(m => m.GetParameters().FirstOrDefault()?.ParameterType)
+            .Where(pt => pt?.Namespace?.StartsWith("CoffeePeek", StringComparison.Ordinal) == true)
+            .Select(pt => pt!.Name)
+            .ToHashSet(StringComparer.Ordinal);
+
+        var generatedNames = typeof(InfrastructureExtensions).Assembly
+            .GetTypes()
+            .Where(t => t.Namespace == "Internal.Generated.WolverineHandlers")
+            .Select(t => t.Name)
+            .ToArray();
+
+        var missing = discoveredMessageNames
+            .Where(msg => !generatedNames.Any(g => g.StartsWith(msg + "Handler", StringComparison.Ordinal)))
+            .OrderBy(x => x, StringComparer.Ordinal)
+            .ToArray();
+
+        Assert.True(missing.Length == 0,
+            "Internal/Generated/WolverineHandlers/ is out of sync — missing pre-generated code for: "
+            + string.Join(", ", missing)
+            + ". Run 'dotnet run -- codegen write' in CoffeePeek.AccountService and commit the output.");
+    }
+
     [Fact]
     public async Task ProductionAccountHost_StartsPastWolverineHandlerCheck()
     {
