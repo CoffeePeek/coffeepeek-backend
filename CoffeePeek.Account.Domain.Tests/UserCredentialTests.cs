@@ -125,6 +125,17 @@ public class UserCredentialTests
     }
 
     [Fact]
+    public void ValidatePassword_ForExternalCredential_ReturnsFalseWithoutCallingHasher()
+    {
+        var credential = UserCredential.CreateExternal(Email.Create("user@example.com"), "google", "provider-id");
+        var hasher = new Mock<IPasswordHasherService>(MockBehavior.Strict);
+
+        credential.ValidatePassword("submitted-password", hasher.Object).Should().BeFalse();
+
+        hasher.VerifyNoOtherCalls();
+    }
+
+    [Fact]
     public void LinkExternalProvider_WithNoExistingProvider_ShouldSucceed()
     {
         // Arrange

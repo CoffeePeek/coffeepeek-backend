@@ -30,12 +30,11 @@ public sealed class TelegramModerationClient(HttpClient httpClient, IOptions<Tel
                 [new { text = "Открыть очередь", url = $"{settings.AdminBaseUrl.TrimEnd('/')}/check-ins?status=Pending" }]
             } };
         }
-        using var response = await PostJsonAsync("sendMessage", new
-        {
-            chat_id = settings.ChatId,
-            text = Format(submission, review, settings),
-            reply_markup = markup
-        }, ct);
+        var text = Format(submission, review, settings);
+        var message = markup is null
+            ? (object)new { chat_id = settings.ChatId, text }
+            : new { chat_id = settings.ChatId, text, reply_markup = markup };
+        using var response = await PostJsonAsync("sendMessage", message, ct);
         if (review is null) return;
         var position = 0;
         foreach (var photo in review.ReviewPhotos.OrderBy(p => p.SortIndex))
@@ -98,14 +97,49 @@ public sealed class TelegramModerationClient(HttpClient httpClient, IOptions<Tel
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", settings.BotToken);
         using var response = await httpClient.SendAsync(request, ct);
         if (!response.IsSuccessStatusCode)
-            throw new HttpRequestException($"Telegram {method} failed with HTTP {(int)response.StatusCode}.");
+        {
+            var description = await ReadErrorDescriptionAsync(response, settings.BotToken, ct);
+            throw new HttpRequestException($"Telegram {method} failed with HTTP {(int)response.StatusCode}{description}.",
+                null, response.StatusCode);
+        }
         var body = await JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync(ct), cancellationToken: ct);
         if (!body.RootElement.TryGetProperty("ok", out var ok) || ok.ValueKind != JsonValueKind.True)
         {
+            var description = ErrorDescription(body.RootElement, settings.BotToken);
             body.Dispose();
-            throw new HttpRequestException($"Telegram {method} returned an unsuccessful response.");
+            throw new HttpRequestException($"Telegram {method} returned an unsuccessful response{description}.",
+                null, response.StatusCode);
         }
         return body;
+    }
+
+    private static async Task<string> ReadErrorDescriptionAsync(HttpResponseMessage response, string botToken,
+        CancellationToken ct)
+    {
+        try
+        {
+            using var body = await JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync(ct),
+                cancellationToken: ct);
+            return ErrorDescription(body.RootElement, botToken);
+        }
+        catch (JsonException)
+        {
+            // A relay can return an HTML error page. Keep its body, which may contain credentials, out of logs.
+            return "";
+        }
+    }
+
+    private static string ErrorDescription(JsonElement body, string botToken)
+    {
+        if (body.ValueKind != JsonValueKind.Object ||
+            !body.TryGetProperty("description", out var description) ||
+            description.ValueKind != JsonValueKind.String)
+            return "";
+
+        var value = description.GetString()!
+            .Replace(botToken, "[redacted]", StringComparison.Ordinal);
+        value = new string(value.Select(c => char.IsControl(c) ? ' ' : c).ToArray()).Trim();
+        return value.Length == 0 ? "" : $": {value[..Math.Min(value.Length, 200)]}";
     }
 
     public static string Format(ModerationSubmissionCreated submission, ModerationReview? review = null,

@@ -30,6 +30,7 @@ public class TelegramModerationClientTests
         var message = body.RootElement.GetProperty("text").GetString();
         message.Should().Contain(id.ToString()).And.Contain("Test Cafe").And.Contain("Main street");
         message.Should().NotContain("Test\n Cafe");
+        body.RootElement.TryGetProperty("reply_markup", out _).Should().BeFalse();
     }
 
     [Fact]
@@ -59,6 +60,7 @@ public class TelegramModerationClientTests
 
     [Theory]
     [InlineData(HttpStatusCode.OK, "{\"ok\":false,\"description\":\"rejected\"}", false)]
+    [InlineData(HttpStatusCode.BadRequest, "{\"ok\":false,\"description\":\"Bad Request: chat not found\"}", false)]
     [InlineData(HttpStatusCode.Forbidden, "{\"ok\":false}", false)]
     [InlineData(HttpStatusCode.TooManyRequests, "{\"ok\":false}", false)]
     [InlineData(HttpStatusCode.BadGateway, "unavailable", false)]
@@ -67,7 +69,7 @@ public class TelegramModerationClientTests
     [InlineData(HttpStatusCode.TooManyRequests, "{\"ok\":false}", true)]
     [InlineData(HttpStatusCode.BadGateway, "unavailable", true)]
     [InlineData(HttpStatusCode.TemporaryRedirect, "redirect", true)]
-    public async Task SendAsync_UnsuccessfulTelegramReplyThrowsForWolverineRetry(HttpStatusCode status, string response,
+    public async Task SendAsync_UnsuccessfulTelegramReplyThrows(HttpStatusCode status, string response,
         bool useRelay)
     {
         var handler = new ReplyHandler(status, response);
@@ -83,6 +85,44 @@ public class TelegramModerationClientTests
 
         var error = await send.Should().ThrowAsync<HttpRequestException>();
         error.Which.ToString().Should().NotContain("test-token");
+        error.Which.StatusCode.Should().Be(status);
+    }
+
+    [Fact]
+    public async Task SendAsync_BadRequestIncludesSanitizedTelegramReason()
+    {
+        const string token = "123456:fake-test-token";
+        var description = $"Bad Request: {token}\r\nchat not found";
+        var handler = new ReplyHandler(HttpStatusCode.BadRequest,
+            JsonSerializer.Serialize(new { ok = false, error_code = 400, description }));
+        using var http = new HttpClient(handler) { BaseAddress = new Uri("https://api.telegram.org/") };
+        var client = CreateClient(http, new TelegramModerationOptions { BotToken = token, ChatId = "123" });
+
+        var send = () => client.SendAsync(new ModerationSubmissionCreated(ModerationSubmissionKind.Shop,
+            Guid.NewGuid(), Guid.NewGuid()), TestContext.Current.CancellationToken);
+
+        var error = await send.Should().ThrowAsync<HttpRequestException>();
+        error.Which.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        error.Which.Message.Should().Contain("Bad Request:").And.Contain("chat not found")
+            .And.Contain("[redacted]").And.NotContain(token).And.NotContain("\r").And.NotContain("\n");
+    }
+
+    [Fact]
+    public async Task SendAsync_NonJsonRelayErrorKeepsStatusWithoutBody()
+    {
+        var handler = new ReplyHandler(HttpStatusCode.BadRequest, "<html>private diagnostic</html>");
+        using var http = new HttpClient(handler) { BaseAddress = new Uri("https://api.telegram.org/") };
+        var client = CreateClient(http, new TelegramModerationOptions
+        {
+            BotToken = "test-token", ChatId = "123", RelayUrl = "https://relay.example/telegram/sendMessage"
+        });
+
+        var send = () => client.SendAsync(new ModerationSubmissionCreated(ModerationSubmissionKind.Shop,
+            Guid.NewGuid(), Guid.NewGuid()), TestContext.Current.CancellationToken);
+
+        var error = await send.Should().ThrowAsync<HttpRequestException>();
+        error.Which.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        error.Which.Message.Should().NotContain("private diagnostic").And.NotContain("test-token");
     }
 
     private static TelegramModerationClient CreateClient(HttpClient http, TelegramModerationOptions settings) =>

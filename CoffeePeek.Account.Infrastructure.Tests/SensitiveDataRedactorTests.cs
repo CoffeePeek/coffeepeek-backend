@@ -1,3 +1,5 @@
+using CoffeePeek.Account.Application.Features.Auth.Login;
+using CoffeePeek.Account.Application.Features.Auth.RegisterUser;
 using CoffeePeek.Shared.Web.Logging;
 using FluentAssertions;
 using Serilog;
@@ -36,6 +38,18 @@ public class SensitiveDataRedactorTests
     }
 
     [Fact]
+    public void Redact_RemovesEntireStringifiedAuthCommandWithSecretAssignment()
+    {
+        const string password = "secret, with } record delimiters";
+        var command = new RegisterUserCommand("testuser", "user@example.com", password);
+        var recordLog = $"Failed handling {command}";
+
+        SensitiveDataRedactor.Redact(recordLog).Should().Be("[REDACTED]");
+        SensitiveDataRedactor.Redact("{\"Password\":\"opaque value\"}").Should().Be("[REDACTED]");
+        SensitiveDataRedactor.Redact("Password login is unavailable").Should().Be("Password login is unavailable");
+    }
+
+    [Fact]
     public void Enricher_RedactsStructuredLogProperties()
     {
         const string destination =
@@ -54,6 +68,35 @@ public class SensitiveDataRedactorTests
         rendered.Should().Contain("access_token=[REDACTED]");
         rendered.Should().NotContain("eyJ");
         rendered.Should().Contain("id=abc");
+    }
+
+    [Fact]
+    public void Enricher_RedactsCredentialFieldsInWolverineCommandLogs()
+    {
+        const string password = "arbitrary password, with } delimiters";
+        const string idToken = "opaque-provider-token";
+        const string refreshToken = "opaque-refresh-token";
+        var command = new LoginUserCommand("user@example.com", password);
+        var sink = new CollectingSink();
+
+        using var logger = new LoggerConfiguration()
+            .Enrich.With<SensitiveDataRedactingEnricher>()
+            .WriteTo.Sink(sink)
+            .CreateLogger();
+
+        logger.Error("Failed {Command} {@Request} {RefreshToken} {@Metadata}",
+            command,
+            new { Email = command.Email, Password = password, IdToken = idToken },
+            refreshToken,
+            new Dictionary<string, string> { ["password"] = password, ["safe"] = "visible" });
+
+        var rendered = sink.Events.Single().RenderMessage();
+        rendered.Should().Contain("[REDACTED]");
+        rendered.Should().Contain("user@example.com");
+        rendered.Should().Contain("visible");
+        rendered.Should().NotContain(password);
+        rendered.Should().NotContain(idToken);
+        rendered.Should().NotContain(refreshToken);
     }
 
     private sealed class CollectingSink : ILogEventSink

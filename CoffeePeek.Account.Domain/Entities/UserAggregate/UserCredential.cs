@@ -108,6 +108,9 @@ public partial record UserCredential
     
     public bool ValidatePassword(string password, IPasswordHasherService passwordHasher)
     {
+        if (!HasPasswordAuth)
+            return false;
+
         return passwordHasher.VerifyPassword(PasswordHash, password);
     }
 

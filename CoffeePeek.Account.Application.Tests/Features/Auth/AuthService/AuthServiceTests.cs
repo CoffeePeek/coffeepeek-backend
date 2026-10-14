@@ -98,6 +98,19 @@ public class AuthServiceTests
     }
 
     [Fact]
+    public async Task LoginAsync_WithPasswordlessExternalAccount_ReturnsSameErrorAsWrongPassword()
+    {
+        var user = DomainUser.CreateExternal("user@example.com", "google", "provider-id");
+        _userRepoMock.Setup(r => r.GetByEmail("user@example.com", _ct)).ReturnsAsync(user);
+
+        Func<Task> act = () => CreateSut().LoginAsync("user@example.com", "submitted-password", "device", "ip", _ct);
+
+        await act.Should().ThrowAsync<UnauthorizedException>().WithMessage("Invalid credentials");
+        _hasherMock.VerifyNoOtherCalls();
+        _jwtMock.VerifyNoOtherCalls();
+    }
+
+    [Fact]
     public async Task LoginAsync_WithUnconfirmedEmail_ThrowsUnauthorizedException()
     {
         // Arrange — Register creates user with EmailConfirmed=false

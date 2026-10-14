@@ -23,6 +23,16 @@ public class LoginUserHandlerTests
         new(email, password, "Chrome", "127.0.0.1");
 
     [Fact]
+    public void Command_ToString_DoesNotExposeSubmittedPassword()
+    {
+        const string password = "secret, with } delimiters and spaces";
+        var command = CreateCommand(password: password);
+
+        command.ToString().Should().Contain("[REDACTED]");
+        command.ToString().Should().NotContain(password);
+    }
+
+    [Fact]
     public async Task Handle_WithValidCredentials_ReturnsLoginResponse()
     {
         // Arrange

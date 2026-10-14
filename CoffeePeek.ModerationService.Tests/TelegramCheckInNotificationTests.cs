@@ -70,7 +70,7 @@ public class TelegramCheckInNotificationTests
             TestContext.Current.CancellationToken);
 
         using var message = JsonDocument.Parse(Assert.Single(handler.Requests).Body);
-        Assert.Equal(JsonValueKind.Null, message.RootElement.GetProperty("reply_markup").ValueKind);
+        Assert.False(message.RootElement.TryGetProperty("reply_markup", out _));
         Assert.Contains("Текст: нет", message.RootElement.GetProperty("text").GetString());
     }
 

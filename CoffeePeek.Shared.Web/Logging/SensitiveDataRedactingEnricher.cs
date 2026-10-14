@@ -4,7 +4,7 @@ using Serilog.Events;
 namespace CoffeePeek.Shared.Web.Logging;
 
 /// <summary>
-/// Walks structured log properties and redacts secrets (JWTs, access_token query params).
+/// Walks structured log properties and redacts secrets by value and property name.
 /// YARP logs the destination URL including SignalR's access_token query string.
 /// </summary>
 public sealed class SensitiveDataRedactingEnricher : ILogEventEnricher
@@ -14,13 +14,18 @@ public sealed class SensitiveDataRedactingEnricher : ILogEventEnricher
         foreach (var key in logEvent.Properties.Keys.ToArray())
         {
             var original = logEvent.Properties[key];
-            var redacted = Redact(original);
+            var redacted = Redact(original, key);
             if (!ReferenceEquals(original, redacted))
                 logEvent.AddOrUpdateProperty(new LogEventProperty(key, redacted));
         }
     }
 
-    private static LogEventPropertyValue Redact(LogEventPropertyValue value) =>
+    private static LogEventPropertyValue Redact(LogEventPropertyValue value, string? propertyName = null) =>
+        IsSensitivePropertyName(propertyName)
+            ? new ScalarValue("[REDACTED]")
+            : RedactValue(value);
+
+    private static LogEventPropertyValue RedactValue(LogEventPropertyValue value) =>
         value switch
         {
             ScalarValue { Value: string text } =>
@@ -33,6 +38,25 @@ public sealed class SensitiveDataRedactingEnricher : ILogEventEnricher
                 RedactDictionary(dictionary),
             _ => value
         };
+
+    private static bool IsSensitivePropertyName(string? name)
+    {
+        if (name is null)
+            return false;
+
+        var normalized = name.Replace("_", "", StringComparison.Ordinal)
+            .Replace("-", "", StringComparison.Ordinal);
+
+        return normalized.Contains("password", StringComparison.OrdinalIgnoreCase) ||
+               normalized.Contains("credential", StringComparison.OrdinalIgnoreCase) ||
+               normalized.EndsWith("token", StringComparison.OrdinalIgnoreCase) ||
+               normalized.EndsWith("secret", StringComparison.OrdinalIgnoreCase) ||
+               normalized.EndsWith("apikey", StringComparison.OrdinalIgnoreCase) ||
+               normalized.EndsWith("nonce", StringComparison.OrdinalIgnoreCase) ||
+               normalized.Equals("authorization", StringComparison.OrdinalIgnoreCase) ||
+               normalized.Equals("cookie", StringComparison.OrdinalIgnoreCase) ||
+               normalized.Equals("setcookie", StringComparison.OrdinalIgnoreCase);
+    }
 
     private static LogEventPropertyValue RedactScalar(string text, LogEventPropertyValue original)
     {
@@ -60,7 +84,7 @@ public sealed class SensitiveDataRedactingEnricher : ILogEventEnricher
         for (var i = 0; i < structure.Properties.Count; i++)
         {
             var property = structure.Properties[i];
-            var redacted = Redact(property.Value);
+            var redacted = Redact(property.Value, property.Name);
             changed |= !ReferenceEquals(redacted, property.Value);
             props[i] = ReferenceEquals(redacted, property.Value)
                 ? property
@@ -88,7 +112,7 @@ public sealed class SensitiveDataRedactingEnricher : ILogEventEnricher
                 }
             }
 
-            var redactedValue = Redact(element);
+            var redactedValue = Redact(element, key.Value as string);
             if (!ReferenceEquals(redactedValue, element))
                 changed = true;
 
