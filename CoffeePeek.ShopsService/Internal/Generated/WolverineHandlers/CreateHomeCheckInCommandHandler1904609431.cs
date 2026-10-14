@@ -40,6 +40,7 @@ namespace Internal.Generated.WolverineHandlers
             var queryCheckInRepository = new CoffeePeek.Shops.Persistance.Repositories.QueryCheckInRepository(shopsDbContext);
             // This service has been marked as requiring service location independent of Wolverine's ability to use constructor injection of everything else
             var drinkCatalog = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<CoffeePeek.Shared.Kernel.Drinks.IDrinkCatalog>(serviceScope.ServiceProvider);
+            var publicAddressService = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<CoffeePeek.Shops.Application.PublicAddresses.IPublicAddressService>(serviceScope.ServiceProvider);
             // The actual message body
             var createHomeCheckInCommand = (CoffeePeek.Shops.Application.Features.CheckIn.CreateHomeCheckInCommand)context.Envelope.Message;
 
@@ -59,7 +60,7 @@ namespace Internal.Generated.WolverineHandlers
                 System.Diagnostics.Activity.Current?.SetTag("handler.type", "CoffeePeek.Shops.Application.Features.CheckIn.CreateHomeCheckInHandler");
 
                 // The actual message execution
-                var outgoing1 = await CoffeePeek.Shops.Application.Features.CheckIn.CreateHomeCheckInHandler.Handle(createHomeCheckInCommand, queryCheckInRepository, drinkCatalog, mediaUploadedPhotoLookup, unitOfWorkOfShopsDbContext, context, cancellation).ConfigureAwait(false);
+                var outgoing1 = await CoffeePeek.Shops.Application.Features.CheckIn.CreateHomeCheckInHandler.Handle(createHomeCheckInCommand, queryCheckInRepository, drinkCatalog, publicAddressService, mediaUploadedPhotoLookup, unitOfWorkOfShopsDbContext, context, cancellation).ConfigureAwait(false);
 
 
                 // Outgoing, cascaded message

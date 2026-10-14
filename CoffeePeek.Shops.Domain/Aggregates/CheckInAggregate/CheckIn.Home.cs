@@ -76,8 +76,7 @@ public sealed partial class CheckIn
             throw new DomainException("PreparedAt must be a valid UTC time and cannot be in the future.");
         if (preparedOn == default || Math.Abs(preparedOn.DayNumber - DateOnly.FromDateTime(preparedAtUtc).DayNumber) > 1)
             throw new DomainException("PreparedOn must be the local preparation date.");
-        if (brewMethodCode is not null && brewMethodCode is not
-            ("espresso" or "pour_over" or "batch_drip" or "moka_pot" or "cezve" or "aeropress" or "french_press" or "other"))
+        if (brewMethodCode is not null && !HomeBrewMethodCode.IsValid(brewMethodCode))
             throw new DomainException("Unknown home brew method.");
         if (coffeeProductId == Guid.Empty) throw new DomainException("CoffeeProductId must not be empty.");
         var beanName = beanNameSnapshot?.Trim();

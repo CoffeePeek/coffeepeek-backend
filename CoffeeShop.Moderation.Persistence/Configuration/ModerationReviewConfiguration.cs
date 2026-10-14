@@ -41,7 +41,7 @@ public class ModerationReviewConfiguration : IEntityTypeConfiguration<Moderation
         entity.OwnsOne(r => r.Home, home =>
         {
             home.Property(h => h.BeanName).HasMaxLength(250);
-            home.Property(h => h.BrewMethodCode).HasMaxLength(32);
+            home.Property(h => h.BrewMethodCode).HasMaxLength(100);
             home.Property(h => h.DoseGrams).HasPrecision(8, 2);
         });
         entity.Navigation(r => r.Home).IsRequired(false);

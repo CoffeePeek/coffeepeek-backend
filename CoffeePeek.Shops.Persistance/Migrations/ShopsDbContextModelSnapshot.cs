@@ -264,8 +264,8 @@ namespace CoffeePeek.Shops.Persistance.Migrations
                         .HasColumnType("integer");
 
                     b.Property<string>("BrewMethodCode")
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
                     b.Property<Guid?>("CoffeeProductId")
                         .HasColumnType("uuid");
@@ -394,7 +394,7 @@ namespace CoffeePeek.Shops.Persistance.Migrations
                         {
                             t.HasCheckConstraint("CK_CanonicalCheckIns_CompleteContent", "\"Note\" IS NOT NULL AND length(btrim(\"Note\")) <= 1000 AND ((\"Rating_Place\" IS NULL AND \"Rating_Service\" IS NULL AND \"Rating_Coffee\" IS NULL AND \"Rating_AverageRating\" IS NULL) OR (\"Rating_Place\" IS NOT NULL AND \"Rating_Service\" IS NOT NULL AND \"Rating_Coffee\" IS NOT NULL AND \"Rating_AverageRating\" IS NOT NULL AND \"Rating_Place\" BETWEEN 1 AND 5 AND \"Rating_Service\" BETWEEN 1 AND 5 AND \"Rating_Coffee\" BETWEEN 1 AND 5))");
 
-                            t.HasCheckConstraint("CK_CanonicalCheckIns_HomeDetails", "(\"BrewMethodCode\" IS NULL OR \"BrewMethodCode\" IN ('espresso', 'pour_over', 'batch_drip', 'moka_pot', 'cezve', 'aeropress', 'french_press', 'other')) AND (\"CoffeeProductId\" IS NULL OR \"BeanNameSnapshot\" IS NOT NULL AND length(btrim(\"BeanNameSnapshot\")) > 0) AND (\"DoseGrams\" IS NULL OR \"DoseGrams\" > 0 AND \"DoseGrams\" <= 10000) AND (\"BrewDurationSeconds\" IS NULL OR \"BrewDurationSeconds\" BETWEEN 1 AND 604800) AND (\"TasteScore\" IS NULL OR \"TasteScore\" BETWEEN 1 AND 5)");
+                            t.HasCheckConstraint("CK_CanonicalCheckIns_HomeDetails", "(\"BrewMethodCode\" IS NULL OR length(\"BrewMethodCode\") BETWEEN 1 AND 100) AND (\"CoffeeProductId\" IS NULL OR \"BeanNameSnapshot\" IS NOT NULL AND length(btrim(\"BeanNameSnapshot\")) > 0) AND (\"DoseGrams\" IS NULL OR \"DoseGrams\" > 0 AND \"DoseGrams\" <= 10000) AND (\"BrewDurationSeconds\" IS NULL OR \"BrewDurationSeconds\" BETWEEN 1 AND 604800) AND (\"TasteScore\" IS NULL OR \"TasteScore\" BETWEEN 1 AND 5)");
 
                             t.HasCheckConstraint("CK_CanonicalCheckIns_KindShape", "(\"Kind\" = 0 AND \"ShopId\" IS NOT NULL AND \"PreparedOn\" IS NULL AND \"BrewMethodCode\" IS NULL AND \"CoffeeProductId\" IS NULL AND \"BeanNameSnapshot\" IS NULL AND \"DoseGrams\" IS NULL AND \"BrewDurationSeconds\" IS NULL AND \"TasteScore\" IS NULL) OR (\"Kind\" = 1 AND \"ShopId\" IS NULL AND \"PreparedOn\" IS NOT NULL AND \"Rating_Place\" IS NULL AND \"Rating_Service\" IS NULL AND \"Rating_Coffee\" IS NULL AND \"Rating_AverageRating\" IS NULL)");
 
