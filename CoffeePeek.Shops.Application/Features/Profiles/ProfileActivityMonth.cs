@@ -39,16 +39,63 @@ public sealed class ProfileActivityMonth
         }
     }
 
-    private static DateTime BoundaryUtc(DateTime localBoundary, TimeZoneInfo timeZone)
+    internal static DateTime BoundaryUtc(DateTime localBoundary, TimeZoneInfo timeZone)
     {
-        // A month can start during a skipped midnight. Begin at its first valid instant.
-        while (timeZone.IsInvalidTime(localBoundary))
-            localBoundary = localBoundary.AddMinutes(1);
+        // Historical base-offset changes can skip/repeat midnight without being reported
+        // by IsInvalidTime/IsAmbiguousTime. Verify each possible offset using UTC -> local.
+        var offsets = new HashSet<TimeSpan> { timeZone.BaseUtcOffset };
+        foreach (var rule in timeZone.GetAdjustmentRules())
+        {
+            var standardOffset = timeZone.BaseUtcOffset + rule.BaseUtcOffsetDelta;
+            offsets.Add(standardOffset);
+            offsets.Add(standardOffset + rule.DaylightDelta);
+        }
 
-        // If midnight repeats, include both occurrences at the start and exclude both at the end.
-        if (timeZone.IsAmbiguousTime(localBoundary))
-            return new DateTimeOffset(localBoundary, timeZone.GetAmbiguousTimeOffsets(localBoundary).Max()).UtcDateTime;
+        DateTime? earliestMatch = null;
+        DateTime? before = null;
+        DateTime? after = null;
+        foreach (var offset in offsets)
+        {
+            var candidate = DateTime.SpecifyKind(localBoundary - offset, DateTimeKind.Utc);
+            var local = TimeZoneInfo.ConvertTimeFromUtc(candidate, timeZone);
+            if (local == localBoundary)
+            {
+                // Include both occurrences of a repeated midnight at the start, and
+                // exclude both at the end, by choosing its earliest UTC occurrence.
+                if (earliestMatch is null || candidate < earliestMatch.Value)
+                    earliestMatch = candidate;
+            }
+            else if (local < localBoundary)
+            {
+                if (before is null || candidate > before.Value)
+                    before = candidate;
+            }
+            else if (after is null || candidate < after.Value)
+            {
+                after = candidate;
+            }
+        }
 
-        return TimeZoneInfo.ConvertTimeToUtc(localBoundary, timeZone);
+        if (earliestMatch is not null)
+            return earliestMatch.Value;
+        if (before is null || after is null || before >= after)
+            throw new InvalidTimeZoneException("Cannot resolve the local month boundary.");
+
+        // Midnight is in a forward gap. Find the first valid instant of the month,
+        // including transitions that skip only part of the hour around midnight.
+        // System zone transitions have second precision. Windows historical rules may
+        // end at :59.999; do not treat that inclusive end as the next month beginning.
+        var lower = before.Value.Ticks / TimeSpan.TicksPerSecond;
+        var upper = after.Value.Ticks / TimeSpan.TicksPerSecond;
+        while (upper - lower > 1)
+        {
+            var middle = lower + (upper - lower) / 2;
+            if (TimeZoneInfo.ConvertTimeFromUtc(new DateTime(middle * TimeSpan.TicksPerSecond, DateTimeKind.Utc), timeZone) < localBoundary)
+                lower = middle;
+            else
+                upper = middle;
+        }
+
+        return new DateTime(upper * TimeSpan.TicksPerSecond, DateTimeKind.Utc);
     }
 }

@@ -150,6 +150,35 @@ public sealed class ProfileActivityQueriesTests
         Assert.Contains("\"UserId\" =", sql);
     }
 
+    [Theory]
+    [InlineData(9, 3)]
+    [InlineData(10, 2)]
+    public async Task MidnightGapDoesNotLoseOrDuplicateCheckInsBetweenAdjacentMonths(int month, int expectedCount)
+    {
+        await using var db = Database();
+        var author = Guid.NewGuid();
+        var shop = Shop();
+        db.Shops.Add(shop);
+        db.CheckIns.AddRange(new[]
+        {
+            Utc(2017, 9, 1, 4),
+            Utc(2017, 10, 1, 3, 30),
+            Utc(2017, 10, 1, 4).AddMilliseconds(-1),
+            Utc(2017, 10, 1, 4),
+            Utc(2017, 10, 31, 12),
+            Utc(2017, 11, 1, 3)
+        }.Select(visit => Published(author, shop.Id, visit)));
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        var result = await new ProfileActivityQueries(db).GetAsync(author,
+            ProfileActivityMonth.Parse(2017, month, "America/Asuncion"), TestContext.Current.CancellationToken);
+
+        Assert.Equal(expectedCount, result.TotalCheckIns);
+        Assert.Equal(expectedCount, result.Days.Sum(day => day.CheckInCount));
+        Assert.Equal(2, result.ActiveDays);
+        Assert.Equal(1, result.Days[0].CheckInCount);
+        Assert.Equal(expectedCount - 1, result.Days[^1].CheckInCount);
+    }
     private static ShopsDbContext Database() => new(new DbContextOptionsBuilder<ShopsDbContext>()
         .UseInMemoryDatabase(Guid.NewGuid().ToString()).Options);
 
