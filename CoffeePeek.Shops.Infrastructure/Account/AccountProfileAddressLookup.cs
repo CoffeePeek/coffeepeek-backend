@@ -10,4 +10,6 @@ public sealed class AccountProfileAddressLookup(PublicAddressHttpClient client) 
         client.ResolveAsync("account-user-lookup", "users", slug, ct);
     public Task<PublicAddressMetadata[]> GetByIdsAsync(Guid[] ids, CancellationToken ct) =>
         client.GetByIdsAsync("account-user-lookup", "users", ids, ct);
+    public Task<PublicProfileSummaryDto[]> GetProfilesByIdsAsync(Guid[] ids, CancellationToken ct) =>
+        client.GetUserProfilesByIdsAsync("account-user-lookup", ids, ct);
 }

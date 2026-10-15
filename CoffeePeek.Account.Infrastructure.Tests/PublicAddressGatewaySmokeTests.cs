@@ -35,6 +35,7 @@ using CoffeePeek.Account.Application.Common.Interfaces;
 using CoffeePeek.Account.Application.Features.User.GetProfile;
 using CoffeePeek.Account.Application.Mapper;
 using CoffeePeek.Account.Domain.Entities.UserAggregate;
+using AccountPhoto = CoffeePeek.Account.Domain.Entities.PhotoMetadata;
 using CoffeePeek.Account.Persistence.Configuration;
 using CoffeePeek.Account.Persistence.PublicAddresses;
 using CoffeePeek.Account.Persistence.Repositories;
@@ -85,12 +86,15 @@ public sealed class PublicAddressGatewaySmokeTests
         var database = Guid.NewGuid().ToString("N");
         var accountFlags = new AccountFlags { Enabled = true };
         var shopsFlags = new ShopsFlags();
+        var mediaOptions = new MediaPublicUrlOptions { PublicEndpoint = "https://media.example.com" };
+        const string avatarUrl = "https://media.example.com/coffeepeek.avatars/example-author.jpg";
         AccountDbContext Account() => new(new DbContextOptionsBuilder<AccountDbContext>()
             .UseInMemoryDatabase(database + "-account", root).Options, MsOptions.Create(accountFlags));
         ShopsDbContext Shops() => new(new DbContextOptionsBuilder<ShopsDbContext>()
             .UseInMemoryDatabase(database + "-shops", root).Options, MsOptions.Create(shopsFlags));
 
         var user = User.CreateExternal("private@example.com", "Google", "smoke", "Ivan.Petrov");
+        user.UpdateAvatar(AccountPhoto.Create("avatar.jpg", "image/jpeg", "example-author.jpg", 100));
         var blocked = User.CreateExternal("blocked@example.com", "Google", "blocked", "Boris.Blocked");
         var deleted = User.CreateExternal("deleted@example.com", "Google", "deleted", "Dmitry.Deleted");
         await using (var db = Account())
@@ -158,8 +162,7 @@ public sealed class PublicAddressGatewaySmokeTests
             {
                 await using var db = Account();
                 return await new GetPublicUserProfileHandler().Handle((GetPublicUserProfileCommand)command,
-                    new UserRepository(db), MapsterConfiguration.CreateMapper(new MediaPublicUrlOptions
-                    { PublicEndpoint = "http://localhost" }), ct);
+                    new UserRepository(db), MapsterConfiguration.CreateMapper(mediaOptions), ct);
             });
 
         bus.Setup(x => x.InvokeAsync<Response<GetCoffeeShopResponse>>(It.IsAny<object>(), It.IsAny<CancellationToken>(), It.IsAny<TimeSpan?>()))
@@ -206,6 +209,8 @@ public sealed class PublicAddressGatewaySmokeTests
                 });
             });
         var checkInQueries = new Mock<ICheckInQueries>();
+        checkInQueries.Setup(x => x.GetUnifiedByIdAsync(visit.Id, It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(visit);
         checkInQueries.Setup(x => x.GetUnifiedByUserAsync(user.Id, 1, 10, null, null, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new CheckInPage([visit with { Visibility = CheckInVisibility.Private,
                 ModerationState = CheckInModerationState.NotSubmitted }], 1));
@@ -214,6 +219,7 @@ public sealed class PublicAddressGatewaySmokeTests
         var accountBuilder = ControllerHost(typeof(PublicUserAddressesController));
         accountBuilder.Services.AddScoped(_ => Account());
         accountBuilder.Services.AddScoped<IProfileAddressService, ProfileAddressService>();
+        accountBuilder.Services.AddSingleton(MsOptions.Create(mediaOptions));
         accountBuilder.Services.AddSingleton(bus.Object);
         accountBuilder.Services.AddSingleton(Mock.Of<IUserContext>());
         await using var account = accountBuilder.Build();
@@ -333,12 +339,18 @@ public sealed class PublicAddressGatewaySmokeTests
         await Get($"/api/CoffeeShops/{shop.Id}", HttpStatusCode.BadRequest, "shops");
         using (var oldLookup = await http.GetAsync($"/api/CoffeeShops/{shop.Id}/public-address", Ct))
             oldLookup.StatusCode.Should().Be(HttpStatusCode.NotFound);
-        using (var internalLookup = await http.GetAsync($"/internal/public-addresses/users?ids={user.Id}", Ct))
+        foreach (var route in new[] { "users", "users/profiles" })
+        {
+            using var internalLookup = await http.GetAsync($"/internal/public-addresses/{route}?ids={user.Id}", Ct);
             internalLookup.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        }
         using (var internalHttp = new HttpClient { BaseAddress = new Uri(Address(account)) })
         {
-            using var denied = await internalHttp.GetAsync($"/internal/public-addresses/users?ids={user.Id}", Ct);
-            denied.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+            foreach (var route in new[] { "users", "users/profiles" })
+            {
+                using var denied = await internalHttp.GetAsync($"/internal/public-addresses/{route}?ids={user.Id}", Ct);
+                denied.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+            }
         }
 
         accountFlags.Enabled = true;
@@ -348,6 +360,7 @@ public sealed class PublicAddressGatewaySmokeTests
         canonical["address"]!["canonicalPath"]!.GetValue<string>().Should().Be("/users/petr");
         canonical["address"]!["revision"]!.GetValue<long>().Should().Be(2);
         canonical["data"]!["userName"]!.GetValue<string>().Should().Be("Petr");
+        canonical["data"]!["avatarUrl"]!.GetValue<string>().Should().Be(avatarUrl);
         canonical["data"]!.AsObject().ContainsKey("email").Should().BeFalse();
         // Browsing more than 20 profiles must not consume the login/token-refresh bucket.
         for (var i = 0; i < 21; i++) await Get("/api/Users/by-slug/petr", HttpStatusCode.OK, "account");
@@ -355,11 +368,15 @@ public sealed class PublicAddressGatewaySmokeTests
         var shopDetail = await Get("/api/CoffeeShops/by-slug/26-october-16", HttpStatusCode.OK, "shops");
         NoInternalIds(shopDetail);
         shopDetail!["data"]!["checkIns"]![0]!["author"]!["slug"]!.GetValue<string>().Should().Be("petr");
+        shopDetail["data"]!["checkIns"]![0]!["authorAvatarUrl"]!.GetValue<string>().Should().Be(avatarUrl);
         shopDetail["data"]!["checkIns"]![0]!["id"]!.GetValue<Guid>().Should().Be(visit.Id);
         shopDetail["data"]!["checkIns"]![0]!["drinkSlug"]!.GetValue<string>().Should().Be("other");
         shopDetail["data"]!["checkIns"]![0]!["customDrinkName"]!.GetValue<string>().Should().Be("Эспрессо-тоник");
         shopDetail["data"]!["checkIns"]![0]!["drinkNameRu"]!.GetValue<string>().Should().Be("Эспрессо-тоник");
         shopDetail["data"]!["checkIns"]![0]!["drinkNameEn"]!.GetValue<string>().Should().Be("Espresso tonic");
+        var checkInDetail = await Get($"/api/v1/check-ins/{visit.Id}", HttpStatusCode.OK, "shops");
+        NoInternalIds(checkInDetail);
+        checkInDetail!["data"]!["authorAvatarUrl"]!.GetValue<string>().Should().Be(avatarUrl);
         using (var authenticated = new HttpClient { BaseAddress = new Uri(Address(shops)) })
         {
             authenticated.DefaultRequestHeaders.Add(GatewayHeaderConsts.XGatewayAuth, "http-smoke-internal-secret-at-least-32-characters");
@@ -396,6 +413,7 @@ public sealed class PublicAddressGatewaySmokeTests
                 createdJson!["data"]!["id"]!.GetValue<Guid>().Should().Be(visit.Id);
                 createdJson["data"]!["shop"]!["slug"]!.GetValue<string>().Should().Be("26-october-16");
                 createdJson["data"]!["author"]!["slug"]!.GetValue<string>().Should().Be("petr");
+                createdJson["data"]!["authorAvatarUrl"]!.GetValue<string>().Should().Be(avatarUrl);
                 createdJson["data"]!["visibility"]!.GetValue<string>().Should().Be(visibility);
                 createdJson["data"]!["moderationState"]!.GetValue<string>()
                     .Should().Be(visibility == "Public" ? "Pending" : "NotSubmitted");
@@ -409,6 +427,7 @@ public sealed class PublicAddressGatewaySmokeTests
             checkIn["customDrinkName"]!.GetValue<string>().Should().Be("Эспрессо-тоник");
             checkIn["drinkNameRu"]!.GetValue<string>().Should().Be("Эспрессо-тоник");
             checkIn["drinkNameEn"]!.GetValue<string>().Should().Be("Espresso tonic");
+            checkIn["authorAvatarUrl"]!.GetValue<string>().Should().Be(avatarUrl);
             using var invalid = await authenticated.PostAsJsonAsync("/api/v1/check-ins", new
             { coffeeShopSlug = shop.Id.ToString(), text = "Great coffee", rating = new { place = 5, coffee = 5, service = 5 } }, Ct);
             invalid.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -416,7 +435,20 @@ public sealed class PublicAddressGatewaySmokeTests
         var publicFeed = await Get("/api/v1/check-ins?coffeeShopSlug=26-october-16&authorSlug=petr", HttpStatusCode.OK, "shops");
         NoInternalIds(publicFeed);
         publicFeed!["data"]!["items"]![0]!["author"]!["slug"]!.GetValue<string>().Should().Be("petr");
+        publicFeed["data"]!["items"]![0]!["authorAvatarUrl"]!.GetValue<string>().Should().Be(avatarUrl);
         publicFeed["data"]!["items"]![0]!["moderationState"]!.GetValue<string>().Should().Be("Approved");
+        await using (var db = Account())
+        {
+            var author = await db.Users.SingleAsync(x => x.Id == user.Id, Ct);
+            author.UpdateAvatar(AccountPhoto.Create("new-avatar.jpg", "image/jpeg", "updated-author.jpg", 100));
+            db.Photos.Add(author.PhotoMetadata!);
+            await db.SaveChangesAsync(Ct);
+        }
+        const string updatedAvatarUrl = "https://media.example.com/coffeepeek.avatars/updated-author.jpg";
+        var updatedDetail = await Get($"/api/v1/check-ins/{visit.Id}", HttpStatusCode.OK, "shops");
+        updatedDetail!["data"]!["authorAvatarUrl"]!.GetValue<string>().Should().Be(updatedAvatarUrl);
+        var updatedFeed = await Get("/api/v1/check-ins?coffeeShopSlug=26-october-16&authorSlug=petr", HttpStatusCode.OK, "shops");
+        updatedFeed!["data"]!["items"]![0]!["authorAvatarUrl"]!.GetValue<string>().Should().Be(updatedAvatarUrl);
         using (var authenticated = new HttpClient { BaseAddress = new Uri(Address(moderation)) })
         {
             authenticated.DefaultRequestHeaders.Add(GatewayHeaderConsts.XGatewayAuth, "http-smoke-internal-secret-at-least-32-characters");

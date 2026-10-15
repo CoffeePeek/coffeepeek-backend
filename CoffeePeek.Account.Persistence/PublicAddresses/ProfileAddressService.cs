@@ -3,8 +3,11 @@ using CoffeePeek.Account.Domain.Entities.UserAggregate;
 using CoffeePeek.Account.Persistence.Configuration;
 using CoffeePeek.Contract.Dtos.PublicAddresses;
 using CoffeePeek.Shared.Domain.PublicAddresses;
+using CoffeePeek.Shared.Kernel;
 using CoffeePeek.Shared.Kernel.Exceptions;
+using CoffeePeek.Shared.Kernel.Options;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Npgsql;
 
 namespace CoffeePeek.Account.Persistence.PublicAddresses;
@@ -13,7 +16,7 @@ namespace CoffeePeek.Account.Persistence.PublicAddresses;
 /// Visibility-filtered profile address lookup and the bounded admin backfill (single-kind reduction of the Shops
 /// PublicAddressService). No admin initialize, rename or history exists for users (D-06, D-10).
 /// </summary>
-public sealed class ProfileAddressService(AccountDbContext db) : IProfileAddressService
+public sealed class ProfileAddressService(AccountDbContext db, IOptions<MediaPublicUrlOptions>? mediaOptions = null) : IProfileAddressService
 {
     // D-08: canonical paths are built only from this literal plus the stored, validated slug, never from request input.
     private const string CanonicalPrefix = "/users/";
@@ -42,6 +45,31 @@ public sealed class ProfileAddressService(AccountDbContext db) : IProfileAddress
             .Select(u => new PublicAddressMetadata(u.Id, u.PublicSlug!, CanonicalPrefix + u.PublicSlug, u.SlugRevision, false))
             .ToArrayAsync(ct);
         return addresses.OrderBy(m => Array.IndexOf(distinct, m.EntityId)).ToArray();
+    }
+
+    public async Task<PublicProfileSummaryDto[]> GetProfilesByIdsAsync(Guid[] ids, CancellationToken ct)
+    {
+        RequireEnabled();
+        if (ids.Length is < 1 or > 100 || ids.Contains(Guid.Empty))
+            throw new ValidationException("Supply 1–100 nonempty user IDs.");
+
+        var distinct = ids.Distinct().ToArray();
+        var profiles = await db.Users.AsNoTracking().Where(u => distinct.Contains(u.Id) &&
+                !u.IsSoftDelete && !u.IsBlocked && u.PublicSlug != null)
+            .Select(u => new
+            {
+                u.Id,
+                u.PublicSlug,
+                u.SlugRevision,
+                StorageKey = u.PhotoMetadata != null ? u.PhotoMetadata.StorageKey : null
+            })
+            .ToArrayAsync(ct);
+        var options = mediaOptions?.Value ?? new MediaPublicUrlOptions();
+        return profiles.OrderBy(p => Array.IndexOf(distinct, p.Id))
+            .Select(p => new PublicProfileSummaryDto(
+                new PublicAddressMetadata(p.Id, p.PublicSlug!, CanonicalPrefix + p.PublicSlug, p.SlugRevision, false),
+                MediaStorageUrlBuilder.BuildPublicUrl(options.PublicEndpoint, options.AvatarBucketName, p.StorageKey)))
+            .ToArray();
     }
 
     public async Task<PublicAddressBackfillResult> BackfillAsync(Guid? afterId, int limit, bool dryRun, CancellationToken ct)

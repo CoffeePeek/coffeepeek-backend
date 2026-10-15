@@ -1,4 +1,6 @@
 using System.Net;
+using System.Net.Http.Json;
+using CoffeePeek.Contract.Dtos.PublicAddresses;
 using CoffeePeek.Shared.Auth;
 using CoffeePeek.Shared.Auth.Constants;
 using CoffeePeek.Shared.Auth.Options;
@@ -11,6 +13,42 @@ namespace CoffeePeek.Shops.Infrastructure.Tests.Account;
 
 public sealed class PublicAddressHttpClientTests
 {
+    [Fact]
+    public async Task ProfileSummaries_PreserveAvatarsAndBatchDistinctAuthorsWithInternalAuthentication()
+    {
+        var paths = new List<Uri>();
+        var ids = Enumerable.Range(0, 101).Select(_ => Guid.NewGuid()).ToArray();
+        const string avatarUrl = "https://media.example.com/coffeepeek.avatars/author.jpg";
+        using var client = new HttpClient(new Handler(request =>
+        {
+            request.Headers.GetValues(GatewayHeaderConsts.XGatewayAuth).Should().Equal("internal-test-secret");
+            paths.Add(request.RequestUri!);
+            var batchIds = request.RequestUri!.Query.TrimStart('?').Split('&')
+                .Select(value => Guid.Parse(value[4..])).ToArray();
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = JsonContent.Create(batchIds.Select(id => new PublicProfileSummaryDto(
+                    new(id, "author", "/users/author", 1), id == ids[0] ? avatarUrl : null)).ToArray())
+            };
+        })) { BaseAddress = new Uri("http://localhost") };
+        var factory = new Mock<IHttpClientFactory>();
+        factory.Setup(x => x.CreateClient("account-user-lookup")).Returns(client);
+        var lookup = new PublicAddressHttpClient(factory.Object,
+            Options.Create(new GatewayAuthOptions { SecretKey = "internal-test-secret" }));
+        var ct = TestContext.Current.CancellationToken;
+
+        (await lookup.GetUserProfilesByIdsAsync("account-user-lookup", [], ct)).Should().BeEmpty();
+        paths.Should().BeEmpty();
+        var profiles = await lookup.GetUserProfilesByIdsAsync("account-user-lookup", [.. ids, ids[0], Guid.Empty], ct);
+
+        profiles.Select(x => x.Address.EntityId).Should().Equal(ids);
+        profiles[0].AvatarUrl.Should().Be(avatarUrl);
+        profiles.Skip(1).Should().OnlyContain(x => x.AvatarUrl == null);
+        paths.Should().HaveCount(2);
+        paths.Should().OnlyContain(path => path.AbsolutePath == "/internal/public-addresses/users/profiles");
+        paths.Select(path => path.Query.Split('&').Length).Should().Equal(100, 1);
+    }
+
     [Fact]
     public async Task Lookup_ValidatesInputsBatchesIdsAndFailsClosed()
     {

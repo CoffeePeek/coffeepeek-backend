@@ -106,8 +106,9 @@ public class CheckInControllerTests
         addresses.Setup(x => x.GetForReadAsync(PublicAddressKind.CoffeeShop,
             It.Is<Guid[]>(ids => ids.SequenceEqual(new[] { shopId })), ct)).ReturnsAsync(new[] { shop });
         var profiles = new Mock<IProfileAddressLookup>();
-        profiles.Setup(x => x.GetByIdsAsync(It.Is<Guid[]>(ids => ids.SequenceEqual(new[] { authorId })), ct))
-            .ReturnsAsync(new[] { author });
+        const string avatarUrl = "https://media.example.com/coffeepeek.avatars/example-author.jpg";
+        profiles.Setup(x => x.GetProfilesByIdsAsync(It.Is<Guid[]>(ids => ids.SequenceEqual(new[] { authorId })), ct))
+            .ReturnsAsync(new[] { new PublicProfileSummaryDto(author, avatarUrl) });
         var user = new Mock<IUserContext>();
         user.Setup(x => x.GetUserIdOrThrow()).Returns(authorId);
         user.Setup(x => x.GetUsernameOrThrow()).Returns("example_author");
@@ -142,10 +143,13 @@ public class CheckInControllerTests
         Assert.Equal(checkInId, response.Data.Id);
         Assert.Equal(shop.Slug, response.Data.Shop!.Slug);
         Assert.Equal(author.Slug, response.Data.Author!.Slug);
+        Assert.Equal(avatarUrl, response.Data.AuthorAvatarUrl);
         Assert.Equal(drinkSlug, response.Data.DrinkSlug);
         Assert.Equal(customDrinkName, response.Data.CustomDrinkName);
         Assert.Equal(request.Rating, response.Data.Rating);
         var json = JsonSerializer.Serialize(response, new JsonSerializerOptions(JsonSerializerDefaults.Web));
+        using var document = JsonDocument.Parse(json);
+        Assert.Equal(avatarUrl, document.RootElement.GetProperty("data").GetProperty("authorAvatarUrl").GetString());
         Assert.DoesNotContain(shopId.ToString(), json);
         Assert.DoesNotContain(authorId.ToString(), json);
         foreach (var identity in new[] { "userId", "shopId", "coffeeShopId", "drinkDefinitionId" })

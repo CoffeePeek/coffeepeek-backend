@@ -36,8 +36,9 @@ public class FeedHttpFlowTests
         addresses.Setup(x => x.GetForReadAsync(PublicAddressKind.CoffeeShop, It.IsAny<Guid[]>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync([new PublicAddressMetadata(shopId, "example-shop", "/coffee-shops/example-shop", 1)]);
         var profiles = new Mock<IProfileAddressLookup>();
-        profiles.Setup(x => x.GetByIdsAsync(It.IsAny<Guid[]>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync([new PublicAddressMetadata(authorId, "example-author", "/users/example-author", 1)]);
+        const string avatarUrl = "https://media.example.com/coffeepeek.avatars/example-author.jpg";
+        profiles.Setup(x => x.GetProfilesByIdsAsync(It.IsAny<Guid[]>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync([new PublicProfileSummaryDto(new(authorId, "example-author", "/users/example-author", 1), avatarUrl)]);
 
         var builder = WebApplication.CreateBuilder(new WebApplicationOptions { EnvironmentName = "Development" });
         builder.Services.AddControllersModule();
@@ -80,6 +81,7 @@ public class FeedHttpFlowTests
             Assert.Empty(card.GetProperty("photos").EnumerateArray());
             Assert.Equal("Approved", card.GetProperty("moderationState").GetString());
             Assert.Equal("example-shop", card.GetProperty("shop").GetProperty("slug").GetString());
+            Assert.Equal(avatarUrl, card.GetProperty("authorAvatarUrl").GetString());
             Assert.DoesNotContain(shopId.ToString(), json); Assert.DoesNotContain(authorId.ToString(), json);
             using var invalid = await client.GetAsync("/api/v1/feed?pageSize=0", ct);
             Assert.Equal(HttpStatusCode.BadRequest, invalid.StatusCode);

@@ -17,6 +17,10 @@ public sealed class InternalPublicAddressesController(IProfileAddressService add
     public async Task<IActionResult> GetBatch([FromQuery] Guid[] ids, CancellationToken ct) => Trusted()
         ? Ok(await addresses.GetByIdsAsync(ids, ct)) : Unauthorized();
 
+    [HttpGet("profiles")]
+    public async Task<IActionResult> GetProfiles([FromQuery] Guid[] ids, CancellationToken ct) => Trusted()
+        ? Ok(await addresses.GetProfilesByIdsAsync(ids, ct)) : Unauthorized();
+
     [HttpGet("by-slug/{slug}")]
     public async Task<IActionResult> Resolve(string slug, CancellationToken ct)
     {

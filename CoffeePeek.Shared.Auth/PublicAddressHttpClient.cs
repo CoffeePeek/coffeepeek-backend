@@ -33,13 +33,19 @@ public sealed class PublicAddressHttpClient(IHttpClientFactory factory, IOptions
             throw new ValidationException("Supply a nonempty public slug of at most 100 characters.");
     }
 
-    public async Task<PublicAddressMetadata[]> GetByIdsAsync(string clientName, string kind, Guid[] ids, CancellationToken ct)
+    public Task<PublicAddressMetadata[]> GetByIdsAsync(string clientName, string kind, Guid[] ids, CancellationToken ct) =>
+        GetBatchAsync<PublicAddressMetadata>(clientName, $"/internal/public-addresses/{kind}", ids, ct);
+
+    public Task<PublicProfileSummaryDto[]> GetUserProfilesByIdsAsync(string clientName, Guid[] ids, CancellationToken ct) =>
+        GetBatchAsync<PublicProfileSummaryDto>(clientName, "/internal/public-addresses/users/profiles", ids, ct);
+
+    private async Task<T[]> GetBatchAsync<T>(string clientName, string path, Guid[] ids, CancellationToken ct)
     {
-        var result = new List<PublicAddressMetadata>();
+        var result = new List<T>();
         foreach (var batch in ids.Where(id => id != Guid.Empty).Distinct().Chunk(100))
         {
             var query = string.Join("&", batch.Select(id => $"ids={id}"));
-            result.AddRange(await GetAsync<PublicAddressMetadata[]>(clientName, $"/internal/public-addresses/{kind}?{query}", ct) ?? []);
+            result.AddRange(await GetAsync<T[]>(clientName, $"{path}?{query}", ct) ?? []);
         }
         return result.ToArray();
     }

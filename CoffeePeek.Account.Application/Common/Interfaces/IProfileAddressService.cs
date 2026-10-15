@@ -23,6 +23,12 @@ public interface IProfileAddressService
     Task<PublicAddressMetadata[]> GetByIdsAsync(Guid[] ids, CancellationToken ct);
 
     /// <summary>
+    /// Returns the current canonical address and avatar of visible users among 1–100 non-empty ids, in input order.
+    /// Unknown, soft-deleted and blocked users are omitted. Throws <c>ValidationException</c> (400) otherwise.
+    /// </summary>
+    Task<PublicProfileSummaryDto[]> GetProfilesByIdsAsync(Guid[] ids, CancellationToken ct);
+
+    /// <summary>
     /// Allocates missing canonical addresses for non-deleted users (blocked users included, allocated but hidden),
     /// paged by user id after <paramref name="afterId"/>. A dry run writes nothing; a replay never renames and reports
     /// <c>AlreadyInitialized</c> (D-10). Throws <c>ValidationException</c> (400) unless the limit is 1–100.

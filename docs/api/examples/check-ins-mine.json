@@ -15,6 +15,7 @@
           "revision": 1,
           "isAlias": false
         },
+        "authorAvatarUrl": "https://media.example.com/coffeepeek.avatars/example-author.jpg",
         "username": "example_author",
         "shopName": "Example Coffee",
         "text": "A balanced cappuccino and friendly service.",
@@ -64,6 +65,7 @@
           "revision": 1,
           "isAlias": false
         },
+        "authorAvatarUrl": "https://media.example.com/coffeepeek.avatars/example-author.jpg",
         "username": "example_author",
         "shopName": "Example Coffee",
         "text": "A quiet early visit.",
@@ -103,6 +105,7 @@
           "revision": 1,
           "isAlias": false
         },
+        "authorAvatarUrl": "https://media.example.com/coffeepeek.avatars/example-author.jpg",
         "username": "example_author",
         "shopName": "Example Coffee",
         "text": "Good coffee during yesterday's visit.",

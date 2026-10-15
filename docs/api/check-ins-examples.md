@@ -30,6 +30,8 @@ Public creation adds `"visibility": "Public"`; text and rating remain optional. 
 
 The public visit has flat `drinkSlug`, `customDrinkName`, `drinkNameRu`, `drinkNameEn` fields and `shop`/`author` public addresses. Use its operational `id` for read/edit/visibility/helpful/report routes; `photos[].id` selects protected bytes. Aggregate shop/author/drink UUIDs are absent.
 
+The flat nullable `authorAvatarUrl` contains the author's current Account profile image URL, for example `https://media.example.com/coffeepeek.avatars/example-author.jpg`. The same field appears in both feeds, detail, owner history, shop/user check-in lists and create/edit/visibility responses. It is `null` for an author without an avatar or an unavailable public profile; this does not remove the visit. Account is queried when cards are projected, so a profile image change is reflected on the next read. Deploy Account before Shops to provide the internal profile batch endpoint; no data migration is needed.
+
 ## Transparent drink cutout
 
 Upload the original photos and one cutout through `POST /api/Photos/check-in`, then PUT

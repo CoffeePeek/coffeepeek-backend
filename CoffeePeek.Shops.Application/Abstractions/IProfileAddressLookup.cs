@@ -7,4 +7,5 @@ public interface IProfileAddressLookup
 {
     Task<PublicAddressMetadata?> ResolveAsync(string slug, CancellationToken ct);
     Task<PublicAddressMetadata[]> GetByIdsAsync(Guid[] ids, CancellationToken ct);
+    Task<PublicProfileSummaryDto[]> GetProfilesByIdsAsync(Guid[] ids, CancellationToken ct);
 }

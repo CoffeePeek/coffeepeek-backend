@@ -13,11 +13,12 @@ public sealed class PublicCheckInProjector(IPublicAddressService addresses, IPro
         var shops = (await addresses.GetForReadAsync(PublicAddressKind.CoffeeShop,
             items.Where(x => x.ShopId.HasValue).Select(x => x.ShopId!.Value).Where(id => id != Guid.Empty).Distinct().ToArray(), ct))
             .ToDictionary(x => x.EntityId, PublicAddressDto.From);
-        var authors = (await profiles.GetByIdsAsync(items.Select(x => x.UserId).Distinct().ToArray(), ct))
-            .ToDictionary(x => x.EntityId, PublicAddressDto.From);
+        var authors = (await profiles.GetProfilesByIdsAsync(items.Select(x => x.UserId).Where(id => id != Guid.Empty).Distinct().ToArray(), ct))
+            .ToDictionary(x => x.Address.EntityId);
         return items.Select(x => new PublicCheckInDto
         {
-            Id = x.Id, Kind = x.Kind, Home = x.Home, Shop = x.ShopId.HasValue ? shops.GetValueOrDefault(x.ShopId.Value) : null, Author = authors.GetValueOrDefault(x.UserId),
+            Id = x.Id, Kind = x.Kind, Home = x.Home, Shop = x.ShopId.HasValue ? shops.GetValueOrDefault(x.ShopId.Value) : null, Author = authors.TryGetValue(x.UserId, out var author) ? PublicAddressDto.From(author.Address) : null,
+            AuthorAvatarUrl = author?.AvatarUrl,
             Username = x.Username, ShopName = x.ShopName, Text = x.Text, Rating = x.Rating,
             VisitedAt = x.VisitedAt, CreatedAtUtc = x.CreatedAtUtc,
             Visibility = x.Visibility, ModerationState = x.ModerationState, ContentRevision = x.ContentRevision,

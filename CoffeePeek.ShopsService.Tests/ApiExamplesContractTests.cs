@@ -137,8 +137,9 @@ public class ApiExamplesContractTests
         addresses.Setup(x => x.GetForReadAsync(PublicAddressKind.CoffeeShop, It.IsAny<Guid[]>(), ct))
             .ReturnsAsync([new PublicAddressMetadata(ShopId, "example-coffee", "/coffee-shops/example-coffee", 1)]);
         var profiles = new Mock<IProfileAddressLookup>();
-        profiles.Setup(x => x.GetByIdsAsync(It.IsAny<Guid[]>(), ct))
-            .ReturnsAsync([new PublicAddressMetadata(AuthorId, "example-author", "/users/example-author", 1)]);
+        profiles.Setup(x => x.GetProfilesByIdsAsync(It.IsAny<Guid[]>(), ct))
+            .ReturnsAsync([new PublicProfileSummaryDto(new(AuthorId, "example-author", "/users/example-author", 1),
+                "https://media.example.com/coffeepeek.avatars/example-author.jpg")]);
         var discovery = new PublicDiscoveryService(addresses.Object, profiles.Object, Mock.Of<ICoffeeShopQueries>(),
             Mock.Of<IQueryCheckInRepository>(), Mock.Of<IMessageBus>(), new PublicCheckInProjector(addresses.Object, profiles.Object));
         var visits = await discovery.CheckInsAsync([pending, privateVisit, approved], ct);

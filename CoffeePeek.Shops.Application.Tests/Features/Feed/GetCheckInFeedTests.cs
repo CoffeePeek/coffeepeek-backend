@@ -36,20 +36,24 @@ public class GetCheckInFeedTests
             It.Is<Guid[]>(ids => ids.SequenceEqual(new[] { shopId })), ct))
             .ReturnsAsync([new(shopId, "shop", "/coffee-shops/shop", 1)]);
         var profiles = new Mock<IProfileAddressLookup>();
-        profiles.Setup(x => x.GetByIdsAsync(It.Is<Guid[]>(ids => ids.SequenceEqual(new[] { user1, user2 })), ct))
-            .ReturnsAsync([new(user1, "author-one", "/users/author-one", 1), new(user2, "author-two", "/users/author-two", 1)]);
+        const string avatarUrl = "https://media.example.com/coffeepeek.avatars/example-author.jpg";
+        profiles.Setup(x => x.GetProfilesByIdsAsync(It.Is<Guid[]>(ids => ids.SequenceEqual(new[] { user1, user2 })), ct))
+            .ReturnsAsync([new(new(user1, "author-one", "/users/author-one", 1), avatarUrl),
+                new(new(user2, "author-two", "/users/author-two", 1), null)]);
         var response = await GetCheckInFeedHandler.Handle(new(readerId, PageSize: 2), reader.Object,
             addresses.Object, profiles.Object, new PublicCheckInProjector(addresses.Object, profiles.Object), ct);
 
         Assert.True(response.IsSuccess);
         Assert.Equal(new[] { "author-one", "author-two" }, response.Data.Items.Select(x => x.CheckIn.Author!.Slug));
+        Assert.Equal(avatarUrl, response.Data.Items[0].CheckIn.AuthorAvatarUrl);
+        Assert.Null(response.Data.Items[1].CheckIn.AuthorAvatarUrl);
         Assert.Equal(new[] { "First", "Second" }, response.Data.Items.Select(x => x.CheckIn.Text));
         Assert.True(response.Data.Items[0].CheckIn.IsHelpfulByCurrentUser);
         Assert.Equal(time, response.Data.Items[0].PublishedAtUtc);
         Assert.Equal(new CheckInFeedPosition(rows[1].PublishedAtUtc, rows[1].CheckIn.Id),
             CheckInFeedCursor.Decode(response.Data.NextCursor!, new()));
         addresses.Verify(x => x.GetForReadAsync(PublicAddressKind.CoffeeShop, It.IsAny<Guid[]>(), ct), Times.Once);
-        profiles.Verify(x => x.GetByIdsAsync(It.IsAny<Guid[]>(), ct), Times.Once);
+        profiles.Verify(x => x.GetProfilesByIdsAsync(It.IsAny<Guid[]>(), ct), Times.Once);
     }
 
     [Fact]
@@ -70,7 +74,7 @@ public class GetCheckInFeedTests
         Assert.Empty(response.Data.Items);
         Assert.Null(response.Data.NextCursor);
         reader.VerifyAll();
-        profiles.Verify(x => x.GetByIdsAsync(It.IsAny<Guid[]>(), ct), Times.Never);
+        profiles.Verify(x => x.GetProfilesByIdsAsync(It.IsAny<Guid[]>(), ct), Times.Never);
     }
 
     [Theory]
