@@ -1,7 +1,7 @@
 # Local development infrastructure for CoffeePeek.
 # Starts ONLY the backing services (Postgres, RabbitMQ, Redis, MinIO) that the
-# .NET services expect. The services themselves are run on the host with
-# `dotnet run` (see dev/run-services.sh) so they get hot-reload / dev config.
+# .NET services expect. The services themselves are run on the host by
+# dev/run-services.sh, which builds and launches DLLs with development config.
 #
 # Usage:
 #   docker compose -f dev/docker-compose.dev.yml up -d

@@ -40,7 +40,4 @@ Next steps:
   2. cd ${DEPLOY_DIR}/deploy && cp .env.example .env && nano .env
   3. ./scripts/deploy.sh
 
-Optional — import data from Railway before first deploy:
-  ./scripts/import-railway-data.sh
-
 EOF

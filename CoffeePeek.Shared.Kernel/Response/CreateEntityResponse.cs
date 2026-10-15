@@ -1,19 +1,18 @@
 namespace CoffeePeek.Shared.Kernel.Response;
 
-public class CreateEntityResponse<T> : Response<T>
+public class CreateEntityResponse : Response
 {
-    public Guid? EntityId { get; set; }
+    public Guid? EntityId { get; init; }
 
     /// <summary>
     /// Creates a successful response for entity creation.
     /// </summary>
-    public static CreateEntityResponse<T> Success(T data, string message = null, Guid? entityId = null)
+    public static CreateEntityResponse Success(string message = null, Guid? entityId = null)
     {
-        return new CreateEntityResponse<T>
+        return new CreateEntityResponse
         {
             IsSuccess = true,
             Message = message ?? "Entity created successfully",
-            Data = data,
             EntityId = entityId
         };
     }
@@ -21,13 +20,13 @@ public class CreateEntityResponse<T> : Response<T>
     /// <summary>
     /// Creates an error response for entity creation.
     /// </summary>
-    public static CreateEntityResponse<T> Error(string message, Dictionary<string, string[]> errors = null, string errorCode = null)
+    public static CreateEntityResponse Error(string message)
     {
-        return new CreateEntityResponse<T>
+        return new CreateEntityResponse
         {
             IsSuccess = false,
             Message = message,
-            Data = default,
+            Data = null,
         };
     }
 }

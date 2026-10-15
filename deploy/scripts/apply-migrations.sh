@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# Apply EF Core migrations to the VPS PostgreSQL instance.
-# Requires .NET 10 SDK on the host (install: https://dot.net).
+# Apply EF Core migrations to the four VPS databases.
+# CI runs this inside the .NET 10 SDK container; the repository tool manifest
+# provides dotnet-ef.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -25,14 +26,31 @@ fi
 export ASPNETCORE_ENVIRONMENT=Production
 export PG_HOST="${PG_HOST:-localhost}"
 export PG_PORT="${PG_PORT:-5432}"
+: "${POSTGRES_USER:?POSTGRES_USER is required}"
+: "${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}"
+# Npgsql reads credentials from these variables when they are absent from the
+# connection string. This preserves passwords containing semicolons or quotes.
+export PGUSER="${POSTGRES_USER}"
+export PGPASSWORD="${POSTGRES_PASSWORD}"
 
 cd "${REPO_ROOT}"
-dotnet restore CoffeePeek.Backend.ci.slnf -p:AllowMissingPrunePackageData=true
-dotnet build CoffeePeek.Backend.ci.slnf --configuration Release --no-restore -m -p:AllowMissingPrunePackageData=true
+dotnet tool restore
 
-# Application writers must be stopped. This runner first upgrades to the canonical
-# schema, transfers recoverable legacy data and private photos, then removes archives.
-# It creates no backups and is safe to rerun after an interrupted deployment.
-dotnet "${REPO_ROOT}/CoffeePeek.LegacyCheckInMigration/bin/Release/net10.0/CoffeePeek.LegacyCheckInMigration.dll"
+apply_migrations() {
+  local database="$1" project="$2" startup="$3" context="$4"
+  local quoted_host="${PG_HOST//\"/\"\"}"
+  export PostgresCpOptions__ConnectionString="Host=\"${quoted_host}\";Port=${PG_PORT};Database=${database};SslMode=Disable;GSS Encryption Mode=Disable"
+  echo "==> Applying ${database} migrations..."
+  dotnet ef database update \
+    --project "${project}" \
+    --startup-project "${startup}" \
+    --context "${context}" \
+    --configuration Release
+}
+
+apply_migrations cpaccountdb CoffeePeek.Account.Persistence CoffeePeek.AccountService CoffeePeek.Account.Persistence.Configuration.AccountDbContext
+apply_migrations cpshopsdb CoffeePeek.Shops.Persistance CoffeePeek.ShopsService CoffeePeek.Shops.Persistance.Configuration.ShopsDbContext
+apply_migrations cpmoderationdb CoffeeShop.Moderation.Persistence CoffeePeek.ModerationService CoffeeShop.Moderation.Persistence.Configuration.ModerationDbContext
+apply_migrations cpmediadb CoffeePeek.MediaService CoffeePeek.MediaService CoffeePeek.MediaService.Data.MediaDbContext
 
 echo "All migrations applied."

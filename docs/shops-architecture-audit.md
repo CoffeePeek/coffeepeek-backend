@@ -12,7 +12,7 @@
 
 Теперь подготовка адреса и контактов, создание расписания и загрузка всех переданных справочников происходят до изменения агрегата. `ReplaceSchedules`, проверяющий дубликаты до изменения коллекции, выполняется перед остальными подготовленными изменениями. Основные поля и статус меняются только после успешного применения профиля. При любом возвращаемом отказе профиль остаётся неизменным. Исключения не подавляются и остаются ошибками транзакции.
 
-Это локальное исправление обоих путей обновления профиля, а не новая глобальная политика отката всех `Response.Error` в сервисе. Сигнатуры обработчиков и API сохранены. Изменённые файлы с несколькими типами разделены согласно `CLAUDE.md`; миграция БД не нужна.
+Это локальное исправление обоих путей обновления профиля, а не новая глобальная политика отката всех `Response.Error` в сервисе. Сигнатуры обработчиков и API сохранены. Изменённые файлы с несколькими типами разделены согласно корневому `AGENTS.md`; миграция БД не нужна.
 
 Код: [ShopProfileApplier.cs](C:/Users/goloo/VSCodeProjects/CoffeePeek-NET/CoffeePeek.Shops.Application/Features/CoffeeShop/ShopProfile/ShopProfileApplier.cs:28); [UpdateAdminCoffeeShopHandler.cs](C:/Users/goloo/VSCodeProjects/CoffeePeek-NET/CoffeePeek.Shops.Application/Features/Admin/Shops/UpdateAdminCoffeeShopHandler.cs:32); [UpdateOwnerCoffeeShopHandler.cs](C:/Users/goloo/VSCodeProjects/CoffeePeek-NET/CoffeePeek.Shops.Application/Features/Owner/UpdateOwnerCoffeeShopHandler.cs:31).
 

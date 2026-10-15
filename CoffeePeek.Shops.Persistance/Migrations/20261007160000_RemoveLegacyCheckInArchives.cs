@@ -15,7 +15,7 @@ public sealed class RemoveLegacyCheckInArchives : Migration
               IF EXISTS (SELECT 1 FROM "CheckIns") OR EXISTS (SELECT 1 FROM "Reviews")
                  OR EXISTS (SELECT 1 FROM "ShopPhotos" WHERE "CheckInId" IS NOT NULL OR "ReviewId" IS NOT NULL) THEN
                 IF to_regclass('"_LegacyCheckInMigration"') IS NULL THEN
-                  RAISE EXCEPTION 'Run CoffeePeek.LegacyCheckInMigration before deleting legacy check-ins';
+                  RAISE EXCEPTION 'Historical check-ins must be transferred using the previous release before this upgrade';
                 END IF;
                 IF NOT EXISTS (SELECT 1 FROM "_LegacyCheckInMigration" WHERE "Completed") THEN
                   RAISE EXCEPTION 'Legacy check-in transfer is incomplete';

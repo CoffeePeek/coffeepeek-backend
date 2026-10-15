@@ -1,6 +1,6 @@
 # Client: my moderation submissions
 
-All four `/mine` endpoints return only the signed-in caller's submissions, newest first. Caller identity comes from the JWT; a query cannot select another user's submissions. Anonymous shop/roaster suggestions have no owner and never appear in `/mine`.
+The three `/mine` endpoints below return only the signed-in caller's submissions, newest first. Caller identity comes from the JWT; a query cannot select another user's submissions. Anonymous shop/roaster suggestions have no owner and never appear in `/mine`.
 
 The current API uses public slugs. See the [client contract](public-addresses-client.md) for submission bodies and shared types.
 
@@ -38,7 +38,7 @@ Every list uses the same shape; read `data.items`, not `moderationShops`, `revie
 }
 ```
 
-The item `id` is a service workflow ID, not the published shop/roaster ID. It remains a GUID for tracking and editing the submission. Public aggregate GUIDs, submitter/reviewer GUIDs and photo owner GUIDs are excluded.
+The item `id` is a service workflow ID, not the published shop/roaster ID. It remains a GUID for tracking and editing the submission. Public aggregate GUIDs, submitter and reviewer GUIDs, and photo owner GUIDs are excluded.
 
 - Shops: `city` and `publishedShop` are addresses or null. `publishedShop` can remain null briefly after approval while the Shops consumer publishes it. Catalog references are `beans`, `equipments`, `roasters`, `brewMethods`, arrays of slug.
 - Roasters: `city` is an address or null; status/rejection fields and photos are preserved.

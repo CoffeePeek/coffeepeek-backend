@@ -39,17 +39,6 @@ public class Response
         };
     }
     
-    [Obsolete("Use Error(int statusCode, string message) for HTTP-mapped errors.")]
-    public static Response Error(string message)
-    {
-        return new Response
-        {
-            IsSuccess = false,
-            Message = message,
-            Data = null,
-        };
-    }
-    
     /// <summary>
     /// Creates an error response with message and optional validation errors.
     /// </summary>

@@ -21,9 +21,9 @@ This repository is the **backend only** — a set of .NET 10 microservices behin
 | Service | Responsibility |
 |---|---|
 | **Gateway** (YARP) | Single entry point: JWT validation, CORS, per-client rate limiting, routing, Scalar API docs |
-| **Account** | Users, email + Google sign-in, JWT issuing, profiles, account deletion, user statistics |
+| **Account** | Users, email and OAuth sign-in, JWT issuing, profiles, account deletion, user statistics |
 | **Shops** | Published catalog: shops, search, map/clusters, coffee zones, check-ins, menus (OpenAI vision parsing), owner and admin tools, app downloads |
-| **Moderation** | Review queue for shop/roaster/review suggestions, shop change requests and issue reports; import pipeline (OSM Overpass, files, Google Places status, Yandex geocoding); audit log |
+| **Moderation** | Queue for shop/roaster suggestions, canonical check-in submissions, shop change requests and issue reports; import pipeline (OSM Overpass, files, Google Places status, Yandex geocoding); audit log |
 | **Media** | Uploads and photo storage (MinIO / S3) |
 
 Each bounded context is layered DDD: **Domain → Application** (CQRS handlers on Wolverine) **→ Infrastructure →
@@ -42,7 +42,7 @@ replies with `ModerationShopApproveCompleteResponse`; Account updates the submit
 | Concern | Technology |
 |---|---|
 | Runtime | .NET 10, C# 14 |
-| CQRS / messaging | Wolverine 5 + RabbitMQ, PostgreSQL outbox/inbox |
+| CQRS / messaging | Wolverine 6 + RabbitMQ, PostgreSQL outbox/inbox |
 | Data | EF Core 10 + Npgsql, PostgreSQL 17 |
 | Caching | Redis (StackExchange.Redis) |
 | Gateway | YARP, ASP.NET Core rate limiting, Scalar |
@@ -68,7 +68,7 @@ CoffeePeek.ModerationService/     Moderation host   + CoffeePeek.Moderation.{Dom
                                                     + CoffeeShop.Moderation.Persistence
 CoffeePeek.MediaService/          Media (single project)
 CoffeePeek.Contract/              Shared DTOs and event contracts
-CoffeePeek.Shared.*               Kernel, Domain, Persistence, Auth, Web, Validation
+CoffeePeek.Shared.*               Kernel, Domain, Persistence, Auth, Web
 *.Tests/                          Test projects
 deploy/                           Production Docker Compose, Caddy, deploy scripts
 dev/                              Local infra compose and helper scripts
@@ -81,37 +81,41 @@ The folder-name typos `CoffePeek.*`, `Shops.Persistance` and `CoffeeShop.Moderat
 
 ### Prerequisites
 - [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
-- Docker Desktop
+- Docker Engine or Docker Desktop
 - Rider, Visual Studio or VS Code with C# Dev Kit
 
 ```bash
 git clone <repository-url>
 cd CoffeePeek-NET
-dotnet workload restore CoffeePeek.slnx   # Aspire workload, first time only
 dotnet restore CoffeePeek.slnx
+dotnet tool restore                 # repository-pinned dotnet-ef for migrations
 dotnet build CoffeePeek.slnx
 ```
 
-### Option 1 — Aspire (recommended)
+### Option 1 — Dev infrastructure and services on the host (recommended)
+
+```bash
+docker compose -f dev/docker-compose.dev.yml up -d   # Postgres, RabbitMQ, Redis, MinIO
+dev/migrate-and-seed.sh                              # apply migrations, seed roles
+dev/run-services.sh                                  # build and start all services (logs in dev/logs/)
+dev/hello-world.sh                                   # end-to-end gateway smoke test
+dev/stop-services.sh
+```
+
+The helper scripts use Bash and `dev/dev.env` for local-only connection settings. The gateway listens on
+`http://localhost:8080` and API docs are at `http://localhost:8080/scalar`.
+
+### Option 2 — Aspire app host
 
 ```bash
 cd CoffePeek.AppHost
 dotnet run
 ```
 
-Starts PostgreSQL, RabbitMQ and Redis containers plus all services. The gateway listens on `http://localhost:5169`
-and API docs are at `http://localhost:5169/scalar`. The Aspire dashboard URL is printed on startup.
-
-### Option 2 — Dev infrastructure + services on the host
-
-```bash
-docker compose -f dev/docker-compose.dev.yml up -d   # Postgres, RabbitMQ, Redis, MinIO
-dev/migrate-and-seed.sh                              # apply migrations, seed roles
-dev/run-services.sh                                  # build and start all services (logs in dev/logs/)
-dev/stop-services.sh
-```
-
-`dev/dev.env` holds the local-only connection settings used by these scripts.
+The current AppHost starts PostgreSQL and Redis resources and the five service projects. It does **not** create
+RabbitMQ or MinIO resources. Start and configure those separately before using Aspire; supply each service's
+required environment settings. The Aspire dashboard prints the actual gateway URL. For a standalone gateway
+`dotnet run`, its HTTP launch profile uses `http://localhost:5169`.
 
 ### Option 3 — A single service
 
@@ -119,7 +123,8 @@ dev/stop-services.sh
 cd CoffeePeek.ShopsService && dotnet run
 ```
 
-The service needs its database, RabbitMQ and (for Shops/Account) Redis reachable — use Option 2's infrastructure.
+The service needs its database and required backing services reachable. Option 1 starts the local infrastructure;
+its scripts also supply the connection strings and other required settings.
 
 ## Configuration and Secrets
 
@@ -129,6 +134,7 @@ The service needs its database, RabbitMQ and (for Shops/Account) Redis reachable
   (`dotnet user-secrets`), never in tracked files. Docker builds exclude it via `.dockerignore`.
 - **Gateway secret.** `GatewayAuth:SecretKey` must be identical in the gateway and every service. The key committed
   in `appsettings.json` is a public development value and is **rejected outside the Development environment**.
+- **JWT secret.** Account issues tokens and Gateway validates them. Both must use the same `JWTOptions:SecretKey`.
 - Optional integrations: `OpenAiOptions` (menu parsing), `YandexApiOptions` (geocoding), `GooglePlaces`
   (import status checks), `Sentry:Dsn`. See `deploy/.env.example` for the full production variable list.
 
@@ -164,8 +170,9 @@ public static class UpdateModerationCoffeeShopStatusHandler
 
 ## Database Migrations
 
-Each service owns its database and migration history. Pending migrations are **applied automatically at service
-startup**, so migrations must be safe to run against production data.
+Each service owns its database and migration history. Apply pending migrations before starting services;
+`dev/migrate-and-seed.sh` handles local databases and deployment scripts handle production. Service startup
+does not apply them. Preserve historical EF migrations and model snapshots for fresh installs and upgrades.
 
 ```bash
 make mig-acc n=MigrationName     # add migration — Account
@@ -173,7 +180,10 @@ make mig-shops n=MigrationName   # add migration — Shops
 make mig-mod n=MigrationName     # add migration — Moderation
 make mig-media n=MigrationName   # add migration — Media
 
-make up-acc | up-shops | up-mod | up-media   # apply manually
+make up-acc                        # apply — Account
+make up-shops                      # apply — Shops
+make up-mod                        # apply — Moderation
+make up-media                      # apply — Media
 ```
 
 Manual equivalent:
@@ -205,11 +215,13 @@ dotnet test CoffeePeek.slnx --collect:"XPlat Code Coverage"   # coverage
 | `CoffeePeek.Gateway.Tests` | Route configuration, auth policies, rate limiting |
 | `*Service.Tests` | Host wiring: OpenAPI generation, Wolverine pre-generated handlers, contracts |
 
-CI runs the unit test projects listed in `CoffeePeek.Backend.ci.slnf` — add new test projects there.
+CI runs the .NET test projects listed in `CoffeePeek.Backend.ci.slnf` — add new test projects there.
+It also tests the Node Cloudflare relay and Python coffee collectors/deployment validation. Separate live Shops
+integration and fault gates use PostgreSQL, RabbitMQ, Redis and MinIO.
 
 ## API
 
-Interactive documentation for all services: `http://localhost:5169/scalar`.
+With the dev scripts, interactive documentation for all services is at `http://localhost:8080/scalar`.
 
 Main route groups through the gateway:
 
@@ -222,12 +234,13 @@ Main route groups through the gateway:
 | `/api/admin/*` | Admin tools (Moderator/Admin roles) |
 | `/download/*`, `/api/v1/app-downloads`, `/api/v1/app-version` | App download links, update policy |
 
-Every service exposes `/health` and `/alive`.
+Every service exposes `/health`. Gateway, Account, Shops and Moderation also expose `/alive`; Media does not.
 
 ## Deployment
 
 Production runs on a VPS with Docker Compose (`deploy/docker-compose.yml`) behind Caddy (HTTPS). CI
-(`.github/workflows/ci-cd.yml`) builds, tests and pushes images on pushes to `dev`/`main`.
+(`.github/workflows/ci-cd.yml`) builds and runs the .NET, Node, Python and live Shops gates for pushes and
+pull requests targeting `dev`/`main`. It publishes images on `main` and deploys to the VPS only on a `main` push.
 
 ```bash
 cp deploy/.env.example deploy/.env    # fill in values

@@ -18,7 +18,6 @@ COPY ["CoffeePeek.Shops.Infrastructure/CoffeePeek.Shops.Infrastructure.csproj", 
 COPY ["CoffeePeek.Shops.Application/CoffeePeek.Shops.Application.csproj", "CoffeePeek.Shops.Application/"]
 COPY ["CoffeePeek.Contract/CoffeePeek.Contract.csproj", "CoffeePeek.Contract/"]
 COPY ["CoffeePeek.Shared.Kernel/CoffeePeek.Shared.Kernel.csproj", "CoffeePeek.Shared.Kernel/"]
-COPY ["CoffeePeek.Shared.Validation/CoffeePeek.Shared.Validation.csproj", "CoffeePeek.Shared.Validation/"]
 COPY ["CoffeePeek.Shops.Domain/CoffeePeek.Shops.Domain.csproj", "CoffeePeek.Shops.Domain/"]
 COPY ["CoffeePeek.Shared.Domain/CoffeePeek.Shared.Domain.csproj", "CoffeePeek.Shared.Domain/"]
 COPY ["CoffeePeek.Shops.Persistance/CoffeePeek.Shops.Persistance.csproj", "CoffeePeek.Shops.Persistance/"]

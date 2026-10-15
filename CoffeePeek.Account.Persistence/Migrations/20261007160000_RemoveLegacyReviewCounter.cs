@@ -14,7 +14,7 @@ public sealed class RemoveLegacyReviewCounter : Migration
             DO $$ BEGIN
               IF EXISTS (SELECT 1 FROM "Users" WHERE "ReviewCount"<>0 OR "CheckInCount"<>0) THEN
                 IF to_regclass('"_LegacyCheckInMigration"') IS NULL THEN
-                  RAISE EXCEPTION 'Run CoffeePeek.LegacyCheckInMigration to recalculate check-in counters';
+                  RAISE EXCEPTION 'Historical counters must be transferred using the previous release before this upgrade';
                 END IF;
                 IF NOT EXISTS (SELECT 1 FROM "_LegacyCheckInMigration" WHERE "Completed") THEN
                   RAISE EXCEPTION 'Legacy counter transfer is incomplete';

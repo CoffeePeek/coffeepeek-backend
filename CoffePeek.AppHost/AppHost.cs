@@ -14,16 +14,6 @@ var mediaDb = postgres.AddDatabase(AppResources.MediaDb);
 var redis = builder.AddRedis("redis")
     .WithHostPort(6379);
 
-// builder
-//     .AddViteApp(AppResources.FrontEnd, "../../CoffeePeek.FE.WebClient/coffee-peek")
-//     .WithHttpEndpoint(
-//         port: 5173, 
-//         targetPort: 5173, 
-//         isProxied: false,
-//         name: AppResources.FrontEnd 
-//     )
-//     .WithExternalHttpEndpoints();
-
 var shopsService = builder
     .AddProject<Projects.CoffeePeek_ShopsService>(AppResources.ShopsService)
     .WithReference(shopsDb)

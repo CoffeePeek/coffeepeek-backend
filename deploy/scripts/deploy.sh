@@ -4,6 +4,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DEPLOY_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
+REPO_ROOT="$(cd "${DEPLOY_DIR}/.." && pwd)"
 cd "${DEPLOY_DIR}"
 
 if [[ ! -f .env ]]; then
@@ -25,7 +26,7 @@ if [[ "${JWT_SECRET_KEY:-}" == change-me* ]] || [[ "${POSTGRES_PASSWORD:-}" == c
 fi
 
 COMPOSE=(docker compose)
-if [[ "${USE_HTTPS:-}" == "1" ]]; then
+if [[ "${USE_HTTPS:-1}" == "1" ]]; then
   COMPOSE+=(--profile https)
 fi
 
@@ -38,16 +39,33 @@ until "${COMPOSE[@]}" exec -T postgres pg_isready -U "${POSTGRES_USER}" >/dev/nu
 done
 
 if [[ "${SKIP_MIGRATIONS:-}" != "1" ]]; then
-  echo "==> Applying EF Core migrations..."
-  "${SCRIPT_DIR}/apply-migrations.sh"
+  running_apps="$("${COMPOSE[@]}" ps -q gateway account shops moderation media)"
+  if [[ -n "${running_apps}" ]]; then
+    echo "==> Stopping application writers before schema updates..."
+    "${COMPOSE[@]}" stop gateway account shops moderation media
+  fi
+  echo "==> Applying EF Core migrations via Docker..."
+  docker run --rm \
+    --network coffeepeek_default \
+    -v "${REPO_ROOT}:/src" \
+    -w /src \
+    -e POSTGRES_USER \
+    -e POSTGRES_PASSWORD \
+    -e PG_HOST=postgres \
+    -e PG_PORT=5432 \
+    -e ASPNETCORE_ENVIRONMENT=Production \
+    -e DOTNET_CLI_TELEMETRY_OPTOUT=1 \
+    mcr.microsoft.com/dotnet/sdk:10.0 \
+    bash deploy/scripts/apply-migrations.sh
 fi
 
 echo "==> Building and starting application services..."
 if [[ "${PULL_IMAGES:-}" == "1" ]]; then
-  "${COMPOSE[@]}" pull account shops moderation media gateway || true
+  "${COMPOSE[@]}" pull account shops moderation media gateway
+  "${COMPOSE[@]}" up -d --no-build
+else
+  "${COMPOSE[@]}" up -d --build
 fi
-
-"${COMPOSE[@]}" up -d --build
 if [[ -n "${COFFEE_IMPORT_TOKEN:-}" ]]; then
   # Refresh the mapping bind mount and cached options after configuration updates.
   "${COMPOSE[@]}" up -d --no-deps --no-build --force-recreate --wait media shops

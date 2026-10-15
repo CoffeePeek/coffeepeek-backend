@@ -21,7 +21,6 @@ COPY ["CoffeePeek.Moderation.Domain/CoffeePeek.Moderation.Domain.csproj", "Coffe
 COPY ["CoffeePeek.Shared.Domain/CoffeePeek.Shared.Domain.csproj", "CoffeePeek.Shared.Domain/"]
 COPY ["CoffeePeek.Shared.Kernel/CoffeePeek.Shared.Kernel.csproj", "CoffeePeek.Shared.Kernel/"]
 COPY ["CoffeePeek.Contract/CoffeePeek.Contract.csproj", "CoffeePeek.Contract/"]
-COPY ["CoffeePeek.Shared.Validation/CoffeePeek.Shared.Validation.csproj", "CoffeePeek.Shared.Validation/"]
 COPY ["CoffeePeek.Shared.Auth/CoffeePeek.Shared.Auth.csproj", "CoffeePeek.Shared.Auth/"]
 COPY ["CoffeePeek.Shared.Web/CoffeePeek.Shared.Web.csproj", "CoffeePeek.Shared.Web/"]
 COPY ["CoffeeShop.Moderation.Persistence/CoffeeShop.Moderation.Persistence.csproj", "CoffeeShop.Moderation.Persistence/"]

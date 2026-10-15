@@ -1,43 +1,37 @@
-# Жалобы на отзывы
+# Жалобы на публичные check-in
 
-Все запросы идут через Gateway с `Authorization: Bearer <token>`.
+Канонические check-in заменили отдельные отзывы. Клиентские операции с check-in описаны в [контракте v1](check-ins.md). Все запросы ниже идут через Gateway с `Authorization: Bearer <token>`.
 
-## Отправка жалобы
+## Отправить жалобу
 
-`POST /api/CoffeeShopReviews/{reviewId}/reports`
+```http
+POST /api/v1/check-ins/{id}/reports
+Content-Type: application/json
 
-```json
-{ "text": "В отзыве оскорбления" }
+{ "text": "В публикации оскорбления" }
 ```
 
-Доступно любому авторизованному пользователю. Текст обязателен, после обрезки пробелов — 1–2000 символов. Пользователь берётся из авторизации. Жаловаться можно только на опубликованные отзывы; отсутствующий/скрытый/удалённый отзыв даёт 404. Ответ 201 — стандартный `Response<ReviewReportDto>` с ID жалобы в `data.id`. Используется существующий лимит отправки контента Gateway; при превышении — 429.
+Отправлять может авторизованный пользователь. Целью может быть только текущий одобренный публичный check-in; недоступная цель возвращает 404. Текст обязателен, максимальная длина — 2000 символов. Успех возвращает `201` и стандартный `Response<ReviewReportDto>` с ID жалобы в `data.id`.
 
 ## Очередь администратора
 
-`GET /api/admin/review-reports?status=Pending&page=1&pageSize=20`
+Эти маршруты требуют роль **Admin**:
 
-Только роль **Admin**. По умолчанию — `Pending`, первая страница, 20 записей. `pageSize`: 1–100. Порядок — старые жалобы сначала, ID для одинаковых дат. Ответ `data`: `{ items, totalCount, page, pageSize }`.
+| Метод | Маршрут | Результат |
+| --- | --- | --- |
+| `GET` | `/api/admin/check-in-reports?status=Pending&page=1&pageSize=20` | `data: { items, totalCount, page, pageSize }` |
+| `GET` | `/api/admin/check-in-reports/{reportId}` | `data: { report, checkIn }`; `checkIn` может быть `null`, если историческая цель отсутствует |
+| `PUT` | `/api/admin/check-in-reports/{reportId}/resolution` | Закрыть жалобу или скрыть check-in |
 
-Статусы: `Pending` (0), `Dismissed` (1), `ReviewDeleted` (2). Можно использовать названия или числа. Для всех статусов передать пустой `status=`. Неизвестный статус и неверная пагинация дают 400.
+Без `status` список показывает `Pending`. Статусы: `Pending`, `Dismissed`, `CheckInDeleted`. Детали жалобы содержат `id`, `checkInId`, `reportedByUserId`, `text`, `status`, `createdAtUtc`, `resolvedByAdminId`, `resolvedAtUtc`. У текущего check-in в административной детали есть текст, оценки, даты и признак публичной видимости.
 
-`GET /api/admin/review-reports/{reportId}`
+Решение передаётся явно:
 
-Ответ `data`: `{ report, review }`. Жалоба содержит `id`, `reviewId`, `reportedByUserId`, `text`, `status`, `createdAtUtc`, `resolvedByAdminId`, `resolvedAtUtc`. Текущий отзыв содержит `id`, `coffeeShopId`, автора (`userId`, `userName`), `header`, `comment`, оценки (`ratingPlace`, `ratingService`, `ratingCoffee`) и флаги `isSoftDelete`, `isRemovedByAdmin`. Статус в JSON — число. Неизвестная жалоба — 404. Список и детали не кэшируются.
+```http
+PUT /api/admin/check-in-reports/{reportId}/resolution
+Content-Type: application/json
 
-## Решение
-
-`PUT /api/admin/review-reports/{reportId}/resolution`
-
-```json
-{ "deleteReview": true }
+{ "deleteCheckIn": true }
 ```
 
-`true` — мягко удалить отзыв и закрыть жалобу как `ReviewDeleted`. `false` — закрыть жалобу как `Dismissed`, сохранив отзыв. Поле обязательно: отсутствие/`null` даёт 400. Администратор берётся из авторизации. Ответ 200 — `Response<ReviewReportDto>`.
-
-Решение и удаление сохраняются атомарно. Повтор того же решения возвращает 200 и сохраняет первого администратора/дату; попытка изменить уже принятое решение — 409. Конкурентное изменение — 409, можно перечитать жалобу и повторить решение. Удалённый администратором отзыв не восстанавливается повторной публикацией из модерации. Кэши карточки, поиска и статистики кофейни сбрасываются. Остальные жалобы на этот отзыв остаются в очереди до явного решения.
-
-Ответы по почте пока не отправляются; `reportedByUserId` позволяет добавить это позже через Account Service.
-
-## Развёртывание
-
-Перед обновлением ShopsService применить миграцию `AddReviewReports` к Shops DB. Она добавляет таблицу жалоб и `Reviews.IsRemovedByAdmin`; `xmin` используется для защиты жалоб и отзывов от конкурентной записи. Автоматически миграция не применяется.
+`true` скрывает check-in и закрывает жалобу как `CheckInDeleted`; `false` закрывает её как `Dismissed`. Отсутствующий или `null` `deleteCheckIn` даёт 400. Повтор того же решения идемпотентен; попытка изменить уже принятое решение даёт конфликт. Жалобы сохраняются как административный аудит, включая те, чья историческая цель больше не существует.

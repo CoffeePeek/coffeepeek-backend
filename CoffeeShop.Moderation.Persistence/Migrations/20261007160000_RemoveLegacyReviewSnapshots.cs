@@ -14,7 +14,7 @@ public sealed class RemoveLegacyReviewSnapshots : Migration
             DO $$ BEGIN
               IF EXISTS (SELECT 1 FROM "ModerationReviews") OR EXISTS (SELECT 1 FROM "ShopPhotos" WHERE "ModerationReviewId" IS NOT NULL) THEN
                 IF to_regclass('"_LegacyCheckInMigration"') IS NULL THEN
-                  RAISE EXCEPTION 'Run CoffeePeek.LegacyCheckInMigration before deleting legacy moderation';
+                  RAISE EXCEPTION 'Historical moderation must be transferred using the previous release before this upgrade';
                 END IF;
                 IF NOT EXISTS (SELECT 1 FROM "_LegacyCheckInMigration" WHERE "Completed") THEN
                   RAISE EXCEPTION 'Legacy moderation transfer is incomplete';

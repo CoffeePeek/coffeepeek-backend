@@ -33,9 +33,6 @@ if [[ "${SKIP_MIGRATIONS:-}" != "1" ]]; then
     -e POSTGRES_PASSWORD \
     -e PG_HOST=postgres \
     -e PG_PORT=5432 \
-    -e MINIO_ROOT_USER \
-    -e MINIO_ROOT_PASSWORD \
-    -e MinIOOptions__Endpoint=http://minio:9000 \
     -e ASPNETCORE_ENVIRONMENT=Production \
     -e DOTNET_CLI_TELEMETRY_OPTOUT=1 \
     mcr.microsoft.com/dotnet/sdk:10.0 \

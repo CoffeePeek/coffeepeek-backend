@@ -92,33 +92,15 @@ jobs:
       - name: Restore backend solution
         run: dotnet restore "CoffeePeek.Backend.ci.slnf" -p:AllowMissingPrunePackageData=true
 
-      - name: Audit dependencies
-        continue-on-error: true
-        run: |
-          set -uo pipefail
-          set +e
-          report="$(dotnet list "CoffeePeek.Backend.ci.slnf" package --vulnerable --include-transitive 2>&1)"
-          set -e
-          echo "$report"
-          {
-            echo "### Vulnerable packages report"
-            echo '```'
-            echo "$report"
-            echo '```'
-          } >> "$GITHUB_STEP_SUMMARY"
-          if echo "$report" | grep -qiE '>\s*Project|has the following vulnerable'; then
-            echo "::warning::Vulnerable NuGet packages reported by dotnet list; see the step log and job summary"
-          fi
-
       - name: Build backend solution
         run: dotnet build "CoffeePeek.Backend.ci.slnf" --configuration Release --no-restore -m -p:AllowMissingPrunePackageData=true
 
       - name: Run tests
         run: dotnet test "CoffeePeek.Backend.ci.slnf" --configuration Release --no-build -m -p:AllowMissingPrunePackageData=true --verbosity normal
 
-      - name: Start isolated MinIO for legacy migration verification
+      - name: Start MinIO for Shops fault recovery tests
         run: |
-          docker run -d --name coffeepeek-legacy-test-minio -p 127.0.0.1:9000:9000 \
+          docker run -d --name coffeepeek-shops-test-minio -p 127.0.0.1:9000:9000 \
             -e MINIO_ROOT_USER=coffee-legacy-test -e MINIO_ROOT_PASSWORD=coffee-legacy-test-only \
             bitnamilegacy/minio@sha256:451fe6858cb770cc9d0e77ba811ce287420f781c7c1b806a386f6896471a349c
           for attempt in {1..30}; do
@@ -131,7 +113,7 @@ jobs:
         run: |
           set -euo pipefail
           pgpass_file="$(mktemp "${RUNNER_TEMP}/coffeepeek-pgpass.XXXXXX")"
-          trap 'rm -f "$pgpass_file"' EXIT
+          trap 'rm -f "$pgpass_file"; docker rm -f coffeepeek-shops-test-minio >/dev/null 2>&1 || true' EXIT
           chmod 600 "$pgpass_file"
           printf '%s\n' '127.0.0.1:5432:*:postgres:coffeepeek-ci-only-postgres' '127.0.0.1:15432:*:postgres:coffeepeek-ci-only-postgres' > "$pgpass_file"
           export COFFEEPEEK_LIVE_PG='Host=127.0.0.1;Port=5432;Username=postgres;Database=postgres;SslMode=Disable'
@@ -223,20 +205,6 @@ jobs:
           name: shops-read-performance
           path: .test-results/shops-performance/*.json
           if-no-files-found: ignore
-
-      - name: Rehearse legacy transfer and cleanup with PostgreSQL and MinIO
-        run: |
-          set -euo pipefail
-          pgpass_file="$(mktemp "${RUNNER_TEMP}/coffeepeek-legacy-pgpass.XXXXXX")"
-          trap 'rm -f "$pgpass_file"; docker rm -f coffeepeek-legacy-test-minio' EXIT
-          chmod 600 "$pgpass_file"
-          printf '%s\n' '127.0.0.1:5432:*:postgres:coffeepeek-ci-only-postgres' > "$pgpass_file"
-          COFFEEPEEK_LIVE_PG='Host=127.0.0.1;Port=5432;Username=postgres;Database=postgres;SslMode=Disable' \
-          COFFEEPEEK_LIVE_PG_ALLOW_SUPERUSER=1 \
-          COFFEEPEEK_LIVE_MINIO=http://127.0.0.1:9000 \
-          PGPASSFILE="$pgpass_file" \
-            dotnet test CoffeePeek.LegacyCheckInMigration.Tests --configuration Release --no-build \
-              --filter 'Category=LivePostgres' --verbosity normal
 
       - name: Setup Python
         uses: actions/setup-python@v5
