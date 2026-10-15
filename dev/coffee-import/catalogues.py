@@ -577,6 +577,35 @@ def welder_details(soup):
     return properties, description
 
 
+def welder_variants(soup, offers, available, url):
+    roasting = {n["value"]: text(str(soup.select_one('label[for="' + n["id"] + '"]')))
+                for n in soup.select("input.roasting-checkbox[value][id]")}
+    weight_labels = {}
+    for node in soup.select("input.weight-checkbox[value][id]"):
+        label = node.parent.select_one("[data-weight]")
+        if label is None:
+            raise ParseError(f"Missing Welder weight label: {url}")
+        weight_labels[node["value"]] = label["data-weight"]
+    if not weight_labels:
+        raise ParseError(f"Missing Welder weight selectors: {url}")
+    variants = []
+    for offer in offers:
+        weight = weight_labels.get(offer["weight"])
+        selectable = weight is not None and (not roasting or offer["roasting"] in roasting)
+        if weight is None:
+            # window.sku can retain discontinued weights absent from the purchase selectors.
+            match = re.search(r"/\s*(\d+(?:[.,]\d+)?\s*(?:кг|kg|гр\.?|г\.?|g))\s*\)$", offer["name"], re.I)
+            if match is None:
+                raise ParseError(f"Unknown Welder SKU weight ({offer['id']}): {url}")
+            weight = match[1]
+        attrs = {k: offer[k] for k in ("weight", "roasting", "name", "week_active", "week_sale")}
+        purpose = re.search(r"\((?:под )?([^()/]+)/\s*\d", offer["name"])
+        attrs |= {"roastPurpose": roasting.get(offer["roasting"]) or (clean(purpose[1]) if purpose else None),
+                  "availabilityEvidence": "product_jsonld_and_buy_button" if selectable else "sku_not_selectable"}
+        variants.append(variant(offer["id"], weight, str(offer["price"]), "RUB", available and selectable, attrs))
+    return variants
+
+
 def collect_welder(fetcher):
     host = "theweldercatherine.ru"
     products, excluded, seen, coverage = [], [], set(), []
@@ -589,7 +618,7 @@ def collect_welder(fetcher):
             link = next((a for a in card.select("a[href]") if a["href"].startswith(path) and urlsplit(a["href"]).path != path), None)
             if link is None:
                 raise ParseError("Missing Welder product URL")
-            url = urljoin(root, link["href"])
+            url = urlunsplit(urlsplit(urljoin(root, link["href"]))._replace(fragment=""))
             if url in urls:
                 raise ParseError("Duplicate Welder catalogue card")
             urls.add(url)
@@ -610,19 +639,7 @@ def collect_welder(fetcher):
             if state not in ("InStock", "OutOfStock", "PreOrder", "BackOrder"):
                 raise ParseError("Unknown Welder product availability")
             available = state != "OutOfStock" and not buy.has_attr("disabled")
-            variants = []
-            roasting = {n["value"]: text(str(soup.select_one('label[for="' + n["id"] + '"]')))
-                        for n in soup.select("input.roasting-checkbox[value][id]")}
-            weight_labels = {n["value"]: n.parent.select_one("[data-weight]")["data-weight"]
-                             for n in soup.select("input.weight-checkbox[value][id]")}
-            for o in offers:
-                if o["weight"] not in weight_labels:
-                    raise ParseError("Unknown Welder SKU weight")
-                attrs = {k: o[k] for k in ("weight", "roasting", "name", "week_active", "week_sale")}
-                purpose = re.search(r"\((?:под )?([^()/]+)/\s*\d", o["name"])
-                attrs |= {"roastPurpose": roasting.get(o["roasting"]) or (clean(purpose[1]) if purpose else None),
-                          "availabilityEvidence": "product_jsonld_and_buy_button"}
-                variants.append(variant(o["id"], weight_labels[o["weight"]], str(o["price"]), "RUB", available, attrs))
+            variants = welder_variants(soup, offers, available, url)
             name = clean(soup.select_one("h1").get_text())
             properties, description = welder_details(soup)
             item = product(host, buy["data-id"], url, name, "Сварщица Екатерина", variants,
@@ -778,6 +795,28 @@ def mcoffee_details(soup):
     return properties, description
 
 
+def mcoffee_images(soup, metadata):
+    image = soup.select_one(".product__image-main, .product__image img")
+    if image is not None:
+        candidates = []
+        for entry in (image.get("srcset") or image.get("data-srcset") or "").split(","):
+            match = re.fullmatch(r"\s*(\S+)\s+(\d+)w\s*", entry)
+            if match:
+                candidates.append((int(match[2]), match[1]))
+        if candidates:
+            return [max(candidates, key=lambda candidate: candidate[0])[1]]
+    images = metadata.get("image", [])
+    if isinstance(images, str):
+        images = [images]
+    if images:
+        return list(dict.fromkeys(images))
+    if image is not None:
+        url = image.get("data-src") or image.get("src")
+        if url and not url.startswith("data:"):
+            return [url]
+    raise ParseError("Missing Manufactura detail product image")
+
+
 def collect_mcoffee(fetcher):
     root = "https://mcoffee.by/catalog/coffee/kofe-v-zernah"
     # The site uses a CSRF-protected read-only POST for option selection, separate from cart actions.
@@ -850,7 +889,7 @@ def collect_mcoffee(fetcher):
             properties["Обработка"] = text(str(processing))
         item = product("mcoffee.by", uid, url, name, "Manufactura", variants,
                        properties=properties, description=description,
-                       images=[i["src"] for i in form.select("img[src]")][:1])
+                       images=mcoffee_images(detail, metadata[0]))
         retain(products, excluded, item)
         seen[uid] = item
     result = snapshot(fetcher, root, products, excluded, None, pages, discovered=len(cards))

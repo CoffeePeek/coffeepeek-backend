@@ -7,7 +7,7 @@ from unittest.mock import patch
 
 from bs4 import BeautifulSoup
 
-from catalogues import (aspro_details, collect_mcoffee, collect_woo, daloni_details, mcoffee_details, product, tasty_details,
+from catalogues import (aspro_details, collect_mcoffee, collect_woo, daloni_details, mcoffee_details, mcoffee_images, product, tasty_details,
                         tilda_product, variant, welder_details)
 from roast_by import Fetcher, ParseError, clean, property_labels
 from sources import river_products, spiritus_product
@@ -83,13 +83,15 @@ class CharacteristicRegressionTests(unittest.TestCase):
             '<input name="product_id" value="42"><input data-name="variants_data[]" id="weight" value="1" checked>'
             '<label for="weight">250 г</label><span class="current-price">27.50</span>'
             '<button class="add_to_cart"></button><input name="options[]" id="grind" checked>'
-            '<label for="grind">В зёрнах</label><div class="compound">Шоколад, фундук</div>'
+            '<label for="grind">В зёрнах</label><img src="/175x175-thumb.webp">'
+            '<div class="compound">Шоколад, фундук</div>'
             '<div class="processing">мытый</div></form>', "html.parser").form
         specs = detail("mcoffee")
         for row in specs.select(".spec"):
             if row.select_one(".spec__label").get_text() == "Дескрипторы":
                 row.decompose()
-        metadata = '<script type="application/ld+json">{"@type":"Product","offers":{"priceCurrency":"BYN"}}</script>'
+        metadata = ('<script type="application/ld+json">{"@type":"Product","offers":{"priceCurrency":"BYN"},'
+                    '"image":["/644x644-detail.webp"]}</script>')
         class Mcoffee:
             offline = True
             sources = {}
@@ -98,6 +100,7 @@ class CharacteristicRegressionTests(unittest.TestCase):
         with patch("catalogues.html_pages", return_value=([(None, form)], 1)):
             result = collect_mcoffee(Mcoffee())["products"][0]
         self.assertEqual(["Шоколад", "фундук"], result["tasteDescriptors"])
+        self.assertEqual(["https://mcoffee.by/644x644-detail.webp"], result["imageUrls"])
         form.select_one(".compound").decompose()
         form.select_one(".processing").decompose()
         for row in specs.select(".spec"):
@@ -111,6 +114,22 @@ class CharacteristicRegressionTests(unittest.TestCase):
         parsed = coffee({"Степень обжарки": raw})
         self.assertEqual("средняя обжарка кофе, эспрессо", parsed["roastLevel"])
         self.assertEqual(raw, parsed["sourceProperties"]["Степень обжарки"])
+
+    def test_manufactura_uses_largest_detail_image_and_ignores_recommendations(self):
+        soup = BeautifulSoup('<div class="product__image"><img class="product__image-main" '
+                             'src="/400.webp" srcset="/644.webp 644w, /400.webp 400w, /521.webp 521w"></div>'
+                             '<aside><img src="/other-coffee.webp" srcset="/other-coffee.webp 2000w"></aside>', "html.parser")
+        self.assertEqual(["/644.webp"], mcoffee_images(soup, {"image": ["/644.webp"]}))
+        image = soup.select_one(".product__image-main")
+        del image["srcset"]
+        self.assertEqual(["/644.webp"], mcoffee_images(soup, {"image": "/644.webp"}))
+        image["data-srcset"] = "/644.webp 644w, /521.webp 521w"
+        self.assertEqual(["/644.webp"], mcoffee_images(soup, {}))
+        del image["data-srcset"]
+        self.assertEqual(["/400.webp"], mcoffee_images(soup, {}))
+        image["src"] = "data:image/gif;base64,x"
+        with self.assertRaisesRegex(ParseError, "Missing Manufactura detail product image"):
+            mcoffee_images(soup, {})
 
     def test_welder_total_is_quality_but_judge_subscores_are_not_intensity(self):
         properties, description = welder_details(detail("welder-catherine"))

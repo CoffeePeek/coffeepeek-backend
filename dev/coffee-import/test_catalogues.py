@@ -1,15 +1,60 @@
 import json
+import re
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from bs4 import BeautifulSoup
 
-from catalogues import bitrix_options, collect_daloni, collect_tasty, html_pages, tilda_product, variant, woo_rows
+from catalogues import (bitrix_options, collect_daloni, collect_tasty, collect_welder, html_pages,
+                        tilda_product, variant, welder_variants, woo_rows)
 from roast_by import Fetcher, ParseError
 
 
 class CatalogueCheck(unittest.TestCase):
+    def test_welder_hidden_weights_and_roasts_are_kept_as_unavailable_skus(self):
+        markup = (Path(__file__).parent / "fixtures/welder-hidden-weight.html").read_text(encoding="utf-8")
+        soup = BeautifulSoup(markup, "html.parser")
+        match = re.search(r"window\.sku\s*=\s*", markup)
+        offers, _ = json.JSONDecoder().raw_decode(markup, match.end())
+        url = "https://theweldercatherine.ru/catalog/dlya_filtra/burundi_bursiara/"
+        variants = welder_variants(soup, offers, True, url)
+        self.assertEqual(["56757", "56761", "56758"], [v["externalVariantId"] for v in variants])
+        self.assertEqual([250, 250, 1000], [v["weightGrams"] for v in variants])
+        self.assertEqual([False, True, False], [v["availableForPurchase"] for v in variants])
+        self.assertEqual("3750.00", variants[2]["price"])
+        self.assertEqual("sku_not_selectable", variants[2]["sourceAttributes"]["availabilityEvidence"])
+        self.assertEqual("эспрессо", variants[2]["sourceAttributes"]["roastPurpose"])
+        self.assertTrue(all(not v["availableForPurchase"] for v in welder_variants(soup, offers, False, url)))
+        missing_selectors = BeautifulSoup(markup, "html.parser")
+        for node in missing_selectors.select("input.weight-checkbox"):
+            node.decompose()
+        with self.assertRaisesRegex(ParseError, "Missing Welder weight selectors"):
+            welder_variants(missing_selectors, offers, True, url)
+        offers[2]["name"] = "Бурунди Бурсиара без указания фасовки"
+        with self.assertRaisesRegex(ParseError, "Unknown Welder SKU weight \\(56758\\)"):
+            welder_variants(soup, offers, True, url)
+
+        class Welder:
+            sources = {}
+            def fetch(self, target):
+                if "#" in target:
+                    raise AssertionError("Review fragments must not create separate product URLs")
+                return markup
+
+        def cards(fetcher, root, selector):
+            card = BeautifulSoup('<div class="product-item"><a href="' + root.replace("https://theweldercatherine.ru", "")
+                                 + 'burundi_bursiara/#reviews-detail">Бурунди Бурсиара</a></div>', "html.parser").div
+            return [(root, card)], 1
+
+        with patch("catalogues.html_pages", side_effect=cards):
+            snapshot = collect_welder(Welder())
+        self.assertEqual(1, snapshot["uniqueProducts"])
+        self.assertEqual(1, len(snapshot["products"]))
+        self.assertEqual(3, len(snapshot["products"][0]["variants"]))
+        self.assertEqual(3, len(snapshot["products"][0]["sourceProperties"]["sourceAliases"]))
+
     def test_platform_differences_and_incomplete_data(self):
         single = {"uid": 10, "title": "Бразилия", "url": "https://singlestep.by/coffee/10",
                   "partuids": "[688675940832]", "editions": [{"uid": 10, "price": "28", "quantity": ""}],

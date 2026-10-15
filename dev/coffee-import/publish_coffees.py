@@ -94,7 +94,23 @@ class Publisher:
                     return json.loads(body)
             except HTTPError as exc:
                 if exc.code not in (429, 500, 502, 503, 504) or attempt == 2:
-                    raise ParseError(f"Private API {path} rejected the request (HTTP {exc.code})") from exc
+                    detail = ""
+                    try:
+                        body = exc.read(8193)
+                        error = json.loads(body) if len(body) <= 8192 else None
+                        if isinstance(error, dict):
+                            messages = [error[k] for k in ("message", "detail") if isinstance(error.get(k), str)]
+                            if isinstance(error.get("errors"), dict):
+                                for field, values in error["errors"].items():
+                                    if isinstance(values, list):
+                                        messages.extend(f"{field}: {value}" for value in values if isinstance(value, str))
+                            detail = " ".join("; ".join(messages).split()).replace(self.token, "[redacted]")[:1200]
+                    except (ValueError, OSError):
+                        pass
+                    finally:
+                        exc.close()
+                    suffix = f": {detail}" if detail else ""
+                    raise ParseError(f"Private API {path} rejected the request (HTTP {exc.code}){suffix}") from exc
             except (URLError, TimeoutError, ConnectionError):
                 if attempt == 2:
                     raise

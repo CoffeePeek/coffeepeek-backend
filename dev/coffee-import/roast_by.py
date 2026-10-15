@@ -30,6 +30,7 @@ CATALOGUES = {
 }
 DEFAULT_OUTPUT = Path(__file__).resolve().parents[1] / "imports" / "roast-by"
 ADAPTER_VERSION = "1.0"
+NON_COFFEE = re.compile(r"\b(?:набор|бокс|дрип|капсул|растворим)\w*|\b(?:drip|capsule|box|set)\b", re.I)
 COUNTRIES = {
     "CO": ("Колумбия", r"колумби[яиюе]|колумбийск[а-я]+|colombia"),
     "ET": ("Эфиопия", r"эфиопи[яиюе]|ethiopia"),
@@ -507,13 +508,20 @@ def collect(fetcher, categories=CATALOGUES):
         if expected is None or len(grouped) != expected:
             raise ParseError(f"Incomplete {kind} catalogue: discovered {len(grouped)}, expected {expected}")
         coverage.append({"productKind": kind, "catalogueUrl": root_url, "pages": len(visited),
-                         "expectedProducts": expected, "discoveredProducts": len(grouped)})
+                         "expectedProducts": expected, "discoveredProducts": len(grouped),
+                         "countUnit": "source_cards_including_non_beans"})
         for index, item in enumerate(grouped, 1):
+            if NON_COFFEE.search(item["name"]):
+                excluded.append({"sourceUrl": item["url"], "name": item["name"], "reason": "not_whole_beans",
+                                 "sourceProductId": item["selectedId"]})
+                continue
             product = parse_product(fetcher.fetch(item["url"]), item["url"], kind)
             listing_ids = {v["externalVariantId"] for v in item["variants"]}
             detail_ids = {v["externalVariantId"] for v in product["variants"]}
             if listing_ids != detail_ids:
                 raise ParseError(f"Offer group changed between catalogue and detail: {item['url']}")
+            if product["productForm"] not in ("whole_beans", "ground_only"):
+                raise ParseError(f"Unknown coffee product form: {item['url']}")
             if product["availableForPurchase"]:
                 products.append(product)
             else:

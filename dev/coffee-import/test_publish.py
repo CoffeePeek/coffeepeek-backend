@@ -2,6 +2,7 @@ import hashlib
 import json
 import tempfile
 import unittest
+from io import BytesIO
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 from urllib.error import HTTPError
@@ -13,6 +14,29 @@ from roast_by import ParseError
 
 
 class PublisherCheck(unittest.TestCase):
+    def test_private_api_validation_error_includes_bounded_details_without_credentials(self):
+        token = "private-import-token-" + "a" * 32
+        with tempfile.TemporaryDirectory(dir=Path(__file__).parent) as folder:
+            publisher = Publisher(folder, "http://localhost:5243", "http://localhost:5025", token)
+            cases = [({"message": "Invalid coffee kind, form or composition."}, "Invalid coffee kind, form or composition."),
+                     ({"errors": {"Snapshot.Products[0].ProductForm": ["Unsupported value"]}},
+                      "Snapshot.Products[0].ProductForm: Unsupported value"),
+                     ({"detail": token + "\nprivate error"}, "[redacted] private error"),
+                     ({"message": "x" * 1600}, "x" * 1200)]
+            for body, expected in cases:
+                error = HTTPError("http://localhost:5243/internal/coffee-import/snapshots", 400, "Bad Request", {},
+                                  BytesIO(json.dumps(body).encode()))
+                with patch.object(publisher.services, "open", side_effect=error):
+                    with self.assertRaises(ParseError) as caught:
+                        publisher.api(publisher.shops_url, "/internal/coffee-import/snapshots", b"{}", "application/json")
+                self.assertIn(expected, str(caught.exception))
+                self.assertNotIn(token, str(caught.exception))
+            for body in (b"<html>Bad Gateway</html>", b"x" * 8193, b"[]"):
+                error = HTTPError("http://localhost:5243", 400, "Bad Request", {}, BytesIO(body))
+                with patch.object(publisher.services, "open", side_effect=error):
+                    with self.assertRaisesRegex(ParseError, r"\(HTTP 400\)$"):
+                        publisher.api(publisher.shops_url, "/internal/coffee-import/snapshots", b"{}", "application/json")
+
     def test_missing_photo_preserves_gallery_and_does_not_block_other_products(self):
         good, missing, other = ("https://roast.by/" + name + ".png" for name in ("good", "missing", "other"))
         for code in (404, 410, 500):

@@ -41,6 +41,48 @@ def detail(*, payload=None, country="Бразилия", description="", features
 
 
 class RoastByParserTests(unittest.TestCase):
+    def test_gift_set_in_coffee_category_is_excluded_without_breaking_coverage(self):
+        root = "https://roast.by/catalog/"
+        coffee = (card() + '<a class="product-block__title" href="/coffee/">Бразилия</a></div>')
+        gift = (card().replace("100", "200").replace("101", "201")
+                + '<a class="product-block__title" href="/gift/">Набор Самой лучшей маме</a></div>')
+        listing = ('<div class="catalog-product-list">' + coffee + gift + '</div>'
+                   '<script type="application/ld+json">{"@type":"Product","offers":'
+                   '{"@type":"AggregateOffer","offercount":"2"}}</script>')
+        markup = detail().replace('</div><script', '<div class="select"><ul class="select__body-list">'
+                                  '<li><span class="text" @click="pomol = `Не молоть`">Не молоть</span></li>'
+                                  '</ul></div></div><script', 1)
+
+        class Feed:
+            sources = {}
+            def fetch(self, url):
+                if url == root:
+                    return listing
+                if url != "https://roast.by/coffee/":
+                    raise AssertionError(f"Gift set must not be collected as coffee: {url}")
+                return markup
+
+        snapshot = collect(Feed(), {"roasted_beans": root})
+        self.assertEqual(["100"], [p["sourceProductId"] for p in snapshot["products"]])
+        self.assertEqual([{"sourceProductId": "200", "sourceUrl": "https://roast.by/gift/",
+                           "name": "Набор Самой лучшей маме", "reason": "not_whole_beans"}], snapshot["excluded"])
+        self.assertEqual(2, snapshot["coverage"][0]["expectedProducts"])
+        self.assertEqual(2, snapshot["coverage"][0]["discoveredProducts"])
+        self.assertTrue(snapshot["complete"])
+
+    def test_unknown_coffee_form_fails_collection_before_private_api_apply(self):
+        listing = ('<div class="catalog-product-list">' + card()
+                   + '<a class="product-block__title" href="/coffee/">Кофе</a></div></div>'
+                   '<script type="application/ld+json">{"@type":"Product","offers":'
+                   '{"@type":"AggregateOffer","offercount":"1"}}</script>')
+
+        class Feed:
+            def fetch(self, url):
+                return listing if url.endswith("/catalog/") else detail()
+
+        with self.assertRaisesRegex(ParseError, "Unknown coffee product form: https://roast.by/coffee/"):
+            collect(Feed(), {"roasted_beans": "https://roast.by/catalog/"})
+
     def test_weights_and_exact_decimal_prices(self):
         self.assertEqual(200, weight_grams("200"))
         self.assertEqual(1000, weight_grams("1 кг"))
