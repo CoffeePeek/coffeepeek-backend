@@ -137,6 +137,9 @@ its scripts also supply the connection strings and other required settings.
 - **JWT secret.** Account issues tokens and Gateway validates them. Both must use the same `JWTOptions:SecretKey`.
 - Optional integrations: `OpenAiOptions` (menu parsing), `YandexApiOptions` (geocoding), `GooglePlaces`
   (import status checks), `Sentry:Dsn`. See `deploy/.env.example` for the full production variable list.
+- Install local secret checks once per checkout: `python dev/security/scan_secrets.py install --hooks`.
+  They check staged changes before commit and history before push. CI runs the same scanner and blocks
+  image publishing on new findings. See [secret handling and the completed exposure review](docs/security/secrets.md).
 
 ## Messaging and Wolverine Code Generation
 

@@ -23,6 +23,9 @@ env:
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
 
 jobs:
+  secret_scan:
+    uses: ./.github/workflows/secret-scan.yml
+
   build_and_test:
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -221,7 +224,7 @@ jobs:
           python dev/coffee-import/validate_deployment.py --mapping deploy/coffee-import/disabled-mapping.json --allow-disabled
 
   build_and_push_images:
-    needs: build_and_test
+    needs: [build_and_test, secret_scan]
     runs-on: ubuntu-latest
     timeout-minutes: 25
     if: github.ref == 'refs/heads/main'

@@ -44,6 +44,13 @@ dotnet list CoffeePeek.Backend.ci.slnf package --vulnerable --include-transitive
 
 ## Local development
 
+Run `python dev/security/scan_secrets.py install --hooks` once per checkout and
+`python dev/security/scan_secrets.py scan` before pushing. `.gitleaksignore` contains only
+reviewed historical finding fingerprints; do not regenerate it to suppress new findings.
+The 2026-10-15 exposure review is recorded in `docs/security/secrets.md`: the owner
+confirmed Google OAuth, Yandex and Resend keys replaced; remaining credentials belong
+to retired infrastructure. Do not reopen those findings without evidence of reuse.
+
 The supported end-to-end helper path uses Bash, Docker and the scripts in `dev/` (run from the repository root):
 
 ```text

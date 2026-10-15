@@ -1,5 +1,16 @@
 # CoffeePeek local artifacts and tooling files.
 # Order is significant for the exception rules below.
+.tools/
+.env
+.env.*
+!.env.example
+*.env
+!dev/dev.env
+*.pem
+*.key
+*.p8
+*.p12
+*.keystore
 *_i.h
 .JustCode
 **/packages/*
