@@ -162,7 +162,8 @@ public sealed class PublicAddressGatewaySmokeTests
             {
                 await using var db = Account();
                 return await new GetPublicUserProfileHandler().Handle((GetPublicUserProfileCommand)command,
-                    new UserRepository(db), MapsterConfiguration.CreateMapper(mediaOptions), ct);
+                    new UserRepository(db), MapsterConfiguration.CreateMapper(mediaOptions),
+                    new CoffeePeek.Account.Persistence.Profiles.ProfileSocialStore(db, Microsoft.Extensions.Options.Options.Create(mediaOptions)), ct);
             });
 
         bus.Setup(x => x.InvokeAsync<Response<GetCoffeeShopResponse>>(It.IsAny<object>(), It.IsAny<CancellationToken>(), It.IsAny<TimeSpan?>()))

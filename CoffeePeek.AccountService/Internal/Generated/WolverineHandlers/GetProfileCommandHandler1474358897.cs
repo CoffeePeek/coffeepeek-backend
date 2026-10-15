@@ -2,6 +2,7 @@
 #pragma warning disable
 using MapsterMapper;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using System.Collections.Generic;
 
 namespace Internal.Generated.WolverineHandlers
@@ -12,12 +13,14 @@ namespace Internal.Generated.WolverineHandlers
     {
         private readonly MapsterMapper.IMapper _mapper;
         private readonly Microsoft.Extensions.DependencyInjection.IServiceScopeFactory _serviceScopeFactory;
+        private readonly Microsoft.Extensions.Options.IOptions<CoffeePeek.Shared.Kernel.Options.MediaPublicUrlOptions> _optionsOfMediaPublicUrlOptions;
         private readonly System.Collections.Generic.IEnumerable<Wolverine.EntityFrameworkCore.IDomainEventScraper> _domainEventScraperIEnumerable;
 
-        public GetProfileCommandHandler1474358897(MapsterMapper.IMapper mapper, Microsoft.Extensions.DependencyInjection.IServiceScopeFactory serviceScopeFactory, System.Collections.Generic.IEnumerable<Wolverine.EntityFrameworkCore.IDomainEventScraper> domainEventScraperIEnumerable)
+        public GetProfileCommandHandler1474358897(MapsterMapper.IMapper mapper, Microsoft.Extensions.DependencyInjection.IServiceScopeFactory serviceScopeFactory, Microsoft.Extensions.Options.IOptions<CoffeePeek.Shared.Kernel.Options.MediaPublicUrlOptions> optionsOfMediaPublicUrlOptions, System.Collections.Generic.IEnumerable<Wolverine.EntityFrameworkCore.IDomainEventScraper> domainEventScraperIEnumerable)
         {
             _mapper = mapper;
             _serviceScopeFactory = serviceScopeFactory;
+            _optionsOfMediaPublicUrlOptions = optionsOfMediaPublicUrlOptions;
             _domainEventScraperIEnumerable = domainEventScraperIEnumerable;
         }
 
@@ -29,11 +32,12 @@ namespace Internal.Generated.WolverineHandlers
             Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<Wolverine.Runtime.ScopedMessageContextHolder>(serviceScope.ServiceProvider).Context = context;
             // This service has been marked as requiring service location independent of Wolverine's ability to use constructor injection of everything else
             var accountDbContext = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<CoffeePeek.Account.Persistence.Configuration.AccountDbContext>(serviceScope.ServiceProvider);
+            var profileSocialStore = new CoffeePeek.Account.Persistence.Profiles.ProfileSocialStore(accountDbContext, _optionsOfMediaPublicUrlOptions);
             var userRepository = new CoffeePeek.Account.Persistence.Repositories.UserRepository(accountDbContext);
             // The actual message body
             var getProfileCommand = (CoffeePeek.Account.Application.Features.User.GetProfile.GetProfileCommand)context.Envelope.Message;
 
-            
+
             // Enroll the DbContext & IMessagingContext in the outgoing Wolverine outbox transaction
             var efCoreEnvelopeTransaction = new Wolverine.EntityFrameworkCore.Internals.EfCoreEnvelopeTransaction(accountDbContext, context, _domainEventScraperIEnumerable);
             await context.EnlistInOutboxAsync(efCoreEnvelopeTransaction).ConfigureAwait(false);
@@ -47,15 +51,15 @@ namespace Internal.Generated.WolverineHandlers
             {
                 System.Diagnostics.Activity.Current?.SetTag("message.handler", "CoffeePeek.Account.Application.Features.User.GetProfile.GetProfileHandler");
                 System.Diagnostics.Activity.Current?.SetTag("handler.type", "CoffeePeek.Account.Application.Features.User.GetProfile.GetProfileHandler");
-                
-                // The actual message execution
-                var outgoing1 = await CoffeePeek.Account.Application.Features.User.GetProfile.GetProfileHandler.Handle(getProfileCommand, userRepository, _mapper, cancellation).ConfigureAwait(false);
 
-                
+                // The actual message execution
+                var outgoing1 = await CoffeePeek.Account.Application.Features.User.GetProfile.GetProfileHandler.Handle(getProfileCommand, userRepository, _mapper, profileSocialStore, cancellation).ConfigureAwait(false);
+
+
                 // Outgoing, cascaded message
                 await context.EnqueueCascadingAsync(outgoing1).ConfigureAwait(false);
 
-                
+
                 // Added by EF Core Transaction Middleware
                 var result_of_SaveChangesAsync = await accountDbContext.SaveChangesAsync(cancellation).ConfigureAwait(false);
 
@@ -74,7 +78,6 @@ namespace Internal.Generated.WolverineHandlers
     }
 
     // END: GetProfileCommandHandler1474358897
-    
-    
-}
 
+
+}

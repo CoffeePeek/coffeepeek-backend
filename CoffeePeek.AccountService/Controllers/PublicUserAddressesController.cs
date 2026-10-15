@@ -5,6 +5,7 @@ using CoffeePeek.Shared.Kernel.Exceptions;
 using CoffeePeek.Shared.Kernel.Response;
 using Microsoft.AspNetCore.Mvc;
 using Wolverine;
+using CoffeePeek.Shared.Auth;
 
 namespace CoffeePeek.AccountService.Controllers;
 
@@ -19,7 +20,7 @@ namespace CoffeePeek.AccountService.Controllers;
 [Tags("User")]
 [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
 [ProducesErrorResponseType(typeof(ErrorResponse))]
-public sealed class PublicUserAddressesController(IProfileAddressService addresses, IMessageBus bus) : ControllerBase
+public sealed class PublicUserAddressesController(IProfileAddressService addresses, IMessageBus bus, IUserContext? userContext = null) : ControllerBase
 {
     /// <summary>
     /// Resolves the current profile slug (case-insensitive) to the public profile and its address.
@@ -38,7 +39,7 @@ public sealed class PublicUserAddressesController(IProfileAddressService address
         try
         {
             var response = await bus.InvokeAsync<Response<PublicUserProfileResponse>>(
-                new GetPublicUserProfileCommand(address.EntityId), ct);
+                new GetPublicUserProfileCommand(address.EntityId) { ViewerId = userContext?.GetUserId() }, ct);
             return response is { IsSuccess: true, Data: not null }
                 ? Ok(new PublicEntityEnvelope<PublicUserProfileResponse>(response.Data, PublicAddressDto.From(address)))
                 : NotFound();

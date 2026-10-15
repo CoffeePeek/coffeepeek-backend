@@ -1,8 +1,14 @@
 #!/usr/bin/env python3
 """Generate the discovery wire DTOs from the checked-in OpenAPI contract."""
+import argparse
 import json
 from pathlib import Path
 import yaml
+
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument('--check', action='store_true', help='Fail if checked-in DTOs differ from the schema, without writing files.')
+args = parser.parse_args()
+outdated = []
 
 ROOT = Path(__file__).resolve().parents[1]
 SPEC = yaml.safe_load((ROOT / 'docs/contracts/discovery-coffee.openapi.yaml').read_text(encoding='utf-8'))
@@ -102,4 +108,13 @@ for class_name, schema in SCHEMAS.items():
             initializer = ' = new();'
         lines += [f'    public {typ} {key[0].upper()+key[1:]} {{ get; set; }}{initializer}']
     lines += ['}', '']
-    (target / (class_name + '.cs')).write_text('\n'.join(lines), encoding='utf-8', newline='\n')
+    output = target / (class_name + '.cs')
+    contents = '\n'.join(lines)
+    if not output.exists() or output.read_text(encoding='utf-8') != contents:
+        if args.check:
+            outdated.append(str(output.relative_to(ROOT)))
+        else:
+            output.write_text(contents, encoding='utf-8', newline='\n')
+
+if outdated:
+    parser.exit(1, 'Generated DTOs differ from their OpenAPI schemas:\n' + '\n'.join(outdated) + '\n')

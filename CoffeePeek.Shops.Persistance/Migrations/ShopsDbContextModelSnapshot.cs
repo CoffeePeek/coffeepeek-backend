@@ -1996,7 +1996,10 @@ namespace CoffeePeek.Shops.Persistance.Migrations
 
                     b.HasIndex("Kind", "EntityId");
 
-                    b.ToTable("DiscoveryFavorites", (string)null);
+                    b.ToTable("DiscoveryFavorites", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_DiscoveryFavorites_Kind", "\"Kind\" IN ('coffee_shop', 'roaster', 'drink')");
+                        });
                 });
 
             modelBuilder.Entity("CoffeePeek.Shops.Domain.Aggregates.MenuAggregate.CoffeeDrinkDefinition", b =>

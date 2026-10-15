@@ -57,6 +57,7 @@ if [[ "${SKIP_MIGRATIONS:-}" != "1" ]]; then
     -e DOTNET_CLI_TELEMETRY_OPTOUT=1 \
     mcr.microsoft.com/dotnet/sdk:10.0 \
     bash deploy/scripts/apply-migrations.sh
+  bash "${REPO_ROOT}/dev/backfill-profile-roaster-counts.sh"
 fi
 
 echo "==> Building and starting application services..."

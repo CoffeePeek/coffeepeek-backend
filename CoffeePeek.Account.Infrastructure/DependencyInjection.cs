@@ -30,6 +30,7 @@ public static class DependencyInjection
         // 2. Event Handlers
         services.AddScoped<CheckinCreatedHandler>();
         services.AddScoped<ModerationShopApprovedAccountHandler>();
+        services.AddScoped<ModerationRoasterApprovedAccountHandler>();
         services.AddScoped<UserPhotoUploadedHandler>();
         services.AddScoped<UserRegisteredEventHandler>();
         services.AddScoped<PasswordResetRequestedEventHandler>();

@@ -50,6 +50,7 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         {
             sb.Property(s => s.CheckInCount).HasColumnName(nameof(UserStatistics.CheckInCount));
             sb.Property(s => s.AddedShopsCount).HasColumnName(nameof(UserStatistics.AddedShopsCount));
+            sb.Property(s => s.AddedRoastersCount).HasColumnName(nameof(UserStatistics.AddedRoastersCount)).HasDefaultValue(0);
             sb.Property(s => s.StatisticUpdatedAtUtc).HasColumnName(nameof(UserStatistics.StatisticUpdatedAtUtc));
         });
 

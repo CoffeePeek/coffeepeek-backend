@@ -282,6 +282,48 @@ namespace CoffeePeek.Account.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("CoffeePeek.Account.Domain.Entities.UserAggregate.UserFollow", b =>
+                {
+                    b.Property<Guid>("FollowerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("FollowedId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("FollowerId", "FollowedId");
+
+                    b.HasIndex("FollowedId", "CreatedAtUtc", "FollowerId");
+
+                    b.HasIndex("FollowerId", "CreatedAtUtc", "FollowedId");
+
+                    b.ToTable("UserFollows", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_UserFollows_NoSelfFollow", "\"FollowerId\" <> \"FollowedId\"");
+                        });
+                });
+
+            modelBuilder.Entity("CoffeePeek.Account.Domain.Entities.UserAggregate.UserRoasterCredit", b =>
+                {
+                    b.Property<Guid>("RoasterId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("RoasterId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("UserRoasterCredits", (string)null);
+                });
+
             modelBuilder.Entity("UserRoles", b =>
                 {
                     b.Property<Guid>("RoleId")
@@ -387,6 +429,12 @@ namespace CoffeePeek.Account.Persistence.Migrations
                             b1.Property<Guid>("UserId")
                                 .HasColumnType("uuid");
 
+                            b1.Property<int>("AddedRoastersCount")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("integer")
+                                .HasDefaultValue(0)
+                                .HasColumnName("AddedRoastersCount");
+
                             b1.Property<int>("AddedShopsCount")
                                 .HasColumnType("integer")
                                 .HasColumnName("AddedShopsCount");
@@ -413,6 +461,30 @@ namespace CoffeePeek.Account.Persistence.Migrations
                     b.Navigation("PhotoMetadata");
 
                     b.Navigation("Statistics")
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("CoffeePeek.Account.Domain.Entities.UserAggregate.UserFollow", b =>
+                {
+                    b.HasOne("CoffeePeek.Account.Domain.Entities.UserAggregate.User", null)
+                        .WithMany()
+                        .HasForeignKey("FollowedId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("CoffeePeek.Account.Domain.Entities.UserAggregate.User", null)
+                        .WithMany()
+                        .HasForeignKey("FollowerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("CoffeePeek.Account.Domain.Entities.UserAggregate.UserRoasterCredit", b =>
+                {
+                    b.HasOne("CoffeePeek.Account.Domain.Entities.UserAggregate.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 

@@ -7,6 +7,7 @@ using CoffeePeek.Contract.Dtos.PublicAddresses;
 using CoffeePeek.Shared.Auth.Constants;
 using CoffeePeek.Shops.Application.Features.CoffeeCatalog;
 using CoffeePeek.Shops.Application.Features.Discovery;
+using CoffeePeek.Shops.Application.Abstractions;
 using CoffeePeek.ShopsService;
 using CoffeePeek.ShopsService.Controllers;
 using Microsoft.AspNetCore.Hosting.Server;
@@ -26,6 +27,7 @@ public sealed class DiscoveryHttpContractTests : IAsyncLifetime
     private readonly Mock<IDiscoveryClassificationStore> classification = new();
     private readonly Mock<IDiscoveryFavoritesStore> favorites = new();
     private readonly Mock<IMessageBus> bus = new();
+    private readonly Mock<IProfileAddressLookup> profiles = new();
 
     public async ValueTask InitializeAsync()
     {
@@ -39,6 +41,7 @@ public sealed class DiscoveryHttpContractTests : IAsyncLifetime
         builder.Services.AddSingleton(classification.Object);
         builder.Services.AddSingleton(favorites.Object);
         builder.Services.AddSingleton(bus.Object);
+        builder.Services.AddSingleton(profiles.Object);
         builder.Services.AddSingleton(catalog.Object);
         bus.Setup(b => b.InvokeAsync(It.IsAny<SetDiscoveryFavoriteCommand>(), It.IsAny<CancellationToken>(), It.IsAny<TimeSpan?>()))
             .Returns((object command, CancellationToken ct, TimeSpan? _) =>
@@ -178,6 +181,54 @@ public sealed class DiscoveryHttpContractTests : IAsyncLifetime
         using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync(ct));
         Assert.Equal(code, body.RootElement.GetProperty("errorCode").GetString());
         Assert.False(body.RootElement.GetProperty("isSuccess").GetBoolean());
+    }
+
+    [Fact]
+    public async Task PublicFavorites_ResolveRequestedProfile_ForGuestsAndAuthenticatedViewers()
+    {
+        var author = Guid.NewGuid();
+        profiles.Setup(p => p.ResolveAsync("glasha", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new PublicAddressMetadata(author, "glasha", "/users/glasha", 1));
+        favorites.Setup(f => f.ListAsync(author, It.IsAny<CancellationToken>())).ReturnsAsync([
+            new DiscoveryFavoriteItem { Kind = "drink", Drink = new() { Slug = "matcha_latte" }, Name = "Матча латте", CreatedAtUtc = DateTime.UtcNow }
+        ]);
+        foreach (var signedIn in new[] { false, true })
+        {
+            if (signedIn) Authenticate(Guid.NewGuid(), RoleConsts.User);
+            using var response = await client.GetAsync("/api/v1/profiles/glasha/favorites", TestContext.Current.CancellationToken);
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
+            var item = body.RootElement.GetProperty("data")[0];
+            Assert.Equal("Матча латте", item.GetProperty("name").GetString());
+            Assert.Equal("matcha_latte", item.GetProperty("drink").GetProperty("slug").GetString());
+            Assert.Equal(JsonValueKind.Null, item.GetProperty("address").ValueKind);
+            Assert.False(item.TryGetProperty("userId", out _));
+        }
+        favorites.Verify(f => f.ListAsync(author, It.IsAny<CancellationToken>()), Times.Exactly(2));
+        favorites.Verify(f => f.SetAsync(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Theory]
+    [InlineData("missing")]
+    [InlineData("hidden-profile")]
+    public async Task UnavailableProfileFavorites_Return404WithoutReadingFavorites(string slug)
+    {
+        profiles.Setup(p => p.ResolveAsync(slug, It.IsAny<CancellationToken>())).ReturnsAsync((PublicAddressMetadata?)null);
+        using var response = await client.GetAsync($"/api/v1/profiles/{slug}/favorites", TestContext.Current.CancellationToken);
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        favorites.Verify(f => f.ListAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Theory]
+    [InlineData("/api/v1/favorites")]
+    [InlineData("/api/v1/profiles/glasha/favorites", true)]
+    public async Task FavoriteMutations_RequireAuthenticationOrHaveNoPublicRoute(string route, bool publicRoute = false)
+    {
+        using var response = publicRoute
+            ? await client.PutAsync(route, null, TestContext.Current.CancellationToken)
+            : await client.GetAsync(route, TestContext.Current.CancellationToken);
+        Assert.Equal(publicRoute ? HttpStatusCode.MethodNotAllowed : HttpStatusCode.Unauthorized, response.StatusCode);
+        favorites.Verify(f => f.SetAsync(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]

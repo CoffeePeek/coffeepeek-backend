@@ -230,8 +230,8 @@ Main route groups through the gateway:
 
 | Routes | Service |
 |---|---|
-| `/api/Users/*`, `/api/Tokens/*` | Account |
-| `/api/CoffeeShops/*`, `/api/Map/*`, `/api/Catalogs/*`, `/api/v1/check-ins/*`, `/api/menu/*`, `/api/roasters/*`, `/api/owner/*`, `/api/public/stats` | Shops |
+| `/api/Users/*`, `/api/Tokens/*` | Account; [profiles and follows](docs/api/profiles.md) |
+| `/api/CoffeeShops/*`, `/api/Map/*`, `/api/Catalogs/*`, `/api/v1/check-ins/*`, `/api/v1/profiles/*`, `/api/menu/*`, `/api/roasters/*`, `/api/owner/*`, `/api/public/stats` | Shops |
 | `/api/ModerationShops/*`, `/api/v1/moderation/check-ins/*`, `/api/ModerationRoasters/*`, `/api/ShopChangeRequests/*`, `/api/ShopIssueReports/*` | Moderation |
 | `/api/Photos/*` | Media |
 | `/api/admin/*` | Admin tools (Moderator/Admin roles) |

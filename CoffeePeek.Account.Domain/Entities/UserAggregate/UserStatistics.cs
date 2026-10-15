@@ -4,6 +4,7 @@ public partial record UserStatistics
 {
     public int CheckInCount { get; private set; }
     public int AddedShopsCount { get; private set; }
+    public int AddedRoastersCount { get; private set; }
     public DateTime StatisticUpdatedAtUtc { get; set; } = DateTime.UtcNow;
 
     private UserStatistics()
@@ -25,5 +26,10 @@ public partial record UserStatistics
     public void IncrementAddedShops()
     {
         AddedShopsCount += 1;
+    }
+    public void IncrementAddedRoasters()
+    {
+        AddedRoastersCount += 1;
+        StatisticUpdatedAtUtc = DateTime.UtcNow;
     }
 }

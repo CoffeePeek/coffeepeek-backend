@@ -6,4 +6,9 @@ public record PublicUserProfileResponse(
     string? About,
     string? AvatarUrl,
     int CheckInCount,
-    int AddedShopsCount);
+    int AddedShopsCount)
+{
+    public int AddedRoastersCount { get; init; }
+    public int FollowersCount { get; init; }
+    public bool IsFollowing { get; init; }
+}

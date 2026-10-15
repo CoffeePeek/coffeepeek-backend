@@ -264,7 +264,7 @@ paths:
                       addressLine: Пример улицы, 1
                       coverPhoto: null
                       rating: 4.3
-                      reviewCount: 12
+                      checkInCount: 12
                       isOpen: true
                       isVisited: null
                       isFavorite: null
@@ -367,7 +367,7 @@ paths:
                     addressLine: Пример улицы, 1
                     coverPhoto: null
                     rating: 4.3
-                    reviewCount: 12
+                    checkInCount: 12
                     isOpen: true
                     isVisited: null
                     isFavorite: null
@@ -1961,7 +1961,8 @@ paths:
   /api/v1/favorites:
     get:
       operationId: getDiscoveryFavorites
-      summary: Избранные кофейни и обжарщики текущего пользователя
+      summary: Избранные кофейни, обжарщики и напитки текущего пользователя
+      description: Сохранённые избранные объекты также видны в публичном профиле пользователя.
       security: &id001
       - bearerAuth: []
       responses:
@@ -1980,6 +1981,34 @@ paths:
                 - data
         '401':
           description: Требуется авторизация
+  /api/v1/profiles/{authorSlug}/favorites:
+    get:
+      operationId: getPublicProfileFavorites
+      summary: Любимые кофейни, обжарщики и напитки публичного профиля
+      description: Возвращает все сохранённые избранные объекты доступного профиля. Скрытые кофейни и неактивные напитки исключаются.
+      security: []
+      parameters:
+      - name: authorSlug
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/PublicSlug'
+      responses:
+        '200':
+          description: Успех
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/DiscoveryFavoriteItem'
+                required:
+                - data
+        '404':
+          description: Профиль не найден или недоступен
   /api/v1/favorites/{kind}/{slug}:
     put:
       operationId: addDiscoveryFavorite
@@ -1994,11 +2023,16 @@ paths:
           enum:
           - coffee_shop
           - roaster
+          - drink
       - name: slug
         in: path
         required: true
+        description: Публичный slug кофейни/обжарщика либо стабильный slug напитка из каталога. Slug напитка может содержать подчёркивание.
         schema:
-          $ref: '#/components/schemas/PublicSlug'
+          type: string
+          pattern: ^[a-z0-9]+(?:[_-][a-z0-9]+)*$
+          minLength: 1
+          maxLength: 100
       responses:
         '204':
           description: Изменение сохранено; повторный запрос идемпотентен
@@ -2667,7 +2701,7 @@ components:
           type: number
           minimum: 0
           maximum: 5
-        reviewCount:
+        checkInCount:
           type: integer
           minimum: 0
         isOpen:
@@ -2702,7 +2736,7 @@ components:
       - addressLine
       - coverPhoto
       - rating
-      - reviewCount
+      - checkInCount
       - isOpen
       - isVisited
       - isFavorite
@@ -3594,8 +3628,24 @@ components:
           enum:
           - coffee_shop
           - roaster
+          - drink
         address:
-          $ref: '#/components/schemas/PublicAddress'
+          description: Канонический адрес кофейни/обжарщика; для напитка null.
+          anyOf:
+          - $ref: '#/components/schemas/PublicAddress'
+          - type: 'null'
+        drink:
+          description: Стабильная ссылка на напиток каталога; только для kind=drink, без вымышленного URL страницы.
+          anyOf:
+          - $ref: '#/components/schemas/FavoriteDrinkReference'
+          - type: 'null'
+        name:
+          type: string
+          description: Название объекта, для напитка — NameRu.
+        coverPhoto:
+          anyOf:
+          - $ref: '#/components/schemas/Photo'
+          - type: 'null'
         createdAtUtc:
           type: string
           format: date-time
@@ -3603,3 +3653,14 @@ components:
       - kind
       - address
       - createdAtUtc
+    FavoriteDrinkReference:
+      type: object
+      additionalProperties: false
+      properties:
+        slug:
+          type: string
+          pattern: ^[a-z0-9]+(?:[_-][a-z0-9]+)*$
+          minLength: 1
+          maxLength: 50
+      required:
+      - slug

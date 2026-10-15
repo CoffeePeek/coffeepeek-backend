@@ -17,6 +17,36 @@ namespace CoffeePeek.Gateway.Tests;
 public class ReverseProxyRouteConfigurationTests
 {
     [Fact]
+    public void ProfileFollowWritesRequireIdentityAndPublicProfileReadsUseOwningServices()
+    {
+        using var document = LoadGatewayAppsettings();
+        var routes = document.RootElement.GetProperty("ReverseProxy").GetProperty("Routes");
+        var follow = routes.GetProperty("account-profile-follow-route");
+        follow.GetProperty("ClusterId").GetString().Should().Be("account-cluster");
+        follow.GetProperty("AuthorizationPolicy").GetString().Should().Be("Authenticated");
+        follow.GetProperty("Match").GetProperty("Path").GetString().Should().Be("/api/Users/{slug}/follow");
+        follow.GetProperty("Match").GetProperty("Methods").EnumerateArray()
+            .Select(x => x.GetString()).Should().Equal("PUT", "DELETE");
+
+        foreach (var (id, cluster, path) in new[]
+                 {
+                     ("account-profile-followers-route", "account-cluster", "/api/Users/{slug}/followers"),
+                     ("account-profile-following-route", "account-cluster", "/api/Users/{slug}/following"),
+                     ("shops-public-profile-route", "shops-cluster", "/api/v1/profiles/{**remainder}")
+                 })
+        {
+            var route = routes.GetProperty(id);
+            route.GetProperty("ClusterId").GetString().Should().Be(cluster);
+            route.GetProperty("Match").GetProperty("Path").GetString().Should().Be(path);
+            route.GetProperty("Match").GetProperty("Methods").EnumerateArray()
+                .Select(x => x.GetString()).Should().Equal("GET");
+            route.GetProperty("RateLimiterPolicy").GetString().Should().Be("global");
+            route.TryGetProperty("AuthorizationPolicy", out _).Should().BeFalse();
+            route.TryGetProperty("Transforms", out _).Should().BeFalse();
+        }
+    }
+
+    [Fact]
     public void SupportRoutes_ArePublicAndSubmissionIsRateLimited()
     {
         using var document = LoadGatewayAppsettings();

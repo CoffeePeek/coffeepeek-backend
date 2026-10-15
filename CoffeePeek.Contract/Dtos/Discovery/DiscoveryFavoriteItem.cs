@@ -10,11 +10,13 @@ public class DiscoveryFavoriteItem
 {
     [JsonRequired]
     [Required]
-    [DiscoveryChoices("coffee_shop", "roaster")]
+    [DiscoveryChoices("coffee_shop", "roaster", "drink")]
     public string Kind { get; set; } = string.Empty;
     [JsonRequired]
-    [Required]
-    public PublicAddress Address { get; set; } = new();
+    public PublicAddress? Address { get; set; }
+    public FavoriteDrinkReference? Drink { get; set; }
+    public string? Name { get; set; }
+    public Photo? CoverPhoto { get; set; }
     [JsonRequired]
     [Required]
     public DateTime CreatedAtUtc { get; set; }

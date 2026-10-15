@@ -26,7 +26,8 @@ internal static class CoffeeCatalogConfiguration
         filterValue.HasData(CoffeeClassificationSeed.Values());
 
         var favorite = model.Entity<CoffeePeek.Shops.Domain.Aggregates.DiscoveryAggregate.DiscoveryFavorite>();
-        favorite.ToTable("DiscoveryFavorites");
+        favorite.ToTable("DiscoveryFavorites", table =>
+            table.HasCheckConstraint("CK_DiscoveryFavorites_Kind", "\"Kind\" IN ('coffee_shop', 'roaster', 'drink')"));
         favorite.HasKey(f => new { f.UserId, f.Kind, f.EntityId });
         favorite.Property(f => f.Kind).HasMaxLength(30);
         favorite.HasIndex(f => new { f.Kind, f.EntityId });

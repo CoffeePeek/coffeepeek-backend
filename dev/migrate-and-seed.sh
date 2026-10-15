@@ -39,4 +39,7 @@ docker exec "$PG_CONTAINER" psql -U coffeepeek -d cpaccountdb -c \
    SELECT gen_random_uuid(), r, now() FROM (VALUES ('User'),('Admin'),('Moderator'),('Owner'),('Employee'),('Roaster')) AS t(r) \
    WHERE NOT EXISTS (SELECT 1 FROM \"Roles\" WHERE \"Name\" = t.r);"
 
+echo "== backfill added-roaster statistics (application writers must be stopped) =="
+bash dev/backfill-profile-roaster-counts.sh --dev
+
 echo "Done."

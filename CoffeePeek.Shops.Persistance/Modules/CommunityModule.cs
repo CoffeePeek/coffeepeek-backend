@@ -1,5 +1,6 @@
 using CoffeePeek.Shops.Application.Features.CheckIn;
 using CoffeePeek.Shops.Application.Features.Feed;
+using CoffeePeek.Shops.Application.Features.Profiles;
 using CoffeePeek.Shops.Domain.Aggregates.CheckInAggregate;
 using CoffeePeek.Shops.Domain.Aggregates.ReviewAggregate;
 using CoffeePeek.Shops.Persistance.Queries;
@@ -13,6 +14,7 @@ public static class CommunityModule
     public static IServiceCollection AddCommunityModule(this IServiceCollection services)
     {
         services.AddScoped<ICheckInQueries, CheckInQueries>();
+        services.AddScoped<IProfileActivityQueries, ProfileActivityQueries>();
         services.AddScoped<ICheckInFeedReader, CheckInFeedReader>();
         services.AddScoped<IQueryCheckInRepository, QueryCheckInRepository>();
         services.AddScoped<IReviewReportRepository, ReviewReportRepository>();
