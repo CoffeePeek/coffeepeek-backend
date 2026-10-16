@@ -6,9 +6,11 @@ AccountService accepts `OAuthAppleOptions__ClientId` (default `com.coffeepeek`).
 This must match the signed iOS app bundle ID. Apple signing keys are retrieved
 over HTTPS from `https://appleid.apple.com/.well-known/openid-configuration` and
 cached by IdentityModel. The existing Redis connection stores login challenges
-with a five-minute TTL. Gateway's `auth-endpoints` rate limit covers both routes.
+with a five-minute TTL. Gateway's `auth-endpoints` rate limit covers the Apple routes.
 There is no database migration: Apple identities use the existing external
 provider credentials with provider `AppleProvider` and Apple's stable `sub`.
+
+Browser login and deployment settings are documented in [Sign in with Apple](apple-sign-in.md).
 
 ## Contract
 
@@ -18,6 +20,9 @@ provider credentials with provider `AppleProvider` and Apple's stable `sub`.
    and `state` to `challengeId`, requests email scope, and verifies returned state.
 3. `POST /api/Tokens/apple/login` with `{ "challengeId": "uuid", "idToken": "Apple JWT" }`:
    `{ "isSuccess": true, "data": { "accessToken": "CoffeePeek JWT", "refreshToken": "opaque", "accessTokenExpiresAt": "ISO-8601" } }`.
+
+`POST /api/Tokens/apple/native` is an alias with the same challenge ID request and JSON response;
+neither native route sets a browser refresh cookie.
 
 The native session store must securely persist both CoffeePeek tokens. Apple ID
 tokens must never be used as CoffeePeek access tokens or logged. The server
@@ -35,7 +40,8 @@ with Apple's Private Email Relay for transactional emails to relay addresses.
 The native flow validates ID tokens directly; it does not exchange authorization
 codes for Apple refresh tokens. CoffeePeek refresh-token logout/revocation remains
 the existing session lifecycle. Server-side Apple grant revocation on account
-deletion requires a separate Apple signing key/token-exchange integration.
+deletion requires a separate Apple grant storage/revocation integration; the browser code
+exchange does not persist Apple refresh tokens.
 
 ## Verification
 

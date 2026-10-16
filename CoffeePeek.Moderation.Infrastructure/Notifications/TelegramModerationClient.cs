@@ -5,6 +5,7 @@ using CoffeePeek.Contract.Events.Moderation;
 using CoffeePeek.Moderation.Application.Abstractions;
 using CoffeePeek.Moderation.Domain.Aggregates.ModerationReviewAggregate;
 using Microsoft.Extensions.Options;
+using OpenTelemetry;
 
 namespace CoffeePeek.Moderation.Infrastructure.Notifications;
 
@@ -95,6 +96,8 @@ public sealed class TelegramModerationClient(HttpClient httpClient, IOptions<Tel
         };
         if (useRelay)
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", settings.BotToken);
+        // Direct Telegram URLs contain the bot token; keep credentials out of outbound telemetry.
+        using var instrumentation = SuppressInstrumentationScope.Begin();
         using var response = await httpClient.SendAsync(request, ct);
         if (!response.IsSuccessStatusCode)
         {

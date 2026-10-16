@@ -213,6 +213,12 @@ services:
       MinIOOptions__BucketName: coffeepeek.avatars
       OAuthGoogleOptions__ClientId: ${GOOGLE_CLIENT_ID:-770099870632-5eeebr3eqdrma4reson9mv02j4lro583.apps.googleusercontent.com}
       OAuthGoogleOptions__ClientSecret: ${GOOGLE_CLIENT_SECRET:-}
+      OAuthAppleOptions__ClientId: ${APPLE_CLIENT_ID:-com.coffeepeek}
+      OAuthAppleOptions__ServiceId: ${APPLE_WEB_CLIENT_ID:-}
+      OAuthAppleOptions__TeamId: ${APPLE_TEAM_ID:-}
+      OAuthAppleOptions__KeyId: ${APPLE_KEY_ID:-}
+      OAuthAppleOptions__PrivateKeyPem: ${APPLE_PRIVATE_KEY_PEM:-}
+      OAuthAppleOptions__RedirectUri: ${APPLE_REDIRECT_URI:-}
       ResendClientOptions__ApiToken: ${RESEND_API_TOKEN}
       AccountDeletionOptions__TokenPepper: ${ACCOUNT_DELETION_TOKEN_PEPPER:-${JWT_SECRET_KEY}}
       AccountDeletionOptions__TokenLifetimeHours: ${ACCOUNT_DELETION_TOKEN_LIFETIME_HOURS:-24}

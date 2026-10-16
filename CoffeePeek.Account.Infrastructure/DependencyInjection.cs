@@ -57,6 +57,7 @@ public static class DependencyInjection
                 new Microsoft.IdentityModel.Protocols.OpenIdConnect.OpenIdConnectConfigurationRetriever()));
         services.AddScoped<IAppleAuthService, AppleAuthService>();
         services.AddSingleton<IAppleLoginChallengeStore, AppleLoginChallengeStore>();
+        services.AddHttpClient<IAppleWebAuthService, AppleWebAuthService>(client => client.Timeout = TimeSpan.FromSeconds(15));
 
         services.AddOptions<AdminStatsOptions>()
             .BindConfiguration(nameof(AdminStatsOptions));
