@@ -6,6 +6,7 @@ using CoffeePeek.Moderation.Domain.Entities;
 using CoffeePeek.Moderation.Infrastructure.Notifications;
 using CoffeePeek.Shared.Auth.Options;
 using Microsoft.Extensions.Options;
+using OpenTelemetry;
 
 namespace CoffeePeek.ModerationService.Tests;
 
@@ -35,6 +36,8 @@ public class TelegramCheckInNotificationTests
             userId, "alice", review.ShopId, review.Comment), TestContext.Current.CancellationToken);
 
         Assert.Equal(2, telegramHandler.Requests.Count);
+        Assert.All(telegramHandler.InstrumentationSuppressed, Assert.True);
+        Assert.False(Sdk.SuppressInstrumentation);
         using var message = JsonDocument.Parse(telegramHandler.Requests[0].Body);
         var body = message.RootElement;
         Assert.Contains("Вкусный латте", body.GetProperty("text").GetString());
@@ -70,6 +73,8 @@ public class TelegramCheckInNotificationTests
             TestContext.Current.CancellationToken);
 
         using var message = JsonDocument.Parse(Assert.Single(handler.Requests).Body);
+        Assert.True(Assert.Single(handler.InstrumentationSuppressed));
+        Assert.False(Sdk.SuppressInstrumentation);
         Assert.False(message.RootElement.TryGetProperty("reply_markup", out _));
         Assert.Contains("Текст: нет", message.RootElement.GetProperty("text").GetString());
     }
@@ -77,9 +82,11 @@ public class TelegramCheckInNotificationTests
     private sealed class CapturingHandler : HttpMessageHandler
     {
         public List<(string Url, string Body, string? GatewayAuth, string? UserId)> Requests { get; } = [];
+        public List<bool> InstrumentationSuppressed { get; } = [];
 
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
         {
+            InstrumentationSuppressed.Add(Sdk.SuppressInstrumentation);
             Requests.Add((request.RequestUri!.ToString(), request.Content is null
                     ? "" : await request.Content.ReadAsStringAsync(ct),
                 request.Headers.TryGetValues("X-Gateway-Auth", out var auth) ? auth.Single() : null,
