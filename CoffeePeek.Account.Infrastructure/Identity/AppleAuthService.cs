@@ -21,7 +21,10 @@ public sealed class AppleAuthService(
         var parameters = new TokenValidationParameters
         {
             ValidateIssuer = true, ValidIssuer = "https://appleid.apple.com",
-            ValidateAudience = true, ValidAudience = options.Value.ClientId,
+            ValidateAudience = true,
+            ValidAudiences = string.IsNullOrWhiteSpace(options.Value.ServiceId)
+                ? [options.Value.ClientId]
+                : [options.Value.ClientId, options.Value.ServiceId],
             RequireSignedTokens = true, ValidateIssuerSigningKey = true,
             IssuerSigningKeys = metadata.SigningKeys,
             ValidateLifetime = true, RequireExpirationTime = true,

@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.Text.Json;
 using CoffeePeek.Account.Application.Common.Interfaces;
 using CoffeePeek.Account.Application.Features.Auth.AppleLogin;
 using CoffeePeek.AccountService.Controllers;
@@ -25,8 +26,12 @@ public sealed class AppleLoginEndpointTests
         command.ToString().Should().NotContain("secret-id-token");
     }
 
-    [Fact]
-    public async Task Login_ValidBody_ReachesHandlerAndReturnsItsStatus()
+    [Theory]
+    [InlineData("/api/Tokens/apple/login", false)]
+    [InlineData("/api/Tokens/apple/login", true)]
+    [InlineData("/api/Tokens/apple/native", false)]
+    [InlineData("/api/Tokens/apple/native", true)]
+    public async Task Login_ValidBody_ReachesHandlerAndReturnsItsStatus(string route, bool success)
     {
         var ct = TestContext.Current.CancellationToken;
         var challengeId = Guid.NewGuid();
@@ -36,7 +41,9 @@ public sealed class AppleLoginEndpointTests
                                    ((AppleLoginCommand)m).ChallengeId == challengeId &&
                                    ((AppleLoginCommand)m).IdToken == "test-token"),
                 It.IsAny<CancellationToken>(), null))
-            .ReturnsAsync(Response<AppleLoginResponse>.Error(HttpStatusCode.Unauthorized, "Invalid Apple token"));
+            .ReturnsAsync(success
+                ? Response<AppleLoginResponse>.Success(new AppleLoginResponse("access-token", "refresh-token", DateTime.UtcNow.AddMinutes(15)))
+                : Response<AppleLoginResponse>.Error(HttpStatusCode.Unauthorized, "Invalid Apple token"));
 
         var builder = WebApplication.CreateBuilder(new WebApplicationOptions
         {
@@ -56,13 +63,21 @@ public sealed class AppleLoginEndpointTests
 
         var address = app.Services.GetRequiredService<IServer>().Features.Get<IServerAddressesFeature>()!.Addresses.Single();
         using var client = new HttpClient { BaseAddress = new Uri(address) };
-        using var response = await client.PostAsJsonAsync("/api/Tokens/apple/login",
+        using var response = await client.PostAsJsonAsync(route,
             new { challengeId, idToken = "test-token" }, ct);
 
-        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        response.StatusCode.Should().Be(success ? HttpStatusCode.OK : HttpStatusCode.Unauthorized);
+        response.Headers.Contains("Set-Cookie").Should().BeFalse();
+        if (success)
+        {
+            var payload = await response.Content.ReadFromJsonAsync<JsonElement>(ct);
+            payload.GetProperty("data").GetProperty("accessToken").GetString().Should().Be("access-token");
+            payload.GetProperty("data").GetProperty("refreshToken").GetString().Should().Be("refresh-token");
+            payload.GetProperty("data").GetProperty("accessTokenExpiresAt").ValueKind.Should().Be(JsonValueKind.String);
+        }
         bus.VerifyAll();
 
-        using var missingToken = await client.PostAsJsonAsync("/api/Tokens/apple/login", new { challengeId }, ct);
+        using var missingToken = await client.PostAsJsonAsync(route, new { challengeId }, ct);
         missingToken.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         await app.StopAsync(ct);
     }

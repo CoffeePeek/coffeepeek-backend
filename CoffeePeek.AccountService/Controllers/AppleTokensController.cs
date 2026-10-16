@@ -19,6 +19,7 @@ public sealed class AppleTokensController(IAppleLoginChallengeStore challenges, 
         Ok(Response<AppleLoginChallenge>.Success(await challenges.CreateAsync(ct)));
 
     [HttpPost("login")]
+    [HttpPost("native")]
     public async Task<IActionResult> Login(AppleLoginCommand request, CancellationToken ct)
     {
         var command = request with

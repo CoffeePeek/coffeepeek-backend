@@ -14,11 +14,11 @@ public sealed class AppleAuthServiceTests : IDisposable
     private readonly RSA rsa = RSA.Create(2048);
     private RsaSecurityKey Key => new(rsa) { KeyId = "apple-test-key" };
 
-    private AppleAuthService Service()
+    private AppleAuthService Service(OAuthAppleOptions? options = null)
     {
         var configuration = new OpenIdConnectConfiguration();
         configuration.SigningKeys.Add(Key);
-        return new(Microsoft.Extensions.Options.Options.Create(new OAuthAppleOptions()), new StaticConfigurationManager<OpenIdConnectConfiguration>(configuration));
+        return new(Microsoft.Extensions.Options.Options.Create(options ?? new OAuthAppleOptions()), new StaticConfigurationManager<OpenIdConnectConfiguration>(configuration));
     }
 
     private string Token(string issuer = "https://appleid.apple.com", string audience = "com.coffeepeek",
@@ -79,6 +79,23 @@ public sealed class AppleAuthServiceTests : IDisposable
     {
         using var other = new AppleAuthServiceTests();
         (await Service().ValidateIdTokenAsync(other.Token(), "one-time-nonce", TestContext.Current.CancellationToken)).Should().BeNull();
+    }
+
+    [Theory]
+    [InlineData("custom.bundle")]
+    [InlineData("custom.web")]
+    public async Task ConfiguredNativeAndWebAudiences_AreAccepted(string audience)
+    {
+        var service = Service(new OAuthAppleOptions { ClientId = "custom.bundle", ServiceId = "custom.web" });
+        (await service.ValidateIdTokenAsync(Token(audience: audience), "one-time-nonce", TestContext.Current.CancellationToken))
+            .Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task WebAudience_IsRejectedUnlessConfigured()
+    {
+        (await Service().ValidateIdTokenAsync(Token(audience: "custom.web"), "one-time-nonce", TestContext.Current.CancellationToken))
+            .Should().BeNull();
     }
 
     public void Dispose() => rsa.Dispose();
