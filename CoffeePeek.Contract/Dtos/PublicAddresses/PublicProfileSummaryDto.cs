@@ -1,3 +1,6 @@
 namespace CoffeePeek.Contract.Dtos.PublicAddresses;
 
-public sealed record PublicProfileSummaryDto(PublicAddressMetadata Address, string? AvatarUrl);
+public sealed record PublicProfileSummaryDto(PublicAddressMetadata Address, string? AvatarUrl)
+{
+    public Guid AuthorId { get; init; }
+}

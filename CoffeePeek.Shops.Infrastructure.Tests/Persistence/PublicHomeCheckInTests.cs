@@ -21,7 +21,7 @@ public sealed class PublicHomeCheckInTests
         row.AddPhotos([new CheckInPhoto("cup.jpg", "image/jpeg", "private/home", 10, owner)]);
         db.CheckIns.Add(row);
         await db.SaveChangesAsync(ct);
-        var queries = new CheckInQueries(db);
+        var queries = new CheckInQueries(db, Moq.Mock.Of<CoffeePeek.Shops.Application.Abstractions.IAuthorVisibilityLookup>());
         Assert.Null(await queries.GetUnifiedByIdAsync(row.Id, null, ct));
         Assert.Null(await queries.GetHomeByIdAsync(row.Id, Guid.NewGuid(), ct));
         Assert.NotNull(await queries.GetModerationSnapshotAsync(row.Id, row.ContentRevision, ct));

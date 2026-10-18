@@ -8,6 +8,8 @@ public record PublicUserProfileResponse(
     int CheckInCount,
     int AddedShopsCount)
 {
+    public Guid AuthorId { get; init; }
+    public bool IsBlockedByViewer { get; init; }
     public int AddedRoastersCount { get; init; }
     public int FollowersCount { get; init; }
     public bool IsFollowing { get; init; }

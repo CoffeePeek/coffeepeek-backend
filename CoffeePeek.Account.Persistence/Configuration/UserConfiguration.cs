@@ -1,4 +1,4 @@
-﻿using CoffeePeek.Account.Domain;
+using CoffeePeek.Account.Domain;
 using CoffeePeek.Account.Domain.Entities.RoleAggregate;
 using CoffeePeek.Account.Domain.Entities.UserAggregate;
 using Microsoft.EntityFrameworkCore;
@@ -10,6 +10,9 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
 {
     public void Configure(EntityTypeBuilder<User> builder)
     {
+        builder.Property(u => u.PublicAuthorId).HasDefaultValueSql("gen_random_uuid()");
+        builder.HasIndex(u => u.PublicAuthorId).IsUnique();
+
         builder.Property(u => u.About)
             .HasMaxLength(600);
 

@@ -139,7 +139,7 @@ public class ApiExamplesContractTests
         var profiles = new Mock<IProfileAddressLookup>();
         profiles.Setup(x => x.GetProfilesByIdsAsync(It.IsAny<Guid[]>(), ct))
             .ReturnsAsync([new PublicProfileSummaryDto(new(AuthorId, "example-author", "/users/example-author", 1),
-                "https://media.example.com/coffeepeek.avatars/example-author.jpg")]);
+                "https://media.example.com/coffeepeek.avatars/example-author.jpg") { AuthorId = Guid.Parse("88888888-8888-4888-8888-888888888888") }]);
         var discovery = new PublicDiscoveryService(addresses.Object, profiles.Object, Mock.Of<ICoffeeShopQueries>(),
             Mock.Of<IQueryCheckInRepository>(), Mock.Of<IMessageBus>(), new PublicCheckInProjector(addresses.Object, profiles.Object));
         var visits = await discovery.CheckInsAsync([pending, privateVisit, approved], ct);

@@ -78,6 +78,7 @@ public static class DependencyInjection
         services.AddScoped<IUserExistenceLookup, AccountUserExistenceLookup>();
         services.AddScoped<CoffeePeek.Shared.Auth.PublicAddressHttpClient>();
         services.AddScoped<IProfileAddressLookup, AccountProfileAddressLookup>();
+        services.AddScoped<IAuthorVisibilityLookup, AccountAuthorVisibilityLookup>();
         services.AddScoped<IUploadedPhotoLookup, MediaUploadedPhotoLookup>();
         services.AddScoped<MediaCheckInPhotoClient>();
         services.AddScoped<IMenuVisionParser, OpenAiMenuVisionParser>();

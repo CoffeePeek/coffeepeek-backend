@@ -50,7 +50,7 @@ public sealed class ProfileFollowsControllerTests
     {
         var targetId = Guid.NewGuid();
         addresses.Setup(a => a.ResolveAsync("owner", Ct)).ReturnsAsync(new PublicAddressMetadata(targetId, "owner", "/users/owner", 1));
-        social.Setup(s => s.ListAsync(targetId, false, 2, 10, Ct)).ThrowsAsync(new NotFoundException("User not found"));
+        social.Setup(s => s.ListAsync(targetId, false, 2, 10, Ct, null)).ThrowsAsync(new NotFoundException("User not found"));
         (await Controller().Followers("owner", Ct, 2, 10)).Should().BeOfType<NotFoundResult>();
     }
 

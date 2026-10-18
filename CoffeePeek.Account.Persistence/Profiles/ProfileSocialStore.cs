@@ -19,6 +19,8 @@ public sealed class ProfileSocialStore(AccountDbContext db, IOptions<MediaPublic
     public async Task<ProfileFollowStateDto> GetStateAsync(Guid userId, Guid? viewerId, CancellationToken ct)
     {
         await RequireVisibleAsync(userId, ct);
+        if (viewerId.HasValue && await IsRestrictedAsync(viewerId.Value, userId, ct))
+            throw new NotFoundException("User not found");
         var followers = db.UserFollows.AsNoTracking().Where(f => f.FollowedId == userId &&
             VisibleUsers.Any(u => u.Id == f.FollowerId));
         var count = await followers.CountAsync(ct);
@@ -26,14 +28,18 @@ public sealed class ProfileSocialStore(AccountDbContext db, IOptions<MediaPublic
         return new(count, isFollowing);
     }
 
-    public async Task<ProfileFollowPageDto> ListAsync(Guid userId, bool following, int page, int pageSize, CancellationToken ct)
+    public async Task<ProfileFollowPageDto> ListAsync(Guid userId, bool following, int page, int pageSize, CancellationToken ct, Guid? viewerId = null)
     {
         if (page is < 1 or > 10000 || pageSize is < 1 or > 100)
             throw new ValidationException("Page must be 1–10000 and pageSize must be 1–100.");
         await RequireVisibleAsync(userId, ct);
+        if (viewerId.HasValue && await IsRestrictedAsync(viewerId.Value, userId, ct))
+            throw new NotFoundException("User not found");
+        var visible = viewerId.HasValue ? VisibleUsers.Where(u => !db.UserBlocks.Any(b =>
+            (b.BlockerId == viewerId && b.BlockedId == u.Id) || (b.BlockedId == viewerId && b.BlockerId == u.Id))) : VisibleUsers;
         var links = db.UserFollows.AsNoTracking()
             .Where(f => following ? f.FollowerId == userId : f.FollowedId == userId);
-        var query = links.Join(VisibleUsers,
+        var query = links.Join(visible,
             f => following ? f.FollowedId : f.FollowerId,
             u => u.Id,
             (f, u) => new
@@ -55,11 +61,17 @@ public sealed class ProfileSocialStore(AccountDbContext db, IOptions<MediaPublic
             count, page, pageSize);
     }
 
-    public async Task SetAsync(Guid followerId, Guid followedId, bool following, CancellationToken ct)
+    public Task SetAsync(Guid followerId, Guid followedId, bool following, CancellationToken ct) =>
+        ProfileRelationshipTransaction.RunAsync(db, followerId, followedId,
+            () => SetCoreAsync(followerId, followedId, following, ct), ct);
+
+    private async Task SetCoreAsync(Guid followerId, Guid followedId, bool following, CancellationToken ct)
     {
         if (followerId == followedId) throw new ValidationException("You cannot follow yourself.");
         await RequireVisibleAsync(followerId, ct);
         await RequireVisibleAsync(followedId, ct);
+        if (following && await IsRestrictedAsync(followerId, followedId, ct))
+            throw new NotFoundException("User not found");
         if (db.Database.IsNpgsql())
         {
             if (following)
@@ -84,6 +96,9 @@ public sealed class ProfileSocialStore(AccountDbContext db, IOptions<MediaPublic
         if (!following && row is not null) db.UserFollows.Remove(row);
         await db.SaveChangesAsync(ct);
     }
+
+    private Task<bool> IsRestrictedAsync(Guid viewer, Guid author, CancellationToken ct) => db.UserBlocks.AnyAsync(b =>
+        (b.BlockerId == viewer && b.BlockedId == author) || (b.BlockerId == author && b.BlockedId == viewer), ct);
 
     private async Task RequireVisibleAsync(Guid id, CancellationToken ct)
     {

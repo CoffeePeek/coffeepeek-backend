@@ -34,7 +34,7 @@ public class CheckInQueriesTests
         db.CheckIns.AddRange(onFrom, inside, onTo, before, otherUser);
         await db.SaveChangesAsync(_ct);
 
-        var sut = new CheckInQueries(db);
+        var sut = new CheckInQueries(db, Moq.Mock.Of<CoffeePeek.Shops.Application.Abstractions.IAuthorVisibilityLookup>());
 
         var (items, total) = await sut.GetUnifiedByUserAsync(userId, 1, 100, Utc(9, 1), Utc(10, 1), _ct);
 
@@ -56,7 +56,7 @@ public class CheckInQueriesTests
         db.CheckIns.Add(checkIn);
         await db.SaveChangesAsync(_ct);
 
-        var sut = new CheckInQueries(db);
+        var sut = new CheckInQueries(db, Moq.Mock.Of<CoffeePeek.Shops.Application.Abstractions.IAuthorVisibilityLookup>());
 
         var (items, _) = await sut.GetUnifiedByUserAsync(userId, 1, 100, null, null, _ct);
 

@@ -26,6 +26,7 @@ public class GetPublicUserProfileHandler
         var state = await social.GetStateAsync(user.Id, command.ViewerId, ct);
         var result = mapper.Map<PublicUserProfileResponse>(user) with
         {
+            AuthorId = user.PublicAuthorId,
             AddedRoastersCount = user.Statistics.AddedRoastersCount,
             FollowersCount = state.FollowersCount,
             IsFollowing = state.IsFollowing

@@ -53,7 +53,7 @@ public sealed class ProfileFollowsController(
     {
         var address = await addresses.ResolveAsync(slug, ct);
         if (address is null) return NotFound();
-        try { return Ok(await social.ListAsync(address.EntityId, following, page, pageSize, ct)); }
+        try { return Ok(await social.ListAsync(address.EntityId, following, page, pageSize, ct, userContext.GetUserId())); }
         catch (NotFoundException) { return NotFound(); }
     }
 }

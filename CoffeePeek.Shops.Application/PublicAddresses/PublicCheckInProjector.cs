@@ -18,6 +18,7 @@ public sealed class PublicCheckInProjector(IPublicAddressService addresses, IPro
         return items.Select(x => new PublicCheckInDto
         {
             Id = x.Id, Kind = x.Kind, Home = x.Home, Shop = x.ShopId.HasValue ? shops.GetValueOrDefault(x.ShopId.Value) : null, Author = authors.TryGetValue(x.UserId, out var author) ? PublicAddressDto.From(author.Address) : null,
+            AuthorId = author?.AuthorId,
             AuthorAvatarUrl = author?.AvatarUrl,
             Username = x.Username, ShopName = x.ShopName, Text = x.Text, Rating = x.Rating,
             VisitedAt = x.VisitedAt, CreatedAtUtc = x.CreatedAtUtc,

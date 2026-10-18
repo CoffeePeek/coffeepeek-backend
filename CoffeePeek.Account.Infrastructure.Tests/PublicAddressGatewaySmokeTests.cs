@@ -223,6 +223,7 @@ public sealed class PublicAddressGatewaySmokeTests
         accountBuilder.Services.AddSingleton(MsOptions.Create(mediaOptions));
         accountBuilder.Services.AddSingleton(bus.Object);
         accountBuilder.Services.AddSingleton(Mock.Of<IUserContext>());
+        accountBuilder.Services.AddSingleton(Mock.Of<IUserBlockStore>());
         await using var account = accountBuilder.Build();
         MapControllers(account, "account");
         await account.StartAsync(Ct);
@@ -235,6 +236,7 @@ public sealed class PublicAddressGatewaySmokeTests
         shopsBuilder.Services.AddSingleton(queries.Object);
         shopsBuilder.Services.AddSingleton(checkInQueries.Object);
         shopsBuilder.Services.AddSingleton(Mock.Of<IQueryCheckInRepository>());
+        shopsBuilder.Services.AddSingleton(Mock.Of<CoffeePeek.Shops.Application.Abstractions.IAuthorVisibilityLookup>());
         shopsBuilder.Services.AddScoped<IProfileAddressLookup, CoffeePeek.Shops.Infrastructure.Account.AccountProfileAddressLookup>();
         shopsBuilder.Services.AddScoped<PublicAddressHttpClient>();
         shopsBuilder.Services.AddHttpClient("account-user-lookup", c => c.BaseAddress = new Uri(Address(account)));
