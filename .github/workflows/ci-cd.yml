@@ -131,12 +131,13 @@ jobs:
           export PGPASSFILE="$pgpass_file"
           docker network create coffeepeek-photo-test
           docker network connect --alias minio coffeepeek-photo-test coffeepeek-shops-test-minio
+          docker build --file deploy/minio/mc.Dockerfile --tag coffeepeek-minio-mc:test deploy/minio
           docker run --rm --network coffeepeek-photo-test -v "$PWD/deploy/minio:/provision:ro" \
             -e MINIO_ROOT_USER=coffee-legacy-test -e MINIO_ROOT_PASSWORD=coffee-legacy-test-only \
             -e MINIO_CHECKIN_READ_USER=photo-test-reader -e MINIO_CHECKIN_READ_PASSWORD=photo-test-reader-password \
             -e MINIO_CHECKIN_VARIANT_USER=photo-test-writer -e MINIO_CHECKIN_VARIANT_PASSWORD=photo-test-writer-password \
             -e MINIO_CHECKIN_VARIANT_READ_USER=photo-test-variant-reader -e MINIO_CHECKIN_VARIANT_READ_PASSWORD=photo-test-variant-reader-password \
-            --entrypoint /bin/sh quay.io/minio/mc:latest /provision/provision.sh
+            --entrypoint /bin/sh coffeepeek-minio-mc:test /provision/provision.sh
           export COFFEEPEEK_LIVE_RENDERER=http://127.0.0.1:18080
           export COFFEEPEEK_LIVE_RENDERER_KEY=1111111111111111111111111111111111111111111111111111111111111111
           export COFFEEPEEK_LIVE_RENDERER_SALT=2222222222222222222222222222222222222222222222222222222222222222
