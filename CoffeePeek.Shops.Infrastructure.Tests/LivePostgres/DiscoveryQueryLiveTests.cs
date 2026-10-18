@@ -2,11 +2,14 @@ using CoffeePeek.Contract.Dtos.Coffee;
 using CoffeePeek.Contract.Dtos.Discovery;
 using CoffeePeek.Shared.Kernel.Options;
 using CoffeePeek.Shops.Application.PublicAddresses;
+using CoffeePeek.Shops.Application.Features.CoffeeShop.SearchCoffeeShops;
+using CoffeePeek.Shops.Application.Mapper;
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeProductAggregate;
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
 using CoffeePeek.Shops.Domain.Aggregates.MenuAggregate;
 using CoffeePeek.Shops.Domain.Aggregates.RoasterTagAggregate;
 using CoffeePeek.Shops.Persistance.Configuration;
+using CoffeePeek.Shops.Persistance.Queries;
 using CoffeePeek.Shops.Persistance.Discovery;
 using CoffeePeek.Shops.Persistance.CoffeeCatalog;
 using CoffeePeek.Shops.Application.Features.CoffeeCatalog;
@@ -56,6 +59,106 @@ public sealed class DiscoveryQueryLiveTests : IClassFixture<ShopsLiveDatabase>
         }
         var v = new CoffeeVariant(source, Guid.NewGuid().ToString(), weight, price, "BYN", availability);
         v.SetBrewPurpose(brew, false); source.AttachVariant(v);
+    }
+
+    [Fact]
+    public async Task NormalizedShopSearch_UsesTrigramIndexes_ExecuteInPostgres()
+    {
+        await using var db = fixture.Context(false);
+        await db.Database.OpenConnectionAsync(Ct);
+        await using var command = db.Database.GetDbConnection().CreateCommand();
+        command.CommandText = "SET enable_seqscan = off";
+        await command.ExecuteNonQueryAsync(Ct);
+        command.CommandText = """
+            EXPLAIN SELECT "Id" FROM "Shops"
+            WHERE replace(lower("Name"), 'ё', 'е') ILIKE '%кофеек%'
+               OR replace(lower("Address"), 'ё', 'е') ILIKE '%кофеек%'
+            """;
+        await using var reader = await command.ExecuteReaderAsync(Ct);
+        var lines = new List<string>();
+        while (await reader.ReadAsync(Ct)) lines.Add(reader.GetString(0));
+        var plan = string.Join("\n", lines);
+        Assert.Contains("IX_Shops_NormalizedName_GIN", plan);
+        Assert.Contains("IX_Shops_NormalizedAddress_GIN", plan);
+    }
+
+    [Theory]
+    [InlineData("кофеек", false)]
+    [InlineData("кофеёк", false)]
+    [InlineData("  КОФЕЕК  ", false)]
+    [InlineData("КОФЕЁК", false)]
+    [InlineData("кофеек", true)]
+    [InlineData("кофеёк", true)]
+    [InlineData("  КОФЕЕК  ", true)]
+    [InlineData("КОФЕЁК", true)]
+    public async Task ShopSearch_EquatesYoAndEInNamesAndAddresses_ExecuteInPostgres(string query, bool byAddress)
+    {
+        await using var db = fixture.Context(false);
+        var city = new City(Key()); city.SetPublicSlug(Key()); db.Cities.Add(city);
+        CoffeeShop AddShop(string text)
+        {
+            var shop = new CoffeeShop(null, byAddress ? Key() : text, null, CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate.PriceRange.Cheap, Guid.NewGuid());
+            shop.SetPublicSlug(Key());
+            shop.SetLocation(city.Id, byAddress ? text : "Street", 53.9m, 27.56m);
+            shop.SetContact(null, null, null, null); db.Shops.Add(shop); return shop;
+        }
+        var yo = AddShop("Кафе КОФЕЁК");
+        var e = AddShop("Кафе кофеек");
+        AddShop("Кофейня");
+        AddShop("Кофеёк hidden").SetHidden(true);
+        AddShop("Кофеек closed").SetStatus(CoffeeShopStatus.PermanentlyClosed);
+        await db.SaveChangesAsync(Ct); db.ChangeTracker.Clear();
+
+        var media = Options.Create(new MediaPublicUrlOptions { PublicEndpoint = "https://media.example" });
+        var queries = new CoffeeShopQueries(db, MapsterConfiguration.CreateMapper(media.Value),
+            Mock.Of<IQueryCoffeeDrinkRepository>(), Mock.Of<IQueryShopMenuRepository>(), media);
+        var request = new SearchCoffeeShopsQuery(Query: query, CityId: city.Id, PageSize: 1);
+        var (first, firstCount) = await queries.Search(request, Ct);
+        var (second, secondCount) = await queries.Search(request with { PageNumber = 2 }, Ct);
+        Assert.Equal(2, firstCount); Assert.Equal(2, secondCount);
+        var ids = new[] { Assert.Single(first).Id, Assert.Single(second).Id };
+        Assert.Equal(2, ids.Distinct().Count());
+        Assert.Contains(yo.Id, ids); Assert.Contains(e.Id, ids);
+        Assert.Equal(yo.Name, first.Concat(second).Single(s => s.Id == yo.Id).Name);
+
+        if (!byAddress)
+        {
+            var discovery = await Store(db).SearchShopsAsync(new()
+            {
+                Q = query, Filters = new() { City = city.PublicSlug }
+            }, null, Ct);
+            Assert.Equal(2, discovery.TotalItems);
+            Assert.Contains(discovery.Items, s => s.Address.Slug == yo.PublicSlug);
+            Assert.Contains(discovery.Items, s => s.Address.Slug == e.PublicSlug);
+        }
+    }
+
+    [Theory]
+    [InlineData("кофеек")]
+    [InlineData("кофеёк")]
+    [InlineData("КОФЕЕК")]
+    [InlineData("КОФЕЁК")]
+    public async Task CoffeeCatalogSearch_EquatesYoAndE_ExecuteInPostgres(string query)
+    {
+        await using var db = fixture.Context(false);
+        var roaster = AddRoaster(db, Key());
+        var yo = AddProduct(db, roaster, "Бленд КОФЕЁК"); AddOffer(yo, 250, 30);
+        var e = AddProduct(db, roaster, "Бленд кофеек"); AddOffer(e, 250, 30);
+        AddOffer(AddProduct(db, roaster, "Кофейный бленд"), 250, 30);
+        var draft = AddProduct(db, roaster, "Кофеёк draft");
+        draft.SetStatus(CoffeePublicationStatus.Draft); AddOffer(draft, 250, 30);
+        await db.SaveChangesAsync(Ct); db.ChangeTracker.Clear();
+
+        var catalog = new CoffeeCatalogStore(db,
+            Options.Create(new MediaPublicUrlOptions { PublicEndpoint = "https://media.example" }),
+            Options.Create(new CoffeeImportOptions()), Mock.Of<IPublicAddressService>(), NullLogger<CoffeeCatalogStore>.Instance);
+        var first = await catalog.ListAsync(new() { RoasterSlug = roaster.PublicSlug, Search = query, PageSize = 1 }, Ct);
+        var second = await catalog.ListAsync(new() { RoasterSlug = roaster.PublicSlug, Search = query, PageSize = 1, Page = 2 }, Ct);
+        Assert.Equal(2, first.TotalItems); Assert.Equal(2, second.TotalItems);
+        var slugs = new[] { Assert.Single(first.Items).Address.Slug, Assert.Single(second.Items).Address.Slug };
+        Assert.Equal(2, slugs.Distinct().Count());
+        Assert.Contains(yo.PublicSlug, slugs); Assert.Contains(e.PublicSlug, slugs);
+        Assert.Equal(yo.Name, first.Items.Concat(second.Items).Single(p => p.Address.Slug == yo.PublicSlug).Content.Name);
     }
 
     [Fact]

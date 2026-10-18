@@ -108,7 +108,8 @@ public sealed partial class CoffeeCatalogStore(ShopsDbContext db, IOptions<Media
         }
         if (!string.IsNullOrWhiteSpace(filter.Search))
         {
-            var term = filter.Search.ToLowerInvariant(); q = q.Where(p => p.Name.ToLower().Contains(term));
+            var term = filter.Search.ToLowerInvariant().Replace('ё', 'е');
+            q = q.Where(p => p.Name.ToLower().Replace("ё", "е").Contains(term));
         }
         if (countryCodes.Length > 0) q = q.Where(p => p.Countries.Any(c => countryCodes.Contains(c.CountryCode)));
         if (filter.ProductKind is not null) q = q.Where(p => p.ProductKind == filter.ProductKind);

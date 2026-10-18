@@ -32,8 +32,10 @@ public class CoffeeShopQueries(
 
         if (!string.IsNullOrWhiteSpace(request.Query))
         {
-            var term = $"%{request.Query.Trim()}%";
-            query = query.Where(s => EF.Functions.ILike(s.Name, term) || EF.Functions.ILike(s.Location.Address, term));
+            var term = $"%{request.Query.Trim().ToLowerInvariant().Replace('ё', 'е')}%";
+            query = query.Where(s =>
+                EF.Functions.ILike(s.Name.ToLower().Replace("ё", "е"), term) ||
+                EF.Functions.ILike(s.Location.Address.ToLower().Replace("ё", "е"), term));
         }
 
         if (request.CityId.HasValue)
