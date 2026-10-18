@@ -11,6 +11,7 @@ on:
       - dev
       - develop
       - main
+      - 'codex/photo-delivery-*'
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
@@ -118,7 +119,7 @@ jobs:
         run: |
           set -euo pipefail
           pgpass_file="$(mktemp "${RUNNER_TEMP}/coffeepeek-pgpass.XXXXXX")"
-          trap 'rm -f "$pgpass_file"; docker rm -f coffeepeek-shops-test-minio >/dev/null 2>&1 || true' EXIT
+          trap 'rm -f "$pgpass_file"; docker rm -f coffeepeek-photo-renderer coffeepeek-shops-test-minio >/dev/null 2>&1 || true; docker network rm coffeepeek-photo-test >/dev/null 2>&1 || true' EXIT
           chmod 600 "$pgpass_file"
           printf '%s\n' '127.0.0.1:5432:*:postgres:coffeepeek-ci-only-postgres' '127.0.0.1:15432:*:postgres:coffeepeek-ci-only-postgres' > "$pgpass_file"
           export COFFEEPEEK_LIVE_PG='Host=127.0.0.1;Port=5432;Username=postgres;Database=postgres;SslMode=Disable'
@@ -127,8 +128,36 @@ jobs:
           export COFFEEPEEK_LIVE_MINIO=http://127.0.0.1:9000
           export COFFEEPEEK_LIVE_MINIO_ACCESS_KEY=coffee-legacy-test
           export COFFEEPEEK_LIVE_MINIO_SECRET_KEY=coffee-legacy-test-only
+          export PGPASSFILE="$pgpass_file"
+          docker network create coffeepeek-photo-test
+          docker network connect --alias minio coffeepeek-photo-test coffeepeek-shops-test-minio
+          docker run --rm --network coffeepeek-photo-test -v "$PWD/deploy/minio:/provision:ro" \
+            -e MINIO_ROOT_USER=coffee-legacy-test -e MINIO_ROOT_PASSWORD=coffee-legacy-test-only \
+            -e MINIO_CHECKIN_READ_USER=photo-test-reader -e MINIO_CHECKIN_READ_PASSWORD=photo-test-reader-password \
+            -e MINIO_CHECKIN_VARIANT_USER=photo-test-writer -e MINIO_CHECKIN_VARIANT_PASSWORD=photo-test-writer-password \
+            -e MINIO_CHECKIN_VARIANT_READ_USER=photo-test-variant-reader -e MINIO_CHECKIN_VARIANT_READ_PASSWORD=photo-test-variant-reader-password \
+            --entrypoint /bin/sh quay.io/minio/mc:latest /provision/provision.sh
+          export COFFEEPEEK_LIVE_RENDERER=http://127.0.0.1:18080
+          export COFFEEPEEK_LIVE_RENDERER_KEY=1111111111111111111111111111111111111111111111111111111111111111
+          export COFFEEPEEK_LIVE_RENDERER_SALT=2222222222222222222222222222222222222222222222222222222222222222
+          export COFFEEPEEK_LIVE_READER_USER=photo-test-reader
+          export COFFEEPEEK_LIVE_READER_PASSWORD=photo-test-reader-password
+          export COFFEEPEEK_LIVE_VARIANT_USER=photo-test-writer
+          export COFFEEPEEK_LIVE_VARIANT_PASSWORD=photo-test-writer-password
+          export COFFEEPEEK_LIVE_VARIANT_READER_USER=photo-test-variant-reader
+          export COFFEEPEEK_LIVE_VARIANT_READER_PASSWORD=photo-test-variant-reader-password
+          docker run -d --name coffeepeek-photo-renderer --network coffeepeek-photo-test -p 127.0.0.1:18080:8080 \
+            --memory 512m --cpus 1 --env-file deploy/imgproxy/checkin-renderer.conf \
+            -e AWS_ACCESS_KEY_ID=photo-test-reader -e AWS_SECRET_ACCESS_KEY=photo-test-reader-password \
+            -e IMGPROXY_KEY="$COFFEEPEEK_LIVE_RENDERER_KEY" -e IMGPROXY_SALT="$COFFEEPEEK_LIVE_RENDERER_SALT" \
+            ghcr.io/imgproxy/imgproxy:v4.0.18
+          for attempt in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:18080/health >/dev/null; then break; fi
+            sleep 1
+          done
+          curl --fail --silent http://127.0.0.1:18080/health >/dev/null
           dotnet test CoffeePeek.MediaService.Tests/CoffeePeek.MediaService.Tests.csproj --configuration Release --no-build \
-            --filter FullyQualifiedName~CheckInPhotoStorageLiveTests --verbosity normal
+            --filter 'FullyQualifiedName~CheckInPhotoStorageLiveTests|FullyQualifiedName~PhotoVariantQueueLiveTests|FullyQualifiedName~PhotoVariantPipelineLiveTests|FullyQualifiedName~PhotoVariantOutboxLiveTests' --verbosity normal
           export COFFEEPEEK_FAULT_RESULTS="$PWD/.test-results/shops-faults"
           export COFFEEPEEK_PERF_RESULTS="$PWD/.test-results/shops-performance"
           curl --fail --silent --show-error -X POST -H 'Content-Type: application/json' \

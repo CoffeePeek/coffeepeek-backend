@@ -8,6 +8,7 @@ using CoffeePeek.MediaService.Services;
 using CoffeePeek.Shared.Kernel;
 using FluentAssertions;
 using Moq;
+using CoffeePeek.MediaService.Services.Variants;
 
 namespace CoffeePeek.MediaService.Tests;
 
@@ -16,6 +17,7 @@ public class CheckInPhotosAttachedHandlerTests
     private readonly Mock<IPhotoRepository> _repoMock = new();
     private readonly Mock<IUnitOfWork> _uowMock = new();
     private readonly Mock<IStorageService> _storageMock = new();
+    private readonly Mock<IPhotoVariantQueue> _variants = new();
     private readonly Guid _userId = Guid.NewGuid();
 
     [Fact]
@@ -49,6 +51,8 @@ public class CheckInPhotosAttachedHandlerTests
         _storageMock.Verify(s => s.MarkAsPermanent("check-ins/new", BucketType.CheckIn, It.IsAny<CancellationToken>()), Times.Once);
         _storageMock.Verify(s => s.MarkAsPermanent("check-ins/foreign", It.IsAny<BucketType>(), It.IsAny<CancellationToken>()), Times.Never);
         _uowMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        _variants.Verify(v => v.EnqueueAsync(own, It.IsAny<CancellationToken>()), Times.Exactly(2));
+        _variants.Verify(v => v.EnqueueAsync(foreign, It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -83,7 +87,7 @@ public class CheckInPhotosAttachedHandlerTests
     };
 
     private CheckInPhotosAttachedHandler CreateHandler() =>
-        new(_repoMock.Object, _uowMock.Object, _storageMock.Object);
+        new(_repoMock.Object, _uowMock.Object, _storageMock.Object, _variants.Object);
 
     private CheckInPhotosAttachedEvent Event(params string[] keys) =>
         new(_userId, Guid.NewGuid(), keys, DateTime.UtcNow);

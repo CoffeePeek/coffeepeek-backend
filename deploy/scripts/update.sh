@@ -70,6 +70,7 @@ fi
 echo "==> Provisioning private photo storage and the read-only reader..."
 "${COMPOSE[@]}" up -d minio
 "${COMPOSE[@]}" run --rm --no-deps minio-init
+"${COMPOSE[@]}" up -d --no-deps checkin-renderer
 
 # Start one backend at a time to avoid simultaneous initialization spikes.
 for service in account media shops moderation; do

@@ -27,11 +27,11 @@ namespace Internal.Generated.WolverineHandlers
 
         public override async System.Threading.Tasks.Task HandleAsync(Wolverine.Runtime.MessageContext context, System.Threading.CancellationToken cancellation)
         {
+            using var minIOStorageService = new CoffeePeek.MediaService.Services.MinIOStorageService(_optionsOfMinIOOptions, _optionsOfMediaPublicUrlOptions);
             await using var serviceScope = _serviceScopeFactory.CreateAsyncScope();
             Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<Wolverine.Runtime.ScopedMessageContextHolder>(serviceScope.ServiceProvider).Context = context;
             // This service has been marked as requiring service location independent of Wolverine's ability to use constructor injection of everything else
             var mediaDbContext = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<CoffeePeek.MediaService.Data.MediaDbContext>(serviceScope.ServiceProvider);
-            using var minIOStorageService = new CoffeePeek.MediaService.Services.MinIOStorageService(_optionsOfMinIOOptions, _optionsOfMediaPublicUrlOptions);
             var photoRepository = new CoffeePeek.MediaService.Repositories.PhotoRepository(mediaDbContext);
             // The actual message body
             var resolveUploadedPhotosQuery = (CoffeePeek.MediaService.Commands.ResolveUploadedPhotosQuery)context.Envelope.Message;

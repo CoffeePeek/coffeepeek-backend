@@ -22,7 +22,11 @@ public static class ResolveReviewReportHandler
         if (changed)
         {
             if (checkIn is not null)
+            {
                 checkIn.Delete();
+                await bus.PublishAsync(new CoffeePeek.Contract.Events.CheckInPhotosDeletedEvent(
+                    checkIn.Id, checkIn.UserId, checkIn.DeletedAtUtc!.Value));
+            }
             await uow.SaveChangesAsync(ct);
             if (checkIn is not null)
                 await bus.PublishAsync(new CheckInCacheInvalidationRequested(

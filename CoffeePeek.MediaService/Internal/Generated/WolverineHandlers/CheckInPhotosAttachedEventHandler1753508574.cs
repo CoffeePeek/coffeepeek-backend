@@ -27,17 +27,18 @@ namespace Internal.Generated.WolverineHandlers
 
         public override async System.Threading.Tasks.Task HandleAsync(Wolverine.Runtime.MessageContext context, System.Threading.CancellationToken cancellation)
         {
-            using var minIOStorageService = new CoffeePeek.MediaService.Services.MinIOStorageService(_optionsOfMinIOOptions, _optionsOfMediaPublicUrlOptions);
             await using var serviceScope = _serviceScopeFactory.CreateAsyncScope();
             Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<Wolverine.Runtime.ScopedMessageContextHolder>(serviceScope.ServiceProvider).Context = context;
             // This service has been marked as requiring service location independent of Wolverine's ability to use constructor injection of everything else
             var mediaDbContext = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<CoffeePeek.MediaService.Data.MediaDbContext>(serviceScope.ServiceProvider);
+            var photoVariantQueue = new CoffeePeek.MediaService.Services.Variants.PhotoVariantQueue(mediaDbContext);
+            using var minIOStorageService = new CoffeePeek.MediaService.Services.MinIOStorageService(_optionsOfMinIOOptions, _optionsOfMediaPublicUrlOptions);
             var unitOfWorkOfMediaDbContext = new CoffeePeek.Shared.Persistence.Data.UnitOfWork<CoffeePeek.MediaService.Data.MediaDbContext>(mediaDbContext);
             var photoRepository = new CoffeePeek.MediaService.Repositories.PhotoRepository(mediaDbContext);
             // The actual message body
             var checkInPhotosAttachedEvent = (CoffeePeek.Contract.Events.CheckInPhotosAttachedEvent)context.Envelope.Message;
 
-            
+
             // Enroll the DbContext & IMessagingContext in the outgoing Wolverine outbox transaction
             var efCoreEnvelopeTransaction = new Wolverine.EntityFrameworkCore.Internals.EfCoreEnvelopeTransaction(mediaDbContext, context, _domainEventScraperIEnumerable);
             await context.EnlistInOutboxAsync(efCoreEnvelopeTransaction).ConfigureAwait(false);
@@ -51,12 +52,12 @@ namespace Internal.Generated.WolverineHandlers
             {
                 System.Diagnostics.Activity.Current?.SetTag("message.handler", "CoffeePeek.MediaService.Consumers.CheckInPhotosAttachedHandler");
                 System.Diagnostics.Activity.Current?.SetTag("handler.type", "CoffeePeek.MediaService.Consumers.CheckInPhotosAttachedHandler");
-                var checkInPhotosAttachedHandler = new CoffeePeek.MediaService.Consumers.CheckInPhotosAttachedHandler(photoRepository, unitOfWorkOfMediaDbContext, minIOStorageService);
-                
+                var checkInPhotosAttachedHandler = new CoffeePeek.MediaService.Consumers.CheckInPhotosAttachedHandler(photoRepository, unitOfWorkOfMediaDbContext, minIOStorageService, photoVariantQueue);
+
                 // The actual message execution
                 await checkInPhotosAttachedHandler.Handle(checkInPhotosAttachedEvent, cancellation).ConfigureAwait(false);
 
-                
+
                 // Added by EF Core Transaction Middleware
                 var result_of_SaveChangesAsync = await mediaDbContext.SaveChangesAsync(cancellation).ConfigureAwait(false);
 
@@ -75,7 +76,6 @@ namespace Internal.Generated.WolverineHandlers
     }
 
     // END: CheckInPhotosAttachedEventHandler1753508574
-    
-    
-}
 
+
+}

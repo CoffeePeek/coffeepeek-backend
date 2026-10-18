@@ -5,6 +5,10 @@ namespace CoffeePeek.MediaService.Data;
 public class MediaDbContext(DbContextOptions<MediaDbContext> options) : DbContext(options)
 {
     public DbSet<PhotoMetadata> Photos => Set<PhotoMetadata>();
+    public DbSet<PhotoVariantJob> PhotoVariantJobs => Set<PhotoVariantJob>();
+    public DbSet<PhotoVariant> PhotoVariants => Set<PhotoVariant>();
+    public DbSet<PhotoVariantArtifact> PhotoVariantArtifacts => Set<PhotoVariantArtifact>();
+    public DbSet<CheckInPhotoTombstone> CheckInPhotoTombstones => Set<CheckInPhotoTombstone>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -43,6 +47,17 @@ public class MediaDbContext(DbContextOptions<MediaDbContext> options) : DbContex
             entity.HasIndex(p => new { p.Status, p.ScheduledDeletionAt });
         });
 
+        modelBuilder.ApplyConfiguration(new PhotoVariantJobConfiguration());
+        modelBuilder.ApplyConfiguration(new PhotoVariantConfiguration());
+        modelBuilder.Entity<CheckInPhotoTombstone>().HasKey(x => x.CheckInId);
+        modelBuilder.Entity<CheckInPhotoTombstone>().Property(x => x.CheckInId).ValueGeneratedNever();
+        modelBuilder.Entity<PhotoVariantArtifact>(entity =>
+        {
+            entity.HasKey(x => x.ObjectKey);
+            entity.Property(x => x.ObjectKey).HasMaxLength(255);
+            entity.HasIndex(x => x.CreatedAtUtc);
+            entity.HasOne<PhotoVariantJob>().WithMany().HasForeignKey(x => x.JobId).OnDelete(DeleteBehavior.Restrict);
+        });
         base.OnModelCreating(modelBuilder);
     }
 }

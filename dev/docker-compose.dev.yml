@@ -58,6 +58,7 @@ services:
       retries: 20
 
   minio:
+    networks: [default, checkin-render]
     image: quay.io/minio/minio:latest
     restart: unless-stopped
     command: server /data --console-address ":9001"
@@ -88,6 +89,29 @@ services:
       MINIO_ROOT_PASSWORD: minioadmin
       MINIO_CHECKIN_READ_USER: coffeepeek-checkin-reader
       MINIO_CHECKIN_READ_PASSWORD: local-checkin-reader-password
+      MINIO_CHECKIN_VARIANT_USER: coffeepeek-checkin-variant-writer
+      MINIO_CHECKIN_VARIANT_PASSWORD: local-checkin-variant-password
+      MINIO_CHECKIN_VARIANT_READ_USER: coffeepeek-checkin-variant-reader
+      MINIO_CHECKIN_VARIANT_READ_PASSWORD: local-checkin-variant-reader-password
+
+  checkin-renderer:
+    image: ghcr.io/imgproxy/imgproxy:v4.0.18
+    restart: unless-stopped
+    networks: [checkin-render]
+    env_file: ../deploy/imgproxy/checkin-renderer.conf
+    # Host-run Media reaches this loopback port; production publishes no renderer port.
+    ports: ["127.0.0.1:18080:8080"]
+    environment:
+      AWS_ACCESS_KEY_ID: coffeepeek-checkin-reader
+      AWS_SECRET_ACCESS_KEY: local-checkin-reader-password
+      IMGPROXY_KEY: '1111111111111111111111111111111111111111111111111111111111111111'
+      IMGPROXY_SALT: '2222222222222222222222222222222222222222222222222222222222222222'
+    mem_limit: 512m
+    cpus: 1.0
+
+networks:
+  checkin-render:
+    internal: true
 
 volumes:
   pg_data:

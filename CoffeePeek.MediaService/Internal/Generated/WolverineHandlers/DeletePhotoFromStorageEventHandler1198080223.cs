@@ -27,11 +27,12 @@ namespace Internal.Generated.WolverineHandlers
 
         public override async System.Threading.Tasks.Task HandleAsync(Wolverine.Runtime.MessageContext context, System.Threading.CancellationToken cancellation)
         {
-            using var minIOStorageService = new CoffeePeek.MediaService.Services.MinIOStorageService(_optionsOfMinIOOptions, _optionsOfMediaPublicUrlOptions);
             await using var serviceScope = _serviceScopeFactory.CreateAsyncScope();
             Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<Wolverine.Runtime.ScopedMessageContextHolder>(serviceScope.ServiceProvider).Context = context;
             // This service has been marked as requiring service location independent of Wolverine's ability to use constructor injection of everything else
             var mediaDbContext = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<CoffeePeek.MediaService.Data.MediaDbContext>(serviceScope.ServiceProvider);
+            var photoVariantQueue = new CoffeePeek.MediaService.Services.Variants.PhotoVariantQueue(mediaDbContext);
+            using var minIOStorageService = new CoffeePeek.MediaService.Services.MinIOStorageService(_optionsOfMinIOOptions, _optionsOfMediaPublicUrlOptions);
             var unitOfWorkOfMediaDbContext = new CoffeePeek.Shared.Persistence.Data.UnitOfWork<CoffeePeek.MediaService.Data.MediaDbContext>(mediaDbContext);
             var photoRepository = new CoffeePeek.MediaService.Repositories.PhotoRepository(mediaDbContext);
             // The actual message body
@@ -51,10 +52,10 @@ namespace Internal.Generated.WolverineHandlers
             {
                 System.Diagnostics.Activity.Current?.SetTag("message.handler", "CoffeePeek.MediaService.Consumers.DeletePhotoHandler");
                 System.Diagnostics.Activity.Current?.SetTag("handler.type", "CoffeePeek.MediaService.Consumers.DeletePhotoHandler");
-                var deletePhotoHandler = new CoffeePeek.MediaService.Consumers.DeletePhotoHandler(photoRepository, unitOfWorkOfMediaDbContext, minIOStorageService);
+                var deletePhotoHandler = new CoffeePeek.MediaService.Consumers.DeletePhotoHandler(photoRepository, unitOfWorkOfMediaDbContext, minIOStorageService, photoVariantQueue);
 
                 // The actual message execution
-                await deletePhotoHandler.Handle(deletePhotoFromStorageEvent).ConfigureAwait(false);
+                await deletePhotoHandler.Handle(deletePhotoFromStorageEvent, cancellation).ConfigureAwait(false);
 
 
                 // Added by EF Core Transaction Middleware

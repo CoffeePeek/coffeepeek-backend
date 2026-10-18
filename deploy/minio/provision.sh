@@ -3,6 +3,16 @@
 set -eu
 : "${MINIO_ROOT_USER:?required}" "${MINIO_ROOT_PASSWORD:?required}"
 : "${MINIO_CHECKIN_READ_USER:?required}" "${MINIO_CHECKIN_READ_PASSWORD:?required}"
+: "${MINIO_CHECKIN_VARIANT_USER:?required}" "${MINIO_CHECKIN_VARIANT_PASSWORD:?required}"
+: "${MINIO_CHECKIN_VARIANT_READ_USER:?required}" "${MINIO_CHECKIN_VARIANT_READ_PASSWORD:?required}"
+if [ "$MINIO_CHECKIN_VARIANT_READ_USER" = "$MINIO_ROOT_USER" ] || [ "$MINIO_CHECKIN_VARIANT_READ_USER" = "$MINIO_CHECKIN_READ_USER" ] || [ "$MINIO_CHECKIN_VARIANT_READ_USER" = "$MINIO_CHECKIN_VARIANT_USER" ]; then
+    echo 'Variant reader must use a separate MinIO identity.' >&2
+    exit 1
+fi
+if [ "$MINIO_CHECKIN_VARIANT_USER" = "$MINIO_ROOT_USER" ] || [ "$MINIO_CHECKIN_VARIANT_USER" = "$MINIO_CHECKIN_READ_USER" ]; then
+    echo 'Variant writer must use a separate MinIO identity.' >&2
+    exit 1
+fi
 if [ "$MINIO_CHECKIN_READ_USER" = "$MINIO_ROOT_USER" ]; then
     echo 'Check-in reader must use a separate MinIO identity.' >&2
     exit 1
@@ -18,6 +28,8 @@ mc mb --ignore-existing local/coffeepeek.shops
 mc mb --ignore-existing local/coffeepeek.avatars
 mc mb --ignore-existing local/coffeepeek.checkins
 mc anonymous set none local/coffeepeek.checkins
+mc mb --ignore-existing local/coffeepeek.checkin-variants
+mc anonymous set none local/coffeepeek.checkin-variants
 # Preserve historical per-object denies while keeping the existing public gallery policy.
 if ! mc anonymous get-json local/coffeepeek.shops | grep -q CheckInPrivate; then
     mc anonymous set download local/coffeepeek.shops
@@ -27,3 +39,9 @@ mc anonymous set download local/coffeepeek.avatars
 mc admin policy create local coffeepeek-checkin-reader /provision/checkin-reader-policy.json
 mc admin user add local "$MINIO_CHECKIN_READ_USER" "$MINIO_CHECKIN_READ_PASSWORD" >/dev/null
 mc admin policy attach local coffeepeek-checkin-reader --user "$MINIO_CHECKIN_READ_USER"
+mc admin policy create local coffeepeek-checkin-variant-writer /provision/checkin-variant-writer-policy.json
+mc admin user add local "$MINIO_CHECKIN_VARIANT_USER" "$MINIO_CHECKIN_VARIANT_PASSWORD" >/dev/null
+mc admin policy attach local coffeepeek-checkin-variant-writer --user "$MINIO_CHECKIN_VARIANT_USER"
+mc admin policy create local coffeepeek-checkin-variant-reader /provision/checkin-variant-reader-policy.json
+mc admin user add local "$MINIO_CHECKIN_VARIANT_READ_USER" "$MINIO_CHECKIN_VARIANT_READ_PASSWORD" >/dev/null
+mc admin policy attach local coffeepeek-checkin-variant-reader --user "$MINIO_CHECKIN_VARIANT_READ_USER"

@@ -16,6 +16,9 @@ using CoffeePeek.Shared.Web.Handlers;
 using CoffeePeek.Shared.Web.Sentry;
 using System.Text.Json.Serialization;
 using CoffePeek.ServiceDefaults;
+using CoffeePeek.MediaService.Services.Variants;
+using Wolverine.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace CoffeePeek.MediaService;
 
@@ -83,6 +86,30 @@ public static class InfrastructureExtensions
         services.AddOptions<CheckInPhotoReadOptions>().BindConfiguration(nameof(CheckInPhotoReadOptions))
             .ValidateDataAnnotations().ValidateOnStart();
         services.AddScoped<ICheckInPhotoReader, CheckInPhotoReader>();
+        services.AddOptions<PhotoVariantOptions>().BindConfiguration(nameof(PhotoVariantOptions))
+            .ValidateDataAnnotations().Validate(o => o.IsValid(), "Invalid private variant worker configuration.").ValidateOnStart();
+        services.AddScoped<IPhotoVariantQueue, PhotoVariantQueue>();
+        services.AddScoped<PhotoVariantJobStore>(provider =>
+        {
+            var db = provider.GetRequiredService<MediaDbContext>();
+            var outbox = provider.GetRequiredService<IDbContextOutbox>();
+            outbox.Enroll(db);
+            return new PhotoVariantJobStore(db, provider.GetRequiredService<IOptions<PhotoVariantOptions>>(), outbox);
+        });
+        services.AddScoped<PhotoVariantStorage>();
+        services.AddScoped<PhotoVariantReads>();
+        services.AddScoped<IPhotoVariantReader, PhotoVariantReader>();
+        services.AddSingleton<PhotoVariantReadState>();
+        services.AddSingleton<PhotoVariantReadMonitor>();
+        services.AddHostedService(sp => sp.GetRequiredService<PhotoVariantReadMonitor>());
+        services.AddHealthChecks().AddCheck<PhotoVariantReadMonitor>("checkin-private-variants");
+        services.AddScoped<PhotoVariantProcessor>();
+        services.AddScoped<PhotoVariantCleanup>();
+        services.AddHttpClient<PhotoVariantRenderer>(http => http.Timeout = TimeSpan.FromSeconds(25))
+            .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false })
+            .RemoveAllLoggers();
+        services.AddHostedService<PhotoVariantWorker>();
+        services.AddHostedService<PhotoVariantCleanupWorker>();
         services.AddOptions<CoffeeImportAuthOptions>().BindConfiguration(nameof(CoffeeImportAuthOptions))
             .Validate(o => o.Token.Length == 0 || o.Token.Length >= 32).ValidateOnStart();
 

@@ -324,6 +324,8 @@ public class UnifiedCheckInHandlerTests
 
         Assert.True(result.IsSuccess);
         Assert.NotNull(row.DeletedAtUtc);
+        _bus.Verify(b => b.PublishAsync(It.Is<CoffeePeek.Contract.Events.CheckInPhotosDeletedEvent>(message =>
+            message.CheckInId == row.Id && message.UserId == _userId && message.DeletedAtUtc == row.DeletedAtUtc)), Times.Once);
         _unitOfWork.Verify(u => u.SaveChangesAsync(default), Times.Once);
         _bus.Verify(b => b.PublishAsync(It.Is<CheckInCacheInvalidationRequested>(message =>
             message.CheckInId == row.Id && message.ShopId == _shopId && message.UserId == _userId)), Times.Once);
