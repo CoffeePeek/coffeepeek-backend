@@ -1,7 +1,7 @@
 # План улучшения доставки фотографий CoffeePeek
 
 Дата: 18 октября 2026. Основа backend: `main`, `50d78de6`.
-Статус этой части: P0/P1 и Media variants P2 и Community/API P3 с private revalidation подготовлены. Последующие части публикуются зависимыми PR; включение требует сквозных acceptance checks.
+Статус: реализация начата. Backend-часть P0/P1 подготовлена в `codex/photo-delivery-foundation`: узкий photo access query, отдельный storage reader, provisioning/readiness, телеметрия и HTTP harness. P2 реализован в коде: durable jobs, приватный renderer и варианты, отмена и очистка. PostgreSQL gates пройдены локально; MinIO/renderer/broker acceptance и замеры на стенде ещё ожидают выполнения. Базовая часть P3 реализована: Ready/outbox, Community projection, variant descriptors, protected GET/HEAD и private revalidation. Бюджет 20/20 реализован за выключенным флагом, включая исходный deadline, срок JWT и запрет anonymous fallback при недействительных credentials. Локальный HTTP gate с JWT/YARP пройден; production proxy/client rollout gates P3 остаются. P4–P7 не начаты. Контракт и включение: [API вариантов](photo-delivery-api.md). Запуск P2: [фоновые варианты](photo-delivery-variants.md). Подробности и запуск: [первая часть реализации](photo-delivery-foundation.md).
 
 Цель — ускорить появление фотографий в мобильном и веб-клиентах, уменьшить трафик и нагрузку на VPS. Начинаем с ленты чекинов, затем распространяем подход на дневник, домашние приготовления, профили, галереи кофеен, обжарщиков, каталог кофе, аватары и меню. Уже загруженные оригиналы и действующие клиенты продолжают работать.
 

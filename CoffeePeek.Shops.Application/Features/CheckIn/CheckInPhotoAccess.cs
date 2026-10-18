@@ -7,4 +7,5 @@ public sealed record CheckInPhotoAccess(Guid CheckInId, Guid OwnerId, Guid Photo
 {
     public bool IsPubliclyVisible { get; init; }
     public string SourceVersion { get; init; } = "";
+    public CheckInPhotoPolicyObservation? PolicyObservation { get; init; }
 }

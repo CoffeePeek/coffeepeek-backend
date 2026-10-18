@@ -1,4 +1,6 @@
 using CoffeePeek.Shops.Application.Abstractions;
+using CoffeePeek.Shops.Application.Features.CheckIn;
+using CoffeePeek.Shops.Infrastructure.Account;
 using CoffeePeek.Shops.Domain.Aggregates.CheckInAggregate;
 using CoffeePeek.Shops.Domain.Entities;
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
@@ -7,6 +9,7 @@ using CoffeePeek.Shops.Persistance.Queries;
 using CoffeePeek.Testing;
 using Microsoft.EntityFrameworkCore;
 using Moq;
+using Microsoft.Extensions.Options;
 
 namespace CoffeePeek.Shops.Infrastructure.Tests.LivePostgres;
 
@@ -33,7 +36,9 @@ public sealed class CheckInPhotoAccessLiveTests(ShopsLiveDatabase fixture) : ICl
             .UseNpgsql(fixture.ConnectionString).AddInterceptors(probe).Options);
         var visibility = new Mock<IAuthorVisibilityLookup>();
         visibility.Setup(v => v.ExcludedUserIdsAsync(It.IsAny<Guid?>(), ct)).ReturnsAsync([]);
-        var access = new CheckInPhotoAccessQueries(db, visibility.Object);
+        using var cache = new CheckInPhotoVisibilityCache(TimeProvider.System,
+            Options.Create(new CheckInPhotoDeliveryOptions { CachePublicVariants = true }));
+        var access = new CheckInPhotoAccessQueries(db, visibility.Object, cache);
         Assert.NotNull(await access.GetAsync(row.Id, photos[2].Id, null, ct));
         Assert.Equal(1, probe.Count);
         Assert.Empty(db.ChangeTracker.Entries());
@@ -46,9 +51,14 @@ public sealed class CheckInPhotoAccessLiveTests(ShopsLiveDatabase fixture) : ICl
             Assert.DoesNotContain("CheckInHelpfulVotes", explain);
         }
         var reader = Guid.NewGuid();
+        var beforeVariant = probe.Count;
+        Assert.NotNull((await access.GetVariantAsync(row.Id, photos[2].Id, reader, ct))?.PolicyObservation);
+        Assert.Equal(beforeVariant + 1, probe.Count);
         visibility.Setup(v => v.ExcludedUserIdsAsync(reader, ct)).ReturnsAsync([row.UserId]);
         Assert.Null(await access.GetAsync(row.Id, photos[2].Id, reader, ct));
+        Assert.NotNull(await access.GetVariantAsync(row.Id, photos[2].Id, reader, ct)); // Warm facts, bounded to 20 seconds.
         shop.SetHidden(true); await writer.SaveChangesAsync(ct);
+        Assert.Null(await access.GetVariantAsync(row.Id, photos[2].Id, reader, ct)); // Community state is never cached.
         Assert.Null(await access.GetAsync(row.Id, photos[2].Id, null, ct));
         Assert.NotNull(await access.GetAsync(row.Id, photos[2].Id, row.UserId, ct));
         row.Delete(); await writer.SaveChangesAsync(ct);

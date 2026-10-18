@@ -32,6 +32,9 @@ public class HeaderAuthenticationHandler(
         var claims = new List<Claim> { new(ClaimTypes.NameIdentifier, userId) };
         claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
 
+        var expires = Context.Request.Headers[GatewayHeaderConsts.XUserTokenExpiresAt].ToString();
+        if (!string.IsNullOrEmpty(expires)) claims.Add(new Claim(AccessTokenExpiry.ClaimType, expires));
+
         var userName = Context.Request.Headers[GatewayHeaderConsts.XUserName].ToString();
         if (!string.IsNullOrEmpty(userName))
             claims.Add(new Claim(ClaimTypes.Name, Uri.UnescapeDataString(userName)));

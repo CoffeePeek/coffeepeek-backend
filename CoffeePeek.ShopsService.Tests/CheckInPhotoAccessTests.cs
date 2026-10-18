@@ -164,6 +164,7 @@ public class CheckInPhotoAccessTests
     }
     private sealed class FakeQueries : ICheckInPhotoAccessQueries
     {
+        public Task<CheckInPhotoAccess?> GetVariantAsync(Guid id, Guid photoId, Guid? reader, CancellationToken ct) => throw new NotSupportedException();
         public CheckInPhotoAccess? Detail { get; set; }
         public CheckInPhotoAccess? Snapshot { get; set; }
         public List<Guid?> Readers { get; } = [];

@@ -8,9 +8,25 @@ using Microsoft.EntityFrameworkCore;
 
 namespace CoffeePeek.Shops.Persistance.Queries;
 
-public sealed class CheckInPhotoAccessQueries(ShopsDbContext db, IAuthorVisibilityLookup visibility)
+public sealed class CheckInPhotoAccessQueries(ShopsDbContext db, IAuthorVisibilityLookup visibility,
+    ICheckInPhotoVisibilityCache variantVisibility)
     : ICheckInPhotoAccessQueries
 {
+    public async Task<CheckInPhotoAccess?> GetVariantAsync(Guid checkInId, Guid photoId, Guid? readerId, CancellationToken ct)
+    {
+        using var measurement = PhotoDeliveryTelemetry.Start("access", readerId.HasValue ? "authenticated" : "anonymous");
+        var facts = await variantVisibility.GetAsync(readerId, visibility, ct);
+        var result = await ReaderQuery(checkInId, photoId, readerId, facts.ExcludedUserIds).SingleOrDefaultAsync(ct);
+        // Owner-only/pending/rejected/hidden variants keep the fresh Account check as well as no-store.
+        if (result is { IsPubliclyVisible: false } && readerId.HasValue)
+        {
+            var current = await visibility.ExcludedUserIdsAsync(readerId, ct);
+            if (current.Contains(result.OwnerId)) result = null;
+        }
+        measurement.Complete(result is null ? "denied" : "allowed");
+        return result is null ? null : result with { PolicyObservation = facts.Observation };
+    }
+
     public async Task<CheckInPhotoAccess?> GetAsync(Guid checkInId, Guid photoId, Guid? readerId, CancellationToken ct)
     {
         using var measurement = PhotoDeliveryTelemetry.Start("access", readerId.HasValue ? "authenticated" : "anonymous");

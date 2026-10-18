@@ -65,6 +65,7 @@ app.UseCors();
 app.UseRateLimiter();
 
 app.UseAuthentication();
+app.UseMiddleware<CheckInPhotoAuthenticationMiddleware>();
 app.UseAuthorization();
 
 app.UseResponseCaching();

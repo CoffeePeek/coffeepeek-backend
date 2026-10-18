@@ -4,5 +4,6 @@ namespace CoffeePeek.Shops.Application.Features.CheckIn;
 public interface ICheckInPhotoAccessQueries
 {
     Task<CheckInPhotoAccess?> GetAsync(Guid checkInId, Guid photoId, Guid? readerId, CancellationToken ct);
+    Task<CheckInPhotoAccess?> GetVariantAsync(Guid checkInId, Guid photoId, Guid? readerId, CancellationToken ct);
     Task<CheckInPhotoAccess?> GetModerationAsync(Guid checkInId, Guid photoId, int revision, CancellationToken ct);
 }

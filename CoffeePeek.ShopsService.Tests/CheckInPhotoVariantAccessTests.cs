@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Headers;
+using System.Security.Claims;
 using CoffeePeek.Contract.Enums;
 using CoffeePeek.Shared.Auth;
 using CoffeePeek.Shared.Auth.Options;
@@ -21,6 +22,93 @@ public sealed class CheckInPhotoVariantAccessTests
         { IsPubliclyVisible = true, SourceVersion = Source };
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
+    [Theory]
+    [InlineData("GET")]
+    [InlineData("HEAD")]
+    public async Task PublicFreshnessIsPrivateAndBoundedByOriginalObservationIncluding304(string method)
+    {
+        var fixture = new Fixture();
+        fixture.Visible = Access with { PolicyObservation = CheckInPhotoPolicyObservation.Start(fixture.Clock) };
+        var first = fixture.Controller(caching: true); first.Request.Method = method;
+        Assert.IsType<EmptyResult>(await Download(first));
+        Assert.Equal("private, max-age=20, must-revalidate", first.Response.Headers.CacheControl);
+        fixture.Clock.Advance(19); fixture.Media.Delay = () => fixture.Clock.Advance(18);
+        fixture.Media.Status = HttpStatusCode.NotModified;
+        var second = fixture.Controller(caching: true); second.Request.Method = method; second.Request.Headers.IfNoneMatch = "*";
+        Assert.Equal(304, Assert.IsType<StatusCodeResult>(await Download(second)).StatusCode);
+        Assert.Equal("private, max-age=3, must-revalidate", second.Response.Headers.CacheControl);
+        Assert.Equal(fixture.Clock.GetUtcNow(), second.Response.GetTypedHeaders().Date);
+        fixture.Media.Delay = null; fixture.Clock.Advance(3);
+        var expired = fixture.Controller(caching: true); expired.Request.Headers.IfNoneMatch = "*";
+        Assert.Equal(503, Assert.IsType<StatusCodeResult>(await Download(expired)).StatusCode);
+        Assert.Equal("private, no-store", expired.Response.Headers.CacheControl);
+        Assert.Equal(2, fixture.Media.Calls);
+    }
+
+    [Theory]
+    [InlineData(7, 7)]
+    [InlineData(60, 20)]
+    [InlineData(null, 0)]
+    public async Task FreshnessCannotOutliveValidatedCredentials(int? secondsLeft, int expected)
+    {
+        var fixture = new Fixture();
+        fixture.Visible = Access with { PolicyObservation = CheckInPhotoPolicyObservation.Start(fixture.Clock) };
+        var controller = fixture.Controller(caching: true, expiresIn: secondsLeft);
+        Assert.IsType<EmptyResult>(await Download(controller));
+        Assert.Equal($"private, max-age={expected}, must-revalidate", controller.Response.Headers.CacheControl);
+    }
+
+    [Fact]
+    public async Task FractionalRemainingLifetimeRoundsDownAndMissingObservationCannotEnableFreshness()
+    {
+        var fixture = new Fixture();
+        var missing = fixture.Controller(caching: true);
+        Assert.IsType<EmptyResult>(await Download(missing));
+        Assert.Equal("private, max-age=0, must-revalidate", missing.Response.Headers.CacheControl);
+        fixture.Visible = Access with { PolicyObservation = CheckInPhotoPolicyObservation.Start(fixture.Clock) };
+        var controller = fixture.Controller(caching: true, expiresIn: 1);
+        fixture.Clock.Advance(0.75);
+        Assert.IsType<EmptyResult>(await Download(controller));
+        Assert.Equal("private, max-age=0, must-revalidate", controller.Response.Headers.CacheControl);
+    }
+
+    [Fact]
+    public async Task ExpiredCredentialsAndInvalidAnonymousCredentialsNeverUseConditionalBytes()
+    {
+        var fixture = new Fixture();
+        var expired = fixture.Controller(caching: true, expiresIn: 0); expired.Request.Headers.IfNoneMatch = "*";
+        Assert.IsType<UnauthorizedResult>(await Download(expired));
+        var invalid = fixture.Controller(caching: true, anonymous: true); invalid.Request.Headers.Authorization = "Bearer invalid";
+        Assert.IsType<UnauthorizedResult>(await Download(invalid));
+        Assert.Equal("private, no-store", invalid.Response.Headers.CacheControl);
+        Assert.Equal(0, fixture.Media.Calls);
+        fixture.Queries.Verify(q => q.GetVariantAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task TokenExpiringDuringUpstreamReadCannotProduce304()
+    {
+        var fixture = new Fixture(); fixture.Media.Status = HttpStatusCode.NotModified;
+        fixture.Media.Delay = () => fixture.Clock.Advance(2);
+        var controller = fixture.Controller(caching: true, expiresIn: 1); controller.Request.Headers.IfNoneMatch = "*";
+        Assert.IsType<UnauthorizedResult>(await Download(controller));
+        Assert.Equal("private, no-store", controller.Response.Headers.CacheControl);
+    }
+
+    [Fact]
+    public async Task AnonymousMayUseOnlyPrivateCacheAndOwnerOnlyVariantRemainsNoStore()
+    {
+        var fixture = new Fixture();
+        fixture.Visible = Access with { PolicyObservation = CheckInPhotoPolicyObservation.Start(fixture.Clock) };
+        var anonymous = fixture.Controller(caching: true, anonymous: true);
+        Assert.IsType<EmptyResult>(await Download(anonymous));
+        Assert.Equal("private, max-age=20, must-revalidate", anonymous.Response.Headers.CacheControl);
+        fixture.Visible = fixture.Visible with { IsPubliclyVisible = false };
+        var own = fixture.Controller(caching: true);
+        Assert.IsType<EmptyResult>(await Download(own));
+        Assert.Equal("private, no-store", own.Response.Headers.CacheControl);
+    }
+
     [Fact]
     public async Task ConditionalRequestRechecksAccessAndCannotReturn304AfterHideOrBlock()
     {
@@ -41,7 +129,7 @@ public sealed class CheckInPhotoVariantAccessTests
         Assert.IsType<NotFoundResult>(await Download(blocked));
         Assert.Equal("private, no-store", blocked.Response.Headers.CacheControl);
         Assert.Equal(2, fixture.Media.Calls);
-        fixture.Queries.Verify(q => q.GetAsync(Access.CheckInId, Access.PhotoId, Access.OwnerId, It.IsAny<CancellationToken>()), Times.Exactly(3));
+        fixture.Queries.Verify(q => q.GetVariantAsync(Access.CheckInId, Access.PhotoId, Access.OwnerId, It.IsAny<CancellationToken>()), Times.Exactly(3));
     }
 
     [Fact]
@@ -82,7 +170,7 @@ public sealed class CheckInPhotoVariantAccessTests
     public async Task UncachedAccountFailureNeverReusesAnEtagOrContactsMedia()
     {
         var fixture = new Fixture();
-        fixture.Queries.Setup(q => q.GetAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
+        fixture.Queries.Setup(q => q.GetVariantAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new ServiceUnavailableException("Account unavailable"));
         var controller = fixture.Controller(); controller.Request.Headers.IfNoneMatch = "*";
         await Assert.ThrowsAsync<ServiceUnavailableException>(() => Download(controller));
@@ -94,7 +182,7 @@ public sealed class CheckInPhotoVariantAccessTests
     public async Task SlowAccessDecisionCannotResetRevocationDeadline()
     {
         var fixture = new Fixture();
-        fixture.Queries.Setup(q => q.GetAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
+        fixture.Queries.Setup(q => q.GetVariantAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(() => { fixture.Clock.Advance(41); return Access; });
         Assert.Equal(503, Assert.IsType<StatusCodeResult>(await Download(fixture.Controller())).StatusCode);
         Assert.Equal(0, fixture.Media.Calls);
@@ -122,17 +210,23 @@ public sealed class CheckInPhotoVariantAccessTests
         public readonly Mock<ICheckInPhotoAccessQueries> Queries = new();
         public readonly MediaHandler Media = new();
         public readonly Clock Clock = new();
-        public Fixture() => Queries.Setup(q => q.GetAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
+        public Fixture() => Queries.Setup(q => q.GetVariantAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(() => Visible);
-        public CheckInPhotoVariantsController Controller(bool enabled = true)
+        public CheckInPhotoVariantsController Controller(bool enabled = true, bool caching = false, int? expiresIn = 3600, bool anonymous = false)
         {
-            var user = new Mock<IUserContext>(); user.Setup(u => u.GetUserId()).Returns(Access.OwnerId);
+            var user = new Mock<IUserContext>(); user.Setup(u => u.GetUserId()).Returns(anonymous ? null : Access.OwnerId);
             var factory = new Mock<IHttpClientFactory>(); factory.Setup(f => f.CreateClient(It.IsAny<string>()))
                 .Returns(() => new HttpClient(Media, false) { BaseAddress = new Uri("http://media") });
             var controller = new CheckInPhotoVariantsController(Queries.Object,
                 new MediaCheckInPhotoClient(factory.Object, Options.Create(new GatewayAuthOptions { SecretKey = "test" })),
-                user.Object, Options.Create(new CheckInPhotoDeliveryOptions { ServeVariants = enabled }), Clock)
+                user.Object, Options.Create(new CheckInPhotoDeliveryOptions { ServeVariants = enabled, CachePublicVariants = caching }), Clock)
                 { ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() } };
+            if (!anonymous)
+            {
+                var claims = new List<Claim> { new(ClaimTypes.NameIdentifier, Access.OwnerId.ToString()) };
+                if (expiresIn.HasValue) claims.Add(new(AccessTokenExpiry.ClaimType, Clock.GetUtcNow().AddSeconds(expiresIn.Value).ToUnixTimeSeconds().ToString()));
+                controller.HttpContext.User = new(new ClaimsIdentity(claims, "test"));
+            }
             controller.Request.Method = "GET"; controller.Response.Body = new MemoryStream();
             return controller;
         }
@@ -152,9 +246,11 @@ public sealed class CheckInPhotoVariantAccessTests
         public string? Conditional;
         public string? Owner;
         public HttpMethod? Method;
+        public Action? Delay;
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
             Calls++; Method = request.Method;
+            Delay?.Invoke();
             Conditional = request.Headers.TryGetValues("If-None-Match", out var values) ? values.Single() : null;
             Owner = request.Headers.GetValues("X-User-Id").Single();
             Assert.DoesNotContain("X-User-Role", request.Headers.Select(h => h.Key));

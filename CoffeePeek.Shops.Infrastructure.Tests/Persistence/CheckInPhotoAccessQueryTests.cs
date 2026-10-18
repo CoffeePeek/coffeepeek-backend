@@ -15,7 +15,7 @@ public class CheckInPhotoAccessQueryTests
     {
         using var db = new ShopsDbContext(new DbContextOptionsBuilder<ShopsDbContext>()
             .UseNpgsql("Host=localhost;Database=unused;Username=test").Options);
-        var queries = new CheckInPhotoAccessQueries(db, Mock.Of<IAuthorVisibilityLookup>());
+        var queries = new CheckInPhotoAccessQueries(db, Mock.Of<IAuthorVisibilityLookup>(), Mock.Of<CoffeePeek.Shops.Application.Features.CheckIn.ICheckInPhotoVisibilityCache>());
         var sql = queries.ReaderQuery(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), [Guid.NewGuid()]).ToQueryString();
         Assert.Contains("JOIN", sql);
         Assert.Contains("CheckInPhotos", sql);
@@ -49,7 +49,7 @@ public class CheckInPhotoAccessQueryTests
         visibility.Setup(v => v.ExcludedUserIdsAsync(It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(() => excluded);
         var original = new CheckInQueries(db, visibility.Object);
-        var narrow = new CheckInPhotoAccessQueries(db, visibility.Object);
+        var narrow = new CheckInPhotoAccessQueries(db, visibility.Object, Mock.Of<CoffeePeek.Shops.Application.Features.CheckIn.ICheckInPhotoVisibilityCache>());
         var other = Guid.NewGuid();
 
         async Task AssertParity()
@@ -104,7 +104,7 @@ public class CheckInPhotoAccessQueryTests
         visibility.Setup(v => v.ExcludedUserIdsAsync(It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new CoffeePeek.Shared.Kernel.Exceptions.ServiceUnavailableException("unavailable"));
         await Assert.ThrowsAsync<CoffeePeek.Shared.Kernel.Exceptions.ServiceUnavailableException>(() =>
-            new CheckInPhotoAccessQueries(db, visibility.Object).GetAsync(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(),
+            new CheckInPhotoAccessQueries(db, visibility.Object, Mock.Of<CoffeePeek.Shops.Application.Features.CheckIn.ICheckInPhotoVisibilityCache>()).GetAsync(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(),
                 TestContext.Current.CancellationToken));
     }
 }

@@ -1,4 +1,6 @@
 using System.Security.Claims;
+using System.Globalization;
+using CoffeePeek.Shared.Auth;
 using CoffeePeek.Shared.Auth.Constants;
 
 namespace CoffeePeek.Gateway.Extensions;
@@ -24,6 +26,9 @@ public static class ClaimsTransformationExtensions
         var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (!string.IsNullOrEmpty(userId))
             headers[GatewayHeaderConsts.XUserId] = userId;
+
+        if (AccessTokenExpiry.Read(user) is { } expires)
+            headers[GatewayHeaderConsts.XUserTokenExpiresAt] = expires.ToUnixTimeSeconds().ToString(CultureInfo.InvariantCulture);
 
         var userName = user.FindFirst(ClaimTypes.Name)?.Value
                        ?? user.FindFirst("preferred_username")?.Value;

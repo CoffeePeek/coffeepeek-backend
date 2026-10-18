@@ -1,6 +1,6 @@
 # Защищённые варианты фото: P3
 
-Реализованы Ready event/outbox, Community projection, совместимые дескрипторы и защищённый GET/HEAD с private revalidation. Эта часть вводит private revalidation без положительного TTL. Кеш 20/20 и передача срока JWT следуют отдельным PR. [Общий план](photo-delivery-improvement-plan.md), [генерация P2](photo-delivery-variants.md).
+Реализованы Ready event/outbox, Community projection, совместимые дескрипторы и защищённый GET/HEAD с private revalidation. Кеш ограничений Account до 20 секунд и private freshness до 20 секунд реализованы за отдельным флагом, по умолчанию выключенным. Срок учитывает исходную проверку, задержки и истечение JWT. [Общий план](photo-delivery-improvement-plan.md), [генерация P2](photo-delivery-variants.md).
 
 ## Ответы ленты и деталей
 
@@ -30,15 +30,25 @@ Community запрашивает manifests одним дополнительны
 
 `GET` и `HEAD /api/v1/check-ins/{id}/photos/{photoId}/variants/{source}/{recipe}/{purpose}.{format}`:
 
-- Community заново проверяет чекин, актуальное одобрение, скрытие кофейни и личные блокировки; Account lookup не кешируется. Версия источника сверяется с текущей Community photo binding.
+- Community заново проверяет чекин, актуальное одобрение и скрытие кофейни. Личные блокировки читаются из Account; при включённом флаге для публичных вариантов допустимы факты возрастом менее 20 секунд. Версия источника сверяется с текущей Community photo binding.
 - Media проверяет owner/check-in/photo/source binding, Confirmed source, Ready job и отсутствие tombstone. Неготовый, удалённый или отменённый вариант возвращает 404.
 - Варианты читаются отдельной IAM identity: GetObject только в private variants bucket, чтение policy/location для readiness. Проверка policy выполняется фоновым monitor каждые 10 секунд с timeout 5 секунд; readiness lease истекает через 30 секунд. Неуспешная проверка закрывает также HEAD/304.
 - Ответ содержит фактические `Content-Type`, `Content-Length`, `ETag`, `X-Content-Type-Options: nosniff`. HEAD и 304 не читают объект из MinIO. `If-None-Match` поддерживает weak tags, список и `*`.
-- Approved-public variant возвращает `Cache-Control: private, max-age=0, must-revalidate` и `Vary: Authorization, Cookie`, включая anonymous. Shared cache не разрешён. Ошибки, owner-only/private/pending/rejected/hidden данные и оригиналы остаются `private, no-store`. Для owner-only фото conditional header не пересылается в Media, ответ 304 не принимается.
-- Каждый 304 следует новой проверке доступа. Решение ограничено 40 секундами от начала запроса; положительный TTL отсутствует. Это оставляет запас до согласованных 60 секунд.
-- Gateway разрешает web-клиенту читать ETag через CORS. Range и If-Range не проксируются в Media; отдаётся целый вариант без seek/buffering всего изображения.
+- Approved-public variant по умолчанию возвращает `Cache-Control: private, max-age=0, must-revalidate`; при включённом кеше — `private, max-age=N, must-revalidate`, где N от 0 до 20 и `Vary: Authorization, Cookie`, включая anonymous. Shared cache не разрешён. Ошибки, owner-only/private/pending/rejected/hidden данные и оригиналы остаются `private, no-store`. Для owner-only фото conditional header не пересылается в Media, ответ 304 не принимается.
+- Каждый 304 следует проверке доступа. Решение ограничено 40 секундами от начала исходного Account lookup, включая его retries и дальнейшие запросы. Cache hit сохраняет исходные observedAt/allowedUntil. Положительная freshness не выходит за этот срок или срок JWT; доли секунды округляются вниз. Это оставляет 20 секунд резерва до согласованных 60 секунд.
+- Gateway отбрасывает невалидный/истёкший/отозванный JWT на photo routes до response cache и YARP, возвращая 401/no-store. Он удаляет клиентский `X-User-Token-Expires-At` и передаёт срок из проверенного JWT; downstream принимает его только вместе с доверенной identity. При отсутствии срока у авторизованного пользователя freshness остаётся нулевой. Gateway разрешает web-клиенту читать ETag через CORS. Range и If-Range не проксируются в Media; отдаётся целый вариант без seek/buffering всего изображения.
 
 После истечения freshness наличие кешированных bytes не даёт права показывать фото offline без успешной перепроверки. Новый клиент должен выбирать вариант по месту показа и формату, сохранять account/session/URL как часть ключа кеша и использовать прежний URL, когда `variants` отсутствует. Существующий клиент, продолжающий использовать `url`, сам по себе не начнёт загружать меньшие файлы.
+
+## Бюджет кеша 20/20
+
+Флаг: `CheckInPhotoDeliveryOptions.CachePublicVariants` (`CHECKIN_VARIANTS_CACHE_ENABLED` в production Compose). Значения 20/20 фиксированы в коде; их нельзя случайно увеличить конфигурацией. Кеш Account выделен отдельно, ограничен 4 MiB по оценке размера записей, разделён по viewer ID и объединяет одновременные lookup через 64 ограничителя. Обычные feed/detail/original/moderation reads продолжают использовать прежнюю свежую проверку; owner-only вариант дополнительно проверяет Account без кеша. Community и Media bindings не кешируются.
+
+Пример: Account наблюдал разрешение в t=0, клиент повторяет запрос в t=19, а Media отвечает в t=37. Ответ 200/HEAD/304 получает максимум 3 секунды freshness, а не 20. Повторный запрос в t=40 обязан получить новое разрешение; если Account недоступен или автор заблокирован, старый ETag не помогает. Account lookup длительностью 20 секунд или больше при включённом кеше отклоняется и не сохраняется. После истечения записи нет stale fallback при сбое.
+
+Возвращается время текущего ответа `Date` и остаток срока в `max-age`; HTTP age включает сетевую задержку. 304 не сбрасывает исходное наблюдение policy. Сервер дополнительно использует монотонные часы, поэтому перевод системных часов назад не продлевает факт. Срок JWT — абсолютный UTC, часы Gateway/Shops должны быть синхронизированы. Shared cache запрещён и для anonymous. Эти правила используют [HTTP freshness и расчёт возраста RFC 9111](https://www.rfc-editor.org/rfc/rfc9111.html#section-4.2.3).
+
+Локальные bitmap/disk caches клиентов должны учитывать `Date`, `Age`, `max-age`, время передачи, account/session/variant и принудительно очищать разрешение при logout/смене аккаунта/local hide/block. Положительный TTL включается после проверки реальных клиентов; один серверный заголовок не ограничивает произвольный offline image cache.
 
 ## Транзакции и восстановление проекции
 
@@ -62,9 +72,18 @@ X-Gateway-Auth: <shared service secret>
 4. Включить `CHECKIN_VARIANTS_SERVE_ENABLED=true` у Shops. Проверить GET/HEAD/304 через реальный gateway, затем hide/block/delete, owner-only, смену аккаунта и истёкшие credentials.
 5. Выполнить replay готовых jobs, если они появились до нового consumer или проекция потеряна. Дождаться обработки outbox/inbox.
 6. После проверки старых и новых клиентов включить `CHECKIN_VARIANTS_ADVERTISE_ENABLED=true`. Shops не стартует, если advertisement включён, а serving выключен. Все rollout-флаги в репозитории по умолчанию false.
+7. После проверки Date/Age/freshness через production Caddy и кеши обоих клиентов отдельно включить `CHECKIN_VARIANTS_CACHE_ENABLED=true`. Сначала проверить cold/warm, повторные 304, блокировку непосредственно после заполнения кеша, Account outage, смену аккаунта и истечение JWT.
 
-Для мягкого отката выключить advertisement/generation, сохранив read/serve для уже выданных URL. Для аварийного закрытия вариантов выключить read/serve: клиент получит 404/503 и сможет обратиться к прежнему оригиналу только после обычной проверки доступа. Не удалять private artifacts, originals, tombstones или таблицы при откате приложения. Reconciliation и migration replay не меняют moderation state.
+Для отката кеширования выключить `CHECKIN_VARIANTS_CACHE_ENABLED`: новые ответы потребуют revalidation, ранее выданная freshness истечёт максимум через 20 секунд. Для мягкого отката выключить advertisement/generation, сохранив read/serve для уже выданных URL. Для аварийного закрытия вариантов выключить read/serve: клиент получит 404/503 и сможет обратиться к прежнему оригиналу только после обычной проверки доступа. Не удалять private artifacts, originals, tombstones или таблицы при откате приложения. Reconciliation и migration replay не меняют moderation state.
 
 ## Проверки и границы готовности
 
-Backend unit/contract checks и PostgreSQL gates покрывают access parity, source binding, projection replay и atomic Ready/outbox. HTTP-тест Kestrel подтверждает HEAD/304 без object GET. Перед включением остаются MinIO/renderer/RabbitMQ, production Caddy и клиентские acceptance checks. Флаги read/serve/advertise выключены по умолчанию.
+Финальный локальный backend gate: **2 431 passed / 210 skipped**, 0 failed; Release build: **0 errors** (739 analyzer/compiler warnings). Audit зависимостей — без найденных уязвимостей. Первоначальный P2/P3-прогон фото с PostgreSQL: **49 passed / 2 skipped** (MinIO/renderer). Новый целевой прогон кеша и доступа с PostgreSQL: **7 passed / 0 skipped**; HTTP JWT/YARP gate: **1 passed**. HTTP harness: 4 passed; deployment helpers: 8 passed; `git diff --check` проходит.
+
+Локально выполнены PostgreSQL gates для additive populated upgrade, duplicate/out-of-order/late события, source/owner binding, восстановления проекции, постоянного числа SQL batches, atomic Ready + Wolverine envelope rollback и доставки через durable local queue после commit. HTTP-тест с настоящим Kestrel подтверждает заголовки и пустое тело HEAD/304. Контроллерные проверки покрывают скрытие/блокировку, private no-store, недоступность Account/Media и истечение бюджета решения. Добавлены проверки границы 20 секунд, отсутствия sliding TTL/stale fallback, coalescing, разделения viewers, возврата часов назад, общего deadline 200/HEAD/304 и округления freshness до истечения JWT. Настоящий Kestrel + JWT validation + YARP + downstream header auth подтверждает удаление поддельного expiry, 401 для malformed/expired/wrong-signature/revoked токенов и отсутствие shared cache hit; Date/Age сохраняются при GET/HEAD/304 через прокси. Проверяются публичный DTO вырезки, OpenAPI и CORS.
+
+MinIO + pinned renderer gate дополнен настоящим variant reader и проверками запрета DELETE и чтения originals. Для него нужны `COFFEEPEEK_LIVE_VARIANT_READER_USER/PASSWORD` наряду с переменными P2; CI их задаёт. При подготовке PR Docker запущен в rootless-режиме. Дополнительный прогон на Docker PostgreSQL 17: 12 passed / 0 skipped (queue/outbox, populated migration/projection, access SQL). Для MinIO/renderer выполняется отдельный прогон; временный MinIO image собран из закреплённого официального исходника, поскольку прежние публичные образы и dl.min.io недоступны. Доставка через RabbitMQ, production gateway/Caddy, целевые web/mobile клиенты, warm-cache latency и p95 на стенде остаются acceptance checks. Успех durable local queue теста не означает проверки RabbitMQ outage/restart.
+
+Метрики `photo.stage.duration` используют stage `variant_download`, а `policy_cache` показывает hit/miss для ограничений Account. `photo.responses` различает `no_store`, `private_revalidate`, `private_fresh` и учитывает 304. Метрики не содержат URLs, object keys или идентификаторы пользователей.
+
+Внешняя зависимость выпуска: [MinIO OSS архивирован](https://github.com/minio/minio), официальный download возвращает HTTP 410. Для clean CI и свежего deploy нужна доступная доверенная сборка MinIO/mc; локальная тестовая source-сборка не подменяет production image.
