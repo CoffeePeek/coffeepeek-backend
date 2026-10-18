@@ -130,6 +130,21 @@ class PreflightTests(unittest.TestCase):
         self.assertEqual("preflight_unavailable", json.loads(output.getvalue())["state"])
         self.assertNotIn(PRIVATE, output.getvalue())
 
+    def test_storage_volume_identity_is_observed_without_compose_or_environment(self):
+        commands = Mock()
+        raw = {"project": "coffeepeek", "service": "minio", "running": True, "imageId": "sha256:" + "a" * 64,
+               "mounts": [{"Type": "volume", "Name": "coffeepeek_minio_data", "Destination": "/data", "RW": True,
+                           "Source": PRIVATE}], "Env": PRIVATE}
+        commands.run.return_value = json.dumps(raw)
+        result = tool.storage_topology(commands)
+        self.assertEqual("observed", result["state"])
+        self.assertEqual("coffeepeek_minio_data", result["mounts"][0]["name"])
+        self.assertNotIn(PRIVATE, json.dumps(result))
+        commands.compose.assert_not_called()
+        raw["project"] = "another-project"
+        commands.run.return_value = json.dumps(raw)
+        self.assertEqual({"state": "unavailable"}, tool.storage_topology(commands))
+
     def test_schema_sql_has_sizes_but_no_keys_ids_credentials_or_writes_in_result(self):
         sql = tool.schema_sql()
         self.assertIn("pg_database_size(current_database())", sql)

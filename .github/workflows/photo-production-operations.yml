@@ -5,6 +5,16 @@ on:
     branches: [codex/photo-archive-backfill]
     paths: [.github/workflows/photo-production-operations.yml]
   workflow_dispatch:
+    inputs:
+      operation:
+        description: Explicit operation; storage reads policies, backup preserves databases and rollback images.
+        type: choice
+        default: preflight
+        options: [preflight, storage, backup, inventory, pilot-create, pilot-advance, pilot-status, pilot-pause, canary-prepare, canary-activate, canary-create, canary-verify, canary-cleanup]
+      expected_revision:
+        description: Exact deployed Git SHA required by post-deployment operations.
+        type: string
+        required: false
 
 permissions:
   contents: read
@@ -15,6 +25,7 @@ concurrency:
 
 jobs:
   inspect:
+    if: github.event_name == 'push' || inputs.operation == 'preflight'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -68,4 +79,121 @@ jobs:
         with:
           name: photo-production-preflight
           path: ${{ runner.temp }}/photo-production-preflight.json
+          retention-days: 7
+
+  operate:
+    if: github.event_name == 'workflow_dispatch' && inputs.operation != 'preflight' && inputs.operation != 'storage' && inputs.operation != 'backup'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout reviewed operator source
+        uses: actions/checkout@v4
+      - name: Setup deployment SSH identity
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.VPS_SSH_KEY }}
+      - name: Trust configured deployment host
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+        run: ssh-keyscan -H "$VPS_HOST" >> ~/.ssh/known_hosts
+      - name: Install versioned operators outside the application checkout
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+        run: |
+          set -euo pipefail
+          [[ "$GITHUB_SHA" =~ ^[0-9a-f]{40}$ && "$GITHUB_RUN_ID" =~ ^[0-9]+$ ]]
+          operator_dir="/var/lib/coffeepeek/photo-backfill/operators/$GITHUB_SHA/$GITHUB_RUN_ID"
+          tar -czf - dev/photo-variants/*.py | ssh -o BatchMode=yes -o ConnectTimeout=20 \
+            "$VPS_USER@$VPS_HOST" "umask 077; mkdir -p '$operator_dir'; tar -xzf - -C '$operator_dir'"
+      - name: Execute one explicit bounded operation
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          PHOTO_OPERATION: ${{ inputs.operation }}
+          EXPECTED_DEPLOY_SHA: ${{ inputs.expected_revision }}
+        run: |
+          set -euo pipefail
+          umask 077
+          case "$PHOTO_OPERATION" in
+            inventory|pilot-create|pilot-advance|pilot-status|pilot-pause) operator=photo_production_inventory.py ;;
+            canary-prepare|canary-activate|canary-create|canary-verify|canary-cleanup) operator=photo_production_activation.py ;;
+            *) exit 1 ;;
+          esac
+          [[ -z "$EXPECTED_DEPLOY_SHA" || "$EXPECTED_DEPLOY_SHA" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$PHOTO_OPERATION" == canary-prepare || -n "$EXPECTED_DEPLOY_SHA" ]]
+          operator_path="/var/lib/coffeepeek/photo-backfill/operators/$GITHUB_SHA/$GITHUB_RUN_ID/dev/photo-variants/$operator"
+          {
+          printf 'photo_operation=%q\nexpected_deploy_sha=%q\noperator_path=%q\n' "$PHOTO_OPERATION" "$EXPECTED_DEPLOY_SHA" "$operator_path"
+          cat <<'REMOTE'
+          set -euo pipefail
+          set +x
+          umask 077
+          cd /opt/coffeepeek
+          set -a
+          source deploy/.env
+          set +a
+          export PHOTO_OPERATION="$photo_operation" EXPECTED_DEPLOY_SHA="$expected_deploy_sha"
+          python3 "$operator_path"
+          REMOTE
+          } | ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=15 \
+            -o ServerAliveCountMax=4 "$VPS_USER@$VPS_HOST" 'bash -s' \
+            > "$RUNNER_TEMP/photo-production-operation.json"
+          python3 -m json.tool "$RUNNER_TEMP/photo-production-operation.json"
+      - name: Save sanitized operation result
+        uses: actions/upload-artifact@v4
+        with:
+          name: photo-production-operation
+          path: ${{ runner.temp }}/photo-production-operation.json
+          retention-days: 7
+
+  preserve:
+    if: github.event_name == 'workflow_dispatch' && (inputs.operation == 'storage' || inputs.operation == 'backup')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout reviewed operator source
+        uses: actions/checkout@v4
+      - name: Setup deployment SSH identity
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.VPS_SSH_KEY }}
+      - name: Trust configured deployment host
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+        run: ssh-keyscan -H "$VPS_HOST" >> ~/.ssh/known_hosts
+      - name: Preserve production rollback material without stopping writers
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          PHOTO_OPERATION: ${{ inputs.operation }}
+        run: |
+          set -euo pipefail
+          umask 077
+          [[ "$PHOTO_OPERATION" == storage || "$PHOTO_OPERATION" == backup ]]
+          [[ "$GITHUB_RUN_ID" =~ ^[0-9]+$ ]]
+          {
+          printf 'export PHOTO_OPERATION=%q GITHUB_RUN_ID=%q\n' "$PHOTO_OPERATION" "$GITHUB_RUN_ID"
+          cat <<'REMOTE'
+          set -euo pipefail
+          set +x
+          umask 077
+          cd /opt/coffeepeek
+          test -f deploy/.env
+          set -a
+          source deploy/.env
+          set +a
+          python3 - <<'GUARD_PY'
+          REMOTE
+          cat dev/photo-variants/photo_production_guard.py
+          printf '\nGUARD_PY\n'
+          } | ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=15 \
+            -o ServerAliveCountMax=4 "$VPS_USER@$VPS_HOST" 'bash -s' \
+            > "$RUNNER_TEMP/photo-production-preservation.json"
+          python3 -m json.tool "$RUNNER_TEMP/photo-production-preservation.json"
+      - name: Save sanitized preservation report
+        uses: actions/upload-artifact@v4
+        with:
+          name: photo-production-preservation
+          path: ${{ runner.temp }}/photo-production-preservation.json
           retention-days: 7

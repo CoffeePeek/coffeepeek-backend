@@ -18,7 +18,7 @@ public sealed class CheckInFeedReader(ShopsDbContext db, CoffeePeek.Shops.Applic
         var rows = await query.AsNoTracking().Include(c => c.ShopPhotos).Take(pageSize + 1).ToArrayAsync(ct);
         var hasMore = rows.Length > pageSize;
         rows = rows.Take(pageSize).ToArray();
-        var items = await CheckInProjection.FromRowsAsync(db, rows, readerId, ct, deliveryOptions?.Value.AdvertiseVariants == true);
+        var items = await CheckInProjection.FromRowsAsync(db, rows, readerId, ct, deliveryOptions?.Value.ShouldAdvertiseTo(readerId) == true);
         return new(items.Select((item, i) => new CheckInFeedEntry(item, rows[i].FirstPublishedAtUtc!.Value)).ToArray(), hasMore);
     }
 

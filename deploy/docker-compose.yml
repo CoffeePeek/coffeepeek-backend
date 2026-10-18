@@ -284,6 +284,8 @@ services:
     environment:
       CheckInPhotoDeliveryOptions__ServeVariants: ${CHECKIN_VARIANTS_SERVE_ENABLED:-false}
       CheckInPhotoDeliveryOptions__AdvertiseVariants: ${CHECKIN_VARIANTS_ADVERTISE_ENABLED:-false}
+      CheckInPhotoDeliveryOptions__AdvertiseCanaryOnly: ${CHECKIN_VARIANTS_CANARY_ONLY:-false}
+      CheckInPhotoDeliveryOptions__AdvertiseCanaryUserIds: "${CHECKIN_VARIANTS_CANARY_USER_IDS:-}"
       CheckInPhotoDeliveryOptions__CachePublicVariants: ${CHECKIN_VARIANTS_CACHE_ENABLED:-false}
       <<: [*dotnet-common, *rabbitmq-env, *redis-env, *media-public-env, *gateway-auth-env, *aspire-service-discovery]
       PostgresCpOptions__ConnectionString: Host=postgres;Port=5432;Database=cpshopsdb;Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD};SslMode=Disable;GSS Encryption Mode=Disable

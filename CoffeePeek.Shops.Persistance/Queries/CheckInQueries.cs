@@ -84,7 +84,7 @@ public partial class CheckInQueries(ShopsDbContext dbContext, CoffeePeek.Shops.A
     {
         var rows = await query.AsNoTracking().Include(c => c.ShopPhotos).ToArrayAsync(ct);
         return await CheckInProjection.FromRowsAsync(_db, rows, readerId, ct,
-            advertiseVariants && deliveryOptions?.Value.AdvertiseVariants == true);
+            advertiseVariants && deliveryOptions?.Value.ShouldAdvertiseTo(readerId) == true);
     }
 
     public static string EncodeCursor(DateTime createdAt, Guid id) => Convert.ToBase64String(

@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # CI deploy entrypoint on VPS: migrations (docker) + pull/restart app containers.
 set -euo pipefail
+set +x
+requested_image_tag="${DEPLOY_IMAGE_TAG:-}"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DEPLOY_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
@@ -13,7 +15,18 @@ set -a
 source .env
 set +a
 
+if [[ -n "${requested_image_tag}" ]]; then
+  python3 "${SCRIPT_DIR}/persist_image_tag.py" --check .env "${requested_image_tag}"
+  export IMAGE_TAG="${requested_image_tag}"
+fi
+
 bash "${SCRIPT_DIR}/check-coffee-import.sh"
+
+# Registry/build/network failures must occur while the old application is still running.
+bash "${SCRIPT_DIR}/prepare-images.sh"
+if [[ -n "${requested_image_tag}" ]]; then
+  python3 "${SCRIPT_DIR}/persist_image_tag.py" .env "${requested_image_tag}"
+fi
 
 echo "==> Ensuring infrastructure is up..."
 docker compose up -d postgres redis rabbitmq minio
@@ -41,4 +54,5 @@ if [[ "${SKIP_MIGRATIONS:-}" != "1" ]]; then
   bash "${REPO_ROOT}/dev/backfill-profile-roaster-counts.sh"
 fi
 
-bash "${SCRIPT_DIR}/update.sh"
+# Images were prepared before the writer stop; do not require a registry round-trip during downtime.
+bash "${SCRIPT_DIR}/update.sh" --images-prepared

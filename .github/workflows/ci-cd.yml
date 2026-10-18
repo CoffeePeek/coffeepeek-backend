@@ -205,6 +205,7 @@ jobs:
             CheckInPhotoAccessLiveTests \
             CheckInPhotoVariantProjectionLiveTests \
             CheckInPhotoBackfillCandidatesLiveTests \
+            CheckInPhotoCanaryLiveTests \
             DiscoveryClassificationLiveTests \
             DiscoveryQueryLiveTests \
             CoffeeImportRecoveryLiveTests \
@@ -318,7 +319,7 @@ jobs:
           python -m pip install 'PyYAML==6.0.3'
           python -X utf8 -m unittest discover -s dev -p 'test_discovery_contract.py' -v
           python -X utf8 -m unittest discover -s dev/performance -p 'test_*.py' -v
-          python -X utf8 -m unittest discover -s dev/photo-variants -p 'test_photo_backfill*.py' -v
+          python -X utf8 -m unittest discover -s dev/photo-variants -p 'test_photo_*.py' -v
           python -X utf8 -m unittest discover -s dev/coffee-import -p 'test_*.py' -v
           for script in deploy/scripts/*.sh; do bash -n "$script"; done
           sh -n deploy/minio/provision.sh
@@ -374,7 +375,10 @@ jobs:
           context: .
           file: ${{ matrix.dockerfile }}
           push: true
-          tags: ${{ env.REGISTRY }}/${{ secrets.DOCKER_HUB_USERNAME }}/${{ matrix.image }}:dev
+          tags: |
+            ${{ env.REGISTRY }}/${{ secrets.DOCKER_HUB_USERNAME }}/${{ matrix.image }}:dev
+            ${{ env.REGISTRY }}/${{ secrets.DOCKER_HUB_USERNAME }}/${{ matrix.image }}:sha-${{ github.sha }}
+          labels: org.opencontainers.image.revision=${{ github.sha }}
           cache-from: type=gha,scope=${{ matrix.service }}
           cache-to: type=gha,mode=max,scope=${{ matrix.service }}
 
@@ -417,10 +421,19 @@ jobs:
           VPS_USER: ${{ secrets.VPS_USER }}
           DOCKER_HUB_USERNAME: ${{ secrets.DOCKER_HUB_USERNAME }}
           DOCKER_HUB_PASSWORD: ${{ secrets.DOCKER_HUB_PASSWORD }}
+          DEPLOY_IMAGE_TAG: sha-${{ github.sha }}
           SSH_OPTS: "-o ServerAliveInterval=30 -o ServerAliveCountMax=120 -o ConnectTimeout=30"
         run: |
-          ssh ${SSH_OPTS} "${VPS_USER}@${VPS_HOST}" \
-            "export DOCKER_HUB_USERNAME='${DOCKER_HUB_USERNAME}'; \
-             export DOCKER_HUB_PASSWORD='${DOCKER_HUB_PASSWORD}'; \
-             set -euo pipefail; \
-             cd /opt/coffeepeek/deploy && chmod +x scripts/*.sh && bash scripts/ci-deploy.sh"
+          # NUL-delimited stdin preserves quotes/newlines in credentials and keeps them out of SSH argv.
+          printf '%s\0' "$DOCKER_HUB_USERNAME" "$DOCKER_HUB_PASSWORD" "$DEPLOY_IMAGE_TAG" | \
+            ssh ${SSH_OPTS} "${VPS_USER}@${VPS_HOST}" 'bash -c '\''
+              set +x
+              set -euo pipefail
+              IFS= read -r -d "" DOCKER_HUB_USERNAME
+              IFS= read -r -d "" DOCKER_HUB_PASSWORD
+              IFS= read -r -d "" DEPLOY_IMAGE_TAG
+              export DOCKER_HUB_USERNAME DOCKER_HUB_PASSWORD DEPLOY_IMAGE_TAG
+              cd /opt/coffeepeek/deploy
+              chmod +x scripts/*.sh
+              exec bash scripts/ci-deploy.sh
+            '\'''

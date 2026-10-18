@@ -333,6 +333,32 @@ def observe_databases(commands, postgres, environment):
     return result
 
 
+def storage_topology(commands):
+    """Observe the already-running storage volume without relying on candidate Compose interpolation."""
+    template = ('{"id":{{json .Id}},"imageId":{{json .Image}},'
+                '"project":{{json (index .Config.Labels "com.docker.compose.project")}},'
+                '"service":{{json (index .Config.Labels "com.docker.compose.service")}},'
+                '"running":{{json .State.Running}},"mounts":{{json .Mounts}}}')
+    try:
+        raw = json.loads(commands.run(["docker", "inspect", "--format", template, "coffeepeek-minio-1"]))
+        if raw.get("project") != "coffeepeek" or raw.get("service") != "minio" or raw.get("running") is not True:
+            raise ObservationUnavailable("storage_identity_unconfirmed")
+        mounts = []
+        for entry in raw.get("mounts", []):
+            if entry.get("Destination") != "/data":
+                continue
+            name = entry.get("Name", "")
+            if entry.get("Type") != "volume" or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]{0,127}", name):
+                raise ObservationUnavailable("storage_mount_unconfirmed")
+            mounts.append({"type": "volume", "name": name, "destination": "/data", "writable": entry.get("RW") is True})
+        if len(mounts) != 1 or not mounts[0]["writable"] or not HEX.fullmatch(raw.get("imageId", "")):
+            raise ObservationUnavailable("storage_mount_unconfirmed")
+        return {"state": "observed", "project": "coffeepeek", "service": "minio",
+                "imageId": raw["imageId"], "mounts": mounts}
+    except (ObservationUnavailable, ValueError, TypeError, AttributeError):
+        return {"state": "unavailable"}
+
+
 def report(environment=None, commands=None, probe=health):
     environment = dict(os.environ if environment is None else environment)
     root = pathlib.Path(environment.get("REPO_ROOT", "/opt/coffeepeek"))
@@ -363,6 +389,7 @@ def report(environment=None, commands=None, probe=health):
         result["composeConfig"] = {"valid": False, "reason": "validation_unavailable_or_invalid"}
     result["containers"], ids = observe_containers(commands)
     result["dockerStorage"] = docker_storage(commands)
+    result["storageTopology"] = storage_topology(commands)
     result["health"] = observe_health(result["containers"], environment, probe)
     result["databases"] = observe_databases(commands, ids.get("postgres"), environment)
     return result
