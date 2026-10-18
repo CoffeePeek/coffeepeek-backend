@@ -86,6 +86,8 @@ MinIO + pinned renderer gate дополнен настоящим variant reader 
 
 Метрики `photo.stage.duration` используют stage `variant_download`, а `policy_cache` показывает hit/miss для ограничений Account. `photo.responses` различает `no_store`, `private_revalidate`, `private_fresh` и учитывает 304. Метрики не содержат URLs, object keys или идентификаторы пользователей.
 
-Внешняя зависимость выпуска: [MinIO OSS архивирован](https://github.com/minio/minio), официальный download возвращает HTTP 410. Для clean CI и свежего deploy нужна доступная доверенная сборка MinIO/mc; локальная тестовая source-сборка не подменяет production image.
+Внешняя зависимость выпуска: [MinIO OSS архивирован](https://github.com/minio/minio), официальный download возвращает HTTP 410. Клиент mc теперь собирается из официального закреплённого GitHub release через `deploy/minio/mc.Dockerfile`, с проверкой SHA256 для amd64/arm64. CI и minio-init не зависят от недоступного quay.io/minio/mc. Для свежего production deploy по-прежнему нужно подтвердить доступность выбранного MinIO server image; локальная тестовая source-сборка не подменяет его.
 
 Live-проверка выявила и устранила два дефекта: unsupported `/a:0` в presets imgproxy 4.0.18 и скрытые bucket/object HEAD в Minio .NET 7 GetObjectAsync. Reader использует локальную server-only подпись и один потоковый GET без расширения IAM; worker дополнительно сверяет длину и SHA256 реально сохранённого варианта через scoped GET.
+
+Сборка нового mc image проверена настоящим Docker; `mc --version`, Compose validation и 8 deployment helper tests проходят. Исправление устраняет подтверждённое падение GitHub CI на pull `quay.io/minio/mc:latest`.
