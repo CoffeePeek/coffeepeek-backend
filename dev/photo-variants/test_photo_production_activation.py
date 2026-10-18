@@ -29,8 +29,18 @@ class PilotProduction(FakeProduction):
     def api(self, method, path, token=None, data=None):
         if path.startswith("/api/v1/check-ins/") and "/home" not in path:
             self.calls.append((method, path, token, data))
-            return {"photos": [{"id": self.old["photoId"], "url": canary.base_path(self.old["checkInId"], self.old["photoId"])}],
-                    "drinkPhotoVariants": None}
+            base = canary.base_path(self.old["checkInId"], self.old["photoId"])
+            variants = []
+            if token:
+                for raw in self.old["variants"]:
+                    row = {key[0].lower() + key[1:]: value for key, value in raw.items()}
+                    variants.append({key: row[key] for key in ("purpose", "format", "contentType", "width", "height", "sizeBytes")})
+                    variants[-1].update(sourceVersion=self.old["sourceVersion"], recipeVersion=self.old["recipeVersion"],
+                                        url=base + "/variants/" + self.old["sourceVersion"] + "/" + str(self.old["recipeVersion"])
+                                            + "/" + row["purpose"] + "." + row["format"])
+            if getattr(self, "public_as_drink", False):
+                return {"photos": [], "drinkPhotoUrl": base, "drinkPhotoVariants": variants or None}
+            return {"photos": [{"id": self.old["photoId"], "url": base, "variants": variants or None}], "drinkPhotoVariants": None}
         return super().api(method, path, token, data)
 
 
@@ -137,8 +147,13 @@ class ActivationTests(unittest.TestCase):
         self.assertTrue(created["privateHomeCreated"])
         result = self.operator.run("canary-verify")
         self.assertTrue(result["descriptorGateVerified"])
+        self.assertTrue(result["publicCanaryDescriptorGateVerified"])
         self.assertEqual((2, 1), (result["newPhotos"], result["oldPhotos"]))
         self.assertTrue(self.operator.state()["verification"]["descriptorGateVerified"])
+        self.assertTrue(self.operator.state()["verification"]["publicCanaryDescriptorGateVerified"])
+        old_reads = [(method, token) for method, route, token, _ in self.client.calls
+                     if route == "/api/v1/check-ins/" + self.commands.old["checkInId"]]
+        self.assertEqual([("GET", None), ("GET", self.operator.state()["accessToken"])], old_reads)
         self.assertTrue(self.operator.run("canary-cleanup")["privateHomeDeleted"])
         home_writes = [data for method, route, _, data in self.client.calls if method == "POST" and route == "/api/v1/check-ins/home"]
         self.assertEqual(1, len(home_writes))
@@ -146,6 +161,41 @@ class ActivationTests(unittest.TestCase):
         self.assertFalse(any("visibility" in route for _, route, _, _ in self.client.calls))
         self.assertTrue((self.private / "confirmation.json").exists())
         self.assertTrue((self.private / "old-photo.json").exists())
+
+    def test_public_canary_selected_drink_photo_advertises_the_verified_manifest(self):
+        self.activate()
+        self.operator.run("canary-create")
+        self.client.public_as_drink = True
+        result = self.operator.run("canary-verify")
+        self.assertTrue(result["publicCanaryDescriptorGateVerified"])
+
+    def test_allowlisted_public_descriptor_omission_or_mismatch_cannot_pass(self):
+        self.activate()
+        self.operator.run("canary-create")
+        original_api = self.client.api
+        mutations = (
+            lambda photo: photo.update(variants=None),
+            lambda photo: photo["variants"].pop(),
+            lambda photo: photo["variants"][0].update(sourceVersion="f" * 64),
+            lambda photo: photo["variants"][0].update(recipeVersion=2),
+            lambda photo: photo["variants"][0].update(url="https://foreign.example/private"),
+            lambda photo: photo["variants"][0].update(sizeBytes=999),
+            lambda photo: photo["variants"][0].update(width=47),
+            lambda photo: photo["variants"][0].update(height=63),
+            lambda photo: photo["variants"][0].update(contentType="image/png"),
+            lambda photo: photo["variants"].__setitem__(1, dict(photo["variants"][0])),
+        )
+        for index, mutation in enumerate(mutations):
+            with self.subTest(mutation=index):
+                def changed_response(method, path, token=None, data=None):
+                    result = original_api(method, path, token, data)
+                    if path == "/api/v1/check-ins/" + self.commands.old["checkInId"] and token:
+                        mutation(result["photos"][0])
+                    return result
+                with patch.object(self.client, "api", side_effect=changed_response):
+                    with self.assertRaises(canary.CanaryError):
+                        self.operator.run("canary-verify")
+                self.assertNotIn("publicCanaryDescriptorGateVerified", self.operator.state()["verification"])
 
     def test_activation_restarts_only_two_services_and_persists_fixed_fail_closed_flags(self):
         result = self.activate()
