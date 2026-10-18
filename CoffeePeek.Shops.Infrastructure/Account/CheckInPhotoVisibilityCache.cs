@@ -30,7 +30,8 @@ public sealed class CheckInPhotoVisibilityCache(TimeProvider clock, IOptions<Che
             var facts = await ReadAsync(viewerId.Value, source, ct);
             var remaining = CheckInPhotoPolicyObservation.FactsLifetime - facts.Observation.Age(clock);
             if (remaining <= TimeSpan.Zero) throw new ServiceUnavailableException("Photo visibility observation expired.");
-            cache.Set(viewerId.Value, facts, new MemoryCacheEntryOptions
+            // Only the current caller performed this read; later callers receive cached provenance.
+            cache.Set(viewerId.Value, facts with { ReadFromSource = false }, new MemoryCacheEntryOptions
             {
                 AbsoluteExpirationRelativeToNow = remaining,
                 Size = 128L + facts.ExcludedUserIds.Length * 16L
@@ -45,7 +46,7 @@ public sealed class CheckInPhotoVisibilityCache(TimeProvider clock, IOptions<Che
     {
         // Include all Account network/retry time in the original deadline.
         var observation = CheckInPhotoPolicyObservation.Start(clock);
-        return new(await source.ExcludedUserIdsAsync(viewerId, ct), observation);
+        return new(await source.ExcludedUserIdsAsync(viewerId, ct), observation) { ReadFromSource = true };
     }
 
     public void Dispose()

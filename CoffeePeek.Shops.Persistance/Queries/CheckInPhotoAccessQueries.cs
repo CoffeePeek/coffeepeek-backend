@@ -17,8 +17,8 @@ public sealed class CheckInPhotoAccessQueries(ShopsDbContext db, IAuthorVisibili
         using var measurement = PhotoDeliveryTelemetry.Start("access", readerId.HasValue ? "authenticated" : "anonymous");
         var facts = await variantVisibility.GetAsync(readerId, visibility, ct);
         var result = await ReaderQuery(checkInId, photoId, readerId, facts.ExcludedUserIds).SingleOrDefaultAsync(ct);
-        // Owner-only/pending/rejected/hidden variants keep the fresh Account check as well as no-store.
-        if (result is { IsPubliclyVisible: false } && readerId.HasValue)
+        // Private access may reuse the Account read made for this request, but never a cached observation.
+        if (result is { IsPubliclyVisible: false } && readerId.HasValue && !facts.ReadFromSource)
         {
             var current = await visibility.ExcludedUserIdsAsync(readerId, ct);
             if (current.Contains(result.OwnerId)) result = null;

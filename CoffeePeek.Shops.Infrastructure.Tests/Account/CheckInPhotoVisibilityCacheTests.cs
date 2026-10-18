@@ -18,12 +18,15 @@ public sealed class CheckInPhotoVisibilityCacheTests
         var original = await cache.GetAsync(viewer, source, Ct);
         clock.Advance(19); source.Excluded = [blocked];
         var hit = await cache.GetAsync(viewer, source, Ct);
-        Assert.Same(original, hit);
+        Assert.True(original.ReadFromSource);
+        Assert.False(hit.ReadFromSource);
+        Assert.Equal(original.Observation, hit.Observation);
         Assert.Empty(hit.ExcludedUserIds);
         Assert.Equal(TimeSpan.FromSeconds(21), hit.Observation.Remaining(clock));
         Assert.Equal(new[] { blocked }, (await cache.GetAsync(Guid.NewGuid(), source, Ct)).ExcludedUserIds);
         clock.Advance(1);
         var fresh = await cache.GetAsync(viewer, source, Ct);
+        Assert.True(fresh.ReadFromSource);
         Assert.Equal(new[] { blocked }, fresh.ExcludedUserIds);
         Assert.NotEqual(original.Observation, fresh.Observation);
         Assert.Equal(3, source.Calls);
@@ -70,7 +73,9 @@ public sealed class CheckInPhotoVisibilityCacheTests
         await started.Task; clock.Advance(3); complete.SetResult();
         var facts = await Task.WhenAll(requests);
         Assert.Equal(1, source.Calls);
-        Assert.All(facts, f => Assert.Same(facts[0], f));
+        Assert.Single(facts, f => f.ReadFromSource);
+        Assert.All(facts, f => Assert.Equal(facts[0].Observation, f.Observation));
+        Assert.All(facts, f => Assert.Empty(f.ExcludedUserIds));
         Assert.Equal(TimeSpan.FromSeconds(37), facts[0].Observation.Remaining(clock));
     }
 
@@ -82,8 +87,12 @@ public sealed class CheckInPhotoVisibilityCacheTests
         using var cache = new CheckInPhotoVisibilityCache(clock, Options.Create(options));
         await cache.GetAsync(viewer, source, Ct);
         options.CachePublicVariants = false; source.Excluded = [Guid.NewGuid()];
-        Assert.Single((await cache.GetAsync(viewer, source, Ct)).ExcludedUserIds);
-        Assert.Single((await cache.GetAsync(viewer, source, Ct)).ExcludedUserIds);
+        var first = await cache.GetAsync(viewer, source, Ct);
+        var second = await cache.GetAsync(viewer, source, Ct);
+        Assert.Single(first.ExcludedUserIds);
+        Assert.Single(second.ExcludedUserIds);
+        Assert.True(first.ReadFromSource);
+        Assert.True(second.ReadFromSource);
         Assert.Empty((await cache.GetAsync(null, source, Ct)).ExcludedUserIds);
         Assert.Equal(3, source.Calls);
     }

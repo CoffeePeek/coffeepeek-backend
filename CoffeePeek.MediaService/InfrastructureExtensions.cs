@@ -85,7 +85,10 @@ public static class InfrastructureExtensions
 
         services.AddScoped<IStorageService, MinIOStorageService>();
         services.AddOptions<CheckInPhotoReadOptions>().BindConfiguration(nameof(CheckInPhotoReadOptions))
-            .ValidateDataAnnotations().ValidateOnStart();
+            .ValidateDataAnnotations()
+            .Validate<IOptions<MinIOOptions>>((reader, storage) => reader.AccessKey != storage.Value.AccessKey,
+                "Photo downloads require a separate read-only storage identity.")
+            .ValidateOnStart();
         services.AddScoped<ICheckInPhotoReader, CheckInPhotoReader>();
         services.AddScoped<IPhotoBackfillObjectReader, PhotoBackfillObjectReader>();
         services.AddScoped<PhotoBackfillInspector>();
