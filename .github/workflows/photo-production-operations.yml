@@ -1,0 +1,52 @@
+name: Photo production operations
+
+on:
+  push:
+    branches: [codex/photo-archive-backfill]
+    paths: [.github/workflows/photo-production-operations.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: coffeepeek-photo-production-operations
+  cancel-in-progress: false
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout inspected operator source
+        uses: actions/checkout@v4
+
+      - name: Setup deployment SSH identity
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.VPS_SSH_KEY }}
+
+      - name: Trust configured deployment host
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+        run: ssh-keyscan -H "$VPS_HOST" >> ~/.ssh/known_hosts
+
+      - name: Inspect production footprint without changing services
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+        run: |
+          set -euo pipefail
+          ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=15 \
+            -o ServerAliveCountMax=4 "$VPS_USER@$VPS_HOST" 'bash -s' <<'REMOTE'
+          set -euo pipefail
+          set +x
+          cd /opt/coffeepeek
+          test -f deploy/.env
+          printf 'Production checkout and configuration exist.\n'
+          python3 --version
+          docker version --format 'Docker server: {{.Server.Version}}'
+          docker compose version --short
+          docker ps --format '{{.Names}} {{.Image}} {{.Status}}'
+          df -Pk /opt/coffeepeek /var/lib/docker
+          REMOTE
