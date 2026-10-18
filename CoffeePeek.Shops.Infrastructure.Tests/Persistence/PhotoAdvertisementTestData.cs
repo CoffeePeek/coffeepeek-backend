@@ -12,7 +12,7 @@ using Moq;
 
 namespace CoffeePeek.Shops.Infrastructure.Tests.Persistence;
 
-internal static class PhotoCanaryTestData
+internal static class PhotoAdvertisementTestData
 {
     internal static IAuthorVisibilityLookup Visibility()
     {
@@ -23,12 +23,12 @@ internal static class PhotoCanaryTestData
 
     internal static async Task<(CheckIn Shop, CheckIn Home)> SeedAsync(ShopsDbContext db, Guid owner, CancellationToken ct)
     {
-        var city = new City("Photo canary " + Guid.NewGuid().ToString("N"));
-        var shop = ShopsLiveDatabase.NewShop("Photo canary shop", city.Id);
+        var city = new City("Photo delivery " + Guid.NewGuid().ToString("N"));
+        var shop = ShopsLiveDatabase.NewShop("Photo delivery shop", city.Id);
         db.Cities.Add(city); db.Shops.Add(shop);
         var now = DateTime.UtcNow.AddMinutes(-1);
-        var visit = CheckIn.CreateUnified(owner, shop.Id, "canary-author", null, null, now);
-        var home = CheckIn.CreateHome(owner, "canary-author", null, now, DateOnly.FromDateTime(now),
+        var visit = CheckIn.CreateUnified(owner, shop.Id, "photo-author", null, null, now);
+        var home = CheckIn.CreateHome(owner, "photo-author", null, now, DateOnly.FromDateTime(now),
             null, null, null, null, null, null);
         foreach (var row in new[] { visit, home })
         {

@@ -20,7 +20,6 @@ public static class CommunityModule
         services.AddScoped<ICheckInPhotoVariantProjection, Community.CheckInPhotoVariantProjection>();
         services.AddOptions<CheckInPhotoDeliveryOptions>().BindConfiguration(nameof(CheckInPhotoDeliveryOptions))
             .Validate(o => !o.AdvertiseVariants || o.ServeVariants, "Advertising variants requires serving them.")
-            .Validate(o => o.IsCanaryConfigurationValid(), "Photo variant canary requires 1..100 distinct non-empty user IDs.")
             .ValidateOnStart();
         services.TryAddSingleton(TimeProvider.System);
         services.AddScoped<IProfileActivityQueries, ProfileActivityQueries>();
