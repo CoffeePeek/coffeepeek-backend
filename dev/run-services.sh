@@ -69,7 +69,8 @@ start media CoffeePeek.MediaService \
   ASPNETCORE_URLS=http://localhost:5025 \
   PostgresCpOptions__ConnectionString="$(pg cpmediadb)" \
   MinIOOptions__ShopBucketName=coffeepeek.shops \
-  MinIOOptions__UserBucketName=coffeepeek.avatars
+  MinIOOptions__UserBucketName=coffeepeek.avatars \
+  services__coffeepeek-shopsservice__http__0=http://localhost:5243
 
 start gateway CoffeePeek.Gateway \
   ASPNETCORE_URLS=http://localhost:8080

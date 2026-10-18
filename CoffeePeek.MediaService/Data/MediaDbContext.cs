@@ -9,6 +9,7 @@ public class MediaDbContext(DbContextOptions<MediaDbContext> options) : DbContex
     public DbSet<PhotoVariant> PhotoVariants => Set<PhotoVariant>();
     public DbSet<PhotoVariantArtifact> PhotoVariantArtifacts => Set<PhotoVariantArtifact>();
     public DbSet<CheckInPhotoTombstone> CheckInPhotoTombstones => Set<CheckInPhotoTombstone>();
+    public DbSet<PhotoBackfillRun> PhotoBackfillRuns => Set<PhotoBackfillRun>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -49,6 +50,7 @@ public class MediaDbContext(DbContextOptions<MediaDbContext> options) : DbContex
 
         modelBuilder.ApplyConfiguration(new PhotoVariantJobConfiguration());
         modelBuilder.ApplyConfiguration(new PhotoVariantConfiguration());
+        modelBuilder.ApplyConfiguration(new PhotoBackfillRunConfiguration());
         modelBuilder.Entity<CheckInPhotoTombstone>().HasKey(x => x.CheckInId);
         modelBuilder.Entity<CheckInPhotoTombstone>().Property(x => x.CheckInId).ValueGeneratedNever();
         modelBuilder.Entity<PhotoVariantArtifact>(entity =>

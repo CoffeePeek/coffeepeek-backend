@@ -362,7 +362,7 @@ services:
       PhotoVariantOptions__SigningSalt: ${CHECKIN_RENDERER_SALT}
       PhotoVariantOptions__AccessKey: ${MINIO_CHECKIN_VARIANT_USER}
       PhotoVariantOptions__SecretKey: ${MINIO_CHECKIN_VARIANT_PASSWORD}
-      <<: [*dotnet-common, *rabbitmq-env, *media-public-env, *gateway-auth-env]
+      <<: [*dotnet-common, *rabbitmq-env, *media-public-env, *gateway-auth-env, *aspire-service-discovery]
       PostgresCpOptions__ConnectionString: Host=postgres;Port=5432;Database=cpmediadb;Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD};SslMode=Disable;GSS Encryption Mode=Disable
       CoffeeImportAuthOptions__Token: ${COFFEE_IMPORT_TOKEN:-}
       MinIOOptions__Endpoint: http://minio:9000

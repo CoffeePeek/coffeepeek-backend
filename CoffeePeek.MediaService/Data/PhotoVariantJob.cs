@@ -19,4 +19,7 @@ public sealed class PhotoVariantJob
     public DateTime CreatedAtUtc { get; set; }
     public DateTime UpdatedAtUtc { get; set; }
     public string? FailureCode { get; set; }
+    /// <summary>Zero is a new user upload; one is explicitly requested archive work.</summary>
+    public int Priority { get; set; }
+    public Guid? BackfillRunId { get; set; }
 }

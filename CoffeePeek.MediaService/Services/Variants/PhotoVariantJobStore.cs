@@ -31,8 +31,10 @@ public sealed class PhotoVariantJobStore(MediaDbContext db, IOptions<PhotoVarian
                   AND p."Status" = 'Confirmed' AND p."BucketType" = 'CheckIn'
                   AND p."CheckInId" = j."CheckInId" AND p."OwnerId" = j."OwnerId"
                   AND p."StorageKey" = j."SourceKey" AND p."ShopAttachmentId" IS NULL
+                  AND (j."Priority" = 0 OR EXISTS (SELECT 1 FROM "PhotoBackfillRuns" r
+                      WHERE r."Id" = j."BackfillRunId" AND NOT r."Paused"))
                   AND NOT EXISTS (SELECT 1 FROM "CheckInPhotoTombstones" t WHERE t."CheckInId" = j."CheckInId")
-                ORDER BY j."NextAttemptAtUtc", j."Id" FOR UPDATE OF j SKIP LOCKED LIMIT 1
+                ORDER BY j."Priority", j."NextAttemptAtUtc", j."Id" FOR UPDATE OF j SKIP LOCKED LIMIT 1
             )
             UPDATE "PhotoVariantJobs" j SET "Status" = 'Processing', "LeaseToken" = {token},
                 "LeaseUntilUtc" = now() + {duration}, "Attempts" = j."Attempts" + 1, "UpdatedAtUtc" = now()

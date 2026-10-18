@@ -89,6 +89,16 @@ public static class InfrastructureExtensions
         services.AddScoped<ICheckInPhotoReader, CheckInPhotoReader>();
         services.AddScoped<IPhotoBackfillObjectReader, PhotoBackfillObjectReader>();
         services.AddScoped<PhotoBackfillInspector>();
+        services.AddScoped<PhotoBackfillRuns>();
+        services.AddServiceDiscovery();
+        services.AddHttpClient<IPhotoBackfillCandidateSource, PhotoBackfillCandidateClient>(http =>
+            {
+                http.BaseAddress = new Uri($"http://{AppResources.ShopsService}");
+                http.Timeout = TimeSpan.FromSeconds(20);
+            })
+            .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false, UseCookies = false })
+            .RemoveAllLoggers()
+            .AddServiceDiscovery();
         services.AddOptions<PhotoVariantOptions>().BindConfiguration(nameof(PhotoVariantOptions))
             .ValidateDataAnnotations().Validate(o => o.IsValid(), "Invalid private variant worker configuration.").ValidateOnStart();
         services.AddScoped<IPhotoVariantQueue, PhotoVariantQueue>();

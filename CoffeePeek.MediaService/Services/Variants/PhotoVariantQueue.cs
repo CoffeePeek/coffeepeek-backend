@@ -20,7 +20,9 @@ public sealed class PhotoVariantQueue(MediaDbContext db) : IPhotoVariantQueue
             SELECT {Guid.NewGuid()}, {photo.Id}, {checkInId}, {photo.OwnerId}, {photo.StorageKey},
                    {version}, {PhotoVariantRecipe.Version}, 'Pending', 0, now(), now(), now()
             WHERE NOT EXISTS (SELECT 1 FROM "CheckInPhotoTombstones" WHERE "CheckInId" = {checkInId})
-            ON CONFLICT ("PhotoId", "SourceVersion", "RecipeVersion") DO NOTHING
+            ON CONFLICT ("PhotoId", "SourceVersion", "RecipeVersion") DO UPDATE
+                SET "Priority" = 0, "BackfillRunId" = NULL
+                WHERE "PhotoVariantJobs"."Priority" <> 0
             """, ct);
     }
 

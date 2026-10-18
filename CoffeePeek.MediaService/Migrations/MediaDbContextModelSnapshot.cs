@@ -35,6 +35,81 @@ namespace CoffeePeek.MediaService.Migrations
                     b.ToTable("CheckInPhotoTombstones");
                 });
 
+            modelBuilder.Entity("CoffeePeek.MediaService.Data.PhotoBackfillRun", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("BatchSize")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("BeforeUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long>("BlockedCount")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("CursorCheckInId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("CursorPhotoId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("CursorSortAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long>("EnqueuedCount")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("ExistingCount")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("MinBatchIntervalSeconds")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("NextBatchAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("Paused")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Phase")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<DateTime>("RecentSinceUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("RecipeVersion")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("ScanComplete")
+                        .HasColumnType("boolean");
+
+                    b.Property<long>("ScannedCount")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Paused")
+                        .IsUnique()
+                        .HasFilter("\"Paused\" = FALSE");
+
+                    b.ToTable("PhotoBackfillRuns", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_PhotoBackfillRuns_Bounds", "\"BatchSize\" BETWEEN 1 AND 100 AND \"MinBatchIntervalSeconds\" BETWEEN 5 AND 3600 AND \"RecentSinceUtc\" < \"BeforeUtc\"");
+
+                            t.HasCheckConstraint("CK_PhotoBackfillRuns_Cursor", "(\"CursorSortAtUtc\" IS NULL AND \"CursorCheckInId\" IS NULL AND \"CursorPhotoId\" IS NULL) OR (\"CursorSortAtUtc\" IS NOT NULL AND \"CursorCheckInId\" IS NOT NULL AND \"CursorPhotoId\" IS NOT NULL)");
+                        });
+                });
+
             modelBuilder.Entity("CoffeePeek.MediaService.Data.PhotoMetadata", b =>
                 {
                     b.Property<Guid>("Id")
@@ -229,6 +304,9 @@ namespace CoffeePeek.MediaService.Migrations
                     b.Property<int>("Attempts")
                         .HasColumnType("integer");
 
+                    b.Property<Guid?>("BackfillRunId")
+                        .HasColumnType("uuid");
+
                     b.Property<Guid>("CheckInId")
                         .HasColumnType("uuid");
 
@@ -253,6 +331,11 @@ namespace CoffeePeek.MediaService.Migrations
 
                     b.Property<Guid>("PhotoId")
                         .HasColumnType("uuid");
+
+                    b.Property<int>("Priority")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
 
                     b.Property<int>("RecipeVersion")
                         .HasColumnType("integer");
@@ -281,6 +364,8 @@ namespace CoffeePeek.MediaService.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("BackfillRunId");
+
                     b.HasIndex("CheckInId");
 
                     b.HasIndex("Status", "LeaseUntilUtc");
@@ -290,7 +375,12 @@ namespace CoffeePeek.MediaService.Migrations
                     b.HasIndex("PhotoId", "SourceVersion", "RecipeVersion")
                         .IsUnique();
 
-                    b.ToTable("PhotoVariantJobs");
+                    b.HasIndex("Priority", "Status", "NextAttemptAtUtc");
+
+                    b.ToTable("PhotoVariantJobs", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_PhotoVariantJobs_Priority", "(\"Priority\" = 0 AND \"BackfillRunId\" IS NULL) OR (\"Priority\" = 1 AND \"BackfillRunId\" IS NOT NULL)");
+                        });
                 });
 
             modelBuilder.Entity("CoffeePeek.MediaService.Data.PhotoVariant", b =>
@@ -313,6 +403,11 @@ namespace CoffeePeek.MediaService.Migrations
 
             modelBuilder.Entity("CoffeePeek.MediaService.Data.PhotoVariantJob", b =>
                 {
+                    b.HasOne("CoffeePeek.MediaService.Data.PhotoBackfillRun", null)
+                        .WithMany()
+                        .HasForeignKey("BackfillRunId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("CoffeePeek.MediaService.Data.PhotoMetadata", null)
                         .WithMany()
                         .HasForeignKey("PhotoId")
