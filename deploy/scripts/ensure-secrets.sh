@@ -58,3 +58,45 @@ if [[ -z "${gateway_secret}" ]]; then
 fi
 
 upsert_if_empty GATEWAY_AUTH_SECRET "${gateway_secret}"
+
+# GET photo requests use a dedicated read-only MinIO identity. Preserve it across upgrades.
+photo_reader_user="${MINIO_CHECKIN_READ_USER:-coffeepeek-checkin-reader}"
+if [[ "${photo_reader_user}" == "${MINIO_ROOT_USER:-}" ]]; then
+  echo "MINIO_CHECKIN_READ_USER must differ from MINIO_ROOT_USER" >&2
+  exit 1
+fi
+photo_reader_password="${MINIO_CHECKIN_READ_PASSWORD:-}"
+if [[ -z "${photo_reader_password}" ]]; then
+  if ! command -v openssl >/dev/null 2>&1; then
+    echo "openssl is required to generate MINIO_CHECKIN_READ_PASSWORD" >&2
+    exit 1
+  fi
+  photo_reader_password="$(openssl rand -hex 32)"
+  echo "==> Writing MINIO_CHECKIN_READ_PASSWORD to .env"
+fi
+upsert_if_empty MINIO_CHECKIN_READ_USER "${photo_reader_user}"
+upsert_if_empty MINIO_CHECKIN_READ_PASSWORD "${photo_reader_password}"
+
+variant_user="${MINIO_CHECKIN_VARIANT_USER:-coffeepeek-checkin-variant-writer}"
+if [[ "${variant_user}" == "${MINIO_ROOT_USER:-}" || "${variant_user}" == "${photo_reader_user}" ]]; then
+  echo "Variant writer must use its own MinIO identity" >&2
+  exit 1
+fi
+upsert_if_empty MINIO_CHECKIN_VARIANT_USER "${variant_user}"
+for key in MINIO_CHECKIN_VARIANT_PASSWORD CHECKIN_RENDERER_KEY CHECKIN_RENDERER_SALT; do
+  if [[ -z "$(current_value "${key}")" ]]; then
+    command -v openssl >/dev/null 2>&1 || { echo "openssl is required to generate ${key}" >&2; exit 1; }
+    upsert_if_empty "${key}" "$(openssl rand -hex 32)"
+  fi
+done
+
+variant_reader_user="${MINIO_CHECKIN_VARIANT_READ_USER:-coffeepeek-checkin-variant-reader}"
+if [[ "${variant_reader_user}" == "${MINIO_ROOT_USER:-}" || "${variant_reader_user}" == "${photo_reader_user}" || "${variant_reader_user}" == "${variant_user}" ]]; then
+  echo "Variant reader must use its own MinIO identity" >&2
+  exit 1
+fi
+upsert_if_empty MINIO_CHECKIN_VARIANT_READ_USER "${variant_reader_user}"
+if [[ -z "$(current_value MINIO_CHECKIN_VARIANT_READ_PASSWORD)" ]]; then
+  command -v openssl >/dev/null 2>&1 || { echo "openssl is required to generate variant reader password" >&2; exit 1; }
+  upsert_if_empty MINIO_CHECKIN_VARIANT_READ_PASSWORD "$(openssl rand -hex 32)"
+fi

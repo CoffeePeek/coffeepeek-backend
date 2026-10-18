@@ -121,6 +121,8 @@ public class ReviewReportHandlerTests
         _bus.Verify(x => x.PublishAsync(It.Is<CheckInCacheInvalidationRequested>(message =>
             message.CheckInId == checkIn.Id && message.ShopId == checkIn.ShopId && message.UserId == checkIn.UserId)),
             delete ? Times.Once() : Times.Never());
+        _bus.Verify(x => x.PublishAsync(It.Is<CoffeePeek.Contract.Events.CheckInPhotosDeletedEvent>(message =>
+            message.CheckInId == checkIn.Id && message.UserId == checkIn.UserId)), delete ? Times.Once() : Times.Never());
         var conflicting = () => ResolveReviewReportHandler.Handle(command with { DeleteCheckIn = !delete },
             _reports.Object, _checkIns.Object, _uow.Object, _bus.Object, _ct);
         await conflicting.Should().ThrowAsync<ConflictException>();

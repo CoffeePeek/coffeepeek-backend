@@ -1,6 +1,7 @@
 using CoffeePeek.Shared.Kernel;
 using CoffeePeek.Shared.Kernel.Options;
 using CoffeePeek.Shops.Application.Abstractions;
+using CoffeePeek.Shops.Application.Features.CheckIn;
 using CoffeePeek.Shops.Application.Services;
 using CoffeePeek.Shops.Infrastructure.Account;
 using CoffeePeek.Shops.Infrastructure.Consumers;
@@ -79,6 +80,7 @@ public static class DependencyInjection
         services.AddScoped<CoffeePeek.Shared.Auth.PublicAddressHttpClient>();
         services.AddScoped<IProfileAddressLookup, AccountProfileAddressLookup>();
         services.AddScoped<IAuthorVisibilityLookup, AccountAuthorVisibilityLookup>();
+        services.AddSingleton<ICheckInPhotoVisibilityCache, CheckInPhotoVisibilityCache>();
         services.AddScoped<IUploadedPhotoLookup, MediaUploadedPhotoLookup>();
         services.AddScoped<MediaCheckInPhotoClient>();
         services.AddScoped<IMenuVisionParser, OpenAiMenuVisionParser>();

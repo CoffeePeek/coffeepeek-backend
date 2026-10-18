@@ -11,6 +11,7 @@ on:
       - dev
       - develop
       - main
+      - 'codex/photo-*'
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
@@ -105,9 +106,13 @@ jobs:
 
       - name: Start MinIO for Shops fault recovery tests
         run: |
+          # Run the pinned server directly. The vendor setup starts a temporary server
+          # whose ready endpoint can succeed before its shutdown for the final process.
           docker run -d --name coffeepeek-shops-test-minio -p 127.0.0.1:9000:9000 \
             -e MINIO_ROOT_USER=coffee-legacy-test -e MINIO_ROOT_PASSWORD=coffee-legacy-test-only \
-            bitnamilegacy/minio@sha256:451fe6858cb770cc9d0e77ba811ce287420f781c7c1b806a386f6896471a349c
+            --entrypoint /opt/bitnami/minio/bin/minio \
+            bitnamilegacy/minio@sha256:451fe6858cb770cc9d0e77ba811ce287420f781c7c1b806a386f6896471a349c \
+            server /tmp/coffeepeek-test-data --address :9000 --console-address :9001
           for attempt in {1..30}; do
             if curl --fail --silent http://127.0.0.1:9000/minio/health/ready >/dev/null; then exit 0; fi
             sleep 1
@@ -118,13 +123,76 @@ jobs:
         run: |
           set -euo pipefail
           pgpass_file="$(mktemp "${RUNNER_TEMP}/coffeepeek-pgpass.XXXXXX")"
-          trap 'rm -f "$pgpass_file"; docker rm -f coffeepeek-shops-test-minio >/dev/null 2>&1 || true' EXIT
+          cleanup_photo_gate() {
+            gate_status=$?
+            if [ "$gate_status" -ne 0 ]; then
+              docker inspect --format '{{json .State}}' coffeepeek-shops-test-minio || true
+              docker logs --tail 100 coffeepeek-shops-test-minio || true
+              docker logs --tail 100 coffeepeek-photo-renderer || true
+            fi
+            rm -f "$pgpass_file"
+            docker rm -f coffeepeek-photo-renderer coffeepeek-shops-test-minio >/dev/null 2>&1 || true
+            docker network rm coffeepeek-photo-test >/dev/null 2>&1 || true
+            return "$gate_status"
+          }
+          trap cleanup_photo_gate EXIT
           chmod 600 "$pgpass_file"
           printf '%s\n' '127.0.0.1:5432:*:postgres:coffeepeek-ci-only-postgres' '127.0.0.1:15432:*:postgres:coffeepeek-ci-only-postgres' > "$pgpass_file"
           export COFFEEPEEK_LIVE_PG='Host=127.0.0.1;Port=5432;Username=postgres;Database=postgres;SslMode=Disable'
           export COFFEEPEEK_LIVE_PG_ALLOW_SUPERUSER=1
           export COFFEEPEEK_LIVE_FAULTS=1
           export COFFEEPEEK_LIVE_MINIO=http://127.0.0.1:9000
+          export COFFEEPEEK_LIVE_MINIO_ACCESS_KEY=coffee-legacy-test
+          export COFFEEPEEK_LIVE_MINIO_SECRET_KEY=coffee-legacy-test-only
+          export PGPASSFILE="$pgpass_file"
+          docker network create coffeepeek-photo-test
+          docker network connect --alias minio coffeepeek-photo-test coffeepeek-shops-test-minio
+          docker build --file deploy/minio/mc.Dockerfile --tag coffeepeek-minio-mc:test deploy/minio
+          docker run --rm --network coffeepeek-photo-test -v "$PWD/deploy/minio:/provision:ro" \
+            -e MINIO_ROOT_USER=coffee-legacy-test -e MINIO_ROOT_PASSWORD=coffee-legacy-test-only \
+            -e MINIO_CHECKIN_READ_USER=photo-test-reader -e MINIO_CHECKIN_READ_PASSWORD=photo-test-reader-password \
+            -e MINIO_CHECKIN_VARIANT_USER=photo-test-writer -e MINIO_CHECKIN_VARIANT_PASSWORD=photo-test-writer-password \
+            -e MINIO_CHECKIN_VARIANT_READ_USER=photo-test-variant-reader -e MINIO_CHECKIN_VARIANT_READ_PASSWORD=photo-test-variant-reader-password \
+            --entrypoint /bin/sh coffeepeek-minio-mc:test /provision/provision.sh
+          export COFFEEPEEK_LIVE_RENDERER=http://127.0.0.1:18080
+          export COFFEEPEEK_LIVE_RENDERER_KEY=1111111111111111111111111111111111111111111111111111111111111111
+          export COFFEEPEEK_LIVE_RENDERER_SALT=2222222222222222222222222222222222222222222222222222222222222222
+          export COFFEEPEEK_LIVE_READER_USER=photo-test-reader
+          export COFFEEPEEK_LIVE_READER_PASSWORD=photo-test-reader-password
+          export COFFEEPEEK_LIVE_VARIANT_USER=photo-test-writer
+          export COFFEEPEEK_LIVE_VARIANT_PASSWORD=photo-test-writer-password
+          export COFFEEPEEK_LIVE_VARIANT_READER_USER=photo-test-variant-reader
+          export COFFEEPEEK_LIVE_VARIANT_READER_PASSWORD=photo-test-variant-reader-password
+          docker run -d --name coffeepeek-photo-renderer --network coffeepeek-photo-test -p 127.0.0.1:18080:8080 \
+            --memory 512m --cpus 1 --env-file deploy/imgproxy/checkin-renderer.conf \
+            -e AWS_ACCESS_KEY_ID=photo-test-reader -e AWS_SECRET_ACCESS_KEY=photo-test-reader-password \
+            -e IMGPROXY_KEY="$COFFEEPEEK_LIVE_RENDERER_KEY" -e IMGPROXY_SALT="$COFFEEPEEK_LIVE_RENDERER_SALT" \
+            ghcr.io/imgproxy/imgproxy:v4.0.18
+          for attempt in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:18080/health >/dev/null; then break; fi
+            sleep 1
+          done
+          curl --fail --silent http://127.0.0.1:18080/health >/dev/null
+          dotnet test CoffeePeek.MediaService.Tests/CoffeePeek.MediaService.Tests.csproj --configuration Release --no-build \
+            --filter 'FullyQualifiedName~CheckInPhotoStorageLiveTests|FullyQualifiedName~PhotoVariantQueueLiveTests|FullyQualifiedName~PhotoVariantPipelineLiveTests|FullyQualifiedName~PhotoVariantOutboxLiveTests' --verbosity normal
+          mkdir -p .test-results/media-backfill
+          dotnet CoffeePeek.MediaService.Tests/bin/Release/net10.0/CoffeePeek.MediaService.Tests.dll \
+            -class 'CoffeePeek.MediaService.Tests.PhotoBackfillRunLiveTests' \
+            -failSkips -noAutoReporters -trx .test-results/media-backfill/runs.trx
+          python3 - .test-results/media-backfill/runs.trx <<'PY'
+          import sys
+          import xml.etree.ElementTree as ET
+
+          root = ET.parse(sys.argv[1]).getroot()
+          counters = next((node for node in root.iter() if node.tag.endswith('Counters')), None)
+          if counters is None:
+              raise SystemExit('Media backfill: TRX counters missing')
+          total = int(counters.attrib.get('total', 0))
+          if total == 0 or any(int(counters.attrib.get(key, 0)) != total for key in ('executed', 'passed')) \
+                  or int(counters.attrib.get('notExecuted', 0)):
+              raise SystemExit('Media backfill: required PostgreSQL tests did not all pass')
+          print(f'Media backfill: {total} required PostgreSQL tests passed')
+          PY
           export COFFEEPEEK_FAULT_RESULTS="$PWD/.test-results/shops-faults"
           export COFFEEPEEK_PERF_RESULTS="$PWD/.test-results/shops-performance"
           curl --fail --silent --show-error -X POST -H 'Content-Type: application/json' \
@@ -134,6 +202,10 @@ jobs:
           mkdir -p .test-results/shops-live
           assembly='CoffeePeek.Shops.Infrastructure.Tests/bin/Release/net10.0/CoffeePeek.Shops.Infrastructure.Tests.dll'
           for class in \
+            CheckInPhotoAccessLiveTests \
+            CheckInPhotoVariantProjectionLiveTests \
+            CheckInPhotoBackfillCandidatesLiveTests \
+            CheckInPhotoCanaryLiveTests \
             DiscoveryClassificationLiveTests \
             DiscoveryQueryLiveTests \
             CoffeeImportRecoveryLiveTests \
@@ -195,6 +267,14 @@ jobs:
           path: .test-results/shops-live/*.trx
           if-no-files-found: ignore
 
+      - name: Upload Media backfill PostgreSQL test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: media-backfill-postgres-trx
+          path: .test-results/media-backfill/*.trx
+          if-no-files-found: ignore
+
       - name: Upload Shops fault worker logs
         if: always()
         uses: actions/upload-artifact@v4
@@ -238,8 +318,11 @@ jobs:
           python -m pip install -r dev/coffee-import/requirements.txt
           python -m pip install 'PyYAML==6.0.3'
           python -X utf8 -m unittest discover -s dev -p 'test_discovery_contract.py' -v
+          python -X utf8 -m unittest discover -s dev/performance -p 'test_*.py' -v
+          python -X utf8 -m unittest discover -s dev/photo-variants -p 'test_photo_*.py' -v
           python -X utf8 -m unittest discover -s dev/coffee-import -p 'test_*.py' -v
           for script in deploy/scripts/*.sh; do bash -n "$script"; done
+          sh -n deploy/minio/provision.sh
           bash -n dev/backfill-profile-roaster-counts.sh
           python dev/coffee-import/validate_deployment.py --mapping deploy/coffee-import/disabled-mapping.json --allow-disabled
 
@@ -292,7 +375,10 @@ jobs:
           context: .
           file: ${{ matrix.dockerfile }}
           push: true
-          tags: ${{ env.REGISTRY }}/${{ secrets.DOCKER_HUB_USERNAME }}/${{ matrix.image }}:dev
+          tags: |
+            ${{ env.REGISTRY }}/${{ secrets.DOCKER_HUB_USERNAME }}/${{ matrix.image }}:dev
+            ${{ env.REGISTRY }}/${{ secrets.DOCKER_HUB_USERNAME }}/${{ matrix.image }}:sha-${{ github.sha }}
+          labels: org.opencontainers.image.revision=${{ github.sha }}
           cache-from: type=gha,scope=${{ matrix.service }}
           cache-to: type=gha,mode=max,scope=${{ matrix.service }}
 
@@ -335,10 +421,19 @@ jobs:
           VPS_USER: ${{ secrets.VPS_USER }}
           DOCKER_HUB_USERNAME: ${{ secrets.DOCKER_HUB_USERNAME }}
           DOCKER_HUB_PASSWORD: ${{ secrets.DOCKER_HUB_PASSWORD }}
+          DEPLOY_IMAGE_TAG: sha-${{ github.sha }}
           SSH_OPTS: "-o ServerAliveInterval=30 -o ServerAliveCountMax=120 -o ConnectTimeout=30"
         run: |
-          ssh ${SSH_OPTS} "${VPS_USER}@${VPS_HOST}" \
-            "export DOCKER_HUB_USERNAME='${DOCKER_HUB_USERNAME}'; \
-             export DOCKER_HUB_PASSWORD='${DOCKER_HUB_PASSWORD}'; \
-             set -euo pipefail; \
-             cd /opt/coffeepeek/deploy && chmod +x scripts/*.sh && bash scripts/ci-deploy.sh"
+          # NUL-delimited stdin preserves quotes/newlines in credentials and keeps them out of SSH argv.
+          printf '%s\0' "$DOCKER_HUB_USERNAME" "$DOCKER_HUB_PASSWORD" "$DEPLOY_IMAGE_TAG" | \
+            ssh ${SSH_OPTS} "${VPS_USER}@${VPS_HOST}" 'bash -c '\''
+              set +x
+              set -euo pipefail
+              IFS= read -r -d "" DOCKER_HUB_USERNAME
+              IFS= read -r -d "" DOCKER_HUB_PASSWORD
+              IFS= read -r -d "" DEPLOY_IMAGE_TAG
+              export DOCKER_HUB_USERNAME DOCKER_HUB_PASSWORD DEPLOY_IMAGE_TAG
+              cd /opt/coffeepeek/deploy
+              chmod +x scripts/*.sh
+              exec bash scripts/ci-deploy.sh
+            '\'''

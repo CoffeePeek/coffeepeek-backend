@@ -275,4 +275,17 @@ public class HomeCheckInHandlerTests
         _unitOfWork.VerifyNoOtherCalls();
         _bus.VerifyNoOtherCalls();
     }
+
+    [Fact]
+    public async Task DeletingHomeEntryPublishesPhotoTombstone()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var row = DomainCheckIn.CreateHome(_owner, "author", null, PreparedUtc,
+            new DateOnly(2026, 9, 20), null, null, null, null, null, null);
+        _repository.Setup(r => r.GetTrackedByIdAsync(row.Id, ct)).ReturnsAsync(row);
+        await UpdateHomeCheckInHandler.Handle(new DeleteHomeCheckInCommand(row.Id, _owner),
+            _repository.Object, _unitOfWork.Object, _bus.Object, ct);
+        _bus.Verify(b => b.PublishAsync(It.Is<CoffeePeek.Contract.Events.CheckInPhotosDeletedEvent>(message =>
+            message.CheckInId == row.Id && message.UserId == _owner && message.DeletedAtUtc == row.DeletedAtUtc)), Times.Once);
+    }
 }

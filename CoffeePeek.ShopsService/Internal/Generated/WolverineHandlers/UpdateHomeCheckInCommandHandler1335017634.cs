@@ -29,8 +29,9 @@ namespace Internal.Generated.WolverineHandlers
             var unitOfWorkOfShopsDbContext = new CoffeePeek.Shared.Persistence.Data.UnitOfWork<CoffeePeek.Shops.Persistance.Configuration.ShopsDbContext>(shopsDbContext);
             var queryCheckInRepository = new CoffeePeek.Shops.Persistance.Repositories.QueryCheckInRepository(shopsDbContext);
             // This service has been marked as requiring service location independent of Wolverine's ability to use constructor injection of everything else
-            var drinkCatalog = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<CoffeePeek.Shared.Kernel.Drinks.IDrinkCatalog>(serviceScope.ServiceProvider);
             var publicAddressService = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<CoffeePeek.Shops.Application.PublicAddresses.IPublicAddressService>(serviceScope.ServiceProvider);
+            // This service has been marked as requiring service location independent of Wolverine's ability to use constructor injection of everything else
+            var drinkCatalog = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<CoffeePeek.Shared.Kernel.Drinks.IDrinkCatalog>(serviceScope.ServiceProvider);
             // The actual message body
             var updateHomeCheckInCommand = (CoffeePeek.Shops.Application.Features.CheckIn.UpdateHomeCheckInCommand)context.Envelope.Message;
 

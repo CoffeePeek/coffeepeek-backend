@@ -46,6 +46,8 @@ public static class UpdateHomeCheckInHandler
             || checkIn.DeletedAtUtc != null)
             throw new NotFoundException("Home check-in not found.");
         checkIn.Delete();
+        await bus.PublishAsync(new CoffeePeek.Contract.Events.CheckInPhotosDeletedEvent(
+            checkIn.Id, checkIn.UserId, checkIn.DeletedAtUtc!.Value));
         await bus.PublishAsync(new CheckInCacheInvalidationRequested(checkIn.Id, null, checkIn.UserId));
         await unitOfWork.SaveChangesAsync(ct);
         return Response.Success();

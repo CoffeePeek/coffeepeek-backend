@@ -21,7 +21,7 @@ public class InternalCheckInPhotoAccessTests
     [Fact]
     public async Task UntrustedRequest_DoesNotReadMetadataOrStorage()
     {
-        var repo = new Mock<IPhotoRepository>(); var storage = new Mock<IStorageService>();
+        var repo = new Mock<IPhotoRepository>(); var storage = new Mock<ICheckInPhotoReader>();
         var user = new Mock<IUserContext>(); user.Setup(u => u.GetUserId()).Returns(Guid.NewGuid());
         var controller = Create(repo, storage, user);
         (await controller.Download(Guid.NewGuid(), Guid.NewGuid(), TestContext.Current.CancellationToken))
@@ -32,7 +32,7 @@ public class InternalCheckInPhotoAccessTests
     [Fact]
     public async Task TrustedRequestWithoutMatchingParent_DoesNotServeBytes()
     {
-        var repo = new Mock<IPhotoRepository>(); var storage = new Mock<IStorageService>();
+        var repo = new Mock<IPhotoRepository>(); var storage = new Mock<ICheckInPhotoReader>();
         var user = new Mock<IUserContext>(); user.Setup(u => u.GetUserId()).Returns(Guid.NewGuid());
         var controller = Create(repo, storage, user);
         controller.Request.Headers[GatewayHeaderConsts.XGatewayAuth] = "secret";
@@ -45,12 +45,12 @@ public class InternalCheckInPhotoAccessTests
     public async Task MatchingParent_StreamsPrivateBytesWithoutRedirectOrPublicUrl()
     {
         var owner = Guid.NewGuid(); var checkIn = Guid.NewGuid(); var id = Guid.NewGuid();
-        var repo = new Mock<IPhotoRepository>(); var storage = new Mock<IStorageService>();
+        var repo = new Mock<IPhotoRepository>(); var storage = new Mock<ICheckInPhotoReader>();
         var user = new Mock<IUserContext>(); user.Setup(u => u.GetUserId()).Returns(owner);
         repo.Setup(r => r.GetCheckInPhotoAsync(checkIn, id, owner, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new PhotoMetadata { StorageKey = "private", ContentType = "image/jpeg" });
-        storage.Setup(s => s.CopyToAsync("private", BucketType.CheckIn, It.IsAny<Stream>(), It.IsAny<CancellationToken>()))
-            .Returns<string, BucketType, Stream, CancellationToken>((_, _, stream, ct) => stream.WriteAsync(new byte[] { 1, 2, 3 }, ct).AsTask());
+        storage.Setup(s => s.CopyToAsync("private", It.IsAny<Stream>(), It.IsAny<CancellationToken>()))
+            .Returns<string, Stream, CancellationToken>((_, stream, ct) => stream.WriteAsync(new byte[] { 1, 2, 3 }, ct).AsTask());
         var controller = Create(repo, storage, user);
         controller.Request.Headers[GatewayHeaderConsts.XGatewayAuth] = "secret";
         (await controller.Download(checkIn, id, TestContext.Current.CancellationToken)).Should().BeOfType<EmptyResult>();
@@ -67,12 +67,12 @@ public class InternalCheckInPhotoAccessTests
     public async Task HistoricalUnsafeMime_IsStreamedOnlyAsAnOctetStreamAttachment(string contentType)
     {
         var owner=Guid.NewGuid(); var checkIn=Guid.NewGuid(); var id=Guid.NewGuid();
-        var repo=new Mock<IPhotoRepository>(); var storage=new Mock<IStorageService>();
+        var repo=new Mock<IPhotoRepository>(); var storage=new Mock<ICheckInPhotoReader>();
         var user=new Mock<IUserContext>(); user.Setup(u => u.GetUserId()).Returns(owner);
         repo.Setup(r => r.GetCheckInPhotoAsync(checkIn, id, owner, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new PhotoMetadata { StorageKey="legacy", ContentType=contentType });
-        storage.Setup(s => s.CopyToAsync("legacy", BucketType.CheckIn, It.IsAny<Stream>(), It.IsAny<CancellationToken>()))
-            .Returns<string,BucketType,Stream,CancellationToken>((_,_,stream,ct) =>
+        storage.Setup(s => s.CopyToAsync("legacy", It.IsAny<Stream>(), It.IsAny<CancellationToken>()))
+            .Returns<string,Stream,CancellationToken>((_,stream,ct) =>
                 stream.WriteAsync("<script>alert(1)</script>"u8.ToArray(),ct).AsTask());
         var controller=Create(repo,storage,user);
         controller.Request.Headers[GatewayHeaderConsts.XGatewayAuth]="secret";
@@ -83,9 +83,9 @@ public class InternalCheckInPhotoAccessTests
         ((MemoryStream)controller.Response.Body).Length.Should().BeGreaterThan(0);
     }
 
-    private static InternalCheckInPhotosController Create(Mock<IPhotoRepository> repo, Mock<IStorageService> storage, Mock<IUserContext> user)
+    private static InternalCheckInPhotosController Create(Mock<IPhotoRepository> repo, Mock<ICheckInPhotoReader> storage, Mock<IUserContext> user)
     {
-        var controller = new InternalCheckInPhotosController(new ClaimCheckInPhotosHandler(repo.Object, storage.Object,
+        var controller = new InternalCheckInPhotosController(new ClaimCheckInPhotosHandler(repo.Object, Mock.Of<IStorageService>(),
             Mock.Of<IUnitOfWork>()), repo.Object, storage.Object, user.Object,
             Options.Create(new GatewayAuthOptions { SecretKey = "secret" }));
         controller.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() };

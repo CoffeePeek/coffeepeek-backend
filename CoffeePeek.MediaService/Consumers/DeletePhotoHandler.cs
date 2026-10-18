@@ -4,26 +4,29 @@ using CoffeePeek.MediaService.Events;
 using CoffeePeek.MediaService.Repositories;
 using CoffeePeek.MediaService.Services;
 using CoffeePeek.Shared.Kernel;
-using MassTransit;
+using CoffeePeek.MediaService.Services.Variants;
 
 namespace CoffeePeek.MediaService.Consumers;
 
 public class DeletePhotoHandler(
     IPhotoRepository photoRepository,
     IUnitOfWork unitOfWork,
-    IStorageService storageService)
+    IStorageService storageService,
+    IPhotoVariantQueue variants)
 {
-    public async Task Handle(DeletePhotoFromStorageEvent message)
+    public async Task Handle(DeletePhotoFromStorageEvent message, CancellationToken ct)
     {
-        var photo = await photoRepository.GetByIdAsync(message.PhotoId);
+        var photo = await photoRepository.GetByIdAsync(message.PhotoId, ct);
         
-        if (photo == null || photo.Status == PhotoStatus.Deleted) return;
+        if (photo == null) return;
+        await variants.CancelPhotoAsync(photo.Id, ct);
+        if (photo.Status == PhotoStatus.Deleted) return;
 
-        await storageService.Delete(photo.StorageKey, (BucketType)(int)photo.BucketType);
+        await storageService.Delete(photo.StorageKey, photo.BucketType, ct);
 
         photo.Status = PhotoStatus.Deleted;
         photo.DeletedAt = DateTime.UtcNow;
 
-        await unitOfWork.SaveChangesAsync();
+        await unitOfWork.SaveChangesAsync(ct);
     }
 }

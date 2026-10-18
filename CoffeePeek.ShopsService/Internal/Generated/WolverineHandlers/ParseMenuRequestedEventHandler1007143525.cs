@@ -41,17 +41,17 @@ namespace Internal.Generated.WolverineHandlers
 
         public override async System.Threading.Tasks.Task HandleAsync(Wolverine.Runtime.MessageContext context, System.Threading.CancellationToken cancellation)
         {
+            var httpMenuPhotoDownloader = new CoffeePeek.Shops.Infrastructure.Menu.HttpMenuPhotoDownloader(_httpClientFactory2, _loggerOfHttpMenuPhotoDownloader);
             await using var serviceScope = _serviceScopeFactory.CreateAsyncScope();
             Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<Wolverine.Runtime.ScopedMessageContextHolder>(serviceScope.ServiceProvider).Context = context;
             // This service has been marked as requiring service location independent of Wolverine's ability to use constructor injection of everything else
             var shopsDbContext = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<CoffeePeek.Shops.Persistance.Configuration.ShopsDbContext>(serviceScope.ServiceProvider);
-            var httpMenuPhotoDownloader = new CoffeePeek.Shops.Infrastructure.Menu.HttpMenuPhotoDownloader(_httpClientFactory2, _loggerOfHttpMenuPhotoDownloader);
             var queryCoffeeDrinkRepository = new CoffeePeek.Shops.Persistance.Repositories.QueryCoffeeDrinkRepository(shopsDbContext);
             var openAiMenuVisionParser = new CoffeePeek.Shops.Infrastructure.Menu.OpenAiMenuVisionParser(_httpClientFactory1, _optionsOfOpenAiOptions, _loggerOfOpenAiMenuVisionParser);
             // The actual message body
             var parseMenuRequestedEvent = (CoffeePeek.Contract.Events.Menu.ParseMenuRequestedEvent)context.Envelope.Message;
 
-            
+
             // Enroll the DbContext & IMessagingContext in the outgoing Wolverine outbox transaction
             var efCoreEnvelopeTransaction = new Wolverine.EntityFrameworkCore.Internals.EfCoreEnvelopeTransaction(shopsDbContext, context, _domainEventScraperIEnumerable);
             await context.EnlistInOutboxAsync(efCoreEnvelopeTransaction).ConfigureAwait(false);
@@ -66,15 +66,15 @@ namespace Internal.Generated.WolverineHandlers
                 System.Diagnostics.Activity.Current?.SetTag("message.handler", "CoffeePeek.Shops.Infrastructure.Consumers.ParseMenuRequestedEventHandler");
                 System.Diagnostics.Activity.Current?.SetTag("handler.type", "CoffeePeek.Shops.Infrastructure.Consumers.ParseMenuRequestedEventHandler");
                 var parseMenuRequestedEventHandler = new CoffeePeek.Shops.Infrastructure.Consumers.ParseMenuRequestedEventHandler(_optionsOfMediaPublicUrlOptions, openAiMenuVisionParser, queryCoffeeDrinkRepository, httpMenuPhotoDownloader, _optionsOfMenuPriceRangeOptions, _loggerOfParseMenuRequestedEventHandler);
-                
+
                 // The actual message execution
                 var outgoing1 = await parseMenuRequestedEventHandler.Handle(parseMenuRequestedEvent, cancellation).ConfigureAwait(false);
 
-                
+
                 // Outgoing, cascaded message
                 await context.EnqueueCascadingAsync(outgoing1).ConfigureAwait(false);
 
-                
+
                 // Added by EF Core Transaction Middleware
                 var result_of_SaveChangesAsync = await shopsDbContext.SaveChangesAsync(cancellation).ConfigureAwait(false);
 
@@ -93,7 +93,6 @@ namespace Internal.Generated.WolverineHandlers
     }
 
     // END: ParseMenuRequestedEventHandler1007143525
-    
-    
-}
 
+
+}

@@ -3,6 +3,15 @@
 # CI runs this inside the .NET 10 SDK container; the repository tool manifest
 # provides dotnet-ef.
 set -euo pipefail
+set +x
+
+prepared=false
+if [[ "$#" == 1 && "$1" == --prepared ]]; then
+  prepared=true
+elif [[ "$#" != 0 ]]; then
+  echo "Usage: apply-migrations.sh [--prepared]" >&2
+  exit 1
+fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DEPLOY_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
@@ -34,18 +43,26 @@ export PGUSER="${POSTGRES_USER}"
 export PGPASSWORD="${POSTGRES_PASSWORD}"
 
 cd "${REPO_ROOT}"
-dotnet tool restore
+if [[ "${prepared}" == false ]]; then
+  dotnet tool restore
+fi
 
 apply_migrations() {
   local database="$1" project="$2" startup="$3" context="$4"
   local quoted_host="${PG_HOST//\"/\"\"}"
   export PostgresCpOptions__ConnectionString="Host=\"${quoted_host}\";Port=${PG_PORT};Database=${database};SslMode=Disable;GSS Encryption Mode=Disable"
   echo "==> Applying ${database} migrations..."
+  local prepared_options=()
+  if [[ "${prepared}" == true ]]; then
+    # EF --no-build also skips its implicit restore; all tools and assemblies were prepared before downtime.
+    prepared_options+=(--no-build)
+  fi
   dotnet ef database update \
     --project "${project}" \
     --startup-project "${startup}" \
     --context "${context}" \
-    --configuration Release
+    --configuration Release \
+    "${prepared_options[@]}"
 }
 
 apply_migrations cpaccountdb CoffeePeek.Account.Persistence CoffeePeek.AccountService CoffeePeek.Account.Persistence.Configuration.AccountDbContext

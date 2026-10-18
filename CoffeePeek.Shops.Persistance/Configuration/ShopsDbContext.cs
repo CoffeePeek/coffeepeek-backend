@@ -100,6 +100,7 @@ public class ShopsDbContext(DbContextOptions<ShopsDbContext> options, IOptions<P
     public virtual DbSet<CoffeePeek.Shops.Domain.Aggregates.ReviewAggregate.ReviewReport> ReviewReports { get; set; }
     public virtual DbSet<CheckIn> CheckIns { get; set; }
     public DbSet<Domain.Aggregates.CheckInAggregate.CheckInPhoto> CheckInPhotos => Set<Domain.Aggregates.CheckInAggregate.CheckInPhoto>();
+    public DbSet<Community.CheckInPhotoVariantManifest> CheckInPhotoVariantManifests => Set<Community.CheckInPhotoVariantManifest>();
     public virtual DbSet<Domain.Aggregates.CheckInAggregate.CheckInHelpfulVote> CheckInHelpfulVotes { get; set; }
 
     public virtual DbSet<Roaster> Roasters { get; set; }
@@ -149,6 +150,7 @@ public class ShopsDbContext(DbContextOptions<ShopsDbContext> options, IOptions<P
         modelBuilder.ApplyConfiguration(new CoffeeZoneMembershipOverrideConfiguration());
         modelBuilder.ApplyConfiguration(new ShopPhotoConfiguration());
         modelBuilder.ApplyConfiguration(new CheckInPhotoConfiguration());
+        modelBuilder.ApplyConfiguration(new CheckInPhotoVariantManifestConfiguration());
         modelBuilder.ApplyConfiguration(new AppliedShopChangeRequestConfiguration());
         modelBuilder.ApplyConfiguration(new RoasterConfiguration());
         modelBuilder.ApplyConfiguration(new RoasterPhotoConfiguration());

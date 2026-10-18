@@ -1,6 +1,12 @@
 #!/usr/bin/env bash
 # Pull latest app images and restart services (used by CI and manual updates).
 set -euo pipefail
+set +x
+requested_image_tag="${DEPLOY_IMAGE_TAG:-}"
+if [[ "${1:-}" != "" && "${1:-}" != "--images-prepared" ]]; then
+  echo "Unsupported update argument" >&2
+  exit 1
+fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DEPLOY_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
@@ -13,6 +19,11 @@ set -a
 source .env
 set +a
 
+if [[ -n "${requested_image_tag}" ]]; then
+  python3 "${SCRIPT_DIR}/persist_image_tag.py" --check .env "${requested_image_tag}"
+  export IMAGE_TAG="${requested_image_tag}"
+fi
+
 bash "${SCRIPT_DIR}/check-coffee-import.sh"
 
 COMPOSE=(docker compose)
@@ -20,9 +31,11 @@ if [[ "${USE_HTTPS:-1}" == "1" ]]; then
   COMPOSE+=(--profile https)
 fi
 
-if [[ -n "${DOCKER_HUB_USERNAME:-}" && -n "${DOCKER_HUB_PASSWORD:-}" ]]; then
-  echo "==> Logging in to Docker Hub..."
-  echo "${DOCKER_HUB_PASSWORD}" | docker login -u "${DOCKER_HUB_USERNAME}" --password-stdin
+if [[ "${1:-}" != "--images-prepared" ]]; then
+  bash "${SCRIPT_DIR}/prepare-images.sh"
+fi
+if [[ -n "${requested_image_tag}" ]]; then
+  python3 "${SCRIPT_DIR}/persist_image_tag.py" .env "${requested_image_tag}"
 fi
 
 wait_for_backend() {
@@ -52,19 +65,11 @@ wait_for_backend() {
   return 1
 }
 
-use_registry_images=false
-if [[ -n "${DOCKER_HUB_USERNAME:-}" && -n "${DOCKER_HUB_PASSWORD:-}" ]]; then
-  use_registry_images=true
-fi
-
-# Prepare every image before replacing any running backend.
-if [[ "${use_registry_images}" == "true" ]]; then
-  echo "==> Pulling application images from Docker Hub..."
-  "${COMPOSE[@]}" pull account shops moderation media gateway
-else
-  echo "==> Building application images (no registry credentials)..."
-  "${COMPOSE[@]}" build account shops moderation media gateway
-fi
+# Run the current mounted provisioning script even when the one-shot container already completed.
+echo "==> Provisioning private photo storage and the read-only reader..."
+"${COMPOSE[@]}" up -d minio
+"${COMPOSE[@]}" run --rm --no-deps minio-init
+"${COMPOSE[@]}" up -d --no-deps checkin-renderer
 
 # Start one backend at a time to avoid simultaneous initialization spikes.
 for service in account media shops moderation; do

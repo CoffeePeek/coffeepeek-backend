@@ -27,6 +27,7 @@ public class ClaimsToHeadersTransformProvider : ITransformProvider
             requestHeaders.Remove(GatewayHeaderConsts.XUserName);
             requestHeaders.Remove(GatewayHeaderConsts.XUserRole);
             requestHeaders.Remove(GatewayHeaderConsts.XUserEmail);
+            requestHeaders.Remove(GatewayHeaderConsts.XUserTokenExpiresAt);
             requestHeaders.Remove(GatewayHeaderConsts.XGatewayAuth);
 
             var gatewayAuth = transformContext.HttpContext.RequestServices

@@ -19,6 +19,9 @@ public static class GatewayHeaderConsts
     /// <summary>The authenticated user's email address.</summary>
     public const string XUserEmail = "X-User-Email";
 
+    /// <summary>Validated JWT expiration as Unix seconds; never a client-supplied cache deadline.</summary>
+    public const string XUserTokenExpiresAt = "X-User-Token-Expires-At";
+
     /// <summary>Shared secret proving the request was forwarded by the API Gateway.</summary>
     public const string XGatewayAuth = "X-Gateway-Auth";
 }

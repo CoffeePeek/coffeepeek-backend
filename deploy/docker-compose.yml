@@ -122,6 +122,7 @@ services:
           memory: 512M
 
   minio:
+    networks: [default, checkin-render]
     image: quay.io/minio/minio:latest
     restart: unless-stopped
     logging: *default-logging
@@ -137,24 +138,26 @@ services:
           memory: 256M
 
   minio-init:
-    image: quay.io/minio/mc:latest
+    image: coffeepeek-minio-mc:2025-08-13
+    pull_policy: build
+    build:
+      context: ./minio
+      dockerfile: mc.Dockerfile
     depends_on:
       - minio
     restart: "no"
-    entrypoint: >
-      /bin/sh -c "
-      sleep 5;
-      until mc alias set local http://minio:9000 ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD}; do sleep 2; done;
-      mc mb --ignore-existing local/coffeepeek.shops;
-      mc mb --ignore-existing local/coffeepeek.avatars;
-      mc mb --ignore-existing local/coffeepeek.checkins;
-      mc anonymous set none local/coffeepeek.checkins;
-      mc anonymous get-json local/coffeepeek.shops | grep -q CheckInPrivate || mc anonymous set download local/coffeepeek.shops;
-      mc anonymous set download local/coffeepeek.avatars
-      "
+    entrypoint: ["/bin/sh", "/provision/provision.sh"]
+    volumes:
+      - ./minio:/provision:ro
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_CHECKIN_READ_USER: ${MINIO_CHECKIN_READ_USER:?set a dedicated MinIO reader}
+      MINIO_CHECKIN_READ_PASSWORD: ${MINIO_CHECKIN_READ_PASSWORD:?set the dedicated reader password}
+      MINIO_CHECKIN_VARIANT_USER: ${MINIO_CHECKIN_VARIANT_USER:?set a dedicated variant writer}
+      MINIO_CHECKIN_VARIANT_PASSWORD: ${MINIO_CHECKIN_VARIANT_PASSWORD:?set the variant writer password}
+      MINIO_CHECKIN_VARIANT_READ_USER: ${MINIO_CHECKIN_VARIANT_READ_USER:?set a dedicated variant reader}
+      MINIO_CHECKIN_VARIANT_READ_PASSWORD: ${MINIO_CHECKIN_VARIANT_READ_PASSWORD:?set the variant reader password}
 
   # Resized image variants in front of MinIO. Reachable only on the compose network through Caddy
   # ({MEDIA_DOMAIN}/img/*). No MinIO credentials: it reads the anonymous-download buckets over plain HTTP.
@@ -180,6 +183,24 @@ services:
       resources:
         limits:
           memory: 512M
+
+  # Private signed renderer: no published ports and no public proxy network.
+  checkin-renderer:
+    image: ghcr.io/imgproxy/imgproxy:v4.0.18
+    restart: unless-stopped
+    # Renderer error logs can include signed source URLs; use bounded Media metrics/logs instead.
+    logging:
+      driver: none
+    networks: [checkin-render]
+    env_file: ./imgproxy/checkin-renderer.conf
+    environment:
+      AWS_ACCESS_KEY_ID: ${MINIO_CHECKIN_READ_USER}
+      AWS_SECRET_ACCESS_KEY: ${MINIO_CHECKIN_READ_PASSWORD}
+      IMGPROXY_KEY: ${CHECKIN_RENDERER_KEY:?set the renderer signing key}
+      IMGPROXY_SALT: ${CHECKIN_RENDERER_SALT:?set the renderer signing salt}
+    mem_limit: 512m
+    memswap_limit: 512m
+    cpus: 1.0
 
   account:
     networks:
@@ -261,6 +282,11 @@ services:
       media:
         condition: service_healthy
     environment:
+      CheckInPhotoDeliveryOptions__ServeVariants: ${CHECKIN_VARIANTS_SERVE_ENABLED:-false}
+      CheckInPhotoDeliveryOptions__AdvertiseVariants: ${CHECKIN_VARIANTS_ADVERTISE_ENABLED:-false}
+      CheckInPhotoDeliveryOptions__AdvertiseCanaryOnly: ${CHECKIN_VARIANTS_CANARY_ONLY:-false}
+      CheckInPhotoDeliveryOptions__AdvertiseCanaryUserIds: "${CHECKIN_VARIANTS_CANARY_USER_IDS:-}"
+      CheckInPhotoDeliveryOptions__CachePublicVariants: ${CHECKIN_VARIANTS_CACHE_ENABLED:-false}
       <<: [*dotnet-common, *rabbitmq-env, *redis-env, *media-public-env, *gateway-auth-env, *aspire-service-discovery]
       PostgresCpOptions__ConnectionString: Host=postgres;Port=5432;Database=cpshopsdb;Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD};SslMode=Disable;GSS Encryption Mode=Disable
       PublicAddresses__Enabled: "${SHOPS_PUBLIC_ADDRESSES_ENABLED:-false}"
@@ -309,6 +335,7 @@ services:
     memswap_limit: 1536m
 
   media:
+    networks: [default, checkin-render]
     healthcheck: *app-healthcheck
     image: ${DOCKER_IMAGE_PREFIX}/coffeepeek.mediaservice:${IMAGE_TAG}
     build:
@@ -326,12 +353,25 @@ services:
       minio-init:
         condition: service_completed_successfully
     environment:
-      <<: [*dotnet-common, *rabbitmq-env, *media-public-env, *gateway-auth-env]
+      PhotoVariantOptions__ReadEnabled: ${CHECKIN_VARIANTS_READ_ENABLED:-false}
+      PhotoVariantOptions__ReadAccessKey: ${MINIO_CHECKIN_VARIANT_READ_USER}
+      PhotoVariantOptions__ReadSecretKey: ${MINIO_CHECKIN_VARIANT_READ_PASSWORD}
+      PhotoVariantOptions__Enabled: ${CHECKIN_VARIANTS_ENABLED:-false}
+      PhotoVariantOptions__CleanupEnabled: ${CHECKIN_VARIANTS_CLEANUP_ENABLED:-false}
+      PhotoVariantOptions__CleanupDryRun: ${CHECKIN_VARIANTS_CLEANUP_DRY_RUN:-true}
+      PhotoVariantOptions__RendererEndpoint: http://checkin-renderer:8080
+      PhotoVariantOptions__SigningKey: ${CHECKIN_RENDERER_KEY}
+      PhotoVariantOptions__SigningSalt: ${CHECKIN_RENDERER_SALT}
+      PhotoVariantOptions__AccessKey: ${MINIO_CHECKIN_VARIANT_USER}
+      PhotoVariantOptions__SecretKey: ${MINIO_CHECKIN_VARIANT_PASSWORD}
+      <<: [*dotnet-common, *rabbitmq-env, *media-public-env, *gateway-auth-env, *aspire-service-discovery]
       PostgresCpOptions__ConnectionString: Host=postgres;Port=5432;Database=cpmediadb;Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD};SslMode=Disable;GSS Encryption Mode=Disable
       CoffeeImportAuthOptions__Token: ${COFFEE_IMPORT_TOKEN:-}
       MinIOOptions__Endpoint: http://minio:9000
       MinIOOptions__AccessKey: ${MINIO_ROOT_USER}
       MinIOOptions__SecretKey: ${MINIO_ROOT_PASSWORD}
+      CheckInPhotoReadOptions__AccessKey: ${MINIO_CHECKIN_READ_USER}
+      CheckInPhotoReadOptions__SecretKey: ${MINIO_CHECKIN_READ_PASSWORD}
       MinIOOptions__ShopBucketName: coffeepeek.shops
       MinIOOptions__UserBucketName: coffeepeek.avatars
       Sentry__Dsn: ${SENTRY_DSN_MEDIA:-}
@@ -407,6 +447,8 @@ services:
 
 # Stable proxy IPs without trusting the default network or other application containers.
 networks:
+  checkin-render:
+    internal: true
   default:
   proxy:
     ipam:
