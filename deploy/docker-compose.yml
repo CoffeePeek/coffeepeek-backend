@@ -138,7 +138,11 @@ services:
           memory: 256M
 
   minio-init:
-    image: quay.io/minio/mc:latest
+    image: coffeepeek-minio-mc:2025-08-13
+    pull_policy: build
+    build:
+      context: ./minio
+      dockerfile: mc.Dockerfile
     depends_on:
       - minio
     restart: "no"
