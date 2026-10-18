@@ -6,6 +6,7 @@ import json
 import os
 from pathlib import Path
 import subprocess
+import sys
 import tempfile
 import unittest
 from unittest.mock import Mock, patch
@@ -180,24 +181,95 @@ class GuardTests(unittest.TestCase):
 
     def test_dump_streams_private_custom_format_validates_toc_and_passes_credentials_only_in_environment(self):
         destination = self.base / "database.dump"
-        def run(args, **kwargs):
+        real_popen = subprocess.Popen
+        def popen(args, **kwargs):
             self.assertNotIn(PRIVATE, " ".join(args))
             self.assertEqual(PRIVATE, kwargs["env"]["PGPASSWORD"])
-            self.assertEqual(subprocess.DEVNULL, kwargs["stderr"])
+            self.assertEqual(subprocess.PIPE, kwargs["stderr"])
             self.assertFalse(kwargs.get("shell", False))
             if "pg_dump" in args:
                 self.assertIn("--format=custom", args)
                 self.assertIn("default_transaction_read_only=on", kwargs["env"]["PGOPTIONS"])
-                kwargs["stdout"].write(b"PGDMPsynthetic")
+                script = "import sys; sys.stdout.buffer.write(b'PGDMPsynthetic'); sys.stderr.write('synthetic dump notice')"
             else:
                 self.assertIn("--list", args)
-                self.assertEqual(b"PGDMP", kwargs["stdin"].read(5))
-            return subprocess.CompletedProcess(args, 0)
-        with patch.object(guard.subprocess, "run", side_effect=run) as mocked:
+                script = "import sys; assert sys.stdin.buffer.read(5) == b'PGDMP'; sys.stderr.write('synthetic TOC notice')"
+            kwargs["env"] = dict(os.environ, **kwargs["env"])
+            return real_popen([sys.executable, "-c", script], **kwargs)
+        with patch.object(guard.subprocess, "Popen", side_effect=popen) as mocked:
             guard.Commands(ENV).dump("a" * 64, "cpmediadb", destination)
         self.assertEqual(2, mocked.call_count)
+        self.assertEqual({"diagnosticStage": "pg_restore_cpmediadb"}, guard.safe_diagnostic())
+        self.assertEqual(b"synthetic dump notice", Path(str(destination) + ".pg_dump.stderr").read_bytes())
+        self.assertEqual(b"synthetic TOC notice", Path(str(destination) + ".pg_restore.stderr").read_bytes())
         if os.name != "nt":
-            self.assertEqual(0o600, destination.stat().st_mode & 0o777)
+            for path in (destination, Path(str(destination) + ".pg_dump.stderr"), Path(str(destination) + ".pg_restore.stderr")):
+                self.assertEqual(0o600, path.stat().st_mode & 0o777)
+
+    def test_database_errors_report_only_exact_whitelisted_reason_and_stage_with_private_bounded_stderr(self):
+        real_popen = subprocess.Popen
+        cases = (("pg_dump", "password authentication failed", "auth"),
+                 ("pg_dump", "permission denied for table", "permission"),
+                 ("pg_dump", "cannot execute in a read-only transaction", "read_only_tx"),
+                 ("pg_dump", "unrecognized synthetic failure", "pg_dump_failed"),
+                 ("pg_restore", "input file does not appear to be a valid archive", "restore_toc_failed"))
+        for index, (failed, message, reason) in enumerate(cases):
+            with self.subTest(command=failed, reason=reason):
+                destination = self.base / ("failure-" + str(index) + ".dump")
+                def popen(args, **kwargs):
+                    current = "pg_dump" if "pg_dump" in args else "pg_restore"
+                    self.assertNotIn(PRIVATE, " ".join(args))
+                    if current == failed:
+                        # Keep the test child command below Windows' argv limit while emitting a larger pipe.
+                        script = "import sys; sys.stderr.buffer.write(" + repr((message + " " + PRIVATE).encode()) + "+ b'x' * " \
+                            + str(guard.MAX_DATABASE_STDERR_BYTES * 3) + "); sys.exit(1)"
+                    else:
+                        script = "import sys; sys.stdout.buffer.write(b'PGDMPsynthetic')"
+                    kwargs["env"] = dict(os.environ, **kwargs["env"])
+                    return real_popen([sys.executable, "-c", script], **kwargs)
+                stream = io.StringIO()
+                with patch.object(guard.subprocess, "Popen", side_effect=popen) as mocked, \
+                     patch.object(guard, "execute", side_effect=lambda *args: guard.Commands(ENV).dump("a" * 64, "cpaccountdb", destination)), \
+                     contextlib.redirect_stdout(stream):
+                    self.assertEqual(1, guard.main(["backup", "1"]))
+                self.assertEqual({"complete": False, "status": "unknown", "reason": reason,
+                                  "diagnosticStage": failed + "_cpaccountdb"}, json.loads(stream.getvalue()))
+                self.assertNotIn(PRIVATE, stream.getvalue())
+                self.assertNotIn(message, stream.getvalue())
+                self.assertNotIn(str(destination), stream.getvalue())
+                self.assertEqual(1 if failed == "pg_dump" else 2, mocked.call_count)
+                raw_path = Path(str(destination) + "." + failed + ".stderr")
+                self.assertEqual(guard.MAX_DATABASE_STDERR_BYTES, raw_path.stat().st_size)
+                self.assertIn(PRIVATE.encode(), raw_path.read_bytes())
+                if os.name != "nt":
+                    self.assertEqual(0o600, raw_path.stat().st_mode & 0o777)
+
+    def test_invalid_dump_header_stops_before_toc_command_and_preserves_dump_stage(self):
+        real_popen = subprocess.Popen
+        destination = self.base / "invalid-header.dump"
+        def popen(args, **kwargs):
+            kwargs["env"] = dict(os.environ, **kwargs["env"])
+            return real_popen([sys.executable, "-c", "import sys; sys.stdout.buffer.write(b'not-an-archive')"], **kwargs)
+        with patch.object(guard.subprocess, "Popen", side_effect=popen) as mocked:
+            with self.assertRaises(guard.GuardError):
+                guard.Commands(ENV).dump("a" * 64, "cpshopsdb", destination)
+        self.assertEqual(1, mocked.call_count)
+        self.assertEqual({"diagnosticStage": "pg_dump_cpshopsdb", "reason": "pg_dump_failed"}, guard.safe_diagnostic())
+        self.assertFalse(Path(str(destination) + ".pg_restore.stderr").exists())
+
+    def test_process_start_failure_and_untrusted_diagnostic_reason_never_expose_error_text(self):
+        destination = self.base / "unavailable.dump"
+        with patch.object(guard.subprocess, "Popen", side_effect=OSError(PRIVATE)) as mocked:
+            with self.assertRaises(guard.GuardError) as raised:
+                guard.Commands(ENV).dump("a" * 64, "cpmoderationdb", destination)
+        self.assertEqual(1, mocked.call_count)
+        self.assertNotIn(PRIVATE, str(raised.exception))
+        self.assertEqual({"diagnosticStage": "pg_dump_cpmoderationdb", "reason": "pg_dump_failed"}, guard.safe_diagnostic())
+        guard._diagnostic["reason"] = PRIVATE
+        self.assertEqual({"diagnosticStage": "pg_dump_cpmoderationdb"}, guard.safe_diagnostic())
+        guard.diagnostic_stage("policy_1")
+        guard._diagnostic["reason"] = "auth"
+        self.assertEqual({"diagnosticStage": "policy_1"}, guard.safe_diagnostic())
 
     def test_main_suppresses_all_raw_output_and_exceptions(self):
         stream = io.StringIO()
@@ -326,6 +398,8 @@ class PolicyTests(unittest.TestCase):
             body, result = client.read("coffeepeek.checkins")
             self.assertEqual(status, result["status"])
             self.assertEqual(code == "NoSuchBucketPolicy", result["private"])
+            self.assertFalse(result["checkInPrivateMarker"])
+            self.assertEqual(0, result["anonymousDenyCount"])
             self.assertNotIn(PRIVATE, body.decode())
             request = client.opener.open.call_args.args[0]
             self.assertEqual("GET", request.method)
@@ -348,11 +422,40 @@ class PolicyTests(unittest.TestCase):
         body = json.dumps(policy).encode()
         result = guard.policy_view(policy, body)
         self.assertTrue(result["anonymousAllow"])
+        self.assertEqual(1, result["anonymousDenyCount"])
         self.assertFalse(result["private"])
         self.assertNotIn(PRIVATE, json.dumps(result))
         for malformed in ({}, {"Statement": "invalid"}, {"Statement": [{"Effect": "Allow", "NotPrincipal": "*", "Action": "*"}]}):
             with self.assertRaises(guard.GuardError):
                 guard.policy_view(malformed, b"synthetic")
+
+    def test_historical_private_marker_and_deny_count_are_safe_aggregates(self):
+        policy = {"Statement": [{"Effect": "Allow", "Principal": "*", "Action": "s3:GetObject", "Resource": "*"}] +
+            [{"Sid": "CheckInPrivate" + str(index), "Effect": "Deny", "Principal": {"AWS": "*"},
+              "Action": "s3:GetObject", "Resource": PRIVATE + str(index)} for index in range(31)]}
+        body = json.dumps(policy).encode()
+        result = guard.policy_view(policy, body)
+        self.assertTrue(result["checkInPrivateMarker"])
+        self.assertEqual(31, result["anonymousDenyCount"])
+        self.assertEqual(32, result["statementCount"])
+        self.assertEqual(hashlib.sha256(body).hexdigest(), result["sha256"])
+        self.assertNotIn(PRIVATE, json.dumps(result))
+        self.assertNotIn("CheckInPrivate0", json.dumps(result))
+
+    def test_marker_matches_raw_bytes_and_deny_count_only_explicit_anonymous_principals(self):
+        policy = {"Statement": [
+            {"Effect": "Deny", "Principal": "*", "Resource": PRIVATE},
+            {"Effect": "Deny", "Principal": {"AWS": ["arn:aws:iam::123456789012:root", "*"]},
+             "Condition": {"StringEquals": {"s3:ExistingObjectTag/Private": "true"}}, "Resource": PRIVATE},
+            {"Effect": "Deny", "Principal": {"AWS": "arn:aws:iam::123456789012:root"}, "Resource": PRIVATE},
+            {"Effect": "Deny", "NotPrincipal": {"AWS": "*"}, "Resource": PRIVATE}]}
+        for marker, expected in (("CheckInPrivate", True), ("checkinprivate", False), ("CheckIn\\u0050rivate", False)):
+            with self.subTest(marker=marker):
+                body = json.dumps(policy).encode()[:-1] + b',"Id":"' + marker.encode() + b'"}'
+                result = guard.policy_view(json.loads(body), body)
+                self.assertEqual(expected, result["checkInPrivateMarker"])
+                self.assertEqual(2, result["anonymousDenyCount"])
+                self.assertNotIn(PRIVATE, json.dumps(result))
 
     def test_no_redirect_and_no_proxy_are_used(self):
         with patch.object(guard.urllib.request, "build_opener") as built, patch.object(guard.urllib.request, "ProxyHandler") as proxy:

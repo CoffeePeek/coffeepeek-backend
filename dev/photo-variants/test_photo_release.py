@@ -96,7 +96,7 @@ else
   export PATH="$PHOTO_TEST_BIN:$PATH"
 fi
 ''', encoding="utf-8", newline="\n")
-        for name in ("ci-deploy.sh", "update.sh", "prepare-images.sh", "persist_image_tag.py"):
+        for name in ("ci-deploy.sh", "update.sh", "prepare-images.sh", "prepare-migrations.sh", "apply-migrations.sh", "persist_image_tag.py"):
             shutil.copyfile(SCRIPTS / name, self.scripts / name)
         for name in ("ensure-secrets.sh", "check-coffee-import.sh"):
             (self.scripts / name).write_text("#!/usr/bin/env bash\nset -euo pipefail\n", encoding="utf-8")
@@ -104,10 +104,29 @@ fi
         (self.root / "dev" / "backfill-profile-roaster-counts.sh").write_text("#!/usr/bin/env bash\nexit 0\n")
         self.write_bin("docker", '''#!/usr/bin/env bash
 set -euo pipefail
-printf 'tag=%s|%s\\n' "${IMAGE_TAG:-unset}" "$*" >> docker.log
+printf 'tag=%s|%s\\n' "${IMAGE_TAG:-unset}" "$*" >> "$PHOTO_TEST_EVENT_LOG"
 if [[ "${1:-}" == login ]]; then cat >/dev/null; fi
 if [[ "${PHOTO_FAIL:-}" == app && "$*" == 'compose pull account shops moderation media gateway' ]]; then exit 19; fi
 if [[ "${PHOTO_FAIL:-}" == sdk && "$*" == 'pull mcr.microsoft.com/dotnet/sdk:10.0' ]]; then exit 20; fi
+if [[ "$*" == 'image inspect --format {{.Id}} mcr.microsoft.com/dotnet/sdk:10.0' ]]; then
+  printf 'sha256:%064d\\n' 1
+fi
+if [[ "${1:-}" == run && "$*" == *'bash deploy/scripts/prepare-migrations.sh' ]]; then
+  env -u POSTGRES_USER -u POSTGRES_PASSWORD -u PGUSER -u PGPASSWORD -u PostgresCpOptions__ConnectionString \
+    bash "$PHOTO_TEST_ROOT/deploy/scripts/prepare-migrations.sh"
+fi
+if [[ "${1:-}" == run && "$*" == *'bash deploy/scripts/apply-migrations.sh --prepared' ]]; then
+  bash "$PHOTO_TEST_ROOT/deploy/scripts/apply-migrations.sh" --prepared
+fi
+exit 0
+''')
+        self.write_bin("dotnet", '''#!/usr/bin/env bash
+set -euo pipefail
+printf 'tag=%s|dotnet %s\\n' "${IMAGE_TAG:-unset}" "$*" >> "$PHOTO_TEST_EVENT_LOG"
+if [[ "$*" == 'tool restore' && "${PHOTO_FAIL:-}" == tool_restore ]]; then exit 21; fi
+if [[ "${1:-}" == restore && "${PHOTO_FAIL:-}" == package_restore ]]; then exit 22; fi
+if [[ "${1:-}" == build && "${PHOTO_FAIL:-}" == migration_build ]]; then exit 23; fi
+if [[ "${1:-}" == ef && "$*" != *--no-build* ]]; then exit 24; fi
 exit 0
 ''')
         self.write_bin("curl", "#!/usr/bin/env bash\nexit 0\n")
@@ -116,10 +135,11 @@ target="$PHOTO_TEST_PYTHON"
 if command -v cygpath >/dev/null 2>&1; then target="$(cygpath -u "$target")"; fi
 exec "$target" "$@"
 ''')
-        self.original = b"IMAGE_TAG=dev\nPASSWORD='s'\"'\"'ecret$with;spaces'\nCHECKIN_VARIANTS_ENABLED=false\nUSE_HTTPS=0\nPOSTGRES_USER=test_role\n"
+        self.original = b"IMAGE_TAG=dev\nPASSWORD='s'\"'\"'ecret$with;spaces'\nCHECKIN_VARIANTS_ENABLED=false\nUSE_HTTPS=0\nPOSTGRES_USER=test_role\nPOSTGRES_PASSWORD=test-database-password\n"
         (self.deploy / ".env").write_bytes(self.original)
         self.environment = os.environ | {"PATH": str(self.bin) + os.pathsep + os.environ.get("PATH", ""),
             "BASH_ENV": bootstrap.as_posix(), "PHOTO_TEST_BIN": str(self.bin),
+            "PHOTO_TEST_ROOT": self.root.as_posix(), "PHOTO_TEST_EVENT_LOG": (self.deploy / "docker.log").as_posix(),
             "PHOTO_TEST_PYTHON": sys.executable, "DEPLOY_IMAGE_TAG": TAG,
             "DOCKER_HUB_USERNAME": "test-user", "DOCKER_HUB_PASSWORD": PRIVATE}
 
@@ -166,6 +186,51 @@ exec "$target" "$@"
                 result = self.run_script("ci-deploy.sh", PHOTO_FAIL=failure)
                 self.assertNotEqual(0, result.returncode)
                 self.assertFalse(any("|compose stop " in line or "|compose run " in line or "|compose up " in line for line in self.events()))
+                self.assertEqual(self.original, (self.deploy / ".env").read_bytes())
+                self.assertNotIn(PRIVATE, result.stdout + result.stderr)
+
+    def test_migration_dependencies_and_serial_builds_precede_stop_and_apply_reuses_local_sdk_and_caches(self):
+        result = self.run_script("ci-deploy.sh")
+        self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+        events = self.events()
+        stop = next(i for i, line in enumerate(events) if "|compose stop " in line)
+        tool = [i for i, line in enumerate(events) if "|dotnet tool restore" in line]
+        restores = [i for i, line in enumerate(events) if "|dotnet restore " in line]
+        builds = [i for i, line in enumerate(events) if "|dotnet build " in line]
+        migrations = [i for i, line in enumerate(events) if "|dotnet ef database update " in line]
+        self.assertEqual(1, len(tool))
+        self.assertEqual(4, len(restores))
+        self.assertEqual(4, len(builds))
+        self.assertEqual(4, len(migrations))
+        self.assertTrue(all(i < stop for i in tool + restores + builds))
+        self.assertTrue(all(i > stop and "--no-build" in events[i] for i in migrations))
+        self.assertTrue(all("--no-restore -m:1" in events[i] for i in builds))
+        self.assertTrue(all("--disable-parallel" in events[i] for i in restores))
+        for startup in ("Account", "Shops", "Moderation", "Media"):
+            restore = next(i for i in restores if "CoffeePeek." + startup + "Service/" in events[i])
+            build = next(i for i in builds if "CoffeePeek." + startup + "Service/" in events[i])
+            self.assertLess(restore, build)
+        sdk_runs = [line for line in events if "|run " in line and "migrations.sh" in line]
+        self.assertEqual(2, len(sdk_runs))
+        for line in sdk_runs:
+            self.assertIn("--pull=never", line)
+            self.assertIn("coffeepeek_migration_nuget:/root/.nuget", line)
+            self.assertIn("coffeepeek_migration_dotnet:/root/.dotnet", line)
+            self.assertIn("sha256:" + "0" * 63 + "1 bash", line)
+        self.assertNotIn("-e POSTGRES_", sdk_runs[0])
+        self.assertNotIn("--network coffeepeek_default", sdk_runs[0])
+        self.assertIn("--network coffeepeek_default", sdk_runs[1])
+        self.assertNotIn(PRIVATE, result.stdout + result.stderr + "\n".join(events))
+
+    def test_migration_preparation_failure_never_stops_writers_applies_migrations_or_persists_tag(self):
+        for failure in ("tool_restore", "package_restore", "migration_build"):
+            with self.subTest(failure=failure):
+                path = self.deploy / "docker.log"
+                if path.exists(): path.unlink()
+                result = self.run_script("ci-deploy.sh", PHOTO_FAIL=failure)
+                self.assertNotEqual(0, result.returncode)
+                self.assertFalse(any("|compose stop " in line or "|compose up " in line or
+                                     "apply-migrations.sh" in line or "|dotnet ef " in line for line in self.events()))
                 self.assertEqual(self.original, (self.deploy / ".env").read_bytes())
                 self.assertNotIn(PRIVATE, result.stdout + result.stderr)
 

@@ -16,6 +16,7 @@ from pathlib import Path
 import re
 import stat
 import subprocess
+import threading
 import urllib.error
 import urllib.request
 import xml.etree.ElementTree as ET
@@ -39,8 +40,10 @@ INSPECT = ('{"id":{{json .Id}},"name":{{json .Name}},"imageId":{{json .Image}},"
 NETWORK = '{"id":{{json .Id}},"driver":{{json .Driver}},"scope":{{json .Scope}},"config":{{json .IPAM.Config}}}'
 DIAGNOSTIC_STAGES = frozenset(("initialization", "arguments", "output", "storage_container", "network", "policy_1",
     "policy_2", "policy_3", "application_containers", "postgres_container", "config", "tags", "summary", "complete",
-    *("pg_dump_" + database for database in DATABASES)))
+    *("pg_dump_" + database for database in DATABASES), *("pg_restore_" + database for database in DATABASES)))
 STORAGE_ERROR_CODES = frozenset(("AccessDenied", "SignatureDoesNotMatch", "RequestTimeTooSkewed", "InvalidAccessKeyId"))
+DATABASE_ERROR_REASONS = frozenset(("auth", "permission", "read_only_tx", "pg_dump_failed", "restore_toc_failed"))
+MAX_DATABASE_STDERR_BYTES = 64 * 1024
 _diagnostic = {}
 
 
@@ -75,6 +78,10 @@ def safe_diagnostic():
         result["httpStatus"] = status
     if isinstance(code, str) and code in STORAGE_ERROR_CODES:
         result["storageErrorCode"] = code
+    reason = _diagnostic.get("reason")
+    if isinstance(stage, str) and stage in {"pg_dump_" + db for db in DATABASES} | {"pg_restore_" + db for db in DATABASES} \
+            and isinstance(reason, str) and reason in DATABASE_ERROR_REASONS:
+        result["reason"] = reason
     return result
 
 
@@ -106,27 +113,80 @@ class Commands:
 
     def dump(self, container, database, destination):
         require(IDENTIFIER.fullmatch(container) and database in DATABASES)
+        diagnostic_stage("pg_dump_" + database)
         environment = dict(self.environment)
         require(environment.get("POSTGRES_USER") and environment.get("POSTGRES_PASSWORD"))
         environment.update(PGUSER=environment["POSTGRES_USER"], PGPASSWORD=environment["POSTGRES_PASSWORD"],
                            PGOPTIONS="-c default_transaction_read_only=on -c lock_timeout=5000")
         args = ["docker", "exec", "-e", "PGUSER", "-e", "PGPASSWORD", "-e", "PGOPTIONS", container,
                 "pg_dump", "--format=custom", "--no-password", "--dbname=" + database]
+
+        def failure_reason(stderr):
+            lowered = stderr.lower()
+            if any(marker in lowered for marker in (b"read-only transaction", b"read only transaction")):
+                return "read_only_tx"
+            if any(marker in lowered for marker in (b"password authentication failed", b"authentication failed",
+                    b"no password supplied", b"no pg_hba.conf entry", b"pg_hba.conf rejects", b"fe_sendauth")):
+                return "auth"
+            if any(marker in lowered for marker in (b"permission denied", b"insufficient privilege",
+                    b"must be owner", b"must be superuser")):
+                return "permission"
+            return "restore_toc_failed" if _diagnostic.get("diagnosticStage") == "pg_restore_" + database else "pg_dump_failed"
+
+        def run_database(command, stderr_path, timeout, **streams):
+            # Drain the entire pipe to avoid blocking pg_dump, but retain only a fixed private prefix.
+            # Do not use communicate(): an unexpected unbounded diagnostic must not fill memory.
+            captured = bytearray()
+            read_failed = []
+            try:
+                with private_open(stderr_path) as errors:
+                    with subprocess.Popen(command, cwd=ROOT, env=environment, stderr=subprocess.PIPE, **streams) as process:
+                        def drain():
+                            try:
+                                while chunk := process.stderr.read(8192):
+                                    remaining = MAX_DATABASE_STDERR_BYTES - len(captured)
+                                    if remaining > 0:
+                                        prefix = chunk[:remaining]
+                                        captured.extend(prefix)
+                                        errors.write(prefix)
+                            except (OSError, ValueError):
+                                read_failed.append(True)
+                        reader = threading.Thread(target=drain, daemon=True)
+                        reader.start()
+                        try:
+                            status = process.wait(timeout=timeout)
+                        except subprocess.TimeoutExpired:
+                            process.kill()
+                            process.wait(timeout=10)
+                            raise
+                        finally:
+                            reader.join(timeout=10)
+                        require(not reader.is_alive() and not read_failed)
+                        errors.flush()
+                        os.fsync(errors.fileno())
+                        if status != 0:
+                            _diagnostic["reason"] = failure_reason(captured)
+                        require(status == 0)
+            except (OSError, ValueError, subprocess.SubprocessError, GuardError):
+                _diagnostic["reason"] = failure_reason(captured)
+                raise GuardError("database_backup_unavailable") from None
+
         try:
             with private_open(destination) as target:
-                result = subprocess.run(args, cwd=ROOT, env=environment, stdout=target, stderr=subprocess.DEVNULL,
-                                        timeout=600, check=False)
+                run_database(args, Path(str(destination) + ".pg_dump.stderr"), 600, stdout=target)
                 target.flush()
                 os.fsync(target.fileno())
-            require(result.returncode == 0)
-            with destination.open("rb") as source:
+            # pg_restore inherits the OS file descriptor, not Python's buffered logical cursor.
+            # The signature probe must rewind the actual descriptor before handing it to stdin.
+            with destination.open("rb", buffering=0) as source:
                 require(source.read(5) == b"PGDMP")
                 source.seek(0)
-                checked = subprocess.run(["docker", "exec", "-i", container, "pg_restore", "--list"],
-                    cwd=ROOT, env=environment, stdin=source, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-                    timeout=120, check=False)
-            require(checked.returncode == 0)
-        except (OSError, ValueError, subprocess.SubprocessError):
+                diagnostic_stage("pg_restore_" + database)
+                run_database(["docker", "exec", "-i", container, "pg_restore", "--list"],
+                             Path(str(destination) + ".pg_restore.stderr"), 120, stdin=source, stdout=subprocess.DEVNULL)
+        except (OSError, ValueError, subprocess.SubprocessError, GuardError):
+            if _diagnostic.get("reason") not in DATABASE_ERROR_REASONS:
+                _diagnostic["reason"] = failure_reason(b"")
             raise GuardError("database_backup_unavailable") from None
 
 
@@ -245,7 +305,8 @@ class Policies:
                 status = "missing" if code == "NoSuchBucketPolicy" else "missing_bucket"
                 saved = json.dumps({"status": status, "policy": None}).encode()
                 return saved, {"status": status, "sha256": hashlib.sha256(saved).hexdigest(), "statementCount": 0,
-                               "anonymousAllow": False, "private": status == "missing"}
+                               "anonymousAllow": False, "anonymousDenyCount": 0, "checkInPrivateMarker": False,
+                               "private": status == "missing"}
             finally:
                 error.close()
         except (OSError, ValueError, urllib.error.URLError):
@@ -255,10 +316,14 @@ class Policies:
 def policy_view(policy, body):
     require(isinstance(policy, dict) and isinstance(policy.get("Statement"), (list, dict)))
     statements = policy["Statement"] if isinstance(policy["Statement"], list) else [policy["Statement"]]
-    anonymous = False
+    anonymous, anonymous_denies = False, 0
     for statement in statements:
         require(isinstance(statement, dict) and statement.get("Effect") in ("Allow", "Deny"))
         if statement["Effect"] == "Deny":
+            principal = statement.get("Principal")
+            aws = principal.get("AWS") if isinstance(principal, dict) else None
+            # Count explicit wildcard-principal statements, including conditional denies; this is not coverage proof.
+            anonymous_denies += int(principal == "*" or aws == "*" or isinstance(aws, list) and "*" in aws)
             continue
         require("NotPrincipal" not in statement and "NotAction" not in statement)
         actions = statement.get("Action")
@@ -274,7 +339,8 @@ def policy_view(policy, body):
             require(False)
     # Conditions/denies may further restrict an Allow; treating it as potentially anonymous fails closed.
     return {"status": "anonymous_allow" if anonymous else "private", "sha256": hashlib.sha256(body).hexdigest(),
-            "statementCount": len(statements), "anonymousAllow": anonymous, "private": not anonymous}
+            "statementCount": len(statements), "anonymousAllow": anonymous, "anonymousDenyCount": anonymous_denies,
+            "checkInPrivateMarker": b"CheckInPrivate" in body, "private": not anonymous}
 
 
 def inspect_storage(commands, environment, destination, policies=None):
