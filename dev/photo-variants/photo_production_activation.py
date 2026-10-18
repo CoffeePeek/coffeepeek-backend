@@ -434,7 +434,32 @@ class Activation:
         canary.require((any(photo.get("id") == old["photoId"] and photo.get("url") == old_base for photo in public["photos"])
                         or public.get("drinkPhotoUrl") == old_base)
                        and all(not photo.get("variants") for photo in public["photos"]) and not public.get("drinkPhotoVariants"))
+        public_canary = self.client.api("GET", "/api/v1/check-ins/" + old["checkInId"], token)
+        selected = [photo for photo in public_canary["photos"] if photo.get("id") == old["photoId"]]
+        canary.require(len(selected) <= 1)
+        if selected:
+            canary.require(selected[0].get("url") == old_base)
+            variants = selected[0].get("variants")
+        else:
+            canary.require(public_canary.get("drinkPhotoUrl") == old_base)
+            variants = public_canary.get("drinkPhotoVariants")
+        canary.require(isinstance(variants, list) and len(variants) == 6)
+        expected = {(variant["purpose"], variant["format"]): variant for variant in old["variants"]}
+        seen = set()
+        for variant in variants:
+            canary.require(isinstance(variant, dict))
+            pair = variant.get("purpose"), variant.get("format")
+            canary.require(pair in expected and pair not in seen)
+            seen.add(pair)
+            purpose, fmt = pair
+            canary.require(variant.get("sourceVersion") == old["sourceVersion"]
+                           and type(variant.get("recipeVersion")) is int and variant["recipeVersion"] == old["recipeVersion"]
+                           and all(variant.get(field) == expected[pair][field] for field in ("contentType", "width", "height", "sizeBytes"))
+                           and all(type(variant.get(field)) is int for field in ("width", "height", "sizeBytes"))
+                           and variant.get("url") == old_base + "/variants/" + old["sourceVersion"] + "/"
+                               + str(old["recipeVersion"]) + "/" + purpose + "." + fmt)
         result["descriptorGateVerified"] = True
+        result["publicCanaryDescriptorGateVerified"] = True
         state["verification"] = result
         canary.private_write(self.state_path, state)
         return result

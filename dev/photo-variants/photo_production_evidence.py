@@ -25,6 +25,30 @@ JOB_STATES = {"Pending", "Processing", "Ready", "RetryScheduled", "Failed", "Can
 LATENCY_FIELDS = ("samples", "below1Second", "from1To10Seconds", "from10To60Seconds", "atLeast60Seconds",
                   "negativeClockSamples", "p50Ms", "p95Ms", "maxMs")
 NUMBER = re.compile(r"([0-9]+(?:\.[0-9]+)?)\s*(B|kB|KB|MB|GB|TB|KiB|MiB|GiB|TiB)\Z")
+RESOURCE_FIELDS = {"container", "stats", "cpu", "memory", "memory_working_set", "memory_limit", "pids", "rss"}
+RESOURCE_REASONS = {"command_failed", "invalid_json", "invalid_shape", "invalid_value"}
+RESOURCE_TYPES = {str: "string", int: "integer", float: "number", bool: "boolean", dict: "object", list: "array",
+                  type(None): "null"}
+
+
+class ResourceObservationError(canary.CanaryError):
+    def __init__(self, service, field, reason, value=None):
+        canary.require(service in STAT_SERVICES and field in RESOURCE_FIELDS and reason in RESOURCE_REASONS)
+        super().__init__("Resource observation failed; inspect the fixed diagnostic fields.")
+        self.diagnostic = {"service": service, "field": field, "reason": reason,
+                           "observedType": RESOURCE_TYPES.get(type(value), "other")}
+
+
+def resource_require(condition, service, field, value):
+    if not condition:
+        raise ResourceObservationError(service, field, "invalid_value", value)
+
+
+def resource_command(service, field, read):
+    try:
+        return read()
+    except Exception:
+        raise ResourceObservationError(service, field, "command_failed") from None
 
 
 def number(value, integer=False):
@@ -98,22 +122,46 @@ class Evidence:
     def resources(self):
         result = {}
         for service in STAT_SERVICES:
-            container = self.operator.commands.compose("ps", "-a", "-q", service)
-            canary.require(re.fullmatch(r"[0-9a-f]{64}", container))
-            raw = json.loads(self.operator.commands.run(["docker", "stats", "--no-stream", "--format",
+            container = resource_command(service, "container", lambda: self.operator.commands.compose("ps", "-a", "-q", service))
+            resource_require(isinstance(container, str) and re.fullmatch(r"[0-9a-f]{64}", container), service, "container", container)
+            stats = resource_command(service, "stats", lambda: self.operator.commands.run(["docker", "stats", "--no-stream", "--format",
                 '{"cpu":{{json .CPUPerc}},"memory":{{json .MemUsage}},"pids":{{json .PIDs}}}', container], timeout=20))
-            canary.require(isinstance(raw.get("cpu"), str) and re.fullmatch(r"[0-9]+(?:\.[0-9]+)?%", raw["cpu"]))
-            cpu = number(float(raw["cpu"][:-1]))
-            canary.require(cpu <= 100000 and isinstance(raw.get("memory"), str)
-                           and isinstance(raw.get("pids"), str) and raw["pids"].isdigit())
-            memory = raw["memory"].split("/")
-            canary.require(len(memory) == 2)
-            rss = self.operator.commands.run(["docker", "top", container, "-eo", "rss"]).splitlines()
-            canary.require(rss and rss[0].strip() == "RSS" and 1 <= len(rss) - 1 <= 1024
-                           and all(line.strip().isdigit() for line in rss[1:]))
-            result[service] = {"cpuPercent": cpu, "memoryWorkingSetBytes": memory_bytes(memory[0]),
-                               "memoryLimitBytes": memory_bytes(memory[1]), "pids": int(raw["pids"]),
-                               "processRssSumBytes": sum(int(line) * 1024 for line in rss[1:])}
+            try:
+                raw = json.loads(stats)
+            except (ValueError, TypeError):
+                raise ResourceObservationError(service, "stats", "invalid_json", stats) from None
+            if not isinstance(raw, dict):
+                raise ResourceObservationError(service, "stats", "invalid_shape", raw)
+            cpu_value, memory_value, pids = raw.get("cpu"), raw.get("memory"), raw.get("pids")
+            resource_require(isinstance(cpu_value, str) and re.fullmatch(r"[0-9]+(?:\.[0-9]+)?%", cpu_value), service, "cpu", cpu_value)
+            cpu = float(cpu_value[:-1])
+            resource_require(math.isfinite(cpu) and 0 <= cpu <= 100000, service, "cpu", cpu_value)
+            resource_require(isinstance(memory_value, str) and len(memory_value.split("/")) == 2, service, "memory", memory_value)
+            memory = memory_value.split("/")
+            sizes = []
+            for field, value in zip(("memory_working_set", "memory_limit"), memory):
+                try:
+                    sizes.append(memory_bytes(value))
+                except (canary.CanaryError, ValueError, OverflowError):
+                    raise ResourceObservationError(service, field, "invalid_value", value) from None
+            # Docker CLI's .PIDs formatter returns a decimal string, including in v29.
+            resource_require(isinstance(pids, str) and re.fullmatch(r"[0-9]{1,20}", pids), service, "pids", pids)
+            resource_require(int(pids) <= 2 ** 64 - 1, service, "pids", pids)
+            rss_sum, rss_state = None, "unavailable"
+            try:
+                rss_value = resource_command(service, "rss", lambda: self.operator.commands.run(["docker", "top", container, "-eo", "rss"]))
+            except ResourceObservationError as error:
+                if error.diagnostic["field"] != "rss" or error.diagnostic["reason"] != "command_failed":
+                    raise
+            else:
+                resource_require(isinstance(rss_value, str), service, "rss", rss_value)
+                rss = rss_value.splitlines()
+                resource_require(rss and rss[0].strip() == "RSS" and 1 <= len(rss) - 1 <= 1024
+                                 and all(re.fullmatch(r"[0-9]{1,20}", line.strip()) for line in rss[1:]), service, "rss", rss_value)
+                rss_sum, rss_state = sum(int(line) * 1024 for line in rss[1:]), "observed"
+            result[service] = {"cpuPercent": cpu, "memoryWorkingSetBytes": sizes[0],
+                               "memoryLimitBytes": sizes[1], "pids": int(pids),
+                               "processRssSumBytes": rss_sum, "processRssState": rss_state}
         return result
 
     def media(self):
@@ -208,7 +256,8 @@ class Evidence:
                     "Changed/added/removed business rows may reflect real traffic; private fingerprints require investigation.",
                     "Ready source sizes are declared metadata; use verified inventory for actual source lengths.",
                     "Queue-to-Ready latency includes queueing and retries; it is not pure renderer duration.",
-                    "Docker CPU is an instantaneous sample; RSS sums process resident pages and can double-count shared pages."]}
+                    "Docker CPU is an instantaneous sample; RSS sums process resident pages and can double-count shared pages.",
+                    "Process RSS is auxiliary; null/unavailable means the docker top command could not be read."]}
         self.stage = "private_state"
         if baseline is None:
             # Exclusive creation prevents accidental baseline replacement, even after a partial prior write.
@@ -236,9 +285,12 @@ def main(argv=None, environment=None, commands=None):
             result = operator.run(operation)
         print(json.dumps(result, allow_nan=False))
         return 0
-    except Exception:
-        print(json.dumps({"success": False, "stage": operator.stage if operator else "validation",
-                          "requiresPrivateStateReview": True}))
+    except Exception as error:
+        failure = {"success": False, "stage": operator.stage if operator else "validation",
+                   "requiresPrivateStateReview": True}
+        if isinstance(error, ResourceObservationError):
+            failure["resourceDiagnostic"] = error.diagnostic
+        print(json.dumps(failure))
         return 1
 
 
