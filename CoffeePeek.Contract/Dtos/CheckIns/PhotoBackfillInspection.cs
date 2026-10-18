@@ -1,3 +1,4 @@
+#nullable enable
 namespace CoffeePeek.Contract.Dtos.CheckIns;
 
 /// <summary>Operator-only report. Storage addresses and credentials are never returned.</summary>
