@@ -1,6 +1,7 @@
 using CoffeePeek.Shared.Persistence.Cache.Redis;
 using CoffeePeek.Shared.Kernel.Response;
 using CoffeePeek.Shops.Application.Features.CheckIn;
+using CoffeePeek.Shops.Application.Abstractions;
 using CoffeePeek.Shops.Domain.Aggregates.CheckInAggregate;
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
 using CoffeePeek.Shops.Domain.Entities;
@@ -65,6 +66,7 @@ public sealed class CheckInHelpfulOutboxLiveTests : IClassFixture<ShopsLiveDatab
                 services.AddScoped(_ => fixture.Context(false));
                 services.AddScoped<IQueryCheckInRepository, QueryCheckInRepository>();
                 services.AddScoped<ICheckInQueries, CheckInQueries>();
+                services.AddSingleton(Moq.Mock.Of<IAuthorVisibilityLookup>());
                 services.AddSingleton<IStrictCacheInvalidator>(invalidator);
             })
             .UseWolverine(options =>
