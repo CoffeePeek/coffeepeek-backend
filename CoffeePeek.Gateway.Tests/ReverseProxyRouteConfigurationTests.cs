@@ -131,6 +131,27 @@ public class ReverseProxyRouteConfigurationTests
             .Select(method => method.GetString())
             .Should().Equal("PUT");
 
+        var publishRoute = routes.GetProperty("shops-admin-v1-app-downloads-automation-publish-route");
+        publishRoute.GetProperty("ClusterId").GetString().Should().Be("shops-cluster");
+        publishRoute.GetProperty("AuthorizationPolicy").GetString().Should().Be("AppReleaseAutomationPolicy");
+        publishRoute.GetProperty("Match").GetProperty("Path").GetString()
+            .Should().Be("/api/admin/v1/app-downloads/android/releases/{id:guid}/publish");
+        publishRoute.GetProperty("Match").GetProperty("Methods").EnumerateArray()
+            .Select(method => method.GetString()).Should().Equal("POST");
+
+        routes.EnumerateObject()
+            .Where(candidate => candidate.Value.TryGetProperty("AuthorizationPolicy", out var policy)
+                                && policy.GetString() == "AppReleaseAutomationPolicy")
+            .Select(candidate => candidate.Name).Should().BeEquivalentTo(new[]
+            {
+                "shops-admin-v1-app-downloads-automation-route",
+                "shops-admin-v1-app-downloads-automation-publish-route",
+                "shops-admin-v1-app-downloads-automation-config-route",
+                "shops-admin-v1-app-downloads-automation-version-route"
+            });
+        RoutePrecedence.ComputeInbound(ParseRouteTemplate(routes, "shops-admin-v1-app-downloads-automation-publish-route"))
+            .Should().BeLessThan(RoutePrecedence.ComputeInbound(ParseRouteTemplate(routes, "shops-admin-v1-app-downloads-route")));
+
         routes.GetProperty("shops-admin-v1-app-downloads-route")
             .GetProperty("AuthorizationPolicy").GetString().Should().Be("Admin");
     }
