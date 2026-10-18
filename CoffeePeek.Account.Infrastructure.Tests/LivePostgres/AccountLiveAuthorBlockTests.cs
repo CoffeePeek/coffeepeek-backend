@@ -42,6 +42,8 @@ public sealed class AccountLiveAuthorBlockTests : IClassFixture<AccountLiveDatab
         await Task.WhenAll(Enumerable.Range(0, 12).Select(i => i % 3 == 0 ? Block(false) : Follow(i % 2 == 0)));
         (await read.UserBlocks.CountAsync(x => x.BlockerId == a && x.BlockedId == b, Ct)).Should().Be(1);
         (await read.UserFollows.CountAsync(x => (x.FollowerId == a && x.FollowedId == b) || (x.FollowerId == b && x.FollowedId == a), Ct)).Should().Be(0);
+        (await UserBlockStoreTests.Store(read).FindOutgoingAsync(a, b, Ct))!.AuthorId.Should().Be(publicB);
+        (await UserBlockStoreTests.Store(read).FindOutgoingAsync(b, a, Ct)).Should().BeNull();
         await Block(true);
         await UserBlockStoreTests.Store(read).SetAsync(a, publicB, false, Ct);
         (await UserBlockStoreTests.Store(read).ExcludedUserIdsAsync(a, Ct)).Should().Contain(b);

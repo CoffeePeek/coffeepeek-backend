@@ -19,7 +19,7 @@ public sealed class UserBlockStore(AccountDbContext db, IOptions<MediaPublicUrlO
     public async Task<AuthorBlockPageDto> ListAsync(Guid viewerId, int pageSize, string? cursor, CancellationToken ct)
     {
         if (pageSize is < 1 or > 100) throw new ValidationException("PageSize must be between 1 and 100.");
-        var items = await ReadSnapshotAsync(viewerId, ct);
+        var items = await ReadAuthorsAsync(viewerId, ct);
         var revision = Revision(items);
         var offset = 0;
         if (cursor is not null)
@@ -80,7 +80,7 @@ public sealed class UserBlockStore(AccountDbContext db, IOptions<MediaPublicUrlO
                 await db.SaveChangesAsync(ct);
             }
         }, ct);
-        var snapshot = await ReadSnapshotAsync(viewerId, ct);
+        var snapshot = await ReadAuthorsAsync(viewerId, ct);
         return new(publicAuthorId, snapshot.Any(x => x.AuthorId == publicAuthorId), Revision(snapshot));
     }
 
@@ -90,14 +90,14 @@ public sealed class UserBlockStore(AccountDbContext db, IOptions<MediaPublicUrlO
 
     public async Task<BlockedAuthorDto?> FindOutgoingAsync(Guid viewerId, Guid targetUserId, CancellationToken ct)
     {
-        var authorId = await db.Users.Where(u => u.Id == targetUserId).Select(u => u.PublicAuthorId).SingleOrDefaultAsync(ct);
-        return (await ReadSnapshotAsync(viewerId, ct)).SingleOrDefault(x => x.AuthorId == authorId);
+        return (await ReadAuthorsAsync(viewerId, ct, targetUserId)).SingleOrDefault();
     }
 
-    private async Task<BlockedAuthorDto[]> ReadSnapshotAsync(Guid viewerId, CancellationToken ct)
+    private async Task<BlockedAuthorDto[]> ReadAuthorsAsync(Guid viewerId, CancellationToken ct, Guid? targetUserId = null)
     {
-        var rows = await db.UserBlocks.AsNoTracking().Where(b => b.BlockerId == viewerId)
-            .Join(db.Users.AsNoTracking(), b => b.BlockedId, u => u.Id, (b, u) => new
+        var blocks = db.UserBlocks.AsNoTracking().Where(b => b.BlockerId == viewerId);
+        if (targetUserId.HasValue) blocks = blocks.Where(b => b.BlockedId == targetUserId.Value);
+        var rows = await blocks.Join(db.Users.AsNoTracking(), b => b.BlockedId, u => u.Id, (b, u) => new
             {
                 u.PublicAuthorId, u.Username, u.PublicSlug, u.SlugRevision, u.IsSoftDelete, u.IsBlocked,
                 b.CreatedAtUtc, StorageKey = u.PhotoMetadata != null ? u.PhotoMetadata.StorageKey : null

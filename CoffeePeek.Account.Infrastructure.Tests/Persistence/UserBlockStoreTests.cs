@@ -79,6 +79,25 @@ public sealed class UserBlockStoreTests
     }
 
     [Fact]
+    public async Task OutgoingLookupIsTargeted_Directional_AndPreservesListPresentation()
+    {
+        await using var db = ProfileSocialStoreTests.Db();
+        var a = ProfileSocialStoreTests.NewUser("Viewer"); var b = ProfileSocialStoreTests.NewUser("Author");
+        var c = ProfileSocialStoreTests.NewUser("Other"); db.AddRange(a, b, c); await db.SaveChangesAsync(Ct);
+        var blocks = Store(db);
+        await blocks.SetAsync(a.Id, b.PublicAuthorId, true, Ct);
+        await blocks.SetAsync(a.Id, c.PublicAuthorId, true, Ct);
+        var expected = (await blocks.ListAsync(a.Id, 20, null, Ct)).Items.Single(x => x.AuthorId == b.PublicAuthorId);
+        (await blocks.FindOutgoingAsync(a.Id, b.Id, Ct)).Should().Be(expected);
+        (await blocks.FindOutgoingAsync(b.Id, a.Id, Ct)).Should().BeNull();
+        (await blocks.FindOutgoingAsync(a.Id, Guid.NewGuid(), Ct)).Should().BeNull();
+        b.SetSoftDelete(); await db.SaveChangesAsync(Ct);
+        var deleted = await blocks.FindOutgoingAsync(a.Id, b.Id, Ct);
+        deleted.Should().NotBeNull(); deleted!.UserName.Should().Be("Недоступный автор");
+        deleted.Address.Should().BeNull(); deleted.AvatarUrl.Should().BeNull();
+    }
+
+    [Fact]
     public async Task ConnectionsFilterBeforePaging_AndProfileIsUnavailableInBothDirections()
     {
         await using var db = ProfileSocialStoreTests.Db();
