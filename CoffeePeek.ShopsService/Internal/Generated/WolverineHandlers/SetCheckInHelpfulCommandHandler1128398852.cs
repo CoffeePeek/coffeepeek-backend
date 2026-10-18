@@ -13,13 +13,15 @@ namespace Internal.Generated.WolverineHandlers
     {
         private readonly Microsoft.Extensions.DependencyInjection.IServiceScopeFactory _serviceScopeFactory;
         private readonly Microsoft.Extensions.Options.IOptions<CoffeePeek.Shared.Auth.Options.GatewayAuthOptions> _optionsOfGatewayAuthOptions;
+        private readonly Microsoft.Extensions.Options.IOptions<CoffeePeek.Shops.Application.Features.CheckIn.CheckInPhotoDeliveryOptions> _optionsOfCheckInPhotoDeliveryOptions;
         private readonly System.Collections.Generic.IEnumerable<Wolverine.EntityFrameworkCore.IDomainEventScraper> _domainEventScraperIEnumerable;
         private readonly System.Net.Http.IHttpClientFactory _httpClientFactory;
 
-        public SetCheckInHelpfulCommandHandler1128398852(Microsoft.Extensions.DependencyInjection.IServiceScopeFactory serviceScopeFactory, Microsoft.Extensions.Options.IOptions<CoffeePeek.Shared.Auth.Options.GatewayAuthOptions> optionsOfGatewayAuthOptions, System.Collections.Generic.IEnumerable<Wolverine.EntityFrameworkCore.IDomainEventScraper> domainEventScraperIEnumerable, System.Net.Http.IHttpClientFactory httpClientFactory)
+        public SetCheckInHelpfulCommandHandler1128398852(Microsoft.Extensions.DependencyInjection.IServiceScopeFactory serviceScopeFactory, Microsoft.Extensions.Options.IOptions<CoffeePeek.Shared.Auth.Options.GatewayAuthOptions> optionsOfGatewayAuthOptions, Microsoft.Extensions.Options.IOptions<CoffeePeek.Shops.Application.Features.CheckIn.CheckInPhotoDeliveryOptions> optionsOfCheckInPhotoDeliveryOptions, System.Collections.Generic.IEnumerable<Wolverine.EntityFrameworkCore.IDomainEventScraper> domainEventScraperIEnumerable, System.Net.Http.IHttpClientFactory httpClientFactory)
         {
             _serviceScopeFactory = serviceScopeFactory;
             _optionsOfGatewayAuthOptions = optionsOfGatewayAuthOptions;
+            _optionsOfCheckInPhotoDeliveryOptions = optionsOfCheckInPhotoDeliveryOptions;
             _domainEventScraperIEnumerable = domainEventScraperIEnumerable;
             _httpClientFactory = httpClientFactory;
         }
@@ -33,7 +35,7 @@ namespace Internal.Generated.WolverineHandlers
             Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<Wolverine.Runtime.ScopedMessageContextHolder>(serviceScope.ServiceProvider).Context = context;
             // This service has been marked as requiring service location independent of Wolverine's ability to use constructor injection of everything else
             var shopsDbContext = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<CoffeePeek.Shops.Persistance.Configuration.ShopsDbContext>(serviceScope.ServiceProvider);
-            var checkInQueries = new CoffeePeek.Shops.Persistance.Queries.CheckInQueries(shopsDbContext, accountAuthorVisibilityLookup);
+            var checkInQueries = new CoffeePeek.Shops.Persistance.Queries.CheckInQueries(shopsDbContext, accountAuthorVisibilityLookup, _optionsOfCheckInPhotoDeliveryOptions);
             var queryCheckInRepository = new CoffeePeek.Shops.Persistance.Repositories.QueryCheckInRepository(shopsDbContext);
             // The actual message body
             var setCheckInHelpfulCommand = (CoffeePeek.Shops.Application.Features.CheckIn.SetCheckInHelpfulCommand)context.Envelope.Message;

@@ -15,7 +15,7 @@ public partial class CheckInQueries
                 && c.DeletedAtUtc == null && !excluded.Contains(c.UserId) && (c.UserId == readerId || eligible.Any(p => p.Id == c.Id)))
             .Include(c => c.ShopPhotos)
             .SingleOrDefaultAsync(c => c.Id == id, ct);
-        return row is null ? null : HomeCheckInMapping.ToDto(row);
+        return row is null ? null : (await WithHomeVariantsAsync([HomeCheckInMapping.ToDto(row)], ct))[0];
     }
 
     public async Task<HomeCheckInPage> GetHomeByUserAsync(Guid userId, int pageNumber, int pageSize,
@@ -29,7 +29,19 @@ public partial class CheckInQueries
             .OrderByDescending(c => c.PreparedOn).ThenByDescending(c => c.VisitedAt).ThenByDescending(c => c.Id)
             .Skip((Math.Clamp(pageNumber, 1, 10000) - 1) * Math.Clamp(pageSize, 1, 100))
             .Take(Math.Clamp(pageSize, 1, 100)).ToArrayAsync(ct);
-        return new HomeCheckInPage(rows.Select(HomeCheckInMapping.ToDto).ToArray(), total);
+        return new HomeCheckInPage(await WithHomeVariantsAsync(rows.Select(HomeCheckInMapping.ToDto).ToArray(), ct), total);
+    }
+
+    private async Task<HomeCheckInDto[]> WithHomeVariantsAsync(HomeCheckInDto[] items, CancellationToken ct)
+    {
+        var variants = await CheckInPhotoVariantBatch.ReadAsync(_db, items.SelectMany(c =>
+            CheckInPhotoVariantBatch.Photos(c.Photos, c.DrinkPhoto).Select(p => (c.Id, p))),
+            deliveryOptions?.Value.AdvertiseVariants == true, ct);
+        return items.Select(c => c with
+        {
+            Photos = c.Photos.Select(p => CheckInPhotoVariantBatch.WithVariants(p, variants)).ToArray(),
+            DrinkPhoto = c.DrinkPhoto is null ? null : CheckInPhotoVariantBatch.WithVariants(c.DrinkPhoto, variants)
+        }).ToArray();
     }
 
     public async Task<HomeCalendarDayDto[]> GetHomeCalendarAsync(Guid userId, DateOnly from, DateOnly to,

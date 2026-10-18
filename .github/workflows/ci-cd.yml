@@ -168,6 +168,7 @@ jobs:
           assembly='CoffeePeek.Shops.Infrastructure.Tests/bin/Release/net10.0/CoffeePeek.Shops.Infrastructure.Tests.dll'
           for class in \
             CheckInPhotoAccessLiveTests \
+            CheckInPhotoVariantProjectionLiveTests \
             DiscoveryClassificationLiveTests \
             DiscoveryQueryLiveTests \
             CoffeeImportRecoveryLiveTests \

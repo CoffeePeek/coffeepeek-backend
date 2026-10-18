@@ -103,6 +103,13 @@ public class OpenApiDocumentGenerationTests
                 dtoProperties.TryGetValue(field, out _).Should().BeTrue();
             foreach (var identity in new[] { "shopId", "userId", "drinkDefinitionId", "drink" })
                 dtoProperties.TryGetValue(identity, out _).Should().BeFalse();
+            dtoProperties.Keys.Should().Contain(new[] { "drinkPhotoUrl", "drinkPhotoVariants" });
+            var photoSchema = ResolveSchema(document.RootElement, dtoProperties["photos"]).GetProperty("items");
+            SchemaProperties(document.RootElement, photoSchema).Keys.Should().Contain(new[] { "url", "variants" });
+            var variantRoute = paths.GetProperty("/api/v1/check-ins/{id}/photos/{photoId}/variants/{source}/{recipe}/{purpose}.{format}");
+            foreach (var method in new[] { "get", "head" })
+                variantRoute.GetProperty(method).GetProperty("responses").EnumerateObject().Select(p => p.Name)
+                    .Should().Contain(new[] { "200", "304", "404", "503" });
             var filters = feed.GetProperty("parameters").EnumerateArray().Select(x => x.GetProperty("name").GetString()).ToArray();
             filters.Should().Contain(new[] { "citySlug", "coffeeShopSlug", "authorSlug" });
             filters.Should().NotContain(new[] { "cityId", "coffeeShopId", "userId" });

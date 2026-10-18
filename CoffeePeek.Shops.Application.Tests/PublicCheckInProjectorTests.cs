@@ -14,6 +14,30 @@ namespace CoffeePeek.Shops.Application.Tests;
 public class PublicCheckInProjectorTests
 {
     [Fact]
+    public async Task PublicPhotoAndDrinkCutoutKeepLegacyUrlsAndReadyVariants()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var addresses = new Mock<IPublicAddressService>();
+        addresses.Setup(a => a.GetForReadAsync(It.IsAny<PublicAddressKind>(), It.IsAny<Guid[]>(), ct)).ReturnsAsync([]);
+        var profiles = new Mock<IProfileAddressLookup>();
+        profiles.Setup(p => p.GetProfilesByIdsAsync(It.IsAny<Guid[]>(), ct)).ReturnsAsync([]);
+        var photo = new CheckInPhotoDto(Guid.NewGuid(), "photo.jpg", "image/jpeg", "private/source", 999, 0, "/protected/original")
+        {
+            Variants = [new CheckInPhotoVariantDto("feed", "webp", "image/webp", 100, 200, 123,
+                new string('a', 64), 1, "/protected/variant")]
+        };
+        var item = new UnifiedCheckInDto { Id = Guid.NewGuid(), Photos = [photo], DrinkPhoto = photo };
+        var projector = new PublicCheckInProjector(addresses.Object, profiles.Object);
+        var result = (await projector.ProjectAsync([item], ct)).Single();
+        Assert.Equal(photo.Url, result.Photos.Single().Url); Assert.Equal(photo.Url, result.DrinkPhotoUrl);
+        Assert.Same(photo.Variants, result.Photos.Single().Variants); Assert.Same(photo.Variants, result.DrinkPhotoVariants);
+        var legacy = (await projector.ProjectAsync([item with { Photos = [photo with { Variants = null }], DrinkPhoto = photo with { Variants = null } }], ct)).Single();
+        var json = System.Text.Json.JsonSerializer.Serialize(legacy, new System.Text.Json.JsonSerializerOptions(System.Text.Json.JsonSerializerDefaults.Web));
+        Assert.DoesNotContain("variants", json); Assert.DoesNotContain("drinkPhotoVariants", json);
+        Assert.Contains("drinkPhotoUrl", json);
+    }
+
+    [Fact]
     public async Task BatchesDistinctAuthorsAndKeepsVisitsWhoseProfileOrAvatarIsMissing()
     {
         var ct = TestContext.Current.CancellationToken;

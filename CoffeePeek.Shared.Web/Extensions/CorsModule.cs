@@ -16,6 +16,7 @@ public static class CorsModule
         {
             options.AddDefaultPolicy(policy =>
             {
+                policy.WithExposedHeaders("ETag");
                 if (environment.IsDevelopment())
                 {
                     policy

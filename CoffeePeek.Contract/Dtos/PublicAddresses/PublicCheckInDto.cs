@@ -1,3 +1,5 @@
+#nullable enable
+using System.Text.Json.Serialization;
 using CoffeePeek.Contract.Dtos;
 using CoffeePeek.Contract.Dtos.CheckIns;
 using CoffeePeek.Contract.Enums;
@@ -26,6 +28,8 @@ public sealed record PublicCheckInDto
     public string? DrinkNameRu { get; init; }
     public string? DrinkNameEn { get; init; }
     public string? DrinkPhotoUrl { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public CheckInPhotoVariantDto[]? DrinkPhotoVariants { get; init; }
     public CheckInPhotoDto[] Photos { get; init; } = [];
     public int HelpfulCount { get; init; }
     public bool IsHelpfulByCurrentUser { get; init; }

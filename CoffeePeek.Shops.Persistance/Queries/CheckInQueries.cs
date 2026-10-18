@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Options;
 using System.Globalization;
 using System.Text;
 using CoffeePeek.Contract.Dtos.CheckIns;
@@ -9,7 +10,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace CoffeePeek.Shops.Persistance.Queries;
 
-public partial class CheckInQueries(ShopsDbContext dbContext, CoffeePeek.Shops.Application.Abstractions.IAuthorVisibilityLookup visibility) : ICheckInQueries
+public partial class CheckInQueries(ShopsDbContext dbContext, CoffeePeek.Shops.Application.Abstractions.IAuthorVisibilityLookup visibility,
+    IOptions<CheckInPhotoDeliveryOptions>? deliveryOptions = null) : ICheckInQueries
 {
     private readonly ShopsDbContext _db = dbContext;
 
@@ -38,7 +40,7 @@ public partial class CheckInQueries(ShopsDbContext dbContext, CoffeePeek.Shops.A
 
     public async Task<UnifiedCheckInDto?> GetModerationSnapshotAsync(Guid id, int revision, CancellationToken ct = default) =>
         (await ProjectAsync(_db.CheckIns.Where(c => c.Id == id && c.ContentRevision == revision
-            && c.DeletedAtUtc == null && c.Visibility == CheckInVisibility.Public), null, ct))
+            && c.DeletedAtUtc == null && c.Visibility == CheckInVisibility.Public), null, ct, advertiseVariants: false))
         .SingleOrDefault();
 
     public async Task<CheckInPage> GetUnifiedByUserAsync(Guid userId, int pageNumber, int pageSize,
@@ -77,10 +79,12 @@ public partial class CheckInQueries(ShopsDbContext dbContext, CoffeePeek.Shops.A
         return new PublicCheckInPage(items, next);
     }
 
-    private async Task<UnifiedCheckInDto[]> ProjectAsync(IQueryable<CheckIn> query, Guid? readerId, CancellationToken ct)
+    private async Task<UnifiedCheckInDto[]> ProjectAsync(IQueryable<CheckIn> query, Guid? readerId, CancellationToken ct,
+        bool advertiseVariants = true)
     {
         var rows = await query.AsNoTracking().Include(c => c.ShopPhotos).ToArrayAsync(ct);
-        return await CheckInProjection.FromRowsAsync(_db, rows, readerId, ct);
+        return await CheckInProjection.FromRowsAsync(_db, rows, readerId, ct,
+            advertiseVariants && deliveryOptions?.Value.AdvertiseVariants == true);
     }
 
     public static string EncodeCursor(DateTime createdAt, Guid id) => Convert.ToBase64String(

@@ -1,3 +1,5 @@
+using CoffeePeek.Shops.Application.Features.CheckIn;
+using Microsoft.Extensions.Options;
 using CoffeePeek.Shops.Application.Features.Feed;
 using CoffeePeek.Shops.Domain.Aggregates.CheckInAggregate;
 using CoffeePeek.Shops.Persistance.Configuration;
@@ -5,7 +7,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace CoffeePeek.Shops.Persistance.Queries;
 
-public sealed class CheckInFeedReader(ShopsDbContext db, CoffeePeek.Shops.Application.Abstractions.IAuthorVisibilityLookup visibility) : ICheckInFeedReader
+public sealed class CheckInFeedReader(ShopsDbContext db, CoffeePeek.Shops.Application.Abstractions.IAuthorVisibilityLookup visibility,
+    IOptions<CheckInPhotoDeliveryOptions>? deliveryOptions = null) : ICheckInFeedReader
 {
     public async Task<CheckInFeedReadPage> ReadAsync(CheckInFeedScope scope, int pageSize,
         CheckInFeedPosition? after, Guid? readerId, CancellationToken ct)
@@ -15,7 +18,7 @@ public sealed class CheckInFeedReader(ShopsDbContext db, CoffeePeek.Shops.Applic
         var rows = await query.AsNoTracking().Include(c => c.ShopPhotos).Take(pageSize + 1).ToArrayAsync(ct);
         var hasMore = rows.Length > pageSize;
         rows = rows.Take(pageSize).ToArray();
-        var items = await CheckInProjection.FromRowsAsync(db, rows, readerId, ct);
+        var items = await CheckInProjection.FromRowsAsync(db, rows, readerId, ct, deliveryOptions?.Value.AdvertiseVariants == true);
         return new(items.Select((item, i) => new CheckInFeedEntry(item, rows[i].FirstPublishedAtUtc!.Value)).ToArray(), hasMore);
     }
 

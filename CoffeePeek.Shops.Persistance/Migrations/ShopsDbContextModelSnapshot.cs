@@ -2605,6 +2605,30 @@ namespace CoffeePeek.Shops.Persistance.Migrations
                     b.ToTable("ShopPhotos");
                 });
 
+            modelBuilder.Entity("CoffeePeek.Shops.Persistance.Community.CheckInPhotoVariantManifest", b =>
+                {
+                    b.Property<Guid>("PhotoId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("SourceVersion")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<int>("RecipeVersion")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("CheckInId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("VariantsJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.HasKey("PhotoId", "SourceVersion", "RecipeVersion");
+
+                    b.ToTable("CheckInPhotoVariantManifests", (string)null);
+                });
+
             modelBuilder.Entity("CoffeeShopBrewMethods", b =>
                 {
                     b.Property<Guid>("BrewMethodId")
@@ -3147,6 +3171,15 @@ namespace CoffeePeek.Shops.Persistance.Migrations
                     b.HasOne("CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate.CoffeeShop", null)
                         .WithMany("ShopPhotos")
                         .HasForeignKey("CoffeeShopId");
+                });
+
+            modelBuilder.Entity("CoffeePeek.Shops.Persistance.Community.CheckInPhotoVariantManifest", b =>
+                {
+                    b.HasOne("CoffeePeek.Shops.Domain.Aggregates.CheckInAggregate.CheckInPhoto", null)
+                        .WithMany()
+                        .HasForeignKey("PhotoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("CoffeeShopBrewMethods", b =>

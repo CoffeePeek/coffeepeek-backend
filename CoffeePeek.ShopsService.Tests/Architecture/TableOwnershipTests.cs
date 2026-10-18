@@ -21,7 +21,7 @@ public class TableOwnershipTests
                 "CoffeeShopEquipments", "CoffeeShopRoasters"
             ],
             ["Menus"] = ["CoffeeDrinkDefinitions", "ShopMenus", "ShopMenuItems", "ShopMenuPhotos", "MenuOcrJobs"],
-            ["Community"] = ["CanonicalCheckIns", "CheckInPhotos", "CheckInHelpfulVotes", "ReviewReports"],
+            ["Community"] = ["CanonicalCheckIns", "CheckInPhotos", "CheckInPhotoVariantManifests", "CheckInHelpfulVotes", "ReviewReports"],
             ["CoffeeCatalog"] =
             [
                 "Roasters", "RoasterPhotos", "RoasterTags", "RoasterTagAssignments",

@@ -1,3 +1,4 @@
+using CoffeePeek.Shared.Kernel.Media;
 using CoffeePeek.Shared.Kernel.Observability;
 using CoffeePeek.Shops.Application.Abstractions;
 using CoffeePeek.Shops.Application.Features.CheckIn;
@@ -40,5 +41,9 @@ public sealed class CheckInPhotoAccessQueries(ShopsDbContext db, IAuthorVisibili
     private IQueryable<CheckInPhotoAccess> Project(IQueryable<CheckIn> rows, Guid photoId) =>
         rows.AsNoTracking().Join(db.CheckInPhotos.Where(p => p.Id == photoId), c => c.Id, p => p.CanonicalCheckInId,
             (c, p) => new CheckInPhotoAccess(c.Id, c.UserId, p.Id, p.ContentType,
-                (CoffeePeek.Contract.Enums.CheckInKind)c.Kind, c.ContentRevision));
+                (CoffeePeek.Contract.Enums.CheckInKind)c.Kind, c.ContentRevision)
+            {
+                IsPubliclyVisible = CheckInEligibility.Public(db).Any(visible => visible.Id == c.Id),
+                SourceVersion = CheckInPhotoVariantIdentity.SourceVersion(p.Id, p.StorageKey)
+            });
 }

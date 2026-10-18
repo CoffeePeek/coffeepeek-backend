@@ -22,7 +22,7 @@ public class CheckInPhotoAccessQueryTests
         Assert.Contains("ApprovedRevision", sql);
         Assert.Contains("IsHidden", sql);
         Assert.DoesNotContain("CheckInHelpfulVotes", sql);
-        Assert.DoesNotContain("\"StorageKey\"", sql);
+        Assert.Contains("\"StorageKey\"", sql); // Bind variant version to the current source.
         Assert.DoesNotContain("\"Note\"", sql);
     }
 

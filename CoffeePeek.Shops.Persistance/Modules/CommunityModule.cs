@@ -6,6 +6,7 @@ using CoffeePeek.Shops.Domain.Aggregates.ReviewAggregate;
 using CoffeePeek.Shops.Persistance.Queries;
 using CoffeePeek.Shops.Persistance.Repositories;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace CoffeePeek.Shops.Persistance.Modules;
 
@@ -15,6 +16,10 @@ public static class CommunityModule
     {
         services.AddScoped<ICheckInQueries, CheckInQueries>();
         services.AddScoped<ICheckInPhotoAccessQueries, CheckInPhotoAccessQueries>();
+        services.AddScoped<ICheckInPhotoVariantProjection, Community.CheckInPhotoVariantProjection>();
+        services.AddOptions<CheckInPhotoDeliveryOptions>().BindConfiguration(nameof(CheckInPhotoDeliveryOptions))
+            .Validate(o => !o.AdvertiseVariants || o.ServeVariants, "Advertising variants requires serving them.").ValidateOnStart();
+        services.TryAddSingleton(TimeProvider.System);
         services.AddScoped<IProfileActivityQueries, ProfileActivityQueries>();
         services.AddScoped<ICheckInFeedReader, CheckInFeedReader>();
         services.AddScoped<IQueryCheckInRepository, QueryCheckInRepository>();
