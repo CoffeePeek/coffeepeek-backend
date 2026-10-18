@@ -14,6 +14,7 @@ import base64
 import datetime as dt
 import hashlib
 import json
+import math
 import os
 from pathlib import Path
 import re
@@ -117,11 +118,18 @@ class Client:
                 require(len(body) <= cap)
                 return status, {key.lower(): value for key, value in response.headers.items()}, body
         except urllib.error.HTTPError as error:
-            status = error.code
-            response_headers = {key.lower(): value for key, value in error.headers.items()}
-            error.close()
-            require(status in expected)
-            return status, response_headers, b""
+            try:
+                status = error.code
+                response_headers = {key.lower(): value for key, value in error.headers.items()}
+                require(status in expected)
+                # Denial checks must inspect the actual bounded body, not an invented empty body.
+                body = error.read(cap + 1)
+                require(len(body) <= cap)
+                return status, response_headers, body
+            except (TimeoutError, OSError, ValueError):
+                raise CanaryError("Canary transport failed; no mutation was retried.") from None
+            finally:
+                error.close()
         except (urllib.error.URLError, TimeoutError, OSError, ValueError):
             raise CanaryError("Canary transport failed; no mutation was retried.") from None
 
@@ -358,6 +366,51 @@ def verify(path, old_path, client, recipe=1, public_cache_enabled=False):
     return state["verification"]
 
 
+def cleanup_observation(state, home, token, client):
+    photos = []
+    for photo in [home["photos"][0], home["drinkPhoto"]]:
+        photo_id = identity(photo["id"])
+        base = base_path(state["homeId"], photo_id)
+        key = photo["storageKey"]
+        require(key == "check-ins/" + uuid.UUID(photo_id).hex + ".png")
+        require(photo.get("url") == base)
+        source = hashlib.sha256(("checkin:" + uuid.UUID(photo_id).hex + ":" + key).encode()).hexdigest()
+        variants = photo.get("variants")
+        require(isinstance(variants, list) and len(variants) == 6)
+        seen, recipes, issued = set(), set(), []
+        for variant in variants:
+            purpose, fmt, recipe = variant["purpose"], variant["format"], variant["recipeVersion"]
+            require(purpose in PURPOSES and fmt in ("webp", "jpeg", "png") and type(recipe) is int and recipe > 0
+                    and variant["sourceVersion"] == source and (purpose, fmt) not in seen)
+            seen.add((purpose, fmt))
+            recipes.add(recipe)
+            url = base + "/variants/" + source + "/" + str(recipe) + "/" + purpose + "." + fmt
+            require(variant["url"] == url and variant["contentType"] == "image/" + fmt)
+            _, headers, body = client.request("HEAD", API + url, token)
+            etag = headers.get("etag", "")
+            require(not body and headers.get("content-type", "").split(";")[0] == "image/" + fmt
+                    and re.fullmatch('"' + source + "-v" + str(recipe) + '-[0-9a-f]{64}"', etag)
+                    and 0 < int(headers["content-length"]) <= 8 * 1024 * 1024)
+            check_cache_policy(headers, public=False)
+            issued.append({"url": url, "etag": etag})
+        require(len(recipes) == 1 and all((purpose, "webp") in seen
+                and sum(p == purpose and f in ("png", "jpeg") for p, f in seen) == 1 for purpose in PURPOSES))
+        photos.append({"originalUrl": base, "variants": issued})
+    return {"observedAtUtc": dt.datetime.now(dt.timezone.utc).isoformat(), "photos": photos}
+
+
+def cleanup_denial(client, method, url, token, etag=None):
+    status, headers, body = client.request(method, API + url, token,
+        headers={"If-None-Match": etag} if etag else None, expected=(401, 404))
+    require(status in (401, 404))
+    content_type = headers.get("content-type", "").split(";")[0].strip().lower()
+    require(not content_type.startswith("image/") and (method != "HEAD" or not body))
+    # Empty denials and JSON error objects are safe; HTML, arbitrary bytes and image bodies fail closed.
+    if body:
+        require(content_type in ("application/json", "application/problem+json"))
+        require(isinstance(json.loads(body), dict))
+
+
 def cleanup(path, client):
     state = private_read(path)
     validate_state(state)
@@ -365,15 +418,35 @@ def cleanup(path, client):
     token = login(state, path, client)
     home = client.api("GET", "/api/v1/check-ins/home/" + identity(state["homeId"]), token)
     validate_home(state, home)
+    observation = cleanup_observation(state, home, token, client)
+    state["cleanupObservation"] = observation
     state["cleanupAttempted"] = True
     private_write(path, state)
     client.api("DELETE", "/api/v1/check-ins/home/" + identity(state["homeId"]), token)
+    revocation_started = time.monotonic()
     state["deleted"] = True
     state.pop("accessToken", None)
     private_write(path, state)
-    for photo in [home["photos"][0], home["drinkPhoto"]]:
-        client.request("GET", API + base_path(state["homeId"], photo["id"]), token, expected=(401, 404))
-    return {"privateHomeDeleted": True, "accountRetained": True}
+    originals, variants, checks = 0, 0, 0
+    for photo in observation["photos"]:
+        # Originals expose GET only and do not issue ETags; variants support all three requests.
+        cleanup_denial(client, "GET", photo["originalUrl"], token)
+        originals += 1
+        checks += 1
+        for variant in photo["variants"]:
+            cleanup_denial(client, "GET", variant["url"], token)
+            cleanup_denial(client, "HEAD", variant["url"], token)
+            cleanup_denial(client, "GET", variant["url"], token, variant["etag"])
+            variants += 1
+            checks += 3
+    revocation_duration_ms = max(0, math.ceil((time.monotonic() - revocation_started) * 1000))
+    result = {"privateHomeDeleted": True, "accountRetained": True, "originalsDenied": originals,
+              "variantsDenied": variants, "denialChecks": checks,
+              "revocationCheckDurationMs": revocation_duration_ms,
+              "verifiedAtUtc": dt.datetime.now(dt.timezone.utc).isoformat()}
+    state["cleanupVerification"] = result
+    private_write(path, state)
+    return result
 
 
 def main(argv=None, client=None):
