@@ -24,6 +24,10 @@ class FakeCommands:
         self.bad_release = False
         self.bad_rss = False
         self.fail = False
+        self.stats = {"cpu": "12.50%", "memory": "15.25MiB / 1.5GiB", "pids": "7", "ignored": "secret-storage/key"}
+        self.stats_text = None
+        self.resource_container = "1" * 64
+        self.resource_failure = None
         self.media = {"queues": [{"priority": 0, "status": "Pending", "count": 2},
                                  {"priority": 1, "status": "Ready", "count": 1}],
                       "pilot": {"readyJobs": 1, "declaredReadySourceBytes": 500,
@@ -36,7 +40,7 @@ class FakeCommands:
     def compose(self, *args):
         self.calls.append(("compose", args, None, None))
         if args[:3] == ("ps", "-a", "-q"):
-            return "1" * 64
+            return self.resource_container if args[3] == "checkin-renderer" else "1" * 64
         raise AssertionError("Unexpected compose mutation")
 
     def run(self, args, stdin=None, environment=None, timeout=25):
@@ -48,9 +52,12 @@ class FakeCommands:
         if args[:2] == ["docker", "inspect"]:
             return json.dumps({"running": True, "image": "sha256:" + "d" * 64})
         if args[:2] == ["docker", "stats"]:
-            return json.dumps({"cpu": "12.50%", "memory": "15.25MiB / 1.5GiB", "pids": "7",
-                               "ignored": "secret-storage/key"})
+            if self.resource_failure == "stats":
+                raise RuntimeError("private-password secret-storage/key private@example.invalid")
+            return self.stats_text if self.stats_text is not None else json.dumps(self.stats)
         if args[:2] == ["docker", "top"]:
+            if self.resource_failure == "rss":
+                raise RuntimeError("private-password secret-storage/key private@example.invalid")
             return "RSS\n1000\n250" if not self.bad_rss else "RSS\nprivate-password"
         if args[:2] == ["docker", "exec"]:
             self.assert_read_only(args, stdin, environment)
@@ -185,6 +192,61 @@ class EvidenceTests(unittest.TestCase):
         commands = [args for kind, args, _, _ in self.commands.calls if kind == "run"]
         self.assertTrue(all(".Config.Env" not in " ".join(args) and ("--format" in args or args[1] == "top") for args in commands))
         self.assertEqual(3, sum(args[1] == "top" and args[-2:] == ["-eo", "rss"] for args in commands))
+
+    def test_resource_validation_reports_only_fixed_service_field_reason_and_type(self):
+        cases = (("cpu", None, "cpu", "null"), ("cpu", "private-password", "cpu", "string"),
+                 ("cpu", "9" * 500 + "%", "cpu", "string"),
+                 ("memory", 100, "memory", "integer"),
+                 ("memory", "private-password", "memory", "string"),
+                 ("memory", "private-password / 1GiB", "memory_working_set", "string"),
+                 ("memory", "1MiB / private-password", "memory_limit", "string"),
+                 ("pids", 7, "pids", "integer"), ("pids", True, "pids", "boolean"),
+                 ("pids", "private-password", "pids", "string"),
+                 ("pids", "9" * 21, "pids", "string"))
+        original = copy.deepcopy(self.commands.stats)
+        for key, value, field, observed_type in cases:
+            with self.subTest(field=field, observed_type=observed_type):
+                self.commands.stats = copy.deepcopy(original)
+                self.commands.stats[key] = value
+                with self.assertRaises(evidence.ResourceObservationError) as raised:
+                    self.operator.resources()
+                self.assertEqual({"service": "checkin-renderer", "field": field, "reason": "invalid_value",
+                                  "observedType": observed_type}, raised.exception.diagnostic)
+                self.assertNotIn("private-password", str(raised.exception))
+
+    def test_resource_json_container_rss_and_command_failures_have_precise_diagnostics(self):
+        cases = (("resource_container", "", "container", "invalid_value", "string"),
+                 ("resource_container", "1" * 64 + "\n" + "2" * 64, "container", "invalid_value", "string"),
+                 ("stats_text", "private-password", "stats", "invalid_json", "string"),
+                 ("stats_text", "[]", "stats", "invalid_shape", "array"),
+                 ("bad_rss", True, "rss", "invalid_value", "string"),
+                 ("resource_failure", "stats", "stats", "command_failed", "null"),
+                 ("resource_failure", "rss", "rss", "command_failed", "null"))
+        for attribute, value, field, reason, observed_type in cases:
+            with self.subTest(field=field, reason=reason):
+                original = getattr(self.commands, attribute)
+                setattr(self.commands, attribute, value)
+                with self.assertRaises(evidence.ResourceObservationError) as raised:
+                    self.operator.resources()
+                self.assertEqual({"service": "checkin-renderer", "field": field, "reason": reason,
+                                  "observedType": observed_type}, raised.exception.diagnostic)
+                setattr(self.commands, attribute, original)
+
+    def test_failed_resource_main_emits_safe_diagnostic_and_does_not_create_baseline(self):
+        self.commands.bad_rss = True
+        environment = {**self.environment, "PHOTO_OPERATION": "evidence-before"}
+        output = io.StringIO()
+        with patch.object(Path, "cwd", return_value=self.root), patch.object(activation, "private_lock", contextlib.nullcontext), \
+                contextlib.redirect_stdout(output):
+            result = evidence.main([], environment, self.commands)
+        self.assertEqual(1, result)
+        self.assertEqual({"success": False, "stage": "resources", "requiresPrivateStateReview": True,
+                          "resourceDiagnostic": {"service": "checkin-renderer", "field": "rss",
+                              "reason": "invalid_value", "observedType": "string"}}, json.loads(output.getvalue()))
+        self.assertFalse((self.private / "evidence-before.json").exists())
+        self.assertNotIn("private-password", output.getvalue())
+        self.assertNotIn("secret-storage/key", output.getvalue())
+        self.assertNotIn("1" * 64, output.getvalue())
 
     def test_invalid_or_nonfinite_metrics_fail_closed_without_forwarding_raw_fields(self):
         original = copy.deepcopy(self.commands.media)
