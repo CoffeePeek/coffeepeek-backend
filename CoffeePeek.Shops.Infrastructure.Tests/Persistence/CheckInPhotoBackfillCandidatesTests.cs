@@ -17,7 +17,7 @@ public sealed class CheckInPhotoBackfillCandidatesTests
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
     private static PhotoBackfillPageRequest Request(PhotoBackfillPhase phase) => new(phase, Before, Recent, null);
     private static ShopsDbContext Context() => new(new DbContextOptionsBuilder<ShopsDbContext>()
-        .UseInMemoryDatabase(Guid.NewGuid().ToString()).Options);
+        .UseInMemoryDatabase(Guid.NewGuid().ToString()).AddInterceptors(new CheckInAuditInterceptor()).Options);
 
     [Fact]
     public async Task PhasesUseCurrentCanonicalEligibilityAndKeepHomeCutoutsWithTheirBindings()
