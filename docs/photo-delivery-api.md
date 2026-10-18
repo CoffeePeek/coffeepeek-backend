@@ -1,6 +1,6 @@
 # Защищённые варианты фото: P3
 
-Реализованы Ready event/outbox, Community projection, совместимые дескрипторы и защищённый GET/HEAD с private revalidation. Кеш ограничений Account до 20 секунд и private freshness до 20 секунд реализованы за отдельным флагом, по умолчанию выключенным. Срок учитывает исходную проверку, задержки и истечение JWT. [Общий план](photo-delivery-improvement-plan.md), [генерация P2](photo-delivery-variants.md).
+Реализованы Ready event/outbox, Community projection, совместимые дескрипторы и защищённый GET/HEAD с private revalidation. Кеш ограничений Account до 20 секунд и private freshness до 20 секунд реализованы за отдельным флагом, по умолчанию выключенным. Срок учитывает исходную проверку, задержки и истечение JWT. [Общий план](photo-delivery-improvement-plan.md), [генерация P2](photo-delivery-variants.md), [архивная инвентаризация P5](photo-delivery-inventory.md).
 
 ## Ответы ленты и деталей
 

@@ -16,6 +16,7 @@ public static class CommunityModule
     {
         services.AddScoped<ICheckInQueries, CheckInQueries>();
         services.AddScoped<ICheckInPhotoAccessQueries, CheckInPhotoAccessQueries>();
+        services.AddScoped<ICheckInPhotoBackfillCandidates, CheckInPhotoBackfillCandidates>();
         services.AddScoped<ICheckInPhotoVariantProjection, Community.CheckInPhotoVariantProjection>();
         services.AddOptions<CheckInPhotoDeliveryOptions>().BindConfiguration(nameof(CheckInPhotoDeliveryOptions))
             .Validate(o => !o.AdvertiseVariants || o.ServeVariants, "Advertising variants requires serving them.").ValidateOnStart();

@@ -17,6 +17,7 @@ using CoffeePeek.Shared.Web.Sentry;
 using System.Text.Json.Serialization;
 using CoffePeek.ServiceDefaults;
 using CoffeePeek.MediaService.Services.Variants;
+using CoffeePeek.MediaService.Services.Backfill;
 using Wolverine.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
@@ -86,6 +87,8 @@ public static class InfrastructureExtensions
         services.AddOptions<CheckInPhotoReadOptions>().BindConfiguration(nameof(CheckInPhotoReadOptions))
             .ValidateDataAnnotations().ValidateOnStart();
         services.AddScoped<ICheckInPhotoReader, CheckInPhotoReader>();
+        services.AddScoped<IPhotoBackfillObjectReader, PhotoBackfillObjectReader>();
+        services.AddScoped<PhotoBackfillInspector>();
         services.AddOptions<PhotoVariantOptions>().BindConfiguration(nameof(PhotoVariantOptions))
             .ValidateDataAnnotations().Validate(o => o.IsValid(), "Invalid private variant worker configuration.").ValidateOnStart();
         services.AddScoped<IPhotoVariantQueue, PhotoVariantQueue>();
