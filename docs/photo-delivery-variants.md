@@ -1,6 +1,6 @@
 # Приватные варианты фотографий: P2
 
-Продолжение [плана доставки фото](photo-delivery-improvement-plan.md). Код готов для проверки на стенде; generation и cleanup по умолчанию выключены. При выключенных rollout-флагах публичный API отдаёт прежние URL оригиналов. Дескрипторы, Ready/outbox, Community projection и защищённый маршрут добавлены в [базовой реализации P3](photo-delivery-api.md).
+Продолжение [плана доставки фото](photo-delivery-improvement-plan.md). Pipeline работает в production, новые uploads обрабатываются автоматически. После пилота владелец разрешил полный запуск; порядок и фактические проверки описаны в [production runbook](photo-delivery-production.md). Deployment defaults остаются выключенными для новых окружений; в production общие флаги включены явно. Cleanup остаётся отдельной выключенной операцией. Дескрипторы, Ready/outbox, Community projection и защищённый маршрут описаны в [P3](photo-delivery-api.md).
 
 ## Триггер и транзакции
 

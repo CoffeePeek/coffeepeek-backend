@@ -10,7 +10,7 @@ on:
         description: Explicit operation; storage reads policies, backup preserves databases and rollback images.
         type: choice
         default: preflight
-        options: [preflight, storage, backup, inventory, evidence-before, evidence-after, pilot-create, pilot-advance, pilot-status, pilot-pause, canary-prepare, canary-activate, canary-create, canary-verify, canary-cleanup]
+        options: [preflight, storage, backup, inventory, evidence-before, evidence-after, pilot-create, pilot-advance, pilot-status, pilot-pause, canary-prepare, canary-create, canary-verify, canary-cleanup, rollout-enable, rollout-adopt, rollout-advance, rollout-status, rollout-inventory, rollout-verify, rollout-pause, rollout-smoke-create, rollout-smoke-verify, rollout-smoke-cleanup]
       expected_revision:
         description: Exact deployed Git SHA required by post-deployment operations.
         type: string
@@ -118,7 +118,9 @@ jobs:
           case "$PHOTO_OPERATION" in
             inventory|pilot-create|pilot-advance|pilot-status|pilot-pause) operator=photo_production_inventory.py ;;
             evidence-before|evidence-after) operator=photo_production_evidence.py ;;
-            canary-prepare|canary-activate|canary-create|canary-verify|canary-cleanup) operator=photo_production_activation.py ;;
+            canary-prepare|canary-create|canary-verify|canary-cleanup) operator=photo_production_activation.py ;;
+            rollout-enable|rollout-adopt|rollout-advance|rollout-status|rollout-inventory|rollout-verify|rollout-pause) operator=photo_production_rollout.py ;;
+            rollout-smoke-create|rollout-smoke-verify|rollout-smoke-cleanup) operator=photo_production_rollout_smoke.py ;;
             *) exit 1 ;;
           esac
           [[ -z "$EXPECTED_DEPLOY_SHA" || "$EXPECTED_DEPLOY_SHA" =~ ^[0-9a-f]{40}$ ]]

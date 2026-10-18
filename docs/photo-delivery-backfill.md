@@ -1,6 +1,6 @@
 # P5: управляемый backfill вариантов фотографий
 
-PR 16 [общего плана](photo-delivery-improvement-plan.md) добавляет возобновляемый обход архива с checkpoint в Media PostgreSQL. Перед ним выполняется [read-only инвентаризация PR 15](photo-delivery-inventory.md). Производственный архив этим изменением не сканировался и не обрабатывался; его объём, реальная скорость renderer и даты завершения ещё неизвестны.
+PR 16 [общего плана](photo-delivery-improvement-plan.md) добавил возобновляемый обход архива с checkpoint в Media PostgreSQL. Production-инвентаризация проверила 45 originals; пилот обработал пять фото, все Ready. Владелец разрешил завершить весь архив и включить варианты всем; актуальный порядок — в [production runbook](photo-delivery-production.md). Ниже описаны durable producer и его низкоуровневый CLI.
 
 ## Подготовка
 
@@ -80,7 +80,7 @@ Backfill не меняет visibility, content/approved revision, publication ti
 
 Переход к реальному архиву требует отдельного контролируемого запуска. Сначала staging и canary accounts с малой партией. Измерить фактические Ready bytes, throughput, renderer CPU/RSS, очередь новых uploads, ошибки, p95 и storage headroom; сравнивать одинаковые источники и версии клиентов. Включение клиентов выполняется средствами выпуска, этот CLI не задаёт процент аудитории.
 
-После стендовой приёмки: **5% новых клиентов → 25% → 100%**. Перед каждым увеличением требуется минимум **24 часа** без нарушения privacy gate, error rate и latency не хуже baseline, а Ready coverage недавних eligible фотографий — **не ниже 99%**. Denominator и cohort подтверждаются свежей инвентаризацией и фактической доступностью Ready projection, а не `existingCount` или одним `generationDrained`. Hide/block/delete, смена аккаунта, истечение credentials и offline после deadline входят в приёмку. При ухудшении очереди/ошибок остановить архив раньше новых uploads. При нарушении срока отзыва доступа немедленно отключить соответствующее кеширование и расследовать причину.
+После production-пилота владелец разрешил полный запуск без промежуточных процентов и ожидания между ними. Ограничение advertisement на canary accounts удалено; варианты доступны всем читателям с обычной проверкой доступа. Полный архив завершается через `rollout-*` [production workflow](photo-delivery-production.md). Denominator и cohort подтверждаются свежей инвентаризацией и фактической доступностью Ready projection, а не `existingCount` или одним `generationDrained`. При ухудшении очереди/ошибок остановить архив раньше новых uploads; при нарушении отзыва доступа отключить соответствующее кеширование и расследовать причину.
 
 ## Откат и поддержка выданных URL
 
@@ -94,4 +94,4 @@ Backfill не меняет visibility, content/approved revision, publication ti
 
 Тесты PostgreSQL покрывают populated upgrade, restart/checkpoint, rollback между enqueue и checkpoint, конкурентные advances, приоритет uploads, pause, queue cap, сохранение Failed и смену recipe. CI должен обязательно выполнять `PhotoBackfillRunLiveTests` и `CheckInPhotoBackfillCandidatesLiveTests` без skips; Python tests проверяют operator CLI, ошибки и synthetic HTTP, MinIO/renderer corpus gates проверяют приватность и pipeline P2. Наличие теста или его включение в CI не означает успешный прогон текущего commit.
 
-Перед реальным пилотом остаются проверка полного стенда с PostgreSQL/MinIO/RabbitMQ/renderer, `EXPLAIN (ANALYZE, BUFFERS)` на репрезентативном архиве, восстановление после сбоев и content corpus (corrupt/huge, EXIF, alpha, animation и реальные форматы). Измерения production archive, его инвентаризация, запуск backfill и rollout этим PR не выполнялись. Числа synthetic tests не используются как прогноз срока или стоимости архива.
+Production-пилот пяти фото выполнен с PostgreSQL/MinIO/RabbitMQ/renderer: Ready без Failed jobs, p95 queue-to-Ready 5479,7 мс; feed WebP для тех же пяти originals занимает на 96,6% меньше байт. Это измерение пилота, не клиентская latency и не гарантия скорости всего архива. Отдельные нагрузочные и device/browser проверки не подменяются этими числами. Свежая готовность полного архива подтверждается отдельным production отчётом.

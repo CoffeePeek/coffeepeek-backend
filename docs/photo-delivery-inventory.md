@@ -1,6 +1,6 @@
 # P5: инвентаризация старых фотографий
 
-Реализована read-only инвентаризация для PR 15 [общего плана](photo-delivery-improvement-plan.md). Производственный архив этим изменением не сканировался: количество, объём и скорость обработки ещё не измерены. Наличие кода не означает разрешения на rollout.
+Read-only инвентаризация из PR 15 [общего плана](photo-delivery-improvement-plan.md) выполнена в production: проверены 45 eligible originals, 45 399 435 байт, без missing/corrupt и metadata mismatches. Затем выполнен пилот пяти фото. Владелец разрешил обработать оставшийся архив и включить варианты всем. Свежая проверка выполняется через `rollout-inventory` с отдельным checkpoint; [production runbook](photo-delivery-production.md).
 
 ## Границы данных
 

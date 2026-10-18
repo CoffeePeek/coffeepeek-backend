@@ -1,4 +1,9 @@
-# Контролируемый запуск доставки фотографий
+# Production-доставка фотографий
+
+После пилота владелец разрешил полный запуск для всех пользователей без этапов 5% / 25% и ожидания
+между ними. Ограничение advertisement на отдельные аккаунты удалено из приложения и Compose.
+`CHECKIN_VARIANTS_ADVERTISE_ENABLED=true` выдаёт готовые варианты каждому читателю с обычной проверкой
+доступа. Для приватных фото продолжают действовать owner/visibility/block/delete checks.
 
 Операции выполняются workflow **Photo production operations** из проверенного commit. Для ручного
 запуска выбрать `operation`; после deployment обязательно указать `expected_revision` — полный Git SHA
@@ -41,25 +46,24 @@ writers остаются остановленными; оператор заве
 новые migrations, dedicated reader/writer identities и приватность двух buckets после provisioning.
 Не использовать `SKIP_MIGRATIONS=1` для первого выпуска вариантов.
 
-## Инвентаризация и canary
+## Выполненный пилот
 
 1. `inventory`: не более 20 страниц по 5 кандидатов за dispatch, с проверкой original content.
    Не завершённый checkpoint продолжается отдельным dispatch. SQLite фиксирует cutoff и deployment;
    смена IP контейнера не меняет логическую идентичность checkpoint.
 2. `evidence-before`: приватные fingerprints существующих Community business rows, очереди и
    снимок ресурсов renderer/Media/Gateway. Существующий baseline не перезаписывается.
-3. Последовательно `canary-prepare`, `canary-activate`, `canary-create`. Подтверждение email имеет
-   ограниченный срок; между этими операциями не ставить долгие проверки. Это отдельный reserved-domain
-   аккаунт, два synthetic PNG и один private home check-in с drink cutout.
-4. Activation проверяет точные revisions/IMAGE_TAG и миграции, затем включает generation/read/serve и
-   advertisement только одному canary viewer. Public freshness cache и cleanup остаются выключенными;
-   cleanup dry-run остаётся включённым. Пересоздаются только Shops и Media.
+3. Исторический пилот использовал reserved-domain аккаунт, два synthetic PNG и один private home
+   check-in с drink cutout. До полного запуска успешно проверены 72 HTTPS checks и 38 отказов после
+   удаления тестового check-in. Аккаунт сохранён для аудита. Повторное создание и удаление не требуются.
+4. Старый `canary-activate` исключён из production workflow: режима с отдельным списком аккаунтов
+   больше нет. Приватные журналы пилота сохраняются как доказательства ранее выполненных операций.
 
 Инвентаризация не подтверждает Ready coverage по одному `existingCount`: отдельно сверять актуальный
 Ready manifest, binding, source и Community projection. `needs_transfer`, повреждения, provenance и
 metadata mismatches расследуются отдельно, без автоматической смены originals или business metadata.
 
-## Пять архивных фотографий
+## Исторический пилот пяти архивных фотографий
 
 1. `pilot-create` создаёт paused run с batch 5 / interval 5 seconds.
 2. `pilot-advance` явно возобновляет run и продвигает ровно одну страницу. Повторный dispatch означает
@@ -78,7 +82,38 @@ metadata mismatches расследуются отдельно, без автом
 не пересоздавать run и не повторять writes автоматически. Pause разрешён после неизвестного advance;
 уже начатая попытка не прерывается. Новые uploads имеют priority 0, архив — priority 1.
 
-## Клиенты и расширение аудитории
+## Полный запуск и завершение архива
+
+Операции `rollout-*` принимают точный `expected_revision` работающих образов. Они используют новый
+приватный каталог `full-rollout-<revision>`, сохраняя исходные inventory/pilot/canary/evidence без
+перезаписи. Смена Git SHA не считается разрешением забыть уже выполненную запись.
+
+1. `rollout-enable` проверяет пять OCI revisions, IMAGE_TAG и migrations, сохраняет generation/read/
+   serve/advertise=true, удаляет устаревшие canary assignments и пересоздаёт только Shops/Media.
+   Actual runtime flags и health проверяются после запуска. Public freshness cache и cleanup остаются
+   выключенными, cleanup dry-run включён.
+2. `rollout-inventory` создаёт свежий checkpoint исходного cohort и проверяет original content.
+   До adoption cutoff совпадает с исходным pilot run; его immutable inventory не перезаписывается.
+3. `rollout-adopt` принимает существующий paused pilot run только при совпадении его параметров,
+   recipe и durable состояния и отсутствии незавершённых writes. Новый журнал сохраняет хеш старого.
+   Исходный run продолжается; новый конкурирующий архивный run не создаётся.
+4. `rollout-advance` продвигает ограниченное число страниц; `rollout-status` проверяет durable status.
+   Продолжать до ScanComplete и завершения jobs, сохраняя приоритет новых uploads. При неизвестном
+   ответе write сначала status/private-state review; повтор записи автоматически не выполняется.
+5. Последовательно `rollout-smoke-create`, `rollout-smoke-verify`, `rollout-smoke-cleanup` создают
+   отдельный reserved-domain аккаунт и private home с двумя новыми фото уже на текущем release.
+   Проверяются generation, alpha, protected GET/HEAD, owner descriptors и отказ после удаления.
+   Create/cleanup не повторяются после неизвестного результата; старые canary данные не меняются.
+6. Повторный `rollout-inventory` создаёт новый checkpoint с текущим cutoff и проверяет original
+   content и актуальную Ready coverage. Завершённая старая inventory не используется как свежий снимок.
+7. `rollout-verify` сверяет Media и Community manifests с актуальными bindings, проверяет публичные
+   descriptors и реальные HTTPS ответы, а также отказ доступа к удалённым synthetic фото. После
+   завершения `rollout-pause` оставляет законченный архивный run остановленным.
+
+Rollback generation/advertisement остаётся общей операционной настройкой. Выданные versioned URLs
+продолжают проходить защищённый read path; originals и checkpoints ради отката не удаляются.
+
+## Клиенты
 
 Web canary проверяется на same-site `coffeepeek.by` после backend gate: лента, viewer, explicit original,
 private home/drink photo, logout/account switch, expired credentials и offline deadline. Preview на
@@ -86,10 +121,8 @@ private home/drink photo, logout/account switch, expired credentials и offline 
 Для mobile требуется настоящий iOS compile job; зелёный wrapper при skipped compile доказательством
 не является. Публикация клиентских сборок выполняется выбранным release workflow отдельно.
 
-Массовый rollout следует плану 5% → 25% → 100%, с минимум 24 часами между расширениями, проверками
-privacy/error/latency и свежей Ready coverage недавних eligible фотографий не ниже 99%. Один
-пятифотографический пилот не подтверждает эти условия. Временные canary данные удаляются отдельной
-операцией `canary-cleanup` только после завершённой проверки; аккаунт остаётся для операторского аудита.
+Процентного audience gate в приложении больше нет. Фактическую готовность архива подтверждают свежая
+инвентаризация и Ready projections; счётчик `existingCount` сам по себе этого не доказывает.
 
 Для мягкого отката pause архива и выключение generation/advertisement сохраняют read/serve уже выданных
 versioned URLs. Originals, Ready artifacts, manifests и checkpoints ради отката не удаляются.
