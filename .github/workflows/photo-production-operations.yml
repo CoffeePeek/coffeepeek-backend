@@ -31,22 +31,41 @@ jobs:
           VPS_HOST: ${{ secrets.VPS_HOST }}
         run: ssh-keyscan -H "$VPS_HOST" >> ~/.ssh/known_hosts
 
-      - name: Inspect production footprint without changing services
+      - name: Inspect production without changing services
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_USER: ${{ secrets.VPS_USER }}
         run: |
           set -euo pipefail
-          ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=15 \
-            -o ServerAliveCountMax=4 "$VPS_USER@$VPS_HOST" 'bash -s' <<'REMOTE'
+          umask 077
+          {
+          cat <<'REMOTE'
           set -euo pipefail
           set +x
           cd /opt/coffeepeek
           test -f deploy/.env
-          printf 'Production checkout and configuration exist.\n'
-          python3 --version
-          docker version --format 'Docker server: {{.Server.Version}}'
-          docker compose version --short
-          docker ps --format '{{.Names}} {{.Image}} {{.Status}}'
-          df -Pk /opt/coffeepeek /var/lib/docker
+          set -a
+          source deploy/.env
+          set +a
+          python3 - <<'PREFLIGHT_PY'
           REMOTE
+          cat dev/photo-variants/photo_production_preflight.py
+          printf '\nPREFLIGHT_PY\n'
+          } | ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=15 \
+            -o ServerAliveCountMax=4 "$VPS_USER@$VPS_HOST" 'bash -s' \
+            > "$RUNNER_TEMP/photo-production-preflight.json"
+          python3 - "$RUNNER_TEMP/photo-production-preflight.json" <<'PY'
+          import json, sys
+          with open(sys.argv[1], encoding='utf-8') as source:
+              report = json.load(source)
+          if report.get('readOnly') is not True or 'databases' not in report:
+              raise SystemExit('Read-only production observations unavailable.')
+          print(json.dumps(report, indent=2))
+          PY
+
+      - name: Save sanitized production observations
+        uses: actions/upload-artifact@v4
+        with:
+          name: photo-production-preflight
+          path: ${{ runner.temp }}/photo-production-preflight.json
+          retention-days: 7
