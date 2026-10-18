@@ -18,7 +18,11 @@ public sealed class CheckInPhotoBackfillCandidatesLiveTests(ShopsLiveDatabase fi
     {
         Assert.SkipUnless(LivePostgresServer.IsConfigured, LivePostgresServer.SkipReason);
         var ct = TestContext.Current.CancellationToken;
-        await using var writer = fixture.Context(false);
+        // The generic live fixture uses AuditInterceptor, which resets historical Added stamps.
+        // Shops production preserves canonical creation timestamps through its specialised interceptor.
+        await using var writer = new ShopsDbContext(new DbContextOptionsBuilder<ShopsDbContext>()
+            .UseNpgsql(fixture.ConnectionString, npgsql => npgsql.ConfigureDataSource(ds => ds.EnableDynamicJson()))
+            .AddInterceptors(new CheckInAuditInterceptor()).Options);
         var before = DateTime.UtcNow.AddMinutes(-1); var created = before.AddDays(-2);
         var city = new City("photo inventory city"); writer.Cities.Add(city);
         var shop = ShopsLiveDatabase.NewShop("Photo inventory", city.Id); writer.Shops.Add(shop);
@@ -41,9 +45,16 @@ public sealed class CheckInPhotoBackfillCandidatesLiveTests(ShopsLiveDatabase fi
         rows[1].ChangeVisibility(CheckInVisibility.Public);
         rows[1].ApplyModerationDecision(rows[1].ContentRevision, Guid.NewGuid(), 1, CheckInModerationState.Approved, null, before.AddDays(-1));
         await writer.SaveChangesAsync(ct);
-        var expected = rows.SelectMany(r => r.ShopPhotos).Select(p => p.Id).Order().ToArray();
-        var revisions = rows.Select(r => r.ContentRevision).ToArray();
-        var published = rows.Select(r => r.FirstPublishedAtUtc).ToArray();
+        writer.ChangeTracker.Clear();
+        var parentIds = rows.Select(r => r.Id).ToArray();
+        var baseline = await writer.CheckIns.AsNoTracking().Where(c => parentIds.Contains(c.Id))
+            .Select(c => new { c.Id, c.CreatedAtUtc, c.ContentRevision, c.FirstPublishedAtUtc }).ToDictionaryAsync(c => c.Id, ct);
+        var photoBaseline = await writer.CheckInPhotos.AsNoTracking().Where(p => parentIds.Contains(p.CanonicalCheckInId))
+            .Select(p => new { p.Id, p.StorageKey, p.CreatedAtUtc }).ToArrayAsync(ct);
+        Assert.Equal(4, baseline.Count); Assert.Equal(12, photoBaseline.Length);
+        Assert.All(baseline.Values, c => Assert.True(c.CreatedAtUtc <= before, "Seeded parent must predate the fixed inventory cutoff."));
+        Assert.All(photoBaseline, p => Assert.True(p.CreatedAtUtc <= before, "Seeded photo must predate the fixed inventory cutoff."));
+        var expected = photoBaseline.Select(p => p.Id).Order().ToArray();
         using var probe = new ReadPerformanceCommandProbe(capturePlans: true);
         await using var db = new ShopsDbContext(new DbContextOptionsBuilder<ShopsDbContext>()
             .UseNpgsql(fixture.ConnectionString).AddInterceptors(probe).Options);
@@ -72,11 +83,14 @@ public sealed class CheckInPhotoBackfillCandidatesLiveTests(ShopsLiveDatabase fi
             Assert.Equal(phasePhotos.OrderDescending(), phasePhotos); actual.AddRange(phasePhotos);
         }
         Assert.Equal(expected, actual.Order()); Assert.Empty(db.ChangeTracker.Entries());
-        var after = await writer.CheckIns.AsNoTracking().Where(c => rows.Select(r => r.Id).Contains(c.Id)).ToArrayAsync(ct);
+        var after = await writer.CheckIns.AsNoTracking().Where(c => parentIds.Contains(c.Id)).ToArrayAsync(ct);
         foreach (var row in after)
         {
-            var index = Array.FindIndex(rows, r => r.Id == row.Id);
-            Assert.Equal(revisions[index], row.ContentRevision); Assert.Equal(published[index], row.FirstPublishedAtUtc);
+            var persisted = baseline[row.Id];
+            Assert.Equal(persisted.ContentRevision, row.ContentRevision); Assert.Equal(persisted.FirstPublishedAtUtc, row.FirstPublishedAtUtc);
         }
+        var photoAfter = await writer.CheckInPhotos.AsNoTracking().Where(p => parentIds.Contains(p.CanonicalCheckInId))
+            .Select(p => new { p.Id, p.StorageKey, p.CreatedAtUtc }).ToArrayAsync(ct);
+        Assert.Equal(photoBaseline.OrderBy(p => p.Id), photoAfter.OrderBy(p => p.Id));
     }
 }
