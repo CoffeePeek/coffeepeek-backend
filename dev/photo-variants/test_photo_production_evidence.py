@@ -23,6 +23,7 @@ class FakeCommands:
                      for table in evidence.TABLES}
         self.bad_release = False
         self.bad_rss = False
+        self.rss_text = None
         self.fail = False
         self.stats = {"cpu": "12.50%", "memory": "15.25MiB / 1.5GiB", "pids": "7", "ignored": "secret-storage/key"}
         self.stats_text = None
@@ -58,7 +59,7 @@ class FakeCommands:
         if args[:2] == ["docker", "top"]:
             if self.resource_failure == "rss":
                 raise RuntimeError("private-password secret-storage/key private@example.invalid")
-            return "RSS\n1000\n250" if not self.bad_rss else "RSS\nprivate-password"
+            return self.rss_text if self.rss_text is not None else "RSS\n1000\n250" if not self.bad_rss else "RSS\nprivate-password"
         if args[:2] == ["docker", "exec"]:
             self.assert_read_only(args, stdin, environment)
             return json.dumps(self.rows if args[args.index("-d") + 1] == "cpshopsdb" else self.media)
@@ -189,6 +190,7 @@ class EvidenceTests(unittest.TestCase):
             self.assertEqual(12.5, result[service]["cpuPercent"])
             self.assertEqual(15990784, result[service]["memoryWorkingSetBytes"])
             self.assertEqual(1280000, result[service]["processRssSumBytes"])
+            self.assertEqual("observed", result[service]["processRssState"])
         commands = [args for kind, args, _, _ in self.commands.calls if kind == "run"]
         self.assertTrue(all(".Config.Env" not in " ".join(args) and ("--format" in args or args[1] == "top") for args in commands))
         self.assertEqual(3, sum(args[1] == "top" and args[-2:] == ["-eo", "rss"] for args in commands))
@@ -220,8 +222,7 @@ class EvidenceTests(unittest.TestCase):
                  ("stats_text", "private-password", "stats", "invalid_json", "string"),
                  ("stats_text", "[]", "stats", "invalid_shape", "array"),
                  ("bad_rss", True, "rss", "invalid_value", "string"),
-                 ("resource_failure", "stats", "stats", "command_failed", "null"),
-                 ("resource_failure", "rss", "rss", "command_failed", "null"))
+                 ("resource_failure", "stats", "stats", "command_failed", "null"))
         for attribute, value, field, reason, observed_type in cases:
             with self.subTest(field=field, reason=reason):
                 original = getattr(self.commands, attribute)
@@ -231,6 +232,53 @@ class EvidenceTests(unittest.TestCase):
                 self.assertEqual({"service": "checkin-renderer", "field": field, "reason": reason,
                                   "observedType": observed_type}, raised.exception.diagnostic)
                 setattr(self.commands, attribute, original)
+
+    def test_rss_command_failure_is_explicitly_unavailable_and_baseline_can_be_saved(self):
+        self.commands.resource_failure = "rss"
+        environment = {**self.environment, "PHOTO_OPERATION": "evidence-before"}
+        output = io.StringIO()
+        with patch.object(Path, "cwd", return_value=self.root), patch.object(activation, "private_lock", contextlib.nullcontext), \
+                contextlib.redirect_stdout(output):
+            result = evidence.main([], environment, self.commands)
+        self.assertEqual(0, result)
+        report = json.loads(output.getvalue())
+        self.assertTrue(report["success"])
+        saved = canary.private_read(self.private / "evidence-before.json")
+        self.assertEqual(saved["resources"], report["resources"])
+        for service in evidence.STAT_SERVICES:
+            metrics = report["resources"][service]
+            self.assertIsNone(metrics["processRssSumBytes"])
+            self.assertEqual("unavailable", metrics["processRssState"])
+            self.assertEqual(12.5, metrics["cpuPercent"])
+            self.assertEqual(15990784, metrics["memoryWorkingSetBytes"])
+            self.assertEqual(1610612736, metrics["memoryLimitBytes"])
+        self.assertNotIn("private-password", output.getvalue())
+        self.assertNotIn("secret-storage/key", output.getvalue())
+        self.assertNotIn("1" * 64, output.getvalue())
+
+    def test_successful_rss_zero_is_observed_and_malformed_responses_still_fail(self):
+        self.commands.rss_text = "RSS\n0"
+        result = self.operator.resources()
+        self.assertTrue(all(metrics["processRssSumBytes"] == 0 and metrics["processRssState"] == "observed"
+                            for metrics in result.values()))
+        for value in ("", "RSS", "RSS\nprivate-password", "PRIVATE\n100", "RSS\n-1", "RSS\n" + "1" * 21):
+            with self.subTest(value_length=len(value)):
+                self.commands.rss_text = value
+                with self.assertRaises(evidence.ResourceObservationError) as raised:
+                    self.operator.resources()
+                self.assertEqual("rss", raised.exception.diagnostic["field"])
+                self.assertEqual("invalid_value", raised.exception.diagnostic["reason"])
+
+    def test_unavailable_auxiliary_rss_does_not_mask_invalid_required_metrics(self):
+        self.commands.resource_failure = "rss"
+        original = copy.deepcopy(self.commands.stats)
+        for field, value in (("cpu", None), ("memory", None), ("memory", "1MiB / invalid"), ("pids", None)):
+            with self.subTest(field=field):
+                self.commands.stats = copy.deepcopy(original)
+                self.commands.stats[field] = value
+                with self.assertRaises(evidence.ResourceObservationError):
+                    self.operator.run("evidence-before")
+                self.assertFalse((self.private / "evidence-before.json").exists())
 
     def test_failed_resource_main_emits_safe_diagnostic_and_does_not_create_baseline(self):
         self.commands.bad_rss = True
