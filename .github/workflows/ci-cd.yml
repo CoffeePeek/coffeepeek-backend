@@ -125,6 +125,10 @@ jobs:
           export COFFEEPEEK_LIVE_PG_ALLOW_SUPERUSER=1
           export COFFEEPEEK_LIVE_FAULTS=1
           export COFFEEPEEK_LIVE_MINIO=http://127.0.0.1:9000
+          export COFFEEPEEK_LIVE_MINIO_ACCESS_KEY=coffee-legacy-test
+          export COFFEEPEEK_LIVE_MINIO_SECRET_KEY=coffee-legacy-test-only
+          dotnet test CoffeePeek.MediaService.Tests/CoffeePeek.MediaService.Tests.csproj --configuration Release --no-build \
+            --filter FullyQualifiedName~CheckInPhotoStorageLiveTests --verbosity normal
           export COFFEEPEEK_FAULT_RESULTS="$PWD/.test-results/shops-faults"
           export COFFEEPEEK_PERF_RESULTS="$PWD/.test-results/shops-performance"
           curl --fail --silent --show-error -X POST -H 'Content-Type: application/json' \
@@ -134,6 +138,7 @@ jobs:
           mkdir -p .test-results/shops-live
           assembly='CoffeePeek.Shops.Infrastructure.Tests/bin/Release/net10.0/CoffeePeek.Shops.Infrastructure.Tests.dll'
           for class in \
+            CheckInPhotoAccessLiveTests \
             DiscoveryClassificationLiveTests \
             DiscoveryQueryLiveTests \
             CoffeeImportRecoveryLiveTests \
@@ -238,8 +243,10 @@ jobs:
           python -m pip install -r dev/coffee-import/requirements.txt
           python -m pip install 'PyYAML==6.0.3'
           python -X utf8 -m unittest discover -s dev -p 'test_discovery_contract.py' -v
+          python -X utf8 -m unittest discover -s dev/performance -p 'test_*.py' -v
           python -X utf8 -m unittest discover -s dev/coffee-import -p 'test_*.py' -v
           for script in deploy/scripts/*.sh; do bash -n "$script"; done
+          sh -n deploy/minio/provision.sh
           bash -n dev/backfill-profile-roaster-counts.sh
           python dev/coffee-import/validate_deployment.py --mapping deploy/coffee-import/disabled-mapping.json --allow-disabled
 

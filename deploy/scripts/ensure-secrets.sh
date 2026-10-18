@@ -58,3 +58,21 @@ if [[ -z "${gateway_secret}" ]]; then
 fi
 
 upsert_if_empty GATEWAY_AUTH_SECRET "${gateway_secret}"
+
+# GET photo requests use a dedicated read-only MinIO identity. Preserve it across upgrades.
+photo_reader_user="${MINIO_CHECKIN_READ_USER:-coffeepeek-checkin-reader}"
+if [[ "${photo_reader_user}" == "${MINIO_ROOT_USER:-}" ]]; then
+  echo "MINIO_CHECKIN_READ_USER must differ from MINIO_ROOT_USER" >&2
+  exit 1
+fi
+photo_reader_password="${MINIO_CHECKIN_READ_PASSWORD:-}"
+if [[ -z "${photo_reader_password}" ]]; then
+  if ! command -v openssl >/dev/null 2>&1; then
+    echo "openssl is required to generate MINIO_CHECKIN_READ_PASSWORD" >&2
+    exit 1
+  fi
+  photo_reader_password="$(openssl rand -hex 32)"
+  echo "==> Writing MINIO_CHECKIN_READ_PASSWORD to .env"
+fi
+upsert_if_empty MINIO_CHECKIN_READ_USER "${photo_reader_user}"
+upsert_if_empty MINIO_CHECKIN_READ_PASSWORD "${photo_reader_password}"

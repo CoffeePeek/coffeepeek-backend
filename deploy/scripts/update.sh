@@ -66,6 +66,11 @@ else
   "${COMPOSE[@]}" build account shops moderation media gateway
 fi
 
+# Run the current mounted provisioning script even when the one-shot container already completed.
+echo "==> Provisioning private photo storage and the read-only reader..."
+"${COMPOSE[@]}" up -d minio
+"${COMPOSE[@]}" run --rm --no-deps minio-init
+
 # Start one backend at a time to avoid simultaneous initialization spikes.
 for service in account media shops moderation; do
   if [[ -n "${COFFEE_IMPORT_TOKEN:-}" && ( "${service}" == "media" || "${service}" == "shops" ) ]]; then

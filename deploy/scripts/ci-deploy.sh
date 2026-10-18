@@ -7,6 +7,7 @@ DEPLOY_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 REPO_ROOT="$(cd "${DEPLOY_DIR}/.." && pwd)"
 
 cd "${DEPLOY_DIR}"
+bash "${SCRIPT_DIR}/ensure-secrets.sh"
 set -a
 # shellcheck disable=SC1091
 source .env

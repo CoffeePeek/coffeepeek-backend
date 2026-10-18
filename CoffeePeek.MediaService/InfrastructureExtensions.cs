@@ -15,6 +15,7 @@ using CoffeePeek.Shared.Web;
 using CoffeePeek.Shared.Web.Handlers;
 using CoffeePeek.Shared.Web.Sentry;
 using System.Text.Json.Serialization;
+using CoffePeek.ServiceDefaults;
 
 namespace CoffeePeek.MediaService;
 
@@ -22,7 +23,9 @@ public static class InfrastructureExtensions
 {
     public static WebApplicationBuilder AddApplication(this WebApplicationBuilder builder)
     {
-        builder.WebHost.UseCoffeePeekSentry();
+        // OpenTelemetry owns HTTP tracing; its filters/suppression protect signed storage/renderer URLs.
+        builder.WebHost.UseCoffeePeekSentry(options => options.DisableSentryHttpMessageHandler = true);
+        builder.ConfigureOpenTelemetry();
         var services = builder.Services;
 
         services.AddControllers()
@@ -31,7 +34,11 @@ public static class InfrastructureExtensions
                 options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
             });
         services.AddProblemDetails();
-        services.AddHealthChecks();
+        services.AddSingleton(TimeProvider.System);
+        services.AddSingleton<CheckInStorageState>();
+        services.AddSingleton<CheckInStorageMonitor>();
+        services.AddHostedService(sp => sp.GetRequiredService<CheckInStorageMonitor>());
+        services.AddHealthChecks().AddCheck<CheckInStorageMonitor>("checkin-private-storage");
         services.AddExceptionHandler<GlobalExceptionHandler>();
         services.AddHeaderUserContext(builder.Configuration);
 
@@ -73,6 +80,9 @@ public static class InfrastructureExtensions
         services.AddValidateOptions<MinIOOptions>();
 
         services.AddScoped<IStorageService, MinIOStorageService>();
+        services.AddOptions<CheckInPhotoReadOptions>().BindConfiguration(nameof(CheckInPhotoReadOptions))
+            .ValidateDataAnnotations().ValidateOnStart();
+        services.AddScoped<ICheckInPhotoReader, CheckInPhotoReader>();
         services.AddOptions<CoffeeImportAuthOptions>().BindConfiguration(nameof(CoffeeImportAuthOptions))
             .Validate(o => o.Token.Length == 0 || o.Token.Length >= 32).ValidateOnStart();
 

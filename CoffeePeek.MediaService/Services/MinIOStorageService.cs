@@ -9,6 +9,7 @@ using Minio.DataModel.Args;
 using Minio.DataModel.Tags;
 using Minio.Exceptions;
 using System.Runtime.CompilerServices;
+using CoffeePeek.Shared.Kernel.Observability;
 
 [assembly: InternalsVisibleTo("CoffeePeek.MediaService.Tests")]
 
@@ -138,12 +139,32 @@ public class MinIOStorageService : IStorageService, IDisposable
 
     public async Task EnsureCheckInBucketPrivateAsync(CancellationToken ct = default)
     {
+        using var measurement = PhotoDeliveryTelemetry.Start("minio_policy_write");
         var bucket = GetBucketName(BucketType.CheckIn);
         if (string.IsNullOrWhiteSpace(bucket) || bucket == _options.ShopBucketName || bucket == _options.UserBucketName)
             throw new InvalidOperationException("Check-in storage must use a separate private bucket.");
         if (!await _internalClient.BucketExistsAsync(new BucketExistsArgs().WithBucket(bucket), ct))
             await _internalClient.MakeBucketAsync(new MakeBucketArgs().WithBucket(bucket), ct);
         await _internalClient.RemovePolicyAsync(new RemovePolicyArgs().WithBucket(bucket), ct);
+        measurement.Complete();
+    }
+
+    public async Task<bool> IsCheckInBucketPrivateAsync(CancellationToken ct = default)
+    {
+        using var measurement = PhotoDeliveryTelemetry.Start("minio_policy_audit");
+        var bucket = GetBucketName(BucketType.CheckIn);
+        if (string.IsNullOrWhiteSpace(bucket) || bucket == _options.ShopBucketName || bucket == _options.UserBucketName)
+            return false;
+        if (!await _internalClient.BucketExistsAsync(new BucketExistsArgs().WithBucket(bucket), ct)) return false;
+        string? policy;
+        try { policy = await _internalClient.GetPolicyAsync(new GetPolicyArgs().WithBucket(bucket), ct); }
+        catch (MinioException error) when (error.Response?.Code == "NoSuchBucketPolicy")
+        { policy = null; }
+        // Provisioning removes all bucket policies. Any unexpected policy needs operator inspection.
+        var isPrivate = string.IsNullOrWhiteSpace(policy)
+            || JsonNode.Parse(policy)?["Statement"] is JsonArray { Count: 0 };
+        measurement.Complete(isPrivate ? "private" : "drift");
+        return isPrivate;
     }
 
     public async Task CopyToAsync(string key, BucketType bucket, Stream destination, CancellationToken ct = default)

@@ -1,7 +1,6 @@
 using System.Net;
 using System.Text;
-using CoffeePeek.Contract.Dtos.CheckIns;
-using CoffeePeek.Contract.Dtos.CoffeeShop;
+using CoffeePeek.Contract.Enums;
 using CoffeePeek.Shared.Auth;
 using CoffeePeek.Shared.Auth.Constants;
 using CoffeePeek.Shared.Auth.Options;
@@ -20,8 +19,7 @@ public class CheckInPhotoAccessTests
     private static readonly Guid Author = Guid.NewGuid();
     private static readonly Guid CheckInId = Guid.NewGuid();
     private static readonly Guid PhotoId = Guid.NewGuid();
-    private static UnifiedCheckInDto Visible => new() { Id = CheckInId, UserId = Author,
-        Photos = [new(PhotoId, "photo.jpg", "image/jpeg", "private-key", 5, 0, "protected-url")] };
+    private static CheckInPhotoAccess Visible => new(CheckInId, Author, PhotoId, "image/jpeg", CheckInKind.Shop, 1);
 
     private static (CheckInPhotosController Controller, FakeQueries Queries, FakeMedia Handler) Setup(Guid? reader)
     {
@@ -40,19 +38,19 @@ public class CheckInPhotoAccessTests
     public async Task CutoutDownloadUsesSameAuthorizationAndStreamsPngWithoutAddingItToGallery(bool moderator)
     {
         var (controller, queries, media) = Setup(Author);
-        var cup = new CheckInPhotoDto(Guid.NewGuid(), "cup.png", "image/png", "private/cup", 5, 1, "protected-url");
-        queries.Detail = Visible with { DrinkPhoto = cup }; queries.Snapshot = queries.Detail;
+        var cup = Visible with { PhotoId = Guid.NewGuid(), ContentType = "image/png" };
+        queries.Detail = cup; queries.Snapshot = cup;
         media.ContentType = "image/png";
         var result = moderator
-            ? await controller.DownloadModeration(CheckInId, cup.Id, 1, TestContext.Current.CancellationToken)
-            : await controller.Download(CheckInId, cup.Id, TestContext.Current.CancellationToken);
+            ? await controller.DownloadModeration(CheckInId, cup.PhotoId, 1, TestContext.Current.CancellationToken)
+            : await controller.Download(CheckInId, cup.PhotoId, TestContext.Current.CancellationToken);
         result.Should().BeOfType<EmptyResult>();
         controller.Response.ContentType.Should().Be("image/png");
-        media.Path.Should().Be($"/internal/check-in-photos/{CheckInId}/{cup.Id}");
+        media.Path.Should().Be($"/internal/check-in-photos/{CheckInId}/{cup.PhotoId}");
         queries.Detail = null; queries.Snapshot = null;
         var denied = moderator
-            ? await controller.DownloadModeration(CheckInId, cup.Id, 1, TestContext.Current.CancellationToken)
-            : await controller.Download(CheckInId, cup.Id, TestContext.Current.CancellationToken);
+            ? await controller.DownloadModeration(CheckInId, cup.PhotoId, 1, TestContext.Current.CancellationToken)
+            : await controller.Download(CheckInId, cup.PhotoId, TestContext.Current.CancellationToken);
         denied.Should().BeOfType<NotFoundResult>();
         media.Calls.Should().Be(1);
     }
@@ -62,7 +60,7 @@ public class CheckInPhotoAccessTests
     {
         var ct = TestContext.Current.CancellationToken;
         var (controller, queries, media) = Setup(null);
-        queries.Detail = Visible with { Kind = CoffeePeek.Contract.Enums.CheckInKind.Home, ShopId = null };
+        queries.Detail = Visible with { Kind = CheckInKind.Home };
         (await controller.Download(CheckInId, PhotoId, ct)).Should().BeOfType<EmptyResult>();
         media.OwnerHeader.Should().Be(Author.ToString());
         queries.Detail = null;
@@ -80,34 +78,6 @@ public class CheckInPhotoAccessTests
         queries.Readers.Should().Equal(Author, Author);
         media.Calls.Should().Be(1);
         controller.Response.Headers.CacheControl.ToString().Should().Be("private, no-store");
-    }
-
-    [Fact]
-    public async Task HomePhotoStreamsOnlyForItsOwnerAndNeverForAnonymousOrAnotherUser()
-    {
-        var home = new HomeCheckInDto { Id = CheckInId,
-            Photos = [new(PhotoId, "home.jpg", "image/jpeg", "private/home", 5, 0,
-                $"/api/v1/check-ins/{CheckInId}/photos/{PhotoId}")] };
-        var (ownerController, ownerQueries, ownerMedia) = Setup(Author);
-        ownerQueries.HomeDetail = home;
-        (await ownerController.Download(CheckInId, PhotoId, TestContext.Current.CancellationToken))
-            .Should().BeOfType<EmptyResult>();
-        ownerQueries.HomeReaders.Should().Equal(Author);
-        ownerMedia.Calls.Should().Be(1);
-        ownerController.Response.Headers.CacheControl.ToString().Should().Be("private, no-store");
-
-        var (otherController, otherQueries, otherMedia) = Setup(Guid.NewGuid());
-        otherQueries.HomeDetail = home;
-        (await otherController.Download(CheckInId, PhotoId, TestContext.Current.CancellationToken))
-            .Should().BeOfType<NotFoundResult>();
-        otherMedia.Calls.Should().Be(0);
-
-        var (anonymousController, anonymousQueries, anonymousMedia) = Setup(null);
-        anonymousQueries.HomeDetail = home;
-        (await anonymousController.Download(CheckInId, PhotoId, TestContext.Current.CancellationToken))
-            .Should().BeOfType<NotFoundResult>();
-        anonymousQueries.HomeReaders.Should().BeEmpty();
-        anonymousMedia.Calls.Should().Be(0);
     }
 
     [Fact]
@@ -153,8 +123,7 @@ public class CheckInPhotoAccessTests
         bool moderator,string storedType,string upstreamType)
     {
         var (controller,queries,media)=Setup(Author);
-        var photo=Visible.Photos.Single() with { ContentType=storedType };
-        queries.Detail=Visible with { Photos=[photo] }; queries.Snapshot=queries.Detail;
+        queries.Detail=Visible with { ContentType=storedType }; queries.Snapshot=queries.Detail;
         media.ContentType=upstreamType;
         var result=moderator
             ? await controller.DownloadModeration(CheckInId,PhotoId,1,TestContext.Current.CancellationToken)
@@ -193,30 +162,21 @@ public class CheckInPhotoAccessTests
         public string? GetUserRole() => null;
         public bool IsAuthenticated => id.HasValue;
     }
-    private sealed class FakeQueries : ICheckInQueries
+    private sealed class FakeQueries : ICheckInPhotoAccessQueries
     {
-        public UnifiedCheckInDto? Detail { get; set; }
-        public UnifiedCheckInDto? Snapshot { get; set; }
-        public HomeCheckInDto? HomeDetail { get; set; }
+        public CheckInPhotoAccess? Detail { get; set; }
+        public CheckInPhotoAccess? Snapshot { get; set; }
         public List<Guid?> Readers { get; } = [];
-        public List<Guid?> HomeReaders { get; } = [];
         public List<int> Revisions { get; } = [];
-        public Task<HomeCheckInDto?> GetHomeByIdAsync(Guid id, Guid? userId, CancellationToken ct = default)
+        public Task<CheckInPhotoAccess?> GetAsync(Guid id, Guid photoId, Guid? readerId, CancellationToken ct)
         {
-            HomeReaders.Add(userId);
-            return Task.FromResult(id == CheckInId && userId == Author ? HomeDetail : null);
+            Readers.Add(readerId);
+            return Task.FromResult(Detail?.CheckInId == id && Detail.PhotoId == photoId ? Detail : null);
         }
-        public Task<HomeCheckInPage> GetHomeByUserAsync(Guid userId, int pageNumber, int pageSize,
-            DateOnly? from = null, DateOnly? to = null, CancellationToken ct = default) => throw new NotSupportedException();
-        public Task<HomeCalendarDayDto[]> GetHomeCalendarAsync(Guid userId, DateOnly from, DateOnly to,
-            CancellationToken ct = default) => throw new NotSupportedException();
-        public Task<HomeBeanStatsDto[]> GetHomeBeanStatsAsync(Guid userId, CancellationToken ct = default) => throw new NotSupportedException();
-        public Task<HomeMethodStatsDto[]> GetHomeMethodStatsAsync(Guid userId, CancellationToken ct = default) => throw new NotSupportedException();
-        public Task<UnifiedCheckInDto?> GetUnifiedByIdAsync(Guid id, Guid? readerId, CancellationToken ct = default) { Readers.Add(readerId); return Task.FromResult(Detail); }
-        public Task<UnifiedCheckInDto?> GetModerationSnapshotAsync(Guid id, int revision, CancellationToken ct = default) { Revisions.Add(revision); return Task.FromResult(Snapshot); }
-        public Task<CheckInPage> GetUnifiedByUserAsync(Guid userId, int pageNumber, int pageSize, DateTime? from = null, DateTime? to = null, CancellationToken ct = default) => throw new NotSupportedException();
-        public Task<PublicCheckInPage> GetPublicAsync(Guid? readerId, Guid? cityId, Guid? shopId, Guid? authorId, int pageSize, string? cursor, CancellationToken ct = default) => throw new NotSupportedException();
-        public Task<(decimal AverageRating, int Count)> GetStatsByShopAsync(Guid shopId, CancellationToken ct = default) => throw new NotSupportedException();
-        public Task<UnifiedCheckInDto[]> GetByUserAndShopAsync(Guid userId, Guid shopId, int page = 1, int pageSize = 10, CancellationToken ct = default) => throw new NotSupportedException();
+        public Task<CheckInPhotoAccess?> GetModerationAsync(Guid id, Guid photoId, int revision, CancellationToken ct)
+        {
+            Revisions.Add(revision);
+            return Task.FromResult(Snapshot?.CheckInId == id && Snapshot.PhotoId == photoId ? Snapshot : null);
+        }
     }
 }

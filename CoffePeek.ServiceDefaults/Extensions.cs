@@ -53,12 +53,13 @@ public static class Extensions
                     metrics.AddAspNetCoreInstrumentation()
                         .AddHttpClientInstrumentation()
                         .AddRuntimeInstrumentation()
-                        .AddMeter("CoffeePeek.UserWrites");
+                        .AddMeter("CoffeePeek.UserWrites", "CoffeePeek.PhotoDelivery");
                 })
                 .WithTracing(tracing =>
                 {
                     tracing.AddSource(builder.Environment.ApplicationName)
                         .AddSource("CoffeePeek.UserWrites")
+                        .AddSource("CoffeePeek.PhotoDelivery")
                         .AddAspNetCoreInstrumentation(options =>
                         {
                             // Exclude health check requests from tracing
@@ -68,9 +69,12 @@ public static class Extensions
                         })
                         .AddHttpClientInstrumentation(options =>
                         {
-                            // The Bot API carries the secret token in the path; never export that URL in traces.
+                            // Bot paths contain tokens; signed S3 requests expose private object keys/signatures.
+                            // PhotoDelivery spans measure storage separately without exporting those URLs.
                             options.FilterHttpRequestMessage = request =>
-                                !string.Equals(request.RequestUri?.Host, "api.telegram.org", StringComparison.OrdinalIgnoreCase);
+                                !string.Equals(request.RequestUri?.Host, "api.telegram.org", StringComparison.OrdinalIgnoreCase)
+                                && request.Headers.Authorization?.Scheme is not ("AWS4-HMAC-SHA256" or "AWS")
+                                && request.RequestUri?.Query.Contains("X-Amz-Signature", StringComparison.OrdinalIgnoreCase) != true;
                         });
                 });
 

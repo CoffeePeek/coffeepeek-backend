@@ -141,20 +141,14 @@ services:
     depends_on:
       - minio
     restart: "no"
-    entrypoint: >
-      /bin/sh -c "
-      sleep 5;
-      until mc alias set local http://minio:9000 ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD}; do sleep 2; done;
-      mc mb --ignore-existing local/coffeepeek.shops;
-      mc mb --ignore-existing local/coffeepeek.avatars;
-      mc mb --ignore-existing local/coffeepeek.checkins;
-      mc anonymous set none local/coffeepeek.checkins;
-      mc anonymous get-json local/coffeepeek.shops | grep -q CheckInPrivate || mc anonymous set download local/coffeepeek.shops;
-      mc anonymous set download local/coffeepeek.avatars
-      "
+    entrypoint: ["/bin/sh", "/provision/provision.sh"]
+    volumes:
+      - ./minio:/provision:ro
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_CHECKIN_READ_USER: ${MINIO_CHECKIN_READ_USER:?set a dedicated MinIO reader}
+      MINIO_CHECKIN_READ_PASSWORD: ${MINIO_CHECKIN_READ_PASSWORD:?set the dedicated reader password}
 
   # Resized image variants in front of MinIO. Reachable only on the compose network through Caddy
   # ({MEDIA_DOMAIN}/img/*). No MinIO credentials: it reads the anonymous-download buckets over plain HTTP.
@@ -332,6 +326,8 @@ services:
       MinIOOptions__Endpoint: http://minio:9000
       MinIOOptions__AccessKey: ${MINIO_ROOT_USER}
       MinIOOptions__SecretKey: ${MINIO_ROOT_PASSWORD}
+      CheckInPhotoReadOptions__AccessKey: ${MINIO_CHECKIN_READ_USER}
+      CheckInPhotoReadOptions__SecretKey: ${MINIO_CHECKIN_READ_PASSWORD}
       MinIOOptions__ShopBucketName: coffeepeek.shops
       MinIOOptions__UserBucketName: coffeepeek.avatars
       Sentry__Dsn: ${SENTRY_DSN_MEDIA:-}

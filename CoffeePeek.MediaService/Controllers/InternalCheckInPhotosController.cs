@@ -15,7 +15,7 @@ namespace CoffeePeek.MediaService.Controllers;
 [Route("internal/check-in-photos")]
 [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
 public class InternalCheckInPhotosController(ClaimCheckInPhotosHandler claims, IPhotoRepository repository,
-    IStorageService storage, IUserContext userContext, IOptions<GatewayAuthOptions> authOptions) : ControllerBase
+    ICheckInPhotoReader reader, IUserContext userContext, IOptions<GatewayAuthOptions> authOptions) : ControllerBase
 {
     private bool IsTrusted => GatewayAuthVerifier.IsTrusted(Request.Headers[GatewayHeaderConsts.XGatewayAuth],
         authOptions.Value.SecretKey);
@@ -42,7 +42,6 @@ public class InternalCheckInPhotosController(ClaimCheckInPhotosHandler claims, I
         if (!IsTrusted || userContext.GetUserId() is not { } ownerId) return Unauthorized();
         var photo = await repository.GetCheckInPhotoAsync(checkInId, photoId, ownerId, ct);
         if (photo == null) return NotFound();
-        await storage.EnsureCheckInBucketPrivateAsync(ct);
         Response.Headers.CacheControl = "private, no-store";
         Response.Headers["X-Content-Type-Options"] = "nosniff";
         if (GenerateShopPhotoHandler.IsSafePhotoContentType(photo.ContentType))
@@ -52,7 +51,7 @@ public class InternalCheckInPhotosController(ClaimCheckInPhotosHandler claims, I
             Response.ContentType = "application/octet-stream";
             Response.Headers.ContentDisposition = "attachment";
         }
-        await storage.CopyToAsync(photo.StorageKey, BucketType.CheckIn, Response.Body, ct);
+        await reader.CopyToAsync(photo.StorageKey, Response.Body, ct);
         return new EmptyResult();
     }
 }

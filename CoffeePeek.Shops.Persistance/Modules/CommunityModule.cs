@@ -14,6 +14,7 @@ public static class CommunityModule
     public static IServiceCollection AddCommunityModule(this IServiceCollection services)
     {
         services.AddScoped<ICheckInQueries, CheckInQueries>();
+        services.AddScoped<ICheckInPhotoAccessQueries, CheckInPhotoAccessQueries>();
         services.AddScoped<IProfileActivityQueries, ProfileActivityQueries>();
         services.AddScoped<ICheckInFeedReader, CheckInFeedReader>();
         services.AddScoped<IQueryCheckInRepository, QueryCheckInRepository>();

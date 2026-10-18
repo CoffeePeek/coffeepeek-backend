@@ -20,6 +20,7 @@ public interface IStorageService
     Task<long?> GetObjectSize(string storageKey, BucketType bucketType, CancellationToken ct = default);
     Task Delete(string oldStorageKey, BucketType bucketType, CancellationToken ct = default);
     Task EnsureCheckInBucketPrivateAsync(CancellationToken ct = default);
+    Task<bool> IsCheckInBucketPrivateAsync(CancellationToken ct = default);
     Task<string> MoveToCheckInStorageAsync(string key, Guid photoId, Guid checkInId, CancellationToken ct = default,
         BucketType sourceBucket = BucketType.Shop);
     /// <summary>Verify a private historical copy and deny the old public locator while retaining source bytes.</summary>
