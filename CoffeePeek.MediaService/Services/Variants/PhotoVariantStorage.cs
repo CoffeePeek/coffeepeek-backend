@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using CoffeePeek.MediaService.Configuration;
 using Microsoft.Extensions.Options;
 using Minio;
@@ -17,7 +18,7 @@ public sealed class PhotoVariantStorage : IDisposable
             throw new InvalidOperationException("Variants require a separate storage identity.");
         var endpoint = new Uri(storage.Value.Endpoint);
         client = new MinioClient().WithEndpoint(endpoint).WithSSL(endpoint.Scheme == "https")
-            .WithCredentials(options.Value.AccessKey, options.Value.SecretKey).Build();
+            .WithCredentials(options.Value.AccessKey, options.Value.SecretKey).WithRegion("us-east-1").Build();
         bucket = options.Value.BucketName;
     }
 
@@ -41,8 +42,12 @@ public sealed class PhotoVariantStorage : IDisposable
         using var stream = new MemoryStream(image.Bytes, writable: false);
         await client.PutObjectAsync(new PutObjectArgs().WithBucket(bucket).WithObject(key).WithStreamData(stream)
             .WithObjectSize(image.Bytes.Length).WithContentType(image.ContentType), ct);
-        var stat = await client.StatObjectAsync(new StatObjectArgs().WithBucket(bucket).WithObject(key), ct);
-        if (stat.Size != image.Bytes.Length) throw new IOException("Stored variant length mismatch.");
+        // Verify the persisted bytes without the SDK StatObject path, which requires a bucket HEAD.
+        using var verified = new PhotoSourceDigestStream();
+        await PrivatePhotoObjectReader.CopyAsync(client, bucket, key, verified, ct);
+        if (verified.Length != image.Bytes.Length
+            || verified.Digest() != Convert.ToHexStringLower(SHA256.HashData(image.Bytes)))
+            throw new IOException("Stored variant verification failed.");
     }
 
     public Task DeleteAsync(string key, CancellationToken ct) =>
