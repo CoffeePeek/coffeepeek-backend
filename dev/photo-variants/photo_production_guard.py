@@ -37,6 +37,11 @@ INSPECT = ('{"id":{{json .Id}},"name":{{json .Name}},"imageId":{{json .Image}},"
            '"service":{{json (index .Config.Labels "com.docker.compose.service")}},'
            '"networks":{{json .NetworkSettings.Networks}}}')
 NETWORK = '{"id":{{json .Id}},"driver":{{json .Driver}},"scope":{{json .Scope}},"config":{{json .IPAM.Config}}}'
+DIAGNOSTIC_STAGES = frozenset(("initialization", "arguments", "output", "storage_container", "network", "policy_1",
+    "policy_2", "policy_3", "application_containers", "postgres_container", "config", "tags", "summary", "complete",
+    *("pg_dump_" + database for database in DATABASES)))
+STORAGE_ERROR_CODES = frozenset(("AccessDenied", "SignatureDoesNotMatch", "RequestTimeTooSkewed", "InvalidAccessKeyId"))
+_diagnostic = {}
 
 
 class GuardError(Exception):
@@ -46,6 +51,44 @@ class GuardError(Exception):
 def require(condition):
     if not condition:
         raise GuardError("guard_unavailable")
+
+
+def diagnostic_stage(stage):
+    require(stage in DIAGNOSTIC_STAGES)
+    _diagnostic.clear()
+    _diagnostic["diagnosticStage"] = stage
+
+
+def diagnostic_http(status, code):
+    if type(status) is int and 300 <= status <= 599:
+        _diagnostic["httpStatus"] = status
+    if isinstance(code, str) and code in STORAGE_ERROR_CODES:
+        _diagnostic["storageErrorCode"] = code
+
+
+def safe_diagnostic():
+    # Never serialize exception attributes, arbitrary XML fields or the whole diagnostic mapping.
+    stage = _diagnostic.get("diagnosticStage")
+    result = {"diagnosticStage": stage if isinstance(stage, str) and stage in DIAGNOSTIC_STAGES else "unknown"}
+    status, code = _diagnostic.get("httpStatus"), _diagnostic.get("storageErrorCode")
+    if type(status) is int and 300 <= status <= 599:
+        result["httpStatus"] = status
+    if isinstance(code, str) and code in STORAGE_ERROR_CODES:
+        result["storageErrorCode"] = code
+    return result
+
+
+def storage_error_code(body):
+    if len(body) > 4096 or b"<!DOCTYPE" in body.upper() or b"<!ENTITY" in body.upper():
+        return None
+    try:
+        root = ET.fromstring(body)
+        if root.tag.rsplit("}", 1)[-1] != "Error":
+            return None
+        codes = [node.text for node in root if node.tag.rsplit("}", 1)[-1] == "Code"]
+        return codes[0] if len(codes) == 1 else None
+    except (ValueError, ET.ParseError):
+        return None
 
 
 class Commands:
@@ -194,13 +237,12 @@ class Policies:
                 return body, policy_view(json.loads(body), body)
         except urllib.error.HTTPError as error:
             try:
+                diagnostic_http(error.code, None)
                 body = error.read(4097)
-                require(error.code == 404 and len(body) <= 4096 and b"<!DOCTYPE" not in body.upper() and b"<!ENTITY" not in body.upper())
-                root = ET.fromstring(body)
-                require(root.tag.rsplit("}", 1)[-1] == "Error")
-                codes = [node.text for node in root if node.tag.rsplit("}", 1)[-1] == "Code"]
-                require(codes in (["NoSuchBucketPolicy"], ["NoSuchBucket"]))
-                status = "missing" if codes == ["NoSuchBucketPolicy"] else "missing_bucket"
+                code = storage_error_code(body)
+                diagnostic_http(error.code, code)
+                require(error.code == 404 and code in ("NoSuchBucketPolicy", "NoSuchBucket"))
+                status = "missing" if code == "NoSuchBucketPolicy" else "missing_bucket"
                 saved = json.dumps({"status": status, "policy": None}).encode()
                 return saved, {"status": status, "sha256": hashlib.sha256(saved).hexdigest(), "statementCount": 0,
                                "anonymousAllow": False, "private": status == "missing"}
@@ -236,11 +278,14 @@ def policy_view(policy, body):
 
 
 def inspect_storage(commands, environment, destination, policies=None):
+    diagnostic_stage("storage_container")
     observed = container(commands, "minio")
+    diagnostic_stage("network")
     ip = storage_ip(commands, observed)
     policies = policies or Policies(ip, environment)
     result = {}
-    for bucket in BUCKETS:
+    for index, bucket in enumerate(BUCKETS, 1):
+        diagnostic_stage("policy_" + str(index))
         body, summary = policies.read(bucket)
         write_bytes(destination / (bucket + ".policy.json"), body)
         result[bucket] = summary
@@ -270,16 +315,21 @@ def copy_configuration(destination):
 
 def backup(commands, environment, destination, run_id, policies=None):
     result = inspect_storage(commands, environment, destination, policies)
+    diagnostic_stage("application_containers")
     applications = {service: container(commands, service) for service in APPLICATIONS}
+    diagnostic_stage("postgres_container")
     postgres = container(commands, "postgres")
     result["databases"] = {}
     for database in DATABASES:
+        diagnostic_stage("pg_dump_" + database)
         archive = destination / (database + ".dump")
         commands.dump(postgres["id"], database, archive)
         result["databases"][database] = dict(file_digest(archive), validatedToc=True)
+    diagnostic_stage("config")
     configuration = copy_configuration(destination)
     result["configurationFiles"] = sum(not value.get("missing") for value in configuration.values())
     # A concurrent deployment invalidates the rollback baseline instead of silently mixing generations.
+    diagnostic_stage("tags")
     for service in APPLICATIONS:
         current = container(commands, service)
         require(current["id"] == applications[service]["id"] and current["imageId"] == applications[service]["imageId"])
@@ -302,8 +352,10 @@ def backup(commands, environment, destination, run_id, policies=None):
 
 
 def execute(operation, run_id, environment=None, commands=None, policies=None, now=None):
+    diagnostic_stage("arguments")
     require(operation in ("storage", "inspect-storage", "backup") and isinstance(run_id, str) and RUN_ID.fullmatch(run_id))
     environment = dict(os.environ if environment is None else environment)
+    diagnostic_stage("output")
     no_symlinks(OUTPUT)
     OUTPUT.mkdir(parents=True, exist_ok=True, mode=0o700)
     os.chmod(OUTPUT, 0o700)
@@ -314,20 +366,23 @@ def execute(operation, run_id, environment=None, commands=None, policies=None, n
     commands = commands or Commands(environment)
     result = backup(commands, environment, destination, run_id, policies) if operation == "backup" \
         else inspect_storage(commands, environment, destination, policies)
+    diagnostic_stage("summary")
     write_json(destination / "guard-summary.json", result)
+    diagnostic_stage("complete")
     return {"operation": operation, "backupId": name, "complete": True, **result}
 
 
 def main(argv=None):
     import sys
     try:
+        diagnostic_stage("initialization")
         args = sys.argv[1:] if argv is None else argv
         require(len(args) in (0, 2))
         operation, run_id = args if args else (os.environ.get("PHOTO_OPERATION"), os.environ.get("GITHUB_RUN_ID"))
         print(json.dumps(execute(operation, run_id), sort_keys=True))
         return 0
     except Exception:
-        print(json.dumps({"complete": False, "status": "unknown", "reason": "guard_unavailable_no_automatic_retry"}))
+        print(json.dumps({"complete": False, "status": "unknown", "reason": "guard_unavailable_no_automatic_retry", **safe_diagnostic()}))
         return 1
 
 

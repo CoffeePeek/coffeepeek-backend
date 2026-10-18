@@ -206,8 +206,117 @@ class GuardTests(unittest.TestCase):
         self.assertNotIn(PRIVATE, stream.getvalue())
         self.assertFalse(json.loads(stream.getvalue())["complete"])
 
+    def test_failure_reports_the_controlled_operation_stage(self):
+        real_container, real_network = guard.container, guard.storage_ip
+        real_configuration = guard.copy_configuration
+        stages = ("storage_container", "network", "policy_1", "policy_2", "policy_3",
+                  "application_containers", "postgres_container", *("pg_dump_" + db for db in guard.DATABASES),
+                  "config", "tags")
+        for expected in stages:
+            with self.subTest(stage=expected):
+                commands, policies = FakeCommands(), FakePolicies()
+                real_read, real_dump, real_run = policies.read, commands.dump, commands.run
+
+                def observed_container(command, service):
+                    if (expected, service) in (("storage_container", "minio"),
+                                               ("application_containers", "account"), ("postgres_container", "postgres")):
+                        raise RuntimeError(PRIVATE)
+                    return real_container(command, service)
+
+                def network(command, observed):
+                    if expected == "network":
+                        raise RuntimeError(PRIVATE)
+                    return real_network(command, observed)
+
+                def read(bucket):
+                    if expected == "policy_" + str(guard.BUCKETS.index(bucket) + 1):
+                        raise RuntimeError(PRIVATE)
+                    return real_read(bucket)
+
+                def dump(container, database, destination):
+                    if expected == "pg_dump_" + database:
+                        raise RuntimeError(PRIVATE)
+                    return real_dump(container, database, destination)
+
+                def configuration(destination):
+                    if expected == "config":
+                        raise RuntimeError(PRIVATE)
+                    return real_configuration(destination)
+
+                def run(args, **kwargs):
+                    if expected == "tags" and args[:3] == ["docker", "image", "ls"]:
+                        raise RuntimeError(PRIVATE)
+                    return real_run(args, **kwargs)
+
+                policies.read, commands.dump, commands.run = read, dump, run
+                with patch.object(guard, "container", side_effect=observed_container), \
+                     patch.object(guard, "storage_ip", side_effect=network), \
+                     patch.object(guard, "copy_configuration", side_effect=configuration):
+                    with self.assertRaises(RuntimeError):
+                        guard.execute("backup", expected, ENV, commands, policies, self.now)
+                self.assertEqual({"diagnosticStage": expected}, guard.safe_diagnostic())
+
+    def test_main_filters_arbitrary_diagnostic_and_exception_fields(self):
+        exception = RuntimeError(PRIVATE)
+        exception.request_url = "https://private/" + PRIVATE
+        exception.storageErrorCode = PRIVATE
+        exception.diagnosticStage = PRIVATE
+
+        def fail(*args):
+            guard.diagnostic_stage("policy_2")
+            guard._diagnostic.update({"request_url": PRIVATE, "exception": exception,
+                                      "httpStatus": "403 " + PRIVATE, "storageErrorCode": PRIVATE})
+            raise exception
+
+        stream = io.StringIO()
+        with patch.object(guard, "execute", side_effect=fail), contextlib.redirect_stdout(stream):
+            self.assertEqual(1, guard.main(["backup", "1"]))
+        self.assertEqual({"complete": False, "status": "unknown", "reason": "guard_unavailable_no_automatic_retry",
+                          "diagnosticStage": "policy_2"}, json.loads(stream.getvalue()))
+        self.assertNotIn(PRIVATE, stream.getvalue())
+        for status in (True, "403", 403.0, 200, 600):
+            guard._diagnostic.update(diagnosticStage=PRIVATE, httpStatus=status, storageErrorCode=PRIVATE)
+            self.assertEqual({"diagnosticStage": "unknown"}, guard.safe_diagnostic())
+        guard.diagnostic_stage("network")
+        self.assertEqual({"diagnosticStage": "network"}, guard.safe_diagnostic())
+
 
 class PolicyTests(unittest.TestCase):
+    def test_http_failure_reports_only_status_and_allowlisted_code_without_retry(self):
+        for code in (*sorted(guard.STORAGE_ERROR_CODES), PRIVATE):
+            with self.subTest(code=code):
+                client = guard.Policies("172.18.0.2", ENV)
+                body = ("<Error><Code>" + code + "</Code><Message>" + PRIVATE + "</Message>"
+                        "<RequestId>" + PRIVATE + "</RequestId><Resource>" + PRIVATE + "</Resource></Error>").encode()
+                client.opener = Mock()
+                client.opener.open.side_effect = urllib.error.HTTPError("https://private/" + PRIVATE, 403, PRIVATE,
+                                                                       {"X-Private": PRIVATE}, io.BytesIO(body))
+
+                def fail(*args):
+                    guard.diagnostic_stage("policy_1")
+                    client.read("coffeepeek.shops")
+
+                stream = io.StringIO()
+                with patch.object(guard, "execute", side_effect=fail), contextlib.redirect_stdout(stream):
+                    self.assertEqual(1, guard.main(["storage", "1"]))
+                reported = json.loads(stream.getvalue())
+                expected = {"complete": False, "status": "unknown", "reason": "guard_unavailable_no_automatic_retry",
+                            "diagnosticStage": "policy_1", "httpStatus": 403}
+                if code in guard.STORAGE_ERROR_CODES:
+                    expected["storageErrorCode"] = code
+                self.assertEqual(expected, reported)
+                self.assertNotIn(PRIVATE, stream.getvalue())
+                self.assertEqual(1, client.opener.open.call_count)
+
+    def test_malformed_xml_cannot_supply_a_diagnostic_code(self):
+        bodies = (b"<Error><Code>AccessDenied</Code><Code>InvalidAccessKeyId</Code></Error>",
+                  b"<!DOCTYPE Error><Error><Code>AccessDenied</Code></Error>",
+                  b'<Error><Code>AccessDenied</Code><Message>' + PRIVATE.encode() + b'</Message>',
+                  b"<NotError><Code>AccessDenied</Code></NotError>", b"x" * 4097)
+        for body in bodies:
+            with self.subTest(body=body[:20]):
+                self.assertIsNone(guard.storage_error_code(body))
+
     def test_missing_policy_and_missing_bucket_are_distinct_known_baselines(self):
         for code, status in (("NoSuchBucketPolicy", "missing"), ("NoSuchBucket", "missing_bucket")):
             client = guard.Policies("172.18.0.2", ENV)

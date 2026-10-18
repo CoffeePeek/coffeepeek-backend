@@ -123,6 +123,7 @@ jobs:
           [[ -z "$EXPECTED_DEPLOY_SHA" || "$EXPECTED_DEPLOY_SHA" =~ ^[0-9a-f]{40}$ ]]
           [[ "$PHOTO_OPERATION" == canary-prepare || -n "$EXPECTED_DEPLOY_SHA" ]]
           operator_path="/var/lib/coffeepeek/photo-backfill/operators/$GITHUB_SHA/$GITHUB_RUN_ID/dev/photo-variants/$operator"
+          set +e
           {
           printf 'photo_operation=%q\nexpected_deploy_sha=%q\noperator_path=%q\n' "$PHOTO_OPERATION" "$EXPECTED_DEPLOY_SHA" "$operator_path"
           cat <<'REMOTE'
@@ -139,8 +140,12 @@ jobs:
           } | ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=15 \
             -o ServerAliveCountMax=4 "$VPS_USER@$VPS_HOST" 'bash -s' \
             > "$RUNNER_TEMP/photo-production-operation.json"
+          operation_status=$?
+          set -e
           python3 -m json.tool "$RUNNER_TEMP/photo-production-operation.json"
+          exit "$operation_status"
       - name: Save sanitized operation result
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: photo-production-operation
@@ -172,6 +177,7 @@ jobs:
           umask 077
           [[ "$PHOTO_OPERATION" == storage || "$PHOTO_OPERATION" == backup ]]
           [[ "$GITHUB_RUN_ID" =~ ^[0-9]+$ ]]
+          set +e
           {
           printf 'export PHOTO_OPERATION=%q GITHUB_RUN_ID=%q\n' "$PHOTO_OPERATION" "$GITHUB_RUN_ID"
           cat <<'REMOTE'
@@ -190,8 +196,12 @@ jobs:
           } | ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=15 \
             -o ServerAliveCountMax=4 "$VPS_USER@$VPS_HOST" 'bash -s' \
             > "$RUNNER_TEMP/photo-production-preservation.json"
+          operation_status=$?
+          set -e
           python3 -m json.tool "$RUNNER_TEMP/photo-production-preservation.json"
+          exit "$operation_status"
       - name: Save sanitized preservation report
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: photo-production-preservation
