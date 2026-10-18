@@ -7,6 +7,7 @@ using CoffeePeek.Gateway.Middleware;
 using CoffeePeek.Shared.Auth;
 using CoffeePeek.Shared.Auth.Constants;
 using CoffeePeek.Shared.Auth.Options;
+using CoffeePeek.Shared.Web.Extensions;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -61,6 +62,7 @@ public sealed class CheckInPhotoGatewayHttpTests
         var revocation = new Revocations();
         gatewayBuilder.Services.AddSingleton<IRevokedUserStore>(revocation);
         gatewayBuilder.Services.AddGatewayAuth(gatewayBuilder.Environment, gatewayBuilder.Configuration);
+        gatewayBuilder.Services.AddCorsModule(gatewayBuilder.Environment);
         gatewayBuilder.Services.AddResponseCaching();
         gatewayBuilder.Services.AddReverseProxy().LoadFromMemory(
             [new RouteConfig { RouteId = "photos", ClusterId = "shops", Match = new RouteMatch { Path = "/api/v1/check-ins/{**remainder}" }, AuthorizationPolicy = "anonymous" }],
@@ -68,12 +70,27 @@ public sealed class CheckInPhotoGatewayHttpTests
                 { ["local"] = new() { Address = downstream.Urls.Single() } } }])
             .AddTransforms<ClaimsToHeadersTransformProvider>();
         await using var gateway = gatewayBuilder.Build();
-        gateway.UseAuthentication(); gateway.UseMiddleware<CheckInPhotoAuthenticationMiddleware>();
+        gateway.UseCors(); gateway.UseAuthentication(); gateway.UseMiddleware<CheckInPhotoAuthenticationMiddleware>();
         gateway.UseAuthorization(); gateway.UseResponseCaching(); gateway.MapReverseProxy();
         await gateway.StartAsync(ct);
         try
         {
             using var client = new HttpClient { BaseAddress = new Uri(gateway.Urls.Single()) };
+            const string origin = "http://localhost:3000";
+            client.DefaultRequestHeaders.Add("Origin", origin);
+            using (var preflight = new HttpRequestMessage(HttpMethod.Options, Path))
+            {
+                preflight.Headers.Add("Access-Control-Request-Method", "GET");
+                preflight.Headers.Add("Access-Control-Request-Headers", "authorization,if-none-match,cache-control");
+                using var response = await client.SendAsync(preflight, ct);
+                Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+                Assert.Equal(origin, response.Headers.GetValues("Access-Control-Allow-Origin").Single());
+                var allowedHeaders = response.Headers.GetValues("Access-Control-Allow-Headers").Single();
+                Assert.Contains("authorization", allowedHeaders, StringComparison.OrdinalIgnoreCase);
+                Assert.Contains("if-none-match", allowedHeaders, StringComparison.OrdinalIgnoreCase);
+                Assert.Contains("cache-control", allowedHeaders, StringComparison.OrdinalIgnoreCase);
+                Assert.Equal(0, calls);
+            }
             for (var i = 0; i < 2; i++)
             {
                 using var anonymous = new HttpRequestMessage(HttpMethod.Get, Path);
@@ -84,6 +101,7 @@ public sealed class CheckInPhotoGatewayHttpTests
                 Assert.Equal("anonymous", await response.Content.ReadAsStringAsync(ct));
                 Assert.Equal(representationDate, response.Headers.Date);
                 Assert.Equal(TimeSpan.FromSeconds(7), response.Headers.Age);
+                AssertBrowserCanReadFreshness(response, origin);
             }
             Assert.Equal(2, calls); // Private responses never enter Gateway's shared response cache.
 
@@ -119,6 +137,7 @@ public sealed class CheckInPhotoGatewayHttpTests
                 Assert.Equal(TimeSpan.FromSeconds(7), unchanged.Headers.Age);
                 Assert.True(unchanged.Headers.CacheControl!.Private);
                 Assert.Equal(TimeSpan.FromSeconds(20), unchanged.Headers.CacheControl.MaxAge);
+                AssertBrowserCanReadFreshness(unchanged, origin);
             }
             Assert.Equal(5, calls);
 
@@ -130,6 +149,16 @@ public sealed class CheckInPhotoGatewayHttpTests
             Assert.Equal(5, calls);
         }
         finally { await gateway.StopAsync(ct); await downstream.StopAsync(ct); }
+    }
+
+    private static void AssertBrowserCanReadFreshness(HttpResponseMessage response, string origin)
+    {
+        Assert.Equal(origin, response.Headers.GetValues("Access-Control-Allow-Origin").Single());
+        Assert.Equal("true", response.Headers.GetValues("Access-Control-Allow-Credentials").Single());
+        var exposed = response.Headers.GetValues("Access-Control-Expose-Headers")
+            .SelectMany(value => value.Split(',', StringSplitOptions.TrimEntries)).ToArray();
+        foreach (var header in new[] { "ETag", "Date", "Age" })
+            Assert.Contains(exposed, value => string.Equals(value, header, StringComparison.OrdinalIgnoreCase));
     }
 
     private static string Token(DateTime expiry, string secret = Secret) => new JwtSecurityTokenHandler().WriteToken(

@@ -9,7 +9,7 @@ namespace CoffeePeek.Gateway.Tests;
 public sealed class PhotoVariantCorsTests
 {
     [Fact]
-    public void BrowserCanReadEtagAndSendConditionalHeadersOnAllowedOrigins()
+    public void BrowserCanReadValidatorAndAgeAndSendConditionalHeadersOnAllowedOrigins()
     {
         var builder = Host.CreateApplicationBuilder(new HostApplicationBuilderSettings { EnvironmentName = Environments.Development });
         builder.Services.AddCorsModule(builder.Environment);
@@ -17,6 +17,8 @@ public sealed class PhotoVariantCorsTests
         var options = host.Services.GetRequiredService<IOptions<CorsOptions>>().Value;
         var policy = options.GetPolicy(options.DefaultPolicyName)!;
         Assert.Contains("ETag", policy.ExposedHeaders);
+        Assert.Contains("Date", policy.ExposedHeaders);
+        Assert.Contains("Age", policy.ExposedHeaders);
         Assert.True(policy.AllowAnyHeader);
         Assert.True(policy.AllowAnyMethod);
         Assert.True(policy.IsOriginAllowed("http://localhost:3000"));
