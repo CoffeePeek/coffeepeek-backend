@@ -36,7 +36,7 @@ public class HomeCheckInQueriesTests
         await db.SaveChangesAsync(ct);
         db.ChangeTracker.Clear();
 
-        var queries = new CheckInQueries(db);
+        var queries = new CheckInQueries(db, Moq.Mock.Of<CoffeePeek.Shops.Application.Abstractions.IAuthorVisibilityLookup>());
         var history = await queries.GetHomeByUserAsync(author, 1, 20, day, day, ct);
         Assert.Equal(1, history.TotalCount);
         var item = Assert.Single(history.Items);
@@ -70,7 +70,7 @@ public class HomeCheckInQueriesTests
         db.CheckIns.AddRange(shopVisit, home);
         await db.SaveChangesAsync(ct);
 
-        var queries = new CheckInQueries(db);
+        var queries = new CheckInQueries(db, Moq.Mock.Of<CoffeePeek.Shops.Application.Abstractions.IAuthorVisibilityLookup>());
         Assert.Null(await queries.GetUnifiedByIdAsync(home.Id, Guid.NewGuid(), ct));
         Assert.Equal(home.Id, (await queries.GetUnifiedByIdAsync(home.Id, author, ct))!.Id);
         Assert.Equal(shopVisit.Id, Assert.Single((await queries.GetPublicAsync(null, null, null,
@@ -97,7 +97,7 @@ public class HomeCheckInQueriesTests
             Home(Guid.NewGuid(), day, "espresso", product, "Original label", 100m, 1));
         await db.SaveChangesAsync(ct);
 
-        var queries = new CheckInQueries(db);
+        var queries = new CheckInQueries(db, Moq.Mock.Of<CoffeePeek.Shops.Application.Abstractions.IAuthorVisibilityLookup>());
         Assert.Equal("Original label", (await queries.GetHomeByIdAsync(first.Id, author, ct))!.BeanName);
         Assert.Equal("Updated catalog label", (await queries.GetHomeByIdAsync(second.Id, author, ct))!.BeanName);
         var beans = await queries.GetHomeBeanStatsAsync(author, ct);

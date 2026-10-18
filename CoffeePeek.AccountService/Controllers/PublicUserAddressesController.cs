@@ -20,7 +20,7 @@ namespace CoffeePeek.AccountService.Controllers;
 [Tags("User")]
 [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
 [ProducesErrorResponseType(typeof(ErrorResponse))]
-public sealed class PublicUserAddressesController(IProfileAddressService addresses, IMessageBus bus, IUserContext? userContext = null) : ControllerBase
+public sealed class PublicUserAddressesController(IProfileAddressService addresses, IMessageBus bus, IUserBlockStore blocks, IUserContext? userContext = null) : ControllerBase
 {
     /// <summary>
     /// Resolves the current profile slug (case-insensitive) to the public profile and its address.
@@ -36,6 +36,15 @@ public sealed class PublicUserAddressesController(IProfileAddressService address
         var address = await addresses.ResolveAsync(slug, ct);
         if (address is null) return NotFound();
 
+        if (userContext?.GetUserId() is { } viewer)
+        {
+            var outgoing = await blocks.FindOutgoingAsync(viewer, address.EntityId, ct);
+            if (outgoing is not null)
+                return Ok(new PublicEntityEnvelope<PublicUserProfileResponse>(
+                    new PublicUserProfileResponse(outgoing.UserName, default, null, null, 0, 0)
+                    { AuthorId = outgoing.AuthorId, IsBlockedByViewer = true }, PublicAddressDto.From(address)));
+            if ((await blocks.ExcludedUserIdsAsync(viewer, ct)).Contains(address.EntityId)) return NotFound();
+        }
         try
         {
             var response = await bus.InvokeAsync<Response<PublicUserProfileResponse>>(

@@ -40,7 +40,7 @@ public sealed class CheckInPhotoMigrationLiveTests : IClassFixture<CheckInPhotoM
             Assert.Equal(old.SortIndex, photo.SortIndex);
             Assert.Equal(fixture.VisitId, photo.CanonicalCheckInId);
         }
-        var projection = await new CheckInQueries(db).GetUnifiedByIdAsync(visit.Id, null, ct);
+        var projection = await new CheckInQueries(db, Moq.Mock.Of<CoffeePeek.Shops.Application.Abstractions.IAuthorVisibilityLookup>()).GetUnifiedByIdAsync(visit.Id, null, ct);
         Assert.NotNull(projection);
         Assert.Equal(2, projection.Photos.Length);
         Assert.True(await new QueryCheckInRepository(db).ArePhotoKeysUsedAsync([visit.ShopPhotos.First().StorageKey], ct));

@@ -89,7 +89,7 @@ public sealed class CheckInModerationRaceLiveTests : IClassFixture<ShopsLiveData
         Assert.Equal(change == "hide" ? DomainVisibility.Private : DomainVisibility.Public, persisted.Visibility);
         Assert.Equal(2, persisted.ContentRevision);
         Assert.False(persisted.IsPubliclyVisible);
-        var queries = new CheckInQueries(verify);
+        var queries = new CheckInQueries(verify, Moq.Mock.Of<CoffeePeek.Shops.Application.Abstractions.IAuthorVisibilityLookup>());
         Assert.Null(await queries.GetUnifiedByIdAsync(checkIn.Id, null, ct));
         Assert.Null(await queries.GetModerationSnapshotAsync(checkIn.Id, 1, ct));
         Assert.Empty((await queries.GetPublicAsync(null, null, shop.Id, null, 10, null, ct)).Items);

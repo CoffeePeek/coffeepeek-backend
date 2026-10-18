@@ -32,7 +32,7 @@ public sealed class CheckInFeedLiveTests : IClassFixture<ShopsLiveDatabase>
         db.CheckIns.AddRange(rows);
         db.CheckInHelpfulVotes.Add(new(rows[3].Id, readerId, time)); rows[3].SetHelpfulCount(1);
         await db.SaveChangesAsync(ct);
-        var reader = new CheckInFeedReader(db); var scope = new CheckInFeedScope(ShopId: shop.Id);
+        var reader = new CheckInFeedReader(db, Moq.Mock.Of<CoffeePeek.Shops.Application.Abstractions.IAuthorVisibilityLookup>()); var scope = new CheckInFeedScope(ShopId: shop.Id);
         var first = await reader.ReadAsync(scope, 2, null, readerId, ct);
         Assert.Equal(new[] { rows[3].Id, rows[2].Id }, first.Items.Select(x => x.CheckIn.Id));
         Assert.True(first.HasMore); Assert.True(first.Items[0].CheckIn.IsHelpfulByCurrentUser);

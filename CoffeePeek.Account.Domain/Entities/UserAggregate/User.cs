@@ -9,6 +9,7 @@ namespace CoffeePeek.Account.Domain.Entities.UserAggregate;
 
 public class User : AggregateRoot<Guid>, IPublicSlugOwner
 {
+    public Guid PublicAuthorId { get; private set; } = Guid.NewGuid();
     public string? PublicSlug { get; private set; }
     public long SlugRevision { get; private set; }
 

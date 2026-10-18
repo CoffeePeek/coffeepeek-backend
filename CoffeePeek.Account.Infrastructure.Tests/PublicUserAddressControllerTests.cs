@@ -167,7 +167,7 @@ public sealed class PublicUserAddressControllerTests
 
     #endregion
 
-    private PublicUserAddressesController Controller() => new(_addresses.Object, _bus.Object);
+    private PublicUserAddressesController Controller() => new(_addresses.Object, _bus.Object, Mock.Of<IUserBlockStore>());
 
     private Moq.Language.Flow.ISetup<IMessageBus, Task<Response<PublicUserProfileResponse>>> SetupProfile() =>
         _bus.Setup(b => b.InvokeAsync<Response<PublicUserProfileResponse>>(

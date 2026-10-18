@@ -43,6 +43,7 @@ public class AccountDbContext(DbContextOptions<AccountDbContext> options, IOptio
     public DbSet<User> Users { get; set; }
     public DbSet<PhotoMetadata> Photos { get; set; }
     public DbSet<AccountDeletionRequest> AccountDeletionRequests { get; set; }
+    public DbSet<UserBlock> UserBlocks { get; set; }
     public DbSet<UserFollow> UserFollows { get; set; }
     public DbSet<UserRoasterCredit> UserRoasterCredits { get; set; }
 

@@ -44,7 +44,8 @@ public class GetPublicUserProfileHandlerTests
             new GetPublicUserProfileCommand(user.Id), _userRepoMock.Object, _mapperMock.Object, _social.Object, _ct);
 
         result.IsSuccess.Should().BeTrue();
-        result.Data.Should().Be(profile);
+        result.Data.Should().Be(profile with { AuthorId = user.PublicAuthorId });
+        result.Data!.AuthorId.Should().NotBe(user.Id);
         result.Data!.GetType().GetProperty("Email").Should().BeNull();
     }
 

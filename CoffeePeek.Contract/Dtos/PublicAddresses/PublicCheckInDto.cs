@@ -8,6 +8,7 @@ public sealed record PublicCheckInDto
     public HomeCheckInDetailsDto? Home { get; init; }
     public Guid Id { get; init; }
     public PublicAddressDto? Shop { get; init; }
+    public Guid? AuthorId { get; init; }
     public PublicAddressDto? Author { get; init; }
     public string? AuthorAvatarUrl { get; init; }
     public string Username { get; init; } = "";

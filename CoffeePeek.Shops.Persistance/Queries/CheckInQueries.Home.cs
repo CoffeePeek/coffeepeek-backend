@@ -9,9 +9,10 @@ public partial class CheckInQueries
 {
     public async Task<HomeCheckInDto?> GetHomeByIdAsync(Guid id, Guid? readerId, CancellationToken ct = default)
     {
+        var excluded = await visibility.ExcludedUserIdsAsync(readerId, ct);
         var eligible = CheckInEligibility.Public(_db);
         var row = await _db.CheckIns.AsNoTracking().Where(c => c.Kind == CheckInKind.Home
-                && c.DeletedAtUtc == null && (c.UserId == readerId || eligible.Any(p => p.Id == c.Id)))
+                && c.DeletedAtUtc == null && !excluded.Contains(c.UserId) && (c.UserId == readerId || eligible.Any(p => p.Id == c.Id)))
             .Include(c => c.ShopPhotos)
             .SingleOrDefaultAsync(c => c.Id == id, ct);
         return row is null ? null : HomeCheckInMapping.ToDto(row);

@@ -25,7 +25,7 @@ public class UnifiedCheckInQueriesTests
         await db.SaveChangesAsync(); db.ChangeTracker.Clear();
         row = await db.CheckIns.Include(c => c.ShopPhotos).SingleAsync();
         Assert.Equal(cup.Id, row.DrinkPhotoId);
-        var queries = new CheckInQueries(db);
+        var queries = new CheckInQueries(db, Moq.Mock.Of<CoffeePeek.Shops.Application.Abstractions.IAuthorVisibilityLookup>());
         var calendar = Assert.Single((await queries.GetUnifiedByUserAsync(row.UserId, 1, 10)).Items);
         Assert.Equal(original.Id, Assert.Single(calendar.Photos).Id);
         Assert.Equal(cup.Id, calendar.DrinkPhoto!.Id);
@@ -33,11 +33,11 @@ public class UnifiedCheckInQueriesTests
         row.ChangeVisibility(CheckInVisibility.Public);
         row.ApplyModerationDecision(row.ContentRevision, Guid.NewGuid(), 1, CheckInModerationState.Approved, null, DateTime.UtcNow);
         await db.SaveChangesAsync();
-        var feed = await new CheckInFeedReader(db).ReadAsync(new(), 20, null, null, default);
+        var feed = await new CheckInFeedReader(db, Moq.Mock.Of<CoffeePeek.Shops.Application.Abstractions.IAuthorVisibilityLookup>()).ReadAsync(new(), 20, null, null, default);
         Assert.Equal(calendar.DrinkPhoto, Assert.Single(feed.Items).CheckIn.DrinkPhoto);
         Assert.Equal(calendar.DrinkPhoto, Assert.Single((await queries.GetPublicAsync(null, null, shop.Id, row.UserId, 20, null)).Items).DrinkPhoto);
         row.ChangeVisibility(CheckInVisibility.Private); await db.SaveChangesAsync();
-        Assert.Empty((await new CheckInFeedReader(db).ReadAsync(new(), 20, null, null, default)).Items);
+        Assert.Empty((await new CheckInFeedReader(db, Moq.Mock.Of<CoffeePeek.Shops.Application.Abstractions.IAuthorVisibilityLookup>()).ReadAsync(new(), 20, null, null, default)).Items);
         row.Delete(); await db.SaveChangesAsync();
         Assert.Null(await queries.GetUnifiedByIdAsync(row.Id, row.UserId));
     }
@@ -50,7 +50,7 @@ public class UnifiedCheckInQueriesTests
         var row = CheckIn.CreateUnified(Guid.NewGuid(), Guid.NewGuid(), "author", "x", Rating.Create(1, 2, 3), DateTime.UtcNow);
         db.CheckIns.Add(row);
         await db.SaveChangesAsync();
-        var queries = new CheckInQueries(db);
+        var queries = new CheckInQueries(db, Moq.Mock.Of<CoffeePeek.Shops.Application.Abstractions.IAuthorVisibilityLookup>());
         Assert.Null(await queries.GetUnifiedByIdAsync(row.Id, Guid.NewGuid()));
         Assert.Null(await queries.GetUnifiedByIdAsync(row.Id, null));
         Assert.Equal(row.Id, (await queries.GetUnifiedByIdAsync(row.Id, row.UserId))!.Id);

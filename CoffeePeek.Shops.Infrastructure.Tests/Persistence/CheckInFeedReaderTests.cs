@@ -5,6 +5,7 @@ using CoffeePeek.Shops.Domain.Entities;
 using CoffeePeek.Shops.Persistance.Configuration;
 using CoffeePeek.Shops.Persistance.Queries;
 using Microsoft.EntityFrameworkCore;
+using Moq;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 
@@ -30,6 +31,29 @@ public class CheckInFeedReaderTests
     }
 
     [Fact]
+    public async Task BlockedAuthorsAreFilteredBeforePaging_AndCannotBeOpenedDirectly()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        await using var db = Database(); var shop = Shop(); db.Shops.Add(shop);
+        var viewer = Guid.NewGuid(); var blocked = Guid.NewGuid(); var visible = Guid.NewGuid();
+        var time = DateTime.UtcNow.AddDays(-1);
+        var hidden = Published(blocked, shop.Id, time.AddHours(2));
+        var first = Published(visible, shop.Id, time.AddHours(1)); var second = Published(visible, shop.Id, time);
+        hidden.CreatedAtUtc = time.AddHours(2); first.CreatedAtUtc = time.AddHours(1); second.CreatedAtUtc = time;
+        db.CheckIns.AddRange(hidden, first, second); await db.SaveChangesAsync(ct);
+        var policy = new Moq.Mock<CoffeePeek.Shops.Application.Abstractions.IAuthorVisibilityLookup>();
+        policy.Setup(p => p.ExcludedUserIdsAsync(viewer, ct)).ReturnsAsync(new[] { blocked });
+        var page = await new CheckInFeedReader(db, policy.Object).ReadAsync(new(), 1, null, viewer, ct);
+        Assert.Equal(first.Id, Assert.Single(page.Items).CheckIn.Id); Assert.True(page.HasMore);
+        var queries = new CheckInQueries(db, policy.Object);
+        Assert.Null(await queries.GetUnifiedByIdAsync(hidden.Id, viewer, ct));
+        Assert.NotNull(await queries.GetUnifiedByIdAsync(first.Id, viewer, ct));
+        var shopPage = await queries.GetPublicAsync(viewer, null, shop.Id, null, 1, null, ct);
+        Assert.Equal(first.Id, Assert.Single(shopPage.Items).Id);
+        Assert.NotNull(await queries.GetUnifiedByIdAsync(hidden.Id, null, ct));
+    }
+
+    [Fact]
     public async Task FeedContainsOnlyCurrentApprovedPublicContentEvenForItsAuthor()
     {
         var ct = TestContext.Current.CancellationToken;
@@ -47,7 +71,7 @@ public class CheckInFeedReaderTests
         db.CheckIns.AddRange(visible, privateRow, deleted, pending, rejected, neverPublished,
             Published(owner, hiddenShop.Id, time), Published(owner, Guid.NewGuid(), time));
         await db.SaveChangesAsync(ct);
-        var page = await new CheckInFeedReader(db).ReadAsync(new(), 20, null, owner, ct);
+        var page = await new CheckInFeedReader(db, Moq.Mock.Of<CoffeePeek.Shops.Application.Abstractions.IAuthorVisibilityLookup>()).ReadAsync(new(), 20, null, owner, ct);
         Assert.Equal(visible.Id, Assert.Single(page.Items).CheckIn.Id);
         Assert.False(page.HasMore);
     }
@@ -61,7 +85,7 @@ public class CheckInFeedReaderTests
         var delayed = Published(Guid.NewGuid(), shop.Id, time.AddHours(2)); delayed.CreatedAtUtc = time.AddDays(-2);
         var recentCreation = Published(Guid.NewGuid(), shop.Id, time); recentCreation.CreatedAtUtc = time.AddHours(1);
         db.CheckIns.AddRange(delayed, recentCreation); await db.SaveChangesAsync(ct);
-        var reader = new CheckInFeedReader(db);
+        var reader = new CheckInFeedReader(db, Moq.Mock.Of<CoffeePeek.Shops.Application.Abstractions.IAuthorVisibilityLookup>());
         Assert.Equal(new[] { delayed.Id, recentCreation.Id }, (await reader.ReadAsync(new(), 20, null, null, ct)).Items.Select(x => x.CheckIn.Id));
         recentCreation.UpdateContent("Edited", Rating.Create(5, 5, 5));
         recentCreation.ApplyModerationDecision(2, Guid.NewGuid(), 1, CheckInModerationState.Approved, null, time.AddHours(3));
@@ -79,7 +103,7 @@ public class CheckInFeedReaderTests
         var time = DateTime.UtcNow.AddDays(-1); var author = Guid.NewGuid();
         var rows = Enumerable.Range(1, 4).Select(i => Published(author, shop.Id, time, Guid.Parse($"00000000-0000-0000-0000-{i:D12}"))).ToArray();
         db.CheckIns.AddRange(rows); await db.SaveChangesAsync(ct);
-        var reader = new CheckInFeedReader(db);
+        var reader = new CheckInFeedReader(db, Moq.Mock.Of<CoffeePeek.Shops.Application.Abstractions.IAuthorVisibilityLookup>());
         var first = await reader.ReadAsync(new(), 2, null, null, ct);
         Assert.True(first.HasMore);
         Assert.Equal(new[] { rows[3].Id, rows[2].Id }, first.Items.Select(x => x.CheckIn.Id));
@@ -104,7 +128,7 @@ public class CheckInFeedReaderTests
         var visible = Published(author, shop.Id, time); visible.SetHelpfulCount(1);
         db.CheckIns.AddRange(visible, Published(Guid.NewGuid(), shop.Id, time), Published(author, otherShop.Id, time));
         db.CheckInHelpfulVotes.Add(new(visible.Id, readerId, time)); await db.SaveChangesAsync(ct);
-        var reader = new CheckInFeedReader(db); var scope = new CheckInFeedScope(city, shop.Id, author);
+        var reader = new CheckInFeedReader(db, Moq.Mock.Of<CoffeePeek.Shops.Application.Abstractions.IAuthorVisibilityLookup>()); var scope = new CheckInFeedScope(city, shop.Id, author);
         var loggedIn = Assert.Single((await reader.ReadAsync(scope, 20, null, readerId, ct)).Items).CheckIn;
         Assert.Equal(visible.Id, loggedIn.Id); Assert.True(loggedIn.IsHelpfulByCurrentUser); Assert.Equal(1, loggedIn.HelpfulCount);
         var anonymous = Assert.Single((await reader.ReadAsync(scope, 20, null, null, ct)).Items).CheckIn;

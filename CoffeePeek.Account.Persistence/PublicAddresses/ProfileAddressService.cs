@@ -59,6 +59,7 @@ public sealed class ProfileAddressService(AccountDbContext db, IOptions<MediaPub
             .Select(u => new
             {
                 u.Id,
+                u.PublicAuthorId,
                 u.PublicSlug,
                 u.SlugRevision,
                 StorageKey = u.PhotoMetadata != null ? u.PhotoMetadata.StorageKey : null
@@ -68,7 +69,7 @@ public sealed class ProfileAddressService(AccountDbContext db, IOptions<MediaPub
         return profiles.OrderBy(p => Array.IndexOf(distinct, p.Id))
             .Select(p => new PublicProfileSummaryDto(
                 new PublicAddressMetadata(p.Id, p.PublicSlug!, CanonicalPrefix + p.PublicSlug, p.SlugRevision, false),
-                MediaStorageUrlBuilder.BuildPublicUrl(options.PublicEndpoint, options.AvatarBucketName, p.StorageKey)))
+                MediaStorageUrlBuilder.BuildPublicUrl(options.PublicEndpoint, options.AvatarBucketName, p.StorageKey)) { AuthorId = p.PublicAuthorId })
             .ToArray();
     }
 

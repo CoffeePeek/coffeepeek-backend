@@ -40,7 +40,7 @@ public class ReviewReportRatingFallbackTests
         db.ReviewReports.Add(report);
         await db.SaveChangesAsync(ct);
         db.ChangeTracker.Clear();
-        var ratings = new CheckInQueries(db);
+        var ratings = new CheckInQueries(db, Moq.Mock.Of<CoffeePeek.Shops.Application.Abstractions.IAuthorVisibilityLookup>());
         Assert.Equal((4.5m, 3), await ratings.GetStatsByShopAsync(shop.Id, ct));
         var reports = new ReviewReportRepository(db);
         var checkIns = new QueryCheckInRepository(db);

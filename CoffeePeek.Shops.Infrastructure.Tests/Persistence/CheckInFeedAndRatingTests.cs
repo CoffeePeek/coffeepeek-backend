@@ -31,7 +31,7 @@ public class CheckInFeedAndRatingTests
         db.CheckIns.AddRange(rated, unrated, other);
         await db.SaveChangesAsync(ct);
         db.ChangeTracker.Clear();
-        var queries = new CheckInQueries(db);
+        var queries = new CheckInQueries(db, Moq.Mock.Of<CoffeePeek.Shops.Application.Abstractions.IAuthorVisibilityLookup>());
         Assert.Equal((4m, 3), await queries.GetStatsByShopAsync(shop.Id, ct));
         Assert.Null((await queries.GetUnifiedByIdAsync(unrated.Id, null, ct))!.Rating);
         Assert.Equal(3, (await queries.GetPublicAsync(null, null, shop.Id, null, 20, null, ct)).Items.Length);
@@ -64,9 +64,9 @@ public class CheckInFeedAndRatingTests
         var other=Approved(Guid.NewGuid(),shop.Id,3,time,time);
         var pending=CheckIn.CreateUnified(Guid.NewGuid(),shop.Id,"pending","x",Rating.Create(1,1,1),time,CheckInVisibility.Public);
         db.CheckIns.AddRange(old,latest,backdated,other,pending); await db.SaveChangesAsync();
-        var ratings=new CheckInQueries(db);
+        var ratings=new CheckInQueries(db, Moq.Mock.Of<CoffeePeek.Shops.Application.Abstractions.IAuthorVisibilityLookup>());
         Assert.Equal((4m,4),await ratings.GetStatsByShopAsync(shop.Id,default));
-        var queries=new CheckInQueries(db);
+        var queries=new CheckInQueries(db, Moq.Mock.Of<CoffeePeek.Shops.Application.Abstractions.IAuthorVisibilityLookup>());
         var first=await queries.GetPublicAsync(null,null,shop.Id,null,2,null);
         Assert.Equal(2,first.Items.Length); Assert.NotNull(first.NextCursor);
         var second=await queries.GetPublicAsync(null,null,shop.Id,null,2,first.NextCursor);

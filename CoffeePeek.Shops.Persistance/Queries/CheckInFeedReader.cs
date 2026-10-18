@@ -5,12 +5,13 @@ using Microsoft.EntityFrameworkCore;
 
 namespace CoffeePeek.Shops.Persistance.Queries;
 
-public sealed class CheckInFeedReader(ShopsDbContext db) : ICheckInFeedReader
+public sealed class CheckInFeedReader(ShopsDbContext db, CoffeePeek.Shops.Application.Abstractions.IAuthorVisibilityLookup visibility) : ICheckInFeedReader
 {
     public async Task<CheckInFeedReadPage> ReadAsync(CheckInFeedScope scope, int pageSize,
         CheckInFeedPosition? after, Guid? readerId, CancellationToken ct)
     {
-        var query = BuildQuery(db, scope, after);
+        var excluded = await visibility.ExcludedUserIdsAsync(readerId, ct);
+        var query = BuildQuery(db, scope, after).Where(c => !excluded.Contains(c.UserId));
         var rows = await query.AsNoTracking().Include(c => c.ShopPhotos).Take(pageSize + 1).ToArrayAsync(ct);
         var hasMore = rows.Length > pageSize;
         rows = rows.Take(pageSize).ToArray();

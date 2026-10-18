@@ -24,7 +24,7 @@ public class SetReviewHelpfulHandlerTests
         var repository = new Mock<IQueryCheckInRepository>();
         var queries = new Mock<ICheckInQueries>();
         var bus = new Mock<IMessageBus>();
-        queries.Setup(q => q.GetUnifiedByIdAsync(id, null, default))
+        queries.Setup(q => q.GetUnifiedByIdAsync(id, voter, default))
             .ReturnsAsync(new UnifiedCheckInDto { Id = id, UserId = owner, ShopId = shopId });
         repository.Setup(r => r.SetHelpfulAsync(id, voter, true, default))
             .ReturnsAsync((true, 1, changed));
@@ -47,12 +47,12 @@ public class SetReviewHelpfulHandlerTests
         var repository = new Mock<IQueryCheckInRepository>();
         var queries = new Mock<ICheckInQueries>();
         var bus = new Mock<IMessageBus>();
-        queries.Setup(q => q.GetUnifiedByIdAsync(id, null, default))
+        queries.Setup(q => q.GetUnifiedByIdAsync(id, It.IsAny<Guid?>(), default))
             .ReturnsAsync(new UnifiedCheckInDto { Id = id, UserId = owner });
         await Assert.ThrowsAsync<ForbiddenException>(() => CheckInHelpfulHandler.Handle(
             new SetCheckInHelpfulCommand(id, owner, true), repository.Object, queries.Object, bus.Object, default));
 
-        queries.Setup(q => q.GetUnifiedByIdAsync(id, null, default))
+        queries.Setup(q => q.GetUnifiedByIdAsync(id, It.IsAny<Guid?>(), default))
             .ReturnsAsync((UnifiedCheckInDto?)null);
         await Assert.ThrowsAsync<NotFoundException>(() => CheckInHelpfulHandler.Handle(
             new SetCheckInHelpfulCommand(id, Guid.NewGuid(), true), repository.Object, queries.Object, bus.Object, default));

@@ -243,6 +243,11 @@ namespace CoffeePeek.Account.Persistence.Migrations
                     b.Property<Guid?>("PhotoMetadataId")
                         .HasColumnType("uuid");
 
+                    b.Property<Guid>("PublicAuthorId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
                     b.Property<string>("PublicSlug")
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)")
@@ -269,6 +274,9 @@ namespace CoffeePeek.Account.Persistence.Migrations
 
                     b.HasIndex("PhotoMetadataId");
 
+                    b.HasIndex("PublicAuthorId")
+                        .IsUnique();
+
                     b.HasIndex("PublicSlug")
                         .IsUnique()
                         .HasDatabaseName("IX_Users_Slug");
@@ -279,6 +287,29 @@ namespace CoffeePeek.Account.Persistence.Migrations
                     b.ToTable("Users", null, t =>
                         {
                             t.HasCheckConstraint("CK_Users_PublicSlug", "(\"Slug\" IS NULL AND \"SlugRevision\" = 0) OR (\"Slug\" IS NOT NULL AND \"Slug\" ~ '^[a-z0-9]+(-[a-z0-9]+)*$' AND length(\"Slug\") BETWEEN 1 AND 100 AND \"SlugRevision\" > 0)");
+                        });
+                });
+
+            modelBuilder.Entity("CoffeePeek.Account.Domain.Entities.UserAggregate.UserBlock", b =>
+                {
+                    b.Property<Guid>("BlockerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("BlockedId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("BlockerId", "BlockedId");
+
+                    b.HasIndex("BlockedId", "BlockerId");
+
+                    b.HasIndex("BlockerId", "CreatedAtUtc", "BlockedId");
+
+                    b.ToTable("UserBlocks", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_UserBlocks_NoSelfBlock", "\"BlockerId\" <> \"BlockedId\"");
                         });
                 });
 
@@ -461,6 +492,21 @@ namespace CoffeePeek.Account.Persistence.Migrations
                     b.Navigation("PhotoMetadata");
 
                     b.Navigation("Statistics")
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("CoffeePeek.Account.Domain.Entities.UserAggregate.UserBlock", b =>
+                {
+                    b.HasOne("CoffeePeek.Account.Domain.Entities.UserAggregate.User", null)
+                        .WithMany()
+                        .HasForeignKey("BlockedId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("CoffeePeek.Account.Domain.Entities.UserAggregate.User", null)
+                        .WithMany()
+                        .HasForeignKey("BlockerId")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 

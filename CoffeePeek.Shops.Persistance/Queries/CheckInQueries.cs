@@ -9,16 +9,17 @@ using Microsoft.EntityFrameworkCore;
 
 namespace CoffeePeek.Shops.Persistance.Queries;
 
-public partial class CheckInQueries(ShopsDbContext dbContext) : ICheckInQueries
+public partial class CheckInQueries(ShopsDbContext dbContext, CoffeePeek.Shops.Application.Abstractions.IAuthorVisibilityLookup visibility) : ICheckInQueries
 {
     private readonly ShopsDbContext _db = dbContext;
 
     public async Task<UnifiedCheckInDto?> GetUnifiedByIdAsync(Guid id, Guid? readerId, CancellationToken ct = default)
     {
+        var excluded = await visibility.ExcludedUserIdsAsync(readerId, ct);
         var eligible = CheckInEligibility.Public(_db);
         var query = _db.CheckIns.Where(c => c.Id == id && c.DeletedAtUtc == null
             && (c.UserId == readerId || eligible.Any(p => p.Id == c.Id)));
-        return (await ProjectAsync(query, readerId, ct)).SingleOrDefault();
+        return (await ProjectAsync(query.Where(c => !excluded.Contains(c.UserId)), readerId, ct)).SingleOrDefault();
     }
 
     public async Task<(decimal AverageRating, int Count)> GetStatsByShopAsync(Guid shopId, CancellationToken ct = default)
@@ -58,7 +59,8 @@ public partial class CheckInQueries(ShopsDbContext dbContext) : ICheckInQueries
         int pageSize, string? cursor, CancellationToken ct = default)
     {
         if (pageSize is < 1 or > 100) throw new ValidationException("PageSize must be between 1 and 100.");
-        var query = CheckInEligibility.Public(_db);
+        var excluded = await visibility.ExcludedUserIdsAsync(readerId, ct);
+        var query = CheckInEligibility.Public(_db).Where(c => !excluded.Contains(c.UserId));
         if (cityId.HasValue) query = query.Where(c => _db.Shops.Any(s => s.Id == c.ShopId && s.Location.CityId == cityId));
         if (shopId.HasValue) query = query.Where(c => c.ShopId == shopId);
         if (authorId.HasValue) query = query.Where(c => c.UserId == authorId);
