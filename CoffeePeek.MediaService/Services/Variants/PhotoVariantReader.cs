@@ -20,7 +20,7 @@ public sealed class PhotoVariantReader : IPhotoVariantReader, IDisposable
             throw new InvalidOperationException("Variant downloads require a separate read-only storage identity.");
         var endpoint = new Uri(storage.Value.Endpoint);
         client = new MinioClient().WithEndpoint(endpoint).WithSSL(endpoint.Scheme == "https")
-            .WithCredentials(options.Value.ReadAccessKey, options.Value.ReadSecretKey).Build();
+            .WithCredentials(options.Value.ReadAccessKey, options.Value.ReadSecretKey).WithRegion("us-east-1").Build();
         bucket = options.Value.BucketName;
         this.state = state;
     }
@@ -43,8 +43,7 @@ public sealed class PhotoVariantReader : IPhotoVariantReader, IDisposable
     {
         state.Lease.RequireReady();
         using var measurement = PhotoDeliveryTelemetry.Start("minio_get");
-        await client.GetObjectAsync(new GetObjectArgs().WithBucket(bucket).WithObject(key)
-            .WithCallbackStream((stream, token) => PhotoDeliveryTelemetry.CopyAsync(stream, destination, "media_stream", token)), ct);
+        await PrivatePhotoObjectReader.CopyAsync(client, bucket, key, destination, ct);
         measurement.Complete();
     }
 
