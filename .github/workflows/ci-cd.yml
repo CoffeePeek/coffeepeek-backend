@@ -106,9 +106,13 @@ jobs:
 
       - name: Start MinIO for Shops fault recovery tests
         run: |
+          # Run the pinned server directly. The vendor setup starts a temporary server
+          # whose ready endpoint can succeed before its shutdown for the final process.
           docker run -d --name coffeepeek-shops-test-minio -p 127.0.0.1:9000:9000 \
             -e MINIO_ROOT_USER=coffee-legacy-test -e MINIO_ROOT_PASSWORD=coffee-legacy-test-only \
-            bitnamilegacy/minio@sha256:451fe6858cb770cc9d0e77ba811ce287420f781c7c1b806a386f6896471a349c
+            --entrypoint /opt/bitnami/minio/bin/minio \
+            bitnamilegacy/minio@sha256:451fe6858cb770cc9d0e77ba811ce287420f781c7c1b806a386f6896471a349c \
+            server /tmp/coffeepeek-test-data --address :9000 --console-address :9001
           for attempt in {1..30}; do
             if curl --fail --silent http://127.0.0.1:9000/minio/health/ready >/dev/null; then exit 0; fi
             sleep 1
@@ -119,7 +123,19 @@ jobs:
         run: |
           set -euo pipefail
           pgpass_file="$(mktemp "${RUNNER_TEMP}/coffeepeek-pgpass.XXXXXX")"
-          trap 'rm -f "$pgpass_file"; docker rm -f coffeepeek-photo-renderer coffeepeek-shops-test-minio >/dev/null 2>&1 || true; docker network rm coffeepeek-photo-test >/dev/null 2>&1 || true' EXIT
+          cleanup_photo_gate() {
+            gate_status=$?
+            if [ "$gate_status" -ne 0 ]; then
+              docker inspect --format '{{json .State}}' coffeepeek-shops-test-minio || true
+              docker logs --tail 100 coffeepeek-shops-test-minio || true
+              docker logs --tail 100 coffeepeek-photo-renderer || true
+            fi
+            rm -f "$pgpass_file"
+            docker rm -f coffeepeek-photo-renderer coffeepeek-shops-test-minio >/dev/null 2>&1 || true
+            docker network rm coffeepeek-photo-test >/dev/null 2>&1 || true
+            return "$gate_status"
+          }
+          trap cleanup_photo_gate EXIT
           chmod 600 "$pgpass_file"
           printf '%s\n' '127.0.0.1:5432:*:postgres:coffeepeek-ci-only-postgres' '127.0.0.1:15432:*:postgres:coffeepeek-ci-only-postgres' > "$pgpass_file"
           export COFFEEPEEK_LIVE_PG='Host=127.0.0.1;Port=5432;Username=postgres;Database=postgres;SslMode=Disable'
