@@ -61,13 +61,12 @@ public sealed class ApplyShopMenuServiceValidationTests
 
         await service.ApplySnapshotAsync(shopId,
             new ShopMenuSnapshot(DateTime.UtcNow, "BYN", null,
-                [new ShopMenuItemSnapshot("latte", ContractAvailability.Present, 1m, null, ContractSource.Parsed),
-                 new ShopMenuItemSnapshot("latte", ContractAvailability.Present, 8m, 200, ContractSource.Parsed)],
+                [new ShopMenuItemSnapshot("latte", ContractAvailability.Present, null, ContractSource.Parsed),
+                 new ShopMenuItemSnapshot("latte", ContractAvailability.Present, 8m, ContractSource.Parsed)],
                 []), false, null, ct);
 
         var item = Assert.Single(menu.Items);
         Assert.Equal(8m, item.Price);
-        Assert.Equal(200, item.VolumeMl);
         Assert.Equal(MenuParseStatus.Ready, menu.ParseStatus);
     }
 
@@ -87,8 +86,8 @@ public sealed class ApplyShopMenuServiceValidationTests
 
         await Assert.ThrowsAsync<DomainException>(() => service.ApplySnapshotAsync(shopId,
             new ShopMenuSnapshot(DateTime.UtcNow, "BYN", null,
-                [new ShopMenuItemSnapshot("latte", ContractAvailability.Present, 8m, 200, ContractSource.Manual),
-                 new ShopMenuItemSnapshot("latte", ContractAvailability.Present, -1m, 200, ContractSource.Manual)],
+                [new ShopMenuItemSnapshot("latte", ContractAvailability.Present, 8m, ContractSource.Manual),
+                 new ShopMenuItemSnapshot("latte", ContractAvailability.Present, -1m, ContractSource.Manual)],
                 []), false, null, ct));
 
         repository.VerifyNoOtherCalls();
@@ -111,7 +110,7 @@ public sealed class ApplyShopMenuServiceValidationTests
             Mock.Of<ICoffeeShopRepository>(), new ShopPriceRangeWriter(), new Mock<IMessageBus>().Object);
 
         await service.ApplyParseResultAsync(shopId,
-            [new ParsedMenuItemDto("latte", 1m, null, "Latte")], [], null, [],
+            [new ParsedMenuItemDto("latte", null, "Latte")], [], null, [],
             DateTime.UtcNow, null, ct);
 
         Assert.Empty(menu.Items);

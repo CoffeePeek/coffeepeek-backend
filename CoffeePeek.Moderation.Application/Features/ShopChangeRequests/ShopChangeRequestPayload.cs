@@ -131,6 +131,8 @@ public static class ShopChangeRequestPayload
         if (menu.ExpectedInputRevision is null or < 0)
             throw new ArgumentException("Expected menu revision is required and cannot be negative.");
         ArgumentNullException.ThrowIfNull(menu.Items);
+        CoffeePeek.Moderation.Domain.Aggregates.MenuDraftAggregate.MenuDraft.CreateEmpty()
+            .ApplyManualItems(Features.Menu.MenuDraftMapper.ToDraftItems(menu.Items), DateTime.UtcNow);
         ArgumentNullException.ThrowIfNull(menu.RetainedPhotoIds);
         ArgumentNullException.ThrowIfNull(menu.NewPhotos);
         if (menu.Items.Select(x => x.Slug).Distinct(StringComparer.OrdinalIgnoreCase).Count() != menu.Items.Count)

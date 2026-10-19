@@ -40,14 +40,12 @@ public class MenuDraftTests
     }
 
     [Fact]
-    public void ManualEdit_NewAbsentItem_ClearsPriceAndMarksManual()
+    public void ManualEdit_AbsentItemWithPrice_IsRejected()
     {
         var menu = MenuDraft.CreateEmpty();
-        menu.ApplyManualItems([new() { Slug = "latte", Availability = 2, Price = 7 }], DateTime.UtcNow);
-
-        var item = menu.Items.Should().ContainSingle().Subject;
-        item.Price.Should().BeNull();
-        item.Source.Should().Be((int)MenuDraftItemSource.Manual);
+        Action edit = () => menu.ApplyManualItems([new() { Slug = "latte", Availability = 2, Price = 7 }], DateTime.UtcNow);
+        edit.Should().Throw<DomainException>();
+        menu.Items.Should().BeEmpty();
     }
 
     [Theory]

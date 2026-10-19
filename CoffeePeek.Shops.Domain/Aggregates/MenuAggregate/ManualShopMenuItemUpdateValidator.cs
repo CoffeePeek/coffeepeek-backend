@@ -14,7 +14,7 @@ public static class ManualShopMenuItemUpdateValidator
                 throw new DomainException("Drink definition is required.");
             if (!seen.Add(update.DrinkDefinitionId))
                 throw new DomainException("Menu update contains a repeated coffee drink.");
-            ShopMenuItem.ValidateValues(update.Availability, update.Price, update.VolumeMl);
+            ShopMenuItem.ValidateValues(update.Availability, update.Price);
         }
     }
 }

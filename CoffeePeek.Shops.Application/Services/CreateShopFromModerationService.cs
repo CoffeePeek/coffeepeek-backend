@@ -139,7 +139,7 @@ public class CreateShopFromModerationService(
             menu.Items
                 .Where(i => i.Availability != MenuItemAvailability.Unknown)
                 .Select(i => new ShopMenuItemSnapshot(
-                    i.Slug, i.Availability, i.Price, i.VolumeMl, i.Source))
+                    i.Slug, i.Availability, i.Price, i.Source))
                 .ToArray(),
             menu.Photos
                 .Select(p => new ShopMenuPhotoSnapshot(p.FileName, "image/jpeg", p.StorageKey, 0))

@@ -438,14 +438,14 @@ public sealed class DiscoveryQueryLiveTests : IClassFixture<ShopsLiveDatabase>
         var filter = CoffeeDrinkDefinition.CreateWithId(Guid.NewGuid(), Key(), "Фильтр live", "Filter live", CoffeeDrinkCategory.Filter, "", 20);
         db.CoffeeDrinkDefinitions.AddRange(espresso, filter);
         var menu = ShopMenu.Create(near.Id); menu.MarkManuallyCaptured(DateTime.UtcNow);
-        menu.ApplyManualItem(espresso.Id, MenuItemAvailability.Present, 3, 30, null);
-        menu.ApplyManualItem(filter.Id, MenuItemAvailability.Present, 10, 250, null); db.ShopMenus.Add(menu);
+        menu.ApplyManualItem(espresso.Id, MenuItemAvailability.Present, 3, null);
+        menu.ApplyManualItem(filter.Id, MenuItemAvailability.Present, 10, null); db.ShopMenus.Add(menu);
         await db.SaveChangesAsync(Ct); db.ChangeTracker.Clear();
         var store = Store(db);
         var geo = await store.SearchShopsAsync(new() { Filters = new() { City = city.PublicSlug, Origin = new() { Latitude = 53.9m, Longitude = 27.56m }, RadiusKm = 3 }, Sort = "distance_asc" }, null, Ct);
         Assert.Equal(2, geo.TotalItems); Assert.Equal("Near", geo.Items[0].Name); Assert.InRange(geo.Items[0].DistanceMeters!.Value, 0, 1);
         Assert.InRange(geo.Items[1].DistanceMeters!.Value, 2000, 2500);
-        var menuFilter = new ShopFilters { City = city.PublicSlug, Menu = new() { Brew = ["filter"], Currency = "BYN", MaxPrice = 5, VolumeMl = 250 } };
+        var menuFilter = new ShopFilters { City = city.PublicSlug, Menu = new() { Brew = ["filter"], Currency = "BYN", MaxPrice = 5 } };
         Assert.Empty((await store.SearchShopsAsync(new() { Filters = menuFilter }, null, Ct)).Items);
         menuFilter.Menu.MaxPrice = 12;
         var menuResult = await store.SearchShopsAsync(new() { Filters = menuFilter }, null, Ct);

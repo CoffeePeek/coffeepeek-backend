@@ -10,5 +10,4 @@ public record ShopMenuItemDto(
     MenuItemAvailability Availability,
     decimal? Price,
     string Currency,
-    int? VolumeMl,
     MenuItemSource Source);

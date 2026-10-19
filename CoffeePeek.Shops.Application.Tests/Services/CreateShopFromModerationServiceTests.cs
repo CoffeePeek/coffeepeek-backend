@@ -1,7 +1,9 @@
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using CoffeePeek.Contract.Dtos.CoffeeShop;
+using CoffeePeek.Contract.Dtos.Menu;
 using CoffeePeek.Shared.Domain.Interfaces.Infrastructure;
 using CoffeePeek.Shops.Application.Features.CoffeeShop.ShopProfile;
 using CoffeePeek.Shops.Application.Services;
@@ -14,6 +16,32 @@ namespace CoffeePeek.Shops.Application.Tests.Services;
 
 public class CreateShopFromModerationServiceTests
 {
+    [Fact]
+    public async Task LegacyApproval_WithSevenPricedDrinksAndNullVolumes_PreservesEveryPrice()
+    {
+        const string json = """
+            {"userId":null,"shop":{"name":"varka","photos":[],"menu":{"currency":"BYN","items":[
+              {"slug":"espresso","availability":1,"price":5.5,"volumeMl":null,"source":2},
+              {"slug":"americano","availability":1,"price":5.5,"volumeMl":null,"source":2},
+              {"slug":"cappuccino","availability":1,"price":7,"volumeMl":null,"source":2},
+              {"slug":"latte","availability":1,"price":8,"volumeMl":null,"source":2},
+              {"slug":"flat_white","availability":1,"price":7.5,"volumeMl":null,"source":2},
+              {"slug":"raf","availability":1,"price":9.5,"volumeMl":null,"source":2},
+              {"slug":"batch_brew","availability":1,"price":5.5,"volumeMl":null,"source":2}
+            ],"photos":[]}}}
+            """;
+        var message = System.Text.Json.JsonSerializer.Deserialize<CoffeePeek.Contract.Events.Moderation.ModerationShopApprovedEvent>(
+            json, new System.Text.Json.JsonSerializerOptions(System.Text.Json.JsonSerializerDefaults.Web))!;
+
+        await CreateSut().CreateShopFromApprovedEventAsync(message.Shop, null, Guid.NewGuid(), _ct);
+
+        _applyMenuMock.Verify(x => x.ApplySnapshotAsync(It.IsAny<Guid>(),
+            It.Is<ShopMenuSnapshot>(snapshot => snapshot.Items.Count == 7
+                && snapshot.Items.All(item => item.Price > 0 && item.Source == CoffeePeek.Contract.Enums.MenuItemSource.Manual)),
+            false, null, _ct), Times.Once);
+        _shopRepoMock.Verify(x => x.Add(It.IsAny<Domain.Aggregates.CoffeeShopAggregate.CoffeeShop>()), Times.Once);
+    }
+
     private readonly Mock<IQueryCoffeeShopRepository> _shopRepoMock = new();
     private readonly Mock<IQueryCoffeeBeanRepository> _coffeeBeanRepoMock = new();
     private readonly Mock<IQueryEquipmentRepository> _equipmentRepoMock = new();

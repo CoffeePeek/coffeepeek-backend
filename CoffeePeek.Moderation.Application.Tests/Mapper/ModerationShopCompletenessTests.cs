@@ -38,7 +38,7 @@ public class ModerationShopCompletenessTests
     [Fact]
     public void Calculate_MenuWithOnlyAbsentItems_DoesNotCount()
     {
-        var item = new ShopMenuItemDto("latte", "Латте", "Latte", default, MenuItemAvailability.Absent, null, "BYN", null, default);
+        var item = new ShopMenuItemDto("latte", "Латте", "Latte", default, MenuItemAvailability.Absent, null, "BYN", default);
         var shop = new ModerationShopDto
         {
             Menu = new ShopMenuDto(null, null, "BYN", default, null, null, [item], []),

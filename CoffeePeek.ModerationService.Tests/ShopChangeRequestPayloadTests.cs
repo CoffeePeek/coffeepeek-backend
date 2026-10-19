@@ -18,7 +18,7 @@ public class ShopChangeRequestPayloadTests
         { ShopChangeSection.Roasters, new ShopChangePayloadDto(RoasterIds: []) },
         { ShopChangeSection.Equipment, new ShopChangePayloadDto(EquipmentIds: [Guid.NewGuid()]) },
         { ShopChangeSection.Menu, new ShopChangePayloadDto(Menu: new(
-            [new UpdateShopMenuItemRequest("espresso", MenuItemAvailability.Present, 5, 30)], [], [Photo()], 0)) },
+            [new UpdateShopMenuItemRequest("espresso", MenuItemAvailability.Present, 5)], [], [Photo()], 0)) },
         { ShopChangeSection.BrewMethods, new ShopChangePayloadDto(BrewMethodIds: [Guid.NewGuid()]) }
     };
 

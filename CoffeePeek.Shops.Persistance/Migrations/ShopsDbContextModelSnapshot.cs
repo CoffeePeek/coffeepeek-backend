@@ -2220,9 +2220,6 @@ namespace CoffeePeek.Shops.Persistance.Migrations
                     b.Property<DateTime?>("UpdatedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<int?>("VolumeMl")
-                        .HasColumnType("integer");
-
                     b.HasKey("Id");
 
                     b.HasIndex("DrinkDefinitionId");
@@ -2232,7 +2229,7 @@ namespace CoffeePeek.Shops.Persistance.Migrations
 
                     b.ToTable("ShopMenuItems", null, t =>
                         {
-                            t.HasCheckConstraint("CK_ShopMenuItems_Values", "\"Availability\" IN (0, 1, 2) AND ((\"Availability\" = 1 AND \"Price\" IS NOT NULL AND \"Price\" > 0 AND \"VolumeMl\" IS NOT NULL AND \"VolumeMl\" > 0) OR (\"Availability\" <> 1 AND \"Price\" IS NULL AND \"VolumeMl\" IS NULL))");
+                            t.HasCheckConstraint("CK_ShopMenuItems_Values", "\"Availability\" IN (0, 1, 2) AND ((\"Availability\" = 1 AND \"Price\" IS NOT NULL AND \"Price\" > 0) OR (\"Availability\" <> 1 AND \"Price\" IS NULL))");
                         });
                 });
 

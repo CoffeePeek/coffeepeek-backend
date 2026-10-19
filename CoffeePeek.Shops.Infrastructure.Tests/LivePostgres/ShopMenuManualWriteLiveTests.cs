@@ -55,7 +55,7 @@ public sealed class ShopMenuManualWriteLiveTests : IClassFixture<ShopsLiveDataba
             drinkId = drink.Id;
             var menu = ShopMenu.Create(shop.Id);
             menu.ApplyManualItems(
-                [new ManualShopMenuItemUpdate(drinkId, MenuItemAvailability.Present, 5m, 200)],
+                [new ManualShopMenuItemUpdate(drinkId, MenuItemAvailability.Present, 5m)],
                 Guid.NewGuid());
             seed.Cities.Add(city);
             seed.Shops.Add(shop);
@@ -123,7 +123,7 @@ public sealed class ShopMenuManualWriteLiveTests : IClassFixture<ShopsLiveDataba
             var response = await bus.InvokeAsync<Response<AdminShopMenuDto>>(
                 new UpdateAdminShopMenuCommand(shop.Id,
                     [new UpdateShopMenuItemRequest(slug,
-                        CoffeePeek.Contract.Enums.MenuItemAvailability.Present, 8m, 300)],
+                        CoffeePeek.Contract.Enums.MenuItemAvailability.Present, 8m)],
                     ApplySuggestedPriceRange: false, UserId: Guid.NewGuid()), ct);
             Assert.True(response.IsSuccess);
             Assert.True(await invalidator.FirstAttempt.WaitAsync(TimeSpan.FromSeconds(20), ct),
@@ -145,7 +145,6 @@ public sealed class ShopMenuManualWriteLiveTests : IClassFixture<ShopsLiveDataba
         Assert.Equal(2, persisted.InputRevision);
         var item = Assert.Single(persisted.Items);
         Assert.Equal(8m, item.Price);
-        Assert.Equal(300, item.VolumeMl);
     }
 
     [Fact]
@@ -174,8 +173,8 @@ public sealed class ShopMenuManualWriteLiveTests : IClassFixture<ShopsLiveDataba
         {
             var repository = new ShopMenuRepository(writer);
             await Assert.ThrowsAsync<DomainException>(() => repository.ApplyManualItemsAsync(shop.Id,
-                [new ManualShopMenuItemUpdate(validDrinkId, MenuItemAvailability.Present, 5m, 200),
-                 new ManualShopMenuItemUpdate(invalidDrinkId, MenuItemAvailability.Present, 0m, 250)],
+                [new ManualShopMenuItemUpdate(validDrinkId, MenuItemAvailability.Present, 5m),
+                 new ManualShopMenuItemUpdate(invalidDrinkId, MenuItemAvailability.Present, 0m)],
                 Guid.NewGuid(), ct));
             // Wolverine's EF middleware saves at the end even for a returned 400.
             Assert.Equal(0, await writer.SaveChangesAsync(ct));
@@ -201,7 +200,7 @@ public sealed class ShopMenuManualWriteLiveTests : IClassFixture<ShopsLiveDataba
                 .OrderBy(d => d.Slug).Select(d => d.Id).FirstAsync(ct);
             var menu = ShopMenu.Create(shop.Id);
             menu.ApplyManualItems([
-                new ManualShopMenuItemUpdate(drinkId, MenuItemAvailability.Present, 5m, 200)
+                new ManualShopMenuItemUpdate(drinkId, MenuItemAvailability.Present, 5m)
             ], Guid.NewGuid());
             seed.Cities.Add(city);
             seed.Shops.Add(shop);
@@ -215,13 +214,12 @@ public sealed class ShopMenuManualWriteLiveTests : IClassFixture<ShopsLiveDataba
         Assert.Equal(5m, tracked.Items.Single().Price);
 
         var returned = await new ShopMenuRepository(writer).ApplyManualItemsAsync(shop.Id,
-            [new ManualShopMenuItemUpdate(drinkId, MenuItemAvailability.Present, 8m, 300)],
+            [new ManualShopMenuItemUpdate(drinkId, MenuItemAvailability.Present, 8m)],
             Guid.NewGuid(), ct);
 
         Assert.Same(tracked, returned);
         Assert.Equal(2, returned.InputRevision);
         Assert.Equal(8m, returned.Items.Single().Price);
-        Assert.Equal(300, returned.Items.Single().VolumeMl);
         Assert.Single(writer.ChangeTracker.Entries<ShopMenuItem>(),
             entry => entry.Entity.ShopMenuId == returned.Id);
     }
@@ -251,9 +249,9 @@ public sealed class ShopMenuManualWriteLiveTests : IClassFixture<ShopsLiveDataba
         var itemId = Guid.NewGuid();
         var error = await Assert.ThrowsAsync<PostgresException>(() => writer.Database.ExecuteSqlInterpolatedAsync($"""
             INSERT INTO "ShopMenuItems"
-                ("Id", "ShopMenuId", "DrinkDefinitionId", "Availability", "Price", "VolumeMl",
+                ("Id", "ShopMenuId", "DrinkDefinitionId", "Availability", "Price",
                  "Source", "Kind", "CreatedAtUtc", "UpdatedAtUtc")
-            VALUES ({itemId}, {menuId}, {drinkId}, 1, 0, 200, 1, 0, {now}, {now})
+            VALUES ({itemId}, {menuId}, {drinkId}, 1, 0, 1, 0, {now}, {now})
             """, ct));
         Assert.Equal(PostgresErrorCodes.CheckViolation, error.SqlState);
         Assert.Equal("CK_ShopMenuItems_Values", error.ConstraintName);

@@ -42,7 +42,7 @@ public sealed class ShopChangeRequestMenuLiveTests : IClassFixture<ShopsLiveData
             slug = drink.Slug;
             var seededMenu = ShopMenu.Create(shop.Id);
             seededMenu.ApplyManualItem(drink.Id, CoffeePeek.Shops.Domain.Aggregates.MenuAggregate.MenuItemAvailability.Present,
-                3m, 100, Guid.NewGuid());
+                3m, Guid.NewGuid());
             originalItemId = seededMenu.Items.Single().Id;
             seed.Cities.Add(city);
             seed.Shops.Add(shop);
@@ -77,7 +77,7 @@ public sealed class ShopChangeRequestMenuLiveTests : IClassFixture<ShopsLiveData
     private static ShopChangeRequestApprovedV1 Approved(Guid shopId, string slug, long revision, string storageKey) =>
         new(Guid.NewGuid(), shopId, Guid.NewGuid(), ShopChangeSection.Menu,
             new ShopChangePayloadDto(Menu: new ShopChangeMenuDto(
-                [new UpdateShopMenuItemRequest(slug, CoffeePeek.Contract.Enums.MenuItemAvailability.Present, 5m, 200)],
+                [new UpdateShopMenuItemRequest(slug, CoffeePeek.Contract.Enums.MenuItemAvailability.Present, 5m)],
                 [], [new UploadedPhotoDto("menu.jpg", "image/jpeg", storageKey, 100)], revision)),
             Guid.NewGuid(), DateTime.UtcNow);
 

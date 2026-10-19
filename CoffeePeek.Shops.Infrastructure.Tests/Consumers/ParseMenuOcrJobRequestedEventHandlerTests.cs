@@ -180,10 +180,10 @@ public sealed class ParseMenuOcrJobRequestedEventHandlerTests
                 await using var scope = services.CreateAsyncScope();
                 var db = scope.ServiceProvider.GetRequiredService<ShopsDbContext>();
                 var menu = await db.ShopMenus.SingleAsync(ct);
-                menu.ApplyManualItem(Guid.NewGuid(), MenuItemAvailability.Present, 5m, 200, Guid.NewGuid());
+                menu.ApplyManualItem(Guid.NewGuid(), MenuItemAvailability.Present, 5m, Guid.NewGuid());
                 await db.SaveChangesAsync(ct);
                 return new MenuVisionParseResult(true, null,
-                    [new VisionDrinkLine("Cappuccino", 8m, 250, 0.9)]);
+                    [new VisionDrinkLine("Cappuccino", 8m, 0.9)]);
             });
         var apply = services.GetRequiredService<Mock<IApplyShopMenuService>>();
 
@@ -235,7 +235,7 @@ public sealed class ParseMenuOcrJobRequestedEventHandlerTests
         parser.Setup(p => p.ParseAsync(It.IsAny<IReadOnlyList<MenuVisionPhoto>>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(new MenuVisionParseResult(true, null,
-                [new VisionDrinkLine("Cappuccino", 8m, 250, 0.9)]));
+                [new VisionDrinkLine("Cappuccino", 8m, 0.9)]));
         return parser;
     }
 

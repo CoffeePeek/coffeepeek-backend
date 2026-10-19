@@ -32,12 +32,12 @@ public static class UpdateAdminShopMenuHandler
         IOptions<MediaPublicUrlOptions> mediaOptions,
         CancellationToken ct)
     {
-        if (command.Items is null)
+        if (command.Items is null || command.Items.Any(item => item is null))
             return Response<AdminShopMenuDto>.Error(HttpStatusCode.BadRequest, "Menu items are required.");
         try
         {
             foreach (var item in command.Items)
-                ShopMenuItem.ValidateValues((DomainAvailability)(int)item.Availability, item.Price, item.VolumeMl);
+                ShopMenuItem.ValidateValues((DomainAvailability)(int)item.Availability, item.Price);
         }
         catch (DomainException ex)
         {
@@ -54,7 +54,7 @@ public static class UpdateAdminShopMenuHandler
         var seenDrinkIds = new HashSet<Guid>();
         foreach (var item in command.Items)
         {
-            if (string.IsNullOrWhiteSpace(item.Slug) || !bySlug.TryGetValue(item.Slug, out var drink))
+            if (string.IsNullOrWhiteSpace(item.Slug) || !bySlug.TryGetValue(item.Slug.Trim(), out var drink))
                 return Response<AdminShopMenuDto>.Error(
                     HttpStatusCode.BadRequest, $"Active coffee drink '{item.Slug}' was not found.");
             if (!seenDrinkIds.Add(drink.Id))
@@ -63,8 +63,7 @@ public static class UpdateAdminShopMenuHandler
             updates.Add(new ManualShopMenuItemUpdate(
                 drink.Id,
                 (DomainAvailability)(int)item.Availability,
-                item.Price,
-                item.VolumeMl));
+                item.Price));
         }
         var menu = await applyMenu.ApplyManualItemsAsync(command.ShopId, updates, command.UserId, ct);
 

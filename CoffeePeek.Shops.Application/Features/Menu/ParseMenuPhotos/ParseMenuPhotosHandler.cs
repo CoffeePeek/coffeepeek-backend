@@ -65,8 +65,6 @@ public static class ParseMenuPhotosHandler
 
             if (matched.TryGetValue(drink.Slug, out var existing))
             {
-                // Price and volume describe one offer. Replacing only the price would
-                // invent a portion that was never present in the source photo.
                 if (line.Price!.Value < existing.Price!.Value)
                     matched[drink.Slug] = Matched(drink, line);
                 continue;
@@ -101,7 +99,6 @@ public static class ParseMenuPhotosHandler
     private const int MaxDrinkLines = 200;
     private const int MaxRawNameLength = 100;
     private const decimal MaxPrice = 10_000m;
-    private const int MaxVolumeMl = 2_000;
 
     public static IEnumerable<VisionDrinkLine> Sanitize(IEnumerable<VisionDrinkLine> lines) =>
         lines
@@ -111,11 +108,10 @@ public static class ParseMenuPhotosHandler
             {
                 RawName = l.RawName.Length > MaxRawNameLength ? l.RawName[..MaxRawNameLength] : l.RawName,
                 Price = l.Price is > 0 and <= MaxPrice ? l.Price : null,
-                VolumeMl = l.VolumeMl is > 0 and <= MaxVolumeMl ? l.VolumeMl : null,
                 Confidence = l.Confidence is { } c ? Math.Clamp(c, 0, 1) : null
             })
             // A partially known OCR offer cannot become a Present domain item.
-            .Where(l => l.Price.HasValue && l.VolumeMl.HasValue);
+            .Where(l => l.Price.HasValue);
 
     private static ParseMenuPhotosResponse Failed(string error) =>
         new(false, error, null, [], []);
@@ -123,7 +119,6 @@ public static class ParseMenuPhotosHandler
     private static ParsedMenuItemDto Matched(CoffeeDrinkDefinition drink, VisionDrinkLine line) => new(
         drink.Slug,
         line.Price,
-        line.VolumeMl,
         line.RawName,
         drink.NameRu,
         drink.NameEn,

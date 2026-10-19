@@ -313,7 +313,7 @@ public sealed class ShopsFaultRecoveryLiveTests(ShopsLiveDatabase shops, MediaLi
             else
             {
                 Assert.Equal(MenuOcrJobStatus.Applied, final.Status);
-                var item = Assert.Single(current.Items); Assert.Equal(8m, item.Price); Assert.Equal(200, item.VolumeMl);
+                var item = Assert.Single(current.Items); Assert.Equal(8m, item.Price);
                 Assert.Single(current.Photos);
                 await ShopsFaultControl.WaitMarkerAsync(root, "ocr-invalidated", ct, recovery.Process);
             }

@@ -60,15 +60,14 @@ public class ShopMenuRepository(ShopsDbContext dbContext) : IShopMenuRepository
 
             await dbContext.Database.ExecuteSqlInterpolatedAsync($"""
                 INSERT INTO "ShopMenuItems"
-                    ("Id", "ShopMenuId", "DrinkDefinitionId", "Availability", "Price", "VolumeMl",
+                    ("Id", "ShopMenuId", "DrinkDefinitionId", "Availability", "Price",
                      "Source", "Kind", "CustomName", "CreatedAtUtc", "UpdatedAtUtc")
                 VALUES
-                    ({itemId}, {menu.Id}, {item.DrinkDefinitionId}, {availability}, {price}, {item.VolumeMl},
+                    ({itemId}, {menu.Id}, {item.DrinkDefinitionId}, {availability}, {price},
                      {source}, {kind}, NULL, {now}, {now})
                 ON CONFLICT ("ShopMenuId", "DrinkDefinitionId") DO UPDATE SET
                     "Availability" = EXCLUDED."Availability",
                     "Price" = EXCLUDED."Price",
-                    "VolumeMl" = EXCLUDED."VolumeMl",
                     "Source" = EXCLUDED."Source",
                     "UpdatedAtUtc" = EXCLUDED."UpdatedAtUtc"
                 """, ct);

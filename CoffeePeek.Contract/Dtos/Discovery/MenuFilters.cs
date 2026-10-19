@@ -17,6 +17,4 @@ public class MenuFilters
     public decimal? MinPrice { get; set; }
     [Range(typeof(decimal), "0", "2147483647")]
     public decimal? MaxPrice { get; set; }
-    [Range(1, 5000)]
-    public int? VolumeMl { get; set; }
 }

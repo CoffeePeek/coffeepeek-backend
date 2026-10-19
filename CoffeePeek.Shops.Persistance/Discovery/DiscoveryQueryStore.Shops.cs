@@ -29,7 +29,6 @@ public sealed partial class DiscoveryQueryStore
         if (f.Currency is { } currency) items = items.Where(i => db.ShopMenus.Any(m => m.Id == i.ShopMenuId && m.Currency == currency));
         if (f.MinPrice is { } min) items = items.Where(i => i.Price.HasValue && i.Price >= min);
         if (f.MaxPrice is { } max) items = items.Where(i => i.Price.HasValue && i.Price <= max);
-        if (f.VolumeMl is { } volume) items = items.Where(i => i.VolumeMl == volume);
         return items;
     }
 
@@ -97,7 +96,7 @@ public sealed partial class DiscoveryQueryStore
         {
             var menu = f.Menu;
             var items = MatchingMenuItems(menu);
-            var positionRequired = menu.MinPrice.HasValue || menu.MaxPrice.HasValue || menu.VolumeMl.HasValue;
+            var positionRequired = menu.MinPrice.HasValue || menu.MaxPrice.HasValue;
             if (positionRequired || menu.Brew.Length > 0 || menu.Currency is not null)
             {
                 var espresso = menu.Brew.Contains("espresso"); var filter = menu.Brew.Contains("filter");
@@ -147,7 +146,7 @@ public sealed partial class DiscoveryQueryStore
         var positions = matchedMenu is null ? [] : await (
             from m in db.ShopMenus.AsNoTracking() where ids.Contains(m.CoffeeShopId)
             join i in matchedMenu on m.Id equals i.ShopMenuId
-            select new { m.CoffeeShopId, m.Currency, m.CapturedAtUtc, i.Price, i.VolumeMl, i.DrinkDefinition!.Slug, i.DrinkDefinition.NameRu, i.DrinkDefinition.Category }
+            select new { m.CoffeeShopId, m.Currency, m.CapturedAtUtc, i.Price, i.DrinkDefinition!.Slug, i.DrinkDefinition.NameRu, i.DrinkDefinition.Category }
         ).ToArrayAsync(ct);
         return new()
         {
@@ -169,7 +168,7 @@ public sealed partial class DiscoveryQueryStore
                     MatchingMenuItems = positions.Where(p => p.CoffeeShopId == s.Id).OrderBy(p => p.Slug).Select(p => new MatchedMenuItem
                     {
                         DrinkSlug = p.Slug, Name = p.NameRu, BrewMethod = p.Category == CoffeeDrinkCategory.Espresso ? "espresso" : "filter",
-                        Price = p.Price, Currency = p.Currency, VolumeMl = p.VolumeMl, CheckedAtUtc = p.CapturedAtUtc
+                        Price = p.Price, Currency = p.Currency, CheckedAtUtc = p.CapturedAtUtc
                     }).ToArray()
                 };
             }).ToArray(), TotalItems = count, TotalPages = (count + request.PageSize - 1) / request.PageSize, CurrentPage = request.Page, PageSize = request.PageSize

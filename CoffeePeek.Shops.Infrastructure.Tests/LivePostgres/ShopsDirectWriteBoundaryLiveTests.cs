@@ -631,7 +631,7 @@ public sealed class ShopsDirectWriteBoundaryLiveTests : IClassFixture<ShopsLiveD
             var drink = await seed.CoffeeDrinkDefinitions.OrderBy(d => d.Slug).FirstAsync(ct);
             drinkId = drink.Id; slug = drink.Slug;
             var menu = ShopMenu.Create(shop.Id);
-            menu.ApplyManualItem(drinkId, MenuItemAvailability.Present, 5m, 200, Guid.NewGuid());
+            menu.ApplyManualItem(drinkId, MenuItemAvailability.Present, 5m, Guid.NewGuid());
             seed.Cities.Add(city); seed.Shops.Add(shop); seed.ShopMenus.Add(menu);
             await seed.SaveChangesAsync(ct);
         }
@@ -641,7 +641,7 @@ public sealed class ShopsDirectWriteBoundaryLiveTests : IClassFixture<ShopsLiveD
         {
             var message = new ApplyShopMenuSnapshotEvent(shop.Id,
                 new ShopMenuSnapshot(DateTime.UtcNow, "BYN", null,
-                    [new ShopMenuItemSnapshot(slug, CoffeePeek.Contract.Enums.MenuItemAvailability.Present, 8m, 250,
+                    [new ShopMenuItemSnapshot(slug, CoffeePeek.Contract.Enums.MenuItemAvailability.Present, 8m,
                         CoffeePeek.Contract.Enums.MenuItemSource.Manual)], []), false, Guid.NewGuid(), expected);
             var bus = host.Services.GetRequiredService<IMessageBus>();
             await bus.InvokeAsync(message, ct);
@@ -653,7 +653,7 @@ public sealed class ShopsDirectWriteBoundaryLiveTests : IClassFixture<ShopsLiveD
             await using (var manual = fixture.Context())
             {
                 await new ShopMenuRepository(manual).ApplyManualItemsAsync(shop.Id,
-                    [new ManualShopMenuItemUpdate(drinkId, MenuItemAvailability.Present, 12m, 300)], Guid.NewGuid(), ct);
+                    [new ManualShopMenuItemUpdate(drinkId, MenuItemAvailability.Present, 12m)], Guid.NewGuid(), ct);
                 await manual.SaveChangesAsync(ct);
             }
             await bus.InvokeAsync(message, ct);

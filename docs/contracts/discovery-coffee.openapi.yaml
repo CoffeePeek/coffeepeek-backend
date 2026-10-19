@@ -276,7 +276,6 @@ paths:
                         brewMethod: filter
                         price: 8
                         currency: BYN
-                        volumeMl: 250
                         checkedAtUtc: '2026-10-05T08:00:00Z'
                     totalItems: 1
                     totalPages: 1
@@ -379,7 +378,6 @@ paths:
                       brewMethod: filter
                       price: 8
                       currency: BYN
-                      volumeMl: 250
                       checkedAtUtc: '2026-10-05T08:00:00Z'
                   totalItems: 1
                   totalPages: 1
@@ -3033,10 +3031,6 @@ components:
         maxPrice:
           type: number
           minimum: 0
-        volumeMl:
-          type: integer
-          minimum: 1
-          maximum: 5000
       description: Поиск по Present-позициям меню. При цене currency обязательна; цена, brew и объём должны совпасть
         у одной позиции. Без цены brew может опираться на подтверждённый метод кофейни. Отсутствующая цена не проходит
         числовой фильтр.
@@ -3070,11 +3064,6 @@ components:
           enum:
           - BYN
           - RUB
-        volumeMl:
-          anyOf:
-          - type: integer
-            minimum: 1
-          - type: 'null'
         checkedAtUtc:
           anyOf:
           - type: string
@@ -3086,7 +3075,6 @@ components:
       - brewMethod
       - price
       - currency
-      - volumeMl
       - checkedAtUtc
       description: Подходящая позиция меню объясняет совпадение по цене/приготовлению. При ценовом фильтре price
         не null. Время проверки относится к меню. Это цена напитка, не зерна.
@@ -3121,10 +3109,6 @@ components:
         maxDrinkPrice:
           type: number
           minimum: 0
-        drinkVolumeMl:
-          type: integer
-          minimum: 1
-          maximum: 5000
       required:
       - currency
       description: 'Стоимость напитка в кофейне: валюта, минимальная/максимальная цена и объём. min <= max. Конвертации

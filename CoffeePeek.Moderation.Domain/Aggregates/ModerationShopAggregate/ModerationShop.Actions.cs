@@ -212,6 +212,7 @@ public sealed partial class ModerationShop
         if (Location is null || !Location.IsAddressValidated)
             throw new DomainException("Cannot approve shop with unvalidated address.");
 
+        Menu?.ValidateForPublication();
         ModerationStatus = ModerationStatus.Approved;
         RejectedReason = null;
         return true;
