@@ -271,20 +271,18 @@ def png_has_alpha(image):
     return any(alpha < 255 for alpha in alphas) and any(alpha > 0 for alpha in alphas)
 
 
-def check_cache_policy(headers, public, cache_enabled=False):
-    policy = headers.get("cache-control", "").lower()
-    require("private" in policy)
+def check_cache_policy(headers, public):
+    directives = [part.strip().lower() for part in headers.get("cache-control", "").split(",")]
+    require("private" in directives and "public" not in directives)
     if public:
-        age = re.search(r"(?:^|,)\s*max-age=(\d+)(?:\s*,|\s*$)", policy)
-        if cache_enabled:
-            require("must-revalidate" in policy and age and int(age[1]) <= 20)
-        else:
-            require("no-store" in policy or "must-revalidate" in policy and age and int(age[1]) == 0)
+        ages = [part.partition("=")[2].strip() for part in directives if part.partition("=")[0].strip() == "max-age"]
+        require("must-revalidate" in directives and "no-store" not in directives and len(ages) == 1
+                and re.fullmatch(r"[0-9]+", ages[0]) and int(ages[0]) <= 20)
     else:
-        require("no-store" in policy)
+        require("no-store" in directives)
 
 
-def photo_checks(client, base, variants, token=None, public=False, original_digest=None, cache_enabled=False):
+def photo_checks(client, base, variants, token=None, public=False, original_digest=None):
     _, original_headers, original = client.request("GET", API + base, token, cap=32 * 1024 * 1024)
     require("no-store" in original_headers.get("cache-control", ""))
     if original_digest:
@@ -302,7 +300,7 @@ def photo_checks(client, base, variants, token=None, public=False, original_dige
         require(headers.get("content-type", "").split(";")[0] == "image/" + fmt and headers.get("etag"))
         require(headers["etag"] == '"' + source + "-v" + str(recipe) + "-" + hashlib.sha256(image).hexdigest() + '"')
         require(int(headers["content-length"]) == len(image) > 0 and headers.get("x-content-type-options") == "nosniff")
-        check_cache_policy(headers, public, cache_enabled)
+        check_cache_policy(headers, public)
         if variant.get("sizeBytes") is not None:
             require(len(image) == variant["sizeBytes"])
         if fmt == "png":
@@ -316,13 +314,13 @@ def photo_checks(client, base, variants, token=None, public=False, original_dige
         else:
             require(image.startswith(b"\xff\xd8"))
         _, head, body = client.request("HEAD", url, token)
-        check_cache_policy(head, public, cache_enabled)
+        check_cache_policy(head, public)
         require(not body and head.get("etag") == headers["etag"] and head.get("content-length") == headers["content-length"]
                 and head.get("content-type") == headers["content-type"])
         conditional, conditional_headers, conditional_body = client.request("GET", url, token,
-            headers={"If-None-Match": headers["etag"]}, expected=(304,) if public and cache_enabled else (200, 304) if public else (200,), cap=8 * 1024 * 1024)
-        require(conditional in ((200, 304) if public and not cache_enabled else (304,) if public else (200,)))
-        check_cache_policy(conditional_headers, public, cache_enabled)
+            headers={"If-None-Match": headers["etag"]}, expected=(304,) if public else (200,), cap=8 * 1024 * 1024)
+        require(conditional == (304 if public else 200))
+        check_cache_policy(conditional_headers, public)
         if conditional == 304:
             require(not conditional_body and conditional_headers.get("etag") == headers["etag"])
         else:
@@ -337,7 +335,7 @@ def photo_checks(client, base, variants, token=None, public=False, original_dige
     return checks
 
 
-def verify(path, old_path, client, recipe=1, public_cache_enabled=False):
+def verify(path, old_path, client, recipe=1):
     state = private_read(path)
     validate_state(state)
     require(state.get("confirmed") and not state.get("deleted"))
@@ -358,9 +356,9 @@ def verify(path, old_path, client, recipe=1, public_cache_enabled=False):
     old_base = base_path(old["checkInId"], old["photoId"])
     require(identity(old["checkInId"]) != identity(state["homeId"]))
     variants = [dict(variant, sourceVersion=old["sourceVersion"], recipeVersion=old["recipeVersion"]) for variant in old["variants"]]
-    checks += photo_checks(client, old_base, variants, public=True, original_digest=old.get("originalSha256"), cache_enabled=public_cache_enabled)
+    checks += photo_checks(client, old_base, variants, public=True, original_digest=old.get("originalSha256"))
     client.request("GET", API + old_base, token="invalid-canary-token", expected=(401,))
-    state["verification"] = {"checks": checks + 1, "newPhotos": 2, "oldPhotos": 1, "publicCacheRequested": public_cache_enabled,
+    state["verification"] = {"checks": checks + 1, "newPhotos": 2, "oldPhotos": 1, "publicVariantCacheVerified": True,
                              "verifiedAtUtc": dt.datetime.now(dt.timezone.utc).isoformat()}
     private_write(path, state)
     return state["verification"]
@@ -456,7 +454,6 @@ def main(argv=None, client=None):
     parser.add_argument("--confirmation-file")
     parser.add_argument("--old-photo-file")
     parser.add_argument("--recipe", type=int, default=1)
-    parser.add_argument("--public-cache-enabled", action="store_true", help="Require public conditional 304 and private freshness <=20s; default accepts no-store/200 or zero-freshness revalidation.")
     args = parser.parse_args(argv)
     try:
         require(args.recipe > 0)
@@ -468,7 +465,7 @@ def main(argv=None, client=None):
             result = confirm_create(args.state, args.confirmation_file, client)
         elif args.command == "verify":
             require(args.old_photo_file and Path(args.old_photo_file).resolve() != Path(args.state).resolve())
-            result = verify(args.state, args.old_photo_file, client, args.recipe, args.public_cache_enabled)
+            result = verify(args.state, args.old_photo_file, client, args.recipe)
         else:
             result = cleanup(args.state, client)
         print(json.dumps({"command": args.command, "success": True, "result": result}))

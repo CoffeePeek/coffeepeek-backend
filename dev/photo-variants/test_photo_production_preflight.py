@@ -10,7 +10,8 @@ import photo_production_preflight as tool
 PRIVATE = "private-photo-key?password=do-not-print-this"
 ID = "a" * 64
 ENV = {"POSTGRES_USER": "test_role", "POSTGRES_PASSWORD": PRIVATE, "GATEWAY_AUTH_SECRET": PRIVATE,
-       "CHECKIN_VARIANTS_ENABLED": "false", "CHECKIN_VARIANTS_CACHE_ENABLED": PRIVATE}
+       "CHECKIN_VARIANTS_ENABLED": "false", "CHECKIN_VARIANTS_SERVE_ENABLED": PRIVATE,
+       "CHECKIN_VARIANTS_CACHE_ENABLED": PRIVATE}
 
 
 class PreflightTests(unittest.TestCase):
@@ -26,9 +27,11 @@ class PreflightTests(unittest.TestCase):
     def test_flags_never_echo_arbitrary_values_and_presence_is_boolean(self):
         result = tool.flags(ENV)
         self.assertEqual({"configured": True, "value": False}, result["CHECKIN_VARIANTS_ENABLED"])
-        self.assertEqual({"configured": True, "invalid": True}, result["CHECKIN_VARIANTS_CACHE_ENABLED"])
+        self.assertEqual({"configured": True, "invalid": True}, result["CHECKIN_VARIANTS_SERVE_ENABLED"])
         self.assertEqual({"configured": False, "composeDefault": True}, result["CHECKIN_VARIANTS_CLEANUP_DRY_RUN"])
         self.assertNotIn(PRIVATE, json.dumps(result))
+        self.assertNotIn("CHECKIN_VARIANTS_CACHE_ENABLED", result)
+        self.assertNotIn("CHECKIN_VARIANTS_CACHE_ENABLED", tool.flags({}))
 
     def test_container_inspection_selects_no_environment_logs_commands_or_errors(self):
         for forbidden in (".Config.Env", ".Config.Cmd", ".State.Error", ".State.Health.Log"):

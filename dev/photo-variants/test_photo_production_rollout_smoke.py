@@ -17,6 +17,7 @@ class FullReleaseSmokeTests(unittest.TestCase):
         self.addCleanup(directory.cleanup)
         self.root = Path(directory.name)
         self.client = PilotProduction()
+        self.client.public_max_age = 20
         self.environment = {"EXPECTED_DEPLOY_SHA": "a" * 40, "POSTGRES_USER": "private-db-user", "POSTGRES_PASSWORD": "private-db-secret"}
         self.commands = FakeCommands(self.environment, self.client)
         probe = activation.Activation(self.environment, self.commands, self.client)
@@ -28,6 +29,7 @@ class FullReleaseSmokeTests(unittest.TestCase):
         historical.write_text('{"historical":true}', encoding="utf-8")
         self.assertTrue(smoke.execute(self.operator, "rollout-smoke-create")["privateHomeCreated"])
         result = smoke.execute(self.operator, "rollout-smoke-verify")
+        self.assertTrue(result["publicVariantCacheVerified"])
         self.assertEqual((2, 1, 12), (result["newPhotos"], result["oldPhotos"], result["ownerDescriptorsVerified"]))
         deleted = smoke.execute(self.operator, "rollout-smoke-cleanup")
         self.assertTrue(deleted["privateHomeDeleted"])

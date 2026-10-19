@@ -34,11 +34,14 @@ STAGES = {"validation", "private_state", "registration", "release", "migrations"
           "image_tag", "environment", "restart", "health", "runtime_flags", "creation", "old_photo", "verification", "cleanup"}
 
 
+OBSOLETE = {"CHECKIN_VARIANTS_CACHE_ENABLED", "CheckInPhotoDeliveryOptions__CachePublicVariants"}
+
+
 def pilot_flags(user_id):
     return {"CHECKIN_VARIANTS_ENABLED": "true", "CHECKIN_VARIANTS_READ_ENABLED": "true",
             "CHECKIN_VARIANTS_SERVE_ENABLED": "true", "CHECKIN_VARIANTS_CANARY_ONLY": "true",
             "CHECKIN_VARIANTS_CANARY_USER_IDS": canary.identity(user_id),
-            "CHECKIN_VARIANTS_ADVERTISE_ENABLED": "true", "CHECKIN_VARIANTS_CACHE_ENABLED": "false",
+            "CHECKIN_VARIANTS_ADVERTISE_ENABLED": "true",
             "CHECKIN_VARIANTS_CLEANUP_ENABLED": "false", "CHECKIN_VARIANTS_CLEANUP_DRY_RUN": "true"}
 
 
@@ -89,8 +92,11 @@ def assignment_lines(original, targets):
 def environment_replacement(original, user_id):
     """Replace only the fixed pilot assignments, preserving other configuration bytes."""
     values = pilot_flags(user_id)
-    lines, found = assignment_lines(original, values)
+    lines, found = assignment_lines(original, set(values) | OBSOLETE)
     newline = b"\r\n" if b"\r\n" in original else b"\n"
+    for key in OBSOLETE:
+        if key in found:
+            lines[found[key]] = b""
     for key, value in values.items():
         assignment = key.encode() + b"=" + value.encode("ascii")
         if key in found:
@@ -164,21 +170,6 @@ class Commands:
     def compose(self, *args):
         return self.run(["docker", "compose", "--project-directory", str(ROOT / "deploy"),
                          "--project-name", "coffeepeek", "-f", str(ROOT / "deploy" / "docker-compose.yml"), *args])
-
-
-class CacheDisabledClient:
-    def __init__(self, client):
-        self.client = client
-
-    def api(self, *args, **kwargs):
-        return self.client.api(*args, **kwargs)
-
-    def request(self, *args, **kwargs):
-        status, headers, body = self.client.request(*args, **kwargs)
-        if "/variants/" in args[1] and status in (200, 304):
-            policy = {part.strip().lower() for part in headers.get("cache-control", "").split(",")}
-            canary.require(policy in ({"private", "no-store"}, {"private", "max-age=0", "must-revalidate"}))
-        return status, headers, body
 
 
 class Activation:
@@ -304,8 +295,7 @@ class Activation:
                    "shops": {"CheckInPhotoDeliveryOptions__ServeVariants": "true",
                              "CheckInPhotoDeliveryOptions__AdvertiseVariants": "true",
                              "CheckInPhotoDeliveryOptions__AdvertiseCanaryOnly": "true",
-                             "CheckInPhotoDeliveryOptions__AdvertiseCanaryUserIds": state["userId"],
-                             "CheckInPhotoDeliveryOptions__CachePublicVariants": "false"}}
+                             "CheckInPhotoDeliveryOptions__AdvertiseCanaryUserIds": state["userId"]}}
         for service, values in mapping.items():
             conditions = " ".join('(eq (index (split . "=") 0) "' + key + '")' for key in values)
             template = '{{range .Config.Env}}{{if or ' + conditions + '}}{{println .}}{{end}}{{end}}'
@@ -333,6 +323,8 @@ class Activation:
         self.stage = "environment"
         persist_environment(state["userId"])
         self.commands.environment.update(pilot_flags(state["userId"]))
+        for key in OBSOLETE:
+            self.commands.environment.pop(key, None)
         self.stage = "restart"
         self.commands.compose("up", "-d", "--no-deps", "shops", "media")
         self.stage = "health"
@@ -410,7 +402,7 @@ class Activation:
         self.stage = "old_photo"
         old = self.old_photo(state)
         self.stage = "verification"
-        result = canary.verify(self.state_path, self.old_path, CacheDisabledClient(self.client), recipe=1)
+        result = canary.verify(self.state_path, self.old_path, self.client, recipe=1)
         state = self.state()
         token = state["accessToken"]
         home = self.client.api("GET", "/api/v1/check-ins/home/" + canary.identity(state["homeId"]), token)

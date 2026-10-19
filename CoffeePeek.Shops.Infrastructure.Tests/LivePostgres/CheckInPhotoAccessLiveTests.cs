@@ -1,5 +1,4 @@
 using CoffeePeek.Shops.Application.Abstractions;
-using CoffeePeek.Shops.Application.Features.CheckIn;
 using CoffeePeek.Shops.Infrastructure.Account;
 using CoffeePeek.Shops.Domain.Aggregates.CheckInAggregate;
 using CoffeePeek.Shops.Domain.Entities;
@@ -9,7 +8,6 @@ using CoffeePeek.Shops.Persistance.Queries;
 using CoffeePeek.Testing;
 using Microsoft.EntityFrameworkCore;
 using Moq;
-using Microsoft.Extensions.Options;
 
 namespace CoffeePeek.Shops.Infrastructure.Tests.LivePostgres;
 
@@ -36,8 +34,7 @@ public sealed class CheckInPhotoAccessLiveTests(ShopsLiveDatabase fixture) : ICl
             .UseNpgsql(fixture.ConnectionString).AddInterceptors(probe).Options);
         var visibility = new Mock<IAuthorVisibilityLookup>();
         visibility.Setup(v => v.ExcludedUserIdsAsync(It.IsAny<Guid?>(), ct)).ReturnsAsync([]);
-        using var cache = new CheckInPhotoVisibilityCache(TimeProvider.System,
-            Options.Create(new CheckInPhotoDeliveryOptions { CachePublicVariants = true }));
+        using var cache = new CheckInPhotoVisibilityCache(TimeProvider.System);
         var access = new CheckInPhotoAccessQueries(db, visibility.Object, cache);
         Assert.NotNull(await access.GetAsync(row.Id, photos[2].Id, null, ct));
         Assert.Equal(1, probe.Count);

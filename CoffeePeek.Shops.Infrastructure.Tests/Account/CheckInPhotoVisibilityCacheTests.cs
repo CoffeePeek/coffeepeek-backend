@@ -1,8 +1,6 @@
 using CoffeePeek.Shared.Kernel.Exceptions;
 using CoffeePeek.Shops.Application.Abstractions;
-using CoffeePeek.Shops.Application.Features.CheckIn;
 using CoffeePeek.Shops.Infrastructure.Account;
-using Microsoft.Extensions.Options;
 
 namespace CoffeePeek.Shops.Infrastructure.Tests.Account;
 
@@ -80,25 +78,23 @@ public sealed class CheckInPhotoVisibilityCacheTests
     }
 
     [Fact]
-    public async Task RollbackFlagBypassesFactsAndAnonymousNeverCallsAccount()
+    public async Task AnonymousObservationsNeverCallAccountOrShareAuthenticatedFacts()
     {
-        var clock = new Clock(); var source = new Source(); var viewer = Guid.NewGuid();
-        var options = new CheckInPhotoDeliveryOptions { CachePublicVariants = true };
-        using var cache = new CheckInPhotoVisibilityCache(clock, Options.Create(options));
-        await cache.GetAsync(viewer, source, Ct);
-        options.CachePublicVariants = false; source.Excluded = [Guid.NewGuid()];
-        var first = await cache.GetAsync(viewer, source, Ct);
-        var second = await cache.GetAsync(viewer, source, Ct);
-        Assert.Single(first.ExcludedUserIds);
-        Assert.Single(second.ExcludedUserIds);
-        Assert.True(first.ReadFromSource);
-        Assert.True(second.ReadFromSource);
-        Assert.Empty((await cache.GetAsync(null, source, Ct)).ExcludedUserIds);
-        Assert.Equal(3, source.Calls);
+        var clock = new Clock(); var blocked = Guid.NewGuid(); var source = new Source { Excluded = [blocked] };
+        using var cache = Cache(clock);
+        var first = await cache.GetAsync(null, source, Ct);
+        Assert.Empty(first.ExcludedUserIds);
+        Assert.Equal(0, source.Calls);
+        Assert.Equal(new[] { blocked }, (await cache.GetAsync(Guid.NewGuid(), source, Ct)).ExcludedUserIds);
+        source.Fail = true; clock.Advance(19);
+        var next = await cache.GetAsync(null, source, Ct);
+        Assert.Empty(next.ExcludedUserIds);
+        Assert.NotEqual(first.Observation, next.Observation);
+        Assert.Equal(TimeSpan.FromSeconds(40), next.Observation.Remaining(clock));
+        Assert.Equal(1, source.Calls);
     }
 
-    private static CheckInPhotoVisibilityCache Cache(Clock clock) => new(clock,
-        Options.Create(new CheckInPhotoDeliveryOptions { CachePublicVariants = true }));
+    private static CheckInPhotoVisibilityCache Cache(Clock clock) => new(clock);
 
     private sealed class Clock : TimeProvider
     {

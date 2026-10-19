@@ -31,7 +31,7 @@ class FakeProduction:
         self.fail_creation = False
         self.wrong_identity = False
         self.public_no_store = False
-        self.public_max_age = 0
+        self.public_max_age = 20
 
     def api(self, method, path, token=None, data=None):
         self.calls.append((method, path, token, data))
@@ -309,20 +309,40 @@ class CanaryTests(unittest.TestCase):
             canary.confirm_create(self.state, self.confirmation, self.client)
         self.assertEqual(before, len(self.client.calls))
 
-    def test_public_no_store_200_mode_is_supported_without_cache_flag(self):
+    def test_public_variants_always_require_cache_policy_and_conditional_304(self):
         self.create()
+        self.assertTrue(canary.verify(self.state, self.old, self.client)["publicVariantCacheVerified"])
         self.client.public_no_store = True
-        self.assertFalse(canary.verify(self.state, self.old, self.client)["publicCacheRequested"])
-
-    def test_public_positive_freshness_requires_explicit_cache_mode_and_304(self):
-        self.create()
-        self.client.public_max_age = 20
         with self.assertRaises(canary.CanaryError):
             canary.verify(self.state, self.old, self.client)
-        self.assertTrue(canary.verify(self.state, self.old, self.client, public_cache_enabled=True)["publicCacheRequested"])
-        self.client.public_no_store = True
+
+    def test_zero_freshness_boundary_still_requires_conditional_304(self):
+        self.create()
+        self.client.public_max_age = 0
+        self.assertTrue(canary.verify(self.state, self.old, self.client)["publicVariantCacheVerified"])
+        conditional = [request for request in self.client.photo_requests
+                       if request["headers"].get("If-None-Match") and self.client.home_id not in request["url"]]
+        self.assertEqual(6, len(conditional))
+
+    def test_cache_policy_rejects_invalid_public_freshness_and_preserves_private_no_store(self):
+        for policy in ("private, no-store", "public, max-age=20, must-revalidate",
+                       "private, max-age=21, must-revalidate", "private, max-age=20",
+                       "private, max-age=0, max-age=20, must-revalidate"):
+            with self.subTest(policy=policy), self.assertRaises(canary.CanaryError):
+                canary.check_cache_policy({"cache-control": policy}, public=True)
+        canary.check_cache_policy({"cache-control": "private, no-store"}, public=False)
         with self.assertRaises(canary.CanaryError):
-            canary.verify(self.state, self.old, self.client, public_cache_enabled=True)
+            canary.check_cache_policy({"cache-control": "private, max-age=20, must-revalidate"}, public=False)
+
+    def test_public_conditional_200_is_rejected_even_with_cache_headers(self):
+        self.create()
+        request = self.client.request
+        def nonconditional(method, url, token=None, data=None, headers=None, **kwargs):
+            status, response, body = request(method, url, token, data, headers, **kwargs)
+            return (200 if status == 304 else status), response, body
+        with patch.object(self.client, "request", side_effect=nonconditional):
+            with self.assertRaises(canary.CanaryError):
+                canary.verify(self.state, self.old, self.client)
 
     def test_wrong_confirmation_email_and_wrong_jwt_owner_stop_before_upload(self):
         state = self.prepare()

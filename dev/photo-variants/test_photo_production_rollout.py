@@ -89,7 +89,7 @@ class Commands:
                 return "\n".join(["PhotoVariantOptions__Enabled=" + ("false" if self.bad_flags else "true"),
                     "PhotoVariantOptions__ReadEnabled=true", "PhotoVariantOptions__CleanupEnabled=false",
                     "PhotoVariantOptions__CleanupDryRun=true", "CheckInPhotoDeliveryOptions__ServeVariants=true",
-                    "CheckInPhotoDeliveryOptions__AdvertiseVariants=true", "CheckInPhotoDeliveryOptions__CachePublicVariants=false"])
+                    "CheckInPhotoDeliveryOptions__AdvertiseVariants=true"])
             return "healthy"
         raise AssertionError("Unexpected external command")
 
@@ -101,12 +101,14 @@ class RolloutTests(unittest.TestCase):
         self.private.mkdir(mode=0o700); (self.repo / "deploy").mkdir()
         self.env_path = self.repo / "deploy" / ".env"
         self.original = ("IMAGE_TAG=sha-" + SHA + '\nOTHER_SECRET="' + SECRET + '"\nCHECKIN_VARIANTS_CANARY_ONLY=true\nCHECKIN_VARIANTS_CANARY_USER_IDS=' + RUN + '\n').encode()
+        self.original += b"CHECKIN_VARIANTS_CACHE_ENABLED=false\nCheckInPhotoDeliveryOptions__CachePublicVariants=false\n"
         self.env_path.write_bytes(self.original)
         self.addCleanup(patch.stopall)
         patch.object(tool.activation, "ROOT", self.repo).start()
         patch.object(tool.activation, "PRIVATE", self.private).start()
         self.environment = {"EXPECTED_DEPLOY_SHA": SHA, "IMAGE_TAG": "sha-" + SHA, "PHOTO_OPERATION": "rollout-status",
-                            "CHECKIN_VARIANTS_CANARY_ONLY": "true", "CHECKIN_VARIANTS_CANARY_USER_IDS": RUN}
+                            "CHECKIN_VARIANTS_CANARY_ONLY": "true", "CHECKIN_VARIANTS_CANARY_USER_IDS": RUN,
+                            "CHECKIN_VARIANTS_CACHE_ENABLED": "false", "CheckInPhotoDeliveryOptions__CachePublicVariants": "false"}
         self.client, self.commands = PrivateClient(), Commands(self.environment)
         self.operator = tool.Rollout(self.environment, self.commands, self.client, Mock(), sleep=Mock())
         self.old = {"marker": tool.inventory.MARKER, "version": 1, "deploymentSha": tool.PILOT_SHA, "runId": RUN,

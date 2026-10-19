@@ -90,8 +90,9 @@ metadata mismatches расследуются отдельно, без автом
 
 1. `rollout-enable` проверяет пять OCI revisions, IMAGE_TAG и migrations, сохраняет generation/read/
    serve/advertise=true, удаляет устаревшие canary assignments и пересоздаёт только Shops/Media.
-   Actual runtime flags и health проверяются после запуска. Public freshness cache и cleanup остаются
-   выключенными, cleanup dry-run включён.
+   Actual runtime flags и health проверяются после запуска. Bounded private freshness для публичных
+   вариантов применяется постоянно без настройки кеша; cleanup остаётся выключенным, dry-run включён.
+   Public GET/HEAD/304 проверяются с включённым кешем; owner-only/private originals остаются no-store.
 2. `rollout-inventory` создаёт свежий checkpoint исходного cohort и проверяет original content.
    До adoption cutoff совпадает с исходным pilot run; его immutable inventory не перезаписывается.
 3. `rollout-adopt` принимает существующий paused pilot run только при совпадении его параметров,
@@ -126,3 +127,9 @@ private home/drink photo, logout/account switch, expired credentials и offline 
 
 Для мягкого отката pause архива и выключение generation/advertisement сохраняют read/serve уже выданных
 versioned URLs. Originals, Ready artifacts, manifests и checkpoints ради отката не удаляются.
+
+Кеш публичных вариантов работает постоянно: private freshness не более 20 секунд,
+с учётом исходной проверки доступа и срока JWT. Отдельного флага в приложении, Compose и rollout нет;
+устаревшая настройка в production `.env` не может отключить кеш после обновления сервиса.
+Private/home-only/original фотографии остаются no-store. Ни Gateway, ни Caddy,
+ни Media не получают shared-cache разрешение на защищённые фотографии.
