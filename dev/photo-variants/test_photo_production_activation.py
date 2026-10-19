@@ -91,11 +91,10 @@ class FakeCommands:
                 values = {"PhotoVariantOptions__Enabled": "true", "PhotoVariantOptions__ReadEnabled": "true",
                           "PhotoVariantOptions__CleanupEnabled": "false", "PhotoVariantOptions__CleanupDryRun": "true",
                           "CheckInPhotoDeliveryOptions__ServeVariants": "true", "CheckInPhotoDeliveryOptions__AdvertiseVariants": "true",
-                          "CheckInPhotoDeliveryOptions__AdvertiseCanaryOnly": "true", "CheckInPhotoDeliveryOptions__AdvertiseCanaryUserIds": user_id,
-                          "CheckInPhotoDeliveryOptions__CachePublicVariants": "false"}
+                          "CheckInPhotoDeliveryOptions__AdvertiseCanaryOnly": "true", "CheckInPhotoDeliveryOptions__AdvertiseCanaryUserIds": user_id}
                 rows = [key + "=" + value for key, value in values.items()]
                 if self.duplicate_runtime:
-                    rows.append("CheckInPhotoDeliveryOptions__CachePublicVariants=true")
+                    rows.append("CheckInPhotoDeliveryOptions__AdvertiseVariants=false")
                 return "\n".join(rows)
             return self.health
         if args[:2] == ["docker", "exec"]:
@@ -122,14 +121,15 @@ class ActivationTests(unittest.TestCase):
         self.private.mkdir(mode=0o700)
         (self.root / "deploy").mkdir()
         self.env_path = self.root / "deploy" / ".env"
-        self.original = b'OTHER_PASSWORD="private-db-secret"\nIMAGE_TAG=sha-' + b'a' * 40 + b'\nCHECKIN_VARIANTS_CACHE_ENABLED=true\n'
+        self.original = b'OTHER_PASSWORD="private-db-secret"\nIMAGE_TAG=sha-' + b'a' * 40 + b'\nCHECKIN_VARIANTS_CACHE_ENABLED=true\nCheckInPhotoDeliveryOptions__CachePublicVariants=false\n'
         self.env_path.write_bytes(self.original)
         if os.name != "nt":
             self.env_path.chmod(0o600)
         self.addCleanup(patch.stopall)
         patch.object(activation, "ROOT", self.root).start()
         patch.object(activation, "PRIVATE", self.private).start()
-        self.environment = {"EXPECTED_DEPLOY_SHA": "a" * 40, "POSTGRES_USER": "private-db-user", "POSTGRES_PASSWORD": "private-db-secret"}
+        self.environment = {"EXPECTED_DEPLOY_SHA": "a" * 40, "POSTGRES_USER": "private-db-user", "POSTGRES_PASSWORD": "private-db-secret",
+                            "CHECKIN_VARIANTS_CACHE_ENABLED": "false", "CheckInPhotoDeliveryOptions__CachePublicVariants": "false"}
         self.client = PilotProduction()
         self.commands = FakeCommands(self.environment, self.client)
         self.operator = activation.Activation(self.environment, self.commands, self.client)
@@ -210,6 +210,9 @@ class ActivationTests(unittest.TestCase):
             self.assertIn(key + "=" + value + "\n", content)
             self.assertEqual(value, self.commands.environment[key])
         self.assertNotIn("ADVERTISE_CANARY", content)
+        for key in activation.OBSOLETE:
+            self.assertNotIn(key, content)
+            self.assertNotIn(key, self.commands.environment)
         if os.name != "nt":
             self.assertEqual(0o600, self.env_path.stat().st_mode & 0o777)
 
@@ -380,17 +383,6 @@ class CommandTests(unittest.TestCase):
                 self.assertNotIn("private-command", str(raised.exception))
                 self.assertEqual(subprocess.DEVNULL, run.call_args.kwargs["stderr"])
 
-    def test_cache_disabled_wrapper_rejects_positive_freshness_and_shared_cache(self):
-        for policy in ("private, max-age=0, must-revalidate", "private, no-store", "private, max-age=20, must-revalidate", "public, max-age=0, must-revalidate"):
-            class Client:
-                def request(self, *args, **kwargs):
-                    return 200, {"cache-control": policy}, b"image"
-            wrapped = activation.CacheDisabledClient(Client())
-            if policy in ("private, max-age=0, must-revalidate", "private, no-store"):
-                self.assertEqual(200, wrapped.request("GET", canary.API + "/variants/source")[0])
-            else:
-                with self.assertRaises(canary.CanaryError):
-                    wrapped.request("GET", canary.API + "/variants/source")
 
 
 if __name__ == "__main__":

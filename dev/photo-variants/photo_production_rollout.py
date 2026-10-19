@@ -25,9 +25,9 @@ MARKER = "coffeepeek-full-photo-rollout-v1"
 PILOT_SHA = "4290e9419254d5526652ff054743e730d0487460"
 FLAGS = {"CHECKIN_VARIANTS_ENABLED": "true", "CHECKIN_VARIANTS_READ_ENABLED": "true",
          "CHECKIN_VARIANTS_SERVE_ENABLED": "true", "CHECKIN_VARIANTS_ADVERTISE_ENABLED": "true",
-         "CHECKIN_VARIANTS_CACHE_ENABLED": "false", "CHECKIN_VARIANTS_CLEANUP_ENABLED": "false",
+         "CHECKIN_VARIANTS_CLEANUP_ENABLED": "false",
          "CHECKIN_VARIANTS_CLEANUP_DRY_RUN": "true"}
-OBSOLETE = {"CHECKIN_VARIANTS_CANARY_ONLY", "CHECKIN_VARIANTS_CANARY_USER_IDS"}
+OBSOLETE = activation.OBSOLETE | {"CHECKIN_VARIANTS_CANARY_ONLY", "CHECKIN_VARIANTS_CANARY_USER_IDS"}
 ACTIVE = ("Pending", "Processing", "RetryScheduled")
 FROZEN = ("beforeUtc", "recentSinceUtc", "batchSize", "minBatchIntervalSeconds", "recipeVersion")
 PROGRESS = ("phase", "cursorSortAtUtc", "cursorCheckInId", "cursorPhotoId", "scannedCount", "enqueuedCount", "existingCount", "blockedCount", "scanComplete")
@@ -134,8 +134,7 @@ class Rollout:
         expected = {"media": {"PhotoVariantOptions__Enabled": "true", "PhotoVariantOptions__ReadEnabled": "true",
                               "PhotoVariantOptions__CleanupEnabled": "false", "PhotoVariantOptions__CleanupDryRun": "true"},
                     "shops": {"CheckInPhotoDeliveryOptions__ServeVariants": "true",
-                              "CheckInPhotoDeliveryOptions__AdvertiseVariants": "true",
-                              "CheckInPhotoDeliveryOptions__CachePublicVariants": "false"}}
+                              "CheckInPhotoDeliveryOptions__AdvertiseVariants": "true"}}
         for service, values in expected.items():
             keys = set(values) | {"CheckInPhotoDeliveryOptions__AdvertiseCanaryOnly", "CheckInPhotoDeliveryOptions__AdvertiseCanaryUserIds"}
             conditions = " ".join('(eq (index (split . "=") 0) "' + key + '")' for key in sorted(keys))
@@ -181,7 +180,7 @@ class Rollout:
         self.operator.running_release()
         self.runtime()
         canary.private_write(path, {"deploymentSha": self.sha, "verified": True})
-        return {"enabledForAll": True, "restartedServices": 2, "positiveCacheEnabled": False}
+        return {"enabledForAll": True, "restartedServices": 2}
 
     def latest_inventory(self):
         meta = canary.private_read(self.root / "inventory.json")

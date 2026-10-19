@@ -95,7 +95,7 @@ public sealed class CheckInPhotoVariantsController(ICheckInPhotoAccessQueries qu
             if (response.Content.Headers.ContentType?.MediaType != "image/" + format
                 || response.Content.Headers.ContentLength is not (> 0 and <= 8 * 1024 * 1024)
                 || response.Headers.ETag is null) return StatusCode(503);
-            var freshness = options.Value.CachePublicVariants && access.PolicyObservation is not null
+            var freshness = access.PolicyObservation is not null
                 && (!readerId.HasValue || expires.HasValue)
                 ? Math.Min(CheckInPhotoPolicyObservation.ResponseLifetime.TotalSeconds, Remaining().TotalSeconds) : 0;
             if (expires is { } expiry) freshness = Math.Min(freshness, (expiry - clock.GetUtcNow()).TotalSeconds);

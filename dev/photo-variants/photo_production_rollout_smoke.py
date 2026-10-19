@@ -34,7 +34,7 @@ def execute(operator, operation):
         return canary.cleanup(probe.state_path, probe.client)
     canary.require(operation == "rollout-smoke-verify" and not state.get("deleted"))
     probe.old_photo(state)
-    client = activation.CacheDisabledClient(probe.client)
+    client = probe.client
     result = canary.verify(probe.state_path, probe.old_path, client, recipe=1)
     state = probe.state()
     home = client.api("GET", "/api/v1/check-ins/home/" + canary.identity(state["homeId"]), state["accessToken"])

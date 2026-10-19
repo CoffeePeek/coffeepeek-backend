@@ -3,11 +3,10 @@ using CoffeePeek.Shared.Kernel.Observability;
 using CoffeePeek.Shops.Application.Abstractions;
 using CoffeePeek.Shops.Application.Features.CheckIn;
 using Microsoft.Extensions.Caching.Memory;
-using Microsoft.Extensions.Options;
 
 namespace CoffeePeek.Shops.Infrastructure.Account;
 
-public sealed class CheckInPhotoVisibilityCache(TimeProvider clock, IOptions<CheckInPhotoDeliveryOptions> options)
+public sealed class CheckInPhotoVisibilityCache(TimeProvider clock)
     : ICheckInPhotoVisibilityCache, IDisposable
 {
     // Dedicated bounded cache: do not impose size accounting on unrelated application caches.
@@ -17,7 +16,6 @@ public sealed class CheckInPhotoVisibilityCache(TimeProvider clock, IOptions<Che
     public async Task<CheckInPhotoVisibilityFacts> GetAsync(Guid? viewerId, IAuthorVisibilityLookup source, CancellationToken ct)
     {
         if (viewerId is null) return new([], CheckInPhotoPolicyObservation.Start(clock));
-        if (!options.Value.CachePublicVariants) return await ReadAsync(viewerId.Value, source, ct);
         using var measurement = PhotoDeliveryTelemetry.Start("policy_cache", "authenticated");
         var gate = gates[(uint)viewerId.Value.GetHashCode() % gates.Length];
         await gate.WaitAsync(ct);

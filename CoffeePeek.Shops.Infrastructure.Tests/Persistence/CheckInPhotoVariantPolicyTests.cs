@@ -6,7 +6,6 @@ using CoffeePeek.Shops.Infrastructure.Account;
 using CoffeePeek.Shops.Persistance.Configuration;
 using CoffeePeek.Shops.Persistance.Queries;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
 using Moq;
 
 namespace CoffeePeek.Shops.Infrastructure.Tests.Persistence;
@@ -14,19 +13,16 @@ namespace CoffeePeek.Shops.Infrastructure.Tests.Persistence;
 public sealed class CheckInPhotoVariantPolicyTests
 {
     [Theory]
-    [InlineData(false, false)]
-    [InlineData(false, true)]
-    [InlineData(true, false)]
-    [InlineData(true, true)]
-    public async Task FreshOwnerOnlyVariantAccessMakesOneAccountLookup(bool cachePublicVariants, bool pendingPublic)
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task FreshOwnerOnlyVariantAccessMakesOneAccountLookup(bool pendingPublic)
     {
         var ct = TestContext.Current.CancellationToken;
         await using var db = Context();
         var (row, photo) = await OwnerOnlyPhotoAsync(db, pendingPublic, ct);
         var visibility = new Mock<IAuthorVisibilityLookup>();
         visibility.Setup(v => v.ExcludedUserIdsAsync(row.UserId, ct)).ReturnsAsync([]);
-        using var cache = new CheckInPhotoVisibilityCache(new Clock(),
-            Options.Create(new CheckInPhotoDeliveryOptions { CachePublicVariants = cachePublicVariants }));
+        using var cache = new CheckInPhotoVisibilityCache(new Clock());
         var queries = new CheckInPhotoAccessQueries(db, visibility.Object, cache);
 
         var result = await queries.GetVariantAsync(row.Id, photo.Id, row.UserId, ct);
@@ -45,8 +41,7 @@ public sealed class CheckInPhotoVariantPolicyTests
         var visibility = new Mock<IAuthorVisibilityLookup>();
         Guid[] excluded = [];
         visibility.Setup(v => v.ExcludedUserIdsAsync(row.UserId, ct)).ReturnsAsync(() => excluded);
-        using var cache = new CheckInPhotoVisibilityCache(new Clock(),
-            Options.Create(new CheckInPhotoDeliveryOptions { CachePublicVariants = true }));
+        using var cache = new CheckInPhotoVisibilityCache(new Clock());
         var queries = new CheckInPhotoAccessQueries(db, visibility.Object, cache);
         Assert.NotNull(await queries.GetVariantAsync(row.Id, photo.Id, row.UserId, ct));
         visibility.Verify(v => v.ExcludedUserIdsAsync(row.UserId, ct), Times.Once);
@@ -64,8 +59,7 @@ public sealed class CheckInPhotoVariantPolicyTests
         var (row, photo) = await OwnerOnlyPhotoAsync(db, false, ct);
         var visibility = new Mock<IAuthorVisibilityLookup>();
         visibility.Setup(v => v.ExcludedUserIdsAsync(row.UserId, ct)).ReturnsAsync([]);
-        using var cache = new CheckInPhotoVisibilityCache(new Clock(),
-            Options.Create(new CheckInPhotoDeliveryOptions { CachePublicVariants = true }));
+        using var cache = new CheckInPhotoVisibilityCache(new Clock());
         var queries = new CheckInPhotoAccessQueries(db, visibility.Object, cache);
         Assert.NotNull(await queries.GetVariantAsync(row.Id, photo.Id, row.UserId, ct));
         visibility.Setup(v => v.ExcludedUserIdsAsync(row.UserId, ct))
@@ -108,7 +102,7 @@ public sealed class CheckInPhotoVariantPolicyTests
         Guid[] excluded = [];
         visibility.Setup(v => v.ExcludedUserIdsAsync(It.IsAny<Guid?>(), It.IsAny<CancellationToken>())).ReturnsAsync(() => excluded);
         var clock = new Clock();
-        using var cache = new CheckInPhotoVisibilityCache(clock, Options.Create(new CheckInPhotoDeliveryOptions { CachePublicVariants = true }));
+        using var cache = new CheckInPhotoVisibilityCache(clock);
         var queries = new CheckInPhotoAccessQueries(db, visibility.Object, cache);
         var first = await queries.GetVariantAsync(row.Id, photo.Id, other, ct);
         Assert.True(first!.IsPubliclyVisible);
