@@ -26,14 +26,14 @@ concurrency:
 jobs:
   inspect:
     if: github.event_name == 'push' || inputs.operation == 'preflight'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
       - name: Checkout inspected operator source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup deployment SSH identity
-        uses: webfactory/ssh-agent@v0.9.0
+        uses: webfactory/ssh-agent@v0.10.0
         with:
           ssh-private-key: ${{ secrets.VPS_SSH_KEY }}
 
@@ -75,7 +75,7 @@ jobs:
           PY
 
       - name: Save sanitized production observations
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: photo-production-preflight
           path: ${{ runner.temp }}/photo-production-preflight.json
@@ -83,13 +83,13 @@ jobs:
 
   operate:
     if: github.event_name == 'workflow_dispatch' && inputs.operation != 'preflight' && inputs.operation != 'storage' && inputs.operation != 'backup'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - name: Checkout reviewed operator source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Setup deployment SSH identity
-        uses: webfactory/ssh-agent@v0.9.0
+        uses: webfactory/ssh-agent@v0.10.0
         with:
           ssh-private-key: ${{ secrets.VPS_SSH_KEY }}
       - name: Trust configured deployment host
@@ -149,7 +149,7 @@ jobs:
           exit "$operation_status"
       - name: Save sanitized operation result
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: photo-production-operation
           path: ${{ runner.temp }}/photo-production-operation.json
@@ -157,13 +157,13 @@ jobs:
 
   preserve:
     if: github.event_name == 'workflow_dispatch' && (inputs.operation == 'storage' || inputs.operation == 'backup')
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - name: Checkout reviewed operator source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Setup deployment SSH identity
-        uses: webfactory/ssh-agent@v0.9.0
+        uses: webfactory/ssh-agent@v0.10.0
         with:
           ssh-private-key: ${{ secrets.VPS_SSH_KEY }}
       - name: Trust configured deployment host
@@ -205,7 +205,7 @@ jobs:
           exit "$operation_status"
       - name: Save sanitized preservation report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: photo-production-preservation
           path: ${{ runner.temp }}/photo-production-preservation.json
