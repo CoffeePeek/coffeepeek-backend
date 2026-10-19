@@ -75,7 +75,7 @@ public sealed class MenuOcrJobLiveTests : IClassFixture<ShopsLiveDatabase>
             await using var edit = fixture.Context();
             var drinkId = await edit.CoffeeDrinkDefinitions.Select(d => d.Id).FirstAsync(ct);
             await new ShopMenuRepository(edit).ApplyManualItemsAsync(shop.Id,
-                [new ManualShopMenuItemUpdate(drinkId, MenuItemAvailability.Present, 5m, 200)],
+                [new ManualShopMenuItemUpdate(drinkId, MenuItemAvailability.Present, 5m)],
                 Guid.NewGuid(), ct);
             await edit.SaveChangesAsync(ct);
         }

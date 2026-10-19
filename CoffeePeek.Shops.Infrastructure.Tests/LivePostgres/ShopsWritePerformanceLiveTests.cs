@@ -55,7 +55,7 @@ public sealed class ShopsWritePerformanceLiveTests(ShopsLiveDatabase fixture) : 
                 var job = menu.QueueOcrJob([photo], DateTime.UtcNow);
                 job.Start(DateTime.UtcNow);
                 job.StoreResult(JsonSerializer.Serialize(new ParseMenuPhotosResponse(true, null, null,
-                    [new ParsedMenuItemDto("espresso", 8, 200, "espresso")], []), new JsonSerializerOptions(JsonSerializerDefaults.Web)), DateTime.UtcNow);
+                    [new ParsedMenuItemDto("espresso", 8, "espresso")], []), new JsonSerializerOptions(JsonSerializerDefaults.Web)), DateTime.UtcNow);
                 jobs.Add(job); seed.ShopMenus.Add(menu);
             }
             await seed.SaveChangesAsync(ct);

@@ -45,7 +45,7 @@ public class UpdateAdminShopMenuHandlerTests
 
         var result = await UpdateAdminShopMenuHandler.Handle(
             new UpdateAdminShopMenuCommand(shop.Id,
-                [new UpdateShopMenuItemRequest("latte", ContractAvailability.Present, 5m, 200)], true, Guid.NewGuid()),
+                [new UpdateShopMenuItemRequest("latte", ContractAvailability.Present, 5m)], true, Guid.NewGuid()),
             shops.Object, new ShopPriceRangeWriter(), applyMenu.Object, drinks.Object, query.Object,
             new Mock<IUnitOfWork>().Object,
             Options.Create(new MediaPublicUrlOptions { PublicEndpoint = "https://media.example.com" }), ct);
@@ -72,8 +72,8 @@ public class UpdateAdminShopMenuHandlerTests
 
         var result = await UpdateAdminShopMenuHandler.Handle(
             new UpdateAdminShopMenuCommand(shopId,
-                [new UpdateShopMenuItemRequest("latte", ContractAvailability.Present, 5m, 200),
-                 new UpdateShopMenuItemRequest("LATTE", ContractAvailability.Present, 6m, 250)],
+                [new UpdateShopMenuItemRequest("latte", ContractAvailability.Present, 5m),
+                 new UpdateShopMenuItemRequest("LATTE", ContractAvailability.Present, 6m)],
                 false, Guid.NewGuid()),
             shops.Object, new ShopPriceRangeWriter(), applyMenu.Object, drinks.Object, new Mock<IQueryShopMenuRepository>().Object,
             unitOfWork.Object,
@@ -90,13 +90,10 @@ public class UpdateAdminShopMenuHandlerTests
     {
         var invalidRows = new[]
         {
-            new UpdateShopMenuItemRequest("latte", ContractAvailability.Present, null, 200),
-            new UpdateShopMenuItemRequest("latte", ContractAvailability.Present, 5m, null),
-            new UpdateShopMenuItemRequest("latte", ContractAvailability.Present, 0m, 200),
-            new UpdateShopMenuItemRequest("latte", ContractAvailability.Present, 5m, -1),
-            new UpdateShopMenuItemRequest("latte", ContractAvailability.Absent, 5m, null),
-            new UpdateShopMenuItemRequest("latte", ContractAvailability.Unknown, null, 200),
-            new UpdateShopMenuItemRequest("latte", (ContractAvailability)99, null, null)
+            new UpdateShopMenuItemRequest("latte", ContractAvailability.Present, null),
+            new UpdateShopMenuItemRequest("latte", ContractAvailability.Present, 0m),
+            new UpdateShopMenuItemRequest("latte", ContractAvailability.Absent, 5m),
+            new UpdateShopMenuItemRequest("latte", (ContractAvailability)99, null)
         };
         foreach (var invalid in invalidRows)
         {
@@ -107,7 +104,7 @@ public class UpdateAdminShopMenuHandlerTests
 
             var result = await UpdateAdminShopMenuHandler.Handle(
                 new UpdateAdminShopMenuCommand(Guid.NewGuid(),
-                    [new UpdateShopMenuItemRequest("latte", ContractAvailability.Present, 5m, 200), invalid],
+                    [new UpdateShopMenuItemRequest("latte", ContractAvailability.Present, 5m), invalid],
                     false, Guid.NewGuid()),
                 shops.Object, new ShopPriceRangeWriter(), applyMenu.Object, drinks.Object, new Mock<IQueryShopMenuRepository>().Object,
                 unitOfWork.Object,
@@ -139,8 +136,8 @@ public class UpdateAdminShopMenuHandlerTests
 
         var result = await UpdateAdminShopMenuHandler.Handle(
             new UpdateAdminShopMenuCommand(shopId,
-                [new UpdateShopMenuItemRequest("latte", ContractAvailability.Present, 5m, 200),
-                 new UpdateShopMenuItemRequest("inactive", ContractAvailability.Present, 6m, 250)],
+                [new UpdateShopMenuItemRequest("latte", ContractAvailability.Present, 5m),
+                 new UpdateShopMenuItemRequest("inactive", ContractAvailability.Present, 6m)],
                 false, Guid.NewGuid()),
             shops.Object, new ShopPriceRangeWriter(), applyMenu.Object, drinks.Object, new Mock<IQueryShopMenuRepository>().Object,
             unitOfWork.Object,
@@ -326,7 +323,7 @@ public class UpdateAdminShopMenuHandlerTests
         var userId = Guid.NewGuid();
         var shop = new DomainCoffeeShop(userId, "Coffee", null, PriceRange.Moderate, Guid.NewGuid());
         var menu = ShopMenu.Create(shopId);
-        menu.ApplyManualItem(drinkId, MenuItemAvailability.Present, 4.5m, 250, userId);
+        menu.ApplyManualItem(drinkId, MenuItemAvailability.Present, 4.5m, userId);
 
         var shops = new Mock<ICoffeeShopRepository>();
         shops.Setup(repository => repository.GetByIdAsync(shopId, It.IsAny<CancellationToken>()))
@@ -358,7 +355,7 @@ public class UpdateAdminShopMenuHandlerTests
         var result = await UpdateAdminShopMenuHandler.Handle(
             new UpdateAdminShopMenuCommand(
                 shopId,
-                [new UpdateShopMenuItemRequest("latte", ContractAvailability.Present, 4.5m, 250)],
+                [new UpdateShopMenuItemRequest("latte", ContractAvailability.Present, 4.5m)],
                 false,
                 userId),
             shops.Object,
@@ -385,7 +382,7 @@ public class UpdateAdminShopMenuHandlerTests
         var staleMenu = ShopMenu.Create(shopId);
         typeof(ShopMenu).GetProperty(nameof(ShopMenu.Id))!.SetValue(staleMenu, currentMenu.Id);
         staleMenu.ApplyParsedItems(
-            [ShopMenuItem.Create(drinkId, MenuItemAvailability.Present, 5.5m, 250, MenuItemSource.Parsed)],
+            [ShopMenuItem.Create(drinkId, MenuItemAvailability.Present, 5.5m, MenuItemSource.Parsed)],
             null,
             null,
             null);
@@ -393,7 +390,7 @@ public class UpdateAdminShopMenuHandlerTests
 
         // Models the row replaced by a parser transaction after a caller loaded staleId.
         currentMenu.ApplyParsedItems(
-            [ShopMenuItem.Create(drinkId, MenuItemAvailability.Present, 5.5m, 250, MenuItemSource.Parsed)],
+            [ShopMenuItem.Create(drinkId, MenuItemAvailability.Present, 5.5m, MenuItemSource.Parsed)],
             null,
             null,
             null);
@@ -436,7 +433,6 @@ public class UpdateAdminShopMenuHandlerTests
                             update.DrinkDefinitionId,
                             update.Availability,
                             update.Price,
-                            update.VolumeMl,
                             updatedBy);
                     }
 
@@ -452,7 +448,7 @@ public class UpdateAdminShopMenuHandlerTests
         var media = Options.Create(new MediaPublicUrlOptions { PublicEndpoint = "https://media.example.com" });
         var command = new UpdateAdminShopMenuCommand(
             shopId,
-            [new UpdateShopMenuItemRequest("espresso", ContractAvailability.Present, 7m, 30)],
+            [new UpdateShopMenuItemRequest("espresso", ContractAvailability.Present, 7m)],
             false,
             userId);
 

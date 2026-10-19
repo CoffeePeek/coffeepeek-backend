@@ -68,7 +68,6 @@ public class OpenAiMenuVisionParserTests
         result.Drinks.Should().ContainSingle();
         result.Drinks[0].RawName.Should().Be("Cappuccino");
         result.Drinks[0].Price.Should().Be(6.5m);
-        result.Drinks[0].VolumeMl.Should().Be(250);
         captured.Should().NotBeNull();
         captured!.RequestUri!.AbsoluteUri.Should().Be($"{baseUrl.TrimEnd('/')}/chat/completions");
         captured.Headers.Authorization!.Scheme.Should().Be("Bearer");

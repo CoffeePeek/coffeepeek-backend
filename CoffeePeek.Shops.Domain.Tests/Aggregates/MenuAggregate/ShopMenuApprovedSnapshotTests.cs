@@ -29,5 +29,5 @@ public sealed class ShopMenuApprovedSnapshotTests
     }
 
     private static ShopMenuItem Item(Guid drinkId, decimal price) =>
-        ShopMenuItem.Create(drinkId, MenuItemAvailability.Present, price, 200, MenuItemSource.Manual);
+        ShopMenuItem.Create(drinkId, MenuItemAvailability.Present, price, MenuItemSource.Manual);
 }

@@ -53,7 +53,6 @@ public sealed class ShopsSchemaUpgradeLiveTests
                 var item = expected["items"]![0]!;
                 item["Availability"] = 0;
                 item["Price"] = null;
-                item["VolumeMl"] = null;
                 expected["shops"]![0]!["DataCompletenessScore"] = 5;
             }
             if (scenario == "city-orphan")
@@ -125,6 +124,6 @@ public sealed class ShopsSchemaUpgradeLiveTests
             'equipment',(SELECT jsonb_agg(to_jsonb(e) ORDER BY e."Id") FROM "Equipments" e),
             'assignments',(SELECT jsonb_agg(to_jsonb(a)-'CategoryId'-'IsPrimary' ORDER BY a."CoffeeShopId",a."EquipmentId") FROM "CoffeeShopEquipments" a),
             'menus',(SELECT jsonb_agg(to_jsonb(m) ORDER BY m."Id") FROM "ShopMenus" m),
-            'items',(SELECT jsonb_agg(to_jsonb(i) ORDER BY i."Id") FROM "ShopMenuItems" i))::text AS "Value"
+            'items',(SELECT jsonb_agg(to_jsonb(i)-'VolumeMl' ORDER BY i."Id") FROM "ShopMenuItems" i))::text AS "Value"
         """).SingleAsync(ct);
 }

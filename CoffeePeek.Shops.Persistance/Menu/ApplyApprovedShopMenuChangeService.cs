@@ -92,7 +92,6 @@ public sealed class ApplyApprovedShopMenuChangeService(ShopsDbContext db,
                 definition.Id,
                 (DomainAvailability)(int)row.Availability,
                 row.Price,
-                row.VolumeMl,
                 DomainSource.Manual));
         }
 

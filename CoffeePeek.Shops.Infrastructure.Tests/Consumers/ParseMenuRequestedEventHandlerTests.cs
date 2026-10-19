@@ -35,7 +35,7 @@ public class ParseMenuRequestedEventHandlerTests
         downloader.Setup(d => d.DownloadAsync(It.IsAny<IReadOnlyList<MenuPhotoDownloadRequest>>(), ct))
             .ReturnsAsync([new MenuVisionPhoto([1, 2, 3], "image/jpeg")]);
         parser.Setup(p => p.ParseAsync(It.IsAny<IReadOnlyList<MenuVisionPhoto>>(), ct))
-            .ReturnsAsync(new MenuVisionParseResult(true, null, [new("Cappuccino", 8m, 250, .9)]));
+            .ReturnsAsync(new MenuVisionParseResult(true, null, [new("Cappuccino", 8m, .9)]));
         var message = Message(kind) with { ParseRequestId = Guid.NewGuid() };
         var result = Assert.IsType<MenuParsedEvent>(await Handler().Handle(message, ct));
         Assert.True(result.Success);

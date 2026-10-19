@@ -9,7 +9,7 @@ public sealed partial class DiscoveryQueryStore
         var filters = request.Filters ?? new();
         var budget = filters.Budget;
         var menuCriteria = filters.Brew.Length > 0 || budget?.MinDrinkPrice.HasValue == true ||
-            budget?.MaxDrinkPrice.HasValue == true || budget?.DrinkVolumeMl.HasValue == true;
+            budget?.MaxDrinkPrice.HasValue == true;
         var result = new DiscoverySearchResult { Q = NormalizeQuery(request.Q) };
         if (request.Sections.Contains("coffee_shops")) result.CoffeeShops = await SearchShopsAsync(new()
         {
@@ -17,7 +17,7 @@ public sealed partial class DiscoveryQueryStore
             Filters = new() { Menu = menuCriteria ? new MenuFilters
             {
                 Brew = filters.Brew, Currency = budget?.Currency, MinPrice = budget?.MinDrinkPrice,
-                MaxPrice = budget?.MaxDrinkPrice, VolumeMl = budget?.DrinkVolumeMl
+                MaxPrice = budget?.MaxDrinkPrice
             } : null }
         }, userId, ct);
         return result;

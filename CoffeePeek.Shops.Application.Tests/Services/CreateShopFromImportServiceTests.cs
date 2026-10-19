@@ -260,7 +260,7 @@ public class CreateShopFromImportServiceTests
             DateTime.UtcNow,
             "BYN",
             Contract.Enums.PriceRange.Cheap,
-            [new ShopMenuItemSnapshot("cappuccino", MenuItemAvailability.Present, 6.5m, null, MenuItemSource.Parsed)],
+            [new ShopMenuItemSnapshot("cappuccino", MenuItemAvailability.Present, 6.5m, MenuItemSource.Parsed)],
             [new ShopMenuPhotoSnapshot("menu.jpg", "image/jpeg", "menus/a.jpg", 10)]);
 
         var item = new ImportCandidatePublishedItem(

@@ -992,8 +992,6 @@ namespace CoffeeShop.Moderation.Persistence.Migrations
 
                                     b2.Property<int>("Source");
 
-                                    b2.Property<int?>("VolumeMl");
-
                                     b2.HasKey("MenuDraftModerationShopId", "__synthesizedOrdinal");
 
                                     b2.ToTable("ModerationShops");
@@ -1242,8 +1240,6 @@ namespace CoffeeShop.Moderation.Persistence.Migrations
                                         .IsRequired();
 
                                     b2.Property<int>("Source");
-
-                                    b2.Property<int?>("VolumeMl");
 
                                     b2.HasKey("MenuDraftShopImportCandidateId", "__synthesizedOrdinal");
 

@@ -9,7 +9,7 @@ public sealed class ShopMenuItem : Entity<Guid>
     public Guid DrinkDefinitionId { get; private set; }
     public MenuItemAvailability Availability { get; private set; }
     public decimal? Price { get; private set; }
-    public int? VolumeMl { get; private set; }
+
     public MenuItemSource Source { get; private set; }
     public CoffeeDrinkKind Kind { get; private set; }
     public string? CustomName { get; private set; }
@@ -25,14 +25,13 @@ public sealed class ShopMenuItem : Entity<Guid>
         Guid drinkDefinitionId,
         MenuItemAvailability availability,
         decimal? price,
-        int? volumeMl,
         MenuItemSource source)
     {
         if (drinkDefinitionId == Guid.Empty)
             throw new DomainException("Drink definition is required.");
         if (!Enum.IsDefined(source))
             throw new DomainException("Menu item source is invalid.");
-        ValidateValues(availability, price, volumeMl);
+        ValidateValues(availability, price);
 
         return new ShopMenuItem
         {
@@ -40,26 +39,23 @@ public sealed class ShopMenuItem : Entity<Guid>
             DrinkDefinitionId = drinkDefinitionId,
             Availability = availability,
             Price = price,
-            VolumeMl = volumeMl,
             Source = source,
             Kind = CoffeeDrinkKind.Standard
         };
     }
 
-    public void ApplyParsed(decimal? price, int? volumeMl)
+    public void ApplyParsed(decimal? price)
     {
-        ValidateValues(MenuItemAvailability.Present, price, volumeMl);
+        ValidateValues(MenuItemAvailability.Present, price);
         Availability = MenuItemAvailability.Present;
         Price = price;
-        VolumeMl = volumeMl;
     }
 
-    public void ApplyManual(MenuItemAvailability availability, decimal? price, int? volumeMl)
+    public void ApplyManual(MenuItemAvailability availability, decimal? price)
     {
-        ValidateValues(availability, price, volumeMl);
+        ValidateValues(availability, price);
         Availability = availability;
         Price = price;
-        VolumeMl = volumeMl;
         Source = MenuItemSource.Manual;
     }
 
@@ -67,25 +63,9 @@ public sealed class ShopMenuItem : Entity<Guid>
     {
         Availability = item.Availability;
         Price = item.Price;
-        VolumeMl = item.VolumeMl;
         Source = item.Source;
     }
 
-    public static void ValidateValues(MenuItemAvailability availability, decimal? price, int? volumeMl)
-    {
-        if (!Enum.IsDefined(availability))
-            throw new DomainException("Menu item availability is invalid.");
-
-        if (availability == MenuItemAvailability.Present)
-        {
-            if (price is null or <= 0)
-                throw new DomainException("Present menu item requires a positive price.");
-            if (volumeMl is null or <= 0)
-                throw new DomainException("Present menu item requires a positive volume.");
-        }
-        else if (price is not null || volumeMl is not null)
-        {
-            throw new DomainException("Absent or unknown menu item must not have a price or volume.");
-        }
-    }
+    public static void ValidateValues(MenuItemAvailability availability, decimal? price) =>
+        CoffeePeek.Shared.Kernel.Menu.MenuItemValues.Validate((int)availability, price);
 }

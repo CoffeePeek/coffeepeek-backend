@@ -177,7 +177,7 @@ public class ShopChangeRequestApprovedHandlerTests
 
         await CreateHandler(db).Handle(Message(shop.Id, ShopChangeSection.Menu,
             new ShopChangePayloadDto(Menu: new(
-                [new UpdateShopMenuItemRequest("espresso", ContractAvailability.Present, 5, 30)],
+                [new UpdateShopMenuItemRequest("espresso", ContractAvailability.Present, 5)],
                 [],
                 [new UploadedPhotoDto("menu.jpg", "image/jpeg", "menus/new", 50)],
                 ExpectedInputRevision: 0))),
@@ -209,7 +209,7 @@ public class ShopChangeRequestApprovedHandlerTests
 
         var pending = Message(shopId, ShopChangeSection.Menu,
             new ShopChangePayloadDto(Menu: new(
-                [new UpdateShopMenuItemRequest("espresso", ContractAvailability.Present, 5, 30)],
+                [new UpdateShopMenuItemRequest("espresso", ContractAvailability.Present, 5)],
                 [],
                 [new UploadedPhotoDto("old.jpg", "image/jpeg", "menus/old", 50)],
                 ExpectedInputRevision: 0)));
@@ -255,7 +255,7 @@ public class ShopChangeRequestApprovedHandlerTests
             var seededMenu = ShopMenu.Create(shopId);
             seededMenu.ApplyManualItem(drink.Id,
                 CoffeePeek.Shops.Domain.Aggregates.MenuAggregate.MenuItemAvailability.Present,
-                3, 20, Guid.NewGuid());
+                3, Guid.NewGuid());
             originalItemId = seededMenu.Items.Single().Id;
             seed.AddRange(shop, drink, seededMenu);
             await seed.SaveChangesAsync(TestContext.Current.CancellationToken);
@@ -263,7 +263,7 @@ public class ShopChangeRequestApprovedHandlerTests
 
         var approved = Message(shopId, ShopChangeSection.Menu,
             new ShopChangePayloadDto(Menu: new(
-                [new UpdateShopMenuItemRequest("espresso", ContractAvailability.Present, 5, 30)],
+                [new UpdateShopMenuItemRequest("espresso", ContractAvailability.Present, 5)],
                 [],
                 [new UploadedPhotoDto("menu.jpg", "image/jpeg", "menus/new", 50)],
                 ExpectedInputRevision: 1)));
@@ -276,7 +276,7 @@ public class ShopChangeRequestApprovedHandlerTests
         await using var verify = new ShopsDbContext(options);
         var menu = await verify.ShopMenus.Include(x => x.Items).Include(x => x.Photos)
             .SingleAsync(x => x.CoffeeShopId == shopId, TestContext.Current.CancellationToken);
-        menu.Items.Should().ContainSingle(x => x.Id == originalItemId && x.Price == 5 && x.VolumeMl == 30);
+        menu.Items.Should().ContainSingle(x => x.Id == originalItemId && x.Price == 5);
         menu.Photos.Should().ContainSingle(x => x.StorageKey == "menus/new");
         (await verify.AppliedShopChangeRequests.CountAsync(TestContext.Current.CancellationToken)).Should().Be(1);
         bus.Verify(b => b.PublishAsync(It.Is<ShopProfileCacheInvalidationRequested>(

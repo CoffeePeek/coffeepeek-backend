@@ -222,8 +222,8 @@ public class DiscoveryQueryStoreTests
         var filter = CoffeeDrinkDefinition.CreateWithId(Guid.NewGuid(), "batch_brew", "Фильтр", "Filter", CoffeeDrinkCategory.Filter, "", 20);
         db.CoffeeDrinkDefinitions.AddRange(espresso, filter);
         var menu = ShopMenu.Create(shop.Id); menu.MarkManuallyCaptured(DateTime.UtcNow);
-        menu.ApplyManualItem(espresso.Id, MenuItemAvailability.Present, 3, 30, null);
-        menu.ApplyManualItem(filter.Id, MenuItemAvailability.Present, 10, 250, null); db.ShopMenus.Add(menu);
+        menu.ApplyManualItem(espresso.Id, MenuItemAvailability.Present, 3, null);
+        menu.ApplyManualItem(filter.Id, MenuItemAvailability.Present, 10, null); db.ShopMenus.Add(menu);
         await db.SaveChangesAsync(Ct);
         var response = await Store(db).SearchDiscoveryAsync(new() { Filters = new() { Brew = ["filter"], Budget = new() { Currency = "BYN", MaxDrinkPrice = 5 } } }, null, Ct);
         Assert.Empty(response.CoffeeShops!.Items);

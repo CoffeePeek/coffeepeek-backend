@@ -119,7 +119,7 @@ public sealed class OpenAiMenuVisionParser(
 
             var drinks = (parsed?.Drinks ?? [])
                 .Where(d => !string.IsNullOrWhiteSpace(d.RawName))
-                .Select(d => new VisionDrinkLine(d.RawName!.Trim(), d.Price, d.VolumeMl, d.Confidence))
+                .Select(d => new VisionDrinkLine(d.RawName!.Trim(), d.Price, d.Confidence))
                 .ToArray();
 
             logger.LogInformation(
@@ -182,7 +182,7 @@ public sealed class OpenAiMenuVisionParser(
         """
         Extract coffee drinks from this cafe menu photo. Ignore food, desserts, merch.
         Return JSON only. Prices are Belarusian rubles (BYN) unless another currency is explicit.
-        rawName is the drink name as printed. volumeMl if a size in ml is printed, else null.
+        rawName is the drink name as printed. Extract the price only; ignore serving sizes.
         """;
 
     private static readonly object ResponseFormat = new
@@ -209,10 +209,9 @@ public sealed class OpenAiMenuVisionParser(
                             {
                                 rawName = new { type = "string" },
                                 price = new { type = new[] { "number", "null" } },
-                                volumeMl = new { type = new[] { "integer", "null" } },
                                 confidence = new { type = new[] { "number", "null" } }
                             },
-                            required = new[] { "rawName", "price", "volumeMl", "confidence" }
+                            required = new[] { "rawName", "price", "confidence" }
                         }
                     }
                 },
@@ -230,7 +229,7 @@ public sealed class OpenAiMenuVisionParser(
     {
         public string? RawName { get; set; }
         public decimal? Price { get; set; }
-        public int? VolumeMl { get; set; }
+
         public double? Confidence { get; set; }
     }
 

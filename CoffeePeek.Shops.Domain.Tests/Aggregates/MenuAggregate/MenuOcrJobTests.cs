@@ -15,7 +15,7 @@ public sealed class MenuOcrJobTests
         var job = menu.QueueOcrJob([photo], DateTime.UtcNow);
         job.Matches(menu).Should().BeTrue();
 
-        menu.ApplyManualItem(Guid.NewGuid(), MenuItemAvailability.Present, 5m, 200, Guid.NewGuid());
+        menu.ApplyManualItem(Guid.NewGuid(), MenuItemAvailability.Present, 5m, Guid.NewGuid());
 
         job.Matches(menu).Should().BeFalse();
         menu.InputRevision.Should().BeGreaterThan(job.MenuRevision!.Value);

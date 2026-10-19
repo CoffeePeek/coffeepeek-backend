@@ -42,7 +42,7 @@ public static class ShopsOcrFaultWorker
                     """, application).SingleAsync(ct));
                 var calls = ShopsFaultControl.Marker(root, "provider-calls");
                 File.WriteAllText(calls, (File.Exists(calls) ? int.Parse(File.ReadAllText(calls)) + 1 : 1).ToString());
-                return new MenuVisionParseResult(true, null, [new("espresso", 8m, 200, .9)]);
+                return new MenuVisionParseResult(true, null, [new("espresso", 8m, .9)]);
             });
         var downloader = new Mock<IMenuPhotoDownloader>();
         downloader.Setup(d => d.DownloadAsync(It.IsAny<IReadOnlyList<MenuPhotoDownloadRequest>>(), It.IsAny<CancellationToken>()))

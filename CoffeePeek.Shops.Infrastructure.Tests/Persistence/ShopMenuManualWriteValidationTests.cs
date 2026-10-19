@@ -28,8 +28,8 @@ public sealed class ShopMenuManualWriteValidationTests
         var drinkId = Guid.NewGuid();
         var updates = new[]
         {
-            new ManualShopMenuItemUpdate(drinkId, MenuItemAvailability.Present, 5m, 200),
-            new ManualShopMenuItemUpdate(drinkId, MenuItemAvailability.Present, 6m, 250)
+            new ManualShopMenuItemUpdate(drinkId, MenuItemAvailability.Present, 5m),
+            new ManualShopMenuItemUpdate(drinkId, MenuItemAvailability.Present, 6m)
         };
 
         await Assert.ThrowsAsync<DomainException>(() =>
@@ -58,8 +58,8 @@ public sealed class ShopMenuManualWriteValidationTests
         var repository = new ShopMenuRepository(db);
         var updates = new[]
         {
-            new ManualShopMenuItemUpdate(Guid.NewGuid(), MenuItemAvailability.Present, 5m, 200),
-            new ManualShopMenuItemUpdate(Guid.NewGuid(), MenuItemAvailability.Present, -1m, 200)
+            new ManualShopMenuItemUpdate(Guid.NewGuid(), MenuItemAvailability.Present, 5m),
+            new ManualShopMenuItemUpdate(Guid.NewGuid(), MenuItemAvailability.Present, -1m)
         };
 
         await Assert.ThrowsAsync<DomainException>(() =>
@@ -77,8 +77,8 @@ public sealed class ShopMenuManualWriteValidationTests
             .Options;
         await using var db = new ShopsDbContext(options);
         var menu = await new ShopMenuRepository(db).ApplyManualItemsAsync(Guid.NewGuid(),
-            [new ManualShopMenuItemUpdate(Guid.NewGuid(), MenuItemAvailability.Present, 5m, 200),
-             new ManualShopMenuItemUpdate(Guid.NewGuid(), MenuItemAvailability.Present, 8m, 300)],
+            [new ManualShopMenuItemUpdate(Guid.NewGuid(), MenuItemAvailability.Present, 5m),
+             new ManualShopMenuItemUpdate(Guid.NewGuid(), MenuItemAvailability.Present, 8m)],
             Guid.NewGuid(), ct);
 
         Assert.Equal(1, menu.InputRevision);

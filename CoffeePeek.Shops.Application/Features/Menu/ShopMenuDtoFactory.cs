@@ -40,7 +40,6 @@ public static class ShopMenuDtoFactory
                         ContractAvailability.Unknown,
                         null,
                         menu.Currency,
-                        null,
                         ContractSource.Parsed);
                 }
 
@@ -52,7 +51,6 @@ public static class ShopMenuDtoFactory
                     (ContractAvailability)(int)item.Availability,
                     item.Price,
                     menu.Currency,
-                    item.VolumeMl,
                     (ContractSource)(int)item.Source);
             })
             .ToArray();

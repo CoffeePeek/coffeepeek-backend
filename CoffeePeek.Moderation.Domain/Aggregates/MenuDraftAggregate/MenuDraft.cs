@@ -85,6 +85,7 @@ public sealed class MenuDraft
             return false;
         if (success)
         {
+            items = items.Where(item => item is not null && item.Price is > 0).ToArray();
             ValidateItems(items);
             if (suggestedPriceRange.HasValue && !Enum.IsDefined((PriceRange)suggestedPriceRange.Value))
                 throw new DomainException("Unknown suggested price range.");
@@ -120,7 +121,6 @@ public sealed class MenuDraft
                 Slug = edit.Slug.Trim(),
                 Availability = edit.Availability,
                 Price = edit.Availability == (int)MenuDraftAvailability.Present ? edit.Price : null,
-                VolumeMl = edit.VolumeMl,
                 Source = (int)MenuDraftItemSource.Manual,
                 NameRu = string.IsNullOrWhiteSpace(edit.NameRu) ? existing?.NameRu ?? "" : edit.NameRu,
                 NameEn = string.IsNullOrWhiteSpace(edit.NameEn) ? existing?.NameEn ?? "" : edit.NameEn,
@@ -140,12 +140,20 @@ public sealed class MenuDraft
 
     private static void ValidateItems(IReadOnlyList<MenuDraftItem> items)
     {
-        if (items.Any(i => string.IsNullOrWhiteSpace(i.Slug) || !Enum.IsDefined((MenuDraftAvailability)i.Availability)
-                           || i.Price < 0 || i.VolumeMl <= 0))
-            throw new DomainException("Invalid menu item.");
+        if (items is null)
+            throw new DomainException("Menu items are required.");
+        foreach (var item in items)
+        {
+            if (item is null || string.IsNullOrWhiteSpace(item.Slug))
+                throw new DomainException("Menu item slug is required.");
+            CoffeePeek.Shared.Kernel.Menu.MenuItemValues.Validate(item.Availability, item.Price);
+        }
         if (items.Select(i => i.Slug.Trim()).Distinct(StringComparer.OrdinalIgnoreCase).Count() != items.Count)
             throw new DomainException("Menu item slugs must be unique.");
     }
+
+    public void ValidateForPublication() =>
+        ValidateItems(Items.Where(item => item.Source == (int)MenuDraftItemSource.Manual).ToArray());
 
     private static string? ClipError(string? error)
     {

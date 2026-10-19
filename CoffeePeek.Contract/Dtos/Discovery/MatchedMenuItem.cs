@@ -27,8 +27,5 @@ public class MatchedMenuItem
     [DiscoveryChoices("BYN", "RUB")]
     public string Currency { get; set; } = string.Empty;
     [JsonRequired]
-    [Range(1, 2147483647)]
-    public int? VolumeMl { get; set; }
-    [JsonRequired]
     public DateTime? CheckedAtUtc { get; set; }
 }

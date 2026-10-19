@@ -8,6 +8,6 @@ public sealed class MenuDraftItem
     public int Category { get; init; }
     public int Availability { get; init; }
     public decimal? Price { get; init; }
-    public int? VolumeMl { get; init; }
+
     public int Source { get; init; }
 }

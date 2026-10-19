@@ -116,7 +116,7 @@ public sealed class ShopMenu : Entity<Guid>
             if (existing is null)
                 _items.Add(candidate);
             else
-                existing.ApplyManual(candidate.Availability, candidate.Price, candidate.VolumeMl);
+                existing.ApplyManual(candidate.Availability, candidate.Price);
         }
 
         CapturedAtUtc = capturedAtUtc;
@@ -143,7 +143,7 @@ public sealed class ShopMenu : Entity<Guid>
             if (existing is null)
                 _items.Add(item);
             else if (existing.Source != MenuItemSource.Manual)
-                existing.ApplyParsed(item.Price, item.VolumeMl);
+                existing.ApplyParsed(item.Price);
         }
 
         CompleteParse(unmatchedJson, suggestedPriceRange, updatedByUserId);
@@ -209,14 +209,13 @@ public sealed class ShopMenu : Entity<Guid>
         Guid drinkDefinitionId,
         MenuItemAvailability availability,
         decimal? price,
-        int? volumeMl,
         Guid? updatedByUserId)
     {
         var existing = _items.FirstOrDefault(i => i.DrinkDefinitionId == drinkDefinitionId);
         if (existing is null)
-            _items.Add(ShopMenuItem.Create(drinkDefinitionId, availability, price, volumeMl, MenuItemSource.Manual));
+            _items.Add(ShopMenuItem.Create(drinkDefinitionId, availability, price, MenuItemSource.Manual));
         else
-            existing.ApplyManual(availability, price, volumeMl);
+            existing.ApplyManual(availability, price);
 
         MarkManualUpdate(updatedByUserId);
     }
@@ -230,9 +229,9 @@ public sealed class ShopMenu : Entity<Guid>
             var existing = _items.FirstOrDefault(item => item.DrinkDefinitionId == update.DrinkDefinitionId);
             if (existing is null)
                 _items.Add(ShopMenuItem.Create(update.DrinkDefinitionId, update.Availability,
-                    update.Price, update.VolumeMl, MenuItemSource.Manual));
+                    update.Price, MenuItemSource.Manual));
             else
-                existing.ApplyManual(update.Availability, update.Price, update.VolumeMl);
+                existing.ApplyManual(update.Availability, update.Price);
         }
         MarkManualUpdate(updatedByUserId);
     }

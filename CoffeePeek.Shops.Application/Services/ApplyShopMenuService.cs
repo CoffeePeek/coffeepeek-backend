@@ -52,7 +52,7 @@ public class ApplyShopMenuService(
             // skips those offers; invalid manual rows remain a validation failure.
             if (row.Source == Contract.Enums.MenuItemSource.Parsed &&
                 (row.Availability != Contract.Enums.MenuItemAvailability.Present ||
-                 row.Price is not > 0 || row.VolumeMl is not > 0))
+                 row.Price is not > 0))
                 continue;
             if (!bySlug.TryGetValue(row.Slug, out var drink))
                 throw new CoffeePeek.Shared.Kernel.Exceptions.DomainException($"Coffee drink '{row.Slug}' was not found.");
@@ -60,7 +60,6 @@ public class ApplyShopMenuService(
                 drink.Id,
                 (DomainAvailability)(int)row.Availability,
                 row.Price,
-                row.VolumeMl,
                 (DomainSource)(int)row.Source));
         }
 
@@ -111,13 +110,12 @@ public class ApplyShopMenuService(
         {
             if (!bySlug.TryGetValue(row.Slug, out var drink))
                 continue;
-            if (row.Price is not > 0 || row.VolumeMl is not > 0)
+            if (row.Price is not > 0)
                 continue;
             mapped.Add(ShopMenuItem.Create(
                 drink.Id,
                 DomainAvailability.Present,
                 row.Price,
-                row.VolumeMl,
                 DomainSource.Parsed));
         }
 

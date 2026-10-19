@@ -50,7 +50,7 @@ public class ShopChangeRequestPhotoUrlsTests
     [Fact]
     public void Enrich_MenuPhotosPreserveMenuItemsAndRetainedSelections()
     {
-        var item = new UpdateShopMenuItemRequest("espresso", MenuItemAvailability.Present, 5, 30);
+        var item = new UpdateShopMenuItemRequest("espresso", MenuItemAvailability.Present, 5);
         var retainedId = Guid.NewGuid();
         var photo = new UploadedPhotoDto("menu.jpg", "image/jpeg", "menus/menu.jpg", 84);
         var request = Request(ShopChangeSection.Menu, new(Menu: new([item], [retainedId], [photo])));

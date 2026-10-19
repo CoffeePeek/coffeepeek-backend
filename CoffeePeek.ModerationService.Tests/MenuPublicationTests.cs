@@ -74,7 +74,7 @@ public class MenuPublicationTests
 
     private static MenuParsedEvent Parsed(ModerationShop shop) => new(
         MenuParseSourceKind.ModerationShop, shop.Id, null, true, null, null,
-        [new ParsedMenuItemDto("espresso", 5, 30, "Espresso")], [],
+        [new ParsedMenuItemDto("espresso", 5, "Espresso")], [],
         DateTime.UtcNow, shop.Menu!.ParseRequestId);
 
     private static ModerationShop NewShop()

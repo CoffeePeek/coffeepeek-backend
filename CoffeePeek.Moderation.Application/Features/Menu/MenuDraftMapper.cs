@@ -29,7 +29,6 @@ public static class MenuDraftMapper
                     MenuItemAvailability.Unknown,
                     null,
                     draft.Currency,
-                    null,
                     MenuItemSource.Parsed);
             }
 
@@ -41,7 +40,6 @@ public static class MenuDraftMapper
                 (MenuItemAvailability)item.Availability,
                 item.Price,
                 draft.Currency,
-                item.VolumeMl,
                 item.Source == 0 ? MenuItemSource.Parsed : (MenuItemSource)item.Source);
         }).ToArray();
 
@@ -82,7 +80,6 @@ public static class MenuDraftMapper
                 i.Slug,
                 (MenuItemAvailability)i.Availability,
                 i.Price,
-                i.VolumeMl,
                 i.Source == 0 ? MenuItemSource.Parsed : (MenuItemSource)i.Source)).ToArray(),
             draft.Photos.Select(p => new ShopMenuPhotoSnapshot(
                 p.FileName, p.ContentType, p.StorageKey, p.SizeBytes, p.MediaPhotoId)).ToArray(),
@@ -105,7 +102,6 @@ public static class MenuDraftMapper
                 Category = (int)(i.Category ?? catalog?.Category ?? CoffeeDrinkCategory.Espresso),
                 Availability = (int)MenuItemAvailability.Present,
                 Price = i.Price,
-                VolumeMl = i.VolumeMl,
                 Source = (int)MenuItemSource.Parsed
             };
         }).ToArray();
@@ -118,21 +114,28 @@ public static class MenuDraftMapper
             Confidence = u.Confidence
         }).ToArray();
 
-    public static IReadOnlyList<MenuDraftItem> ToDraftItems(IReadOnlyList<UpdateShopMenuItemRequest> items) =>
-        items.Select(i =>
+    public static IReadOnlyList<MenuDraftItem> ToDraftItems(IReadOnlyList<UpdateShopMenuItemRequest> items)
+    {
+        if (items is null || items.Any(item => item is null))
+            throw new CoffeePeek.Shared.Kernel.Exceptions.DomainException("Menu items are required and cannot contain null entries.");
+        return items.Select(i =>
         {
+            if (string.IsNullOrWhiteSpace(i.Slug))
+                throw new CoffeePeek.Shared.Kernel.Exceptions.DomainException("Menu item slug is required.");
             var catalog = StandardCoffeeDrinks.All.FirstOrDefault(d =>
-                string.Equals(d.Slug, i.Slug, StringComparison.OrdinalIgnoreCase));
+                string.Equals(d.Slug, i.Slug.Trim(), StringComparison.OrdinalIgnoreCase));
+            if (catalog is null)
+                throw new CoffeePeek.Shared.Kernel.Exceptions.DomainException($"Coffee drink '{i.Slug}' was not found.");
             return new MenuDraftItem
             {
-                Slug = i.Slug,
+                Slug = catalog.Slug,
                 NameRu = catalog?.NameRu ?? i.Slug,
                 NameEn = catalog?.NameEn ?? i.Slug,
                 Category = (int)(catalog?.Category ?? CoffeeDrinkCategory.Espresso),
                 Availability = (int)i.Availability,
                 Price = i.Price,
-                VolumeMl = i.VolumeMl,
                 Source = (int)MenuItemSource.Manual
             };
         }).ToArray();
+    }
 }
