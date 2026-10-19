@@ -42,17 +42,19 @@ public class EmailTemplateService : IEmailTemplateService
                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
                  <tr><td style="padding-top:28px;">
                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-                     <tr><td align="center" bgcolor="#EAB308" style="border-radius:12px;">
-                       <a href="{safeUrl}" target="_blank" style="display:block;padding:16px 20px;border:1px solid #EAB308;border-radius:12px;background:#EAB308;color:#1A1412;font-size:15px;line-height:22px;font-weight:700;text-align:center;text-decoration:none;">{buttonText}</a>
+                     <tr><td align="center" bgcolor="#EAB308" style="border-radius:12px;mso-padding-alt:14px 20px;">
+                       <a href="{safeUrl}" target="_blank" style="display:block;padding:14px 20px;border:1px solid #EAB308;border-radius:12px;background-color:#EAB308;color:#1A1412;font-family:Manrope,'Segoe UI',Arial,sans-serif;font-size:15px;line-height:22px;font-weight:700;text-align:center;text-decoration:none;">{buttonText}</a>
                      </td></tr>
                    </table>
                  </td></tr>
                  <tr><td style="padding-top:18px;">
-                   <p style="margin:0;padding:14px 16px;background:#1A1412;border:1px solid #3D2F28;border-radius:12px;color:#A39E93;font-size:13px;line-height:20px;">{notice}</p>
+                   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                     <tr><td bgcolor="#1A1412" style="padding:14px 16px;border:1px solid #3D2F28;border-radius:12px;color:#A39E93;font-family:Manrope,'Segoe UI',Arial,sans-serif;font-size:13px;line-height:20px;">{notice}</td></tr>
+                   </table>
                  </td></tr>
-                 <tr><td style="padding-top:24px;">
+                 <tr><td style="padding-top:24px;font-family:Manrope,'Segoe UI',Arial,sans-serif;">
                    <p style="margin:0 0 8px;color:#A39E93;font-size:12px;line-height:19px;">Если кнопка не работает, скопируйте ссылку и откройте её в браузере:</p>
-                   <p style="margin:0;font-size:12px;line-height:19px;word-break:break-all;overflow-wrap:anywhere;"><a href="{safeUrl}" target="_blank" style="color:#EAB308;text-decoration:underline;">{safeUrl}</a></p>
+                   <p style="margin:0;font-size:12px;line-height:19px;word-break:break-all;overflow-wrap:anywhere;"><a href="{safeUrl}" target="_blank" style="color:#EAB308;text-decoration:underline;word-break:break-all;overflow-wrap:anywhere;">{safeUrl}</a></p>
                  </td></tr>
                </table>
                """;
@@ -108,15 +110,19 @@ public class EmailTemplateService : IEmailTemplateService
 
                      @media only screen and (max-width: 620px) {
                        .page {
-                         padding: 20px 12px !important;
+                         padding: 24px 12px !important;
                        }
 
                        .content {
-                         padding: 28px 22px !important;
+                         padding: 28px 20px !important;
+                       }
+
+                       .header {
+                         padding: 24px 20px !important;
                        }
 
                        .footer {
-                         padding: 22px !important;
+                         padding: 20px !important;
                        }
 
                        .title {
@@ -127,20 +133,48 @@ public class EmailTemplateService : IEmailTemplateService
                    </style>
                  </head>
 
-                 <body style="margin:0;padding:0;background:#1A1412;color:#FFFFFF;font-family:Manrope,'Segoe UI',Arial,sans-serif;">
-                   <div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;color:#1A1412;">
+                 <body bgcolor="#1A1412" style="margin:0;padding:0;background-color:#1A1412;color:#FFFFFF;font-family:Manrope,'Segoe UI',Arial,sans-serif;">
+                   <div aria-hidden="true" style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;color:#1A1412;">
                      {{title}}. {{notice}}
                    </div>
 
-                   ...
-                   <h1>{{title}}</h1>
-                   ...
-                   Привет, {{safeUsername}}!
-                   ...
-                   {{message}}
-                   {{action}}
-                   ...
-                   &copy; {{DateTime.UtcNow.Year}} CoffeePeek
+                   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#1A1412" style="background-color:#1A1412;">
+                     <tr>
+                       <td class="page" align="center" style="padding:40px 16px;">
+                         <!--[if mso]><table role="presentation" width="480" cellpadding="0" cellspacing="0" border="0"><tr><td><![endif]-->
+                         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#2D241F" style="width:100%;max-width:480px;table-layout:fixed;background-color:#2D241F;border:1px solid #3D2F28;border-radius:24px;">
+                           <tr>
+                             <td class="header" style="padding:28px 32px;border-bottom:1px solid #3D2F28;">
+                               <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                                 <tr>
+                                   <td width="52" valign="middle" bgcolor="#1A1412" style="border-radius:15px;">
+                                     <img src="https://coffeepeek.by/logo/logo.png" width="52" height="52" alt="" style="display:block;width:52px;height:52px;border-radius:15px;" />
+                                   </td>
+                                   <td valign="middle" style="padding-left:12px;color:#FFFFFF;font-family:Manrope,'Segoe UI',Arial,sans-serif;font-size:20px;line-height:28px;font-weight:800;letter-spacing:-0.7px;">Coffee<span style="color:#EAB308;">Peek</span></td>
+                                 </tr>
+                               </table>
+                             </td>
+                           </tr>
+                           <tr>
+                             <td class="content" style="padding:32px;font-family:Manrope,'Segoe UI',Arial,sans-serif;">
+                               <p style="margin:0 0 12px;color:#EAB308;font-size:12px;line-height:20px;font-weight:700;letter-spacing:0.4px;"><span aria-hidden="true">{{icon}}</span>&nbsp; {{label}}</p>
+                               <h1 class="title" style="margin:0 0 24px;color:#FFFFFF;font-size:28px;line-height:36px;font-weight:700;letter-spacing:-0.5px;">{{title}}</h1>
+                               <p style="margin:0 0 12px;color:#FFFFFF;font-size:15px;line-height:24px;font-weight:600;word-break:break-word;overflow-wrap:anywhere;">Привет, {{safeUsername}}!</p>
+                               <p style="margin:0;color:#A39E93;font-size:15px;line-height:24px;">{{message}}</p>
+                               {{action}}
+                             </td>
+                           </tr>
+                           <tr>
+                             <td class="footer" style="padding:24px 32px;border-top:1px solid #3D2F28;font-family:Manrope,'Segoe UI',Arial,sans-serif;">
+                               <p style="margin:0;color:#A39E93;font-size:12px;line-height:20px;">{{footer}}</p>
+                             </td>
+                           </tr>
+                         </table>
+                         <!--[if mso]></td></tr></table><![endif]-->
+                         <p style="margin:24px 0 0;color:#A39E93;font-family:Manrope,'Segoe UI',Arial,sans-serif;font-size:12px;line-height:20px;text-align:center;">&copy; {{DateTime.UtcNow.Year}} CoffeePeek</p>
+                       </td>
+                     </tr>
+                   </table>
                  </body>
                  </html>
                  """;
