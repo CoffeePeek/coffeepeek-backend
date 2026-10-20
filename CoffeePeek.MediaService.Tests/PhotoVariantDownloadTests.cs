@@ -93,7 +93,7 @@ public sealed class PhotoVariantDownloadTests
         public async Task Seed()
         {
             Job = new PhotoVariantJob { Id = Guid.NewGuid(), CheckInId = Photo.CheckInId!.Value, PhotoId = Photo.Id,
-                OwnerId = Photo.OwnerId, SourceKey = Photo.StorageKey, SourceVersion = PhotoVariantRecipe.SourceVersion(Photo.Id, Photo.StorageKey),
+                OwnerId = Photo.OwnerId, SourceKey = Photo.StorageKey, SourceVersion = CheckInPhotoVariantIdentity.SourceVersion(Photo.Id, Photo.StorageKey),
                 RecipeVersion = 1, Status = PhotoVariantJobStatus.Ready, LeaseToken = Guid.NewGuid() };
             Variant = PhotoVariantPersistenceTests.Manifest(Job).Single(v => v.Purpose == "feed" && v.Format == "webp");
             Db.Photos.Add(Photo); Db.PhotoVariantJobs.Add(Job); Db.PhotoVariants.Add(Variant); await Db.SaveChangesAsync(Ct);

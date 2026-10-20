@@ -4,7 +4,6 @@ public enum PhotoStatus
 {
     Pending,
     Confirmed,
-    Orphaned,
     Deleted,
     PendingDeletion
 }

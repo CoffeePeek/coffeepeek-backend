@@ -37,15 +37,12 @@ public class MediaDbContext(DbContextOptions<MediaDbContext> options) : DbContex
             entity.Property(p => p.ClaimedAtUtc);
             entity.Property(p => p.OriginalStorageKey).HasMaxLength(255);
             entity.Property(p => p.UploadedAt).IsRequired();
-            entity.Property(p => p.PermalinkExpiresAt);
-            entity.Property(p => p.ScheduledDeletionAt);
             entity.Property(p => p.DeletedAt);
 
             entity.HasIndex(p => new { p.OwnerType, p.OwnerId });
             entity.HasIndex(p => p.Status);
             entity.HasIndex(p => p.CheckInId);
             entity.HasIndex(p => new { p.ShopAttachmentId, p.ShopAttachmentKind });
-            entity.HasIndex(p => new { p.Status, p.ScheduledDeletionAt });
         });
 
         modelBuilder.ApplyConfiguration(new PhotoVariantJobConfiguration());

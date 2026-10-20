@@ -15,12 +15,7 @@ public sealed class CheckInPhotoReader : ICheckInPhotoReader, IDisposable
     public CheckInPhotoReader(IOptions<MinIOOptions> storage, IOptions<CheckInPhotoReadOptions> credentials,
         CheckInStorageState state)
     {
-        if (credentials.Value.AccessKey == storage.Value.AccessKey)
-            throw new InvalidOperationException("Photo downloads require a separate read-only storage identity.");
-        var endpoint = new Uri(storage.Value.Endpoint);
-        client = new MinioClient().WithEndpoint(endpoint)
-            .WithCredentials(credentials.Value.AccessKey, credentials.Value.SecretKey)
-            .WithRegion("us-east-1").WithSSL(endpoint.Scheme == Uri.UriSchemeHttps).Build();
+        client = MinioClients.Create(storage.Value.Endpoint, credentials.Value.AccessKey, credentials.Value.SecretKey);
         bucket = storage.Value.CheckInBucketName;
         this.state = state;
     }

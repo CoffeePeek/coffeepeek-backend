@@ -1,4 +1,5 @@
 using CoffeePeek.MediaService.Configuration;
+using CoffeePeek.Shared.Kernel.Media;
 using CoffeePeek.MediaService.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -11,7 +12,7 @@ public sealed class PhotoVariantQueue(MediaDbContext db) : IPhotoVariantQueue
         if (photo.Status != PhotoStatus.Confirmed || photo.BucketType != BucketType.CheckIn
             || photo.CheckInId is not { } checkInId || photo.ShopAttachmentId != null)
             return;
-        var version = PhotoVariantRecipe.SourceVersion(photo.Id, photo.StorageKey);
+        var version = CheckInPhotoVariantIdentity.SourceVersion(photo.Id, photo.StorageKey);
         // Called inside the attachment consumer's EF/outbox transaction. Unique key handles redelivery.
         await db.Database.ExecuteSqlInterpolatedAsync($"""
             INSERT INTO "PhotoVariantJobs"

@@ -20,8 +20,8 @@ public class CoffeePhotoImportTests
         var token = new string('a', 32);
         var bytes = Convert.FromHexString("89504E470D0A1A0A010203");
         var key = "coffees/" + Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(bytes)) + ".png";
-        storage.SetupSequence(s => s.Exists(key, CoffeePeek.MediaService.Configuration.BucketType.Shop, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(false).ReturnsAsync(true);
+        storage.SetupSequence(s => s.GetObjectSize(key, CoffeePeek.MediaService.Configuration.BucketType.Shop, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((long?)null).ReturnsAsync(bytes.Length);
         byte[]? saved = null;
         storage.Setup(s => s.Put(key, "image/png", It.IsAny<Stream>(), bytes.Length, CoffeePeek.MediaService.Configuration.BucketType.Shop, It.IsAny<CancellationToken>()))
             .Returns(async (string _, string _, Stream stream, long _, CoffeePeek.MediaService.Configuration.BucketType _, CancellationToken ct) =>

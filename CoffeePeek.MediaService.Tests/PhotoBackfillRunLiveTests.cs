@@ -31,7 +31,7 @@ public sealed class PhotoBackfillRunLiveTests(MediaVariantsLiveDatabase fixture)
             await db.GetService<IMigrator>().MigrateAsync("20261018123301_AddPrivatePhotoVariants", Ct);
             var photo = Photo(); db.Photos.Add(photo); await db.SaveChangesAsync(Ct);
             var id = Guid.NewGuid();
-            var source = PhotoVariantRecipe.SourceVersion(photo.Id, photo.StorageKey);
+            var source = CheckInPhotoVariantIdentity.SourceVersion(photo.Id, photo.StorageKey);
             var digest = new string('a', 64);
             await db.Database.ExecuteSqlInterpolatedAsync($"""
                 INSERT INTO "PhotoVariantJobs" ("Id", "PhotoId", "CheckInId", "OwnerId", "SourceKey", "SourceVersion",
@@ -279,7 +279,7 @@ public sealed class PhotoBackfillRunLiveTests(MediaVariantsLiveDatabase fixture)
             db.PhotoVariantJobs.AddRange(originals.Select(p => new PhotoVariantJob
             {
                 Id = Guid.NewGuid(), PhotoId = p.Id, CheckInId = p.CheckInId!.Value, OwnerId = p.OwnerId,
-                SourceKey = p.StorageKey, SourceVersion = PhotoVariantRecipe.SourceVersion(p.Id, p.StorageKey),
+                SourceKey = p.StorageKey, SourceVersion = CheckInPhotoVariantIdentity.SourceVersion(p.Id, p.StorageKey),
                 RecipeVersion = PhotoVariantRecipe.Version, Priority = 1, BackfillRunId = run.Id,
                 Status = PhotoVariantJobStatus.Pending, NextAttemptAtUtc = clock.Now,
                 CreatedAtUtc = clock.Now, UpdatedAtUtc = clock.Now
@@ -320,7 +320,7 @@ public sealed class PhotoBackfillRunLiveTests(MediaVariantsLiveDatabase fixture)
             var oldJob = new PhotoVariantJob
             {
                 Id = Guid.NewGuid(), PhotoId = photo.Id, CheckInId = photo.CheckInId!.Value, OwnerId = photo.OwnerId,
-                SourceKey = photo.StorageKey, SourceVersion = PhotoVariantRecipe.SourceVersion(photo.Id, photo.StorageKey),
+                SourceKey = photo.StorageKey, SourceVersion = CheckInPhotoVariantIdentity.SourceVersion(photo.Id, photo.StorageKey),
                 RecipeVersion = issuedRecipe, Priority = 1, BackfillRunId = old.Id,
                 Status = PhotoVariantJobStatus.Pending, NextAttemptAtUtc = clock.Now,
                 CreatedAtUtc = clock.Now, UpdatedAtUtc = clock.Now
@@ -328,7 +328,7 @@ public sealed class PhotoBackfillRunLiveTests(MediaVariantsLiveDatabase fixture)
             var readyJob = new PhotoVariantJob
             {
                 Id = Guid.NewGuid(), PhotoId = readyPhoto.Id, CheckInId = readyPhoto.CheckInId!.Value, OwnerId = readyPhoto.OwnerId,
-                SourceKey = readyPhoto.StorageKey, SourceVersion = PhotoVariantRecipe.SourceVersion(readyPhoto.Id, readyPhoto.StorageKey),
+                SourceKey = readyPhoto.StorageKey, SourceVersion = CheckInPhotoVariantIdentity.SourceVersion(readyPhoto.Id, readyPhoto.StorageKey),
                 SourceDigest = new string('b', 64), RecipeVersion = issuedRecipe, Priority = 1, BackfillRunId = old.Id,
                 Status = PhotoVariantJobStatus.Ready, Attempts = 1, NextAttemptAtUtc = clock.Now,
                 CreatedAtUtc = clock.Now, UpdatedAtUtc = clock.Now
@@ -375,7 +375,7 @@ public sealed class PhotoBackfillRunLiveTests(MediaVariantsLiveDatabase fixture)
     }
 
     private static PhotoBackfillCandidate Candidate(PhotoMetadata photo) => new(photo.Id, photo.CheckInId!.Value,
-        photo.OwnerId, photo.StorageKey, PhotoVariantRecipe.SourceVersion(photo.Id, photo.StorageKey),
+        photo.OwnerId, photo.StorageKey, CheckInPhotoVariantIdentity.SourceVersion(photo.Id, photo.StorageKey),
         CheckInKind.Shop, false, photo.UploadedAt, photo.SizeBytes, photo.ContentType);
 
     private static Task Cancel(MediaDbContext db, PhotoMetadata photo) => new PhotoVariantQueue(db)

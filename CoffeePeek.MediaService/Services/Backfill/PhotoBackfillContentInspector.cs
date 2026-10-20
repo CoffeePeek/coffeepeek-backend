@@ -24,7 +24,7 @@ internal static class PhotoBackfillContentInspector
         var bytes = buffer.ToArray();
         using var data = SKData.CreateCopy(bytes);
         using var codec = SKCodec.Create(data);
-        if (codec is null) return new(LooksLikeKnownFormat(bytes) ? "corrupt" : "unsupported", bytes.LongLength);
+        if (codec is null) return new(CoffeePhotoFormat.Detect(bytes) is not null ? "corrupt" : "unsupported", bytes.LongLength);
         var width = codec.Info.Width;
         var height = codec.Info.Height;
         if (width < 1 || height < 1) return new("corrupt", bytes.LongLength);
@@ -38,10 +38,4 @@ internal static class PhotoBackfillContentInspector
             ? new("verified", bytes.LongLength, Convert.ToHexStringLower(SHA256.HashData(bytes)))
             : new("corrupt", bytes.LongLength);
     }
-
-    private static bool LooksLikeKnownFormat(byte[] bytes) =>
-        bytes.AsSpan().StartsWith(new byte[] { 0x89, 0x50, 0x4e, 0x47 })
-        || bytes.AsSpan().StartsWith(new byte[] { 0xff, 0xd8 })
-        || bytes.AsSpan().StartsWith("GIF8"u8)
-        || bytes.Length >= 12 && bytes.AsSpan(0, 4).SequenceEqual("RIFF"u8) && bytes.AsSpan(8, 4).SequenceEqual("WEBP"u8);
 }
