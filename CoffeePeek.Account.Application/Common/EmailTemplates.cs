@@ -1,32 +1,31 @@
 ﻿using System.Net;
-using CoffeePeek.Account.Application.Common.Interfaces;
 
 namespace CoffeePeek.Account.Application.Common;
 
-public class EmailTemplateService : IEmailTemplateService
+public static class EmailTemplates
 {
-    public string GetConfirmationHtml(string username, string confirmationUrl) => Render(
+    public static string GetConfirmationHtml(string username, string confirmationUrl) => Render(
         username, "Подтвердите почту", "Подтверждение почты", "&#9993;",
         "Спасибо за регистрацию в CoffeePeek! Подтвердите адрес электронной почты, чтобы завершить создание аккаунта.",
         "Ссылка действует 10 минут. Если срок истёк, запросите новое письмо на странице входа.",
         "Если вы не регистрировались в CoffeePeek, просто проигнорируйте это письмо.",
         "Подтвердить почту", confirmationUrl);
 
-    public string GetPasswordResetHtml(string username, string resetUrl) => Render(
+    public static string GetPasswordResetHtml(string username, string resetUrl) => Render(
         username, "Новый пароль", "Сброс пароля", "&#128274;",
         "Мы получили запрос на сброс пароля вашего аккаунта CoffeePeek. Нажмите кнопку ниже, чтобы установить новый пароль.",
         "Ссылка действует 30 минут.",
         "Если вы не запрашивали сброс пароля, проигнорируйте это письмо. Ваш пароль останется прежним.",
         "Установить новый пароль", resetUrl);
 
-    public string GetAccountDeletionConfirmationHtml(string username, string confirmationUrl) => Render(
+    public static string GetAccountDeletionConfirmationHtml(string username, string confirmationUrl) => Render(
         username, "Удаление аккаунта", "Удаление аккаунта", "&#9888;",
         "Мы получили запрос на удаление вашего аккаунта CoffeePeek. Пока аккаунт остаётся активным. Чтобы продолжить удаление, подтвердите запрос.",
         "Подтвердите запрос в течение 24 часов.",
         "Если вы не запрашивали удаление, не подтверждайте его. Отменить запрос можно по ссылке на странице подтверждения.",
         "Подтвердить удаление", confirmationUrl);
 
-    public string GetWelcomeBackHtml(string username) => Render(
+    public static string GetWelcomeBackHtml(string username) => Render(
         username, "С возвращением!", "С возвращением", "&#9749;",
         "Рады снова видеть вас в CoffeePeek. Любимые кофейни и новые открытия уже ждут вас.",
         "", "Если вы не входили в аккаунт, немедленно смените пароль.");

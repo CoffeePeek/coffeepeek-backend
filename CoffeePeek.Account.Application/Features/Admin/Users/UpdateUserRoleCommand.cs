@@ -42,7 +42,6 @@ public static class UpdateUserRoleHandler
 
         user.ReplaceRoles(role);
 
-        await userRepository.Update(user, ct);
         await unitOfWork.SaveChangesAsync(ct);
         // Old tokens carry the previous role claims.
         await revokedUserStore.RevokeAccessTokensAsync(user.Id, jwtOptions.Value, ct);

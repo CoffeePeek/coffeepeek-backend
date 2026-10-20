@@ -13,8 +13,7 @@ required for this prevention setup and was not performed.
 ## Store replacements outside Git
 
 Production credentials belong in `deploy/.env` on the server or the deployment's
-secret store. Use `GOOGLE_CLIENT_SECRET`, `YANDEX_GEOCODER_API_KEY` and
-`RESEND_API_TOKEN`; Docker Compose maps them to the relevant service options.
+secret store. Use `YANDEX_GEOCODER_API_KEY` and `RESEND_API_TOKEN`; Docker Compose maps them to the relevant service options.
 Local credentials belong in .NET user secrets or ignored development configuration.
 Do not paste replacements into issues, documentation, tests, CI logs or chat.
 

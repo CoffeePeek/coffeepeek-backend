@@ -88,48 +88,6 @@ public class PhotoMetadataTests
     }
 
     [Fact]
-    public void IsLargeFile_WithSizeGreaterThan5MB_ShouldReturnTrue()
-    {
-        // Arrange - 6 MB
-        const long largeSize = 6 * 1024 * 1024;
-        var photo = PhotoMetadata.Create("large.jpg", "image/jpeg", "key", largeSize);
-
-        // Act
-        var isLarge = photo.IsLargeFile;
-
-        // Assert
-        isLarge.Should().BeTrue();
-    }
-
-    [Fact]
-    public void IsLargeFile_WithSizeEqualTo5MB_ShouldReturnFalse()
-    {
-        // Arrange - exactly 5 MB
-        const long exactSize = 5 * 1024 * 1024;
-        var photo = PhotoMetadata.Create("medium.jpg", "image/jpeg", "key", exactSize);
-
-        // Act
-        var isLarge = photo.IsLargeFile;
-
-        // Assert
-        isLarge.Should().BeFalse();
-    }
-
-    [Fact]
-    public void IsLargeFile_WithSizeLessThan5MB_ShouldReturnFalse()
-    {
-        // Arrange - 1 MB
-        const long smallSize = 1024 * 1024;
-        var photo = PhotoMetadata.Create("small.jpg", "image/jpeg", "key", smallSize);
-
-        // Act
-        var isLarge = photo.IsLargeFile;
-
-        // Assert
-        isLarge.Should().BeFalse();
-    }
-
-    [Fact]
     public void Create_WithMinimumValidSize_ShouldSucceed()
     {
         // Arrange
@@ -140,7 +98,6 @@ public class PhotoMetadataTests
 
         // Assert
         photo.SizeBytes.Should().Be(minSize);
-        photo.IsLargeFile.Should().BeFalse();
     }
 
     [Fact]
@@ -154,7 +111,6 @@ public class PhotoMetadataTests
 
         // Assert
         photo.SizeBytes.Should().Be(veryLargeSize);
-        photo.IsLargeFile.Should().BeTrue();
     }
 
     [Theory]

@@ -41,7 +41,6 @@ public class UpdateUsernameHandlerTest
         _userRepositoryMock.Setup(x => x.GetById(user.Id, _cancellationToken)).ReturnsAsync(user);
         await Assert.ThrowsAsync<ConflictException>(() => UpdateUsernameHandler.Handle(new(user.Id, "Rejected"),
             _userRepositoryMock.Object, _unitOfWorkMock.Object, _cancellationToken));
-        _userRepositoryMock.Verify(x => x.Update(It.IsAny<DomainUser>(), It.IsAny<CancellationToken>()), Times.Never);
         _unitOfWorkMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 

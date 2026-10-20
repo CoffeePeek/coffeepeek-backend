@@ -9,7 +9,7 @@ namespace CoffeePeek.Account.Application.Features.Auth.OAuthLogin;
 using User = Domain.Entities.UserAggregate.User;
 
 public class ExternalAuthService(
-    IQueryUserRepository userRepository,
+    IUserRepository userRepository,
     IRoleRepository roleRepository) : IExternalAuthService
 {
     private const int UsernameSuffixLength = 4;

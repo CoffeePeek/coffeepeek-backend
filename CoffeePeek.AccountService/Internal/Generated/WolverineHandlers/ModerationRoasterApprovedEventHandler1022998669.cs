@@ -30,7 +30,7 @@ namespace Internal.Generated.WolverineHandlers
             // The actual message body
             var moderationRoasterApprovedEvent = (CoffeePeek.Contract.Events.Moderation.ModerationRoasterApprovedEvent)context.Envelope.Message;
 
-
+            
             // Enroll the DbContext & IMessagingContext in the outgoing Wolverine outbox transaction
             var efCoreEnvelopeTransaction = new Wolverine.EntityFrameworkCore.Internals.EfCoreEnvelopeTransaction(accountDbContext, context, _domainEventScraperIEnumerable);
             await context.EnlistInOutboxAsync(efCoreEnvelopeTransaction).ConfigureAwait(false);
@@ -45,11 +45,11 @@ namespace Internal.Generated.WolverineHandlers
                 System.Diagnostics.Activity.Current?.SetTag("message.handler", "CoffeePeek.Account.Infrastructure.Consumers.ModerationRoasterApprovedAccountHandler");
                 System.Diagnostics.Activity.Current?.SetTag("handler.type", "CoffeePeek.Account.Infrastructure.Consumers.ModerationRoasterApprovedAccountHandler");
                 var moderationRoasterApprovedAccountHandler = new CoffeePeek.Account.Infrastructure.Consumers.ModerationRoasterApprovedAccountHandler(roasterContributionStore);
-
+                
                 // The actual message execution
                 await moderationRoasterApprovedAccountHandler.Handle(moderationRoasterApprovedEvent, cancellation).ConfigureAwait(false);
 
-
+                
                 // Added by EF Core Transaction Middleware
                 var result_of_SaveChangesAsync = await accountDbContext.SaveChangesAsync(cancellation).ConfigureAwait(false);
 
@@ -68,6 +68,7 @@ namespace Internal.Generated.WolverineHandlers
     }
 
     // END: ModerationRoasterApprovedEventHandler1022998669
-
-
+    
+    
 }
+

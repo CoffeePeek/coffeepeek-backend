@@ -64,7 +64,6 @@ public class ResendEmailConfirmationHandlerTests
         await ResendEmailConfirmationHandler.Handle(
             new ResendEmailConfirmationCommand(user.Id), _userRepoMock.Object, _unitOfWorkMock.Object, _ct);
         _unitOfWorkMock.Verify(u => u.SaveChangesAsync(_ct), Times.Once);
-        _userRepoMock.Verify(r => r.Update(user, _ct), Times.Once);
     }
 
     [Fact]

@@ -16,7 +16,7 @@ public static class AppleLoginHandler
         AppleLoginCommand request,
         IAppleLoginChallengeStore challenges,
         IAppleAuthService appleAuth,
-        IQueryUserRepository users,
+        IUserRepository users,
         IExternalAuthService externalAuth,
         IJWTTokenService tokens,
         IOptions<JWTOptions> options,
@@ -41,10 +41,7 @@ public static class AppleLoginHandler
             user = await externalAuth.GetOrCreate(identity.Email, ProviderConsts.AppleProvider, identity.Subject, ct);
         }
 
-        user.EnsureCanAuthenticate();
-        var accessToken = tokens.GenerateAccessToken(user);
-        var refreshToken = tokens.GenerateRefreshToken();
-        user.AddSession(refreshToken, TimeSpan.FromDays(options.Value.RefreshTokenLifetimeDays), request.DeviceName, request.IpAddress);
+        var session = AuthSession.Issue(user, tokens, options.Value, request.DeviceName, request.IpAddress);
         try
         {
             await unitOfWork.SaveChangesAsync(ct);
@@ -54,14 +51,10 @@ public static class AppleLoginHandler
             // A concurrent first login may have created the same Apple account.
             user = await users.GetByProvider(ProviderConsts.AppleProvider, identity.Subject, ct);
             if (user is null) throw;
-            user.EnsureCanAuthenticate();
-            accessToken = tokens.GenerateAccessToken(user);
-            refreshToken = tokens.GenerateRefreshToken();
-            user.AddSession(refreshToken, TimeSpan.FromDays(options.Value.RefreshTokenLifetimeDays), request.DeviceName, request.IpAddress);
+            session = AuthSession.Issue(user, tokens, options.Value, request.DeviceName, request.IpAddress);
             await unitOfWork.SaveChangesAsync(ct);
         }
-        return Response<AppleLoginResponse>.Success(new(accessToken, refreshToken,
-            DateTime.UtcNow.AddMinutes(options.Value.AccessTokenLifetimeMinutes)));
+        return Response<AppleLoginResponse>.Success(new(session.AccessToken, session.RefreshToken, session.AccessTokenExpiresAt));
     }
 
     private static Response<AppleLoginResponse> InvalidLogin() =>

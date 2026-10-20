@@ -41,7 +41,6 @@ public static class CancelAccountDeletionRequestHandler
             return Response.Error((int)HttpStatusCode.Conflict, "The deletion request cannot be cancelled.");
         }
 
-        await repository.Update(request, ct);
         await unitOfWork.SaveChangesAsync(ct);
         return Response.Success();
     }

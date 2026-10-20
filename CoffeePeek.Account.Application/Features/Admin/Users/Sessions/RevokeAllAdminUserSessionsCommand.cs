@@ -28,7 +28,6 @@ public static class RevokeAllAdminUserSessionsHandler
 
         user.RevokeAllSessions();
 
-        await userRepository.Update(user, ct);
         await unitOfWork.SaveChangesAsync(ct);
         await revokedUserStore.RevokeAccessTokensAsync(user.Id, jwtOptions.Value, ct);
         await sessionTerminationNotifier.NotifyForceLogoutAsync(user.Id, SessionTerminationReasons.AllSessionsRevoked, ct);

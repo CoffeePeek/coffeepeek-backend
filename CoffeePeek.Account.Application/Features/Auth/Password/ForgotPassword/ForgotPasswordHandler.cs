@@ -22,7 +22,6 @@ public static class ForgotPasswordHandler
             return (Response.Success(new { message = SilentMessage }), null);
 
         user.BeginPasswordReset();
-        await userRepository.Update(user, ct);
         await unitOfWork.SaveChangesAsync(ct);
 
         var @event = new PasswordResetRequestedInternalEvent(

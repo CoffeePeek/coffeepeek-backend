@@ -22,12 +22,8 @@ public sealed class AppleTokensController(IAppleLoginChallengeStore challenges, 
     [HttpPost("native")]
     public async Task<IActionResult> Login(AppleLoginCommand request, CancellationToken ct)
     {
-        var command = request with
-        {
-            DeviceName = Request.Headers.UserAgent.ToString(),
-            IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown"
-        };
-        var response = await bus.InvokeAsync<Response<AppleLoginResponse>>(command, ct);
+        var (device, ip) = HttpContext.SessionClient();
+        var response = await bus.InvokeAsync<Response<AppleLoginResponse>>(request with { DeviceName = device, IpAddress = ip }, ct);
         return StatusCode(response.IsSuccess ? StatusCodes.Status200OK : response.StatusCode ?? StatusCodes.Status401Unauthorized, response);
     }
 }

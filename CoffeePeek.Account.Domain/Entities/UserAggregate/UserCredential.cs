@@ -17,6 +17,12 @@ public partial record UserCredential
 
     public bool HasPasswordAuth => !string.IsNullOrEmpty(PasswordHash);
 
+    public static void EnsureValidNewPassword(string password)
+    {
+        if (string.IsNullOrWhiteSpace(password) || password.Length < 8)
+            throw new DomainException("Password must be at least 8 characters long");
+    }
+
     private UserCredential()
     {
     }
@@ -73,12 +79,6 @@ public partial record UserCredential
         PasswordResetExpiresAt = DateTime.UtcNow.AddMinutes(30);
     }
 
-    public void ClearPasswordReset()
-    {
-        PasswordResetToken = null;
-        PasswordResetExpiresAt = null;
-    }
-
     public UserCredential ChangePassword(string newHash)
     {
         EnsurePasswordAuthAvailable();
@@ -112,15 +112,6 @@ public partial record UserCredential
             return false;
 
         return passwordHasher.VerifyPassword(PasswordHash, password);
-    }
-
-    public void LinkExternalProvider(string provider, string providerId)
-    {
-        if (!string.IsNullOrEmpty(OAuthProvider) && OAuthProvider != provider)
-            throw new DomainException("User already linked to another provider");
-
-        OAuthProvider = provider;
-        ProviderId = providerId;
     }
 
     private void EnsurePasswordAuthAvailable()

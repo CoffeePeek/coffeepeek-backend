@@ -46,7 +46,6 @@
   <ItemGroup Label="Account">
     <PackageVersion Include="Google.Apis.Auth" Version="1.73.0" />
     <PackageVersion Include="Resend" Version="0.16.0" />
-    <PackageVersion Include="System.IO.Hashing" Version="10.0.5" />
   </ItemGroup>
   <ItemGroup Label="Development.Aspire">
     <PackageVersion Include="Aspire.Hosting.AppHost" Version="13.2.2" />

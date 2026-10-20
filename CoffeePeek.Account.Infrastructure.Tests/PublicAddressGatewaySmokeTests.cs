@@ -33,7 +33,6 @@ using CoffeePeek.Shared.Auth.Constants;
 using System.Text.Json.Nodes;
 using CoffeePeek.Account.Application.Common.Interfaces;
 using CoffeePeek.Account.Application.Features.User.GetProfile;
-using CoffeePeek.Account.Application.Mapper;
 using CoffeePeek.Account.Domain.Entities.UserAggregate;
 using AccountPhoto = CoffeePeek.Account.Domain.Entities.PhotoMetadata;
 using CoffeePeek.Account.Persistence.Configuration;
@@ -162,7 +161,7 @@ public sealed class PublicAddressGatewaySmokeTests
             {
                 await using var db = Account();
                 return await new GetPublicUserProfileHandler().Handle((GetPublicUserProfileCommand)command,
-                    new UserRepository(db), MapsterConfiguration.CreateMapper(mediaOptions),
+                    new UserRepository(db), Microsoft.Extensions.Options.Options.Create(mediaOptions),
                     new CoffeePeek.Account.Persistence.Profiles.ProfileSocialStore(db, Microsoft.Extensions.Options.Options.Create(mediaOptions)), ct);
             });
 

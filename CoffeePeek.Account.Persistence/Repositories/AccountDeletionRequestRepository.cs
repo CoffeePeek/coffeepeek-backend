@@ -22,10 +22,4 @@ public class AccountDeletionRequestRepository(AccountDbContext dbContext) : IAcc
 
     public async Task Add(AccountDeletionRequest request, CancellationToken ct = default) =>
         await _repository.AddAsync(request, ct);
-
-    public Task Update(AccountDeletionRequest request, CancellationToken ct = default)
-    {
-        _repository.Update(request);
-        return Task.CompletedTask;
-    }
 }

@@ -14,7 +14,7 @@ namespace CoffeePeek.Account.Application.Tests.Features.Auth.OAuth;
 
 public class ExternalAuthServiceTests
 {
-    private readonly Mock<IQueryUserRepository> _queryRepoMock = new();
+    private readonly Mock<IUserRepository> _queryRepoMock = new();
     private readonly Mock<IRoleRepository> _roleRepoMock = new();
     private readonly CancellationToken _ct = CancellationToken.None;
 

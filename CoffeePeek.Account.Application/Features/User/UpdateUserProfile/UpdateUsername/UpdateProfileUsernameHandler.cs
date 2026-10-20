@@ -20,7 +20,6 @@ public static class UpdateUsernameHandler
         var userName = Username.Create(command.Username);
         user.UpdateUsername(userName);
 
-        await userRepository.Update(user, ct);
         await unitOfWork.SaveChangesAsync(ct);
 
         var @event = new UserNameChangedEvent

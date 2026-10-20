@@ -21,7 +21,6 @@ public class UpdateProfileHandler
 
         user.UpdateAbout(command.About);
 
-        await userRepository.Update(user, ct);
 
         await unitOfWork.SaveChangesAsync(ct);
         

@@ -52,7 +52,6 @@ public class UpdateEmailRequestHandlerTest
         @event.UserId.Should().Be(userId);
         @event.Email.Should().Be(newEmail);
         @event.ConfirmationToken.Should().NotBeNullOrEmpty();
-        _userRepositoryMock.Verify(r => r.Update(user, _ct), Times.Once);
         _unitOfWorkMock.Verify(u => u.SaveChangesAsync(_ct), Times.Once);
     }
 

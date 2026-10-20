@@ -118,14 +118,6 @@ public sealed class ProfileAddressService(AccountDbContext db, IOptions<MediaPub
         }
     }
 
-    // D-03: a profile is public iff it is not soft-deleted and not blocked. Email confirmation is deliberately not
-    // required. This is a live read with no cache.
-    private Task<bool> IsVisibleAsync(Guid id, CancellationToken ct) =>
-        db.Users.AsNoTracking().AnyAsync(u => u.Id == id && !u.IsSoftDelete && !u.IsBlocked, ct);
-
-    private static PublicAddressMetadata Metadata(User row) =>
-        new(row.Id, row.PublicSlug!, CanonicalPrefix + row.PublicSlug, row.SlugRevision);
-
     private void RequireEnabled()
     {
         if (!db.PublicAddressesEnabled) throw new ServiceUnavailableException("Public addresses are not enabled.");

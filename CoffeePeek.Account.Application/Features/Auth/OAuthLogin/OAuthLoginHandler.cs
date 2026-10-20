@@ -32,16 +32,7 @@ public static class GoogleLoginHandler
             providerId: payload.Subject,
             ct);
 
-        user.EnsureCanAuthenticate();
-
-        var accessToken = tokenService.GenerateAccessToken(user);
-        var refreshToken = tokenService.GenerateRefreshToken();
-
-        user.AddSession(
-            refreshToken,
-            ttl: TimeSpan.FromDays(options.Value.RefreshTokenLifetimeDays),
-            request.DeviceName,
-            request.IpAddress);
+        var session = AuthSession.Issue(user, tokenService, options.Value, request.DeviceName, request.IpAddress);
 
         try
         {
@@ -53,16 +44,14 @@ public static class GoogleLoginHandler
             // Re-fetch the saved user, issue a fresh session for this login attempt.
             user = await externalAuthService.GetOrCreate(
                 payload.Email, ProviderConsts.GoogleProvider, payload.Subject, ct);
-            accessToken = tokenService.GenerateAccessToken(user);
-            refreshToken = tokenService.GenerateRefreshToken();
-            user.AddSession(refreshToken, TimeSpan.FromDays(options.Value.RefreshTokenLifetimeDays), request.DeviceName, request.IpAddress);
+            session = AuthSession.Issue(user, tokenService, options.Value, request.DeviceName, request.IpAddress);
             await unitOfWork.SaveChangesAsync(ct);
         }
 
         return Response<GoogleLoginResponse>.Success(new GoogleLoginResponse(
-            accessToken,
-            refreshToken,
-            DateTime.UtcNow.AddMinutes(options.Value.AccessTokenLifetimeMinutes),
+            session.AccessToken,
+            session.RefreshToken,
+            session.AccessTokenExpiresAt,
             new GoogleLoginUser
             {
                 Email = user.Credentials.Email,

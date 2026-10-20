@@ -43,7 +43,6 @@ public class UpdatePhoneNumberHandlerTest
         result.Message.Should().Be("Phone number updated successful");
 
         _userRepositoryMock.Verify(repo => repo.GetById(userId, _cancellationToken), Times.Once);
-        _userRepositoryMock.Verify(repo => repo.Update(existingUser, _cancellationToken), Times.Once);
         _unitOfWorkMock.Verify(uow => uow.SaveChangesAsync(_cancellationToken), Times.Once);
 
         existingUser.PhoneNumber!.Value.Should().Be(newPhoneNumber);
@@ -70,7 +69,6 @@ public class UpdatePhoneNumberHandlerTest
 
         _userRepositoryMock.Verify(repo => repo.GetById(userId, _cancellationToken), Times.Once);
         _unitOfWorkMock.Verify(uow => uow.SaveChangesAsync(_cancellationToken), Times.Never);
-        _userRepositoryMock.Verify(repo => repo.Update(It.IsAny<CoffeePeek.Account.Domain.Entities.UserAggregate.User>(), _cancellationToken), Times.Never);
     }
 
     [Fact]
@@ -95,7 +93,6 @@ public class UpdatePhoneNumberHandlerTest
 
         _userRepositoryMock.Verify(repo => repo.GetById(userId, _cancellationToken), Times.Once);
         _unitOfWorkMock.Verify(uow => uow.SaveChangesAsync(_cancellationToken), Times.Never);
-        _userRepositoryMock.Verify(repo => repo.Update(It.IsAny<CoffeePeek.Account.Domain.Entities.UserAggregate.User>(), _cancellationToken), Times.Never);
     }
 
     [Fact]
@@ -120,7 +117,6 @@ public class UpdatePhoneNumberHandlerTest
 
         _userRepositoryMock.Verify(repo => repo.GetById(userId, _cancellationToken), Times.Once);
         _unitOfWorkMock.Verify(uow => uow.SaveChangesAsync(_cancellationToken), Times.Never);
-        _userRepositoryMock.Verify(repo => repo.Update(It.IsAny<CoffeePeek.Account.Domain.Entities.UserAggregate.User>(), _cancellationToken), Times.Never);
     }
 
     [Fact]
@@ -159,7 +155,6 @@ public class UpdatePhoneNumberHandlerTest
             result.Data.Should().StartWith("+375"); // Normalized format should start with +375
             
             repoMock.Verify(repo => repo.GetById(userId, _cancellationToken), Times.Once);
-            repoMock.Verify(repo => repo.Update(existingUser, _cancellationToken), Times.Once);
             unitOfWorkMock.Verify(uow => uow.SaveChangesAsync(_cancellationToken), Times.Once);
         }
     }
@@ -190,7 +185,6 @@ public class UpdatePhoneNumberHandlerTest
         result.Message.Should().Be("Phone number updated successful");
 
         _userRepositoryMock.Verify(repo => repo.GetById(userId, _cancellationToken), Times.Once);
-        _userRepositoryMock.Verify(repo => repo.Update(existingUser, _cancellationToken), Times.Once);
         _unitOfWorkMock.Verify(uow => uow.SaveChangesAsync(_cancellationToken), Times.Once);
 
         existingUser.PhoneNumber!.Value.Should().Be(existingPhoneNumber);
@@ -221,7 +215,6 @@ public class UpdatePhoneNumberHandlerTest
             .WithMessage("Database error");
 
         _userRepositoryMock.Verify(repo => repo.GetById(userId, _cancellationToken), Times.Once);
-        _userRepositoryMock.Verify(repo => repo.Update(existingUser, _cancellationToken), Times.Once);
         _unitOfWorkMock.Verify(uow => uow.SaveChangesAsync(_cancellationToken), Times.Once);
     }
 
@@ -238,7 +231,7 @@ public class UpdatePhoneNumberHandlerTest
             .ReturnsAsync(existingUser);
 
         var exception = new Exception("Repository error");
-        _userRepositoryMock.Setup(repo => repo.Update(existingUser, _cancellationToken))
+        _unitOfWorkMock.Setup(uow => uow.SaveChangesAsync(_cancellationToken))
             .ThrowsAsync(exception);
 
         // Act
@@ -250,8 +243,7 @@ public class UpdatePhoneNumberHandlerTest
             .WithMessage("Repository error");
 
         _userRepositoryMock.Verify(repo => repo.GetById(userId, _cancellationToken), Times.Once);
-        _userRepositoryMock.Verify(repo => repo.Update(existingUser, _cancellationToken), Times.Once);
-        _unitOfWorkMock.Verify(uow => uow.SaveChangesAsync(_cancellationToken), Times.Never);
+        _unitOfWorkMock.Verify(uow => uow.SaveChangesAsync(_cancellationToken), Times.Once);
     }
 
     [Theory]
@@ -283,7 +275,6 @@ public class UpdatePhoneNumberHandlerTest
         result.Message.Should().Be("Phone number updated successful");
 
         _userRepositoryMock.Verify(repo => repo.GetById(userId, _cancellationToken), Times.Once);
-        _userRepositoryMock.Verify(repo => repo.Update(existingUser, _cancellationToken), Times.Once);
         _unitOfWorkMock.Verify(uow => uow.SaveChangesAsync(_cancellationToken), Times.Once);
 
         existingUser.PhoneNumber!.Value.Should().Be(validPhoneNumber);
@@ -315,7 +306,6 @@ public class UpdatePhoneNumberHandlerTest
 
         _userRepositoryMock.Verify(repo => repo.GetById(userId, _cancellationToken), Times.Once);
         _unitOfWorkMock.Verify(uow => uow.SaveChangesAsync(_cancellationToken), Times.Never);
-        _userRepositoryMock.Verify(repo => repo.Update(It.IsAny<CoffeePeek.Account.Domain.Entities.UserAggregate.User>(), _cancellationToken), Times.Never);
     }
 
     private CoffeePeek.Account.Domain.Entities.UserAggregate.User CreateUserMock(Guid userId, string username)

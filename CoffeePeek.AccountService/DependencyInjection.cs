@@ -28,8 +28,7 @@ public static class DependencyInjection
 
         services.AddAuthorizationBuilder()
             .AddPolicy(RoleConsts.Admin, policy => policy.RequireRole(RoleConsts.Admin))
-            .AddPolicy(RoleConsts.Moderator, policy => policy.RequireRole(RoleConsts.Moderator, RoleConsts.Admin))
-            .AddPolicy(RoleConsts.User, policy => policy.RequireRole(RoleConsts.User));
+            .AddPolicy(RoleConsts.Moderator, policy => policy.RequireRole(RoleConsts.Moderator, RoleConsts.Admin));
 
         services.AddExceptionHandler<GlobalExceptionHandler>();
         services.AddProblemDetails();

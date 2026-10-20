@@ -5,5 +5,4 @@ public interface IAccountDeletionRequestRepository
     Task<AccountDeletionRequest?> GetActiveByUserId(Guid userId, CancellationToken ct = default);
     Task<AccountDeletionRequest?> GetByTokenHash(string tokenHash, CancellationToken ct = default);
     Task Add(AccountDeletionRequest request, CancellationToken ct = default);
-    Task Update(AccountDeletionRequest request, CancellationToken ct = default);
 }

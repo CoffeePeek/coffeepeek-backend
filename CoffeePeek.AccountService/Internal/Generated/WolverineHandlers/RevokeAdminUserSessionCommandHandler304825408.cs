@@ -28,17 +28,17 @@ namespace Internal.Generated.WolverineHandlers
 
         public override async System.Threading.Tasks.Task HandleAsync(Wolverine.Runtime.MessageContext context, System.Threading.CancellationToken cancellation)
         {
+            var signalRSessionTerminationNotifier = new CoffeePeek.AccountService.Realtime.SignalRSessionTerminationNotifier(_hubContextOfSessionHubAndSessionHubClient, _loggerOfSignalRSessionTerminationNotifier);
             await using var serviceScope = _serviceScopeFactory.CreateAsyncScope();
             Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<Wolverine.Runtime.ScopedMessageContextHolder>(serviceScope.ServiceProvider).Context = context;
             // This service has been marked as requiring service location independent of Wolverine's ability to use constructor injection of everything else
             var accountDbContext = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<CoffeePeek.Account.Persistence.Configuration.AccountDbContext>(serviceScope.ServiceProvider);
-            var signalRSessionTerminationNotifier = new CoffeePeek.AccountService.Realtime.SignalRSessionTerminationNotifier(_hubContextOfSessionHubAndSessionHubClient, _loggerOfSignalRSessionTerminationNotifier);
             var unitOfWorkOfAccountDbContext = new CoffeePeek.Shared.Persistence.Data.UnitOfWork<CoffeePeek.Account.Persistence.Configuration.AccountDbContext>(accountDbContext);
             var userRepository = new CoffeePeek.Account.Persistence.Repositories.UserRepository(accountDbContext);
             // The actual message body
             var revokeAdminUserSessionCommand = (CoffeePeek.Account.Application.Features.Admin.Users.Sessions.RevokeAdminUserSessionCommand)context.Envelope.Message;
 
-
+            
             // Enroll the DbContext & IMessagingContext in the outgoing Wolverine outbox transaction
             var efCoreEnvelopeTransaction = new Wolverine.EntityFrameworkCore.Internals.EfCoreEnvelopeTransaction(accountDbContext, context, _domainEventScraperIEnumerable);
             await context.EnlistInOutboxAsync(efCoreEnvelopeTransaction).ConfigureAwait(false);
@@ -52,15 +52,15 @@ namespace Internal.Generated.WolverineHandlers
             {
                 System.Diagnostics.Activity.Current?.SetTag("message.handler", "CoffeePeek.Account.Application.Features.Admin.Users.Sessions.RevokeAdminUserSessionHandler");
                 System.Diagnostics.Activity.Current?.SetTag("handler.type", "CoffeePeek.Account.Application.Features.Admin.Users.Sessions.RevokeAdminUserSessionHandler");
-
+                
                 // The actual message execution
                 var outgoing1 = await CoffeePeek.Account.Application.Features.Admin.Users.Sessions.RevokeAdminUserSessionHandler.Handle(revokeAdminUserSessionCommand, userRepository, unitOfWorkOfAccountDbContext, signalRSessionTerminationNotifier, cancellation).ConfigureAwait(false);
 
-
+                
                 // Outgoing, cascaded message
                 await context.EnqueueCascadingAsync(outgoing1).ConfigureAwait(false);
 
-
+                
                 // Added by EF Core Transaction Middleware
                 var result_of_SaveChangesAsync = await accountDbContext.SaveChangesAsync(cancellation).ConfigureAwait(false);
 
@@ -79,6 +79,7 @@ namespace Internal.Generated.WolverineHandlers
     }
 
     // END: RevokeAdminUserSessionCommandHandler304825408
-
-
+    
+    
 }
+

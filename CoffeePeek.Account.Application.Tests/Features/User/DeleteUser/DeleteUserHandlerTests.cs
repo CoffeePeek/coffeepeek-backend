@@ -90,7 +90,6 @@ public class DeleteUserHandlerTests
 
         user.IsSoftDelete.Should().BeFalse();
         user.RefreshTokens.Should().OnlyContain(t => t.IsActive);
-        _userRepoMock.Verify(r => r.Update(It.IsAny<DomainUser>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -138,7 +137,6 @@ public class DeleteUserHandlerTests
 
         request.LastResentAtUtc.Should().Be(Now.AddMinutes(5));
         @event.Should().NotBeNull();
-        _deletionRepoMock.Verify(r => r.Update(request, _ct), Times.Once);
     }
 
     [Fact]

@@ -136,51 +136,6 @@ public class UserCredentialTests
     }
 
     [Fact]
-    public void LinkExternalProvider_WithNoExistingProvider_ShouldSucceed()
-    {
-        // Arrange
-        var email = Email.Create("test@example.com");
-        var credential = UserCredential.CreateBasic(email, "hash", "token");
-
-        // Act
-        credential.LinkExternalProvider("google", "google_123");
-
-        // Assert
-        credential.OAuthProvider.Should().Be("google");
-        credential.ProviderId.Should().Be("google_123");
-    }
-
-    [Fact]
-    public void LinkExternalProvider_WithSameProvider_ShouldSucceed()
-    {
-        // Arrange
-        var email = Email.Create("test@example.com");
-        var credential = UserCredential.CreateExternal(email, "google", "google_123");
-
-        // Act
-        credential.LinkExternalProvider("google", "google_456");
-
-        // Assert
-        credential.OAuthProvider.Should().Be("google");
-        credential.ProviderId.Should().Be("google_456");
-    }
-
-    [Fact]
-    public void LinkExternalProvider_WithDifferentProvider_ShouldThrowDomainException()
-    {
-        // Arrange
-        var email = Email.Create("test@example.com");
-        var credential = UserCredential.CreateExternal(email, "google", "google_123");
-
-        // Act
-        Action act = () => credential.LinkExternalProvider("facebook", "fb_123");
-
-        // Assert
-        act.Should().Throw<DomainException>()
-            .WithMessage("*already linked to another provider*");
-    }
-
-    [Fact]
     public void UpdateEmail_WithValidEmail_ShouldUpdateAndResetConfirmation()
     {
         // Arrange

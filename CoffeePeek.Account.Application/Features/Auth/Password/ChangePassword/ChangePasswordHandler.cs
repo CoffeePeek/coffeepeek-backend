@@ -22,8 +22,7 @@ public static class ChangePasswordHandler
         IOptions<JWTOptions> jwtOptions,
         CancellationToken ct)
     {
-        if (string.IsNullOrWhiteSpace(request.NewPassword) || request.NewPassword.Length < 8)
-            throw new DomainException("Password must be at least 8 characters long");
+        UserCredential.EnsureValidNewPassword(request.NewPassword);
 
         var user = await userRepository.GetById(request.UserId, ct)
                    ?? throw new NotFoundException("User not found.");
@@ -37,7 +36,6 @@ public static class ChangePasswordHandler
         var newHash = passwordHasher.HashPassword(request.NewPassword);
         user.ChangePassword(newHash);
 
-        await userRepository.Update(user, ct);
         await unitOfWork.SaveChangesAsync(ct);
         await revokedUserStore.RevokeAccessTokensAsync(user.Id, jwtOptions.Value, ct);
         await sessionTerminationNotifier.NotifyForceLogoutAsync(user.Id, SessionTerminationReasons.PasswordChanged, ct);

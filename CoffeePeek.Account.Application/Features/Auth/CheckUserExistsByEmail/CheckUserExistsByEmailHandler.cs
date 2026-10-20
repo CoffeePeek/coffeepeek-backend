@@ -8,8 +8,7 @@ public class CheckUserExistsByEmailRequestHandler
 {
     public static async Task<Response<bool>> Handle(
         CheckUserExistsByEmailCommand command,
-        IQueryUserRepository userRepository,
-        EmailExistenceFilter emailExistenceFilter,
+        IUserRepository userRepository,
         CancellationToken cancellationToken)
     {
         var exists = await userRepository.UserExistsByEmail(command.Email, cancellationToken);

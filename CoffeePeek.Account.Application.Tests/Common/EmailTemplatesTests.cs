@@ -8,14 +8,13 @@ using Xunit;
 
 namespace CoffeePeek.Account.Application.Tests.Common;
 
-public class EmailTemplateServiceTests
+public class EmailTemplatesTests
 {
     [Fact]
     public void GetAccountDeletionConfirmationHtml_ShouldEncodeUserControlledValues()
     {
-        var service = new EmailTemplateService();
 
-        var html = service.GetAccountDeletionConfirmationHtml(
+        var html = EmailTemplates.GetAccountDeletionConfirmationHtml(
             "<script>alert('x')</script>",
             "https://coffeepeek.by/confirm?token=<unsafe>");
 
@@ -40,16 +39,15 @@ public class EmailTemplateServiceTests
     public void Templates_ShouldRenderCompleteSafeEmail(
         int kind, string title, string message, string securityFooter, string? buttonText, string? notice)
     {
-        var service = new EmailTemplateService();
         const string username = "<script>alert('x')</script> & \"Арсен\"";
         const string url = "https://coffeepeek.by/action?token=<unsafe>\"&source='mail'";
 
         var html = kind switch
         {
-            0 => service.GetConfirmationHtml(username, url),
-            1 => service.GetPasswordResetHtml(username, url),
-            2 => service.GetAccountDeletionConfirmationHtml(username, url),
-            _ => service.GetWelcomeBackHtml(username)
+            0 => EmailTemplates.GetConfirmationHtml(username, url),
+            1 => EmailTemplates.GetPasswordResetHtml(username, url),
+            2 => EmailTemplates.GetAccountDeletionConfirmationHtml(username, url),
+            _ => EmailTemplates.GetWelcomeBackHtml(username)
         };
 
         html.Should().MatchRegex($"<h1\\b[^>]*>\\s*{Regex.Escape(title)}\\s*</h1>");

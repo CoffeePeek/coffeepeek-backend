@@ -1,30 +1,32 @@
-﻿using CoffeePeek.Account.Application.Common;
 using CoffeePeek.Account.Application.Common.Interfaces;
+using CoffeePeek.Account.Domain.Entities.UserAggregate;
+using CoffeePeek.Account.Domain.Services;
+using CoffeePeek.Shared.Auth.Options;
+using CoffeePeek.Shared.Kernel.Exceptions;
 using CoffeePeek.Shared.Kernel.Response;
+using Microsoft.Extensions.Options;
 
 namespace CoffeePeek.Account.Application.Features.Auth.Login;
 
-public class LoginUserHandler
+public static class LoginUserHandler
 {
     public static async Task<Response<LoginResponse>> Handle(
         LoginUserCommand request,
-        IAuthService authService,
-        EmailExistenceFilter emailExistenceFilter,
+        IUserRepository userRepository,
+        IPasswordHasherService passwordHasher,
+        IJWTTokenService tokens,
+        IOptions<JWTOptions> jwtOptions,
         CancellationToken ct)
     {
-        var result = await authService.LoginAsync(
-            request.Email,
-            request.Password,
-            request.DeviceName,
-            request.IpAddress,
-            ct);
+        var user = await userRepository.GetByEmail(request.Email, ct);
+        if (user is null || !user.Credentials.ValidatePassword(request.Password, passwordHasher))
+            throw new UnauthorizedException("Invalid credentials");
+        if (!user.Credentials.EmailConfirmed)
+            throw new UnauthorizedException("Email is not confirmed");
 
-        emailExistenceFilter.Add(request.Email);
-
-        // Session persistence (RevokeAllSessions + AddSession) is managed by Wolverine's transaction
-        return Response<LoginResponse>.Success(new LoginResponse(
-            result.AccessToken,
-            result.RefreshToken,
-            result.ExpiredAt));
+        // Session persistence (AddSession) is managed by Wolverine's transaction.
+        var (accessToken, refreshToken, expiresAt) =
+            AuthSession.Issue(user, tokens, jwtOptions.Value, request.DeviceName, request.IpAddress);
+        return Response<LoginResponse>.Success(new LoginResponse(accessToken, refreshToken, expiresAt));
     }
 }

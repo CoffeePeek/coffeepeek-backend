@@ -35,10 +35,10 @@ public static class DeleteUserHandler
         var request = await deletionRequestRepository.GetActiveByUserId(command.UserId, ct);
 
         if (request is { Status: AccountDeletionRequestStatus.Processing })
-            return (Response<AccountDeletionRequestResponse>.Success(ToResponse(request)), null);
+            return (Response<AccountDeletionRequestResponse>.Success(AccountDeletionRequestResponse.From(request)), null);
 
         if (request is not null && !request.CanResend(nowUtc, settings.MaxEmailsPerHour))
-            return (Response<AccountDeletionRequestResponse>.Success(ToResponse(request)), null);
+            return (Response<AccountDeletionRequestResponse>.Success(AccountDeletionRequestResponse.From(request)), null);
 
         var (token, tokenHash) = tokenService.Generate();
 
@@ -55,7 +55,6 @@ public static class DeleteUserHandler
         else
         {
             request.Resend(tokenHash, nowUtc, tokenLifetime, resendCooldown, settings.MaxEmailsPerHour);
-            await deletionRequestRepository.Update(request, ct);
         }
 
         await unitOfWork.SaveChangesAsync(ct);
@@ -67,9 +66,6 @@ public static class DeleteUserHandler
             user.Username.Value,
             token);
 
-        return (Response<AccountDeletionRequestResponse>.Success(ToResponse(request)), @event);
+        return (Response<AccountDeletionRequestResponse>.Success(AccountDeletionRequestResponse.From(request)), @event);
     }
-
-    private static AccountDeletionRequestResponse ToResponse(AccountDeletionRequest request) =>
-        new(request.Id, request.Status, request.ExpiresAtUtc, request.ResendAvailableAtUtc);
 }

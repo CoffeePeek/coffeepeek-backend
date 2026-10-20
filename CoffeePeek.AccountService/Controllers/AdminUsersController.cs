@@ -98,16 +98,7 @@ public class AdminUsersController(IMessageBus bus, IUserContext userContext) : C
         CancellationToken cancellationToken)
     {
         var command = new UpdateUserRoleCommand(id, request.Role, userContext.GetUserIdOrThrow());
-        var response = await bus.InvokeAsync<Response<Guid>>(command, cancellationToken);
-
-        if (response.IsSuccess)
-            return Ok(response);
-
-        return response.StatusCode switch
-        {
-            StatusCodes.Status404NotFound => NotFound(response),
-            _ => BadRequest(response)
-        };
+        return Result(await bus.InvokeAsync<Response<Guid>>(command, cancellationToken));
     }
 
     /// <summary>Blocks or unblocks a user. Blocking revokes all active sessions.</summary>
@@ -120,17 +111,8 @@ public class AdminUsersController(IMessageBus bus, IUserContext userContext) : C
         [FromBody] BlockUserRequest request,
         CancellationToken cancellationToken)
     {
-        var response = await bus.InvokeAsync<Response<bool>>(
-            new BlockUserCommand(id, request.Blocked, userContext.GetUserIdOrThrow()), cancellationToken);
-
-        if (response.IsSuccess)
-            return Ok(response);
-
-        return response.StatusCode switch
-        {
-            StatusCodes.Status404NotFound => NotFound(response),
-            _ => BadRequest(response)
-        };
+        return Result(await bus.InvokeAsync<Response<bool>>(
+            new BlockUserCommand(id, request.Blocked, userContext.GetUserIdOrThrow()), cancellationToken));
     }
 
     /// <summary>Soft-deletes a user and revokes all active sessions.</summary>
@@ -140,12 +122,10 @@ public class AdminUsersController(IMessageBus bus, IUserContext userContext) : C
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> DeleteUser(Guid id, CancellationToken cancellationToken)
     {
-        var response = await bus.InvokeAsync<Response<bool>>(
-            new AdminDeleteUserCommand(id, userContext.GetUserIdOrThrow()), cancellationToken);
-
-        if (response.IsSuccess)
-            return Ok(response);
-
-        return response.StatusCode == StatusCodes.Status400BadRequest ? BadRequest(response) : NotFound(response);
+        return Result(await bus.InvokeAsync<Response<bool>>(
+            new AdminDeleteUserCommand(id, userContext.GetUserIdOrThrow()), cancellationToken));
     }
+
+    private ObjectResult Result<T>(Response<T> response) =>
+        StatusCode(response.IsSuccess ? StatusCodes.Status200OK : response.StatusCode ?? StatusCodes.Status400BadRequest, response);
 }

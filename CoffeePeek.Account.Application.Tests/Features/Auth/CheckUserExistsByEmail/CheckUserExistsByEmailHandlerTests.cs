@@ -11,8 +11,7 @@ namespace CoffeePeek.Account.Application.Tests.Features.Auth.CheckUserExistsByEm
 
 public class CheckUserExistsByEmailHandlerTests
 {
-    private readonly Mock<IQueryUserRepository> _userRepoMock = new();
-    private readonly EmailExistenceFilter _filter = new(1000, 0.01);
+    private readonly Mock<IUserRepository> _userRepoMock = new();
     private readonly CancellationToken _ct = CancellationToken.None;
 
     [Fact]
@@ -22,7 +21,7 @@ public class CheckUserExistsByEmailHandlerTests
         _userRepoMock.Setup(r => r.UserExistsByEmail(email, _ct)).ReturnsAsync(true);
 
         var response = await CheckUserExistsByEmailRequestHandler.Handle(
-            new CheckUserExistsByEmailCommand(email), _userRepoMock.Object, _filter, _ct);
+            new CheckUserExistsByEmailCommand(email), _userRepoMock.Object, _ct);
 
         response.IsSuccess.Should().BeTrue();
         response.Data.Should().BeTrue();
@@ -35,24 +34,9 @@ public class CheckUserExistsByEmailHandlerTests
         _userRepoMock.Setup(r => r.UserExistsByEmail(email, _ct)).ReturnsAsync(false);
 
         var response = await CheckUserExistsByEmailRequestHandler.Handle(
-            new CheckUserExistsByEmailCommand(email), _userRepoMock.Object, _filter, _ct);
+            new CheckUserExistsByEmailCommand(email), _userRepoMock.Object, _ct);
 
         response.IsSuccess.Should().BeTrue();
         response.Data.Should().BeFalse();
-    }
-
-    [Fact]
-    public async Task Handle_WhenBloomFilterHitsButDbSaysMissing_ReturnsSuccessFalse()
-    {
-        const string email = "ghost@example.com";
-        _filter.Add(email);
-        _userRepoMock.Setup(r => r.UserExistsByEmail(email, _ct)).ReturnsAsync(false);
-
-        var response = await CheckUserExistsByEmailRequestHandler.Handle(
-            new CheckUserExistsByEmailCommand(email), _userRepoMock.Object, _filter, _ct);
-
-        response.IsSuccess.Should().BeTrue();
-        response.Data.Should().BeFalse();
-        _userRepoMock.Verify(r => r.UserExistsByEmail(email, _ct), Times.Once);
     }
 }

@@ -43,31 +43,6 @@ public partial record PhoneNumber
         return new PhoneNumber(normalized);
     }
 
-    public string GetOperator()
-    {
-        var code = Value.Substring(4, 2);
-
-        return code switch
-        {
-            "25" => "Life:)",
-            "33" => "MTS",
-            "44" => "A1",
-            "17" => "Beltelecom (Minsk)",
-            "29" => GetOperatorFor29(),
-            _ => "Other/Landline"
-        };
-    }
-
-    private string GetOperatorFor29()
-    {
-        var seventhDigit = Value[6];
-        return seventhDigit switch
-        {
-            '2' or '5' or '7' or '8' => "A1",
-            _ => "MTS"
-        };
-    }
-
     [GeneratedRegex(@"^\+375\d{9}$", RegexOptions.Compiled)]
     private static partial Regex BelarusPhoneRegex();
 

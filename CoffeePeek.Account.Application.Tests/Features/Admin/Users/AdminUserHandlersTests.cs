@@ -75,7 +75,6 @@ public class AdminUserHandlersTests
 
         response.IsSuccess.Should().BeTrue();
         _userRepoMock.Verify(r => r.Delete(_target, _ct), Times.Once);
-        _userRepoMock.Verify(r => r.Update(It.IsAny<DomainUser>(), _ct), Times.Never);
         VerifyAccessTokensRevoked();
     }
 

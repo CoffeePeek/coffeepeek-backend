@@ -6,22 +6,9 @@ namespace CoffeePeek.Account.Infrastructure.Tests.Identity;
 
 public class GoogleAuthServiceTests
 {
-    private static GoogleAuthService CreateSut(string clientId, string clientSecret = "")
-    {
-        var options = Microsoft.Extensions.Options.Options.Create(new OAuthGoogleOptions
-        {
-            ClientId = clientId,
-            ClientSecret = clientSecret
-        });
-        return new GoogleAuthService(options, NullLogger<GoogleAuthService>.Instance);
-    }
-
-    [Fact]
-    public void Constructor_WhenClientSecretMissing_DoesNotThrow()
-    {
-        var act = () => CreateSut("client-id.apps.googleusercontent.com");
-        act.Should().NotThrow();
-    }
+    private static GoogleAuthService CreateSut(string clientId) =>
+        new(Microsoft.Extensions.Options.Options.Create(new OAuthGoogleOptions { ClientId = clientId }),
+            NullLogger<GoogleAuthService>.Instance);
 
     [Fact]
     public async Task ValidateIdTokenAsync_WhenClientIdMissing_ReturnsNull()

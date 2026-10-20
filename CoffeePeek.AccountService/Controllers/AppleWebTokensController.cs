@@ -24,8 +24,6 @@ public sealed class AppleWebTokensController(IMessageBus bus, IOptions<JWTOption
 
     /// <summary>Start browser sign-in with Apple.</summary>
     [HttpGet("authorize")]
-    [AllowAnonymous]
-    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
     public async Task<IActionResult> AppleAuthorize(
         [FromServices] IAppleWebAuthService appleWebAuth,
         [FromServices] IConfiguration configuration,
@@ -41,11 +39,9 @@ public sealed class AppleWebTokensController(IMessageBus bus, IOptions<JWTOption
 
     /// <summary>Receive Apple's form POST, establish a CoffeePeek session and return to the website.</summary>
     [HttpPost("callback")]
-    [AllowAnonymous]
     [Consumes("application/x-www-form-urlencoded")]
     [RequestSizeLimit(16384)]
     [RequestFormLimits(ValueLengthLimit = 4096, ValueCountLimit = 10)]
-    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
     public async Task<IActionResult> AppleCallback(
         [FromForm] AppleCallbackRequest request,
         [FromServices] IAppleWebAuthService appleWebAuth,
@@ -62,27 +58,14 @@ public sealed class AppleWebTokensController(IMessageBus bus, IOptions<JWTOption
         if (command is null)
             return Unauthorized(new { message = "Apple sign-in failed or expired. Please restart sign-in." });
 
-        command = command with
-        {
-            DeviceName = Request.Headers.UserAgent.ToString(),
-            IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown"
-        };
-        var response = await bus.InvokeAsync<Response<AppleLoginResponse>>(command, ct);
+        var (device, ip) = HttpContext.SessionClient();
+        var response = await bus.InvokeAsync<Response<AppleLoginResponse>>(command with { DeviceName = device, IpAddress = ip }, ct);
         if (response is not { IsSuccess: true, Data: not null })
             return StatusCode(response.StatusCode ?? StatusCodes.Status401Unauthorized, response);
 
-        Response.Cookies.Append("refreshToken", response.Data.RefreshToken, CreateRefreshTokenCookieOptions());
+        Response.SetRefreshCookie(response.Data.RefreshToken, jwtOptions.Value);
         return Redirect(webClientUrl);
     }
-
-    private CookieOptions CreateRefreshTokenCookieOptions() => new()
-    {
-        HttpOnly = true,
-        Secure = true,
-        SameSite = SameSiteMode.Strict,
-        Path = "/api/tokens",
-        Expires = DateTimeOffset.UtcNow.AddDays(jwtOptions.Value.RefreshTokenLifetimeDays)
-    };
 
     private static CookieOptions AppleStateCookieOptions() => new()
     {

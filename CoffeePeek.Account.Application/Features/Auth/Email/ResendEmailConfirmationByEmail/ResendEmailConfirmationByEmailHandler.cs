@@ -25,15 +25,10 @@ public static class ResendEmailConfirmationByEmailHandler
         if (!tokenStillValid)
         {
             user.Credentials.ResetEmailConfirmedFlow();
-            await userRepository.Update(user, ct);
             await unitOfWork.SaveChangesAsync(ct);
         }
 
-        var @event = new UserRegisteredInternalEvent(
-            user.Id,
-            user.Credentials.Email.Value,
-            user.Username.Value,
-            user.Credentials.EmailConfirmationToken!);
+        var @event = UserRegisteredInternalEvent.For(user);
 
         return (Response.Success(new { message = "If your email is registered and unconfirmed, a confirmation email is on its way!" }), @event);
     }

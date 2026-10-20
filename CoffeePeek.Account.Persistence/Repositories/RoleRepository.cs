@@ -12,9 +12,4 @@ public class RoleRepository(AccountDbContext accountDbContext) : IRoleRepository
     {
         return await _repository.FirstOrDefaultAsync(r => r.Name == roleName);
     }
-
-    public async Task<Role?> GetByIdAsync(Guid id, CancellationToken ct)
-    {
-        return await _repository.FirstOrDefaultAsync(r => r.Id == id, ct);
-    }
 }

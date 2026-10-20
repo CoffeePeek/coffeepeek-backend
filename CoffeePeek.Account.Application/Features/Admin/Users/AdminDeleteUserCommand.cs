@@ -29,7 +29,7 @@ public static class AdminDeleteUserHandler
 
         var user = await userRepository.GetById(command.TargetUserId, ct);
         if (user is null)
-            return Response<bool>.Error("User not found");
+            return Response<bool>.Error(HttpStatusCode.NotFound, "User not found");
 
         user.RevokeAllSessions();
 

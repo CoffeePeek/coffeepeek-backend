@@ -24,14 +24,9 @@ public class UpdateEmailRequestHandler
         // sets EmailConfirmed=false and generates a new EmailConfirmationToken
         user.Credentials.UpdateEmail(request.Email);
 
-        await userRepository.Update(user, ct);
         await unitOfWork.SaveChangesAsync(ct);
 
-        var confirmationEvent = new UserRegisteredInternalEvent(
-            user.Id,
-            user.Credentials.Email.Value,
-            user.Username.Value,
-            user.Credentials.EmailConfirmationToken!);
+        var confirmationEvent = UserRegisteredInternalEvent.For(user);
 
         return (
             UpdateEntityResponse<string>.Success(user.Credentials.Email, "Email updated. A confirmation link has been sent to your new address."),

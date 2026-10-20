@@ -49,7 +49,6 @@ public static class DependencyInjection
         
         // 2. Repository Implementations
         services.AddScoped<IUserRepository, UserRepository>();
-        services.AddScoped<IQueryUserRepository, QueryUserRepository>();
         services.AddScoped<IAdminUserQueryRepository, AdminUserQueryRepository>();
         services.AddScoped<IRoleRepository, RoleRepository>();
         services.AddScoped<IPhotoMetadataRepository, PhotoMetadataRepository>();

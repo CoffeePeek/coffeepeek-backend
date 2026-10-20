@@ -94,6 +94,18 @@ public class PasswordHasherServiceTests
     }
 
     [Fact]
+    public void VerifyPassword_AcceptsHashesStoredByThePreviousKeyDerivationImplementation()
+    {
+        // Existing rows were written with ASP.NET KeyDerivation; both are PBKDF2-HMACSHA256 over UTF-8.
+        const string password = "Pässwörd-☕-123";
+        var salt = Enumerable.Range(1, 16).Select(i => (byte)i).ToArray();
+        var key = Microsoft.AspNetCore.Cryptography.KeyDerivation.KeyDerivation.Pbkdf2(password, salt,
+            Microsoft.AspNetCore.Cryptography.KeyDerivation.KeyDerivationPrf.HMACSHA256, 100_000, 32);
+
+        _sut.VerifyPassword(Convert.ToBase64String([.. salt, .. key]), password).Should().BeTrue();
+    }
+
+    [Fact]
     public void VerifyPassword_WithIncorrectPassword_ShouldReturnFalse()
     {
         // Arrange

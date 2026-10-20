@@ -43,7 +43,6 @@ public class UpdateProfileHandlerTest
         result.Message.Should().Be("Profile updated successfully");
 
         _userRepositoryMock.Verify(repo => repo.GetById(userId, _cancellationToken), Times.Once);
-        _userRepositoryMock.Verify(repo => repo.Update(existingUser, _cancellationToken), Times.Once);
         _unitOfWorkMock.Verify(uow => uow.SaveChangesAsync(_cancellationToken), Times.Once);
 
         existingUser.About.Should().Be(aboutText);
@@ -75,7 +74,6 @@ public class UpdateProfileHandlerTest
         result.Message.Should().Be("Profile updated successfully");
 
         _userRepositoryMock.Verify(repo => repo.GetById(userId, _cancellationToken), Times.Once);
-        _userRepositoryMock.Verify(repo => repo.Update(existingUser, _cancellationToken), Times.Once);
         _unitOfWorkMock.Verify(uow => uow.SaveChangesAsync(_cancellationToken), Times.Once);
 
         existingUser.About.Should().BeNull();
@@ -106,7 +104,6 @@ public class UpdateProfileHandlerTest
         result.Message.Should().Be("Profile updated successfully");
 
         _userRepositoryMock.Verify(repo => repo.GetById(userId, _cancellationToken), Times.Once);
-        _userRepositoryMock.Verify(repo => repo.Update(existingUser, _cancellationToken), Times.Once);
         _unitOfWorkMock.Verify(uow => uow.SaveChangesAsync(_cancellationToken), Times.Once);
 
         existingUser.About.Should().Be("");
@@ -137,7 +134,6 @@ public class UpdateProfileHandlerTest
         result.Message.Should().Be("Profile updated successfully");
 
         _userRepositoryMock.Verify(repo => repo.GetById(userId, _cancellationToken), Times.Once);
-        _userRepositoryMock.Verify(repo => repo.Update(existingUser, _cancellationToken), Times.Once);
         _unitOfWorkMock.Verify(uow => uow.SaveChangesAsync(_cancellationToken), Times.Once);
 
         existingUser.About.Should().Be("   \t\n   ");
@@ -168,7 +164,6 @@ public class UpdateProfileHandlerTest
         result.Message.Should().Be("Profile updated successfully");
 
         _userRepositoryMock.Verify(repo => repo.GetById(userId, _cancellationToken), Times.Once);
-        _userRepositoryMock.Verify(repo => repo.Update(existingUser, _cancellationToken), Times.Once);
         _unitOfWorkMock.Verify(uow => uow.SaveChangesAsync(_cancellationToken), Times.Once);
 
         existingUser.About.Should().Be(aboutText);
@@ -195,7 +190,6 @@ public class UpdateProfileHandlerTest
 
         _userRepositoryMock.Verify(repo => repo.GetById(userId, _cancellationToken), Times.Once);
         _unitOfWorkMock.Verify(uow => uow.SaveChangesAsync(_cancellationToken), Times.Never);
-        _userRepositoryMock.Verify(repo => repo.Update(It.IsAny<CoffeePeek.Account.Domain.Entities.UserAggregate.User>(), _cancellationToken), Times.Never);
     }
 
     [Fact]
@@ -224,8 +218,6 @@ public class UpdateProfileHandlerTest
         result.Message.Should().Be("Profile updated successfully");
 
         _userRepositoryMock.Verify(repo => repo.GetById(userId, _cancellationToken), Times.Once);
-        _userRepositoryMock.Verify(repo => repo.Update(existingUser, _cancellationToken), Times.Once); // Still calls update even if value is same
-        _unitOfWorkMock.Verify(uow => uow.SaveChangesAsync(_cancellationToken), Times.Once);
 
         existingUser.About.Should().Be(aboutText);
     }
@@ -255,7 +247,6 @@ public class UpdateProfileHandlerTest
             .WithMessage("Database error");
 
         _userRepositoryMock.Verify(repo => repo.GetById(userId, _cancellationToken), Times.Once);
-        _userRepositoryMock.Verify(repo => repo.Update(existingUser, _cancellationToken), Times.Once);
         _unitOfWorkMock.Verify(uow => uow.SaveChangesAsync(_cancellationToken), Times.Once);
     }
 
@@ -272,7 +263,7 @@ public class UpdateProfileHandlerTest
             .ReturnsAsync(existingUser);
 
         var exception = new Exception("Repository error");
-        _userRepositoryMock.Setup(repo => repo.Update(existingUser, _cancellationToken))
+        _unitOfWorkMock.Setup(uow => uow.SaveChangesAsync(_cancellationToken))
             .ThrowsAsync(exception);
 
         // Act
@@ -284,8 +275,7 @@ public class UpdateProfileHandlerTest
             .WithMessage("Repository error");
 
         _userRepositoryMock.Verify(repo => repo.GetById(userId, _cancellationToken), Times.Once);
-        _userRepositoryMock.Verify(repo => repo.Update(existingUser, _cancellationToken), Times.Once);
-        _unitOfWorkMock.Verify(uow => uow.SaveChangesAsync(_cancellationToken), Times.Never);
+        _unitOfWorkMock.Verify(uow => uow.SaveChangesAsync(_cancellationToken), Times.Once);
     }
 
     [Theory]
@@ -321,7 +311,6 @@ public class UpdateProfileHandlerTest
         result.Message.Should().Be("Profile updated successfully");
 
         _userRepositoryMock.Verify(repo => repo.GetById(userId, _cancellationToken), Times.Once);
-        _userRepositoryMock.Verify(repo => repo.Update(existingUser, _cancellationToken), Times.Once);
         _unitOfWorkMock.Verify(uow => uow.SaveChangesAsync(_cancellationToken), Times.Once);
 
         existingUser.About.Should().Be(aboutText);

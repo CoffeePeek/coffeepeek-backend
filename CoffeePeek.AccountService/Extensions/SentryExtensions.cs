@@ -12,11 +12,7 @@ internal static class SentryExtensions
     {
         switch (sentryEvent.Exception)
         {
-            case UnauthorizedException:
-            case ForbiddenException:
-            case NotFoundException:
-            case ValidationException:
-            case ConflictException:
+            case ConflictException: // Defaults to no status code, unlike the other 4xx exceptions.
                 return null;
             case BaseException { StatusCode: >= 400 and < 500 }:
                 return null;

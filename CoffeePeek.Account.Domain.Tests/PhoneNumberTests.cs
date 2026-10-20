@@ -140,30 +140,6 @@ public class PhoneNumberTests
         phone.Value.Should().Be("+375445678906");
     }
 
-    [Theory]
-    [InlineData("+375292345678", "A1")]
-    [InlineData("+375295234567", "A1")]
-    [InlineData("+375297234567", "A1")]
-    [InlineData("+375298234567", "A1")]
-    [InlineData("+375291234567", "MTS")]
-    [InlineData("+375293234567", "MTS")]
-    [InlineData("+375294234567", "MTS")]
-    [InlineData("+375296234567", "MTS")]
-    [InlineData("+375299234567", "MTS")]
-    [InlineData("+375441234567", "A1")]
-    [InlineData("+375331234567", "MTS")]
-    public void GetBelarusianOperator_ShouldReturnCorrectOperator(string phoneNumber, string expectedOperator)
-    {
-        // Arrange
-        var phone = PhoneNumber.Create(phoneNumber);
-
-        // Act
-        var BYOperator = phone.GetOperator();
-
-        // Assert
-        BYOperator.Should().Be(expectedOperator);
-    }
-
     [Fact]
     public void ImplicitConversion_FromPhoneNumber_ShouldReturnValue()
     {

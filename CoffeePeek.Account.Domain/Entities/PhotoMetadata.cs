@@ -41,6 +41,4 @@ public class PhotoMetadata : Entity<Guid>
 
         return new PhotoMetadata(fileName, contentType, storageKey, length);
     }
-    
-    public bool IsLargeFile => SizeBytes > 5 * 1024 * 1024; // > 5MB
 }

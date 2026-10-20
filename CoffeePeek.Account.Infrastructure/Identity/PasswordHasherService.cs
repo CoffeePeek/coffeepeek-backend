@@ -1,9 +1,9 @@
-﻿using System.Security.Cryptography;
+using System.Security.Cryptography;
 using CoffeePeek.Account.Domain.Services;
-using Microsoft.AspNetCore.Cryptography.KeyDerivation;
 
 namespace CoffeePeek.Account.Infrastructure.Identity;
 
+/// <summary>Base64(salt || PBKDF2-HMACSHA256(UTF-8 password)); the format of every stored hash.</summary>
 public class PasswordHasherService : IPasswordHasherService
 {
     private const int SaltSize = 16; // 128 bit
@@ -16,19 +16,7 @@ public class PasswordHasherService : IPasswordHasherService
             throw new ArgumentException("Password cannot be empty", nameof(password));
 
         var salt = RandomNumberGenerator.GetBytes(SaltSize);
-
-        var key = KeyDerivation.Pbkdf2(
-            password: password,
-            salt: salt,
-            prf: KeyDerivationPrf.HMACSHA256,
-            iterationCount: Iterations,
-            numBytesRequested: KeySize);
-
-        var hashBytes = new byte[SaltSize + KeySize];
-        Array.Copy(salt, 0, hashBytes, 0, SaltSize);
-        Array.Copy(key, 0, hashBytes, SaltSize, KeySize);
-
-        return Convert.ToBase64String(hashBytes);
+        return Convert.ToBase64String([.. salt, .. DeriveKey(password, salt)]);
     }
 
     public bool VerifyPassword(string hashedPassword, string providedPassword)
@@ -42,19 +30,10 @@ public class PasswordHasherService : IPasswordHasherService
         if (hashBytes.Length != SaltSize + KeySize)
             return false;
 
-        var salt = new byte[SaltSize];
-        Array.Copy(hashBytes, 0, salt, 0, SaltSize);
-
-        var storedKey = new byte[KeySize];
-        Array.Copy(hashBytes, SaltSize, storedKey, 0, KeySize);
-
-        var computedKey = KeyDerivation.Pbkdf2(
-            password: providedPassword,
-            salt: salt,
-            prf: KeyDerivationPrf.HMACSHA256,
-            iterationCount: Iterations,
-            numBytesRequested: KeySize);
-
-        return CryptographicOperations.FixedTimeEquals(storedKey, computedKey);
+        var stored = hashBytes.AsSpan();
+        return CryptographicOperations.FixedTimeEquals(stored[SaltSize..], DeriveKey(providedPassword, stored[..SaltSize]));
     }
+
+    private static byte[] DeriveKey(string password, ReadOnlySpan<byte> salt) =>
+        Rfc2898DeriveBytes.Pbkdf2(password, salt, Iterations, HashAlgorithmName.SHA256, KeySize);
 }

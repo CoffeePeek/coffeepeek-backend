@@ -6,4 +6,8 @@ public record AccountDeletionRequestResponse(
     Guid RequestId,
     AccountDeletionRequestStatus Status,
     DateTime ExpiresAtUtc,
-    DateTime ResendAvailableAtUtc);
+    DateTime ResendAvailableAtUtc)
+{
+    public static AccountDeletionRequestResponse From(AccountDeletionRequest request) =>
+        new(request.Id, request.Status, request.ExpiresAtUtc, request.ResendAvailableAtUtc);
+}

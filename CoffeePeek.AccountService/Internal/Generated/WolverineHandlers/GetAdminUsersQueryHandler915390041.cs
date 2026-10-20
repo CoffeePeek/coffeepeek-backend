@@ -11,14 +11,12 @@ namespace Internal.Generated.WolverineHandlers
     public sealed class GetAdminUsersQueryHandler915390041 : Wolverine.Runtime.Handlers.MessageHandler
     {
         private readonly Microsoft.Extensions.DependencyInjection.IServiceScopeFactory _serviceScopeFactory;
-        private readonly Microsoft.Extensions.Options.IOptions<CoffeePeek.Account.Infrastructure.Options.MinIOOptions> _optionsOfMinIOOptions;
         private readonly Microsoft.Extensions.Options.IOptions<CoffeePeek.Shared.Kernel.Options.MediaPublicUrlOptions> _optionsOfMediaPublicUrlOptions;
         private readonly System.Collections.Generic.IEnumerable<Wolverine.EntityFrameworkCore.IDomainEventScraper> _domainEventScraperIEnumerable;
 
-        public GetAdminUsersQueryHandler915390041(Microsoft.Extensions.DependencyInjection.IServiceScopeFactory serviceScopeFactory, Microsoft.Extensions.Options.IOptions<CoffeePeek.Account.Infrastructure.Options.MinIOOptions> optionsOfMinIOOptions, Microsoft.Extensions.Options.IOptions<CoffeePeek.Shared.Kernel.Options.MediaPublicUrlOptions> optionsOfMediaPublicUrlOptions, System.Collections.Generic.IEnumerable<Wolverine.EntityFrameworkCore.IDomainEventScraper> domainEventScraperIEnumerable)
+        public GetAdminUsersQueryHandler915390041(Microsoft.Extensions.DependencyInjection.IServiceScopeFactory serviceScopeFactory, Microsoft.Extensions.Options.IOptions<CoffeePeek.Shared.Kernel.Options.MediaPublicUrlOptions> optionsOfMediaPublicUrlOptions, System.Collections.Generic.IEnumerable<Wolverine.EntityFrameworkCore.IDomainEventScraper> domainEventScraperIEnumerable)
         {
             _serviceScopeFactory = serviceScopeFactory;
-            _optionsOfMinIOOptions = optionsOfMinIOOptions;
             _optionsOfMediaPublicUrlOptions = optionsOfMediaPublicUrlOptions;
             _domainEventScraperIEnumerable = domainEventScraperIEnumerable;
         }
@@ -31,7 +29,6 @@ namespace Internal.Generated.WolverineHandlers
             Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<Wolverine.Runtime.ScopedMessageContextHolder>(serviceScope.ServiceProvider).Context = context;
             // This service has been marked as requiring service location independent of Wolverine's ability to use constructor injection of everything else
             var accountDbContext = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<CoffeePeek.Account.Persistence.Configuration.AccountDbContext>(serviceScope.ServiceProvider);
-            var mediaUrlProvider = new CoffeePeek.Account.Infrastructure.Media.MediaUrlProvider(_optionsOfMinIOOptions, _optionsOfMediaPublicUrlOptions);
             var adminUserQueryRepository = new CoffeePeek.Account.Persistence.Repositories.AdminUserQueryRepository(accountDbContext);
             // The actual message body
             var getAdminUsersQuery = (CoffeePeek.Account.Application.Features.Admin.Users.GetAdminUsersQuery)context.Envelope.Message;
@@ -52,7 +49,7 @@ namespace Internal.Generated.WolverineHandlers
                 System.Diagnostics.Activity.Current?.SetTag("handler.type", "CoffeePeek.Account.Application.Features.Admin.Users.GetAdminUsersHandler");
                 
                 // The actual message execution
-                var outgoing1 = await CoffeePeek.Account.Application.Features.Admin.Users.GetAdminUsersHandler.Handle(getAdminUsersQuery, adminUserQueryRepository, mediaUrlProvider, cancellation).ConfigureAwait(false);
+                var outgoing1 = await CoffeePeek.Account.Application.Features.Admin.Users.GetAdminUsersHandler.Handle(getAdminUsersQuery, adminUserQueryRepository, _optionsOfMediaPublicUrlOptions, cancellation).ConfigureAwait(false);
 
                 
                 // Outgoing, cascaded message

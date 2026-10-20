@@ -30,27 +30,6 @@ public class UserTests
         user.IsSoftDelete.Should().BeFalse();
     }
 
-    [Fact]
-    public void Register_ShouldRaiseDomainEvent()
-    {
-        // Arrange
-        const string email = "test@example.com";
-        const string username = "testuser";
-        const string passwordHash = "hashed_password";
-
-        // Act
-        var user = User.Register(email, username, passwordHash, Role.Create("User"));
-
-        // Assert
-        var domainEvents = user.GetDomainEvents();
-        domainEvents.Should().ContainSingle();
-        domainEvents.First().Should().BeOfType<UserRegisteredInternalEvent>();
-        
-        var registeredEvent = (UserRegisteredInternalEvent)domainEvents.First();
-        registeredEvent.UserId.Should().Be(user.Id);
-        registeredEvent.Email.Should().Be(email);
-    }
-
     [Theory]
     [InlineData("invalid-email", "username")]
     [InlineData("test@example.com", "ab")] // Username too short

@@ -24,7 +24,6 @@ public static class RevokeAdminUserSessionHandler
         if (!user.RevokeSession(command.SessionId))
             return Response<bool>.Error(HttpStatusCode.NotFound, "Session not found.");
 
-        await userRepository.Update(user, ct);
         await unitOfWork.SaveChangesAsync(ct);
         await sessionTerminationNotifier.NotifyForceLogoutAsync(user.Id, SessionTerminationReasons.SessionRevoked, ct);
 

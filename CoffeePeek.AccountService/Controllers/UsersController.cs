@@ -33,19 +33,19 @@ namespace CoffeePeek.AccountService.Controllers;
 public class UsersController(IMessageBus bus, IUserContext userContext) : ControllerBase
 {
     /// <summary>
-    /// Get user profile by id or current user profile
+    /// Get a user's public profile by id (gateway-trusted callers only)
     /// </summary>
     [HttpGet("/internal/users/{id:guid}")]
     [ApiExplorerSettings(IgnoreApi = true)]
     [ProducesResponseType<Response<PublicUserProfileResponse>>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> GetById(Guid? id,
+    public async Task<IActionResult> GetById(Guid id,
         [FromServices] Microsoft.Extensions.Options.IOptions<CoffeePeek.Shared.Auth.Options.GatewayAuthOptions> options)
     {
         if (!GatewayAuthVerifier.IsTrusted(Request.Headers[CoffeePeek.Shared.Auth.Constants.GatewayHeaderConsts.XGatewayAuth], options.Value.SecretKey))
             return Unauthorized();
-        var command = new GetPublicUserProfileCommand(id ?? userContext.GetUserIdOrThrow());
+        var command = new GetPublicUserProfileCommand(id);
         var response = await bus.InvokeAsync<Response<PublicUserProfileResponse>>(command);
         return Ok(response);
     }

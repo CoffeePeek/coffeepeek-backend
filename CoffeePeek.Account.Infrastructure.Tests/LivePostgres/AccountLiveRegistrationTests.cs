@@ -40,7 +40,7 @@ public sealed class AccountLiveRegistrationTests : IClassFixture<AccountLiveData
             AccessTokenLifetimeMinutes = 15, RefreshTokenLifetimeDays = 30
         });
         Task<Response<GoogleLoginResponse>> Login(AccountDbContext db) => GoogleLoginHandler.Handle(new("live-token"),
-            google.Object, new ExternalAuthService(new QueryUserRepository(db), new RoleRepository(db)),
+            google.Object, new ExternalAuthService(new UserRepository(db), new RoleRepository(db)),
             new JWTTokenService(options), options, new UnitOfWork<AccountDbContext>(db), ct);
         await using var first = fixture.Context();
         await using var transaction = await first.Database.BeginTransactionAsync(ct);

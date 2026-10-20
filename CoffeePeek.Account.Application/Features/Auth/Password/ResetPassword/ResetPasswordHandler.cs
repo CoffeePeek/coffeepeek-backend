@@ -22,8 +22,7 @@ public static class ResetPasswordHandler
         IOptions<JWTOptions> jwtOptions,
         CancellationToken ct)
     {
-        if (string.IsNullOrWhiteSpace(request.NewPassword) || request.NewPassword.Length < 8)
-            throw new DomainException("Password must be at least 8 characters long");
+        UserCredential.EnsureValidNewPassword(request.NewPassword);
 
         var user = await userRepository.GetByPasswordResetToken(request.Token, ct)
                    ?? throw new NotFoundException("Invalid or expired reset token.");
@@ -31,7 +30,6 @@ public static class ResetPasswordHandler
         var newHash = passwordHasher.HashPassword(request.NewPassword);
         user.ResetPassword(request.Token, newHash);
 
-        await userRepository.Update(user, ct);
         await unitOfWork.SaveChangesAsync(ct);
         await revokedUserStore.RevokeAccessTokensAsync(user.Id, jwtOptions.Value, ct);
         await sessionTerminationNotifier.NotifyForceLogoutAsync(user.Id, SessionTerminationReasons.PasswordReset, ct);

@@ -40,13 +40,13 @@ namespace Internal.Generated.WolverineHandlers
             var roleRepository = new CoffeePeek.Account.Persistence.Repositories.RoleRepository(accountDbContext);
             var unitOfWorkOfAccountDbContext = new CoffeePeek.Shared.Persistence.Data.UnitOfWork<CoffeePeek.Account.Persistence.Configuration.AccountDbContext>(accountDbContext);
             var jwtTokenService = new CoffeePeek.Account.Infrastructure.Identity.JWTTokenService(_optionsOfJwtOptions);
-            var queryUserRepository = new CoffeePeek.Account.Persistence.Repositories.QueryUserRepository(accountDbContext);
-            var externalAuthService = new CoffeePeek.Account.Application.Features.Auth.OAuthLogin.ExternalAuthService(queryUserRepository, roleRepository);
+            var userRepository = new CoffeePeek.Account.Persistence.Repositories.UserRepository(accountDbContext);
+            var externalAuthService = new CoffeePeek.Account.Application.Features.Auth.OAuthLogin.ExternalAuthService(userRepository, roleRepository);
             var appleAuthService = new CoffeePeek.Account.Infrastructure.Identity.AppleAuthService(_optionsOfOAuthAppleOptions, _configurationManagerOfOpenIdConnectConfiguration);
             // The actual message body
             var appleLoginCommand = (CoffeePeek.Account.Application.Features.Auth.AppleLogin.AppleLoginCommand)context.Envelope.Message;
 
-
+            
             // Enroll the DbContext & IMessagingContext in the outgoing Wolverine outbox transaction
             var efCoreEnvelopeTransaction = new Wolverine.EntityFrameworkCore.Internals.EfCoreEnvelopeTransaction(accountDbContext, context, _domainEventScraperIEnumerable);
             await context.EnlistInOutboxAsync(efCoreEnvelopeTransaction).ConfigureAwait(false);
@@ -60,15 +60,15 @@ namespace Internal.Generated.WolverineHandlers
             {
                 System.Diagnostics.Activity.Current?.SetTag("message.handler", "CoffeePeek.Account.Application.Features.Auth.AppleLogin.AppleLoginHandler");
                 System.Diagnostics.Activity.Current?.SetTag("handler.type", "CoffeePeek.Account.Application.Features.Auth.AppleLogin.AppleLoginHandler");
-
+                
                 // The actual message execution
-                var outgoing1 = await CoffeePeek.Account.Application.Features.Auth.AppleLogin.AppleLoginHandler.Handle(appleLoginCommand, _appleLoginChallengeStore, appleAuthService, queryUserRepository, externalAuthService, jwtTokenService, _optionsOfJwtOptions, unitOfWorkOfAccountDbContext, cancellation).ConfigureAwait(false);
+                var outgoing1 = await CoffeePeek.Account.Application.Features.Auth.AppleLogin.AppleLoginHandler.Handle(appleLoginCommand, _appleLoginChallengeStore, appleAuthService, userRepository, externalAuthService, jwtTokenService, _optionsOfJwtOptions, unitOfWorkOfAccountDbContext, cancellation).ConfigureAwait(false);
 
-
+                
                 // Outgoing, cascaded message
                 await context.EnqueueCascadingAsync(outgoing1).ConfigureAwait(false);
 
-
+                
                 // Added by EF Core Transaction Middleware
                 var result_of_SaveChangesAsync = await accountDbContext.SaveChangesAsync(cancellation).ConfigureAwait(false);
 
@@ -87,6 +87,7 @@ namespace Internal.Generated.WolverineHandlers
     }
 
     // END: AppleLoginCommandHandler748976870
-
-
+    
+    
 }
+

@@ -1,4 +1,5 @@
 using CoffeePeek.Account.Application.Common.Interfaces;
+using CoffeePeek.Account.Infrastructure.Consumers;
 using CoffeePeek.Account.Infrastructure.Options;
 using Microsoft.Extensions.Options;
 using Resend;
@@ -11,7 +12,7 @@ public sealed class SupportEmailSender(IResend resend, IOptions<SupportOptions> 
     {
         var response = await resend.EmailSendAsync(new EmailMessage
         {
-            From = "CoffeePeek.by <info@coffeepeek.by>",
+            From = AccountEmails.From,
             To = options.Value.Email,
             ReplyTo = email,
             Subject = "CoffeePeek support request",

@@ -97,18 +97,6 @@ public class PasswordResetCredentialTests
     }
 
     [Fact]
-    public void ClearPasswordReset_ClearsTokenAndExpiry()
-    {
-        var credential = UserCredential.CreateBasic(Email.Create("test@example.com"), "hash", "confirm");
-        credential.BeginPasswordReset();
-
-        credential.ClearPasswordReset();
-
-        credential.PasswordResetToken.Should().BeNull();
-        credential.PasswordResetExpiresAt.Should().BeNull();
-    }
-
-    [Fact]
     public void User_ResetPassword_RevokesAllSessions()
     {
         var user = User.Register("test@example.com", "testuser", "hash", Role.Create("User"));

@@ -17,10 +17,6 @@ public static class GetCurrentAccountDeletionRequestHandler
                 "No active account deletion request was found.");
 
         return Response<AccountDeletionRequestResponse>.Success(
-            new AccountDeletionRequestResponse(
-                request.Id,
-                request.Status,
-                request.ExpiresAtUtc,
-                request.ResendAvailableAtUtc));
+            AccountDeletionRequestResponse.From(request));
     }
 }

@@ -8,10 +8,7 @@
 
     <ItemGroup>
         <PackageReference Include="Google.Apis.Auth" />
-        <PackageReference Include="Mapster"  />
-        <PackageReference Include="Mapster.DependencyInjection" />
         <PackageReference Include="Resend" />
-        <PackageReference Include="System.IO.Hashing" />
         <PackageReference Include="WolverineFx" />
     </ItemGroup>
 

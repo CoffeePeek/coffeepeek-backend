@@ -1,7 +1,6 @@
 using CoffeePeek.Shared.Domain.PublicAddresses;
 using System.Text.RegularExpressions;
 using CoffeePeek.Account.Domain.Entities.RoleAggregate;
-using CoffeePeek.Account.Domain.Events;
 using CoffeePeek.Shared.Domain.Entities;
 using CoffeePeek.Shared.Kernel.Exceptions;
 
@@ -52,37 +51,16 @@ public class User : AggregateRoot<Guid>, IPublicSlugOwner
 
     public static User Register(string invalidEmail, string invalidUsername, string passwordHash, Role defaultRole)
     {
-        Email email;
-        Username userName;
-        try
-        {
-            email = Email.Create(invalidEmail);
-            userName = Username.Create(invalidUsername);
-        }
-        catch (DomainException)
-        {
-            throw;
-        }
-        catch (Exception ex) when (ex is not DomainException)
-        {
-            throw new DomainException("Invalid email or username");
-        }
-        
-        var userId = Guid.NewGuid();
-        var token = Guid.NewGuid().ToString("N");
-
+        var email = Email.Create(invalidEmail);
         var user = new User
         {
-            Id = userId,
-            Username = userName,
-            Credentials = UserCredential.CreateBasic(email, passwordHash, token),
+            Id = Guid.NewGuid(),
+            Username = Username.Create(invalidUsername),
+            Credentials = UserCredential.CreateBasic(email, passwordHash, Guid.NewGuid().ToString("N")),
             Statistics = UserStatistics.Empty()
         };
 
         user.AssignRole(defaultRole);
-        
-        user.AddDomainEvent(new UserRegisteredInternalEvent(userId, email.Value, userName, token));
-        
         return user;
     }
 
@@ -230,7 +208,6 @@ public class User : AggregateRoot<Guid>, IPublicSlugOwner
             throw new DomainException("Email already confirmed.");
 
         Credentials = Credentials.ConfirmEmail(token);
-        AddDomainEvent(new EmailConfirmedInternalEvent());
     }
 
     public void ChangePassword(string newHash)

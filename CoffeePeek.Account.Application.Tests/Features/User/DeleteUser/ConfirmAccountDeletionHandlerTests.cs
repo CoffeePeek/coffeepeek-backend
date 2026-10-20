@@ -63,7 +63,6 @@ public class ConfirmAccountDeletionHandlerTests
         response.Data.Status.Should().Be(AccountDeletionRequestStatus.Processing);
         request.ConfirmedAtUtc.Should().Be(Now);
         _userRepository.Verify(x => x.Delete(user, It.IsAny<CancellationToken>()), Times.Once);
-        _userRepository.Verify(x => x.Update(It.IsAny<DomainUser>(), It.IsAny<CancellationToken>()), Times.Never);
         user.RefreshTokens.Should().OnlyContain(x => x.IsRevoked);
         @event.Should().BeEquivalentTo(new AccountDeletionRequestedV1(request.Id, user.Id, request.RequestedAtUtc));
         _revokedUserStore.Verify(

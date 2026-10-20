@@ -20,7 +20,7 @@ public sealed class AppleLoginHandlerTests
 {
     private readonly Mock<IAppleLoginChallengeStore> challenges = new();
     private readonly Mock<IAppleAuthService> apple = new();
-    private readonly Mock<IQueryUserRepository> users = new();
+    private readonly Mock<IUserRepository> users = new();
     private readonly Mock<IExternalAuthService> external = new();
     private readonly Mock<IJWTTokenService> tokens = new();
     private readonly Mock<IUnitOfWork> uow = new();

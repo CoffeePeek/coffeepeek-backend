@@ -13,21 +13,19 @@ public static class RegisterUserHandler
 {
     public static async Task<(CreateEntityResponse, UserRegisteredInternalEvent)> Handle(
         RegisterUserCommand request,
-        IQueryUserRepository userRepository,
+        IUserRepository userRepository,
         IRoleRepository roleRepository,
         IPasswordHasherService passwordHasher,
-        EmailExistenceFilter emailExistenceFilter,
         IUnitOfWork unitOfWork,
         CancellationToken ct)
     {
-        if (!await userRepository.IsEmailUnique(request.Email, ct))
+        if (await userRepository.UserExistsByEmail(request.Email, ct))
             throw new DomainException("Email already exists");
 
         if (!await userRepository.IsUsernameUnique(request.UserName, ct))
             throw new DomainException("Username already exists");
 
-        if (string.IsNullOrWhiteSpace(request.Password) || request.Password.Length < 8)
-            throw new DomainException("Password must be at least 8 characters long");
+        UserCredential.EnsureValidNewPassword(request.Password);
 
         var passwordHash = passwordHasher.HashPassword(request.Password);
         var defaultRole = await roleRepository.GetRoleAsync(RoleConsts.User)
@@ -40,7 +38,6 @@ public static class RegisterUserHandler
             defaultRole);
 
         userRepository.Add(user, ct);
-        emailExistenceFilter.Add(request.Email);
 
         try
         {
@@ -52,11 +49,7 @@ public static class RegisterUserHandler
             throw new DomainException("Email already exists");
         }
 
-        var registeredEvent = new UserRegisteredInternalEvent(
-            user.Id,
-            user.Credentials.Email.Value,
-            user.Username.Value,
-            user.Credentials.EmailConfirmationToken!);
+        var registeredEvent = UserRegisteredInternalEvent.For(user);
 
         return (CreateEntityResponse.Success(), registeredEvent);
     }

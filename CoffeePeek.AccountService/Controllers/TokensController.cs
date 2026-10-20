@@ -1,4 +1,4 @@
-﻿using CoffeePeek.Account.Application.Features.Auth.Login;
+using CoffeePeek.Account.Application.Features.Auth.Login;
 using CoffeePeek.Account.Application.Features.Auth.Logout;
 using CoffeePeek.Account.Application.Features.Auth.OAuthLogin;
 using CoffeePeek.Account.Application.Features.Auth.RefreshToken;
@@ -33,14 +33,10 @@ public class TokensController(
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> Create([FromBody] LoginUserCommand request)
     {
-        var deviceName = Request.Headers.UserAgent.ToString();
-        var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+        var (device, ip) = HttpContext.SessionClient();
+        var response = await bus.InvokeAsync<Response<LoginResponse>>(request with { DeviceName = device, IpAddress = ip });
 
-        var command = request with { DeviceName = deviceName, IpAddress = ipAddress };
-
-        var response = await bus.InvokeAsync<Response<LoginResponse>>(command);
-
-        Response.Cookies.Append("refreshToken", response.Data.RefreshToken, CreateRefreshTokenCookieOptions());
+        Response.SetRefreshCookie(response.Data.RefreshToken, jwtOptions.Value);
 
         return Ok(response);
     }
@@ -54,20 +50,14 @@ public class TokensController(
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> GoogleLogin([FromBody] GoogleLoginCommand request)
     {
-        var command = request with
-        {
-            DeviceName = Request.Headers.UserAgent.ToString(),
-            IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown"
-        };
-
-        var response = await bus.InvokeAsync<Response<GoogleLoginResponse>>(command);
+        var (device, ip) = HttpContext.SessionClient();
+        var response = await bus.InvokeAsync<Response<GoogleLoginResponse>>(request with { DeviceName = device, IpAddress = ip });
 
         if (!response.IsSuccess)
             return StatusCode(response.StatusCode ?? StatusCodes.Status400BadRequest, response);
 
-        if (response.IsSuccess && response.Data is not null)
-            Response.Cookies.Append("refreshToken", response.Data.RefreshToken, CreateRefreshTokenCookieOptions());
-
+        if (response.Data is not null)
+            Response.SetRefreshCookie(response.Data.RefreshToken, jwtOptions.Value);
         return Ok(response);
     }
 
@@ -78,17 +68,10 @@ public class TokensController(
     [ProducesResponseType<Response<NativeTokenResponse>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> CreateNative([FromBody] LoginUserCommand request)
     {
-        var command = request with
-        {
-            DeviceName = Request.Headers.UserAgent.ToString(),
-            IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown"
-        };
-        var response = await bus.InvokeAsync<Response<LoginResponse>>(command);
+        var (device, ip) = HttpContext.SessionClient();
+        var response = await bus.InvokeAsync<Response<LoginResponse>>(request with { DeviceName = device, IpAddress = ip });
 
-        return Ok(ToNativeResponse(
-            response.Data.AccessToken,
-            response.Data.RefreshToken,
-            response.Data.AccessTokenExpiresAt));
+        return Ok(ToNativeResponse(response.Data.AccessToken, response.Data.RefreshToken, response.Data.AccessTokenExpiresAt));
     }
 
     /// <summary>
@@ -99,18 +82,12 @@ public class TokensController(
     [ProducesResponseType<Response<NativeTokenResponse>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> RefreshNative([FromBody] NativeRefreshTokenRequest request)
     {
-        var command = new RefreshTokenCommand(
-            request.RefreshToken,
-            Request.Headers.UserAgent.ToString(),
-            HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown");
-        var response = await bus.InvokeAsync<Response<RefreshTokenResponse>>(command);
+        var (device, ip) = HttpContext.SessionClient();
+        var response = await bus.InvokeAsync<Response<RefreshTokenResponse>>(new RefreshTokenCommand(request.RefreshToken, device, ip));
         if (response is not { IsSuccess: true, Data: not null })
             return StatusCode(response.StatusCode ?? StatusCodes.Status401Unauthorized, response);
 
-        return Ok(ToNativeResponse(
-            response.Data.AccessToken,
-            response.Data.RefreshToken,
-            response.Data.AccessTokenExpiresAt));
+        return Ok(ToNativeResponse(response.Data.AccessToken, response.Data.RefreshToken, response.Data.AccessTokenExpiresAt));
     }
 
     /// <summary>
@@ -125,31 +102,27 @@ public class TokensController(
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> Refresh()
     {
-        if (!Request.Cookies.TryGetValue("refreshToken", out var refreshToken))
+        if (!Request.TryGetRefreshCookie(out var refreshToken))
             return BadRequest(new { message = "Refresh token is required" });
 
-        var deviceName = Request.Headers.UserAgent.ToString();
-        var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
-
-        var command = new RefreshTokenCommand(refreshToken, deviceName, ipAddress);
-
+        var (device, ip) = HttpContext.SessionClient();
         try
         {
-            var response = await bus.InvokeAsync<Response<RefreshTokenResponse>>(command);
+            var response = await bus.InvokeAsync<Response<RefreshTokenResponse>>(new RefreshTokenCommand(refreshToken, device, ip));
 
             if (response is not { IsSuccess: true, Data: not null })
             {
                 // Token reuse: the handler returns (not throws) so the session revocation is committed.
-                DeleteRefreshTokenCookie();
+                Response.DeleteRefreshCookie();
                 return StatusCode(response.StatusCode ?? StatusCodes.Status401Unauthorized, response);
             }
 
-            Response.Cookies.Append("refreshToken", response.Data.RefreshToken, CreateRefreshTokenCookieOptions());
+            Response.SetRefreshCookie(response.Data.RefreshToken, jwtOptions.Value);
             return Ok(response);
         }
         catch (UnauthorizedException)
         {
-            DeleteRefreshTokenCookie();
+            Response.DeleteRefreshCookie();
             throw;
         }
     }
@@ -165,14 +138,12 @@ public class TokensController(
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> Delete()
     {
-        if (!Request.Cookies.TryGetValue("refreshToken", out var refreshToken))
+        if (!Request.TryGetRefreshCookie(out var refreshToken))
             return BadRequest(new { message = "Refresh token is required" });
 
-        var request = new LogoutCommand(userContext.GetUserIdOrThrow(), refreshToken);
+        await bus.InvokeAsync(new LogoutCommand(userContext.GetUserIdOrThrow(), refreshToken));
 
-        await bus.InvokeAsync(request);
-
-        DeleteRefreshTokenCookie();
+        Response.DeleteRefreshCookie();
         return NoContent();
     }
 
@@ -193,31 +164,7 @@ public class TokensController(
         return NoContent();
     }
 
-    private CookieOptions CreateRefreshTokenCookieOptions() => new()
-    {
-        HttpOnly = true,
-        Secure = true,
-        SameSite = SameSiteMode.Strict,
-        Path = "/api/tokens",
-        Expires = DateTimeOffset.UtcNow.AddDays(jwtOptions.Value.RefreshTokenLifetimeDays)
-    };
-
-    private void DeleteRefreshTokenCookie() =>
-        Response.Cookies.Delete("refreshToken", new CookieOptions
-        {
-            HttpOnly = true,
-            Secure = true,
-            SameSite = SameSiteMode.Strict,
-            Path = "/api/tokens"
-        });
-
-    private Response<NativeTokenResponse> ToNativeResponse(
-        string accessToken,
-        string refreshToken,
-        DateTime accessTokenExpiresAt) =>
-        Response<NativeTokenResponse>.Success(new NativeTokenResponse(
-            accessToken,
-            refreshToken,
-            accessTokenExpiresAt,
+    private Response<NativeTokenResponse> ToNativeResponse(string accessToken, string refreshToken, DateTime accessTokenExpiresAt) =>
+        Response<NativeTokenResponse>.Success(new NativeTokenResponse(accessToken, refreshToken, accessTokenExpiresAt,
             DateTime.UtcNow.AddDays(jwtOptions.Value.RefreshTokenLifetimeDays)));
 }

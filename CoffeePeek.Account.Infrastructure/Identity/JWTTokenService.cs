@@ -32,13 +32,7 @@ public class JWTTokenService(IOptions<JWTOptions> options) : IJWTTokenService
         return CreateToken(claims, _options.AccessTokenLifetimeMinutes);
     }
 
-    public string GenerateRefreshToken()
-    {
-        var randomNumber = new byte[32];
-        using var rng = RandomNumberGenerator.Create();
-        rng.GetBytes(randomNumber);
-        return Convert.ToBase64String(randomNumber);
-    }
+    public string GenerateRefreshToken() => Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
 
     private string CreateToken(IEnumerable<Claim> claims, int lifetimeMinutes)
     {

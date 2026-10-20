@@ -22,7 +22,6 @@ public class UpdatePhoneNumberHandler
         var phoneNumber = PhoneNumber.Create(request.PhoneNumber);
         user.UpdatePhoneNumber(phoneNumber);
 
-        await userRepository.Update(user, ct);
 
         await unitOfWork.SaveChangesAsync(ct);
 

@@ -35,10 +35,10 @@ namespace Internal.Generated.WolverineHandlers
             // This service has been marked as requiring service location independent of Wolverine's ability to use constructor injection of everything else
             var accountDbContext = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<CoffeePeek.Account.Persistence.Configuration.AccountDbContext>(serviceScope.ServiceProvider);
             var roleRepository = new CoffeePeek.Account.Persistence.Repositories.RoleRepository(accountDbContext);
-            var queryUserRepository = new CoffeePeek.Account.Persistence.Repositories.QueryUserRepository(accountDbContext);
+            var userRepository = new CoffeePeek.Account.Persistence.Repositories.UserRepository(accountDbContext);
             var unitOfWorkOfAccountDbContext = new CoffeePeek.Shared.Persistence.Data.UnitOfWork<CoffeePeek.Account.Persistence.Configuration.AccountDbContext>(accountDbContext);
             var jwtTokenService = new CoffeePeek.Account.Infrastructure.Identity.JWTTokenService(_optionsOfJwtOptions);
-            var externalAuthService = new CoffeePeek.Account.Application.Features.Auth.OAuthLogin.ExternalAuthService(queryUserRepository, roleRepository);
+            var externalAuthService = new CoffeePeek.Account.Application.Features.Auth.OAuthLogin.ExternalAuthService(userRepository, roleRepository);
             var googleAuthService = new CoffeePeek.Account.Infrastructure.Identity.GoogleAuthService(_optionsOfOAuthGoogleOptions, _loggerOfGoogleAuthService);
             // The actual message body
             var googleLoginCommand = (CoffeePeek.Account.Application.Features.Auth.OAuthLogin.GoogleLoginCommand)context.Envelope.Message;

@@ -54,7 +54,7 @@ public static class ConfirmAccountDeletionHandler
         if (request.Status != AccountDeletionRequestStatus.PendingConfirmation)
         {
             await revokedUserStore.RevokeAccessTokensAsync(request.UserId, jwtOptions.Value, ct);
-            return (Response<AccountDeletionRequestResponse>.Success(ToResponse(request)), null);
+            return (Response<AccountDeletionRequestResponse>.Success(AccountDeletionRequestResponse.From(request)), null);
         }
 
         AccountDeletionRequest.ValidateReason(command.Reason, command.OtherReason);
@@ -81,9 +81,6 @@ public static class ConfirmAccountDeletionHandler
             request.UserId,
             request.RequestedAtUtc);
 
-        return (Response<AccountDeletionRequestResponse>.Success(ToResponse(request)), @event);
+        return (Response<AccountDeletionRequestResponse>.Success(AccountDeletionRequestResponse.From(request)), @event);
     }
-
-    private static AccountDeletionRequestResponse ToResponse(AccountDeletionRequest request) =>
-        new(request.Id, request.Status, request.ExpiresAtUtc, request.ResendAvailableAtUtc);
 }

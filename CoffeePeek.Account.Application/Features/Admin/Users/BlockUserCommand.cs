@@ -36,7 +36,6 @@ public static class BlockUserHandler
 
         user.SetBlocked(command.Blocked);
 
-        await userRepository.Update(user, ct);
         await unitOfWork.SaveChangesAsync(ct);
         if (command.Blocked)
         {
