@@ -47,7 +47,7 @@ namespace Internal.Generated.WolverineHandlers
                 System.Diagnostics.Activity.Current?.SetTag("handler.type", "CoffeePeek.Moderation.Application.Features.ShopIssueReports.ChangeShopIssueReportStatus.ChangeShopIssueReportStatusHandler");
                 
                 // The actual message execution
-                var outgoing1 = await CoffeePeek.Moderation.Application.Features.ShopIssueReports.ChangeShopIssueReportStatus.ChangeShopIssueReportStatusHandler.Handle(changeShopIssueReportStatusCommand, shopIssueReportRepository, unitOfWorkOfModerationDbContext, cancellation).ConfigureAwait(false);
+                var outgoing1 = await CoffeePeek.Moderation.Application.Features.ShopIssueReports.ChangeShopIssueReportStatus.ChangeShopIssueReportStatusHandler.Handle(changeShopIssueReportStatusCommand, shopIssueReportRepository, unitOfWorkOfModerationDbContext, context, cancellation).ConfigureAwait(false);
 
                 
                 // Outgoing, cascaded message

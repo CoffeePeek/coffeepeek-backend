@@ -50,7 +50,7 @@ namespace Internal.Generated.WolverineHandlers
                 System.Diagnostics.Activity.Current?.SetTag("handler.type", "CoffeePeek.Moderation.Application.Features.Roaster.UpdateModerationRoasterStatus.UpdateModerationRoasterStatusHandler");
                 
                 // The actual message execution
-                (var outgoing1, var outgoing2) = await CoffeePeek.Moderation.Application.Features.Roaster.UpdateModerationRoasterStatus.UpdateModerationRoasterStatusHandler.Handle(updateModerationRoasterStatusCommand, moderationRoasterRepository, moderationAuditLogRepository, _mapper, cancellation).ConfigureAwait(false);
+                (var outgoing1, var outgoing2) = await CoffeePeek.Moderation.Application.Features.Roaster.UpdateModerationRoasterStatus.UpdateModerationRoasterStatusHandler.Handle(updateModerationRoasterStatusCommand, moderationRoasterRepository, moderationAuditLogRepository, _mapper, context, cancellation).ConfigureAwait(false);
 
                 
                 // Outgoing, cascaded message

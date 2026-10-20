@@ -26,3 +26,7 @@ LICENSE
 README.md
 # Local dev config holds real credentials; never bake it into images
 **/appsettings.Development.json
+**/*service-account*.json
+**/*firebase-adminsdk*.json
+dev/dev.local.env
+dev/logs/

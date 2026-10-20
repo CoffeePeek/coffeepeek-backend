@@ -56,6 +56,8 @@ public class CheckInModerationDecidedHandlerTests
         Assert.False(checkIn.IsPubliclyVisible);
 
         unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Exactly(3));
+        bus.Verify(b => b.PublishAsync(It.Is<ModerationDecisionChanged>(message => message.UserId == checkIn.UserId
+            && message.SubmissionId == decision.SubmissionId && message.Kind == ModerationSubmissionKind.CheckIn)), Times.Exactly(3));
         bus.Verify(b => b.PublishAsync(It.Is<CheckInCacheInvalidationRequested>(message =>
             message.CheckInId == checkIn.Id && message.ShopId == checkIn.ShopId && message.UserId == checkIn.UserId)),
             Times.Exactly(3));

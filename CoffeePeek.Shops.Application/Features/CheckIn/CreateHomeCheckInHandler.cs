@@ -66,6 +66,7 @@ public static class CreateHomeCheckInHandler
         }
 
         repository.Add(checkIn);
+        await bus.PublishAsync(new CoffeePeek.Contract.Events.Shops.UserCheckInActivityRecorded(command.UserId, checkIn.CreatedAtUtc));
         if (checkIn.Visibility == CheckInVisibility.Public)
             await bus.PublishAsync(CheckInMapping.ModerationRequest(checkIn));
         if (keys.Length > 0)

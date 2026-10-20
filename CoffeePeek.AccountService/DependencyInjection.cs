@@ -1,6 +1,9 @@
 ﻿using CoffeePeek.AccountService.Extensions;
 using CoffeePeek.AccountService.Realtime;
 using CoffeePeek.Account.Application.Common.Interfaces;
+using CoffeePeek.Account.Application.Features.Notifications;
+using CoffeePeek.Account.Infrastructure.Notifications;
+using Microsoft.Extensions.Http.Resilience;
 using CoffeePeek.Shared.Auth.Constants;
 using CoffeePeek.Shared.Auth.Extensions;
 using CoffeePeek.Shared.Web;
@@ -23,6 +26,11 @@ public static class DependencyInjection
         services.AddControllersModule();
         services.AddSignalR();
         services.AddScoped<ISessionTerminationNotifier, SignalRSessionTerminationNotifier>();
+        services.AddHostedService<CoffeePeek.AccountService.Notifications.PushNotificationWorker>();
+        services.AddHttpClient<IPushSender, FcmPushSender>(client => client.Timeout = TimeSpan.FromSeconds(20))
+            .ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler { AllowAutoRedirect = false })
+            .RemoveAllLoggers()
+            .RemoveAllResilienceHandlers();
 
         services.AddHeaderUserContext(configuration);
 

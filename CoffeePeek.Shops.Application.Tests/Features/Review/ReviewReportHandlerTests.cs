@@ -117,6 +117,8 @@ public class ReviewReportHandlerTests
         await ResolveReviewReportHandler.Handle(command, _reports.Object, _checkIns.Object, _uow.Object, _bus.Object, _ct);
         checkIn.DeletedAtUtc.HasValue.Should().Be(delete);
         report.Status.Should().Be(delete ? ReviewReportStatus.CheckInDeleted : ReviewReportStatus.Dismissed);
+        _bus.Verify(x => x.PublishAsync(It.Is<CoffeePeek.Contract.Events.Moderation.ModerationDecisionChanged>(message =>
+            message.UserId == report.ReportedByUserId && message.SubmissionId == report.Id)), Times.Once);
         _uow.Verify(x => x.SaveChangesAsync(_ct), Times.Once);
         _bus.Verify(x => x.PublishAsync(It.Is<CheckInCacheInvalidationRequested>(message =>
             message.CheckInId == checkIn.Id && message.ShopId == checkIn.ShopId && message.UserId == checkIn.UserId)),

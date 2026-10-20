@@ -28,6 +28,10 @@ public static class ResolveReviewReportHandler
                     checkIn.Id, checkIn.UserId, checkIn.DeletedAtUtc!.Value));
             }
             await uow.SaveChangesAsync(ct);
+            await bus.PublishAsync(new CoffeePeek.Contract.Events.Moderation.ModerationDecisionChanged(
+                Guid.NewGuid(), report.ReportedByUserId,
+                CoffeePeek.Contract.Events.Moderation.ModerationSubmissionKind.CheckInReport,
+                report.Id, report.Status.ToString()));
             if (checkIn is not null)
                 await bus.PublishAsync(new CheckInCacheInvalidationRequested(
                     checkIn.Id, checkIn.ShopId, checkIn.UserId));

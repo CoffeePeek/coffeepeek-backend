@@ -303,7 +303,7 @@ jobs:
           PGPASSFILE="$pgpass_file" \
             dotnet test CoffeePeek.Account.Infrastructure.Tests/CoffeePeek.Account.Infrastructure.Tests.csproj \
               --configuration Release --no-build -p:AllowMissingPrunePackageData=true \
-              --filter 'FullyQualifiedName~AccountLiveProfileSocialTests|FullyQualifiedName~AccountLiveAuthorBlockTests' \
+              --filter 'FullyQualifiedName~AccountLiveProfileSocialTests|FullyQualifiedName~AccountLiveAuthorBlockTests|FullyQualifiedName~PushNotificationsLiveTests' \
               --verbosity normal
 
       - name: Setup Python

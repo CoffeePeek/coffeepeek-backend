@@ -47,7 +47,7 @@ namespace Internal.Generated.WolverineHandlers
                 System.Diagnostics.Activity.Current?.SetTag("handler.type", "CoffeePeek.Moderation.Infrastructure.Consumers.ShopChangeRequestApplyFailedHandler");
                 
                 // The actual message execution
-                await CoffeePeek.Moderation.Infrastructure.Consumers.ShopChangeRequestApplyFailedHandler.Handle(shopChangeRequestApplyFailedV1, shopChangeRequestRepository, unitOfWorkOfModerationDbContext, cancellation).ConfigureAwait(false);
+                await CoffeePeek.Moderation.Infrastructure.Consumers.ShopChangeRequestApplyFailedHandler.Handle(shopChangeRequestApplyFailedV1, shopChangeRequestRepository, unitOfWorkOfModerationDbContext, context, cancellation).ConfigureAwait(false);
 
                 
                 // Added by EF Core Transaction Middleware

@@ -113,6 +113,195 @@ namespace CoffeePeek.Account.Persistence.Migrations
                     b.ToTable("AccountDeletionRequests");
                 });
 
+            modelBuilder.Entity("CoffeePeek.Account.Domain.Entities.Notifications.NotificationPreferences", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("Custom")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("Inactivity")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime?>("LastCheckInAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("LastReminderAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("LastSeenAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("Moderation")
+                        .HasColumnType("boolean");
+
+                    b.HasKey("UserId");
+
+                    b.HasIndex("Inactivity", "LastSeenAtUtc");
+
+                    b.ToTable("NotificationPreferences");
+                });
+
+            modelBuilder.Entity("CoffeePeek.Account.Domain.Entities.Notifications.PushDelivery", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Attempts")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("DeviceId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("DeviceRevision")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("FinishedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("LeaseUntilUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("NextAttemptAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("NotificationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Outcome")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.Property<Guid>("Revision")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DeviceId");
+
+                    b.HasIndex("FinishedAtUtc", "NextAttemptAtUtc");
+
+                    b.HasIndex("NotificationId", "DeviceId")
+                        .IsUnique();
+
+                    b.ToTable("PushDeliveries");
+                });
+
+            modelBuilder.Entity("CoffeePeek.Account.Domain.Entities.Notifications.PushDevice", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("Revision")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Token")
+                        .IsRequired()
+                        .HasMaxLength(4096)
+                        .HasColumnType("character varying(4096)");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<DateTime>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique();
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("PushDevices");
+                });
+
+            modelBuilder.Entity("CoffeePeek.Account.Domain.Entities.Notifications.PushNotification", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Body")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<int>("Category")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("EntityId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("EntityType")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.Property<DateTime>("ExpiresAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Status")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ExpiresAtUtc");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("PushNotifications");
+                });
+
+            modelBuilder.Entity("CoffeePeek.Account.Domain.Entities.Notifications.PushNotificationTemplate", b =>
+                {
+                    b.Property<int>("Category")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Body")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.Property<DateTime>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UpdatedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Category");
+
+                    b.ToTable("PushNotificationTemplates");
+                });
+
             modelBuilder.Entity("CoffeePeek.Account.Domain.Entities.PhotoMetadata", b =>
                 {
                     b.Property<Guid>("Id")
@@ -371,6 +560,50 @@ namespace CoffeePeek.Account.Persistence.Migrations
                 });
 
             modelBuilder.Entity("CoffeePeek.Account.Domain.Entities.AccountDeletionRequestAggregate.AccountDeletionRequest", b =>
+                {
+                    b.HasOne("CoffeePeek.Account.Domain.Entities.UserAggregate.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("CoffeePeek.Account.Domain.Entities.Notifications.NotificationPreferences", b =>
+                {
+                    b.HasOne("CoffeePeek.Account.Domain.Entities.UserAggregate.User", null)
+                        .WithOne()
+                        .HasForeignKey("CoffeePeek.Account.Domain.Entities.Notifications.NotificationPreferences", "UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("CoffeePeek.Account.Domain.Entities.Notifications.PushDelivery", b =>
+                {
+                    b.HasOne("CoffeePeek.Account.Domain.Entities.Notifications.PushDevice", null)
+                        .WithMany()
+                        .HasForeignKey("DeviceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("CoffeePeek.Account.Domain.Entities.Notifications.PushNotification", "Notification")
+                        .WithMany()
+                        .HasForeignKey("NotificationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Notification");
+                });
+
+            modelBuilder.Entity("CoffeePeek.Account.Domain.Entities.Notifications.PushDevice", b =>
+                {
+                    b.HasOne("CoffeePeek.Account.Domain.Entities.UserAggregate.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("CoffeePeek.Account.Domain.Entities.Notifications.PushNotification", b =>
                 {
                     b.HasOne("CoffeePeek.Account.Domain.Entities.UserAggregate.User", null)
                         .WithMany()

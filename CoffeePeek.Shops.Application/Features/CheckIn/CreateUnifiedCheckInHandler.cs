@@ -73,6 +73,7 @@ public static class CreateUnifiedCheckInHandler
             }
         }
         repository.Add(checkIn);
+        await bus.PublishAsync(new CoffeePeek.Contract.Events.Shops.UserCheckInActivityRecorded(command.UserId, checkIn.CreatedAtUtc));
         if (keys.Length > 0) await bus.PublishAsync(new CheckInPhotosAttachedEvent(command.UserId, checkIn.Id,
             checkIn.ShopPhotos.OrderBy(p => p.SortIndex).Select(p => p.StorageKey).ToArray(), now));
         if (checkIn.Visibility == CheckInVisibility.Public) await bus.PublishAsync(CheckInMapping.ModerationRequest(checkIn));

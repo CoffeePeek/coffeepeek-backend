@@ -1,4 +1,6 @@
 using CoffeePeek.Contract.Enums;
+using CoffeePeek.Contract.Events.Moderation;
+using Wolverine;
 using CoffeePeek.Moderation.Domain.Aggregates.ShopIssueReportAggregate;
 using CoffeePeek.Shared.Kernel;
 using CoffeePeek.Shared.Kernel.Exceptions;
@@ -12,6 +14,7 @@ public static class ChangeShopIssueReportStatusHandler
         ChangeShopIssueReportStatusCommand command,
         IShopIssueReportRepository repository,
         IUnitOfWork unitOfWork,
+        IMessageBus bus,
         CancellationToken ct)
     {
         var report = await repository.GetById(command.ReportId, ct);
@@ -37,6 +40,10 @@ public static class ChangeShopIssueReportStatusHandler
         }
 
         await unitOfWork.SaveChangesAsync(ct);
+
+        if (oldStatus != (ShopIssueReportStatus)report.Status)
+            await bus.PublishAsync(new ModerationDecisionChanged(Guid.NewGuid(), report.ReportedByUserId,
+                ModerationSubmissionKind.ShopIssue, report.Id, report.Status.ToString()));
 
         return UpdateEntityResponse<ShopIssueReportStatus>.Success(
             (ShopIssueReportStatus)report.Status, oldEntity: oldStatus);
