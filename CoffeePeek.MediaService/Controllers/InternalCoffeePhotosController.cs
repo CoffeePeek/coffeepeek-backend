@@ -29,10 +29,11 @@ public sealed class InternalCoffeePhotosController(IStorageService storage, Medi
         var bytes = buffer.ToArray();
         var format = CoffeePhotoFormat.Detect(bytes);
         if (format is null || format.Value.ContentType != file.ContentType) return BadRequest("Unsupported image or mismatched content type.");
-        var hash = Convert.ToHexStringLower(SHA256.HashData(bytes));
+        var digest = SHA256.HashData(bytes);
+        var hash = Convert.ToHexStringLower(digest);
         var key = $"coffees/{hash}.{format.Value.Extension}";
         var photo = await db.Photos.SingleOrDefaultAsync(p => p.StorageKey == key, ct);
-        if (!await storage.Exists(key, BucketType.Shop, ct))
+        if (await storage.GetObjectSize(key, BucketType.Shop, ct) is null)
         {
             buffer.Position = 0;
             await storage.Put(key, format.Value.ContentType, buffer, bytes.Length, BucketType.Shop, ct);
@@ -41,7 +42,7 @@ public sealed class InternalCoffeePhotosController(IStorageService storage, Medi
         await storage.MarkAsPermanent(key, BucketType.Shop, ct);
         if (photo is null)
         {
-            photo = new PhotoMetadata { Id = new Guid(SHA256.HashData(bytes).AsSpan(0, 16)), FileName = hash + "." + format.Value.Extension,
+            photo = new PhotoMetadata { Id = new Guid(digest.AsSpan(0, 16)), FileName = hash + "." + format.Value.Extension,
                 ContentType = format.Value.ContentType, StorageKey = key, SizeBytes = bytes.Length,
                 BucketType = BucketType.Shop, OwnerType = OwnerType.Coffee, OwnerId = Guid.Empty,
                 UploadedAt = DateTime.UtcNow, Status = PhotoStatus.Confirmed };

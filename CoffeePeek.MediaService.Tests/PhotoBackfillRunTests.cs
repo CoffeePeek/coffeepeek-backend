@@ -1,4 +1,5 @@
 using CoffeePeek.Contract.Dtos.CheckIns;
+using CoffeePeek.Shared.Kernel.Media;
 using CoffeePeek.Contract.Enums;
 using CoffeePeek.MediaService.Services.Backfill;
 using CoffeePeek.MediaService.Services.Variants;
@@ -54,7 +55,7 @@ public sealed class PhotoBackfillRunTests
     {
         var id = Guid.NewGuid();
         var key = $"check-ins/{id:N}.jpg";
-        return new(id, Guid.NewGuid(), Guid.NewGuid(), key, PhotoVariantRecipe.SourceVersion(id, key),
+        return new(id, Guid.NewGuid(), Guid.NewGuid(), key, CheckInPhotoVariantIdentity.SourceVersion(id, key),
             CheckInKind.Shop, false, sortAt, 123, "image/jpeg");
     }
 }

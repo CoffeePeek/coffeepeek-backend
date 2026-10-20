@@ -152,12 +152,6 @@ namespace CoffeePeek.MediaService.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
 
-                    b.Property<DateTime?>("PermalinkExpiresAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime?>("ScheduledDeletionAt")
-                        .HasColumnType("timestamp with time zone");
-
                     b.Property<Guid?>("ShopAttachmentId")
                         .HasColumnType("uuid");
 
@@ -193,8 +187,6 @@ namespace CoffeePeek.MediaService.Migrations
                     b.HasIndex("OwnerType", "OwnerId");
 
                     b.HasIndex("ShopAttachmentId", "ShopAttachmentKind");
-
-                    b.HasIndex("Status", "ScheduledDeletionAt");
 
                     b.ToTable("Photos", null, t =>
                         {

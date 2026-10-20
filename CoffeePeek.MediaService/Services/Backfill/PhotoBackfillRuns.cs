@@ -8,10 +8,9 @@ namespace CoffeePeek.MediaService.Services.Backfill;
 
 /// <summary>Operator-driven archive producer. Each advance is bounded and commits jobs with its checkpoint.</summary>
 public sealed class PhotoBackfillRuns(MediaDbContext db, IPhotoBackfillCandidateSource candidates,
-    TimeProvider? clock = null)
+    TimeProvider time)
 {
     public const int MaxOutstandingArchiveJobs = 200;
-    private readonly TimeProvider time = clock ?? TimeProvider.System;
     private const long ProducerLock = 743801836447201L;
 
     public async Task<PhotoBackfillRun> CreateAsync(CreatePhotoBackfillRun request, CancellationToken ct)

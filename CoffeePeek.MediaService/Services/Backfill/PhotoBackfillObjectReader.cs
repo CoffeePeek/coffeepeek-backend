@@ -4,31 +4,23 @@ using CoffeePeek.MediaService.Configuration;
 using CoffeePeek.Shared.Kernel.Exceptions;
 using Microsoft.Extensions.Options;
 using Minio;
-using Minio.DataModel.Args;
 
 namespace CoffeePeek.MediaService.Services.Backfill;
 
 /// <summary>GetObject-only identity; never provisions buckets, changes policy or copies originals.</summary>
 public sealed class PhotoBackfillObjectReader : IPhotoBackfillObjectReader, IDisposable
 {
-    private static readonly HttpClient Transport = new(new SocketsHttpHandler
-    { AllowAutoRedirect = false, UseCookies = false }) { Timeout = Timeout.InfiniteTimeSpan };
     private readonly IMinioClient client;
     private readonly string bucket;
-    private readonly HttpClient transport;
+    private readonly HttpClient? transport;
     private readonly CheckInStorageState state;
 
+    // The read-only identity is enforced by CheckInPhotoReadOptions validation at startup.
     public PhotoBackfillObjectReader(IOptions<MinIOOptions> storage, IOptions<CheckInPhotoReadOptions> credentials,
         CheckInStorageState state)
     {
-        if (credentials.Value.AccessKey == storage.Value.AccessKey)
-            throw new InvalidOperationException("Archive inspection requires the read-only photo identity.");
-        var endpoint = new Uri(storage.Value.Endpoint);
-        client = new MinioClient().WithEndpoint(endpoint).WithRegion("us-east-1")
-            .WithCredentials(credentials.Value.AccessKey, credentials.Value.SecretKey)
-            .WithSSL(endpoint.Scheme == "https").Build();
+        client = MinioClients.Create(storage.Value.Endpoint, credentials.Value.AccessKey, credentials.Value.SecretKey);
         bucket = storage.Value.CheckInBucketName;
-        transport = Transport;
         this.state = state;
     }
 
@@ -42,10 +34,7 @@ public sealed class PhotoBackfillObjectReader : IPhotoBackfillObjectReader, IDis
         HttpResponseMessage? response = null;
         try
         {
-            var signed = await client.PresignedGetObjectAsync(new PresignedGetObjectArgs()
-                .WithBucket(bucket).WithObject(key).WithExpiry(60)).WaitAsync(ct);
-            using var request = new HttpRequestMessage(HttpMethod.Get, signed);
-            response = await transport.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, ct);
+            response = await PrivatePhotoObjectReader.GetAsync(client, bucket, key, transport, ct);
             if (response.StatusCode == HttpStatusCode.NotFound && await IsMissingObjectAsync(response, ct))
                 throw new PhotoBackfillObjectMissingException();
             if (response.StatusCode != HttpStatusCode.OK)

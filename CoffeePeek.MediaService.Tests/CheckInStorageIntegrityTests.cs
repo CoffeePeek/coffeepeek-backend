@@ -33,7 +33,7 @@ public class CheckInStorageIntegrityTests
             .Callback(() => sourceExists = false).Returns(Task.CompletedTask);
         using var storage = new MinIOStorageService(new MinIOOptions(), client.Object);
         var photoId = Guid.NewGuid();
-        var result = await storage.MoveToCheckInStorageAsync("upload.jpg", photoId, Guid.NewGuid(),
+        var result = await storage.MoveToCheckInStorageAsync("upload.jpg", photoId,
             TestContext.Current.CancellationToken, BucketType.CheckIn);
         result.Should().Be($"check-ins/{photoId:N}.jpg");
         targetBytes.Should().Be("already verified");
@@ -49,7 +49,7 @@ public class CheckInStorageIntegrityTests
         client.Setup(c => c.StatObjectAsync(It.IsAny<StatObjectArgs>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new MinioException("storage unavailable"));
         using var storage = new MinIOStorageService(new MinIOOptions(), client.Object);
-        await FluentActions.Awaiting(() => storage.MoveToCheckInStorageAsync("upload.jpg", Guid.NewGuid(), Guid.NewGuid(),
+        await FluentActions.Awaiting(() => storage.MoveToCheckInStorageAsync("upload.jpg", Guid.NewGuid(),
             TestContext.Current.CancellationToken, BucketType.CheckIn)).Should().ThrowAsync<MinioException>();
         client.Verify(c => c.CopyObjectAsync(It.IsAny<CopyObjectArgs>(), It.IsAny<CancellationToken>()), Times.Never);
         client.Verify(c => c.RemoveObjectAsync(It.IsAny<RemoveObjectArgs>(), It.IsAny<CancellationToken>()), Times.Never);

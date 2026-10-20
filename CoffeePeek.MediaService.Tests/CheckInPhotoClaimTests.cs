@@ -140,7 +140,7 @@ public class CheckInPhotoClaimTests
     public async Task LegacyPublicUpload_IsMovedBeforeTheClaimReturns()
     {
         var photo = Photo("reviews/old", BucketType.Shop); Setup(photo);
-        _storage.Setup(s => s.MoveToCheckInStorageAsync("reviews/old", photo.Id, _checkIn, It.IsAny<CancellationToken>(), BucketType.Shop))
+        _storage.Setup(s => s.MoveToCheckInStorageAsync("reviews/old", photo.Id, It.IsAny<CancellationToken>(), BucketType.Shop))
             .ReturnsAsync("check-ins/private");
         var result = await Claim("reviews/old");
         result.Data!.Single().StorageKey.Should().Be("check-ins/private");
@@ -207,7 +207,7 @@ public class CheckInPhotoClaimTests
     public async Task FreshPrivateUpload_RotatesTheKeyToPreventChangesThroughThePutUrl()
     {
         var photo = Photo("upload-key"); photo.OriginalStorageKey = null; Setup(photo);
-        _storage.Setup(s => s.MoveToCheckInStorageAsync("upload-key", photo.Id, _checkIn, It.IsAny<CancellationToken>(), BucketType.CheckIn))
+        _storage.Setup(s => s.MoveToCheckInStorageAsync("upload-key", photo.Id, It.IsAny<CancellationToken>(), BucketType.CheckIn))
             .ReturnsAsync("immutable-key");
         var result = await Claim("upload-key");
         result.Data!.Single().StorageKey.Should().Be("immutable-key");
@@ -261,7 +261,7 @@ public class CheckInPhotoClaimTests
                 fresh.CheckInId = committed ? _checkIn : null;
                 return Task.FromResult(new List<PhotoMetadata> { fresh });
             });
-        _storage.Setup(s => s.MoveToCheckInStorageAsync("upload", photo.Id, _checkIn, It.IsAny<CancellationToken>(), BucketType.CheckIn))
+        _storage.Setup(s => s.MoveToCheckInStorageAsync("upload", photo.Id, It.IsAny<CancellationToken>(), BucketType.CheckIn))
             .ReturnsAsync(() => { privateBytes = sourceBytes; return "immutable"; });
         _uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).Returns(async () =>
         {
@@ -280,7 +280,7 @@ public class CheckInPhotoClaimTests
         var responses = await Task.WhenAll(winner, retry);
         responses.Should().OnlyContain(r => r.IsSuccess && r.Data!.Single().StorageKey == "immutable");
         lookupCount.Should().Be(2); active.Should().BeFalse(); privateBytes.Should().Be("original");
-        _storage.Verify(s => s.MoveToCheckInStorageAsync(It.IsAny<string>(), It.IsAny<Guid>(), It.IsAny<Guid>(),
+        _storage.Verify(s => s.MoveToCheckInStorageAsync(It.IsAny<string>(), It.IsAny<Guid>(),
             It.IsAny<CancellationToken>(), It.IsAny<BucketType>()), Times.Once);
         _repo.Verify(r => r.ReleaseClaimAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
     }

@@ -17,7 +17,8 @@ public sealed class PhotoVariantPersistenceTests
         using var db = new MediaDbContext(new DbContextOptionsBuilder<MediaDbContext>()
             .UseNpgsql("Host=localhost;Database=not_used").Options);
         Assert.False(db.Database.HasPendingModelChanges());
-        var sql = db.GetService<IMigrator>().GenerateScript("20261008211500_ReserveShopPhotoAttachments");
+        var sql = db.GetService<IMigrator>().GenerateScript("20261008211500_ReserveShopPhotoAttachments",
+            "20261018132514_AddPhotoBackfillRuns");
         Assert.Contains("CREATE TABLE \"PhotoVariantJobs\"", sql);
         Assert.Contains("CREATE TABLE \"PhotoVariants\"", sql);
         Assert.DoesNotContain("ALTER TABLE \"Photos\"", sql);

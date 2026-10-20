@@ -207,7 +207,7 @@ public sealed class ShopsFaultRecoveryLiveTests(ShopsLiveDatabase shops, MediaLi
                 && count > handled && await OutgoingCountAsync(ct) == 0
                 && await IncomingCountAsync(media.Context(false), ct) == 0, ct, resumedReceiver.Process);
             await AssertPhotoAsync(PhotoStatus.Confirmed);
-            Assert.True(await storage.Exists(key, BucketType.Shop, ct));
+            Assert.NotNull(await storage.GetObjectSize(key, BucketType.Shop, ct));
         }
         finally
         {

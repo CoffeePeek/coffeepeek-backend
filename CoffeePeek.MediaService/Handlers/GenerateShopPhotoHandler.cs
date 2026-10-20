@@ -2,7 +2,6 @@
 using CoffeePeek.MediaService.Commands;
 using CoffeePeek.MediaService.Configuration;
 using CoffeePeek.MediaService.Data;
-using CoffeePeek.MediaService.Factories;
 using CoffeePeek.MediaService.Repositories;
 using CoffeePeek.MediaService.Responses;
 using CoffeePeek.MediaService.Services;
@@ -40,7 +39,7 @@ public static class GenerateShopPhotoHandler
                     ct,
                     command.StorageKeyPrefix);
 
-            var metadata = PhotoMetadataFactory.Create(
+            var metadata = PhotoMetadata.Pending(
                 request.FileName, request.ContentType.ToLowerInvariant(), presigned.StorageKey,
                 request.SizeBytes, command.Bucket, OwnerType.Shop, command.OwnerId);
 

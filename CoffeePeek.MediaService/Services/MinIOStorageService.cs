@@ -38,11 +38,11 @@ public class MinIOStorageService : IStorageService, IDisposable
         IOptions<MediaPublicUrlOptions> mediaPublicOptions)
     {
         _options = options.Value;
-        _internalClient = BuildClient(_options.Endpoint);
+        _internalClient = MinioClients.Create(_options.Endpoint, _options.AccessKey, _options.SecretKey);
         var presignEndpoint = !string.IsNullOrWhiteSpace(mediaPublicOptions.Value.PublicEndpoint)
             ? mediaPublicOptions.Value.PublicEndpoint
             : _options.Endpoint;
-        _presignClient = BuildClient(presignEndpoint);
+        _presignClient = MinioClients.Create(presignEndpoint, _options.AccessKey, _options.SecretKey);
     }
 
     public async Task<PresignedPhotoMetaData> GetPresignedUploadUrl(string fileName,
@@ -87,23 +87,6 @@ public class MinIOStorageService : IStorageService, IDisposable
     public Task Put(string storageKey, string contentType, Stream stream, long sizeBytes, BucketType bucketType, CancellationToken ct = default) =>
         _internalClient.PutObjectAsync(new PutObjectArgs().WithBucket(GetBucketName(bucketType)).WithObject(storageKey)
             .WithStreamData(stream).WithObjectSize(sizeBytes).WithContentType(contentType), ct);
-
-    public async Task<bool> Exists(string storageKey, BucketType bucketType, CancellationToken ct = default)
-    {
-        try
-        {
-            var args = new StatObjectArgs()
-                .WithBucket(GetBucketName(bucketType))
-                .WithObject(storageKey);
-
-            await _internalClient.StatObjectAsync(args, ct);
-            return true;
-        }
-        catch (ObjectNotFoundException)
-        {
-            return false;
-        }
-    }
 
     public async Task<long?> GetObjectSize(string storageKey, BucketType bucketType, CancellationToken ct = default)
     {
@@ -156,13 +139,7 @@ public class MinIOStorageService : IStorageService, IDisposable
         if (string.IsNullOrWhiteSpace(bucket) || bucket == _options.ShopBucketName || bucket == _options.UserBucketName)
             return false;
         if (!await _internalClient.BucketExistsAsync(new BucketExistsArgs().WithBucket(bucket), ct)) return false;
-        string? policy;
-        try { policy = await _internalClient.GetPolicyAsync(new GetPolicyArgs().WithBucket(bucket), ct); }
-        catch (MinioException error) when (error.Response?.Code == "NoSuchBucketPolicy")
-        { policy = null; }
-        // Provisioning removes all bucket policies. Any unexpected policy needs operator inspection.
-        var isPrivate = string.IsNullOrWhiteSpace(policy)
-            || JsonNode.Parse(policy)?["Statement"] is JsonArray { Count: 0 };
+        var isPrivate = await MinioClients.HasNoPolicyAsync(_internalClient, bucket, ct);
         measurement.Complete(isPrivate ? "private" : "drift");
         return isPrivate;
     }
@@ -174,49 +151,32 @@ public class MinIOStorageService : IStorageService, IDisposable
             .WithCallbackStream((stream, token) => stream.CopyToAsync(destination, token)), ct);
     }
 
-    public async Task<string> MoveToCheckInStorageAsync(string key, Guid photoId, Guid checkInId, CancellationToken ct = default,
+    public async Task<string> MoveToCheckInStorageAsync(string key, Guid photoId, CancellationToken ct = default,
         BucketType sourceBucket = BucketType.Shop)
     {
         await EnsureCheckInBucketPrivateAsync(ct);
-        var target = await CopyVerifiedCheckInObjectAsync(key, photoId, sourceBucket, verifyExisting: false, ct);
+        var target = await CopyVerifiedCheckInObjectAsync(key, photoId, sourceBucket, ct);
         await MarkAsPermanent(target, BucketType.CheckIn, ct);
         if (sourceBucket == BucketType.CheckIn && key == target) return target;
         if (sourceBucket == BucketType.Shop) await DenyOldObjectAsync(key, ct);
         await Delete(key, sourceBucket, ct);
-        if (await Exists(key, sourceBucket, ct))
+        if (await GetObjectSize(key, sourceBucket, ct) is not null)
             throw new InvalidOperationException("Public photo object could not be removed.");
         return target;
     }
 
-
-    public async Task<string> CopyHistoricalToCheckInStorageAsync(string key, Guid photoId, Guid checkInId, CancellationToken ct = default,
-        BucketType sourceBucket = BucketType.Shop)
-    {
-        if (sourceBucket is not (BucketType.Shop or BucketType.CheckIn)
-            || string.IsNullOrWhiteSpace(key) || photoId == Guid.Empty || checkInId == Guid.Empty)
-            throw new InvalidOperationException("Historical copies require a valid object, photo, check-in and shop/private source.");
-        await EnsureCheckInBucketPrivateAsync(ct);
-        var target = await CopyVerifiedCheckInObjectAsync(key, photoId, sourceBucket, verifyExisting: true, ct);
-        await MarkAsPermanent(target, BucketType.CheckIn, ct);
-        if (sourceBucket == BucketType.Shop) await DenyOldObjectAsync(key, ct, anonymousOnly: true);
-        return target;
-    }
-
-    private async Task<string> CopyVerifiedCheckInObjectAsync(string key, Guid photoId, BucketType sourceBucket,
-        bool verifyExisting, CancellationToken ct)
+    private async Task<string> CopyVerifiedCheckInObjectAsync(string key, Guid photoId, BucketType sourceBucket, CancellationToken ct)
     {
         // A photo-owned destination survives a failed DB save and a retry with a new visit ID.
         var target = $"check-ins/{photoId:N}{Path.GetExtension(key)}";
-        var targetSize = await GetObjectSize(target, BucketType.CheckIn, ct);
-        // Live uploads may still change; keep their first private copy. Historical archives must match on every retry.
-        if (targetSize != null && !verifyExisting) return target;
+        // Live uploads may still change; keep their first private copy.
+        if (await GetObjectSize(target, BucketType.CheckIn, ct) != null) return target;
         var sourceSize = await GetObjectSize(key, sourceBucket, ct)
             ?? throw new InvalidOperationException("Photo object was not found.");
         var sourceHash = await HashAsync(key, sourceBucket, ct);
-        if (targetSize == null)
-            await _internalClient.CopyObjectAsync(new CopyObjectArgs().WithBucket(GetBucketName(BucketType.CheckIn))
-                .WithObject(target).WithCopyObjectSource(new CopySourceObjectArgs()
-                    .WithBucket(GetBucketName(sourceBucket)).WithObject(key)), ct);
+        await _internalClient.CopyObjectAsync(new CopyObjectArgs().WithBucket(GetBucketName(BucketType.CheckIn))
+            .WithObject(target).WithCopyObjectSource(new CopySourceObjectArgs()
+                .WithBucket(GetBucketName(sourceBucket)).WithObject(key)), ct);
         var targetHash = await HashAsync(target, BucketType.CheckIn, ct);
         if (await GetObjectSize(target, BucketType.CheckIn, ct) != sourceSize
             || !CryptographicOperations.FixedTimeEquals(sourceHash, targetHash))
@@ -224,26 +184,20 @@ public class MinIOStorageService : IStorageService, IDisposable
         return target;
     }
 
-    public static string BuildObjectDenyPolicy(string existingPolicy, string bucket, string key, bool anonymousOnly = false)
+    public static string BuildObjectDenyPolicy(string existingPolicy, string bucket, string key)
     {
         if (key.IndexOfAny(['*', '?']) >= 0)
             throw new InvalidOperationException("Wildcard object keys require an explicit historical storage policy.");
         var policy = JsonNode.Parse(existingPolicy)?.AsObject() ?? throw new InvalidOperationException("Invalid bucket policy.");
         var statements = policy["Statement"]?.AsArray() ?? throw new InvalidOperationException("Invalid bucket policy statements.");
-        var sid = "CheckInPrivate" + (anonymousOnly ? "Anonymous" : "")
-            + Convert.ToHexString(SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(key)))[..24];
+        var sid = "CheckInPrivate" + Convert.ToHexString(SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(key)))[..24];
         if (!statements.Any(statement => statement?["Sid"]?.GetValue<string>() == sid))
-        {
-            var statement = new JsonObject { ["Sid"] = sid, ["Effect"] = "Deny", ["Principal"] = "*",
-                ["Action"] = new JsonArray("s3:GetObject", "s3:GetObjectVersion"), ["Resource"] = new JsonArray($"arn:aws:s3:::{bucket}/{key}") };
-            if (anonymousOnly)
-                statement["Condition"] = new JsonObject { ["StringEquals"] = new JsonObject { ["aws:PrincipalType"] = "Anonymous" } };
-            statements.Add(statement);
-        }
+            statements.Add(new JsonObject { ["Sid"] = sid, ["Effect"] = "Deny", ["Principal"] = "*",
+                ["Action"] = new JsonArray("s3:GetObject", "s3:GetObjectVersion"), ["Resource"] = new JsonArray($"arn:aws:s3:::{bucket}/{key}") });
         return policy.ToJsonString();
     }
 
-    private async Task DenyOldObjectAsync(string key, CancellationToken ct, bool anonymousOnly = false)
+    private async Task DenyOldObjectAsync(string key, CancellationToken ct)
     {
         await PolicyLock.WaitAsync(ct);
         try
@@ -251,16 +205,9 @@ public class MinIOStorageService : IStorageService, IDisposable
             var bucket = GetBucketName(BucketType.Shop);
             var policy = await _internalClient.GetPolicyAsync(new GetPolicyArgs().WithBucket(bucket), ct);
             await _internalClient.SetPolicyAsync(new SetPolicyArgs().WithBucket(bucket)
-                .WithPolicy(BuildObjectDenyPolicy(policy, bucket, key, anonymousOnly)), ct);
+                .WithPolicy(BuildObjectDenyPolicy(policy, bucket, key)), ct);
         }
         finally { PolicyLock.Release(); }
-    }
-
-    /// <summary>Retire historical public check-in bytes and deny old object/version locators.</summary>
-    public async Task DeleteHistoricalCheckInObjectAsync(string key, CancellationToken ct = default)
-    {
-        await DenyOldObjectAsync(key, ct);
-        await Delete(key, BucketType.Shop, ct);
     }
 
     private async Task<byte[]> HashAsync(string key, BucketType bucket, CancellationToken ct)
@@ -269,21 +216,6 @@ public class MinIOStorageService : IStorageService, IDisposable
         await _internalClient.GetObjectAsync(new GetObjectArgs().WithBucket(GetBucketName(bucket)).WithObject(key)
             .WithCallbackStream(async (stream, token) => { hash = await SHA256.HashDataAsync(stream, token); }), ct);
         return hash;
-    }
-
-    private IMinioClient BuildClient(string endpoint)
-    {
-        var uri = new Uri(endpoint);
-        var builder = new MinioClient()
-            .WithEndpoint(uri)
-            .WithCredentials(_options.AccessKey, _options.SecretKey);
-
-        if (uri.Scheme == Uri.UriSchemeHttps)
-        {
-            builder = builder.WithSSL();
-        }
-
-        return builder.Build();
     }
 
     private string GetBucketName(BucketType type)

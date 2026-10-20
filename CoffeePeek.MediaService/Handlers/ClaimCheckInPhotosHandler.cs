@@ -40,39 +40,37 @@ public class ClaimCheckInPhotosHandler(IPhotoRepository repository, IStorageServ
 
         // Same upload-set retries share a canonical ID. Retain ambiguous reservations;
         // a failing attempt must never compensate a concurrent successful create.
-        {
-            await storage.EnsureCheckInBucketPrivateAsync(ct);
-            foreach (var photo in ordered)
-                if (!await repository.TryClaimAsync(photo!.Id, ownerId, request.CheckInId, ct))
-                    throw new InvalidOperationException("Photo was claimed by another check-in.");
+        await storage.EnsureCheckInBucketPrivateAsync(ct);
+        foreach (var photo in ordered)
+            if (!await repository.TryClaimAsync(photo!.Id, ownerId, request.CheckInId, ct))
+                throw new InvalidOperationException("Photo was claimed by another check-in.");
 
-            var result = new List<ClaimedCheckInPhotoDto>();
-            for (var i = 0; i < ordered.Length; i++)
+        var result = new List<ClaimedCheckInPhotoDto>();
+        for (var i = 0; i < ordered.Length; i++)
+        {
+            var photo = ordered[i]!;
+            photo.CheckInId = request.CheckInId;
+            photo.ClaimedAtUtc = DateTime.UtcNow;
+            if (photo.OriginalStorageKey == null || photo.BucketType == BucketType.Shop)
             {
-                var photo = ordered[i]!;
-                photo.CheckInId = request.CheckInId;
-                photo.ClaimedAtUtc = DateTime.UtcNow;
-                if (photo.OriginalStorageKey == null || photo.BucketType == BucketType.Shop)
-                {
-                    photo.OriginalStorageKey ??= photo.StorageKey;
-                    photo.StorageKey = await storage.MoveToCheckInStorageAsync(photo.StorageKey, photo.Id, request.CheckInId, ct, photo.BucketType);
-                    photo.BucketType = BucketType.CheckIn;
-                    await unitOfWork.SaveChangesAsync(ct);
-                }
-                var size = await storage.GetObjectSize(photo.StorageKey, BucketType.CheckIn, ct)
-                    ?? throw new InvalidOperationException("Photo was not uploaded.");
-                if (request.StorageKeys[i] == request.DrinkPhotoStorageKey)
-                {
-                    // Validate the immutable copy, not a live upload URL that can still replace bytes.
-                    if (!await DrinkPhotoValidation.IsValidAsync(photo, size, storage, ct))
-                        return Response<List<ClaimedCheckInPhotoDto>>.Error("DrinkPhoto must be a transparent PNG up to 768px and 4 MiB.");
-                }
-                photo.SizeBytes = size;
-                result.Add(new ClaimedCheckInPhotoDto(photo.Id, request.StorageKeys[i], photo.StorageKey,
-                    photo.FileName, photo.ContentType, size));
+                photo.OriginalStorageKey ??= photo.StorageKey;
+                photo.StorageKey = await storage.MoveToCheckInStorageAsync(photo.StorageKey, photo.Id, ct, photo.BucketType);
+                photo.BucketType = BucketType.CheckIn;
+                await unitOfWork.SaveChangesAsync(ct);
             }
-            await unitOfWork.SaveChangesAsync(ct);
-            return Response<List<ClaimedCheckInPhotoDto>>.Success(result);
+            var size = await storage.GetObjectSize(photo.StorageKey, BucketType.CheckIn, ct)
+                ?? throw new InvalidOperationException("Photo was not uploaded.");
+            if (request.StorageKeys[i] == request.DrinkPhotoStorageKey)
+            {
+                // Validate the immutable copy, not a live upload URL that can still replace bytes.
+                if (!await DrinkPhotoValidation.IsValidAsync(photo, size, storage, ct))
+                    return Response<List<ClaimedCheckInPhotoDto>>.Error("DrinkPhoto must be a transparent PNG up to 768px and 4 MiB.");
+            }
+            photo.SizeBytes = size;
+            result.Add(new ClaimedCheckInPhotoDto(photo.Id, request.StorageKeys[i], photo.StorageKey,
+                photo.FileName, photo.ContentType, size));
         }
+        await unitOfWork.SaveChangesAsync(ct);
+        return Response<List<ClaimedCheckInPhotoDto>>.Success(result);
     }
 }

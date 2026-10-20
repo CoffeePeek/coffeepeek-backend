@@ -1,4 +1,5 @@
 using System.Net;
+using CoffeePeek.Shared.Kernel.Media;
 using CoffeePeek.MediaService.Configuration;
 using CoffeePeek.MediaService.Controllers;
 using CoffeePeek.MediaService.Data;
@@ -38,7 +39,7 @@ public sealed class PhotoVariantHttpTests
             .Returns<string, Stream, CancellationToken>((_, stream, token) => stream.WriteAsync(new byte[123], token).AsTask());
         builder.Services.AddSingleton(reader.Object);
         await using var app = builder.Build(); app.MapControllers();
-        var source = PhotoVariantRecipe.SourceVersion(photoId, "original");
+        var source = CheckInPhotoVariantIdentity.SourceVersion(photoId, "original");
         using (var scope = app.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<MediaDbContext>();

@@ -2,11 +2,9 @@
 using CoffeePeek.MediaService.Commands;
 using CoffeePeek.MediaService.Configuration;
 using CoffeePeek.MediaService.Data;
-using CoffeePeek.MediaService.Factories;
 using CoffeePeek.MediaService.Repositories;
 using CoffeePeek.MediaService.Responses;
 using CoffeePeek.MediaService.Services;
-using CoffeePeek.Shared.Kernel;
 using CoffeePeek.Shared.Kernel.Exceptions;
 using CoffeePeek.Shared.Kernel.Response;
 
@@ -26,7 +24,7 @@ public static class GenerateAvatarUploadHandler
         var presigned = await storageService
             .GetPresignedUploadUrl(command.FileName, command.ContentType, BucketType.User, ct);
 
-        var metadata = PhotoMetadataFactory.Create(
+        var metadata = PhotoMetadata.Pending(
             command.FileName, command.ContentType, presigned.StorageKey,
             command.SizeBytes, BucketType.User, OwnerType.User, command.OwnerId);
 

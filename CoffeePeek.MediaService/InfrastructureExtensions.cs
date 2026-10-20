@@ -3,7 +3,6 @@ using CoffeePeek.MediaService.Data;
 using CoffeePeek.MediaService.Handlers;
 using CoffeePeek.MediaService.Repositories;
 using CoffeePeek.MediaService.Services;
-using CoffeePeek.Shared.Auth.Constants;
 using CoffeePeek.Shared.Auth.Extensions;
 using CoffeePeek.Shared.Kernel;
 using CoffeePeek.Shared.Kernel.Extentions;
@@ -50,10 +49,6 @@ public static class InfrastructureExtensions
         {
             options.AddDocumentTransformer<BearerSecurityTransformer>();
         });
-
-        services.AddAuthorizationBuilder()
-            .AddPolicy(RoleConsts.Admin, policy => policy.RequireRole(RoleConsts.Admin))
-            .AddPolicy(RoleConsts.User, policy => policy.RequireRole(RoleConsts.User));
 
         if (builder.Environment.IsDevelopment())
         {
@@ -129,11 +124,8 @@ public static class InfrastructureExtensions
         services.AddOptions<CoffeeImportAuthOptions>().BindConfiguration(nameof(CoffeeImportAuthOptions))
             .Validate(o => o.Token.Length == 0 || o.Token.Length >= 32).ValidateOnStart();
 
-        var handlersAssembly = typeof(ConfirmPhotoHandler).Assembly;
-        builder.AddWolverine(
-            typeof(InfrastructureExtensions).Assembly,
-            [handlersAssembly],
-            [typeof(MediaDbContext)]);
+        // Handlers live in the application assembly, which Wolverine always scans.
+        builder.AddWolverine(typeof(InfrastructureExtensions).Assembly, [], [typeof(MediaDbContext)]);
 
         return builder;
     }

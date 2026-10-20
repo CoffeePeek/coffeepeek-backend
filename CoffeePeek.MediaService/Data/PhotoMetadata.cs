@@ -36,13 +36,6 @@ public class PhotoMetadata
     [MaxLength(255)]
     public string? OriginalStorageKey { get; set; }
 
-    public DateTime? PermalinkExpiresAt { get; set; }
-
-    /// <summary>
-    /// When the photo is scheduled for deletion (for replaced photos).
-    /// </summary>
-    public DateTime? ScheduledDeletionAt { get; set; }
-
     /// <summary>
     /// When the photo was actually deleted from storage.
     /// </summary>
@@ -50,11 +43,11 @@ public class PhotoMetadata
 
     public bool IsExpired => Status == PhotoStatus.Pending && UploadedAt < DateTime.UtcNow.AddHours(-24);
 
-    /// <summary>
-    /// Checks if this photo is scheduled for deletion and the delay has passed.
-    /// </summary>
-    public bool IsReadyForDeletion(DateTime utcNow) =>
-        Status == PhotoStatus.PendingDeletion &&
-        ScheduledDeletionAt.HasValue &&
-        ScheduledDeletionAt.Value <= utcNow;
+    public static PhotoMetadata Pending(string fileName, string contentType, string storageKey, long sizeBytes,
+        BucketType bucketType, OwnerType ownerType, Guid ownerId) => new()
+    {
+        Id = Guid.NewGuid(), FileName = fileName, ContentType = contentType, StorageKey = storageKey,
+        SizeBytes = sizeBytes, BucketType = bucketType, OwnerType = ownerType, OwnerId = ownerId,
+        Status = PhotoStatus.Pending, UploadedAt = DateTime.UtcNow
+    };
 }

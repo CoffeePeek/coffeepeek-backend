@@ -1,5 +1,3 @@
-using CoffeePeek.Shared.Kernel.Media;
-
 namespace CoffeePeek.MediaService.Services.Variants;
 
 public static class PhotoVariantRecipe
@@ -8,9 +6,6 @@ public static class PhotoVariantRecipe
     public const int Version = 1;
     public static readonly IReadOnlyDictionary<string, int> Sizes =
         new Dictionary<string, int> { ["thumb"] = 320, ["feed"] = 960, ["detail"] = 1600 }.AsReadOnly();
-
-    public static string SourceVersion(Guid photoId, string key) =>
-        CheckInPhotoVariantIdentity.SourceVersion(photoId, key);
 
     public static string Preset(string purpose, string format)
     {
