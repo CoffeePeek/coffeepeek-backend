@@ -44,7 +44,7 @@ public sealed class PushNotificationStore(AccountDbContext db, TimeProvider time
                 device.Token = token;
                 device.TokenHash = hash;
                 device.UpdatedAtUtc = Now;
-                (await PreferencesAsync(userId, ct)).RecordActivity(Now, false);
+                await PreferencesAsync(userId, ct);
                 await db.SaveChangesAsync(ct);
             }, ct), ct);
     }

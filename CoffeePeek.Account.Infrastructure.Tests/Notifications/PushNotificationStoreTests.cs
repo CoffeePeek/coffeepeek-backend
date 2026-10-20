@@ -67,7 +67,12 @@ public sealed class PushNotificationStoreTests
         var installation = Guid.NewGuid();
         await store.RegisterDeviceAsync(user.Id, installation, "old-token", Ct);
         await store.EnqueueAsync(Notification(user.Id), Ct);
+        var preferences = await db.NotificationPreferences.SingleAsync(Ct);
+        var lastVisit = DateTime.UtcNow.AddDays(-8);
+        preferences.LastSeenAtUtc = lastVisit;
+        await db.SaveChangesAsync(Ct);
         await store.RegisterDeviceAsync(user.Id, installation, "refreshed-token", Ct);
+        Assert.Equal(lastVisit, preferences.LastSeenAtUtc);
         var dispatch = Assert.IsType<PushDispatch>(await store.ClaimAsync(Ct));
         Assert.Equal("refreshed-token", dispatch.Token);
         await store.RegisterDeviceAsync(user.Id, installation, "latest-token", Ct);
