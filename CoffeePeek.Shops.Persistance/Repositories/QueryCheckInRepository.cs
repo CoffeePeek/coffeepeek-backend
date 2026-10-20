@@ -17,7 +17,7 @@ public class QueryCheckInRepository(ShopsDbContext dbContext) : IQueryCheckInRep
         // Serialize eligibility and votes with edit/delete/moderation on the SAME canonical row.
         // The unique vote key still makes duplicate requests idempotent.
         await dbContext.Database.ExecuteSqlInterpolatedAsync($"SELECT 1 FROM \"CanonicalCheckIns\" WHERE \"Id\" = {id} FOR UPDATE", ct);
-        var eligible = await Queries.CheckInEligibility.Public(dbContext).AnyAsync(c => c.Id == id && c.UserId != userId, ct);
+        var eligible = await Queries.CheckInEligibility.Public(dbContext).AnyAsync(c => c.Id == id, ct);
         if (!eligible) throw new CoffeePeek.Shared.Kernel.Exceptions.NotFoundException("Check-in not found.");
         var changed = helpful
             ? await dbContext.Database.ExecuteSqlInterpolatedAsync($"""

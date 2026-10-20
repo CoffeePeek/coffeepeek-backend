@@ -12,7 +12,6 @@ public static class CheckInHelpfulHandler
     {
         var row = await queries.GetUnifiedByIdAsync(command.Id, command.UserId, ct);
         if (row == null) throw new NotFoundException("Check-in not found.");
-        if (row.UserId == command.UserId) throw new ForbiddenException("You cannot mark your own check-in as helpful.");
         var vote = await repository.SetHelpfulAsync(command.Id, command.UserId, command.IsHelpful, ct);
         if (vote.Changed)
             await bus.PublishAsync(new CheckInCacheInvalidationRequested(command.Id, row.ShopId, row.UserId));

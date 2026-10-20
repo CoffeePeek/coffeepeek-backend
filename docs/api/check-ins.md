@@ -25,7 +25,7 @@ Visibility defaults to `0` (`Private`, author only); `1` (`Public`) requests mod
 | `PUT /api/v1/check-ins/{id}/visibility` | Body `{"visibility":0}` or `{"visibility":1}`. Public visibility submits the current revision; repeating the current visibility is a no-op. |
 | `DELETE /api/v1/check-ins/{id}` | Author soft deletion; remove public eligibility and rating contribution immediately. |
 | `GET /api/v1/check-ins` | Public cursor feed; optional `citySlug`, `coffeeShopSlug`, `authorSlug`, `pageSize` (1–100) and opaque `cursor`. |
-| `PUT` / `DELETE /api/v1/check-ins/{id}/helpful` | Idempotent vote on eligible public content; authors cannot vote on their own visit. |
+| `PUT` / `DELETE /api/v1/check-ins/{id}/helpful` | Idempotent vote on eligible public content; authors can add and remove votes on their own published check-ins. Private, unapproved, deleted and hidden content remains ineligible. |
 | `POST /api/v1/check-ins/{id}/reports` | Report current approved public content; reporter identity comes from authentication. Historical report audit remains available to administrators; accepted reviews rebind to the transferred check-in, and unmapped reports keep their original target UUID even when the target is missing. |
 | `GET /api/v1/check-ins/{id}/photos/{photoId}` | Protected photo bytes; current author/public visibility checked on every request. |
 | `GET /api/v1/check-ins/{id}/moderation-photos/{photoId}?revision=N` | Moderator-only bytes for the current public submission revision. Private, deleted and stale revisions are inaccessible. |

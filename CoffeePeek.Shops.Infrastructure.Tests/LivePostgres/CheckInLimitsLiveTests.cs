@@ -97,9 +97,34 @@ public sealed class CheckInLimitsLiveTests : IClassFixture<ShopsLiveDatabase>
     }
 
     [Theory]
-    [InlineData(true)]
-    [InlineData(false)]
-    public async Task DuplicateConcurrentVotesChangeCounterExactlyOnce(bool helpful)
+    [InlineData(CheckInVisibility.Private, true)]
+    [InlineData(CheckInVisibility.Private, false)]
+    [InlineData(CheckInVisibility.Public, true)]
+    [InlineData(CheckInVisibility.Public, false)]
+    public async Task OwnVotesRequirePublishedContent(CheckInVisibility visibility, bool helpful)
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var city = new City("unpublished-votes-" + Guid.NewGuid().ToString("N"));
+        var shop = ShopsLiveDatabase.NewShop("unpublished-votes", city.Id);
+        var visit = CheckIn.CreateUnified(Guid.NewGuid(), shop.Id, "author", "unpublished", Rating.Create(4, 4, 4),
+            DateTime.UtcNow, visibility);
+        await using var db = fixture.Context(false);
+        db.Cities.Add(city); db.Shops.Add(shop); db.CheckIns.Add(visit);
+        await db.SaveChangesAsync(ct);
+        await using var tx = await db.Database.BeginTransactionAsync(ct);
+        await Assert.ThrowsAsync<NotFoundException>(() =>
+            new QueryCheckInRepository(db).SetHelpfulAsync(visit.Id, visit.UserId, helpful, ct));
+        await tx.RollbackAsync(ct);
+        Assert.Equal(0, await db.CheckInHelpfulVotes.CountAsync(v => v.CheckInId == visit.Id, ct));
+        Assert.Equal(0, (await db.CheckIns.AsNoTracking().SingleAsync(v => v.Id == visit.Id, ct)).HelpfulCount);
+    }
+
+    [Theory]
+    [InlineData(true, false)]
+    [InlineData(false, false)]
+    [InlineData(true, true)]
+    [InlineData(false, true)]
+    public async Task DuplicateConcurrentVotesChangeCounterExactlyOnce(bool helpful, bool own)
     {
         var ct = TestContext.Current.CancellationToken;
         var city = new City("votes-" + Guid.NewGuid().ToString("N"));
@@ -107,7 +132,7 @@ public sealed class CheckInLimitsLiveTests : IClassFixture<ShopsLiveDatabase>
         var visit = CheckIn.CreateUnified(Guid.NewGuid(), shop.Id, "author", "public", Rating.Create(4, 4, 4),
             DateTime.UtcNow, CheckInVisibility.Public);
         Assert.True(visit.ApplyModerationDecision(1, Guid.NewGuid(), 1, CheckInModerationState.Approved, null, DateTime.UtcNow));
-        var voter = Guid.NewGuid();
+        var voter = own ? visit.UserId : Guid.NewGuid();
         await using (var db = fixture.Context(false))
         {
             db.Cities.Add(city); db.Shops.Add(shop); db.CheckIns.Add(visit);
