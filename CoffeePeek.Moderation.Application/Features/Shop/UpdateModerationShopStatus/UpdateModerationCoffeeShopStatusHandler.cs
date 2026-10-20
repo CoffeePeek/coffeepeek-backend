@@ -6,6 +6,7 @@ using CoffeePeek.Moderation.Domain.Aggregates;
 using CoffeePeek.Moderation.Domain.Entities;
 using CoffeePeek.Shared.Kernel.Response;
 using MapsterMapper;
+using Wolverine;
 
 namespace CoffeePeek.Moderation.Application.Features.Shop.UpdateModerationShopStatus;
 
@@ -16,6 +17,7 @@ public static class UpdateModerationCoffeeShopStatusHandler
         IModerationShopRepository repository,
         IModerationAuditLogRepository auditLogRepository,
         IMapper mapper,
+        IMessageBus bus,
         CancellationToken ct)
     {
         var shop = await repository.GetByIdAsync(command.Id, ct);
@@ -56,6 +58,9 @@ public static class UpdateModerationCoffeeShopStatusHandler
 
         if (auditAction.HasValue)
         {
+            if (shop.UserId is { } recipient)
+                await bus.PublishAsync(new ModerationDecisionChanged(Guid.NewGuid(), recipient,
+                    ModerationSubmissionKind.Shop, shop.Id, shop.ModerationStatus.ToString()));
             await ModerationAuditWriter.WriteAsync(
                 auditLogRepository,
                 ModerationAuditEntityType.Shop,

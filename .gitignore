@@ -310,6 +310,8 @@ $RECYCLE.BIN/
 *.msp
 *.lnk
 .idea/
+**/*service-account*.json
+**/*firebase-adminsdk*.json
 *.sln.iml
 .vscode/*
 !.vscode/settings.json

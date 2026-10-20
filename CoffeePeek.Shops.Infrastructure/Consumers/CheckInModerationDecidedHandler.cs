@@ -27,5 +27,7 @@ public static class CheckInModerationDecidedHandler
         // Wolverine retries on a fresh context and rechecks revision, visibility and decision order.
         await unitOfWork.SaveChangesAsync(ct);
         await bus.PublishAsync(new CheckInCacheInvalidationRequested(checkIn.Id, checkIn.ShopId, checkIn.UserId));
+        await bus.PublishAsync(new ModerationDecisionChanged(Guid.NewGuid(), checkIn.UserId,
+            ModerationSubmissionKind.CheckIn, message.SubmissionId, message.Status.ToString()));
     }
 }

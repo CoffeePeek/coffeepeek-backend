@@ -23,6 +23,7 @@ public class ModerationStatusHandlersTests
     private readonly Mock<IModerationAuditLogRepository> _audit = new();
     private readonly Mock<IMapper> _mapper = new();
     private readonly Mock<IUnitOfWork> _uow = new();
+    private readonly Mock<IMessageBus> _bus = new();
 
     public ModerationStatusHandlersTests()
     {
@@ -44,7 +45,7 @@ public class ModerationStatusHandlersTests
         repo.Setup(r => r.GetByIdAsync(shop.Id, It.IsAny<CancellationToken>())).ReturnsAsync(shop);
         return UpdateModerationCoffeeShopStatusHandler.Handle(
             new UpdateModerationCoffeeShopStatusCommand(Guid.NewGuid(), shop.Id, status, comment),
-            repo.Object, _audit.Object, _mapper.Object, _ct);
+            repo.Object, _audit.Object, _mapper.Object, _bus.Object, _ct);
     }
 
     [Fact]
@@ -57,6 +58,8 @@ public class ModerationStatusHandlersTests
 
         first.Should().BeOfType<ModerationShopApprovedEvent>();
         second.Should().BeNull("re-approve must not publish the shop again");
+        _bus.Verify(x => x.PublishAsync(It.Is<ModerationDecisionChanged>(e => e.UserId == shop.UserId
+            && e.SubmissionId == shop.Id && e.Kind == ModerationSubmissionKind.Shop && e.Status == "Approved")), Times.Once);
     }
 
     [Fact]
@@ -67,6 +70,8 @@ public class ModerationStatusHandlersTests
         await ChangeShopStatus(shop, ModerationStatus.Rejected, " Duplicate shop ");
 
         _audit.Verify(x => x.AddAsync(It.IsAny<ModerationAuditLog>(), It.IsAny<CancellationToken>()), Times.Once);
+        _bus.Verify(x => x.PublishAsync(It.Is<ModerationDecisionChanged>(e => e.UserId == shop.UserId
+            && e.Status == "Rejected")), Times.Once);
     }
 
     [Fact]

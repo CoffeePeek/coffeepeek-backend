@@ -65,6 +65,14 @@ public static class DependencyInjection
         services.AddHttpClient("admin-stats");
         services.AddScoped<IAdminStatsClient, AdminStatsClient>();
 
+        services.AddOptions<CoffeePeek.Account.Infrastructure.Notifications.PushNotificationOptions>()
+            .BindConfiguration("PushNotifications")
+            .ValidateDataAnnotations()
+            .Validate(o => !o.Enabled || !string.IsNullOrWhiteSpace(o.ProjectId), "PushNotifications:ProjectId is required when enabled.")
+            .ValidateOnStart();
+        services.AddSingleton(_ => Google.Apis.Auth.OAuth2.GoogleCredential.GetApplicationDefault()
+            .CreateScoped("https://www.googleapis.com/auth/firebase.messaging"));
+
         return services;
     }
 }

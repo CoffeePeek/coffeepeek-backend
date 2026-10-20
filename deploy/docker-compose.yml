@@ -209,6 +209,11 @@ services:
         aliases: [account-proxy]
     healthcheck: *app-healthcheck
     image: ${DOCKER_IMAGE_PREFIX}/coffeepeek.accountservice:${IMAGE_TAG}
+    volumes:
+      - type: bind
+        source: ${FIREBASE_CREDENTIALS_DIR:-/etc/coffeepeek/firebase}
+        target: /run/coffeepeek-firebase
+        read_only: true
     build:
       context: ..
       dockerfile: CoffeePeek.AccountService/AccountService.Dockerfile
@@ -245,6 +250,11 @@ services:
       AccountDeletionOptions__TokenLifetimeHours: ${ACCOUNT_DELETION_TOKEN_LIFETIME_HOURS:-24}
       AccountDeletionOptions__ResendCooldownMinutes: ${ACCOUNT_DELETION_RESEND_COOLDOWN_MINUTES:-5}
       AccountDeletionOptions__MaxEmailsPerHour: ${ACCOUNT_DELETION_MAX_EMAILS_PER_HOUR:-3}
+      PushNotifications__Enabled: "${PUSH_NOTIFICATIONS_ENABLED:-false}"
+      PushNotifications__ProjectId: ${FIREBASE_PROJECT_ID:-coffeepeek}
+      PushNotifications__InactiveDays: ${PUSH_INACTIVE_DAYS:-7}
+      PushNotifications__ReminderRepeatDays: ${PUSH_REMINDER_REPEAT_DAYS:-7}
+      GOOGLE_APPLICATION_CREDENTIALS: /run/coffeepeek-firebase/service-account.json
       WebClientUrl: ${WEB_CLIENT_URL}
       AdminStatsOptions__ShopsServiceUrl: http://shops:8080
       AdminStatsOptions__ModerationServiceUrl: http://moderation:8080

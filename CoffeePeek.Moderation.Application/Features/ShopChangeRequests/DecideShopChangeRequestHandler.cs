@@ -13,6 +13,7 @@ using CoffeePeek.Shared.Kernel.Response;
 using DomainSection = CoffeePeek.Moderation.Domain.Aggregates.ShopChangeRequestAggregate.ShopChangeSection;
 using DomainStatus = CoffeePeek.Moderation.Domain.Common.Enums.ModerationStatus;
 using ShopChangeSection = CoffeePeek.Contract.Enums.ShopChangeSection;
+using Wolverine;
 
 namespace CoffeePeek.Moderation.Application.Features.ShopChangeRequests;
 public static class DecideShopChangeRequestHandler
@@ -21,6 +22,7 @@ public static class DecideShopChangeRequestHandler
         DecideShopChangeRequestCommand command,
         IShopChangeRequestRepository repository,
         IModerationAuditLogRepository auditRepository,
+        IMessageBus bus,
         CancellationToken ct)
     {
         var request = await repository.GetByIdAsync(command.RequestId, ct);
@@ -37,6 +39,8 @@ public static class DecideShopChangeRequestHandler
                     (ShopChangeSection)request.Section,
                     ShopChangeRequestPayload.Deserialize(request.PayloadJson),
                     command.ModeratorUserId, now);
+                await bus.PublishAsync(new ModerationDecisionChanged(Guid.NewGuid(), request.SubmittedByUserId,
+                    ModerationSubmissionKind.ShopChange, request.Id, request.Status.ToString()));
                 await ModerationAuditWriter.WriteAsync(
                     auditRepository, ModerationAuditEntityType.ShopChangeRequest, request.Id,
                     $"{request.ShopId}:{request.Section}", ModerationAuditAction.Approved,
@@ -46,6 +50,8 @@ public static class DecideShopChangeRequestHandler
         else if (command.Status == ModerationStatus.Rejected)
         {
             request.Reject(command.ModeratorUserId, command.Comment ?? string.Empty, DateTime.UtcNow);
+            await bus.PublishAsync(new ModerationDecisionChanged(Guid.NewGuid(), request.SubmittedByUserId,
+                ModerationSubmissionKind.ShopChange, request.Id, request.Status.ToString()));
             await ModerationAuditWriter.WriteAsync(
                 auditRepository, ModerationAuditEntityType.ShopChangeRequest, request.Id,
                 $"{request.ShopId}:{request.Section}", ModerationAuditAction.Rejected,

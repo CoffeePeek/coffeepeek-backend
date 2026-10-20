@@ -20,6 +20,10 @@ export PATH="$PATH:$DOTNET_ROOT:$HOME/.dotnet/tools"
 
 # shellcheck disable=SC1091
 set -a; source dev/dev.env; set +a
+# Machine-specific credentials and optional integrations stay outside the shared dev defaults.
+if [[ -f dev/dev.local.env ]]; then
+  set -a; source dev/dev.local.env; set +a
+fi
 
 LOG_DIR="$ROOT/dev/logs"
 mkdir -p "$LOG_DIR"
@@ -73,7 +77,11 @@ start media CoffeePeek.MediaService \
   services__coffeepeek-shopsservice__http__0=http://localhost:5243
 
 start gateway CoffeePeek.Gateway \
-  ASPNETCORE_URLS=http://localhost:8080
+  ASPNETCORE_URLS=http://localhost:8080 \
+  services__coffeepeek-accountservice__http__0=http://localhost:5353 \
+  services__coffeepeek-shopsservice__http__0=http://localhost:5243 \
+  services__coffeepeek-moderationservice__http__0=http://localhost:6453 \
+  services__coffeepeek-mediaservice__http__0=http://localhost:5025
 
 echo
 echo "All services launched. Tail logs with: tail -f dev/logs/<service>.log"
