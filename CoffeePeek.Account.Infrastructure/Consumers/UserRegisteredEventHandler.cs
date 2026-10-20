@@ -1,45 +1,13 @@
-﻿using CoffeePeek.Account.Application.Common.Interfaces;
 using CoffeePeek.Account.Domain.Entities.UserAggregate;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
 using Resend;
 
 namespace CoffeePeek.Account.Infrastructure.Consumers;
 
-public class UserRegisteredEventHandler(
-    IResend resend,
-    IConfiguration config,
-    IEmailTemplateService templateService,
-    ILogger<UserRegisteredEventHandler> logger)
+// Handler names determine the existing RabbitMQ queue names.
+public class UserRegisteredEventHandler(IResend resend, IConfiguration config)
 {
-    public async Task Handle(UserRegisteredInternalEvent @event, CancellationToken ct)
-    {
-        // Query param is read by the SPA; hash-only links remain supported on the frontend.
-        var confirmationUrl =
-            $"{config["WebClientUrl"]}/confirm-email?token={Uri.EscapeDataString(@event.ConfirmationToken)}";
-
-        var message = new EmailMessage
-        {
-            From = "CoffeePeek.by <info@coffeepeek.by>",
-            To = @event.Email,
-            Subject = "Perfectly roasted beans are waiting for you! ☕",
-            HtmlBody = templateService.GetConfirmationHtml(@event.Username, confirmationUrl)
-        };
-
-        try
-        {
-            await resend.EmailSendAsync(message, ct);
-            logger.LogInformation("Confirmation email sent to {Email}", @event.Email);
-        }
-        catch (ResendException e)
-        {
-            logger.LogError(e, "Resend error for {Email}", @event.Email);
-            throw;
-        }
-        catch (Exception e)
-        {
-            logger.LogError(e, "Unexpected error sending email to {Email}", @event.Email);
-            throw;
-        }
-    }
+    public Task Handle(UserRegisteredInternalEvent @event, CancellationToken ct) =>
+        resend.SendAccountEmailAsync(@event.Email, "confirm-email", @event.Username,
+            config.AccountLink("confirm-email", @event.ConfirmationToken), ct);
 }

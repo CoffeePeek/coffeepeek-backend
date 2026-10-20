@@ -3,7 +3,8 @@
 RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
 USER $APP_UID
 WORKDIR /app
-# The aspnet base image already sets ASPNETCORE_HTTP_PORTS=8080 and DOTNET_RUNNING_IN_CONTAINER=true.
+ENV ASPNETCORE_URLS=http://+:8080
+ENV ASPNETCORE_HTTP_PORTS=8080
 EXPOSE 8080
 
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
