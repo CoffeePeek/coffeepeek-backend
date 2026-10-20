@@ -40,7 +40,6 @@ public static class DependencyInjection
             return new EmailExistenceFilter(expectedCount, errorRate);
         });
 
-        services.AddSingleton<IEmailTemplateService, EmailTemplateService>();
         services.AddSingleton<TimeProvider>(TimeProvider.System);
         
         services.AddScoped<IExternalAuthService, ExternalAuthService>();

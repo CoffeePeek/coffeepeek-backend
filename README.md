@@ -224,6 +224,9 @@ integration and fault gates use PostgreSQL, RabbitMQ, Redis and MinIO.
 
 ## API
 
+Transactional account emails use [published Resend templates](docs/account-email-templates.md).
+Publish the required templates before deploying AccountService.
+
 With the dev scripts, interactive documentation for all services is at `http://localhost:8080/scalar`.
 
 Main route groups through the gateway:
