@@ -34,12 +34,14 @@ public sealed class NotificationTemplateTests
         Assert.Equal("Решение модерации", messages[0].Title);
         Assert.Equal("Решение: одобрено", messages[1].Title);
         Assert.Equal("Проверка чекина завершена: одобрено.", messages[1].Body);
-        Assert.Equal(2, (await store.GetTemplatesAsync(Ct)).Count);
+        Assert.Equal(3, (await store.GetTemplatesAsync(Ct)).Count);
     }
 
     [Theory]
     [InlineData("Unknown {user}", "Body", PushNotificationCategory.Moderation)]
     [InlineData("Title", "{status}", PushNotificationCategory.Inactivity)]
+    [InlineData("Title", "{status}", PushNotificationCategory.NewShop)]
+    [InlineData("{name}", "Body", PushNotificationCategory.NewShop)]
     [InlineData("Title", "Body", PushNotificationCategory.Custom)]
     [InlineData(" ", "Body", PushNotificationCategory.Moderation)]
     public void InvalidTemplatesAreRejected(string title, string body, PushNotificationCategory category) =>
@@ -51,4 +53,30 @@ public sealed class NotificationTemplateTests
         {
             Category = PushNotificationCategory.Moderation, Title = new string('x', 111) + "{subject}", Body = "Body"
         }));
+
+    [Fact]
+    public async Task NewShopUsesSavedTemplateAndReplayPreservesExistingMessages()
+    {
+        await using var db = ProfileSocialStoreTests.Db();
+        var user = ProfileSocialStoreTests.NewUser("ShopTemplateOwner");
+        db.Users.Add(user); await db.SaveChangesAsync(Ct);
+        var store = new PushNotificationStore(db, TimeProvider.System);
+        var shopId = Guid.NewGuid();
+        var publishedAt = DateTime.UtcNow;
+        await store.QueueNewShopBatchAsync(shopId, "Кофе {и} друзья", publishedAt, null, Ct);
+        var originalBody = (await db.PushNotifications.SingleAsync(Ct)).Body;
+        Assert.Contains("Кофе {и} друзья", originalBody);
+        await store.SetTemplateAsync(new()
+        {
+            Category = PushNotificationCategory.NewShop, Title = "Новое место",
+            Body = "Попробуйте кофе в «{name}»!", UpdatedByUserId = user.Id
+        }, Ct);
+        await store.QueueNewShopBatchAsync(shopId, "Кофе {и} друзья", publishedAt, null, Ct);
+        Assert.Equal(originalBody, (await db.PushNotifications.SingleAsync(Ct)).Body);
+        var nextShopId = Guid.NewGuid();
+        await store.QueueNewShopBatchAsync(nextShopId, "Кофе {и} друзья", publishedAt, null, Ct);
+        var next = await db.PushNotifications.SingleAsync(x => x.EntityId == nextShopId, Ct);
+        Assert.Equal("Новое место", next.Title);
+        Assert.Equal("Попробуйте кофе в «Кофе {и} друзья»!", next.Body);
+    }
 }

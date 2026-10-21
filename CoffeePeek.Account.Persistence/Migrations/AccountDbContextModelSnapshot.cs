@@ -136,6 +136,11 @@ namespace CoffeePeek.Account.Persistence.Migrations
                     b.Property<bool>("Moderation")
                         .HasColumnType("boolean");
 
+                    b.Property<bool>("PushEnabled")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
+
                     b.HasKey("UserId");
 
                     b.HasIndex("Inactivity", "LastSeenAtUtc");
@@ -255,6 +260,9 @@ namespace CoffeePeek.Account.Persistence.Migrations
                     b.Property<DateTime>("ExpiresAtUtc")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<DateTime?>("ReadAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("Status")
                         .HasMaxLength(40)
                         .HasColumnType("character varying(40)");
@@ -271,7 +279,9 @@ namespace CoffeePeek.Account.Persistence.Migrations
 
                     b.HasIndex("ExpiresAtUtc");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("UserId", "ReadAtUtc");
+
+                    b.HasIndex("UserId", "CreatedAtUtc", "Id");
 
                     b.ToTable("PushNotifications");
                 });

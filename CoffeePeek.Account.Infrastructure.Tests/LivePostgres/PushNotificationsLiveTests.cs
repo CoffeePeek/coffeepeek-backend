@@ -19,6 +19,39 @@ public sealed class PushNotificationsLiveTests : IClassFixture<AccountLiveDataba
     }
 
     [Fact]
+    public async Task InboxMigrationSupportsReadSnapshotsPushOptOutAndPublishedShopBroadcast()
+    {
+        var user = await fixture.RegisterAsync("Inbox" + Guid.NewGuid().ToString("N")[..8], false, Ct);
+        await using var db = fixture.Context(false);
+        var store = new PushNotificationStore(db, TimeProvider.System);
+        Assert.True((await store.GetPushSettingsAsync(user, Ct)).Enabled);
+        await store.RegisterDeviceAsync(user, Guid.NewGuid(), "inbox-test-token", Ct);
+        var old = new PushNotification
+        {
+            Id = Guid.NewGuid(), UserId = user, Category = PushNotificationCategory.Custom,
+            Title = "Older", Body = "Body", CreatedAtUtc = DateTime.UtcNow.AddMinutes(-1), ExpiresAtUtc = DateTime.UtcNow.AddDays(1)
+        };
+        await store.EnqueueAsync(old, Ct);
+        await store.QueueNewShopBatchAsync(Guid.NewGuid(), "Новая кофейня", DateTime.UtcNow, null, Ct);
+        db.ChangeTracker.Clear();
+        var first = await store.GetInboxAsync(user, null, 1, Ct);
+        Assert.Equal("NewShop", first.Items[0].Type);
+        Assert.NotNull(first.NextCursor);
+        var second = await store.GetInboxAsync(user, first.NextCursor, 1, Ct);
+        Assert.Equal(old.Id, second.Items[0].Id);
+        await store.MarkAllReadAsync(user, old.Id, Ct);
+        Assert.Equal(1, (await store.GetInboxAsync(user, null, 30, Ct)).UnreadCount);
+        await store.SetPushEnabledAsync(user, false, Ct);
+        await store.SetPushEnabledAsync(user, true, Ct);
+        Assert.Null(await store.ClaimAsync(Ct));
+        db.ChangeTracker.Clear();
+        await store.MarkReadAsync(user, first.Items[0].Id, Ct);
+        Assert.Equal(0, (await store.GetInboxAsync(user, null, 30, Ct)).UnreadCount);
+        db.Users.Remove(await db.Users.SingleAsync(x => x.Id == user, Ct));
+        await db.SaveChangesAsync(Ct);
+    }
+
+    [Fact]
     public async Task MigratedPostgresSerializesRegistrationAndEnqueueAndFencesConcurrentClaims()
     {
         var user = await fixture.RegisterAsync("Push" + Guid.NewGuid().ToString("N")[..8], false, Ct);

@@ -10,7 +10,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace CoffeePeek.Account.Persistence.Notifications;
 
-public sealed class PushNotificationStore(AccountDbContext db, TimeProvider time) : IPushNotificationStore
+public sealed partial class PushNotificationStore(AccountDbContext db, TimeProvider time) : IPushNotificationStore
 {
     private DateTime Now => time.GetUtcNow().UtcDateTime;
 
@@ -112,6 +112,12 @@ public sealed class PushNotificationStore(AccountDbContext db, TimeProvider time
             return;
         }
         var preferences = await db.NotificationPreferences.FindAsync([n.UserId], ct);
+        if (n.Category == PushNotificationCategory.NewShop)
+        {
+            // Inbox snapshots follow insertion time, even when a publication event arrives late.
+            n.CreatedAtUtc = Now;
+            n.ExpiresAtUtc = n.CreatedAtUtc.AddDays(7);
+        }
         db.PushNotifications.Add(n);
         if (!Allowed(preferences, n.Category)) return;
         var devices = await db.PushDevices.Where(x => x.UserId == n.UserId).ToArrayAsync(ct);
@@ -215,11 +221,11 @@ public sealed class PushNotificationStore(AccountDbContext db, TimeProvider time
             || db.Users.Any(u => u.Id == x.UserId && (u.IsSoftDelete || u.IsBlocked))).ExecuteDeleteAsync(ct);
     }
 
-    private static bool Allowed(NotificationPreferences? p, PushNotificationCategory category) => category switch
+    private static bool Allowed(NotificationPreferences? p, PushNotificationCategory category) => (p?.PushEnabled ?? true) && category switch
     {
         PushNotificationCategory.Moderation => p?.Moderation ?? true,
         PushNotificationCategory.Inactivity => p?.Inactivity ?? false,
-        PushNotificationCategory.Custom => p?.Custom ?? true,
+        PushNotificationCategory.Custom or PushNotificationCategory.NewShop => p?.Custom ?? true,
         _ => false
     };
 
@@ -230,7 +236,7 @@ public sealed class PushNotificationStore(AccountDbContext db, TimeProvider time
     public async Task<IReadOnlyList<NotificationTemplateDto>> GetTemplatesAsync(CancellationToken ct)
     {
         var result = new List<NotificationTemplateDto>();
-        foreach (var category in new[] { PushNotificationCategory.Moderation, PushNotificationCategory.Inactivity })
+        foreach (var category in new[] { PushNotificationCategory.Moderation, PushNotificationCategory.Inactivity, PushNotificationCategory.NewShop })
         {
             var row = await GetTemplateAsync(category, ct);
             result.Add(new(category.ToString(), row.Title, row.Body, row.UpdatedAtUtc == default ? null : row.UpdatedAtUtc));

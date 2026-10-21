@@ -72,6 +72,8 @@ public class CreateShopFromImportService(
         }
 
         await bus.PublishAsync(new ShopProfileCacheInvalidationRequested(shop.Id));
+        if (!shop.IsHidden && shop.Location is { Latitude: not null, Longitude: not null })
+            await bus.PublishAsync(new CoffeePeek.Contract.Events.Shops.ShopPublished(shop.Id, shop.Name, DateTime.UtcNow));
 
         logger.LogInformation(
             "Prepared shop {ShopId} from import candidate {CandidateId} for transaction commit",

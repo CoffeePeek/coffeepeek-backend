@@ -21,7 +21,7 @@ public sealed class AdminNotificationsController(IPushNotificationStore store, I
     public async Task<IActionResult> UpdateTemplate(string category, UpdateNotificationTemplateRequest request, CancellationToken ct)
     {
         if (!Enum.TryParse<PushNotificationCategory>(category, true, out var parsed)
-            || parsed is not (PushNotificationCategory.Moderation or PushNotificationCategory.Inactivity))
+            || parsed is not (PushNotificationCategory.Moderation or PushNotificationCategory.Inactivity or PushNotificationCategory.NewShop))
             throw new ValidationException("Unknown automatic notification template.");
         await store.SetTemplateAsync(new PushNotificationTemplate
         {

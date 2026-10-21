@@ -16,7 +16,7 @@ public sealed class FcmPushSender(HttpClient http, GoogleCredential credential, 
         var n = dispatch.Notification;
         var data = new Dictionary<string, string>
         {
-            ["notificationId"] = n.Id.ToString(), ["category"] = n.Category.ToString(),
+            ["notificationId"] = n.Id.ToString(), ["category"] = n.Category.ToString(), ["type"] = n.Type.ToString(),
             ["userId"] = n.UserId.ToString()
         };
         if (n.EntityType is not null) data["entityType"] = n.EntityType;

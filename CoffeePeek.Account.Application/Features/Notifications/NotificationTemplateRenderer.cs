@@ -17,10 +17,15 @@ public static class NotificationTemplateRenderer
             Category = category, Title = "Время для кофе?",
             Body = "Давно не виделись! Загляните в CoffeePeek и поделитесь новым чекином."
         },
-        _ => throw new ValidationException("Only Moderation and Inactivity have automatic templates.")
+        PushNotificationCategory.NewShop => new()
+        {
+            Category = category, Title = "Новая кофейня на карте",
+            Body = "На карте появилась «{name}». Загляните за чашкой кофе!"
+        },
+        _ => throw new ValidationException("Only Moderation, Inactivity and NewShop have automatic templates.")
     };
 
-    public static (string Title, string Body) Render(PushNotificationTemplate template, string subject = "", string status = "")
+    public static (string Title, string Body) Render(PushNotificationTemplate template, string subject = "", string status = "", string shopName = "")
     {
         var title = Replace(template.Title);
         var body = Replace(template.Body);
@@ -30,10 +35,18 @@ public static class NotificationTemplateRenderer
 
         string Replace(string value)
         {
+            var known = template.Category switch
+            {
+                PushNotificationCategory.Moderation => value.Replace("{subject}", "", StringComparison.Ordinal).Replace("{status}", "", StringComparison.Ordinal),
+                PushNotificationCategory.NewShop => value.Replace("{name}", "", StringComparison.Ordinal),
+                _ => value
+            };
+            if (known.Contains('{') || known.Contains('}'))
+                throw new ValidationException("Unknown template placeholder. Moderation supports {subject} and {status}; NewShop supports {name}; Inactivity has no placeholders.");
             if (template.Category == PushNotificationCategory.Moderation)
                 value = value.Replace("{subject}", subject, StringComparison.Ordinal).Replace("{status}", status, StringComparison.Ordinal);
-            if (value.Contains('{') || value.Contains('}'))
-                throw new ValidationException("Unknown template placeholder. Moderation supports {subject} and {status}; Inactivity has no placeholders.");
+            if (template.Category == PushNotificationCategory.NewShop)
+                value = value.Replace("{name}", shopName, StringComparison.Ordinal);
             return value;
         }
     }
@@ -42,7 +55,7 @@ public static class NotificationTemplateRenderer
     {
         _ = Default(template.Category);
         // The longest supported subject/status must also fit after placeholder expansion.
-        _ = Render(template, "исправления", "не подтверждено");
+        _ = Render(template, "исправления", "не подтверждено", new string('я', 300));
     }
 
     public static string StatusText(string status) => status switch
