@@ -112,6 +112,12 @@ public sealed partial class PushNotificationStore(AccountDbContext db, TimeProvi
             return;
         }
         var preferences = await db.NotificationPreferences.FindAsync([n.UserId], ct);
+        if (n.Category == PushNotificationCategory.NewShop)
+        {
+            // Inbox snapshots follow insertion time, even when a publication event arrives late.
+            n.CreatedAtUtc = Now;
+            n.ExpiresAtUtc = n.CreatedAtUtc.AddDays(7);
+        }
         db.PushNotifications.Add(n);
         if (!Allowed(preferences, n.Category)) return;
         var devices = await db.PushDevices.Where(x => x.UserId == n.UserId).ToArrayAsync(ct);

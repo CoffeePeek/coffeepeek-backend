@@ -178,5 +178,6 @@ public class CreateShopFromModerationServiceTests
 
         added!.Location!.Latitude.Should().BeNull();
         added.Location.Address.Should().Be("Nemiga 5");
+        _bus.Verify(b => b.PublishAsync(It.IsAny<CoffeePeek.Contract.Events.Shops.ShopPublished>()), Times.Never);
     }
 }

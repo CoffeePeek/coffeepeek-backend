@@ -67,6 +67,23 @@ public sealed class NotificationInboxTests
     }
 
     [Fact]
+    public async Task DelayedPublicationStaysUnreadWhenReadingAnEarlierInboxSnapshot()
+    {
+        await using var db = ProfileSocialStoreTests.Db();
+        var user = ProfileSocialStoreTests.NewUser("LatePublication");
+        db.Users.Add(user); await db.SaveChangesAsync(Ct);
+        var store = new PushNotificationStore(db, TimeProvider.System);
+        var anchor = Notification(user.Id, DateTime.UtcNow);
+        await store.EnqueueAsync(anchor, Ct);
+        await store.QueueNewShopBatchAsync(Guid.NewGuid(), "Новая кофейня", DateTime.UtcNow.AddDays(-1), null, Ct);
+        await store.MarkAllReadAsync(user.Id, anchor.Id, Ct);
+        var publication = await db.PushNotifications.SingleAsync(x => x.Category == PushNotificationCategory.NewShop, Ct);
+        Assert.Null(publication.ReadAtUtc);
+        Assert.True(publication.CreatedAtUtc > anchor.CreatedAtUtc);
+        Assert.Equal(1, (await store.GetInboxAsync(user.Id, null, 30, Ct)).UnreadCount);
+    }
+
+    [Fact]
     public async Task NewShopBroadcastUsesBatchesExcludesInactiveAccountsAndIsIdempotent()
     {
         await using var db = ProfileSocialStoreTests.Db();
