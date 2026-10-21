@@ -13,6 +13,35 @@ namespace CoffeePeek.AccountService.Controllers;
 [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
 public sealed class NotificationsController(IPushNotificationStore store, IUserContext user, TimeProvider time) : ControllerBase
 {
+    [HttpGet]
+    public async Task<IActionResult> Inbox([FromQuery] Guid? before, CancellationToken ct, [FromQuery] int pageSize = 30) =>
+        Ok(await store.GetInboxAsync(user.GetUserIdOrThrow(), before, pageSize, ct));
+
+    [HttpPut("{notificationId:guid}/read")]
+    public async Task<IActionResult> MarkRead(Guid notificationId, CancellationToken ct)
+    {
+        await store.MarkReadAsync(user.GetUserIdOrThrow(), notificationId, ct);
+        return NoContent();
+    }
+
+    [HttpPut("read")]
+    public async Task<IActionResult> MarkAllRead(ReadNotificationsRequest request, CancellationToken ct)
+    {
+        await store.MarkAllReadAsync(user.GetUserIdOrThrow(), request.ThroughId, ct);
+        return NoContent();
+    }
+
+    [HttpGet("push")]
+    public async Task<IActionResult> PushSettings(CancellationToken ct) =>
+        Ok(await store.GetPushSettingsAsync(user.GetUserIdOrThrow(), ct));
+
+    [HttpPut("push")]
+    public async Task<IActionResult> SetPushSettings(PushSettingsDto request, CancellationToken ct)
+    {
+        await store.SetPushEnabledAsync(user.GetUserIdOrThrow(), request.Enabled, ct);
+        return NoContent();
+    }
+
     [HttpPut("devices/{installationId:guid}")]
     public async Task<IActionResult> RegisterDevice(Guid installationId, RegisterPushDeviceRequest request, CancellationToken ct)
     {

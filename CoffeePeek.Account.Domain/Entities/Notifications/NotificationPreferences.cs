@@ -5,6 +5,7 @@ namespace CoffeePeek.Account.Domain.Entities.Notifications;
 public sealed class NotificationPreferences
 {
     public Guid UserId { get; set; }
+    public bool PushEnabled { get; set; } = true;
     public bool Moderation { get; set; } = true;
     public bool Inactivity { get; set; }
     public bool Custom { get; set; } = true;

@@ -5,6 +5,12 @@ namespace CoffeePeek.Account.Application.Features.Notifications;
 
 public interface IPushNotificationStore
 {
+    Task<NotificationPageDto> GetInboxAsync(Guid userId, Guid? before, int pageSize, CancellationToken ct);
+    Task MarkReadAsync(Guid userId, Guid notificationId, CancellationToken ct);
+    Task MarkAllReadAsync(Guid userId, Guid throughId, CancellationToken ct);
+    Task<PushSettingsDto> GetPushSettingsAsync(Guid userId, CancellationToken ct);
+    Task SetPushEnabledAsync(Guid userId, bool enabled, CancellationToken ct);
+    Task<Guid?> QueueNewShopBatchAsync(Guid shopId, string name, DateTime publishedAtUtc, Guid? afterUserId, CancellationToken ct);
     Task RegisterDeviceAsync(Guid userId, Guid installationId, string token, CancellationToken ct);
     Task RemoveDeviceAsync(Guid userId, Guid installationId, CancellationToken ct);
     Task<NotificationPreferencesDto> GetPreferencesAsync(Guid userId, CancellationToken ct);

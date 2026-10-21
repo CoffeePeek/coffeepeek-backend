@@ -72,6 +72,7 @@ The push contains a visible title/body and string-valued data:
 {
   "notificationId": "uuid",
   "category": "Moderation",
+  "type": "CheckInModeration",
   "userId": "recipient-user-uuid",
   "entityType": "CheckIn",
   "entityId": "moderation-submission-uuid",
@@ -84,6 +85,49 @@ The push contains a visible title/body and string-valued data:
 Treat this as a navigation hint and reload the current state from the API. On account switching, discard data
 for another `userId`; the OS can still display a previously accepted push after logout.
 Deduplicate foreground handling by `notificationId`; Android notification tags and APNs collapse IDs also use this ID.
+
+## Inbox and master push switch
+
+Apply Account migration AddNotificationInbox before deploying the updated mobile app.
+Deploy Account before the updated Shops producers and mobile clients so the new durable
+consumers are bound before shop publication events are emitted.
+Existing notification rows and category preferences are preserved; existing accounts default
+to PushEnabled=true. ReadAtUtc starts null. The existing purge policy (30 days after push expiry)
+also limits inbox retention. OS permission and the account switch are independent.
+
+All paths below require the current user's authenticated context, return no-store responses,
+and never accept a recipient user ID:
+
+| Method | Path under /api/v1/me/notifications | Behavior |
+| --- | --- | --- |
+| GET | /?pageSize=30&before={id} | items, nextCursor, unreadCount; newest first; page size 1–100 |
+| PUT | /{id}/read | Mark one owned notification read; idempotent 204 |
+| PUT | /read | {"throughId":"newest-visible-id"}; mark that snapshot and older rows read |
+| GET | /push | {"enabled":true} |
+| PUT | /push | Explicit required enabled boolean; returns 204 |
+
+Inbox DTOs contain id, type, title, body, createdAtUtc, readAtUtc, entityType, entityId and status.
+The before cursor must identify a row belonging to the same user. Time/ID ordering makes tied
+timestamps stable; a read-all snapshot leaves notifications arriving afterward unread.
+Foreign notification IDs return 404 for pagination and read operations.
+
+Types are ShopApproved, ShopRejected, RoasterApproved, RoasterRejected, CheckInModeration,
+CorrectionModeration, NewShop, Inactivity and General. Existing category/entity/status fields
+determine the type, so previously queued moderation decisions also have specific types without
+rewriting their text. The same type is included in the FCM data payload.
+
+The master switch gates every category at enqueue and claim time. Disabling also cancels
+pending deliveries so re-enabling does not resend the old queue; an already accepted/in-flight
+FCM message cannot be recalled. Inbox rows are saved even with push disabled or no devices.
+Legacy category PUTs do not reset the master switch. They remain available for older web clients.
+Reading history or changing read state does not change push delivery eligibility.
+
+Shops emits ShopPublished only after a new moderated/imported shop has map coordinates.
+The event shares the existing publication transaction/outbox and is skipped for duplicate
+publication attempts and drafts without coordinates. Account fans out to all active accounts
+in durable batches of 200. Per-shop/per-recipient deterministic IDs make retries idempotent;
+blocked/deleted accounts are excluded. Every recipient gets an inbox entry; push delivery
+also respects the master and existing custom-category preferences.
 
 ## Triggers
 
@@ -126,14 +170,15 @@ Content-Type: application/json
 Returns 202 with `notificationId`. Reuse the same UUID for HTTP retries; reusing it with different content returns 409.
 Title and body limits are 120 and 500 characters. The recipient's custom preference is respected. The creator's
 user ID is stored for audit. A 202 means the request is recorded, even if the account has no devices or has opted out.
-There is no mass broadcast, campaign editor, in-app inbox or delivery analytics in this first version.
+New shop publications broadcast to all active accounts. There is no campaign editor or delivery analytics.
 
 ## Editable automatic templates
 
 Admin role required:
 
-- `GET /api/admin/notifications/templates` returns the Moderation and Inactivity templates, with defaults when not overridden.
-- `PUT /api/admin/notifications/templates/Moderation` or `/Inactivity` accepts `{"title":"…","body":"…"}` and returns 204.
+- `GET /api/admin/notifications/templates` returns the Moderation, Inactivity and NewShop templates, with defaults when not overridden.
+- `PUT /api/admin/notifications/templates/Moderation`, `/Inactivity` or `/NewShop` accepts `{"title":"…","body":"…"}` and returns 204.
+- NewShop supports `{name}` for the published shop name (up to 300 characters). Validation reserves that maximum length before saving. Changes affect new notifications; replays preserve already queued text.
 - Moderation supports `{subject}` (чекина, кофейни, обжарщика, исправления, жалобы) and `{status}` (localized decision).
   Inactivity has no placeholders. Unknown placeholders and text exceeding 120/500 characters after expansion are rejected.
 - Changes affect newly queued notifications. Queued messages and retries of the same event keep their original text.
@@ -144,12 +189,12 @@ form. **Уведомление** on a user row opens this form with the recipien
 retry uses the original ID and payload. It reports queue acceptance rather than claiming delivery.
 
 The customer website has account-wide category switches in Settings and reports foreground activity. It does not
-register a browser for push; delivery in this version targets the Android/iOS app installations.
+register a browser for push; delivery targets Android/iOS app installations. The updated mobile client exposes one master switch and the notification inbox instead of category switches.
 
 ## Native clients and verification
 
 The companion `coffeepeek-cross-mobile` project contains shared session/preferences/device coordination, Android
-Firebase Messaging integration and an iOS native delegate. Android requests permission from Settings, displays foreground
+Firebase Messaging integration and an iOS native delegate. The feed notification panel requests permission on explicit enabling (opens OS settings after a denial), displays foreground
 notifications and uses system FCM display in the background. Tapping opens CoffeePeek; there is no per-submission
 deep link yet. iOS source activation additionally requires FirebaseCore/FirebaseMessaging in Xcode, the configuration
 plist in application resources, Push Notifications entitlement and an APNs credential uploaded to Firebase.

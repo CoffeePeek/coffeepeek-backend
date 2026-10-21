@@ -86,6 +86,8 @@ public class CreateShopFromImportServiceTests
         added.ModerationId.Should().Be(candidateId);
         added.OwnerUserId.Should().BeNull();
         added.ImportedFromFileAt.Should().BeNull();
+        _bus.Verify(b => b.PublishAsync(It.Is<CoffeePeek.Contract.Events.Shops.ShopPublished>(
+            e => e.ShopId == shopId && e.Name == item.Name)), Times.Once);
         _bus.Verify(b => b.PublishAsync(It.Is<ShopProfileCacheInvalidationRequested>(
             e => e.ShopId == shopId)), Times.Once);
     }
@@ -147,6 +149,7 @@ public class CreateShopFromImportServiceTests
         var shopId = await CreateSut().CreateShopFromImportAsync(item, _ct);
 
         shopId.Should().Be(existing);
+        _bus.Verify(b => b.PublishAsync(It.IsAny<CoffeePeek.Contract.Events.Shops.ShopPublished>()), Times.Never);
         _shopRepo.Verify(r => r.Add(It.IsAny<CoffeeShop>()), Times.Never);
         _bus.Verify(b => b.PublishAsync(It.IsAny<ShopProfileCacheInvalidationRequested>()), Times.Never);
     }

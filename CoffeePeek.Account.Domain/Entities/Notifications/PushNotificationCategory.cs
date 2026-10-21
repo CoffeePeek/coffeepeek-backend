@@ -4,5 +4,6 @@ public enum PushNotificationCategory
 {
     Moderation,
     Inactivity,
-    Custom
+    Custom,
+    NewShop
 }

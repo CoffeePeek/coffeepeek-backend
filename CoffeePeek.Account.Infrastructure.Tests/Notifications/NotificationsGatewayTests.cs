@@ -32,6 +32,10 @@ public sealed class NotificationsGatewayTests
         var ct = TestContext.Current.CancellationToken;
         var store = new Mock<IPushNotificationStore>();
         store.Setup(x => x.GetPreferencesAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync(new NotificationPreferencesDto());
+        store.Setup(x => x.GetInboxAsync(It.IsAny<Guid>(), null, 30, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new NotificationPageDto([], null, 0));
+        store.Setup(x => x.GetPushSettingsAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new PushSettingsDto(true));
         var backendBuilder = Host();
         backendBuilder.Configuration["GatewayAuth:SecretKey"] = Secret;
         backendBuilder.Services.AddHeaderUserContext(backendBuilder.Configuration);
@@ -73,6 +77,21 @@ public sealed class NotificationsGatewayTests
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Token(userId, "User"));
             client.DefaultRequestHeaders.Add(GatewayHeaderConsts.XUserId, Guid.NewGuid().ToString());
             client.DefaultRequestHeaders.Add(GatewayHeaderConsts.XUserRole, "Admin");
+            using var inbox = await client.GetAsync(root, ct);
+            Assert.Equal(HttpStatusCode.OK, inbox.StatusCode);
+            store.Verify(x => x.GetInboxAsync(userId, null, 30, It.IsAny<CancellationToken>()), Times.Once);
+            using var push = await client.PutAsJsonAsync(root + "/push", new { enabled = false }, ct);
+            Assert.Equal(HttpStatusCode.NoContent, push.StatusCode);
+            store.Verify(x => x.SetPushEnabledAsync(userId, false, It.IsAny<CancellationToken>()), Times.Once);
+            using var missingPushValue = await client.PutAsJsonAsync(root + "/push", new { }, ct);
+            Assert.Equal(HttpStatusCode.BadRequest, missingPushValue.StatusCode);
+            var readId = Guid.NewGuid();
+            using var read = await client.PutAsync(root + "/" + readId + "/read", null, ct);
+            Assert.Equal(HttpStatusCode.NoContent, read.StatusCode);
+            store.Verify(x => x.MarkReadAsync(userId, readId, It.IsAny<CancellationToken>()), Times.Once);
+            using var readAll = await client.PutAsJsonAsync(root + "/read", new { throughId = readId }, ct);
+            Assert.Equal(HttpStatusCode.NoContent, readAll.StatusCode);
+            store.Verify(x => x.MarkAllReadAsync(userId, readId, It.IsAny<CancellationToken>()), Times.Once);
             var installation = Guid.NewGuid();
             using var registered = await client.PutAsJsonAsync(root + "/devices/" + installation, new { token = "fcm-token" }, ct);
             Assert.Equal(HttpStatusCode.NoContent, registered.StatusCode);

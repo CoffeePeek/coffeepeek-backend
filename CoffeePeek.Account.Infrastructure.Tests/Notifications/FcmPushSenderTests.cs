@@ -39,6 +39,7 @@ public sealed class FcmPushSenderTests
         using var json = JsonDocument.Parse(handler.Payload!);
         var message = json.RootElement.GetProperty("message");
         Assert.Equal("device-token", message.GetProperty("token").GetString());
+        Assert.Equal("CheckInModeration", message.GetProperty("data").GetProperty("type").GetString());
         Assert.Equal(notification.Id.ToString(), message.GetProperty("data").GetProperty("notificationId").GetString());
         Assert.Equal("alert", message.GetProperty("apns").GetProperty("headers").GetProperty("apns-push-type").GetString());
         Assert.Equal(notification.Id.ToString(), message.GetProperty("android").GetProperty("notification").GetProperty("tag").GetString());

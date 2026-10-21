@@ -10,6 +10,7 @@ public sealed class NotificationPreferencesConfiguration : IEntityTypeConfigurat
     public void Configure(EntityTypeBuilder<NotificationPreferences> b)
     {
         b.HasKey(x => x.UserId);
+        b.Property(x => x.PushEnabled).HasDefaultValue(true);
         b.HasOne<User>().WithOne().HasForeignKey<NotificationPreferences>(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
         b.HasIndex(x => new { x.Inactivity, x.LastSeenAtUtc });
     }
