@@ -22,8 +22,11 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
             .IsRequired();
 
         builder.HasIndex(u => u.Username).IsUnique();
-        // Prevent two requests that read the same cooldown from both renaming, including with slugs disabled.
         builder.Property(u => u.UsernameChangedAtUtc).IsConcurrencyToken();
+        builder.Property(u => u.UsernameChangeHistoryUtc)
+            .HasColumnType("timestamp with time zone[]")
+            .HasDefaultValueSql("'{}'::timestamp with time zone[]")
+            .IsConcurrencyToken();
 
         builder.Property(u => u.PhoneNumber)
             .HasConversion(v => v != null ? v.Value : null, v => v != null ? PhoneNumber.Create(v) : null)

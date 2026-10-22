@@ -34,10 +34,32 @@ public class UpdateUsernameHandlerTest
     }
     
     [Fact]
-    public async Task Handle_DuringCooldown_RejectsBeforeSaving()
+    public async Task Handle_AllowsThreeChangesWithinAWeek()
+    {
+        var user = CreateUserMock(Guid.NewGuid(), "Original");
+        _userRepositoryMock.Setup(repository => repository.GetById(user.Id, _cancellationToken)).ReturnsAsync(user);
+
+        foreach (var username in new[] { "Second", "Third", "Fourth" })
+        {
+            var (response, changed) = await UpdateUsernameHandler.Handle(new(user.Id, username),
+                _userRepositoryMock.Object, _unitOfWorkMock.Object, _cancellationToken);
+
+            response.IsSuccess.Should().BeTrue();
+            response.Data.Should().Be(username);
+            changed.NewUserName.Should().Be(username);
+        }
+
+        user.UsernameChangeHistoryUtc.Should().HaveCount(3);
+        _unitOfWorkMock.Verify(unitOfWork => unitOfWork.SaveChangesAsync(_cancellationToken), Times.Exactly(3));
+    }
+
+    [Fact]
+    public async Task Handle_AfterThreeChanges_RejectsBeforeSaving()
     {
         var user = CreateUserMock(Guid.NewGuid(), "Original");
         user.UpdateUsername(Username.Create("Changed"));
+        user.UpdateUsername(Username.Create("ChangedAgain"));
+        user.UpdateUsername(Username.Create("ChangedThirdTime"));
         _userRepositoryMock.Setup(x => x.GetById(user.Id, _cancellationToken)).ReturnsAsync(user);
         await Assert.ThrowsAsync<ConflictException>(() => UpdateUsernameHandler.Handle(new(user.Id, "Rejected"),
             _userRepositoryMock.Object, _unitOfWorkMock.Object, _cancellationToken));

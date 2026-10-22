@@ -9,6 +9,8 @@ public static class BusinessConstants
     public const int MaxActiveSessions = 5;
 
     public const int MaxUserNameLength = 30;
+    public const int MaxUsernameChangesPerWeek = 3;
+    public const int UsernameChangeWindowDays = 7;
     public const int MaxOAuthProviderLength = 50;
     public const int MaxIdProviderLength = 255;
     public const int MaxPhoneNumberLength = 20;

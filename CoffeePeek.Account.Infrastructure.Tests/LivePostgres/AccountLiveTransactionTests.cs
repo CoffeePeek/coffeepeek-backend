@@ -146,9 +146,6 @@ public sealed class AccountLiveTransactionTests : IClassFixture<AccountLiveDatab
         var original = await db.Users.AsNoTracking().SingleAsync(x => x.Id == id, Ct);
         await using var transaction = await db.Database.BeginTransactionAsync(Ct);
         await UpdateUsernameHandler.Handle(new(id, "Restore.Beta"), new UserRepository(db), new UnitOfWork<AccountDbContext>(db), Ct);
-        // Model a second change after the cooldown without waiting seven real days.
-        var previousChange = DateTime.UtcNow.AddDays(-7);
-        await db.Database.ExecuteSqlInterpolatedAsync($"UPDATE \"Users\" SET \"UsernameChangedAtUtc\" = {previousChange} WHERE \"Id\" = {id}", Ct);
         db.ChangeTracker.Clear();
         await UpdateUsernameHandler.Handle(new(id, "Restore.Alpha"), new UserRepository(db), new UnitOfWork<AccountDbContext>(db), Ct);
         await transaction.CommitAsync(Ct);
@@ -160,7 +157,7 @@ public sealed class AccountLiveTransactionTests : IClassFixture<AccountLiveDatab
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public async Task UsernameCooldown_RejectsStaleConcurrentRenameWithFlagOnOrOff(bool enabled)
+    public async Task UsernameWeeklyLimit_RejectsStaleConcurrentRenameWithFlagOnOrOff(bool enabled)
     {
         var prefix = enabled ? "Cooldown.On" : "Cooldown.Off";
         var id = await fixture.RegisterAsync(prefix, enabled, Ct);
@@ -177,8 +174,15 @@ public sealed class AccountLiveTransactionTests : IClassFixture<AccountLiveDatab
         var saved = await check.Users.SingleAsync(x => x.Id == id, Ct);
         saved.Username.Value.Should().Be(prefix + ".First");
         saved.UsernameChangedAtUtc.Should().NotBeNull();
+        saved.UsernameChangeHistoryUtc.Should().HaveCount(1);
+        saved.UpdateUsername(Username.Create(prefix + ".Retry"));
+        saved.UpdateUsername(Username.Create(prefix + ".Third"));
+        await check.SaveChangesAsync(Ct);
+        check.ChangeTracker.Clear();
+        saved = await check.Users.SingleAsync(x => x.Id == id, Ct);
+        saved.UsernameChangeHistoryUtc.Should().HaveCount(3);
         Assert.Throws<ConflictException>(() => saved.UpdateUsername(Username.Create(prefix + ".Retry")));
-        saved.PublicSlug.Should().Be(enabled ? PublicSlug.Generate(prefix + ".First") : null);
+        saved.PublicSlug.Should().Be(enabled ? PublicSlug.Generate(prefix + ".Third") : null);
     }
 
     [Fact]

@@ -465,6 +465,13 @@ namespace CoffeePeek.Account.Persistence.Migrations
                         .HasMaxLength(30)
                         .HasColumnType("character varying(30)");
 
+                    b.PrimitiveCollection<DateTime[]>("UsernameChangeHistoryUtc")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone[]")
+                        .HasDefaultValueSql("'{}'::timestamp with time zone[]");
+
                     b.Property<DateTime?>("UsernameChangedAtUtc")
                         .IsConcurrencyToken()
                         .HasColumnType("timestamp with time zone");
