@@ -104,14 +104,15 @@ public class UpdateAdminCoffeeShopHandlerTests
         shop.SetLocation(Guid.NewGuid(), "Old address", 53.9m, 27.5m);
         var tagId = Guid.NewGuid();
         shop.SetTags([tagId], Guid.NewGuid());
-        var cityId = Guid.NewGuid();
+        var city = new City("Минск");
+        var cityId = city.Id;
         var equipment = new Equipment("La Marzocco", "Linea", new EquipmentCategory());
 
         _shops.Setup(r => r.GetByIdWithCatalogsAsync(shop.Id, _ct)).ReturnsAsync(shop);
-        _cities.Setup(r => r.Exists(cityId, _ct)).ReturnsAsync(true);
+        _cities.Setup(r => r.GetById(cityId, _ct)).ReturnsAsync(city);
         _equipment.Setup(r => r.GetByIds(It.IsAny<List<Guid>>(), _ct)).ReturnsAsync([equipment]);
         var geocoder = new Mock<IAddressGeocoder>();
-        geocoder.Setup(g => g.GeocodeAsync("Немига 5", _ct))
+        geocoder.Setup(g => g.GeocodeAsync("Минск, Немига 5", _ct))
             .ReturnsAsync(new GeocodingResult(53.91m, 27.56m));
 
         var result = await UpdateAdminCoffeeShopHandler.Handle(

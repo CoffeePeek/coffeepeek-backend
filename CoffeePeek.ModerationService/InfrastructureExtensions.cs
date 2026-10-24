@@ -27,7 +27,7 @@ public static class InfrastructureExtensions
         builder.AddWolverine(
             typeof(InfrastructureExtensions).Assembly,
             [applicationAssembly, infrastructureAssembly],
-            [typeof(ModerationDbContext), typeof(IAddressGeocoder), typeof(IGooglePlacesLookup), typeof(IOverpassClient), typeof(TelegramModerationClient)]);
+            [typeof(ModerationDbContext), typeof(IAddressGeocoder), typeof(ICityNameLookup), typeof(IGooglePlacesLookup), typeof(IOverpassClient), typeof(TelegramModerationClient)]);
 
         builder.Services
             .AddApplication()

@@ -139,9 +139,11 @@ its scripts also supply the connection strings and other required settings.
   the existing `YANDEX_GEOCODER_API_KEY` to both services. For local development, configure
   `YandexApiOptions__ApiKey` in `dev/dev.local.env` or set the option in each host's user secrets.
   Admin/owner profile PUTs geocode a changed address or city before saving, replacing the submitted pin with
-  Yandex coordinates. No match returns 400; a network failure returns 503; neither saves a partial profile.
+  Yandex coordinates. The geocoding query combines the selected city's name with the street/house address;
+  the stored address stays unchanged. No match returns 400; a network failure returns 503; neither saves a partial profile.
   Updating coordinates for an unchanged address remains supported without geocoding. Moderation edits queue
   geocoding through the transactional outbox; refresh the suggestion after processing to see validated coordinates.
+  Moderation resolves the current city through Shops and rejects results if either the city or street has changed.
   Previously saved incorrect coordinates are not automatically backfilled by this change.
 - Optional integrations: `OpenAiOptions` (menu parsing), `GooglePlaces`
   (import status checks), `Sentry:Dsn`. See `deploy/.env.example` for the full production variable list.

@@ -30,9 +30,11 @@ public static class ShopProfileApplier
         var changes = new List<Action>();
         List<ShopSchedule>? schedules = null;
         Location? location = null;
+        City? city = null;
         if (patch.Location is not null)
         {
-            if (!await cities.Exists(patch.Location.CityId, ct))
+            city = await cities.GetById(patch.Location.CityId, ct);
+            if (city is null)
                 return Result.Fail("City was not found.");
 
             try
@@ -98,7 +100,7 @@ public static class ShopProfileApplier
                 GeocodingResult? coordinates;
                 try
                 {
-                    coordinates = await geocoder.GeocodeAsync(location.Address, ct);
+                    coordinates = await geocoder.GeocodeAsync($"{city!.Name}, {location.Address}", ct);
                 }
                 catch (HttpRequestException ex)
                 {

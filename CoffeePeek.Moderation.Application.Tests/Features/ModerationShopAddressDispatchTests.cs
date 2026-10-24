@@ -1,3 +1,4 @@
+using CoffeePeek.Moderation.Application.Abstractions;
 using CoffeePeek.Contract.Dtos.CoffeeShop;
 using CoffeePeek.Moderation.Application.Features.Geocoding;
 using CoffeePeek.Moderation.Application.Features.Shop.UpdateShop;
@@ -26,10 +27,10 @@ public class ModerationShopAddressDispatchTests
         if (rejected) shop.Reject("Correct the address");
         var shops = new Mock<IModerationShopRepository>();
         shops.Setup(r => r.GetByIdAsync(shop.Id, It.IsAny<CancellationToken>())).ReturnsAsync(shop);
-        shops.Setup(r => r.IsAwaitingGeocodingAsync(shop.Id, "Corrected address", It.IsAny<CancellationToken>()))
-            .ReturnsAsync(() => shop.Location is { IsAddressValidated: false, Address: "Corrected address" });
+        shops.Setup(r => r.GetAwaitingGeocodingCityIdAsync(shop.Id, "Corrected address", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(() => shop.Location is { IsAddressValidated: false, Address: "Corrected address" } ? (Guid?)shop.CityId : null);
         var applied = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        shops.Setup(r => r.TryApplyGeocodingAsync(shop.Id, "Corrected address", 54.1m, 28.2m, It.IsAny<CancellationToken>()))
+        shops.Setup(r => r.TryApplyGeocodingAsync(shop.Id, "Corrected address", shop.CityId, 54.1m, 28.2m, It.IsAny<CancellationToken>()))
             .Callback(() =>
             {
                 shop.Location!.SetLocation(54.1m, 28.2m, "Corrected address");
@@ -37,8 +38,10 @@ public class ModerationShopAddressDispatchTests
             })
             .ReturnsAsync(true);
         var geocoder = new Mock<IAddressGeocoder>(MockBehavior.Strict);
-        geocoder.Setup(g => g.GeocodeAsync("Corrected address", It.IsAny<CancellationToken>()))
+        geocoder.Setup(g => g.GeocodeAsync("Минск, Corrected address", It.IsAny<CancellationToken>()))
             .ReturnsAsync(new GeocodingResult(54.1m, 28.2m));
+        var cities = new Mock<ICityNameLookup>();
+        cities.Setup(c => c.GetNameAsync(shop.CityId, It.IsAny<CancellationToken>())).ReturnsAsync("Минск");
         var mapper = new Mock<IMapper>();
         mapper.Setup(m => m.Map<ModerationShopDto>(It.IsAny<object>())).Returns(new ModerationShopDto());
 
@@ -48,6 +51,7 @@ public class ModerationShopAddressDispatchTests
                 services.AddSingleton(shops.Object);
                 services.AddSingleton(Mock.Of<IModerationRoasterRepository>());
                 services.AddSingleton(geocoder.Object);
+                services.AddSingleton(cities.Object);
                 services.AddSingleton(mapper.Object);
                 services.AddSingleton(Mock.Of<IUnitOfWork>());
             })
@@ -75,7 +79,7 @@ public class ModerationShopAddressDispatchTests
             Assert.True(shop.Location!.IsAddressValidated);
             Assert.Equal(54.1m, shop.Location.Latitude);
             Assert.Equal(28.2m, shop.Location.Longitude);
-            geocoder.Verify(g => g.GeocodeAsync("Corrected address", It.IsAny<CancellationToken>()), Times.Once);
+            geocoder.Verify(g => g.GeocodeAsync("Минск, Corrected address", It.IsAny<CancellationToken>()), Times.Once);
         }
         finally
         {

@@ -161,4 +161,28 @@ public class ModerationStatusHandlersTests
         _bus.Verify(b => b.PublishAsync(It.IsAny<ModerationGeocodingRequested>()),
             validated ? Times.Never() : Times.Once());
     }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("Validated street")]
+    public async Task ChangedCity_WithSameStreet_ResetsCoordinatesAndQueuesGeocoding(string? address)
+    {
+        var shop = ApprovableShop();
+        var newCityId = Guid.NewGuid();
+        var repo = new Mock<IModerationShopRepository>();
+        repo.Setup(r => r.GetByIdAsync(shop.Id, _ct)).ReturnsAsync(shop);
+
+        var response = await UpdateModerationCoffeeShopHandler.Handle(
+            new(new ModerationShopDto { Id = shop.Id, Name = shop.Name, CityId = newCityId, Address = address },
+                Guid.NewGuid(), true), repo.Object, _mapper.Object, _bus.Object, _uow.Object, _ct);
+
+        response.IsSuccess.Should().BeTrue();
+        shop.CityId.Should().Be(newCityId);
+        shop.Location!.IsAddressValidated.Should().BeFalse();
+        shop.Location.Latitude.Should().BeNull();
+        shop.Location.Longitude.Should().BeNull();
+        shop.Location.Address.Should().Be("Validated street");
+        _bus.Verify(b => b.PublishAsync(It.Is<ModerationGeocodingRequested>(r =>
+            r.EntityId == shop.Id && r.SubmittedAddress == "Validated street")), Times.Once);
+    }
 }

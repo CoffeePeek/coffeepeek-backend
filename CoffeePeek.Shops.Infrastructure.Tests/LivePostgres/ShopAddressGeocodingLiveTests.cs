@@ -58,7 +58,7 @@ public class ShopAddressGeocodingLiveTests : IClassFixture<ShopsLiveDatabase>
         }
 
         var geocoder = new Mock<IAddressGeocoder>(MockBehavior.Strict);
-        var setup = geocoder.Setup(g => g.GeocodeAsync("Corrected address", It.IsAny<CancellationToken>()));
+        var setup = geocoder.Setup(g => g.GeocodeAsync($"{city.Name}, Corrected address", It.IsAny<CancellationToken>()));
         if (outcome == "unavailable") setup.ThrowsAsync(new HttpRequestException("Yandex unavailable"));
         else setup.ReturnsAsync(outcome == "success" ? new GeocodingResult(53.95m, 27.65m) : null);
         using var host = BuildHost(geocoder.Object);
@@ -94,7 +94,7 @@ public class ShopAddressGeocodingLiveTests : IClassFixture<ShopsLiveDatabase>
             Assert.Equal(outcome == "success" ? 27.65m : 27.5m, saved.Location.Longitude);
             Assert.Equal(outcome == "success" ? "Edited cafe" : "Original cafe", saved.Name);
             Assert.Equal(outcome == "success" ? 1 : 0, saved.ProfileRevision);
-            geocoder.Verify(g => g.GeocodeAsync("Corrected address", It.IsAny<CancellationToken>()), Times.Once);
+            geocoder.Verify(g => g.GeocodeAsync($"{city.Name}, Corrected address", It.IsAny<CancellationToken>()), Times.Once);
         }
         finally
         {

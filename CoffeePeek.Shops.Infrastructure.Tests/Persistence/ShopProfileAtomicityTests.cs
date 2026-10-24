@@ -38,9 +38,10 @@ public class ShopProfileAtomicityTests
         await using var db = CreateDb();
         var shop = await SeedAsync(db);
         var before = Snapshot(shop);
-        var cityId = Guid.NewGuid();
+        var city = new City("Минск");
+        var cityId = city.Id;
         var cities = new Mock<IQueryCityRepository>();
-        cities.Setup(x => x.Exists(cityId, Ct)).ReturnsAsync(failure != "city");
+        cities.Setup(x => x.GetById(cityId, Ct)).ReturnsAsync(failure == "city" ? null : city);
         var equipment = new Mock<IQueryEquipmentRepository>();
         equipment.Setup(x => x.GetByIds(It.IsAny<List<Guid>>(), Ct)).ReturnsAsync([]);
         var beans = new Mock<IQueryCoffeeBeanRepository>();
@@ -58,18 +59,20 @@ public class ShopProfileAtomicityTests
         var catalogs = new ShopCatalogsPatch(Ids("equipment"), Ids("beans"), Ids("roasters"), Ids("brew"));
         var repository = new CoffeeShopRepository(db);
         var bus = new Mock<IMessageBus>(MockBehavior.Strict);
+        var geocoder = new Mock<IAddressGeocoder>();
+        geocoder.Setup(g => g.GeocodeAsync("Минск, New address", Ct)).ReturnsAsync(new GeocodingResult(54m, 28m));
 
         Func<Task> action = owner
             ? () => UpdateOwnerCoffeeShopHandler.Handle(
                 new(shop.Id, shop.OwnerUserId!.Value, "Changed", "Changed description", contacts.PhoneNumber,
                     contacts.Email, contacts.SiteLink, contacts.InstagramLink, location, schedules, catalogs),
                 repository, cities.Object, equipment.Object, beans.Object, roasters.Object, brew.Object,
-                bus.Object, Media, Mock.Of<IAddressGeocoder>(), Ct)
+                bus.Object, Media, geocoder.Object, Ct)
             : () => UpdateAdminCoffeeShopHandler.Handle(
                 new(shop.Id, "Changed", "Changed description", CoffeePeek.Contract.Enums.PriceRange.Moderate,
                     CoffeeShopStatus.TemporarilyClosed, location, contacts, schedules, catalogs),
                 repository, cities.Object, equipment.Object, beans.Object, roasters.Object, brew.Object,
-                bus.Object, Media, Mock.Of<IAddressGeocoder>(), Ct);
+                bus.Object, Media, geocoder.Object, Ct);
 
         await Assert.ThrowsAsync<ValidationException>(action);
         Assert.False(db.ChangeTracker.HasChanges());
@@ -92,9 +95,10 @@ public class ShopProfileAtomicityTests
     {
         await using var db = CreateDb();
         var shop = await SeedAsync(db);
-        var cityId = Guid.NewGuid();
+        var city = new City("Минск");
+        var cityId = city.Id;
         var cities = new Mock<IQueryCityRepository>();
-        cities.Setup(x => x.Exists(cityId, Ct)).ReturnsAsync(true);
+        cities.Setup(x => x.GetById(cityId, Ct)).ReturnsAsync(city);
         var cache = new Mock<ICacheService>();
         var repository = new CoffeeShopRepository(db);
         var location = new ShopLocationPatch(cityId, "New address", 54m, 28m);
@@ -102,7 +106,7 @@ public class ShopProfileAtomicityTests
         var catalogs = clearCollections ? new ShopCatalogsPatch([], [], [], []) : null;
         var bus = new Mock<IMessageBus>();
         var geocoder = new Mock<IAddressGeocoder>();
-        geocoder.Setup(g => g.GeocodeAsync("New address", Ct)).ReturnsAsync(new GeocodingResult(54m, 28m));
+        geocoder.Setup(g => g.GeocodeAsync("Минск, New address", Ct)).ReturnsAsync(new GeocodingResult(54m, 28m));
         var response = owner
             ? await UpdateOwnerCoffeeShopHandler.Handle(
                 new(shop.Id, shop.OwnerUserId!.Value, "Changed", "Description", "123", null, null, null,

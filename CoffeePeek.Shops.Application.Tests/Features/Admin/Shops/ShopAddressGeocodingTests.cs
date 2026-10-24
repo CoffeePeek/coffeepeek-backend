@@ -21,7 +21,8 @@ public class ShopAddressGeocodingTests
     private readonly CancellationToken _ct = TestContext.Current.CancellationToken;
     private readonly CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate.CoffeeShop _shop =
         new(null, "One Mo", null, PriceRange.Moderate, Guid.NewGuid());
-    private readonly Guid _cityId = Guid.NewGuid();
+    private readonly City _city = new("Минск");
+    private Guid _cityId => _city.Id;
     private readonly Guid _ownerId = Guid.NewGuid();
     private readonly Mock<ICoffeeShopRepository> _shops = new();
     private readonly Mock<IQueryCityRepository> _cities = new();
@@ -34,7 +35,7 @@ public class ShopAddressGeocodingTests
         _shop.AssignOwner(_ownerId);
         _shops.Setup(r => r.GetByIdWithCatalogsAsync(_shop.Id, _ct)).ReturnsAsync(_shop);
         _shops.Setup(r => r.GetByIdWithCatalogsForOwnerAsync(_shop.Id, _ownerId, _ct)).ReturnsAsync(_shop);
-        _cities.Setup(c => c.Exists(It.IsAny<Guid>(), _ct)).ReturnsAsync(true);
+        _cities.Setup(c => c.GetById(_cityId, _ct)).ReturnsAsync(_city);
     }
 
     [Theory]
@@ -42,7 +43,7 @@ public class ShopAddressGeocodingTests
     [InlineData(true)]
     public async Task ChangedAddress_WithPreviousPin_UsesFreshCoordinatesInResponse(bool owner)
     {
-        _geocoder.Setup(g => g.GeocodeAsync("New address", _ct))
+        _geocoder.Setup(g => g.GeocodeAsync("Минск, New address", _ct))
             .ReturnsAsync(new GeocodingResult(53.92m, 27.61m));
 
         var response = await UpdateAsync(owner, new(_cityId, " New address ", 53.9m, 27.5m));
@@ -53,17 +54,19 @@ public class ShopAddressGeocodingTests
         Assert.Equal(53.92m, response.Location!.Latitude);
         Assert.Equal(27.61m, response.Location.Longitude);
         Assert.Equal(1, response.ProfileRevision);
-        _geocoder.Verify(g => g.GeocodeAsync("New address", _ct), Times.Once);
+        _geocoder.Verify(g => g.GeocodeAsync("Минск, New address", _ct), Times.Once);
         _bus.Verify(b => b.PublishAsync(It.Is<ShopProfileCacheInvalidationRequested>(e => e.ShopId == _shop.Id)), Times.Once);
     }
 
     [Fact]
     public async Task ChangedCity_WithSameStreet_GeocodesAgain()
     {
-        _geocoder.Setup(g => g.GeocodeAsync("Old address", _ct))
+        var otherCity = new City("Брест");
+        _cities.Setup(c => c.GetById(otherCity.Id, _ct)).ReturnsAsync(otherCity);
+        _geocoder.Setup(g => g.GeocodeAsync("Брест, Old address", _ct))
             .ReturnsAsync(new GeocodingResult(54.2m, 28.3m));
 
-        await UpdateAsync(false, new(Guid.NewGuid(), "Old address", 53.9m, 27.5m));
+        await UpdateAsync(false, new(otherCity.Id, "Old address", 53.9m, 27.5m));
 
         Assert.Equal(54.2m, _shop.Location.Latitude);
         _geocoder.VerifyAll();
@@ -88,7 +91,7 @@ public class ShopAddressGeocodingTests
     [InlineData(true, true)]
     public async Task GeocodingFailure_DoesNotMutateAnyProfileFields(bool owner, bool unavailable)
     {
-        var setup = _geocoder.Setup(g => g.GeocodeAsync("New address", _ct));
+        var setup = _geocoder.Setup(g => g.GeocodeAsync("Минск, New address", _ct));
         if (unavailable) setup.ThrowsAsync(new HttpRequestException("Yandex unavailable"));
         else setup.ReturnsAsync((GeocodingResult?)null);
 

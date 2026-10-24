@@ -29,6 +29,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\CoffeePeek.ModerationService\CoffeePeek.ModerationService.csproj" />
+      <Compile Include="..\CoffeePeek.Shops.Infrastructure.Tests\LivePostgres\LivePostgresServer.cs" Link="LivePostgres\LivePostgresServer.cs" />
     </ItemGroup>
 
 </Project>

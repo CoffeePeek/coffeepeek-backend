@@ -75,6 +75,7 @@ public static class DependencyInjection
             client.Timeout = TimeSpan.FromSeconds(5);
         });
         services.AddScoped<IRoasterExistenceLookup, ShopsRoasterExistenceLookup>();
+        services.AddScoped<ICityNameLookup, ShopsCityNameLookup>();
         services.AddScoped<CoffeePeek.Shared.Auth.PublicAddressHttpClient>();
         services.AddScoped<IPublicAddressLookup, ShopsPublicAddressLookup>();
 

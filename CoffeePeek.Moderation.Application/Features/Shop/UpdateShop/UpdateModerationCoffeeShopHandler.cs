@@ -46,6 +46,7 @@ public static class UpdateModerationCoffeeShopHandler
         var domainCoffeeFocus = moderationShopDto.Type != null
             ? (DomainCoffeeFocus?)moderationShopDto.Type
             : null;
+        var cityChanged = shop.CityId != moderationShopDto.CityId;
         shop.UpdateInfo(
             moderationShopDto.Name,
             moderationShopDto.Description,
@@ -53,12 +54,13 @@ public static class UpdateModerationCoffeeShopHandler
             moderationShopDto.CityId,
             domainCoffeeFocus);
 
-        if (moderationShopDto.Address != null &&
-            (moderationShopDto.Address != shop.Location?.Address || shop.Location is { IsAddressValidated: false }))
+        var submittedAddress = moderationShopDto.Address ?? shop.Location?.Address;
+        if (submittedAddress != null &&
+            (cityChanged || submittedAddress != shop.Location?.Address || shop.Location is { IsAddressValidated: false }))
         {
-            shop.SetLocation(new ModerationLocation(moderationShopDto.Address));
+            shop.SetLocation(new ModerationLocation(submittedAddress));
             await bus.PublishAsync(new ModerationGeocodingRequested(
-                ModerationGeocodingKind.Shop, shop.Id, moderationShopDto.Address));
+                ModerationGeocodingKind.Shop, shop.Id, submittedAddress));
         }
 
         if (moderationShopDto.ShopContact != null)

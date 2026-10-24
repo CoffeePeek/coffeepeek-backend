@@ -42,13 +42,13 @@ public class ModerationMineRepositoryFilterTests
         await using var db = new ModerationDbContext(options);
         var repository = new ModerationShopRepository(db);
 
-        (await repository.IsAwaitingGeocodingAsync(shop.Id, "Corrected address", TestContext.Current.CancellationToken)).Should().BeTrue();
-        (await repository.IsAwaitingGeocodingAsync(shop.Id, "Stale address", TestContext.Current.CancellationToken)).Should().BeFalse();
+        (await repository.GetAwaitingGeocodingCityIdAsync(shop.Id, "Corrected address", TestContext.Current.CancellationToken)).Should().Be(shop.CityId);
+        (await repository.GetAwaitingGeocodingCityIdAsync(shop.Id, "Stale address", TestContext.Current.CancellationToken)).Should().BeNull();
         var tracked = await repository.GetByIdAsync(shop.Id, TestContext.Current.CancellationToken);
         tracked!.SetLocation(new ModerationLocation("Corrected address", 53, 27));
         tracked.Approve();
         await db.SaveChangesAsync(TestContext.Current.CancellationToken);
-        (await repository.IsAwaitingGeocodingAsync(shop.Id, "Corrected address", TestContext.Current.CancellationToken)).Should().BeFalse();
+        (await repository.GetAwaitingGeocodingCityIdAsync(shop.Id, "Corrected address", TestContext.Current.CancellationToken)).Should().BeNull();
     }
 
     [Fact]

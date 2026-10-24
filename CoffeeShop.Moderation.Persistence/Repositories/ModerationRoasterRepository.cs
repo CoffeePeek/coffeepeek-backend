@@ -22,14 +22,15 @@ public class ModerationRoasterRepository(ModerationDbContext context) : IModerat
         await Repository.AddAsync(roaster);
     }
 
-    public Task<bool> IsAwaitingGeocodingAsync(Guid id, string submittedAddress, CancellationToken ct = default) =>
-        Repository.AsNoTracking().AnyAsync(roaster =>
+    public Task<Guid?> GetAwaitingGeocodingCityIdAsync(Guid id, string submittedAddress, CancellationToken ct = default) =>
+        Repository.AsNoTracking().Where(roaster =>
             roaster.Id == id && roaster.ModerationStatus == ModerationStatus.Pending &&
             roaster.Location != null && roaster.Location.Address == submittedAddress &&
-            !roaster.Location.IsAddressValidated, ct);
+            !roaster.Location.IsAddressValidated)
+            .Select(roaster => roaster.CityId).SingleOrDefaultAsync(ct);
 
     public async Task<bool> TryApplyGeocodingAsync(
-        Guid id, string submittedAddress, decimal latitude, decimal longitude, CancellationToken ct = default)
+        Guid id, string submittedAddress, Guid cityId, decimal latitude, decimal longitude, CancellationToken ct = default)
     {
         // This guard also makes a redelivered message harmless. The existing xmin concurrency
         // token protects a moderator who loaded the row before this update and saves afterward.
@@ -42,6 +43,7 @@ public class ModerationRoasterRepository(ModerationDbContext context) : IModerat
             WHERE "Id" = {id}
               AND "ModerationStatus" = {(int)ModerationStatus.Pending}
               AND "Location_Address" = {submittedAddress}
+              AND "CityId" = {cityId}
               AND "Location_IsAddressValidated" IS FALSE
             """, ct);
         return affected == 1;

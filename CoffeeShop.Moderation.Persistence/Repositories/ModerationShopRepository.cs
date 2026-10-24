@@ -42,14 +42,15 @@ public class ModerationShopRepository(ModerationDbContext context) : IModeration
         await ShopRepository.AddAsync(shop);
     }
 
-    public Task<bool> IsAwaitingGeocodingAsync(Guid id, string submittedAddress, CancellationToken ct = default) =>
-        ShopRepository.AsNoTracking().AnyAsync(shop =>
+    public Task<Guid?> GetAwaitingGeocodingCityIdAsync(Guid id, string submittedAddress, CancellationToken ct = default) =>
+        ShopRepository.AsNoTracking().Where(shop =>
             shop.Id == id && shop.ModerationStatus != ModerationStatus.Approved &&
             shop.Location != null && shop.Location.Address == submittedAddress &&
-            !shop.Location.IsAddressValidated, ct);
+            !shop.Location.IsAddressValidated)
+            .Select(shop => (Guid?)shop.CityId).SingleOrDefaultAsync(ct);
 
     public async Task<bool> TryApplyGeocodingAsync(
-        Guid id, string submittedAddress, decimal latitude, decimal longitude, CancellationToken ct = default)
+        Guid id, string submittedAddress, Guid cityId, decimal latitude, decimal longitude, CancellationToken ct = default)
     {
         // A single guarded UPDATE is required: a read-then-save could overwrite a moderator's
         // newer address or decision. PostgreSQL reevaluates this predicate after row locking.
@@ -62,6 +63,7 @@ public class ModerationShopRepository(ModerationDbContext context) : IModeration
             WHERE "Id" = {id}
               AND "ModerationStatus" <> {(int)ModerationStatus.Approved}
               AND "Location_Address" = {submittedAddress}
+              AND "CityId" = {cityId}
               AND "Location_IsAddressValidated" IS FALSE
             """, ct);
         return affected == 1;
