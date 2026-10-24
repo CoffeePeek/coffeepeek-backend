@@ -220,7 +220,10 @@ public class ReverseProxyRouteConfigurationTests
     [Theory]
     [InlineData("shops-admin-stats-route", "shops-cluster", "/api/admin/stats/shops/{**remainder}")]
     [InlineData("moderation-admin-stats-route", "moderation-cluster", "/api/admin/stats/moderation/{**remainder}")]
-    public void AdminStatsRoutes_TargetOwningServiceWithAdminPolicyBeforeAccountCatchAll(
+    [InlineData("account-admin-stats-route", "account-cluster", "/api/admin/stats/{**remainder}")]
+    [InlineData("account-admin-users-list-route", "account-cluster", "/api/admin/users")]
+    [InlineData("account-admin-users-stats-route", "account-cluster", "/api/admin/users/stats")]
+    public void DashboardReadRoutes_TargetOwningServiceWithModeratorPolicyBeforeAccountCatchAll(
         string routeId,
         string clusterId,
         string path)
@@ -230,8 +233,14 @@ public class ReverseProxyRouteConfigurationTests
 
         routes.TryGetProperty(routeId, out var route).Should().BeTrue();
         route.GetProperty("ClusterId").GetString().Should().Be(clusterId);
-        route.GetProperty("AuthorizationPolicy").GetString().Should().Be("Admin");
+        route.GetProperty("AuthorizationPolicy").GetString().Should().Be("Moderator");
         route.GetProperty("Match").GetProperty("Path").GetString().Should().Be(path);
+        route.GetProperty("Match").GetProperty("Methods").EnumerateArray()
+            .Select(method => method.GetString()).Should().Equal("GET");
+
+        routes.GetProperty("account-admin-route").GetProperty("AuthorizationPolicy").GetString().Should().Be("Admin");
+        RoutePrecedence.ComputeInbound(ParseRouteTemplate(routes, routeId)).Should()
+            .BeLessThan(RoutePrecedence.ComputeInbound(ParseRouteTemplate(routes, "account-admin-route")));
 
         var routeIds = routes.EnumerateObject().Select(r => r.Name).ToList();
         routeIds.IndexOf(routeId).Should().BeLessThan(routeIds.IndexOf("account-admin-route"));

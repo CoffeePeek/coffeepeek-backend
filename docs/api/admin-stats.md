@@ -8,24 +8,84 @@ Base URL: gateway host, e.g. `https://api.example.com` or Aspire `http://localho
 
 ## Auth
 
-Every endpoint in this document requires an **Admin** JWT:
+Every endpoint in this document requires a JWT with the **Moderator** or **Admin** role:
 
 ```
-Authorization: Bearer {adminJwt}
+Authorization: Bearer {jwt}
 ```
 
 | Situation | Result |
 |-----------|--------|
 | No / invalid / expired token | `401 Unauthorized` (gateway) |
-| Valid token without the `Admin` role | `403 Forbidden` (gateway; the service re-checks the same policy) |
+| Valid token without either the `Moderator` or `Admin` role | `403 Forbidden` (gateway; the service re-checks the same policy) |
 
 Gateway routing:
 
 | Path prefix | Service |
 |-------------|---------|
-| `/api/admin/stats/overview`, `/api/admin/stats/users/*` | Account (via `/api/admin/{**}` catch-all) |
+| `/api/admin/stats/overview`, `/api/admin/stats/users/*` | Account (via a dedicated GET-only `/api/admin/stats/{**}` route) |
 | `/api/admin/stats/shops/*` | Shops |
 | `/api/admin/stats/moderation/*` | Moderation |
+
+Moderators and administrators can also read `GET /api/admin/users` (including search,
+role filters and pagination) and `GET /api/admin/users/stats`. User mutations
+(role changes, blocking and deletion), session reads and session revocation remain
+restricted to **Admin**. Existing URLs and response contracts are unchanged.
+
+## Web integration changes — 2026-10-24
+
+This update expands authorization. HTTP methods, URLs, query parameters, JSON DTOs,
+field meanings and pagination headers keep their existing contracts.
+
+The following requests previously required `Admin` and now accept either `Moderator`
+or `Admin` through the gateway and in the owning service:
+
+| Method | URL | Data available to the web client |
+|--------|-----|----------------------------------|
+| GET | `/api/admin/stats/overview` | All overview cards: users, activity, shops, check-ins, moderation and imports |
+| GET | `/api/admin/stats/users/timeseries?days=30` | User registration chart |
+| GET | `/api/admin/stats/shops/timeseries?days=30` | Shop and check-in charts |
+| GET | `/api/admin/stats/shops/insights` | Ratings, top shops and app downloads |
+| GET | `/api/admin/stats/moderation/insights` | Moderation SLA, queues and moderator workload |
+| GET | `/api/admin/users` | User list with the existing search, role filter and pagination |
+| GET | `/api/admin/users/stats` | Aggregate user counts and distribution by role |
+
+For timeseries, `days` still defaults to `30` and is clamped to `1..90`.
+`GET /api/admin/users` still accepts `page` (default `1`, minimum `1`),
+`pageSize` (default `20`, range `1..100`), optional `search` (up to 100 characters)
+and optional `role` (up to 50 characters). The response remains
+`ApiResponse<{ items, totalItems, totalPages, currentPage, pageSize }>` with
+`X-Total-Count`, `X-Total-Pages`, `X-Current-Page` and `X-Page-Size` headers.
+Each item retains `id`, `userName`, `email`, `createdAtUtc`, `about`, `avatarUrl`,
+`checkInCount`, `addedShopsCount`, `roles` and `isBlocked`.
+`GET /api/admin/users/stats` still returns
+`ApiResponse<{ totalUsers, activeUsers, blockedUsers, registeredToday, usersByRole }>`.
+
+The following requests continue to require `Admin`; a `Moderator` receives `403`:
+
+| Method | URL | Action |
+|--------|-----|--------|
+| PATCH | `/api/admin/users/{id}/role` | Change a user's role |
+| PATCH | `/api/admin/users/{id}/block` | Block or unblock a user |
+| DELETE | `/api/admin/users/{id}` | Delete a user |
+| GET | `/api/admin/users/{userId}/sessions` | Read a user's sessions |
+| DELETE | `/api/admin/users/{userId}/sessions/{sessionId}` | Revoke a session |
+| DELETE | `/api/admin/users/{userId}/sessions` | Revoke all sessions |
+
+Web changes required:
+
+- Allow both roles in navigation and route guards for the complete dashboard and
+  user list, including every dashboard widget and chart.
+- Use the existing API calls, DTOs and bearer token. A moderator receives the same
+  response shape and available data as an administrator for the allowed reads.
+- Show user management controls and session views only to `Admin`. For moderators,
+  render the user list as read-only, including role and blocked-status fields.
+- Keep the usual `401` handling for missing/invalid/expired tokens and `403` handling
+  for insufficient roles. Other roles continue to receive `403` on these reads.
+
+Service-to-service `GET /api/admin/stats/summary` endpoints in Shops and Moderation
+also accept both roles so overview aggregation works for moderators. The web client
+continues to use `/api/admin/stats/overview` for those totals.
 
 ---
 

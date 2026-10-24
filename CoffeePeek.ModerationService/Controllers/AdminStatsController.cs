@@ -11,7 +11,7 @@ namespace CoffeePeek.ModerationService.Controllers;
 /// <summary>Internal admin statistics for the Moderation service.</summary>
 [ApiController]
 [Route("api/admin/stats")]
-[Authorize(Policy = RoleConsts.Admin)]
+[Authorize(Policy = RoleConsts.Moderator)]
 [Tags("Admin")]
 [ProducesErrorResponseType(typeof(ErrorResponse))]
 public class AdminStatsController(IMessageBus bus) : ControllerBase
