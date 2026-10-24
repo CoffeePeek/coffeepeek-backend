@@ -1,4 +1,4 @@
-using CoffeePeek.Moderation.Application.Abstractions;
+using CoffeePeek.Shared.Kernel.Geocoding;
 using CoffeePeek.Moderation.Domain.Aggregates;
 using Microsoft.Extensions.Logging;
 using Wolverine.Attributes;
@@ -15,7 +15,7 @@ public static class ModerationGeocodingRequestedHandler
         ModerationGeocodingRequested request,
         IModerationShopRepository shopRepository,
         IModerationRoasterRepository roasterRepository,
-        IYandexGeocodingService geocodingService,
+        IAddressGeocoder geocodingService,
         ILogger<ModerationGeocodingRequested> logger,
         CancellationToken ct)
     {

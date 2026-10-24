@@ -1,3 +1,4 @@
+using CoffeePeek.Shared.Kernel.Geocoding;
 using System;
 using System.Collections.Generic;
 using System.Net;
@@ -109,6 +110,9 @@ public class UpdateAdminCoffeeShopHandlerTests
         _shops.Setup(r => r.GetByIdWithCatalogsAsync(shop.Id, _ct)).ReturnsAsync(shop);
         _cities.Setup(r => r.Exists(cityId, _ct)).ReturnsAsync(true);
         _equipment.Setup(r => r.GetByIds(It.IsAny<List<Guid>>(), _ct)).ReturnsAsync([equipment]);
+        var geocoder = new Mock<IAddressGeocoder>();
+        geocoder.Setup(g => g.GeocodeAsync("Немига 5", _ct))
+            .ReturnsAsync(new GeocodingResult(53.91m, 27.56m));
 
         var result = await UpdateAdminCoffeeShopHandler.Handle(
             new UpdateAdminCoffeeShopCommand(
@@ -126,7 +130,7 @@ public class UpdateAdminCoffeeShopHandlerTests
                 ],
                 new ShopCatalogsPatch([equipment.Id], [], [], [])),
             _shops.Object, _cities.Object, _equipment.Object, _beans.Object, _roasters.Object, _brew.Object,
-            _bus.Object, _media, _ct);
+            _bus.Object, _media, geocoder.Object, _ct);
 
         result.IsSuccess.Should().BeTrue();
         shop.Name.Should().Be("New name");
@@ -157,7 +161,7 @@ public class UpdateAdminCoffeeShopHandlerTests
                 new ShopLocationPatch(cityId, "Addr", 53m, 27m),
                 null, null, null),
             _shops.Object, _cities.Object, _equipment.Object, _beans.Object, _roasters.Object, _brew.Object,
-            _bus.Object, _media, _ct);
+            _bus.Object, _media, Mock.Of<IAddressGeocoder>(), _ct);
 
         await action.Should().ThrowAsync<ValidationException>();
         _uow.Verify(u => u.SaveChangesAsync(_ct), Times.Never);
@@ -177,7 +181,7 @@ public class UpdateAdminCoffeeShopHandlerTests
                 null, null, null,
                 new ShopCatalogsPatch([Guid.NewGuid()], null, null, null)),
             _shops.Object, _cities.Object, _equipment.Object, _beans.Object, _roasters.Object, _brew.Object,
-            _bus.Object, _media, _ct);
+            _bus.Object, _media, Mock.Of<IAddressGeocoder>(), _ct);
 
         var error = await action.Should().ThrowAsync<ValidationException>();
         error.Which.Message.Should().Contain("equipment");

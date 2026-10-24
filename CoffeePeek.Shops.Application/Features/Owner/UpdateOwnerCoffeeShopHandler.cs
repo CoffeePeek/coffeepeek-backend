@@ -2,6 +2,7 @@ using CoffeePeek.Shared.Domain.Interfaces.Infrastructure;
 using CoffeePeek.Shared.Kernel.Options;
 using CoffeePeek.Shared.Kernel.Response;
 using CoffeePeek.Shared.Kernel.Exceptions;
+using CoffeePeek.Shared.Kernel.Geocoding;
 using CoffeePeek.Shops.Application.Features.Admin.Shops;
 using CoffeePeek.Shops.Application.Features.CoffeeShop.ShopProfile;
 using CoffeePeek.Shops.Application.Observability;
@@ -24,6 +25,7 @@ public static class UpdateOwnerCoffeeShopHandler
         IQueryBrewMethodRepository brewMethods,
         IMessageBus bus,
         IOptions<MediaPublicUrlOptions> mediaOptions,
+        IAddressGeocoder geocoder,
         CancellationToken ct)
     {
         var shop = await repository.GetByIdWithCatalogsForOwnerAsync(command.ShopId, command.OwnerUserId, ct);
@@ -47,7 +49,7 @@ public static class UpdateOwnerCoffeeShopHandler
                 new ShopContactsPatch(command.PhoneNumber, command.Email, command.SiteLink, command.InstagramLink),
                 command.Schedules,
                 command.Catalogs),
-            cities, equipment, beans, roasters, brewMethods, ct);
+            cities, equipment, beans, roasters, brewMethods, geocoder, ct);
         if (applied.IsFailed)
             throw new ValidationException(applied.Errors[0].Message);
 

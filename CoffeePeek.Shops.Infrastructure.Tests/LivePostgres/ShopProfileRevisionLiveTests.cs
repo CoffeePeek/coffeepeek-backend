@@ -1,3 +1,4 @@
+using CoffeePeek.Shared.Kernel.Geocoding;
 using CoffeePeek.Shared.Kernel.Options;
 using CoffeePeek.Shared.Kernel.Exceptions;
 using CoffeePeek.Shared.Kernel.Response;
@@ -66,6 +67,7 @@ public sealed class ShopProfileRevisionLiveTests : IClassFixture<ShopsLiveDataba
             {
                 services.AddScoped(_ => new CoffeePeek.Shops.Persistance.Configuration.ShopsDbContext(options));
                 services.AddScoped<ICoffeeShopRepository, CoffeeShopRepository>();
+                services.AddSingleton(Mock.Of<IAddressGeocoder>());
                 services.AddScoped<IQueryCityRepository, QueryCityRepository>();
                 services.AddScoped<IQueryEquipmentRepository, QueryEquipmentRepository>();
                 services.AddScoped<IQueryCoffeeBeanRepository, QueryCoffeeBeanRepository>();
@@ -178,14 +180,14 @@ public sealed class ShopProfileRevisionLiveTests : IClassFixture<ShopsLiveDataba
             { ExpectedRevision = 0 },
             new CoffeeShopRepository(adminDb), Mock.Of<IQueryCityRepository>(),
             Mock.Of<IQueryEquipmentRepository>(), Mock.Of<IQueryCoffeeBeanRepository>(),
-            Mock.Of<IQueryRoasterRepository>(), Mock.Of<IQueryBrewMethodRepository>(), bus, media, ct);
+            Mock.Of<IQueryRoasterRepository>(), Mock.Of<IQueryBrewMethodRepository>(), bus, media, Mock.Of<IAddressGeocoder>(), ct);
         var owner = await UpdateOwnerCoffeeShopHandler.Handle(
             new UpdateOwnerCoffeeShopCommand(shop.Id, ownerId, "Owner edit", null,
                 null, null, null, null, null, null, null)
             { ExpectedRevision = 0 },
             new CoffeeShopRepository(ownerDb), Mock.Of<IQueryCityRepository>(),
             Mock.Of<IQueryEquipmentRepository>(), Mock.Of<IQueryCoffeeBeanRepository>(),
-            Mock.Of<IQueryRoasterRepository>(), Mock.Of<IQueryBrewMethodRepository>(), bus, media, ct);
+            Mock.Of<IQueryRoasterRepository>(), Mock.Of<IQueryBrewMethodRepository>(), bus, media, Mock.Of<IAddressGeocoder>(), ct);
         Assert.Equal(1, admin.Data.ProfileRevision);
         Assert.Equal(1, owner.Data.ProfileRevision);
 
@@ -228,7 +230,7 @@ public sealed class ShopProfileRevisionLiveTests : IClassFixture<ShopsLiveDataba
                 new CoffeeShopRepository(adminDb), Mock.Of<IQueryCityRepository>(),
                 Mock.Of<IQueryEquipmentRepository>(), Mock.Of<IQueryCoffeeBeanRepository>(),
                 Mock.Of<IQueryRoasterRepository>(), Mock.Of<IQueryBrewMethodRepository>(),
-                Mock.Of<IMessageBus>(), media, ct);
+                Mock.Of<IMessageBus>(), media, Mock.Of<IAddressGeocoder>(), ct);
             await adminDb.SaveChangesAsync(ct);
         }
 
@@ -240,7 +242,7 @@ public sealed class ShopProfileRevisionLiveTests : IClassFixture<ShopsLiveDataba
             new CoffeeShopRepository(staleDb), Mock.Of<IQueryCityRepository>(),
             Mock.Of<IQueryEquipmentRepository>(), Mock.Of<IQueryCoffeeBeanRepository>(),
             Mock.Of<IQueryRoasterRepository>(), Mock.Of<IQueryBrewMethodRepository>(),
-            Mock.Of<IMessageBus>(), media, ct));
+            Mock.Of<IMessageBus>(), media, Mock.Of<IAddressGeocoder>(), ct));
         Assert.False(staleDb.ChangeTracker.HasChanges());
 
         await using var verify = fixture.Context();
@@ -282,7 +284,7 @@ public sealed class ShopProfileRevisionLiveTests : IClassFixture<ShopsLiveDataba
             Mock.Of<IMessageBus>(), Options.Create(new MediaPublicUrlOptions
             {
                 PublicEndpoint = "https://media.example.test", ShopBucketName = "shops"
-            }), ct));
+            }), Mock.Of<IAddressGeocoder>(), ct));
 
         await using var verify = fixture.Context();
         var persisted = await verify.Shops.AsNoTracking().SingleAsync(s => s.Id == shop.Id, ct);

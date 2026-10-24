@@ -29,7 +29,7 @@ namespace Internal.Generated.WolverineHandlers
             var moderationRoasterRepository = new CoffeeShop.Moderation.Persistence.Repositories.ModerationRoasterRepository(moderationDbContext);
             var moderationShopRepository = new CoffeeShop.Moderation.Persistence.Repositories.ModerationShopRepository(moderationDbContext);
             // This service has been marked as requiring service location independent of Wolverine's ability to use constructor injection of everything else
-            var yandexGeocodingService = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<CoffeePeek.Moderation.Application.Abstractions.IYandexGeocodingService>(serviceScope.ServiceProvider);
+            var addressGeocoder = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<CoffeePeek.Shared.Kernel.Geocoding.IAddressGeocoder>(serviceScope.ServiceProvider);
             // The actual message body
             var moderationGeocodingRequested = (CoffeePeek.Moderation.Application.Features.Geocoding.ModerationGeocodingRequested)context.Envelope.Message;
 
@@ -37,7 +37,7 @@ namespace Internal.Generated.WolverineHandlers
             System.Diagnostics.Activity.Current?.SetTag("handler.type", "CoffeePeek.Moderation.Application.Features.Geocoding.ModerationGeocodingRequestedHandler");
 
             // The actual message execution
-            await CoffeePeek.Moderation.Application.Features.Geocoding.ModerationGeocodingRequestedHandler.Handle(moderationGeocodingRequested, moderationShopRepository, moderationRoasterRepository, yandexGeocodingService, _loggerForMessage, cancellation).ConfigureAwait(false);
+            await CoffeePeek.Moderation.Application.Features.Geocoding.ModerationGeocodingRequestedHandler.Handle(moderationGeocodingRequested, moderationShopRepository, moderationRoasterRepository, addressGeocoder, _loggerForMessage, cancellation).ConfigureAwait(false);
 
         }
 

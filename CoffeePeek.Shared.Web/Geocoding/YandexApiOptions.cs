@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace CoffeePeek.Moderation.Infrastructure;
+namespace CoffeePeek.Shared.Web.Geocoding;
 
 public class YandexApiOptions
 {

@@ -64,6 +64,7 @@ public class AdminCoffeeShopsController(IMessageBus bus, IUserContext userContex
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
     public async Task<IActionResult> UpdateShop(
         Guid id,
         [FromBody] UpdateAdminCoffeeShopRequest request,

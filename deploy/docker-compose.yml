@@ -298,6 +298,7 @@ services:
       PostgresCpOptions__ConnectionString: Host=postgres;Port=5432;Database=cpshopsdb;Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD};SslMode=Disable;GSS Encryption Mode=Disable
       PublicAddresses__Enabled: "${SHOPS_PUBLIC_ADDRESSES_ENABLED:-false}"
       CoffeeImportAuthOptions__Token: ${COFFEE_IMPORT_TOKEN:-}
+      YandexApiOptions__ApiKey: ${YANDEX_GEOCODER_API_KEY:-}
       OpenAiOptions__ApiKey: ${OPENAI_API_KEY:-}
       OpenAiOptions__Model: ${OPENAI_MODEL:-gpt-4.1-mini}
       OpenAiOptions__BaseUrl: ${OPENAI_BASE_URL:-https://api.openai.com/v1}

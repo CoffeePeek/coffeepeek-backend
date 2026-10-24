@@ -28,6 +28,7 @@ public class WolverinePreGeneratedHandlersTests
         builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
         {
             ["Sentry:Dsn"] = "",
+            ["YandexApiOptions:ApiKey"] = "codegen-test",
             ["PostgresCpOptions:ConnectionString"] = "Host=127.0.0.1;Port=1;Database=codegen_test;Username=test;Password=test;Timeout=1",
             ["RabbitMqOptions:HostName"] = "127.0.0.1",
             ["RabbitMqOptions:Port"] = "1",

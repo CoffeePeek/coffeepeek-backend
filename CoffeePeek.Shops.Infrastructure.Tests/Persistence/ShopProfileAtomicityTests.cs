@@ -1,3 +1,4 @@
+using CoffeePeek.Shared.Kernel.Geocoding;
 using System.Text.Json;
 using CoffeePeek.Contract.Dtos.Schedule;
 using CoffeePeek.Shared.Domain.Interfaces.Infrastructure;
@@ -63,12 +64,12 @@ public class ShopProfileAtomicityTests
                 new(shop.Id, shop.OwnerUserId!.Value, "Changed", "Changed description", contacts.PhoneNumber,
                     contacts.Email, contacts.SiteLink, contacts.InstagramLink, location, schedules, catalogs),
                 repository, cities.Object, equipment.Object, beans.Object, roasters.Object, brew.Object,
-                bus.Object, Media, Ct)
+                bus.Object, Media, Mock.Of<IAddressGeocoder>(), Ct)
             : () => UpdateAdminCoffeeShopHandler.Handle(
                 new(shop.Id, "Changed", "Changed description", CoffeePeek.Contract.Enums.PriceRange.Moderate,
                     CoffeeShopStatus.TemporarilyClosed, location, contacts, schedules, catalogs),
                 repository, cities.Object, equipment.Object, beans.Object, roasters.Object, brew.Object,
-                bus.Object, Media, Ct);
+                bus.Object, Media, Mock.Of<IAddressGeocoder>(), Ct);
 
         await Assert.ThrowsAsync<ValidationException>(action);
         Assert.False(db.ChangeTracker.HasChanges());
@@ -100,17 +101,19 @@ public class ShopProfileAtomicityTests
         ScheduleDto[]? schedules = clearCollections ? [] : null;
         var catalogs = clearCollections ? new ShopCatalogsPatch([], [], [], []) : null;
         var bus = new Mock<IMessageBus>();
+        var geocoder = new Mock<IAddressGeocoder>();
+        geocoder.Setup(g => g.GeocodeAsync("New address", Ct)).ReturnsAsync(new GeocodingResult(54m, 28m));
         var response = owner
             ? await UpdateOwnerCoffeeShopHandler.Handle(
                 new(shop.Id, shop.OwnerUserId!.Value, "Changed", "Description", "123", null, null, null,
                     location, schedules, catalogs), repository, cities.Object,
                 Mock.Of<IQueryEquipmentRepository>(), Mock.Of<IQueryCoffeeBeanRepository>(),
-                Mock.Of<IQueryRoasterRepository>(), Mock.Of<IQueryBrewMethodRepository>(), bus.Object, Media, Ct)
+                Mock.Of<IQueryRoasterRepository>(), Mock.Of<IQueryBrewMethodRepository>(), bus.Object, Media, geocoder.Object, Ct)
             : await UpdateAdminCoffeeShopHandler.Handle(
                 new(shop.Id, "Changed", "Description", CoffeePeek.Contract.Enums.PriceRange.Moderate,
                     CoffeeShopStatus.TemporarilyClosed, location, new("123", null, null, null), schedules, catalogs),
                 repository, cities.Object, Mock.Of<IQueryEquipmentRepository>(), Mock.Of<IQueryCoffeeBeanRepository>(),
-                Mock.Of<IQueryRoasterRepository>(), Mock.Of<IQueryBrewMethodRepository>(), bus.Object, Media, Ct);
+                Mock.Of<IQueryRoasterRepository>(), Mock.Of<IQueryBrewMethodRepository>(), bus.Object, Media, geocoder.Object, Ct);
 
         Assert.True(response.IsSuccess);
         bus.Verify(b => b.PublishAsync(It.Is<ShopProfileCacheInvalidationRequested>(e => e.ShopId == shop.Id)), Times.Once);

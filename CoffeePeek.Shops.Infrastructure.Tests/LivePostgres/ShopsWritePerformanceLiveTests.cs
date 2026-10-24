@@ -4,6 +4,7 @@ using System.Text.Json;
 using CoffeePeek.Contract.Dtos.Menu;
 using CoffeePeek.Contract.Dtos.Coffee;
 using CoffeePeek.Shared.Kernel;
+using CoffeePeek.Shared.Kernel.Geocoding;
 using CoffeePeek.Shared.Kernel.Options;
 using CoffeePeek.Shared.Kernel.Response;
 using CoffeePeek.Shared.Persistence.Cache.Redis;
@@ -68,6 +69,7 @@ public sealed class ShopsWritePerformanceLiveTests(ShopsLiveDatabase fixture) : 
             services.AddScoped(_ => new ShopsDbContext(new DbContextOptionsBuilder<ShopsDbContext>()
                 .UseNpgsql(poolConnection).AddInterceptors(new CheckInAuditInterceptor(), transactions).Options));
             services.AddShopsModule().AddCoffeeCatalogModule().AddMenuModule();
+            services.AddSingleton(Mock.Of<IAddressGeocoder>());
             services.AddScoped<IUnitOfWork, UnitOfWork<ShopsDbContext>>();
             services.AddScoped<IShopPriceRangeWriter, ShopPriceRangeWriter>();
             services.AddSingleton(Mock.Of<IStrictCacheInvalidator>());

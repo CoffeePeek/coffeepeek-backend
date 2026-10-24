@@ -1,8 +1,7 @@
 using System.Globalization;
 using System.Net;
 using System.Text;
-using CoffeePeek.Moderation.Infrastructure;
-using CoffeePeek.Moderation.Infrastructure.Services;
+using CoffeePeek.Shared.Web.Geocoding;
 using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;

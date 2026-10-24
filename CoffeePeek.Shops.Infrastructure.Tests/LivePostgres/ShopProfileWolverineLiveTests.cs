@@ -1,3 +1,4 @@
+using CoffeePeek.Shared.Kernel.Geocoding;
 using CoffeePeek.Contract.Dtos.Schedule;
 using CoffeePeek.Shared.Domain.Interfaces.Infrastructure;
 using CoffeePeek.Shared.Kernel.Options;
@@ -88,6 +89,7 @@ public sealed class ShopProfileWolverineLiveTests : IClassFixture<ShopsLiveDatab
                 // Reuse the fixture's production Npgsql options, audit interceptor and migrations.
                 services.AddScoped(_ => fixture.Context());
                 services.AddScoped<ICoffeeShopRepository, CoffeeShopRepository>();
+                services.AddSingleton(Mock.Of<IAddressGeocoder>());
                 services.AddScoped<IQueryCityRepository, QueryCityRepository>();
                 services.AddScoped<IQueryEquipmentRepository, QueryEquipmentRepository>();
                 services.AddScoped<IQueryCoffeeBeanRepository, QueryCoffeeBeanRepository>();

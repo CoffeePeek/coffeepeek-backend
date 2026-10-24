@@ -35,6 +35,8 @@ namespace Internal.Generated.WolverineHandlers
             var queryEquipmentRepository = new CoffeePeek.Shops.Persistance.Repositories.QueryEquipmentRepository(shopsDbContext);
             var queryCityRepository = new CoffeePeek.Shops.Persistance.Repositories.QueryCityRepository(shopsDbContext);
             var coffeeShopRepository = new CoffeePeek.Shops.Persistance.Repositories.CoffeeShopRepository(shopsDbContext);
+            // This service has been marked as requiring service location independent of Wolverine's ability to use constructor injection of everything else
+            var addressGeocoder = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<CoffeePeek.Shared.Kernel.Geocoding.IAddressGeocoder>(serviceScope.ServiceProvider);
             // The actual message body
             var updateOwnerCoffeeShopCommand = (CoffeePeek.Shops.Application.Features.Owner.UpdateOwnerCoffeeShopCommand)context.Envelope.Message;
 
@@ -54,7 +56,7 @@ namespace Internal.Generated.WolverineHandlers
                 System.Diagnostics.Activity.Current?.SetTag("handler.type", "CoffeePeek.Shops.Application.Features.Owner.UpdateOwnerCoffeeShopHandler");
 
                 // The actual message execution
-                var outgoing1 = await CoffeePeek.Shops.Application.Features.Owner.UpdateOwnerCoffeeShopHandler.Handle(updateOwnerCoffeeShopCommand, coffeeShopRepository, queryCityRepository, queryEquipmentRepository, queryCoffeeBeanRepository, queryRoasterRepository, queryBrewMethodRepository, context, _optionsOfMediaPublicUrlOptions, cancellation).ConfigureAwait(false);
+                var outgoing1 = await CoffeePeek.Shops.Application.Features.Owner.UpdateOwnerCoffeeShopHandler.Handle(updateOwnerCoffeeShopCommand, coffeeShopRepository, queryCityRepository, queryEquipmentRepository, queryCoffeeBeanRepository, queryRoasterRepository, queryBrewMethodRepository, context, _optionsOfMediaPublicUrlOptions, addressGeocoder, cancellation).ConfigureAwait(false);
 
 
                 // Outgoing, cascaded message

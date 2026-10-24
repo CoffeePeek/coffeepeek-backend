@@ -1,3 +1,4 @@
+using CoffeePeek.Shared.Kernel.Geocoding;
 using System;
 using System.Net;
 using System.Threading;
@@ -51,7 +52,7 @@ public class CoffeeShopProfileValidationTests
             new UpdateAdminCoffeeShopCommand(shop.Id, "   ", "Changed", ContractPriceRange.Expensive,
                 DomainCoffeeShopStatus.TemporarilyClosed, null, null, [MondayClosed()], null),
             _shops.Object, _cities.Object, _equipment.Object, _beans.Object, _roasters.Object, _brew.Object,
-            _bus.Object, _media, _ct);
+            _bus.Object, _media, Mock.Of<IAddressGeocoder>(), _ct);
 
         await action.Should().ThrowAsync<ValidationException>();
         shop.Name.Should().Be("Original");
@@ -74,7 +75,7 @@ public class CoffeeShopProfileValidationTests
             new UpdateAdminCoffeeShopCommand(shop.Id, "Changed", null, (ContractPriceRange)priceRange,
                 status is null ? null : (DomainCoffeeShopStatus)status, null, null, [MondayClosed()], null),
             _shops.Object, _cities.Object, _equipment.Object, _beans.Object, _roasters.Object, _brew.Object,
-            _bus.Object, _media, _ct);
+            _bus.Object, _media, Mock.Of<IAddressGeocoder>(), _ct);
 
         await action.Should().ThrowAsync<ValidationException>();
         shop.Name.Should().Be("Original");
@@ -93,7 +94,7 @@ public class CoffeeShopProfileValidationTests
             new UpdateOwnerCoffeeShopCommand(shop.Id, ownerId, "Changed", new string('x', 501),
                 null, null, null, null, null, [MondayClosed()], null),
             _shops.Object, _cities.Object, _equipment.Object, _beans.Object, _roasters.Object, _brew.Object,
-            _bus.Object, _media, _ct);
+            _bus.Object, _media, Mock.Of<IAddressGeocoder>(), _ct);
 
         await action.Should().ThrowAsync<ValidationException>();
         shop.Name.Should().Be("Original");
@@ -117,13 +118,13 @@ public class CoffeeShopProfileValidationTests
                     null, null, null, null, null, [MondayClosed()], null)
                 { ExpectedRevision = 1 },
                 _shops.Object, _cities.Object, _equipment.Object, _beans.Object, _roasters.Object, _brew.Object,
-                _bus.Object, _media, _ct)
+                _bus.Object, _media, Mock.Of<IAddressGeocoder>(), _ct)
             : () => UpdateAdminCoffeeShopHandler.Handle(
                 new UpdateAdminCoffeeShopCommand(shop.Id, "Changed", null, ContractPriceRange.Expensive,
                     null, null, null, [MondayClosed()], null)
                 { ExpectedRevision = 1 },
                 _shops.Object, _cities.Object, _equipment.Object, _beans.Object, _roasters.Object, _brew.Object,
-                _bus.Object, _media, _ct);
+                _bus.Object, _media, Mock.Of<IAddressGeocoder>(), _ct);
 
         await action.Should().ThrowAsync<ConflictException>();
         shop.Name.Should().Be("Original");

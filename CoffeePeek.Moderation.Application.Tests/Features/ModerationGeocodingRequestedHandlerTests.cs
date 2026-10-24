@@ -1,5 +1,4 @@
-using CoffeePeek.Moderation.Application.Abstractions;
-using CoffeePeek.Moderation.Application.Common.Models;
+using CoffeePeek.Shared.Kernel.Geocoding;
 using CoffeePeek.Moderation.Application.Features.Geocoding;
 using CoffeePeek.Moderation.Domain.Aggregates;
 using FluentAssertions;
@@ -17,7 +16,7 @@ public class ModerationGeocodingRequestedHandlerTests
     {
         var shops = new Mock<IModerationShopRepository>();
         var roasters = new Mock<IModerationRoasterRepository>();
-        var geocoder = new Mock<IYandexGeocodingService>();
+        var geocoder = new Mock<IAddressGeocoder>();
         var request = new ModerationGeocodingRequested(ModerationGeocodingKind.Shop, Guid.NewGuid(), "Old address");
         shops.Setup(x => x.IsAwaitingGeocodingAsync(request.EntityId, request.SubmittedAddress, _ct))
             .ReturnsAsync(false);
@@ -35,7 +34,7 @@ public class ModerationGeocodingRequestedHandlerTests
     {
         var shops = new Mock<IModerationShopRepository>();
         var roasters = new Mock<IModerationRoasterRepository>();
-        var geocoder = new Mock<IYandexGeocodingService>();
+        var geocoder = new Mock<IAddressGeocoder>();
         var request = new ModerationGeocodingRequested(ModerationGeocodingKind.Roaster, Guid.NewGuid(), "Exact address");
         roasters.Setup(x => x.IsAwaitingGeocodingAsync(request.EntityId, request.SubmittedAddress, _ct))
             .ReturnsAsync(true);
@@ -57,7 +56,7 @@ public class ModerationGeocodingRequestedHandlerTests
     {
         var shops = new Mock<IModerationShopRepository>();
         var roasters = new Mock<IModerationRoasterRepository>();
-        var geocoder = new Mock<IYandexGeocodingService>();
+        var geocoder = new Mock<IAddressGeocoder>();
         var request = new ModerationGeocodingRequested(ModerationGeocodingKind.Shop, Guid.NewGuid(), "Address");
         shops.Setup(x => x.IsAwaitingGeocodingAsync(request.EntityId, request.SubmittedAddress, _ct))
             .ReturnsAsync(true);
@@ -77,7 +76,7 @@ public class ModerationGeocodingRequestedHandlerTests
     {
         var shops = new Mock<IModerationShopRepository>();
         var roasters = new Mock<IModerationRoasterRepository>();
-        var geocoder = new Mock<IYandexGeocodingService>();
+        var geocoder = new Mock<IAddressGeocoder>();
         var request = new ModerationGeocodingRequested(ModerationGeocodingKind.Shop, Guid.NewGuid(), "Unmapped address");
         shops.Setup(x => x.IsAwaitingGeocodingAsync(request.EntityId, request.SubmittedAddress, _ct))
             .ReturnsAsync(true);

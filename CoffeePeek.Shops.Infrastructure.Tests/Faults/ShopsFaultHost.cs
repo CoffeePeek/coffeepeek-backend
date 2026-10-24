@@ -6,6 +6,7 @@ using CoffeePeek.MediaService.Repositories;
 using CoffeePeek.MediaService.Services;
 using CoffeePeek.Shared.Domain.Interfaces.Infrastructure;
 using CoffeePeek.Shared.Kernel;
+using CoffeePeek.Shared.Kernel.Geocoding;
 using CoffeePeek.Shared.Kernel.Options;
 using CoffeePeek.Shared.Persistence.Cache.Redis;
 using CoffeePeek.Shared.Persistence.Data;
@@ -70,6 +71,7 @@ public static class ShopsFaultHost
                         new FaultOcrBeforeStoreInterceptor(root, checkpoint), new FaultOcrStoredInterceptor(root, checkpoint),
                         new FaultOcrApplyFlushInterceptor(root, checkpoint), new FaultProfileFlushInterceptor(root, checkpoint)).Options));
                 services.AddShopsModule().AddCoffeeCatalogModule();
+                services.AddSingleton(Mock.Of<IAddressGeocoder>());
                 services.AddHostedService<CoffeePeek.Shops.Infrastructure.Observability.ShopsDurabilityMetrics>();
                 services.AddSingleton(Options.Create(new MediaPublicUrlOptions { PublicEndpoint = "https://media.example.test" }));
                 var mapper = new Mock<IMapper>();

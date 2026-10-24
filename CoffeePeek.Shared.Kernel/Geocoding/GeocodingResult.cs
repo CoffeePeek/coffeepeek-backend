@@ -1,4 +1,4 @@
-﻿namespace CoffeePeek.Moderation.Application.Common.Models;
+namespace CoffeePeek.Shared.Kernel.Geocoding;
 
 public record GeocodingResult(
     decimal Latitude,

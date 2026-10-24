@@ -115,7 +115,7 @@ public class ModerationStatusHandlersTests
 
         var response = await UpdateModerationCoffeeShopHandler.Handle(
             new UpdateModerationCoffeeShopCommand(new ModerationShopDto { Id = shop.Id, Name = "Renamed" }, Guid.NewGuid(), true),
-            repo.Object, _mapper.Object, new OutgoingMessages(), _uow.Object, _ct);
+            repo.Object, _mapper.Object, _bus.Object, _uow.Object, _ct);
 
         response.IsSuccess.Should().BeFalse();
         shop.Name.Should().Be("Test Cafe");
@@ -129,15 +129,36 @@ public class ModerationStatusHandlersTests
         shop.Reject("Wrong address");
         var repo = new Mock<IModerationShopRepository>();
         repo.Setup(r => r.GetByIdAsync(shop.Id, _ct)).ReturnsAsync(shop);
-        var outgoing = new OutgoingMessages();
 
         var response = await UpdateModerationCoffeeShopHandler.Handle(
             new(new ModerationShopDto { Id = shop.Id, Name = shop.Name, CityId = shop.CityId, Address = "New address" },
-                Guid.NewGuid(), true), repo.Object, _mapper.Object, outgoing, _uow.Object, _ct);
+                Guid.NewGuid(), true), repo.Object, _mapper.Object, _bus.Object, _uow.Object, _ct);
 
         response.IsSuccess.Should().BeTrue();
         shop.Location!.IsAddressValidated.Should().BeFalse();
-        outgoing.OfType<ModerationGeocodingRequested>().Should().ContainSingle()
-            .Which.Should().Be(new ModerationGeocodingRequested(ModerationGeocodingKind.Shop, shop.Id, "New address"));
+        _bus.Verify(bus => bus.PublishAsync(It.Is<ModerationGeocodingRequested>(request =>
+            request.Kind == ModerationGeocodingKind.Shop && request.EntityId == shop.Id &&
+            request.SubmittedAddress == "New address")), Times.Once);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task SavingSameAddress_QueuesOnlyWhenStillUnvalidated(bool validated)
+    {
+        var shop = ApprovableShop();
+        if (!validated) shop.SetLocation(new ModerationLocation("Validated street"));
+        var repo = new Mock<IModerationShopRepository>();
+        repo.Setup(r => r.GetByIdAsync(shop.Id, _ct)).ReturnsAsync(shop);
+
+        var response = await UpdateModerationCoffeeShopHandler.Handle(
+            new(new ModerationShopDto
+            {
+                Id = shop.Id, Name = shop.Name, CityId = shop.CityId, Address = "Validated street"
+            }, Guid.NewGuid(), true), repo.Object, _mapper.Object, _bus.Object, _uow.Object, _ct);
+
+        response.IsSuccess.Should().BeTrue();
+        _bus.Verify(b => b.PublishAsync(It.IsAny<ModerationGeocodingRequested>()),
+            validated ? Times.Never() : Times.Once());
     }
 }

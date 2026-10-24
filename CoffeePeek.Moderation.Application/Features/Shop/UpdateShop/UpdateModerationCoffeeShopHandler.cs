@@ -18,7 +18,7 @@ public static class UpdateModerationCoffeeShopHandler
         UpdateModerationCoffeeShopCommand command,
         IModerationShopRepository repository,
         IMapper mapper,
-        OutgoingMessages outgoingMessages,
+        IMessageBus bus,
         IUnitOfWork unitOfWork,
         CancellationToken ct)
     {
@@ -53,10 +53,11 @@ public static class UpdateModerationCoffeeShopHandler
             moderationShopDto.CityId,
             domainCoffeeFocus);
 
-        if (moderationShopDto.Address != null && moderationShopDto.Address != shop.Location?.Address)
+        if (moderationShopDto.Address != null &&
+            (moderationShopDto.Address != shop.Location?.Address || shop.Location is { IsAddressValidated: false }))
         {
             shop.SetLocation(new ModerationLocation(moderationShopDto.Address));
-            outgoingMessages.Add(new ModerationGeocodingRequested(
+            await bus.PublishAsync(new ModerationGeocodingRequested(
                 ModerationGeocodingKind.Shop, shop.Id, moderationShopDto.Address));
         }
 
@@ -92,7 +93,7 @@ public static class UpdateModerationCoffeeShopHandler
 
             foreach (var removedPhoto in removedPhotos)
             {
-                outgoingMessages.Add(new PhotoReplacedEvent(
+                await bus.PublishAsync(new PhotoReplacedEvent(
                     removedPhoto.Id,
                     removedPhoto.StorageKey,
                     Guid.Empty,

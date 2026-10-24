@@ -135,7 +135,15 @@ its scripts also supply the connection strings and other required settings.
 - **Gateway secret.** `GatewayAuth:SecretKey` must be identical in the gateway and every service. The key committed
   in `appsettings.json` is a public development value and is **rejected outside the Development environment**.
 - **JWT secret.** Account issues tokens and Gateway validates them. Both must use the same `JWTOptions:SecretKey`.
-- Optional integrations: `OpenAiOptions` (menu parsing), `YandexApiOptions` (geocoding), `GooglePlaces`
+- **Yandex geocoding.** Shops and Moderation both require `YandexApiOptions:ApiKey`; production Compose supplies
+  the existing `YANDEX_GEOCODER_API_KEY` to both services. For local development, configure
+  `YandexApiOptions__ApiKey` in `dev/dev.local.env` or set the option in each host's user secrets.
+  Admin/owner profile PUTs geocode a changed address or city before saving, replacing the submitted pin with
+  Yandex coordinates. No match returns 400; a network failure returns 503; neither saves a partial profile.
+  Updating coordinates for an unchanged address remains supported without geocoding. Moderation edits queue
+  geocoding through the transactional outbox; refresh the suggestion after processing to see validated coordinates.
+  Previously saved incorrect coordinates are not automatically backfilled by this change.
+- Optional integrations: `OpenAiOptions` (menu parsing), `GooglePlaces`
   (import status checks), `Sentry:Dsn`. See `deploy/.env.example` for the full production variable list.
 - Install local secret checks once per checkout: `python dev/security/scan_secrets.py install --hooks`.
   They check staged changes before commit and history before push. CI runs the same scanner and blocks

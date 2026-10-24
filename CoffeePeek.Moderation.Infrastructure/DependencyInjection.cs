@@ -4,6 +4,7 @@ using CoffeePeek.Moderation.Infrastructure.Shops;
 using CoffeePeek.Moderation.Infrastructure.Notifications;
 using CoffeePeek.Shared.Kernel;
 using CoffeePeek.Shared.Kernel.Extentions;
+using CoffeePeek.Shared.Web.Geocoding;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Http.Resilience;
 
@@ -36,12 +37,7 @@ public static class DependencyInjection
             client.Timeout = TimeSpan.FromSeconds(20);
         });
 
-        var yandexOptions = services.AddValidateOptions<YandexApiOptions>();
-        services.AddHttpClient<IYandexGeocodingService, YandexGeocodingService>(client =>
-        {
-            client.BaseAddress = new Uri(yandexOptions.BaseUrl);
-            client.Timeout = TimeSpan.FromSeconds(yandexOptions.TimeoutSeconds);
-        });
+        services.AddYandexGeocoding();
 
         var googlePlacesOptions = services.AddValidateOptions<GooglePlaces>();
         services.AddHttpClient<IGooglePlacesLookup, GooglePlacesLookup>(client =>

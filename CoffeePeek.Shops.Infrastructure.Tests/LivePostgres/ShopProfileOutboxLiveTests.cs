@@ -1,3 +1,4 @@
+using CoffeePeek.Shared.Kernel.Geocoding;
 using CoffeePeek.Shared.Kernel.Options;
 using CoffeePeek.Shared.Kernel.Response;
 using CoffeePeek.Shared.Persistence.Cache.Redis;
@@ -198,6 +199,7 @@ public sealed class ShopProfileOutboxLiveTests : IClassFixture<ShopsLiveDatabase
         {
             services.AddScoped(_ => fixture.Context());
             services.AddScoped<ICoffeeShopRepository, CoffeeShopRepository>();
+                services.AddSingleton(Mock.Of<IAddressGeocoder>());
             services.AddScoped<IQueryCityRepository, QueryCityRepository>();
             services.AddScoped<IQueryEquipmentRepository, QueryEquipmentRepository>();
             services.AddScoped<IQueryCoffeeBeanRepository, QueryCoffeeBeanRepository>();

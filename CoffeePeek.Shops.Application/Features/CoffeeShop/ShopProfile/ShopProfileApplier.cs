@@ -1,5 +1,6 @@
 using CoffeePeek.Contract.Dtos.Schedule;
 using CoffeePeek.Shared.Kernel.Exceptions;
+using CoffeePeek.Shared.Kernel.Geocoding;
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
 using FluentResults;
 using DomainCoffeeShop = CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate.CoffeeShop;
@@ -21,12 +22,14 @@ public static class ShopProfileApplier
         IQueryCoffeeBeanRepository beans,
         IQueryRoasterRepository roasters,
         IQueryBrewMethodRepository brewMethods,
+        IAddressGeocoder geocoder,
         CancellationToken ct)
     {
         // Wolverine saves tracked changes even when a handler returns a failed Response.
         // Resolve and validate the entire patch before executing any mutations.
         var changes = new List<Action>();
         List<ShopSchedule>? schedules = null;
+        Location? location = null;
         if (patch.Location is not null)
         {
             if (!await cities.Exists(patch.Location.CityId, ct))
@@ -34,13 +37,11 @@ public static class ShopProfileApplier
 
             try
             {
-                var location = Location.CreateValidated(
+                location = Location.CreateValidated(
                     patch.Location.CityId,
                     patch.Location.Address,
                     patch.Location.Latitude,
                     patch.Location.Longitude);
-                changes.Add(() => shop.SetLocation(
-                    location.CityId, location.Address, location.Latitude!.Value, location.Longitude!.Value));
             }
             catch (DomainException ex)
             {
@@ -85,6 +86,41 @@ public static class ShopProfileApplier
                 shop, changes, patch.Catalogs, equipment, beans, roasters, brewMethods, ct);
             if (catalogs.IsFailed)
                 return catalogs;
+        }
+
+        if (location is not null)
+        {
+            // Existing clients send the previous pin with a new address. Only a fresh
+            // geocoding result can bind those coordinates to the changed address/city.
+            if (shop.Location is null || !shop.Location.IsAddressValidated ||
+                shop.Location.CityId != location.CityId || shop.Location.Address != location.Address)
+            {
+                GeocodingResult? coordinates;
+                try
+                {
+                    coordinates = await geocoder.GeocodeAsync(location.Address, ct);
+                }
+                catch (HttpRequestException ex)
+                {
+                    throw new ServiceUnavailableException("Address geocoding is unavailable; retry the update.", ex);
+                }
+
+                if (coordinates is null)
+                    return Result.Fail("Address could not be geocoded; check the address and try again.");
+
+                try
+                {
+                    location = Location.CreateValidated(location.CityId, location.Address,
+                        coordinates.Latitude, coordinates.Longitude);
+                }
+                catch (DomainException ex)
+                {
+                    return Result.Fail(ex.Message);
+                }
+            }
+
+            changes.Add(() => shop.SetLocation(
+                location.CityId, location.Address, location.Latitude!.Value, location.Longitude!.Value));
         }
 
         // ReplaceSchedules validates before touching the collection. Run this last

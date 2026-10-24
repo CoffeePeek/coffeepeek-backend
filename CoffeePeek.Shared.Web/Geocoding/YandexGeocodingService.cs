@@ -1,18 +1,17 @@
 using System.Globalization;
 using System.Net.Http.Json;
 using CoffeePeek.Contract.Dtos.Yandex;
-using CoffeePeek.Moderation.Application.Abstractions;
-using CoffeePeek.Moderation.Application.Common.Models;
+using CoffeePeek.Shared.Kernel.Geocoding;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace CoffeePeek.Moderation.Infrastructure.Services;
+namespace CoffeePeek.Shared.Web.Geocoding;
 
 public class YandexGeocodingService(
     HttpClient httpClient,
     IOptions<YandexApiOptions> options,
     ILogger<YandexGeocodingService> logger) 
-    : IYandexGeocodingService
+    : IAddressGeocoder
 {
     private readonly YandexApiOptions _options = options.Value;
 

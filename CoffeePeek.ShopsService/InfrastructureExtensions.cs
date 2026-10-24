@@ -42,7 +42,8 @@ public static class InfrastructureExtensions
                 typeof(CoffeePeek.Shops.Application.Features.Feed.ICheckInFeedReader),
                 typeof(CoffeePeek.Shops.Application.PublicAddresses.IPublicCheckInProjector),
                 typeof(CoffeePeek.Shops.Application.PublicAddresses.IPublicAddressService),
-                typeof(CoffeePeek.Shops.Application.Abstractions.IProfileAddressLookup)]);
+                typeof(CoffeePeek.Shops.Application.Abstractions.IProfileAddressLookup),
+                typeof(CoffeePeek.Shared.Kernel.Geocoding.IAddressGeocoder)]);
         
         builder.Services
             .AddApplication()

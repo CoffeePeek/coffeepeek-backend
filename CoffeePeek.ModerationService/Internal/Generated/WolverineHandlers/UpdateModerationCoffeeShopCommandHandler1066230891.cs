@@ -30,7 +30,6 @@ namespace Internal.Generated.WolverineHandlers
             // This service has been marked as requiring service location independent of Wolverine's ability to use constructor injection of everything else
             var moderationDbContext = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<CoffeeShop.Moderation.Persistence.Configuration.ModerationDbContext>(serviceScope.ServiceProvider);
             var unitOfWorkOfModerationDbContext = new CoffeePeek.Shared.Persistence.Data.UnitOfWork<CoffeeShop.Moderation.Persistence.Configuration.ModerationDbContext>(moderationDbContext);
-            var outgoingMessages = new Wolverine.OutgoingMessages();
             var moderationShopRepository = new CoffeeShop.Moderation.Persistence.Repositories.ModerationShopRepository(moderationDbContext);
             // The actual message body
             var updateModerationCoffeeShopCommand = (CoffeePeek.Moderation.Application.Features.Shop.UpdateShop.UpdateModerationCoffeeShopCommand)context.Envelope.Message;
@@ -51,7 +50,7 @@ namespace Internal.Generated.WolverineHandlers
                 System.Diagnostics.Activity.Current?.SetTag("handler.type", "CoffeePeek.Moderation.Application.Features.Shop.UpdateShop.UpdateModerationCoffeeShopHandler");
 
                 // The actual message execution
-                var outgoing1 = await CoffeePeek.Moderation.Application.Features.Shop.UpdateShop.UpdateModerationCoffeeShopHandler.Handle(updateModerationCoffeeShopCommand, moderationShopRepository, _mapper, outgoingMessages, unitOfWorkOfModerationDbContext, cancellation).ConfigureAwait(false);
+                var outgoing1 = await CoffeePeek.Moderation.Application.Features.Shop.UpdateShop.UpdateModerationCoffeeShopHandler.Handle(updateModerationCoffeeShopCommand, moderationShopRepository, _mapper, context, unitOfWorkOfModerationDbContext, cancellation).ConfigureAwait(false);
 
 
                 // Outgoing, cascaded message
