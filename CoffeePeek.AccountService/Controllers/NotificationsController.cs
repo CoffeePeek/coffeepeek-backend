@@ -17,6 +17,14 @@ public sealed class NotificationsController(IPushNotificationStore store, IUserC
     public async Task<IActionResult> Inbox([FromQuery] Guid? before, CancellationToken ct, [FromQuery] int pageSize = 30) =>
         Ok(await store.GetInboxAsync(user.GetUserIdOrThrow(), before, pageSize, ct));
 
+    [HttpGet("{notificationId:guid}/destination")]
+    public async Task<IActionResult> Destination(Guid notificationId,
+        [FromServices] NotificationDestinationResolver destinations, CancellationToken ct)
+    {
+        var destination = await destinations.ResolveAsync(user.GetUserIdOrThrow(), notificationId, ct);
+        return destination is null ? NoContent() : Ok(destination);
+    }
+
     [HttpPut("{notificationId:guid}/read")]
     public async Task<IActionResult> MarkRead(Guid notificationId, CancellationToken ct)
     {

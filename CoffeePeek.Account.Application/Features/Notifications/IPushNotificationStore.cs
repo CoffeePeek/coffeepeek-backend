@@ -6,6 +6,7 @@ namespace CoffeePeek.Account.Application.Features.Notifications;
 public interface IPushNotificationStore
 {
     Task<NotificationPageDto> GetInboxAsync(Guid userId, Guid? before, int pageSize, CancellationToken ct);
+    Task<NotificationDto> GetNotificationAsync(Guid userId, Guid notificationId, CancellationToken ct);
     Task MarkReadAsync(Guid userId, Guid notificationId, CancellationToken ct);
     Task MarkAllReadAsync(Guid userId, Guid throughId, CancellationToken ct);
     Task<PushSettingsDto> GetPushSettingsAsync(Guid userId, CancellationToken ct);

@@ -101,6 +101,7 @@ and never accept a recipient user ID:
 | Method | Path under /api/v1/me/notifications | Behavior |
 | --- | --- | --- |
 | GET | /?pageSize=30&before={id} | items, nextCursor, unreadCount; newest first; page size 1–100 |
+| GET | /{id}/destination | Resolve the owned notification to a current destination; 204 when none applies |
 | PUT | /{id}/read | Mark one owned notification read; idempotent 204 |
 | PUT | /read | {"throughId":"newest-visible-id"}; mark that snapshot and older rows read |
 | GET | /push | {"enabled":true} |
@@ -110,6 +111,28 @@ Inbox DTOs contain id, type, title, body, createdAtUtc, readAtUtc, entityType, e
 The before cursor must identify a row belonging to the same user. Time/ID ordering makes tied
 timestamps stable; a read-all snapshot leaves notifications arriving afterward unread.
 Foreign notification IDs return 404 for pagination and read operations.
+
+Destination resolution is also owner-scoped, read-only and available for already-read rows.
+It returns `{"kind":"Shop","value":"current-public-slug"}` for NewShop by resolving the
+published shop UUID through Shops' trusted internal public-address API. Hidden/deleted shops
+return 404; renames use the current slug. Clients must not put the UUID into a slug route.
+Account requires the existing Shops service-discovery endpoint and gateway trust configuration;
+no schema migration or notification backfill is required for this endpoint.
+
+Other destination kinds preserve the identity of the original subject:
+
+| kind | value / client behavior |
+| --- | --- |
+| ShopChange | Correction request UUID; read the owned change and open its current shop slug |
+| ShopSubmission | Submission UUID; find its publishedShopSlug in owned submissions, otherwise open own submissions |
+| RoasterSubmission | Submission UUID; open own roaster submissions |
+| CheckIns | Moderation submission UUID; open own check-in history |
+
+General, inactivity, missing metadata and unrecognized type/entity combinations return 204.
+Foreign or missing notification IDs return 404 before any entity lookup. Resolution never marks
+the notification read; successful client navigation uses the existing read endpoint separately.
+Deploy this additive Account endpoint before the Android navigation client. Existing inbox,
+push delivery, category switches and older clients continue using their current contracts.
 
 Types are ShopApproved, ShopRejected, RoasterApproved, RoasterRejected, CheckInModeration,
 CorrectionModeration, NewShop, Inactivity and General. Existing category/entity/status fields
@@ -195,8 +218,9 @@ register a browser for push; delivery targets Android/iOS app installations. The
 
 The companion `coffeepeek-cross-mobile` project contains shared session/preferences/device coordination, Android
 Firebase Messaging integration and an iOS native delegate. The feed notification panel requests permission on explicit enabling (opens OS settings after a denial), displays foreground
-notifications and uses system FCM display in the background. Tapping opens CoffeePeek; there is no per-submission
-deep link yet. iOS source activation additionally requires FirebaseCore/FirebaseMessaging in Xcode, the configuration
+notifications and uses system FCM display in the background. The Android navigation follow-up resolves
+inbox/system taps through the owned destination endpoint; the iOS tap behavior is unchanged.
+iOS source activation additionally requires FirebaseCore/FirebaseMessaging in Xcode, the configuration
 plist in application resources, Push Notifications entitlement and an APNs credential uploaded to Firebase.
 See that repository's `docs/push-notifications.md` for setup and device checks.
 

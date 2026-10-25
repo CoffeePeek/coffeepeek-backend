@@ -41,6 +41,8 @@ public sealed class NotificationsGatewayTests
         backendBuilder.Services.AddHeaderUserContext(backendBuilder.Configuration);
         backendBuilder.Services.AddAuthorizationBuilder().AddPolicy("Admin", p => p.RequireRole("Admin"));
         backendBuilder.Services.AddSingleton(store.Object);
+        backendBuilder.Services.AddSingleton(Mock.Of<INotificationShopAddressLookup>());
+        backendBuilder.Services.AddScoped<NotificationDestinationResolver>();
         backendBuilder.Services.AddSingleton(TimeProvider.System);
         backendBuilder.Services.AddControllers().AddApplicationPart(typeof(NotificationsController).Assembly);
         await using var backend = backendBuilder.Build();
@@ -73,13 +75,25 @@ public sealed class NotificationsGatewayTests
             const string root = "/api/v1/me/notifications";
             using var anonymous = await client.GetAsync(root + "/preferences", ct);
             Assert.Equal(HttpStatusCode.Unauthorized, anonymous.StatusCode);
+            var notificationId = Guid.NewGuid();
+            var changeId = Guid.NewGuid();
+            using var anonymousDestination = await client.GetAsync(root + $"/{notificationId}/destination", ct);
+            Assert.Equal(HttpStatusCode.Unauthorized, anonymousDestination.StatusCode);
             var userId = Guid.NewGuid();
+            store.Setup(x => x.GetNotificationAsync(userId, notificationId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new NotificationDto(notificationId, "CorrectionModeration", "Title", "Body",
+                    DateTime.UtcNow, null, "ShopChange", changeId, "Approved"));
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Token(userId, "User"));
             client.DefaultRequestHeaders.Add(GatewayHeaderConsts.XUserId, Guid.NewGuid().ToString());
             client.DefaultRequestHeaders.Add(GatewayHeaderConsts.XUserRole, "Admin");
             using var inbox = await client.GetAsync(root, ct);
             Assert.Equal(HttpStatusCode.OK, inbox.StatusCode);
             store.Verify(x => x.GetInboxAsync(userId, null, 30, It.IsAny<CancellationToken>()), Times.Once);
+            using var destinationResponse = await client.GetAsync(root + $"/{notificationId}/destination", ct);
+            Assert.Equal(HttpStatusCode.OK, destinationResponse.StatusCode);
+            Assert.Equal(new NotificationDestinationDto("ShopChange", changeId.ToString("D")),
+                await destinationResponse.Content.ReadFromJsonAsync<NotificationDestinationDto>(ct));
+            store.Verify(x => x.GetNotificationAsync(userId, notificationId, It.IsAny<CancellationToken>()), Times.Once);
             using var push = await client.PutAsJsonAsync(root + "/push", new { enabled = false }, ct);
             Assert.Equal(HttpStatusCode.NoContent, push.StatusCode);
             store.Verify(x => x.SetPushEnabledAsync(userId, false, It.IsAny<CancellationToken>()), Times.Once);

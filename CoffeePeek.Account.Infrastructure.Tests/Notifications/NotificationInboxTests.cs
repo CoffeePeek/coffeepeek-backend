@@ -32,6 +32,9 @@ public sealed class NotificationInboxTests
         Assert.Equal(first.Id, Assert.Single(next.Items).Id);
         Assert.Null(next.NextCursor);
         Assert.Empty(db.PushDeliveries);
+        Assert.Equal(first.Id, (await store.GetNotificationAsync(alice.Id, first.Id, Ct)).Id);
+        Assert.Null(first.ReadAtUtc);
+        await Assert.ThrowsAsync<NotFoundException>(() => store.GetNotificationAsync(alice.Id, foreign.Id, Ct));
         await Assert.ThrowsAsync<NotFoundException>(() => store.MarkReadAsync(alice.Id, foreign.Id, Ct));
         await Assert.ThrowsAsync<NotFoundException>(() => store.GetInboxAsync(alice.Id, foreign.Id, 30, Ct));
         await Assert.ThrowsAsync<NotFoundException>(() => store.MarkAllReadAsync(alice.Id, foreign.Id, Ct));

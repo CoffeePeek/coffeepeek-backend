@@ -24,10 +24,18 @@ public sealed partial class PushNotificationStore
         var rows = await query.OrderByDescending(x => x.CreatedAtUtc).ThenByDescending(x => x.Id).Take(pageSize + 1).ToArrayAsync(ct);
         var page = rows.Take(pageSize).ToArray();
         var unread = await db.PushNotifications.CountAsync(x => x.UserId == userId && x.ReadAtUtc == null, ct);
-        return new(page.Select(x => new NotificationDto(x.Id, x.Type.ToString(), x.Title, x.Body,
-            x.CreatedAtUtc, x.ReadAtUtc, x.EntityType, x.EntityId, x.Status)).ToArray(),
+        return new(page.Select(ToDto).ToArray(),
             rows.Length > pageSize ? page[^1].Id : null, unread);
     }
+
+    public async Task<NotificationDto> GetNotificationAsync(Guid userId, Guid notificationId, CancellationToken ct)
+    {
+        await EnsureUserAsync(userId, ct);
+        return ToDto(await OwnedNotificationAsync(userId, notificationId, ct));
+    }
+
+    private static NotificationDto ToDto(PushNotification row) => new(row.Id, row.Type.ToString(), row.Title, row.Body,
+        row.CreatedAtUtc, row.ReadAtUtc, row.EntityType, row.EntityId, row.Status);
 
     public Task MarkReadAsync(Guid userId, Guid notificationId, CancellationToken ct) => LockedAsync(userId, async () =>
     {

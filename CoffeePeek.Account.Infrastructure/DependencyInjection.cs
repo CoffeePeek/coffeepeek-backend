@@ -65,6 +65,16 @@ public static class DependencyInjection
         services.AddHttpClient("admin-stats");
         services.AddScoped<IAdminStatsClient, AdminStatsClient>();
 
+        services.AddHttpClient("notification-target-shops", client =>
+        {
+            client.BaseAddress = new Uri($"http://{CoffeePeek.Shared.Kernel.AppResources.ShopsService}");
+            client.Timeout = TimeSpan.FromSeconds(5);
+        });
+        services.AddScoped<CoffeePeek.Shared.Auth.PublicAddressHttpClient>();
+        services.AddScoped<CoffeePeek.Account.Application.Features.Notifications.INotificationShopAddressLookup,
+            CoffeePeek.Account.Infrastructure.Notifications.NotificationShopAddressLookup>();
+        services.AddScoped<CoffeePeek.Account.Application.Features.Notifications.NotificationDestinationResolver>();
+
         services.AddOptions<CoffeePeek.Account.Infrastructure.Notifications.PushNotificationOptions>()
             .BindConfiguration("PushNotifications")
             .ValidateDataAnnotations()
