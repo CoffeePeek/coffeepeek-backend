@@ -91,6 +91,8 @@ public sealed class DiscoveryHttpContractTests : IAsyncLifetime
     [InlineData("/api/v1/coffees/search", "{\"sort\":\"price_asc\"}")]
     [InlineData("/api/v1/coffees/search", "{\"sort\":\"relevance\",\"q\":\"  \"}")]
     [InlineData("/api/v1/coffees/search", "{\"pageSize\":101}")]
+    [InlineData("/api/v1/coffee-shops/search", "{\"sort\":\"unknown\"}")]
+    [InlineData("/api/v1/coffee-shops/search", "{\"sort\":\"recommended\",\"userId\":\"00000000-0000-0000-0000-000000000001\"}")]
     public async Task InvalidRequests_ReturnDocumentedErrorBeforeExecutingSearch(string route, string json)
     {
         using var response = await Post(route, json);
@@ -246,6 +248,26 @@ public sealed class DiscoveryHttpContractTests : IAsyncLifetime
         Assert.Equal(HttpStatusCode.Unauthorized, favorite.StatusCode);
         favorites.Verify(f => f.SetAsync(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
         bus.Verify(b => b.InvokeAsync(It.IsAny<SetDiscoveryFavoriteCommand>(), It.IsAny<CancellationToken>(), It.IsAny<TimeSpan?>()), Times.Never);
+    }
+
+    [Theory]
+    [InlineData(null, false)]
+    [InlineData(null, true)]
+    [InlineData("recommended", false)]
+    [InlineData("recommended", true)]
+    public async Task ShopRecommendations_AcceptGuestsAndUseOnlyAuthenticatedIdentity(string? sort, bool authenticated)
+    {
+        var ct = TestContext.Current.CancellationToken;
+        Guid? userId = authenticated ? Guid.NewGuid() : null;
+        if (userId.HasValue) Authenticate(userId.Value, RoleConsts.User);
+        queries.Setup(q => q.SearchShopsAsync(It.IsAny<CoffeeShopSearchRequest>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new CoffeeShopPage { CurrentPage = 1, PageSize = 20 });
+        using var response = await client.PostAsJsonAsync("/api/v1/coffee-shops/search", new CoffeeShopSearchRequest { Sort = sort }, ct);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.True(response.Headers.CacheControl?.NoStore);
+        using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync(ct));
+        Assert.Equal(JsonValueKind.Array, body.RootElement.GetProperty("data").GetProperty("items").ValueKind);
+        queries.Verify(q => q.SearchShopsAsync(It.Is<CoffeeShopSearchRequest>(r => r.Sort == sort), userId, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]

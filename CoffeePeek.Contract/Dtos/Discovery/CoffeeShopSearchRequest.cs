@@ -11,7 +11,7 @@ public class CoffeeShopSearchRequest
     [StringLength(100, MinimumLength = 0)]
     public string Q { get; set; } = "";
     public ShopFilters? Filters { get; set; }
-    [DiscoveryChoices("relevance", "name_asc", "distance_asc", "rating_desc")]
+    [DiscoveryChoices("recommended", "relevance", "name_asc", "distance_asc", "rating_desc")]
     public string? Sort { get; set; }
     [Range(1, 100000)]
     public int Page { get; set; } = 1;

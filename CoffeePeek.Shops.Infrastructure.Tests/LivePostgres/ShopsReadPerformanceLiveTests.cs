@@ -95,7 +95,7 @@ public sealed class ShopsReadPerformanceLiveTests(ShopsLiveDatabase fixture) : I
         Directory.CreateDirectory(output);
         var results = new List<ReadPerformanceResult>();
         foreach (var scenario in new[] { "profile", "admin-1", "admin-50", "owner-50", "discovery-shops-1", "discovery-shops-50",
-                     "discovery-coffees-50", "facets", "map-clusters", "map-zones", "map-markers" })
+                     "discovery-shops-personal-50", "discovery-coffees-50", "facets", "map-clusters", "map-zones", "map-markers" })
         {
             using var warmProbe = new ReadPerformanceCommandProbe(capturePlans: true);
             await using (var warm = Context(warmProbe)) await ExecuteAsync(scenario, warm, ct);
@@ -170,7 +170,8 @@ public sealed class ShopsReadPerformanceLiveTests(ShopsLiveDatabase fixture) : I
             if (scenario.StartsWith("discovery-shops", StringComparison.Ordinal))
             {
                 var pageSize = scenario == "discovery-shops-1" ? 1 : 50;
-                var page = await store.SearchShopsAsync(new CoffeeShopSearchRequest { PageSize = pageSize }, null, token);
+                var page = await store.SearchShopsAsync(new CoffeeShopSearchRequest { PageSize = pageSize },
+                    scenario == "discovery-shops-personal-50" ? owner : null, token);
                 Assert.Equal(ShopCount, page.TotalItems); Assert.Equal(pageSize, page.Items.Length); return;
             }
             if (scenario == "discovery-coffees-50")
