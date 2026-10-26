@@ -40,15 +40,33 @@ public sealed class CheckInPhotoVariantProjectionLiveTests(ShopsLiveDatabase fix
         {
             await using var db = new ShopsDbContext(new DbContextOptionsBuilder<ShopsDbContext>().UseNpgsql(connection).Options);
             await db.GetService<IMigrator>().MigrateAsync("20261015142731_AddDrinkFavorites", Ct);
-            var row = await Seed(db, 2);
-            var ids = row.ShopPhotos.Select(p => p.Id).ToArray();
-            var keys = row.ShopPhotos.Select(p => p.StorageKey).Order().ToArray();
-            var revision = row.ContentRevision;
+            var checkInId = Guid.NewGuid();
+            var ownerId = Guid.NewGuid();
+            var ids = new[] { Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid() };
+            var keys = ids.Select(id => "private/" + id).ToArray();
+            const int revision = 4;
+            // Seed the historical schema without depending on columns added to the current EF model.
+            await db.Database.ExecuteSqlInterpolatedAsync($"""
+                INSERT INTO "CanonicalCheckIns" ("Id", "UserId", "Username", "Note", "Kind", "PreparedOn",
+                    "VisitedAt", "Visibility", "ContentRevision", "ApprovedRevision", "ModerationState",
+                    "ModerationDecisionSequence", "HelpfulCount", "RowVersion", "CreatedAtUtc", "FirstPublishedAtUtc", "DrinkPhotoId")
+                VALUES ({checkInId}, {ownerId}, 'photo-author', '', 1, '2024-01-01', '2024-01-01T00:00:00Z',
+                    1, {revision}, {revision}, 2, 1, 0, {Guid.NewGuid()}, '2024-01-01T00:00:00Z', '2024-01-01T00:00:00Z', {ids[2]})
+                """, Ct);
+            for (var i = 0; i < ids.Length; i++)
+                await db.Database.ExecuteSqlInterpolatedAsync($"""
+                    INSERT INTO "CheckInPhotos" ("Id", "FileName", "ContentType", "StorageKey", "SizeBytes",
+                        "OwnerId", "SortIndex", "CanonicalCheckInId", "CreatedAtUtc")
+                    VALUES ({ids[i]}, {(i == 2 ? "cup.png" : "source.jpg")}, {(i == 2 ? "image/png" : "image/jpeg")},
+                        {keys[i]}, 12345, {ownerId}, {i}, {checkInId}, '2024-01-01T00:00:00Z')
+                    """, Ct);
             await db.Database.MigrateAsync(Ct); db.ChangeTracker.Clear();
-            var upgraded = await db.CheckIns.Include(c => c.ShopPhotos).SingleAsync(c => c.Id == row.Id, Ct);
+            var upgraded = await db.CheckIns.Include(c => c.ShopPhotos).SingleAsync(c => c.Id == checkInId, Ct);
             Assert.Equal(ids.Order(), upgraded.ShopPhotos.Select(p => p.Id).Order());
-            Assert.Equal(keys, upgraded.ShopPhotos.Select(p => p.StorageKey).Order());
+            Assert.Equal(keys.Order(), upgraded.ShopPhotos.Select(p => p.StorageKey).Order());
             Assert.Equal(revision, upgraded.ContentRevision);
+            Assert.Equal(ids[2], upgraded.DrinkPhotoId);
+            Assert.True(upgraded.IsPubliclyVisible);
             Assert.Empty(await db.CheckInPhotoVariantManifests.ToArrayAsync(Ct));
             Assert.False(db.Database.HasPendingModelChanges());
         }

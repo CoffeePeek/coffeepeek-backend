@@ -33,42 +33,29 @@ public sealed class CheckInPhotoMigrationDatabase : LiveDatabase<ShopsDbContext>
         var deleted = CheckIn.CreateUnified(visit.UserId, shop.Id, "author", "deleted",
             Rating.Create(3, 3, 3), DateTime.UtcNow.AddDays(-2));
         deleted.Delete();
+        shop.AddPhotos([new ShopPhoto("gallery.jpg", "image/jpeg", "shops/gallery", 42, Guid.NewGuid())]);
         db.Cities.Add(city);
         db.Shops.Add(shop);
-        db.CheckIns.AddRange(visit, deleted);
+        await db.SaveChangesAsync(ct);
+        // Historical rows must not depend on columns added to the current EF model.
+        foreach (var row in new[] { visit, deleted })
+            await db.Database.ExecuteSqlInterpolatedAsync($"""
+                INSERT INTO "CanonicalCheckIns" ("Id", "UserId", "ShopId", "Username", "Note", "VisitedAt",
+                    "Visibility", "ContentRevision", "ApprovedRevision", "ModerationState", "ModerationSubmissionId",
+                    "ModerationDecisionSequence", "DeletedAtUtc", "HelpfulCount", "FirstPublishedAtUtc", "RowVersion",
+                    "Rating_Place", "Rating_Service", "Rating_Coffee", "Rating_AverageRating", "CreatedAtUtc", "UpdatedAtUtc")
+                VALUES ({row.Id}, {row.UserId}, {row.ShopId}, {row.Username}, {row.Note}, {row.VisitedAt},
+                    {(int)row.Visibility}, {row.ContentRevision}, {row.ApprovedRevision}, {(int)row.ModerationState}, {row.ModerationSubmissionId},
+                    {row.ModerationDecisionSequence}, {row.DeletedAtUtc}, {row.HelpfulCount}, {row.FirstPublishedAtUtc}, {row.RowVersion},
+                    {row.Rating!.Place}, {row.Rating.Service}, {row.Rating.Coffee}, {row.Rating.AverageRating}, {row.CreatedAtUtc}, {row.UpdatedAtUtc})
+                """, ct);
         foreach (var parent in new[] { visit, visit, deleted })
         {
             var photo = new ShopPhoto("legacy.jpg", "image/jpeg", "check-ins/" + Guid.NewGuid(), 42, parent.UserId);
             db.ShopPhotos.Add(photo);
             db.Entry(photo).Property("CanonicalCheckInId").CurrentValue = parent.Id;
         }
-        shop.AddPhotos([new ShopPhoto("gallery.jpg", "image/jpeg", "shops/gallery", 42, Guid.NewGuid())]);
-        // Seed with the current EF model, then restore the historical schema before running its migrations.
-        await db.Database.ExecuteSqlRawAsync("""
-            ALTER TABLE "CanonicalCheckIns"
-                ADD COLUMN "DrinkPhotoId" uuid,
-                ADD COLUMN "BeanNameSnapshot" varchar(250),
-                ADD COLUMN "BrewDurationSeconds" integer,
-                ADD COLUMN "BrewMethodCode" varchar(20),
-                ADD COLUMN "CoffeeProductId" uuid,
-                ADD COLUMN "DoseGrams" numeric(8,2),
-                ADD COLUMN "Kind" integer NOT NULL DEFAULT 0,
-                ADD COLUMN "PreparedOn" date,
-                ADD COLUMN "TasteScore" integer
-            """, ct);
         await db.SaveChangesAsync(ct);
-        await db.Database.ExecuteSqlRawAsync("""
-            ALTER TABLE "CanonicalCheckIns"
-                DROP COLUMN "DrinkPhotoId",
-                DROP COLUMN "BeanNameSnapshot",
-                DROP COLUMN "BrewDurationSeconds",
-                DROP COLUMN "BrewMethodCode",
-                DROP COLUMN "CoffeeProductId",
-                DROP COLUMN "DoseGrams",
-                DROP COLUMN "Kind",
-                DROP COLUMN "PreparedOn",
-                DROP COLUMN "TasteScore"
-            """, ct);
         await db.Database.ExecuteSqlRawAsync("UPDATE \"ShopPhotos\" SET \"CreatedAtUtc\"='2024-01-01T00:00:00Z'", ct);
     }
 
