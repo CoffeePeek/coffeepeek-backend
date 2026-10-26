@@ -41,14 +41,6 @@ public static class DiscoveryRequestValidation
                     Error("sort", "Distance sorting requires an origin.");
                 if (r.Filters?.Menu is { } menu) Price("filters.menu", menu.Currency, menu.MinPrice, menu.MaxPrice);
                 break;
-            case DiscoverySearchRequest r:
-                Query(r.Q, r.Sort);
-                if (r.CoffeeShops is not null && !r.Sections.Contains("coffee_shops")) Error("coffeeShops", "The section is not selected.");
-                if (r.Filters?.Budget is { } budget)
-                {
-                    Price("filters.budget.drink", budget.Currency, budget.MinDrinkPrice, budget.MaxDrinkPrice);
-                }
-                break;
         }
         return errors;
     }

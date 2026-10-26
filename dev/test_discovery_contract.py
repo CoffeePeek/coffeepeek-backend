@@ -1,4 +1,5 @@
 """Discovery contract checks. Uses the same PyYAML dependency as the DTO generator."""
+import json
 import subprocess
 import sys
 import unittest
@@ -16,6 +17,17 @@ class DiscoveryContractTests(unittest.TestCase):
         result = subprocess.run([sys.executable, str(ROOT / "dev/generate-discovery-dtos.py"), "--check"],
                                 capture_output=True, text=True, check=False)
         self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+
+    def test_removed_discovery_search_has_no_contract_dtos_or_gateway_route(self):
+        self.assertNotIn("/api/v1/discovery/search", SPEC["paths"])
+        self.assertIn("/api/v1/coffee-shops/search", SPEC["paths"])
+        for name in ("DiscoverySearchRequest", "DiscoverySearchResult", "DiscoveryFilters", "DiscoveryBudget", "DiscoveryPaging"):
+            self.assertNotIn(name, SPEC["components"]["schemas"])
+            self.assertFalse((ROOT / "CoffeePeek.Contract/Dtos/Discovery" / (name + ".cs")).exists())
+        gateway = json.loads((ROOT / "CoffeePeek.Gateway/appsettings.json").read_text(encoding="utf-8"))
+        paths = [route["Match"]["Path"] for route in gateway["ReverseProxy"]["Routes"].values()]
+        self.assertNotIn("/api/v1/discovery/search", paths)
+        self.assertIn("/api/v1/coffee-shops/search", paths)
 
     def test_favorites_keep_legacy_fields_and_use_catalog_slug_for_drinks(self):
         schemas = SPEC["components"]["schemas"]

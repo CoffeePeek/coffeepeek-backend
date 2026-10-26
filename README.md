@@ -239,6 +239,10 @@ Publish the required templates before deploying AccountService.
 
 With the dev scripts, interactive documentation for all services is at `http://localhost:8080/scalar`.
 
+Shop search uses `POST /api/v1/coffee-shops/search`. The legacy `GET /api/CoffeeShops` is deprecated
+and limited to check-in selection (`q`, `city`, `page`, `pageSize`). Its removal is tracked as
+[API-001](docs/api-deprecations.md#api-001). The unused `POST /api/v1/discovery/search` has been removed.
+
 Main route groups through the gateway:
 
 | Routes | Service |

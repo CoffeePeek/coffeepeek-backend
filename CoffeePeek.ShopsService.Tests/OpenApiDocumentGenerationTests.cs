@@ -3,7 +3,6 @@ using System.Reflection;
 using System.Security.Claims;
 using System.Text.Json;
 using CoffeePeek.Shared.Auth;
-using CoffeePeek.Shared.Web;
 using CoffeePeek.Shops.Application.Features.Review.Reports;
 using CoffeePeek.Shops.Domain.Aggregates.ReviewAggregate;
 using CoffeePeek.ShopsService.Controllers;
@@ -20,11 +19,11 @@ public class OpenApiDocumentGenerationTests
     {
         var ct = TestContext.Current.CancellationToken;
         var bus = DispatchProxy.Create<IMessageBus, ReviewReportApiContractTests.RecordingBus>();
-        var builder = WebApplication.CreateBuilder();
-        builder.Services.AddControllers().AddApplicationPart(typeof(AdminReviewReportsController).Assembly);
-        builder.Services.AddOpenApi(options => options.AddDocumentTransformer<BearerSecurityTransformer>());
-        builder.Services.AddAuthentication();
-        builder.Services.AddAuthorization(options => options.AddPolicy("Admin", policy => policy.RequireRole("Admin")));
+        var builder = WebApplication.CreateBuilder(new WebApplicationOptions
+        { ApplicationName = typeof(AdminReviewReportsController).Assembly.GetName().Name, EnvironmentName = "Testing" });
+        builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
+        { ["GatewayAuth:SecretKey"] = "openapi-test-gateway-secret-at-least-32-characters" });
+        builder.Services.AddPresentation(builder.Configuration);
         builder.Services.AddSingleton(bus);
         builder.Services.AddSingleton(Mock.Of<IUserContext>());
         builder.WebHost.UseUrls("http://127.0.0.1:0");
@@ -74,8 +73,17 @@ public class OpenApiDocumentGenerationTests
             SchemaProperties(document.RootElement, timelineItems.GetProperty("items")).Keys
                 .Should().Contain(new[] { "publishedAtUtc", "checkIn" });
             paths.TryGetProperty("/api/admin/check-in-reports", out _).Should().BeTrue();
-            foreach (var route in new[] { "/api/Catalogs/roasters", "/api/v1/roasters/search", "/api/v1/roasters/facets" })
+            foreach (var route in new[] { "/api/Catalogs/roasters", "/api/v1/roasters/search", "/api/v1/roasters/facets", "/api/v1/discovery/search" })
                 paths.TryGetProperty(route, out _).Should().BeFalse();
+            var picker = paths.GetProperty("/api/CoffeeShops").GetProperty("get");
+            picker.GetProperty("deprecated").GetBoolean().Should().BeTrue();
+            picker.GetProperty("parameters").EnumerateArray().Select(p => p.GetProperty("name").GetString())
+                .Should().BeEquivalentTo(new[] { "city", "q", "page", "pageSize" });
+            foreach (var route in new[] { "/api/CoffeeShops/{slug}", "/api/CoffeeShops/by-slug/{slug}", "/api/v1/coffee-shops/search" })
+            {
+                var operation = paths.GetProperty(route).GetProperty(route.EndsWith("/search") ? "post" : "get");
+                (operation.TryGetProperty("deprecated", out var deprecated) && deprecated.GetBoolean()).Should().BeFalse();
+            }
             var parameters = paths.GetProperty("/api/roasters").GetProperty("get").GetProperty("parameters");
             parameters.EnumerateArray().Select(p => p.GetProperty("name").GetString()).Should().Equal("tags");
             body.Should().NotContain("coffeeCatalogUpdatedAtUtc");

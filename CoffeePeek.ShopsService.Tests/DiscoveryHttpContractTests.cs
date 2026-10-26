@@ -3,10 +3,15 @@ using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
 using CoffeePeek.Contract.Dtos.Discovery;
+using CoffeePeek.Contract.Dtos.CoffeeShop;
 using CoffeePeek.Contract.Dtos.PublicAddresses;
 using CoffeePeek.Shared.Auth.Constants;
 using CoffeePeek.Shops.Application.Features.CoffeeCatalog;
 using CoffeePeek.Shops.Application.Features.Discovery;
+using CoffeePeek.Shops.Application.Features.CoffeeShop.GetCoffeeShop;
+using CoffeePeek.Shops.Application.Features.CoffeeShop.SearchCoffeeShops;
+using CoffeePeek.Shops.Application.PublicAddresses;
+using CoffeePeek.Shops.Domain.Aggregates.CheckInAggregate;
 using CoffeePeek.Shops.Application.Abstractions;
 using CoffeePeek.ShopsService;
 using CoffeePeek.ShopsService.Controllers;
@@ -28,6 +33,9 @@ public sealed class DiscoveryHttpContractTests : IAsyncLifetime
     private readonly Mock<IDiscoveryFavoritesStore> favorites = new();
     private readonly Mock<IMessageBus> bus = new();
     private readonly Mock<IProfileAddressLookup> profiles = new();
+    private readonly Mock<ICoffeeShopQueries> legacyShops = new();
+    private readonly Mock<IPublicAddressService> addresses = new();
+    private readonly Mock<IQueryCheckInRepository> checkIns = new();
 
     public async ValueTask InitializeAsync()
     {
@@ -43,6 +51,13 @@ public sealed class DiscoveryHttpContractTests : IAsyncLifetime
         builder.Services.AddSingleton(bus.Object);
         builder.Services.AddSingleton(profiles.Object);
         builder.Services.AddSingleton(catalog.Object);
+        builder.Services.AddSingleton(legacyShops.Object);
+        builder.Services.AddSingleton(addresses.Object);
+        builder.Services.AddSingleton(checkIns.Object);
+        builder.Services.AddSingleton(Mock.Of<IPublicCheckInProjector>());
+        builder.Services.AddScoped<PublicDiscoveryService>();
+        addresses.Setup(a => a.GetForReadAsync(It.IsAny<PublicAddressKind>(), It.IsAny<Guid[]>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync([]);
         bus.Setup(b => b.InvokeAsync(It.IsAny<SetDiscoveryFavoriteCommand>(), It.IsAny<CancellationToken>(), It.IsAny<TimeSpan?>()))
             .Returns((object command, CancellationToken ct, TimeSpan? _) =>
                 SetDiscoveryFavoriteHandler.Handle((SetDiscoveryFavoriteCommand)command, favorites.Object, ct));
@@ -61,6 +76,7 @@ public sealed class DiscoveryHttpContractTests : IAsyncLifetime
         classification.Setup(c => c.EditClassificationAsync(It.IsAny<Guid>(), It.IsAny<CoffeeClassificationEditRequest>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new DiscoveryException("Coffee changed; reload.", 409, "VERSION_CONFLICT"));
         app = builder.Build();
+        app.UseExceptionHandler();
         app.UseAuthentication(); app.UseAuthorization(); app.MapControllers();
         await app.StartAsync();
         var address = app.Services.GetRequiredService<IServer>().Features.Get<IServerAddressesFeature>()!.Addresses.Single();
@@ -71,8 +87,7 @@ public sealed class DiscoveryHttpContractTests : IAsyncLifetime
     { client.Dispose(); await app.StopAsync(); await app.DisposeAsync(); }
 
     [Theory]
-    [InlineData("/api/v1/discovery/search", "{\"filters\":{\"city\":\"minsk\"}}")]
-    [InlineData("/api/v1/discovery/search", "{\"filters\":{\"budget\":{\"currency\":\"BYN\",\"maxCoffeePrice\":25}}}")]
+    [InlineData("/api/v1/coffee-shops/search", "{\"filters\":{\"budget\":{\"currency\":\"BYN\",\"maxDrinkPrice\":25}}}")]
     [InlineData("/api/v1/coffees/search", "{\"sort\":\"price_asc\"}")]
     [InlineData("/api/v1/coffees/search", "{\"sort\":\"relevance\",\"q\":\"  \"}")]
     [InlineData("/api/v1/coffees/search", "{\"pageSize\":101}")]
@@ -85,6 +100,7 @@ public sealed class DiscoveryHttpContractTests : IAsyncLifetime
         Assert.False(body.RootElement.GetProperty("isSuccess").GetBoolean());
         Assert.Equal(JsonValueKind.Object, body.RootElement.GetProperty("errors").ValueKind);
         queries.Verify(q => q.SearchCoffeesAsync(It.IsAny<CoffeeSearchRequest>(), It.IsAny<CancellationToken>()), Times.Never);
+        queries.Verify(q => q.SearchShopsAsync(It.IsAny<CoffeeShopSearchRequest>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -123,8 +139,100 @@ public sealed class DiscoveryHttpContractTests : IAsyncLifetime
         {
             using var response = await Post(route, "{}"); Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
         }
-        using var shared = await Post("/api/v1/discovery/search", "{\"sections\":[\"roasters\"]}");
-        Assert.Equal(HttpStatusCode.BadRequest, shared.StatusCode);
+    }
+
+    [Fact]
+    public async Task RemovedDiscoverySearch_ReturnsNotFound()
+    {
+        using var response = await Post("/api/v1/discovery/search", "{}");
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        queries.VerifyNoOtherCalls();
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task LegacyPicker_PreservesSelectionResponsePagingAndVisitedState(bool authenticated)
+    {
+        var userId = Guid.NewGuid(); var cityId = Guid.NewGuid(); var shopId = Guid.NewGuid();
+        var city = new PublicAddressMetadata(cityId, "minsk", "/cities/minsk", 1);
+        var shop = new PublicAddressMetadata(shopId, "example-coffee", "/coffee-shops/example-coffee", 2);
+        if (authenticated) Authenticate(userId, RoleConsts.User);
+        addresses.Setup(a => a.ResolveAsync(PublicAddressKind.City, "minsk", It.IsAny<CancellationToken>())).ReturnsAsync(city);
+        addresses.Setup(a => a.GetForReadAsync(PublicAddressKind.City, It.IsAny<Guid[]>(), It.IsAny<CancellationToken>())).ReturnsAsync([city]);
+        addresses.Setup(a => a.GetForReadAsync(PublicAddressKind.CoffeeShop, It.IsAny<Guid[]>(), It.IsAny<CancellationToken>())).ReturnsAsync([shop]);
+        checkIns.Setup(c => c.GetVisitedShopIdsAsync(userId, It.IsAny<CancellationToken>())).ReturnsAsync([shopId]);
+        legacyShops.Setup(s => s.Search(It.IsAny<SearchCoffeeShopsQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((new[] { new ShortShopDto { Id = shopId, CityId = cityId, Name = "Example coffee", Photos = [], Rating = 4.5m } }, 3));
+
+        using var response = await client.GetAsync("/api/CoffeeShops?city=minsk&q=Street&page=2&pageSize=2", TestContext.Current.CancellationToken);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal("@1792972800", Assert.Single(response.Headers.GetValues("Deprecation")));
+        Assert.Equal("</api/v1/coffee-shops/search>; rel=\"successor-version\"", Assert.Single(response.Headers.GetValues("Link")));
+        Assert.Equal("3", Assert.Single(response.Headers.GetValues("X-Total-Count")));
+        foreach (var header in new[] { "X-Total-Pages", "X-Current-Page", "X-Page-Size" })
+            Assert.Equal("2", Assert.Single(response.Headers.GetValues(header)));
+        using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
+        Assert.True(body.RootElement.GetProperty("isSuccess").GetBoolean());
+        var data = body.RootElement.GetProperty("data");
+        Assert.Equal(3, data.GetProperty("totalItems").GetInt32());
+        Assert.Equal(2, data.GetProperty("totalPages").GetInt32());
+        Assert.Equal(2, data.GetProperty("currentPage").GetInt32());
+        Assert.Equal(2, data.GetProperty("pageSize").GetInt32());
+        var item = Assert.Single(data.GetProperty("coffeeShops").EnumerateArray());
+        Assert.Equal("example-coffee", item.GetProperty("address").GetProperty("slug").GetString());
+        Assert.Equal("/coffee-shops/example-coffee", item.GetProperty("address").GetProperty("canonicalPath").GetString());
+        Assert.Equal(2, item.GetProperty("address").GetProperty("revision").GetInt32());
+        Assert.Equal("minsk", item.GetProperty("city").GetProperty("slug").GetString());
+        Assert.Equal("Example coffee", item.GetProperty("name").GetString());
+        Assert.Equal(4.5m, item.GetProperty("rating").GetDecimal());
+        Assert.Equal(authenticated, item.GetProperty("isVisited").GetBoolean());
+        Assert.False(item.TryGetProperty("id", out _));
+        var expected = new SearchCoffeeShopsQuery(
+            UserId: authenticated ? userId : null, Query: "Street", CityId: cityId, PageNumber: 2, PageSize: 2);
+        legacyShops.Verify(s => s.Search(expected, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Theory]
+    [InlineData("roasters")]
+    [InlineData("equipments")]
+    [InlineData("beans")]
+    [InlineData("brewMethods")]
+    [InlineData("tags")]
+    [InlineData("isOpen")]
+    [InlineData("isNew")]
+    [InlineData("isVisited")]
+    [InlineData("priceRange")]
+    [InlineData("type")]
+    [InlineData("minRating")]
+    public async Task LegacyPicker_RejectsRemovedFiltersBeforeReadingShops(string parameter)
+    {
+        using var response = await client.GetAsync($"/api/CoffeeShops?{parameter}=anything", TestContext.Current.CancellationToken);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
+        Assert.Equal("INVALID_FILTER", body.RootElement.GetProperty("errorCode").GetString());
+        Assert.True(body.RootElement.GetProperty("errors").TryGetProperty(parameter, out _));
+        legacyShops.VerifyNoOtherCalls();
+    }
+
+    [Theory]
+    [InlineData("page=0")]
+    [InlineData("page=10001")]
+    [InlineData("pageSize=0")]
+    [InlineData("pageSize=101")]
+    public async Task LegacyPicker_ValidatesPagingBeforeReadingShops(string query)
+    {
+        using var response = await client.GetAsync($"/api/CoffeeShops?{query}", TestContext.Current.CancellationToken);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        legacyShops.VerifyNoOtherCalls();
+    }
+
+    [Fact]
+    public async Task LegacyPicker_RejectsUnknownCityInsteadOfReturningAllShops()
+    {
+        using var response = await client.GetAsync("/api/CoffeeShops?city=unknown", TestContext.Current.CancellationToken);
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        legacyShops.VerifyNoOtherCalls();
     }
 
     [Fact]
