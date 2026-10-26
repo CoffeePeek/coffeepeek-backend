@@ -7,4 +7,5 @@ public record PublicCreateUnifiedCheckInRequest([Required, MaxLength(100)] strin
     [MaxLength(1000)] string? Text = null, RatingDto? Rating = null,
     CheckInVisibility Visibility = CheckInVisibility.Private, string? DrinkSlug = null,
     string? CustomDrinkName = null, UploadedPhotoDto[]? Photos = null,
-    [Required] [property: JsonRequired] DateTimeOffset? VisitedAt = null, UploadedPhotoDto? DrinkPhoto = null);
+    [Required] [property: JsonRequired] DateTimeOffset? VisitedAt = null, UploadedPhotoDto? DrinkPhoto = null,
+    CoffeePeek.Contract.Dtos.CheckIns.CheckInLocationRequest? Location = null);

@@ -11,4 +11,7 @@ public record ChangeStatusModerationReviewCommand(
     [property: JsonConverter(typeof(JsonStringEnumConverter))] ModerationStatus ModerationStatus,
     [MaxLength(BusinessConstants.MaxRejectReasonCommentLength)] string? Comment,
     [MaxLength(BusinessConstants.MaxRejectReasonCommentLength)] string? RejectReason,
-    [property: JsonIgnore] bool PendingOnly = false);
+    [property: JsonIgnore] bool PendingOnly = false,
+    bool? CountsForLeaderboard = null,
+    [MaxLength(1000)] string? LeaderboardReason = null,
+    [property: JsonIgnore] bool CanOverrideLeaderboard = false);

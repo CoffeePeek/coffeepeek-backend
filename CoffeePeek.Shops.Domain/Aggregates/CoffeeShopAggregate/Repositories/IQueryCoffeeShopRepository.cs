@@ -4,6 +4,7 @@ public interface IQueryCoffeeShopRepository
 {
     void Add(CoffeeShop shop);
     Task<bool> Exists(Guid id, CancellationToken ct = default);
+    Task<(decimal Latitude, decimal Longitude)?> GetCoordinatesAsync(Guid id, CancellationToken ct = default);
     Task<Guid?> GetCityIdAsync(Guid id, CancellationToken ct = default);
     Task<bool> ExistsByModerationId(Guid id, CancellationToken ct = default);
     Task<Guid?> GetIdByModerationId(Guid id, CancellationToken ct = default);

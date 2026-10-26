@@ -14,6 +14,12 @@ public record ModerationReviewDto
 
     public Guid CheckInId { get; init; }
     public int ContentRevision { get; init; }
+    public string LeaderboardGeoStatus { get; init; } = "MissingLocation";
+    public double? ShopDistanceMeters { get; init; }
+    public double? LocationAccuracyMeters { get; init; }
+    public DateTime? LocationCapturedAtUtc { get; init; }
+    public bool? LeaderboardOverride { get; init; }
+    public string? LeaderboardReason { get; init; }
     public DateTime VisitedAtUtc { get; init; }
     public string Text { get; init; }
     public Guid UserId { get; init; }

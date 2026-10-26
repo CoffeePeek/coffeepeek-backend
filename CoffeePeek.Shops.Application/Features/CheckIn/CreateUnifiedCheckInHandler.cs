@@ -41,6 +41,12 @@ public static class CreateUnifiedCheckInHandler
             request.VisitedAt.Value.UtcDateTime,
             (CheckInVisibility)request.Visibility, CreateId(command.UserId, allKeys));
         if (!await shops.Exists(request.CoffeeShopId, ct)) throw new NotFoundException("Coffee shop not found.");
+        if (request.Location is { } location)
+        {
+            var coordinates = await shops.GetCoordinatesAsync(request.CoffeeShopId, ct);
+            checkIn.VerifyLocation(location.Latitude, location.Longitude, location.AccuracyMeters,
+                location.CapturedAt.UtcDateTime, (double?)coordinates?.Latitude, (double?)coordinates?.Longitude, DateTime.UtcNow);
+        }
         var drink = await CoffeePeek.Shared.Kernel.Drinks.DrinkSelection.ResolveAsync(request.DrinkSlug, request.CustomDrinkName, drinks, ct);
         checkIn.SetDrink(drink);
         await repository.LockUserForCheckInAsync(command.UserId, ct);

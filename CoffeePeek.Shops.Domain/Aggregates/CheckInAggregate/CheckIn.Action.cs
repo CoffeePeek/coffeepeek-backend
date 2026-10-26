@@ -98,7 +98,7 @@ public partial class CheckIn
     }
 
     public bool ApplyModerationDecision(int revision, Guid submissionId, long sequence,
-        CheckInModerationState state, string? reason, DateTime decidedAt)
+        CheckInModerationState state, string? reason, DateTime decidedAt, bool? leaderboardOverride = null)
     {
         if (DeletedAtUtc != null || Visibility != CheckInVisibility.Public
             || revision != ContentRevision || submissionId == Guid.Empty || sequence <= ModerationDecisionSequence
@@ -110,6 +110,8 @@ public partial class CheckIn
         ModerationState = state;
         ApprovedRevision = state == CheckInModerationState.Approved ? ContentRevision : null;
         RejectionReason = state == CheckInModerationState.Rejected ? reason : null;
+        LeaderboardOverride = leaderboardOverride;
+        if (CountsForLeaderboard) LeaderboardCreditedAtUtc ??= decidedAt;
         if (state == CheckInModerationState.Approved) FirstPublishedAtUtc ??= decidedAt;
         Touch();
         return true;
@@ -142,6 +144,7 @@ public partial class CheckIn
         ModerationSubmissionId = null;
         ModerationDecisionSequence = 0;
         RejectionReason = null;
+        LeaderboardOverride = null;
     }
 
     private void EnsureNotDeleted()
@@ -149,5 +152,10 @@ public partial class CheckIn
         if (DeletedAtUtc != null) throw new DomainException("Deleted check-ins cannot be changed.");
     }
 
-    private void Touch() { RowVersion = Guid.NewGuid(); UpdatedAtUtc = DateTime.UtcNow; }
+    private void Touch()
+    {
+        RowVersion = Guid.NewGuid();
+        UpdatedAtUtc = DateTime.UtcNow;
+        LeaderboardVersion = checked(LeaderboardVersion + 1);
+    }
 }

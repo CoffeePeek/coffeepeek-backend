@@ -20,6 +20,12 @@ public partial class ModerationReview : Entity<Guid>
     public string? DrinkNameEn { get; private set; }
     public DateTime VisitedAtUtc { get; private set; }
     public long DecisionSequence { get; private set; }
+    public string LeaderboardGeoStatus { get; private set; } = "MissingLocation";
+    public double? ShopDistanceMeters { get; private set; }
+    public double? LocationAccuracyMeters { get; private set; }
+    public DateTime? LocationCapturedAtUtc { get; private set; }
+    public bool? LeaderboardOverride { get; private set; }
+    public string? LeaderboardReason { get; private set; }
 
     public Rating? Rating { get; private set; }
 

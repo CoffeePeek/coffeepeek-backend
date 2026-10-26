@@ -26,7 +26,8 @@ public sealed class PublicCheckInProjector(IPublicAddressService addresses, IPro
             RejectionReason = x.RejectionReason, DrinkSlug = x.Drink?.Slug, CustomDrinkName = x.Drink?.CustomName,
             DrinkNameRu = x.Drink?.NameRu, DrinkNameEn = x.Drink?.NameEn, Photos = x.Photos, DrinkPhotoUrl = x.DrinkPhoto?.Url,
             DrinkPhotoVariants = x.DrinkPhoto?.Variants,
-            HelpfulCount = x.HelpfulCount, IsHelpfulByCurrentUser = x.IsHelpfulByCurrentUser
+            HelpfulCount = x.HelpfulCount, IsHelpfulByCurrentUser = x.IsHelpfulByCurrentUser,
+            CountsForLeaderboard = x.CountsForLeaderboard, LeaderboardStatus = x.LeaderboardStatus
         }).ToArray();
     }
 }
