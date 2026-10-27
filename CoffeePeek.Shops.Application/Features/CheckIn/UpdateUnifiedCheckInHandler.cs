@@ -42,6 +42,7 @@ public static class UpdateUnifiedCheckInHandler
     {
         var checkIn = await GetOwnedAsync(repository, command.Id, command.UserId, ct);
         checkIn.Delete();
+        await bus.PublishAsync(CheckInMapping.ScoreChange(checkIn));
         await bus.PublishAsync(new CoffeePeek.Contract.Events.CheckInPhotosDeletedEvent(
             checkIn.Id, checkIn.UserId, checkIn.DeletedAtUtc!.Value));
         await unitOfWork.SaveChangesAsync(ct);
@@ -70,6 +71,7 @@ public static class UpdateUnifiedCheckInHandler
     private static async Task<Response<UnifiedCheckInDto>> SaveAsync(DomainCheckIn checkIn, IUnitOfWork unitOfWork,
         IMessageBus bus, CancellationToken ct)
     {
+        await bus.PublishAsync(CheckInMapping.ScoreChange(checkIn));
         if (checkIn.Visibility == CheckInVisibility.Public) await bus.PublishAsync(CheckInMapping.ModerationRequest(checkIn));
         await unitOfWork.SaveChangesAsync(ct);
         await bus.PublishAsync(new CheckInCacheInvalidationRequested(checkIn.Id, checkIn.ShopId, checkIn.UserId));

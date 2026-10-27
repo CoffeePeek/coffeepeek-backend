@@ -9,7 +9,9 @@ public partial class ModerationReview
 {
     public static ModerationReview CreateCheckInSnapshot(Guid checkInId, int contentRevision,
         Guid userId, Guid? shopId, string userName, string? text, int? place, int? service, int? coffee,
-        DrinkSelection? drink, DateTime visitedAtUtc, List<PhotoMetadata> photos, HomePreparationSnapshot? home = null)
+        DrinkSelection? drink, DateTime visitedAtUtc, List<PhotoMetadata> photos, HomePreparationSnapshot? home = null,
+        string leaderboardGeoStatus = "MissingLocation", double? shopDistanceMeters = null,
+        double? locationAccuracyMeters = null, DateTime? locationCapturedAtUtc = null)
     {
         if (checkInId == Guid.Empty || userId == Guid.Empty || shopId == Guid.Empty || contentRevision < 1)
             throw new DomainException("A check-in snapshot requires valid identity and revision.");
@@ -36,6 +38,10 @@ public partial class ModerationReview
         var review = new ModerationReview(checkInId, contentRevision, userId, shopId, userName, text?.Trim() ?? "",
             rating, drink, visitedAtUtc, photos);
         review.Home = home;
+        review.LeaderboardGeoStatus = leaderboardGeoStatus;
+        review.ShopDistanceMeters = shopDistanceMeters;
+        review.LocationAccuracyMeters = locationAccuracyMeters;
+        review.LocationCapturedAtUtc = locationCapturedAtUtc;
         if (review.Comment.Length == 0 && photos.Count == 0 && string.IsNullOrWhiteSpace(home?.BeanName)
             && string.IsNullOrWhiteSpace(drink?.CustomName))
         {
@@ -44,6 +50,21 @@ public partial class ModerationReview
             review.DecisionSequence = 1;
         }
         return review;
+    }
+
+    public bool SetLeaderboardDecision(bool counted, string? reason, Guid administratorId)
+    {
+        if (administratorId == Guid.Empty || string.IsNullOrWhiteSpace(reason) || reason.Trim().Length > 1000)
+            throw new DomainException("A leaderboard decision requires an administrator and a reason of 1–1000 characters.");
+        if (ShopId is null && counted)
+            throw new DomainException("Home check-ins cannot participate in the leaderboard.");
+        if (LeaderboardOverride == counted && LeaderboardReason == reason.Trim()) return false;
+        LeaderboardOverride = counted;
+        LeaderboardReason = reason.Trim();
+        ModeratedBy = administratorId;
+        ModeratedAt = DateTime.UtcNow;
+        DecisionSequence++;
+        return true;
     }
 
     public bool Approve(Guid moderatorId)

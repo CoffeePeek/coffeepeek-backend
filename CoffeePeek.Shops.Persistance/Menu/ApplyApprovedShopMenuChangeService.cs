@@ -28,13 +28,17 @@ public sealed class ApplyApprovedShopMenuChangeService(ShopsDbContext db,
 
         try
         {
-            var newPhotoKeys = await ApplyMenuAsync(message, ct);
+            var (newPhotoKeys, changed) = await ApplyMenuAsync(message, ct);
             db.AppliedShopChangeRequests.Add(AppliedShopChangeRequest.Create(
                 message.RequestId, message.ShopId, message.ApprovedByUserId, DateTime.UtcNow));
             if (newPhotoKeys.Length > 0)
                 await bus.PublishAsync(new ShopPhotosAttachedEvent(message.SubmittedByUserId,
                     message.ShopId, ShopPhotoAttachmentKind.Menu, newPhotoKeys));
             await bus.PublishAsync(new ShopProfileCacheInvalidationRequested(message.ShopId));
+            if (changed)
+                await bus.PublishAsync(new CoffeePeek.Contract.Events.Leaderboards.ActivityScoreChanged(
+                    CoffeePeek.Shared.Kernel.Leaderboards.LeaderboardActivityKind.ShopEdited,
+                    message.RequestId, message.SubmittedByUserId, 1, true, DateTime.UtcNow));
             await db.SaveChangesAsync(ct);
         }
         catch (Exception ex) when (ex is DomainException or NotFoundException or ArgumentException
@@ -47,7 +51,7 @@ public sealed class ApplyApprovedShopMenuChangeService(ShopsDbContext db,
         return null;
     }
 
-    private async Task<string[]> ApplyMenuAsync(ShopChangeRequestApprovedV1 message, CancellationToken ct)
+    private async Task<(string[] PhotoKeys, bool Changed)> ApplyMenuAsync(ShopChangeRequestApprovedV1 message, CancellationToken ct)
     {
         var change = message.Payload.Menu ?? throw new DomainException("Menu payload is required.");
         if (change.ExpectedInputRevision is null)
@@ -103,6 +107,9 @@ public sealed class ApplyApprovedShopMenuChangeService(ShopsDbContext db,
         if (db.Entry(menu).State == EntityState.Detached)
             db.ShopMenus.Add(menu);
         var existingDrinkIds = menu.Items.Select(item => item.DrinkDefinitionId).ToHashSet();
+        var changed = !menu.Items.OrderBy(x => x.DrinkDefinitionId).Select(x => (x.DrinkDefinitionId, x.Availability, x.Price))
+            .SequenceEqual(items.OrderBy(x => x.DrinkDefinitionId).Select(x => (x.DrinkDefinitionId, x.Availability, x.Price)))
+            || claimed.Count > 0 || !menu.Photos.Select(x => x.Id).ToHashSet().SetEquals(retainedPhotoIds);
         menu.ApplyApprovedManualSnapshot(items, message.ApprovedAtUtc, message.ApprovedByUserId);
         var newPhotos = claimed.Select(x =>
             ShopMenuPhoto.Create(x.FileName, x.ContentType, x.StorageKey, x.SizeBytes, x.PhotoId)).ToArray();
@@ -114,7 +121,7 @@ public sealed class ApplyApprovedShopMenuChangeService(ShopsDbContext db,
             db.Entry(item).State = EntityState.Added;
         foreach (var photo in newPhotos)
             db.Entry(photo).State = EntityState.Added;
-        return claimed.Select(p => p.StorageKey).ToArray();
+        return (claimed.Select(p => p.StorageKey).ToArray(), changed);
     }
 
 }

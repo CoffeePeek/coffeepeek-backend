@@ -50,8 +50,10 @@ public class ModerationReviewsController(IMessageBus bus, IUserContext userConte
     public async Task<IActionResult> ChangeStatusModerationReview(
         [FromBody] ChangeStatusModerationReviewCommand command, CancellationToken ct)
     {
+        var isAdmin = User.IsInRole(RoleConsts.Admin);
+        if (command.CountsForLeaderboard.HasValue && !isAdmin) return Forbid();
         var response = await bus.InvokeAsync<UpdateEntityResponse<ModerationStatus>>(
-            command with { UserId = userContext.GetUserIdOrThrow() }, ct);
+            command with { UserId = userContext.GetUserIdOrThrow(), CanOverrideLeaderboard = isAdmin }, ct);
         return response.IsSuccess ? Ok(response)
             : StatusCode(response.StatusCode ?? StatusCodes.Status400BadRequest, response);
     }

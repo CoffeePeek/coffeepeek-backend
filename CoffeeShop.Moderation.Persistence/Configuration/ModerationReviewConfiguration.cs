@@ -36,6 +36,8 @@ public class ModerationReviewConfiguration : IEntityTypeConfiguration<Moderation
             "(\"Rating_Place\" IS NOT NULL AND \"Rating_Service\" IS NOT NULL AND \"Rating_Coffee\" IS NOT NULL AND \"Rating_AverageRating\" IS NOT NULL AND " +
             "\"Rating_Place\" BETWEEN 1 AND 5 AND \"Rating_Service\" BETWEEN 1 AND 5 AND \"Rating_Coffee\" BETWEEN 1 AND 5))"));
         entity.Property(mr => mr.RejectedReason).HasMaxLength(BusinessConstants.MaxRejectReasonCommentLength);
+        entity.Property(mr => mr.LeaderboardGeoStatus).HasMaxLength(40).HasDefaultValue("MissingLocation");
+        entity.Property(mr => mr.LeaderboardReason).HasMaxLength(1000);
 
         entity.HasMany(mr => mr.ReviewPhotos).WithOne().HasForeignKey("ModerationCheckInId");
         entity.OwnsOne(r => r.Home, home =>

@@ -33,7 +33,7 @@ namespace Internal.Generated.WolverineHandlers
             var shopsDbContext = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<CoffeePeek.Shops.Persistance.Configuration.ShopsDbContext>(serviceScope.ServiceProvider);
             var roasterRepository = new CoffeePeek.Shops.Persistance.Repositories.RoasterRepository(shopsDbContext);
             var queryRoasterRepository = new CoffeePeek.Shops.Persistance.Repositories.QueryRoasterRepository(shopsDbContext);
-            var createRoasterFromModerationService = new CoffeePeek.Shops.Application.Services.CreateRoasterFromModerationService(queryRoasterRepository, roasterRepository, _loggerOfCreateRoasterFromModerationService);
+            var createRoasterFromModerationService = new CoffeePeek.Shops.Application.Services.CreateRoasterFromModerationService(queryRoasterRepository, roasterRepository, context, _loggerOfCreateRoasterFromModerationService);
             // The actual message body
             var moderationRoasterApprovedEvent = (CoffeePeek.Contract.Events.Moderation.ModerationRoasterApprovedEvent)context.Envelope.Message;
 

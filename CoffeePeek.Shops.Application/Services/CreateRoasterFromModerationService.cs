@@ -9,10 +9,11 @@ namespace CoffeePeek.Shops.Application.Services;
 public class CreateRoasterFromModerationService(
     IQueryRoasterRepository queryRoasterRepository,
     IRoasterRepository roasterRepository,
+    Wolverine.IMessageBus bus,
     ILogger<CreateRoasterFromModerationService> logger) : ICreateRoasterFromModerationService
 {
     public async Task<Guid> CreateRoasterFromApprovedEventAsync(
-        ModerationRoasterDto roasterDto, Guid moderationId, CancellationToken ct = default)
+        ModerationRoasterDto roasterDto, Guid moderationId, CancellationToken ct = default, Guid? creatorId = null)
     {
         var existingId = await queryRoasterRepository.GetIdByModerationId(moderationId, ct);
         if (existingId.HasValue)
@@ -50,6 +51,10 @@ public class CreateRoasterFromModerationService(
         }
 
         roasterRepository.Add(roaster);
+        if (creatorId is { } author)
+            await bus.PublishAsync(new CoffeePeek.Contract.Events.Leaderboards.ActivityScoreChanged(
+                CoffeePeek.Shared.Kernel.Leaderboards.LeaderboardActivityKind.RoasterAdded,
+                roaster.Id, author, 1, true, DateTime.UtcNow));
 
         logger.LogInformation(
             "Roaster {RoasterId} successfully created from moderation event {ModerationId}",

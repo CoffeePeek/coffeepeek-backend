@@ -91,6 +91,26 @@ namespace CoffeeShop.Moderation.Persistence.Migrations
                     b.Property<bool>("IsSoftDelete")
                         .HasColumnType("boolean");
 
+                    b.Property<string>("LeaderboardGeoStatus")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasDefaultValue("MissingLocation");
+
+                    b.Property<bool?>("LeaderboardOverride")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("LeaderboardReason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<double?>("LocationAccuracyMeters")
+                        .HasColumnType("double precision");
+
+                    b.Property<DateTime?>("LocationCapturedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<DateTime?>("ModeratedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -103,6 +123,9 @@ namespace CoffeeShop.Moderation.Persistence.Migrations
                     b.Property<string>("RejectedReason")
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
+
+                    b.Property<double?>("ShopDistanceMeters")
+                        .HasColumnType("double precision");
 
                     b.Property<Guid?>("ShopId")
                         .HasColumnType("uuid");

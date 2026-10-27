@@ -25,6 +25,27 @@ public class ModerationStatusHandlersTests
     private readonly Mock<IUnitOfWork> _uow = new();
     private readonly Mock<IMessageBus> _bus = new();
 
+    [Fact]
+    public async Task LeaderboardOverrideRequiresTrustedAdminAndWritesReasonToAuditEvenWithoutStatusChange()
+    {
+        var review = ModerationReview.CreateCheckInSnapshot(Guid.NewGuid(), 1, Guid.NewGuid(), Guid.NewGuid(),
+            "user", "", null, null, null, null, DateTime.UtcNow, []);
+        var repository = new Mock<IModerationReviewRepository>();
+        repository.Setup(x => x.GetById(review.Id, _ct)).ReturnsAsync(review);
+        var command = new ChangeStatusModerationReviewCommand(Guid.NewGuid(), review.Id, ModerationStatus.Approved,
+            null, null, CountsForLeaderboard: true, LeaderboardReason: "GPS error confirmed");
+        await Assert.ThrowsAsync<DomainException>(() => ChangeStatusModerationReviewHandler.Handle(command,
+            repository.Object, _audit.Object, _uow.Object, _ct));
+        var (_, decision) = await ChangeStatusModerationReviewHandler.Handle(command with { CanOverrideLeaderboard = true },
+            repository.Object, _audit.Object, _uow.Object, _ct);
+        Assert.True(decision!.LeaderboardOverride);
+        Assert.Equal(ModerationStatus.Approved, decision.Status);
+        Assert.Equal(2, decision.DecisionSequence);
+        Assert.Equal("GPS error confirmed", review.LeaderboardReason);
+        _uow.Verify(x => x.SaveChangesAsync(_ct), Times.Once);
+        Assert.Single(_audit.Invocations);
+    }
+
     public ModerationStatusHandlersTests()
     {
         _mapper.Setup(m => m.Map<ShopDto>(It.IsAny<object>())).Returns(new ShopDto { Name = "Test Cafe" });

@@ -20,6 +20,8 @@ public static class ChangeStatusModerationReviewHandler
         IUnitOfWork unitOfWork,
         CancellationToken ct)
     {
+        if (command.CountsForLeaderboard.HasValue && !command.CanOverrideLeaderboard)
+            throw new DomainException("Only administrators can override leaderboard eligibility.");
         var review = await repository.GetById(command.SubmissionId, ct);
 
         if (review == null)
@@ -62,13 +64,23 @@ public static class ChangeStatusModerationReviewHandler
                 throw new DomainException("Unknown moderation status.");
         }
 
+        var leaderboardChanged = command.CountsForLeaderboard is { } counted
+            && review.SetLeaderboardDecision(counted, command.LeaderboardReason, command.UserId);
+        if (leaderboardChanged)
+            await ModerationAuditWriter.WriteAsync(auditLogRepository, ModerationAuditEntityType.Review,
+                review.Id, review.CheckInId.ToString(), command.CountsForLeaderboard == true
+                    ? ModerationAuditAction.LeaderboardIncluded : ModerationAuditAction.LeaderboardExcluded,
+                command.UserId, review.LeaderboardReason, ct);
         if (changed)
         {
             await ModerationAuditWriter.WriteAsync(auditLogRepository, ModerationAuditEntityType.Review,
                 review.Id, review.CheckInId.ToString(), auditAction, command.UserId, auditComment, ct);
+        }
+        if (changed || leaderboardChanged)
+        {
             outboundEvent = new CheckInModerationDecidedEvent(review.CheckInId,
                 review.ContentRevision, review.Id, review.DecisionSequence, (ModerationStatus)review.ModerationStatus,
-                review.RejectedReason, review.ModeratedAt ?? DateTime.UtcNow);
+                review.RejectedReason, review.ModeratedAt ?? DateTime.UtcNow, review.LeaderboardOverride);
 
             // xmin rejects competing status writes; Wolverine retries in a fresh context.
             // The returned decision and this audit/status update share the durable EF outbox transaction.

@@ -125,7 +125,13 @@ public class CreateShopFromModerationService(
 
         await bus.PublishAsync(new ShopProfileCacheInvalidationRequested(shop.Id));
         if (!shop.IsHidden && shop.Location is { Latitude: not null, Longitude: not null })
+        {
             await bus.PublishAsync(new CoffeePeek.Contract.Events.Shops.ShopPublished(shop.Id, shop.Name, DateTime.UtcNow));
+            if (creatorId is { } author)
+                await bus.PublishAsync(new CoffeePeek.Contract.Events.Leaderboards.ActivityScoreChanged(
+                    CoffeePeek.Shared.Kernel.Leaderboards.LeaderboardActivityKind.ShopAdded,
+                    shop.Id, author, 1, true, DateTime.UtcNow));
+        }
 
         logger.LogInformation("Prepared shop {ShopId} from moderation event {ModerationId} for transaction commit", shop.Id,
             moderationId);

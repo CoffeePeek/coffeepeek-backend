@@ -113,6 +113,35 @@ namespace CoffeePeek.Account.Persistence.Migrations
                     b.ToTable("AccountDeletionRequests");
                 });
 
+            modelBuilder.Entity("CoffeePeek.Account.Domain.Entities.ActivityScore", b =>
+                {
+                    b.Property<int>("Kind")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("SourceId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("CreditedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Points")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("Version")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Kind", "SourceId");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("CreditedAtUtc", "UserId");
+
+                    b.ToTable("ActivityScores", (string)null);
+                });
+
             modelBuilder.Entity("CoffeePeek.Account.Domain.Entities.Notifications.NotificationPreferences", b =>
                 {
                     b.Property<Guid>("UserId")
@@ -577,6 +606,15 @@ namespace CoffeePeek.Account.Persistence.Migrations
                 });
 
             modelBuilder.Entity("CoffeePeek.Account.Domain.Entities.AccountDeletionRequestAggregate.AccountDeletionRequest", b =>
+                {
+                    b.HasOne("CoffeePeek.Account.Domain.Entities.UserAggregate.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("CoffeePeek.Account.Domain.Entities.ActivityScore", b =>
                 {
                     b.HasOne("CoffeePeek.Account.Domain.Entities.UserAggregate.User", null)
                         .WithMany()

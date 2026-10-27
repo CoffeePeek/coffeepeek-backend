@@ -46,6 +46,7 @@ public class AccountDbContext(DbContextOptions<AccountDbContext> options, IOptio
     public DbSet<UserBlock> UserBlocks { get; set; }
     public DbSet<UserFollow> UserFollows { get; set; }
     public DbSet<UserRoasterCredit> UserRoasterCredits { get; set; }
+    public DbSet<ActivityScore> ActivityScores { get; set; }
     public DbSet<CoffeePeek.Account.Domain.Entities.Notifications.PushDevice> PushDevices { get; set; }
     public DbSet<CoffeePeek.Account.Domain.Entities.Notifications.NotificationPreferences> NotificationPreferences { get; set; }
     public DbSet<CoffeePeek.Account.Domain.Entities.Notifications.PushNotification> PushNotifications { get; set; }

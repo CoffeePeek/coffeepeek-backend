@@ -47,9 +47,13 @@ public class CreateShopFromModerationServiceTests
     {
         var dto = CreateMinimalShopDto();
         dto.Location = new CoffeePeek.Contract.Dtos.Shop.LocationDto { Address = "Nemiga 5", Latitude = 53.9m, Longitude = 27.5m };
-        var id = await CreateSut().CreateShopFromApprovedEventAsync(dto, null, Guid.NewGuid(), _ct);
+        var author = Guid.NewGuid();
+        var id = await CreateSut().CreateShopFromApprovedEventAsync(dto, author, Guid.NewGuid(), _ct);
         _bus.Verify(b => b.PublishAsync(It.Is<CoffeePeek.Contract.Events.Shops.ShopPublished>(
             e => e.ShopId == id && e.Name == dto.Name)), Times.Once);
+        _bus.Verify(b => b.PublishAsync(It.Is<CoffeePeek.Contract.Events.Leaderboards.ActivityScoreChanged>(e =>
+            e.Kind == CoffeePeek.Shared.Kernel.Leaderboards.LeaderboardActivityKind.ShopAdded
+            && e.UserId == author && e.SourceId == id && e.IsEligible)), Times.Once);
     }
 
     private readonly Mock<IQueryCoffeeShopRepository> _shopRepoMock = new();

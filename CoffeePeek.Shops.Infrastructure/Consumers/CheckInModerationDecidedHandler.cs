@@ -21,13 +21,16 @@ public static class CheckInModerationDecidedHandler
             ModerationStatus.Rejected => Domain.Aggregates.CheckInAggregate.CheckInModerationState.Rejected,
             _ => Domain.Aggregates.CheckInAggregate.CheckInModerationState.NotSubmitted
         };
+        var oldState = checkIn.ModerationState;
         if (!checkIn.ApplyModerationDecision(message.ContentRevision, message.SubmissionId,
-                message.DecisionSequence, state, message.RejectionReason, message.DecidedAtUtc)) return;
+                message.DecisionSequence, state, message.RejectionReason, message.DecidedAtUtc, message.LeaderboardOverride)) return;
+        await bus.PublishAsync(CheckInMapping.ScoreChange(checkIn));
         // The independent concurrency token rejects an edit/hide that won after this aggregate was loaded.
         // Wolverine retries on a fresh context and rechecks revision, visibility and decision order.
         await unitOfWork.SaveChangesAsync(ct);
         await bus.PublishAsync(new CheckInCacheInvalidationRequested(checkIn.Id, checkIn.ShopId, checkIn.UserId));
-        await bus.PublishAsync(new ModerationDecisionChanged(Guid.NewGuid(), checkIn.UserId,
-            ModerationSubmissionKind.CheckIn, message.SubmissionId, message.Status.ToString()));
+        if (oldState != checkIn.ModerationState)
+            await bus.PublishAsync(new ModerationDecisionChanged(Guid.NewGuid(), checkIn.UserId,
+                ModerationSubmissionKind.CheckIn, message.SubmissionId, message.Status.ToString()));
     }
 }

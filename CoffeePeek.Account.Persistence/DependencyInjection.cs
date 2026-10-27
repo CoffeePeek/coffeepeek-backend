@@ -58,6 +58,8 @@ public static class DependencyInjection
         services.AddScoped<IProfileSocialStore, ProfileSocialStore>();
         services.AddScoped<IUserBlockStore, UserBlockStore>();
         services.AddScoped<IRoasterContributionStore, RoasterContributionStore>();
+        services.AddScoped<CoffeePeek.Account.Application.Features.Leaderboards.ILeaderboardStore,
+            CoffeePeek.Account.Persistence.Leaderboards.LeaderboardStore>();
         services.AddScoped<CoffeePeek.Account.Application.Features.Notifications.IPushNotificationStore,
             CoffeePeek.Account.Persistence.Notifications.PushNotificationStore>();
         services.AddCacheModule();

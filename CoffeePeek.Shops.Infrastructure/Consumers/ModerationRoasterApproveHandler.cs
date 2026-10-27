@@ -18,7 +18,7 @@ public class ModerationRoasterApproveHandler(
         var roasterId = await createRoasterService.CreateRoasterFromApprovedEventAsync(
             message.Roaster,
             moderationId: message.Roaster.Id,
-            ct);
+            ct, message.UserId);
 
         logger.LogInformation(
             "Created published roaster {RoasterId} from moderation roaster {ModerationRoasterId}",

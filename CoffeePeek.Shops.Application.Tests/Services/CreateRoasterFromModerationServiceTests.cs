@@ -20,6 +20,8 @@ public class CreateRoasterFromModerationServiceTests
         var logger = new Mock<ILogger<CreateRoasterFromModerationService>>();
         var moderationId = Guid.NewGuid();
         var ct = CancellationToken.None;
+        var bus = new Mock<Wolverine.IMessageBus>();
+        var author = Guid.NewGuid();
         queryRepository
             .Setup(r => r.GetIdByModerationId(moderationId, ct))
             .ReturnsAsync((Guid?)null);
@@ -27,14 +29,18 @@ public class CreateRoasterFromModerationServiceTests
         var service = new CreateRoasterFromModerationService(
             queryRepository.Object,
             repository.Object,
+            bus.Object,
             logger.Object);
 
         var result = await service.CreateRoasterFromApprovedEventAsync(
             new ModerationRoasterDto { Id = moderationId, Name = "Coffee Circus" },
             moderationId,
-            ct);
+            ct, author);
 
         result.Should().NotBeEmpty();
+        bus.Verify(b => b.PublishAsync(It.Is<CoffeePeek.Contract.Events.Leaderboards.ActivityScoreChanged>(e =>
+            e.Kind == CoffeePeek.Shared.Kernel.Leaderboards.LeaderboardActivityKind.RoasterAdded
+            && e.UserId == author && e.SourceId == result && e.IsEligible)), Times.Once);
         repository.Verify(r => r.Add(It.Is<Roaster>(roaster => roaster.Id == result && roaster.ModerationId == moderationId)), Times.Once);
     }
 
@@ -45,12 +51,14 @@ public class CreateRoasterFromModerationServiceTests
         var repository = new Mock<IRoasterRepository>();
         var existingId = Guid.NewGuid();
         var moderationId = Guid.NewGuid();
+        var bus = new Mock<Wolverine.IMessageBus>();
         queryRepository.Setup(r => r.GetIdByModerationId(moderationId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(existingId);
 
         var service = new CreateRoasterFromModerationService(
             queryRepository.Object,
             repository.Object,
+            bus.Object,
             Mock.Of<ILogger<CreateRoasterFromModerationService>>());
 
         var result = await service.CreateRoasterFromApprovedEventAsync(
@@ -58,6 +66,7 @@ public class CreateRoasterFromModerationServiceTests
             moderationId);
 
         result.Should().Be(existingId);
+        bus.Verify(b => b.PublishAsync(It.IsAny<CoffeePeek.Contract.Events.Leaderboards.ActivityScoreChanged>()), Times.Never);
         repository.Verify(r => r.Add(It.IsAny<Roaster>()), Times.Never);
     }
 }
