@@ -85,6 +85,8 @@ public static class DependencyInjection
         services.AddSingleton<ICheckInPhotoVisibilityCache, CheckInPhotoVisibilityCache>();
         services.AddScoped<IUploadedPhotoLookup, MediaUploadedPhotoLookup>();
         services.AddScoped<MediaCheckInPhotoClient>();
+        services.AddScoped<MediaShelfBagPhotoClient>();
+        services.AddScoped<CoffeePeek.Shops.Application.Features.Shelf.IShelfBagPhotoStore, MediaShelfBagPhotoClient>();
         services.AddScoped<IMenuVisionParser, OpenAiMenuVisionParser>();
         services.AddScoped<IMenuPhotoDownloader, HttpMenuPhotoDownloader>();
         services.AddScoped<ModerationShopApproveHandler>();
