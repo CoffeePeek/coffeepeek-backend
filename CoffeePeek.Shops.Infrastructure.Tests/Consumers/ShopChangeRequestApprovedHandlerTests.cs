@@ -4,6 +4,8 @@ using CoffeePeek.Contract.Dtos;
 using CoffeePeek.Contract.Dtos.CoffeeShop;
 using CoffeePeek.Contract.Dtos.Menu;
 using CoffeePeek.Contract.Events.Moderation;
+using CoffeePeek.Contract.Events.Leaderboards;
+using CoffeePeek.Shared.Kernel.Leaderboards;
 using CoffeePeek.Contract.Enums;
 using CoffeePeek.Shops.Domain.Aggregates.BrewMethods;
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
@@ -51,6 +53,23 @@ public class ShopChangeRequestApprovedHandlerTests
         (await db.AppliedShopChangeRequests.CountAsync(TestContext.Current.CancellationToken)).Should().Be(1);
         bus.Verify(b => b.PublishAsync(It.Is<ShopProfileCacheInvalidationRequested>(
             e => e.ShopId == shop.Id)), Times.Once);
+        bus.Verify(b => b.PublishAsync(It.Is<ActivityScoreChanged>(e => e.Kind == LeaderboardActivityKind.ShopEdited
+            && e.SourceId == message.RequestId && e.UserId == message.SubmittedByUserId && e.IsEligible)), Times.Once);
+    }
+
+    [Fact]
+    public async Task UnchangedDescriptionAndFailedEditGiveNoPoints()
+    {
+        await using var db = CreateDbContext();
+        var shop = CreateShop(); db.Shops.Add(shop);
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        var bus = new Mock<IMessageBus>(); var handler = CreateHandler(db, bus: bus.Object);
+        await handler.Handle(Message(shop.Id, ShopChangeSection.Description,
+            new ShopChangePayloadDto(Description: shop.Description)), TestContext.Current.CancellationToken);
+        var failure = await handler.Handle(Message(Guid.NewGuid(), ShopChangeSection.Description,
+            new ShopChangePayloadDto(Description: "missing shop")), TestContext.Current.CancellationToken);
+        Assert.NotNull(failure);
+        bus.Verify(b => b.PublishAsync(It.IsAny<ActivityScoreChanged>()), Times.Never);
     }
 
     [Fact]

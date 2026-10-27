@@ -18,7 +18,8 @@ public static class CheckInMapping
         Photos = c.ShopPhotos.Where(p => p.Id != c.DrinkPhotoId).OrderBy(p => p.SortIndex).ThenBy(p => p.Id)
             .Select(p => Photo(c.Id, p)).ToArray(),
         DrinkPhoto = c.ShopPhotos.Where(p => p.Id == c.DrinkPhotoId).Select(p => Photo(c.Id, p)).SingleOrDefault(),
-        HelpfulCount = c.HelpfulCount, IsHelpfulByCurrentUser = helpful
+        HelpfulCount = c.HelpfulCount, IsHelpfulByCurrentUser = helpful,
+        CountsForLeaderboard = c.CountsForLeaderboard, LeaderboardStatus = c.LeaderboardStatus
     };
 
     public static CheckInModerationRequestedEvent ModerationRequest(DomainCheckIn c)
@@ -26,8 +27,14 @@ public static class CheckInMapping
         return new CheckInModerationRequestedEvent(c.Id, c.ContentRevision,
             c.UserId, c.Username, c.ShopId, c.Note, ToDto(c).Rating, c.DrinkSlug, c.CustomDrinkName,
             c.DrinkNameRu, c.DrinkNameEn, c.VisitedAt,
-            c.ShopPhotos.OrderBy(p => p.SortIndex).Select(p => Photo(c.Id, p)).ToArray(), HomeDetails(c));
+            c.ShopPhotos.OrderBy(p => p.SortIndex).Select(p => Photo(c.Id, p)).ToArray(), HomeDetails(c),
+            c.Kind == Domain.Aggregates.CheckInAggregate.CheckInKind.Home ? "HomeCheckIn" : c.LeaderboardGeoStatus,
+            c.ShopDistanceMeters, c.LocationAccuracyMeters, c.LocationCapturedAtUtc);
     }
+
+    public static CoffeePeek.Contract.Events.Leaderboards.ActivityScoreChanged ScoreChange(DomainCheckIn c) =>
+        new(CoffeePeek.Shared.Kernel.Leaderboards.LeaderboardActivityKind.CheckIn, c.Id, c.UserId,
+            c.LeaderboardVersion, c.CountsForLeaderboard, c.LeaderboardCreditedAtUtc);
 
     private static HomeCheckInDetailsDto? HomeDetails(DomainCheckIn c) => c.PreparedOn is { } day ? new()
     {

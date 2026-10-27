@@ -285,6 +285,12 @@ namespace CoffeePeek.Shops.Persistance.Migrations
                     b.Property<DateTime?>("DeletedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<double?>("DeviceLatitude")
+                        .HasColumnType("double precision");
+
+                    b.Property<double?>("DeviceLongitude")
+                        .HasColumnType("double precision");
+
                     b.Property<decimal?>("DoseGrams")
                         .HasPrecision(8, 2)
                         .HasColumnType("numeric(8,2)");
@@ -315,6 +321,30 @@ namespace CoffeePeek.Shops.Persistance.Migrations
                         .HasColumnType("integer")
                         .HasDefaultValue(0);
 
+                    b.Property<DateTime?>("LeaderboardCreditedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("LeaderboardGeoStatus")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasDefaultValue("MissingLocation");
+
+                    b.Property<bool?>("LeaderboardOverride")
+                        .HasColumnType("boolean");
+
+                    b.Property<long>("LeaderboardVersion")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasDefaultValue(1L);
+
+                    b.Property<double?>("LocationAccuracyMeters")
+                        .HasColumnType("double precision");
+
+                    b.Property<DateTime?>("LocationCapturedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<long>("ModerationDecisionSequence")
                         .HasColumnType("bigint");
 
@@ -341,6 +371,9 @@ namespace CoffeePeek.Shops.Persistance.Migrations
                         .IsConcurrencyToken()
                         .HasColumnType("uuid");
 
+                    b.Property<double?>("ShopDistanceMeters")
+                        .HasColumnType("double precision");
+
                     b.Property<Guid?>("ShopId")
                         .HasColumnType("uuid");
 
@@ -359,6 +392,12 @@ namespace CoffeePeek.Shops.Persistance.Migrations
                         .HasMaxLength(30)
                         .HasColumnType("character varying(30)")
                         .HasDefaultValue("");
+
+                    b.Property<double?>("VerifiedShopLatitude")
+                        .HasColumnType("double precision");
+
+                    b.Property<double?>("VerifiedShopLongitude")
+                        .HasColumnType("double precision");
 
                     b.Property<int>("Visibility")
                         .ValueGeneratedOnAdd()

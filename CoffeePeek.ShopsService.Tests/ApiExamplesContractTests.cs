@@ -98,6 +98,7 @@ public class ApiExamplesContractTests
             CreatedAtUtc = new DateTime(2026, 10, 7, 9, 0, 0, DateTimeKind.Utc),
             Visibility = CheckInVisibility.Public,
             ModerationState = CheckInModerationState.Pending,
+            LeaderboardStatus = "AwaitingApproval",
             ContentRevision = 1,
             Drink = new CheckInDrinkDto(cappuccino.Slug, null, cappuccino.NameRu, cappuccino.NameEn),
             DrinkPhoto = new(Guid.Parse("77777777-7777-4777-8777-777777777777"), "cup.png", "image/png",
@@ -116,6 +117,7 @@ public class ApiExamplesContractTests
             CreatedAtUtc = new DateTime(2026, 10, 7, 6, 0, 0, DateTimeKind.Utc),
             Visibility = CheckInVisibility.Private,
             ModerationState = CheckInModerationState.NotSubmitted,
+            LeaderboardStatus = "Private",
             Drink = null,
             DrinkPhoto = null,
             Photos = []
@@ -128,6 +130,7 @@ public class ApiExamplesContractTests
             VisitedAt = new DateTime(2026, 10, 6, 21, 0, 0, DateTimeKind.Utc),
             CreatedAtUtc = new DateTime(2026, 10, 6, 21, 0, 0, DateTimeKind.Utc),
             ModerationState = CheckInModerationState.Approved,
+            LeaderboardStatus = "MissingLocation",
             Drink = null,
             DrinkPhoto = null,
             Photos = [],
@@ -158,7 +161,8 @@ public class ApiExamplesContractTests
             ["check-ins-feed.json"] = Response<PublicCanonicalCheckInPage>.Success(new([visits[2]], null)),
             ["feed.json"] = Response<CheckInFeedPageDto>.Success(new([
                 new(visits[0].CreatedAtUtc, visits[0] with { Visibility = CheckInVisibility.Public,
-                    ModerationState = CheckInModerationState.Approved, RejectionReason = null })], null)),
+                    ModerationState = CheckInModerationState.Approved, RejectionReason = null,
+                    LeaderboardStatus = "MissingLocation" })], null)),
             ["menu-drinks.json"] = Response<GetMenuDrinksResponse>.Success(new GetMenuDrinksResponse(CreateCatalog()))
         };
     }

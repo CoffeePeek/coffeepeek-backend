@@ -40,7 +40,9 @@
         "isHelpfulByCurrentUser": false,
         "drinkPhotoUrl": null,
         "kind": "Shop",
-        "home": null
+        "home": null,
+        "countsForLeaderboard": false,
+        "leaderboardStatus": "MissingLocation"
       }
     ],
     "nextCursor": null

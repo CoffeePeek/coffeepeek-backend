@@ -203,6 +203,10 @@ public class ShopsDbContext(DbContextOptions<ShopsDbContext> options, IOptions<P
             entity.Property(c => c.ModerationState).HasDefaultValue(Domain.Aggregates.CheckInAggregate.CheckInModerationState.NotSubmitted);
             entity.Property(c => c.RowVersion).IsConcurrencyToken();
             entity.Ignore(c => c.IsPubliclyVisible);
+            entity.Ignore(c => c.CountsForLeaderboard);
+            entity.Ignore(c => c.LeaderboardStatus);
+            entity.Property(c => c.LeaderboardVersion).HasDefaultValue(1L);
+            entity.Property(c => c.LeaderboardGeoStatus).HasMaxLength(40).HasDefaultValue("MissingLocation");
             entity.HasIndex(c => new { c.Visibility, c.ModerationState, c.CreatedAtUtc, c.Id });
             entity.HasIndex(c => new { c.FirstPublishedAtUtc, c.Id }).IsDescending()
                 .HasFilter("\"DeletedAtUtc\" IS NULL AND \"Visibility\" = 1 AND \"ModerationState\" = 2 AND \"ApprovedRevision\" = \"ContentRevision\" AND \"FirstPublishedAtUtc\" IS NOT NULL");

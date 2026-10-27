@@ -44,6 +44,7 @@ public class ShopChangeRequestApprovedHandler(
 
         // State may have drifted since submission (shop deleted, tag deactivated, photo removed). Those failures are
         // permanent: dead-lettering left the request Approved in Moderation forever, so report them back instead.
+        var changed = false;
         try
         {
             var shop = await dbContext.Shops
@@ -56,6 +57,7 @@ public class ShopChangeRequestApprovedHandler(
                 .FirstOrDefaultAsync(x => x.Id == message.ShopId, ct)
                 ?? throw new NotFoundException($"Published shop '{message.ShopId}' was not found.");
 
+            var before = ProfileContent(shop);
             switch (message.Section)
             {
                 case CoffeePeek.Contract.Enums.ShopChangeSection.Description:
@@ -92,6 +94,7 @@ public class ShopChangeRequestApprovedHandler(
 
             // Moderation writes the same published profile as admin and owner PUTs.
             // Advancing its concurrency token makes an older If-Match unusable.
+            changed = before != ProfileContent(shop);
             shop.AdvanceProfileRevision();
         }
         catch (Exception ex) when (ex is DomainException or NotFoundException or ArgumentException
@@ -106,12 +109,27 @@ public class ShopChangeRequestApprovedHandler(
         dbContext.AppliedShopChangeRequests.Add(AppliedShopChangeRequest.Create(
             message.RequestId, message.ShopId, message.ApprovedByUserId, DateTime.UtcNow));
         await bus.PublishAsync(new ShopProfileCacheInvalidationRequested(message.ShopId));
+        if (changed)
+            await bus.PublishAsync(new CoffeePeek.Contract.Events.Leaderboards.ActivityScoreChanged(
+                CoffeePeek.Shared.Kernel.Leaderboards.LeaderboardActivityKind.ShopEdited,
+                message.RequestId, message.SubmittedByUserId, 1, true, DateTime.UtcNow));
         await dbContext.SaveChangesAsync(ct);
         logger.LogInformation(
             "Applied {Section} from shop change request {RequestId} to shop {ShopId}",
             message.Section, message.RequestId, message.ShopId);
         return null;
     }
+
+    private static string ProfileContent(CoffeeShop shop) => System.Text.Json.JsonSerializer.Serialize(new
+    {
+        shop.Description,
+        Contact = new { shop.Contact?.InstagramLink, shop.Contact?.Email, shop.Contact?.SiteLink, shop.Contact?.PhoneNumber },
+        Tags = shop.ShopTags.Select(x => x.TagId).Order().ToArray(),
+        Roasters = shop.Roasters.Select(x => x.Id).Order().ToArray(),
+        Equipment = shop.ShopEquipments.OrderBy(x => x.EquipmentId).Select(x => new { x.EquipmentId, x.IsPrimary }).ToArray(),
+        Methods = shop.BrewMethods.Select(x => x.Id).Order().ToArray(),
+        Photos = shop.ShopPhotos.OrderBy(x => x.SortIndex).Select(x => x.Id).ToArray()
+    });
 
     private static void ApplyContacts(
         CoffeeShop shop,

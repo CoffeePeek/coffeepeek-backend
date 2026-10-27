@@ -42,7 +42,8 @@ public static class CheckInModerationRequestedHandler
                 PreparedOn = home.PreparedOn, BrewMethodCode = home.BrewMethodCode,
                 CoffeeProductId = home.CoffeeProductId, BeanName = home.BeanName, DoseGrams = home.DoseGrams,
                 BrewDurationSeconds = home.BrewDurationSeconds, TasteScore = home.TasteScore
-            } : null);
+            } : null, message.LeaderboardGeoStatus, message.ShopDistanceMeters,
+            message.LocationAccuracyMeters, message.LocationCapturedAtUtc);
         repository.Add(review);
         // Existing xmin concurrency + durable EF outbox retry the entire handler after unique-key races.
         await unitOfWork.SaveChangesAsync(ct);

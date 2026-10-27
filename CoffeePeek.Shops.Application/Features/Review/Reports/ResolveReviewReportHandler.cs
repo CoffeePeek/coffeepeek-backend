@@ -24,6 +24,7 @@ public static class ResolveReviewReportHandler
             if (checkIn is not null)
             {
                 checkIn.Delete();
+                await bus.PublishAsync(CheckInMapping.ScoreChange(checkIn));
                 await bus.PublishAsync(new CoffeePeek.Contract.Events.CheckInPhotosDeletedEvent(
                     checkIn.Id, checkIn.UserId, checkIn.DeletedAtUtc!.Value));
             }

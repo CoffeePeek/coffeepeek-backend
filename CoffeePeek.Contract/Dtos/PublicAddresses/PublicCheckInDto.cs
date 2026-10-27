@@ -33,4 +33,6 @@ public sealed record PublicCheckInDto
     public CheckInPhotoDto[] Photos { get; init; } = [];
     public int HelpfulCount { get; init; }
     public bool IsHelpfulByCurrentUser { get; init; }
+    public bool CountsForLeaderboard { get; init; }
+    public string LeaderboardStatus { get; init; } = "MissingLocation";
 }

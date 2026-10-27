@@ -6,6 +6,13 @@ namespace CoffeePeek.Shops.Persistance.Repositories;
 
 public class QueryCoffeeShopRepository(ShopsDbContext dbContext) : IQueryCoffeeShopRepository
 {
+    public async Task<(decimal Latitude, decimal Longitude)?> GetCoordinatesAsync(Guid id, CancellationToken ct = default)
+    {
+        var location = await dbContext.Shops.AsNoTracking().Where(s => s.Id == id && s.Location != null)
+            .Select(s => new { s.Location!.Latitude, s.Location.Longitude }).SingleOrDefaultAsync(ct);
+        return location is { Latitude: { } lat, Longitude: { } lon } ? (lat, lon) : null;
+    }
+
     private readonly DbSet<CoffeeShop> _repository = dbContext.Shops;
     
     public void Add(CoffeeShop shop)
