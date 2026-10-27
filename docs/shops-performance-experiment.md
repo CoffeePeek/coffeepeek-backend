@@ -70,6 +70,28 @@ Map allocations за baseline batch: clusters 378 MB, zones 559 MB, markers 273 
 Это общие process allocations за 32 calls, не retained memory одного запроса.
 Дополнительная map SQL refactor без production distribution/budget не выполнялась.
 
+## Fuzzy-поиск кофеен, 2026-10-27
+
+Локальный PostgreSQL 17, .NET 10 Debug, 20 001 кофейня, 1000 approved visits, 4 клиента,
+32 прогретых вызова каждого сценария. Измеряется весь `SearchShopsAsync`, без HTTP/gateway и сети клиента.
+Первое сравнение до/после изменения на одинаковом fixture сразу после загрузки и `ANALYZE`:
+обычный текстовый запрос — p95 42.68 → 39.94 ms, 8 SQL в обоих случаях. Это отсутствие заметной
+регрессии в данном прогоне, а не доказательство ускорения. Широкая опечатка дала 92.75 ms / 9 SQL.
+
+Массовая загрузка оставляла pending entries GIN; planner выбирал последовательное сканирование.
+Fixture теперь выполняет `VACUUM ANALYZE` после загрузки для измерения обслуженного индекса.
+Последняя кофейня переименована в Starbucks для отдельного селективного сценария.
+В итоговом повторном прогоне обычный запрос дал p95 19.42 ms, промах без результатов 3.83 ms,
+`Starbuks` → Starbucks 17.22 ms / 9 SQL, `Perfrmance` → 200 кандидатов из 20 000 похожих названий
+80.89 ms / 9 SQL. Эти цифры нельзя сравнивать с первым baseline как эффект только fuzzy-кода.
+
+`EXPLAIN (ANALYZE, BUFFERS)` подтверждает `IX_Shops_NormalizedName_GIN` для селективного fuzzy-запроса;
+тест проверяет этот план без отключения seq scan и дополнительный ровно один SQL при fallback.
+Для широкой опечатки planner может предпочесть seq scan: GIN и LIMIT 200 не ограничивают число
+проверенных совпадений. Полные JSON/SQL сохраняются тем же тестом в `COFFEEPEEK_PERF_RESULTS`.
+В production важны autovacuum после массовых импортов, распределение имён и нагрузка; лимит 200
+ограничивает последующее ранжирование/загрузку, но не является гарантией максимального времени.
+
 ## Запись
 
 ShopsWritePerformanceLiveTests использует production module ports и Wolverine EF/outbox,
@@ -123,7 +145,7 @@ dotnet CoffeePeek.Shops.Infrastructure.Tests/bin/Release/net10.0/CoffeePeek.Shop
 ```
 
 read-experiment.json и write-experiment.json находятся в shops-read-performance artifact;
-warm-up SELECT/params и EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON) сняты после ANALYZE.
+warm-up SELECT/params и EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON) чтения теперь снимаются после VACUUM ANALYZE.
 Empirical p99 на 32 read/8 import/16 OCR samples не устойчив. Allocations включают
 runner/GC, working set — snapshot, не peak. Разные CI runners дают шум latency.
 Длительный soak, deployment budgets и реальные pool/queue capacity остаются выпускной

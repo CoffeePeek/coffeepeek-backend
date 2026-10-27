@@ -52,8 +52,6 @@ public sealed partial class DiscoveryQueryStore
         var tags = await ResolveFiltersAsync(PublicAddressKind.ShopTag, f.Tags, "filters.tags", ct);
         var q = NormalizeQuery(request.Q);
         var shops = db.Shops.AsNoTracking().Where(s => s.Status == CoffeeShopStatus.Active && !s.IsHidden && s.PublicSlug != null);
-        if (q.Length > 0) shops = shops.Where(s => s.Name.ToLower().Replace("ё", "е").Contains(q) ||
-            s.Location.Address.ToLower().Replace("ё", "е").Contains(q));
         if (f.City is not null)
         {
             var cityIds = await ResolveFiltersAsync(PublicAddressKind.City, [f.City], "filters.city", ct);
@@ -133,13 +131,33 @@ public sealed partial class DiscoveryQueryStore
         };
         if (f.MinRating is { } rating) hits = hits.Where(h => h.Rating >= rating);
         if (f.RadiusKm is { } radius) hits = hits.Where(h => h.Distance.HasValue && h.Distance <= (double)radius * 1000);
+        var eligibleHits = hits;
+        if (q.Length > 0) hits = hits.Where(h => h.Shop.Name.ToLower().Replace("ё", "е").Contains(q) ||
+            h.Shop.Location.Address.ToLower().Replace("ё", "е").Contains(q));
         var count = await hits.CountAsync(ct);
+        var fuzzy = count == 0 && q.Count(char.IsLetter) >= 4;
+        if (fuzzy)
+        {
+            // Keep indexable pg_trgm operators: a similarity() threshold alone cannot use the GIN index.
+            var candidates = await eligibleHits.Where(h =>
+                    EF.Functions.TrigramsAreSimilar(h.Shop.Name.ToLower().Replace("ё", "е"), q) ||
+                    EF.Functions.TrigramsAreWordSimilar(q, h.Shop.Name.ToLower().Replace("ё", "е")))
+                .OrderByDescending(h => EF.Functions.TrigramsWordSimilarity(q, h.Shop.Name.ToLower().Replace("ё", "е")))
+                .ThenBy(h => h.Shop.Name).ThenBy(h => h.Shop.PublicSlug)
+                // shortcut: fuzzy totals cover the best 200 eligible names; revisit with measured recall and latency.
+                .Take(200).Select(h => h.Shop.Id).ToArrayAsync(ct);
+            count = candidates.Length;
+            hits = eligibleHits.Where(h => candidates.Contains(h.Shop.Id));
+        }
+        if (count == 0) return new() { CurrentPage = request.Page, PageSize = request.PageSize };
         var sort = request.Sort ?? (q.Length > 0 ? "relevance" : "recommended");
         IOrderedQueryable<ShopHit> ordered = sort switch
         {
             "recommended" => RecommendShops(hits, userId),
             "rating_desc" => hits.OrderByDescending(h => h.Rating),
             "distance_asc" => hits.OrderBy(h => h.Distance == null).ThenBy(h => h.Distance),
+            "relevance" when fuzzy => hits.OrderByDescending(h =>
+                EF.Functions.TrigramsWordSimilarity(q, h.Shop.Name.ToLower().Replace("ё", "е"))),
             "relevance" => hits.OrderBy(h => h.Shop.Name.ToLower().Replace("ё", "е") == q ? 0 :
                 h.Shop.Name.ToLower().Replace("ё", "е").StartsWith(q) ? 1 :
                 h.Shop.Name.ToLower().Replace("ё", "е").Contains(" " + q) ? 2 :
