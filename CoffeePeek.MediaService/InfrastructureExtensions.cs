@@ -72,6 +72,7 @@ public static class InfrastructureExtensions
         services.AddScoped<IPhotoRepository, PhotoRepository>();
         services.AddScoped<ClaimCheckInPhotosHandler>();
         services.AddScoped<ClaimShopPhotosHandler>();
+        services.AddScoped<ClaimShelfBagPhotoHandler>();
 
         services.AddOptions<MediaPublicUrlOptions>()
             .BindConfiguration(nameof(MediaPublicUrlOptions));

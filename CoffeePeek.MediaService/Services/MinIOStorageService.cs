@@ -155,7 +155,7 @@ public class MinIOStorageService : IStorageService, IDisposable
         BucketType sourceBucket = BucketType.Shop)
     {
         await EnsureCheckInBucketPrivateAsync(ct);
-        var target = await CopyVerifiedCheckInObjectAsync(key, photoId, sourceBucket, ct);
+        var target = await CopyVerifiedCheckInObjectAsync(key, $"check-ins/{photoId:N}{Path.GetExtension(key)}", sourceBucket, ct);
         await MarkAsPermanent(target, BucketType.CheckIn, ct);
         if (sourceBucket == BucketType.CheckIn && key == target) return target;
         if (sourceBucket == BucketType.Shop) await DenyOldObjectAsync(key, ct);
@@ -165,10 +165,19 @@ public class MinIOStorageService : IStorageService, IDisposable
         return target;
     }
 
-    private async Task<string> CopyVerifiedCheckInObjectAsync(string key, Guid photoId, BucketType sourceBucket, CancellationToken ct)
+    public async Task<string> SealShelfBagObjectAsync(string key, Guid photoId, CancellationToken ct = default)
     {
-        // A photo-owned destination survives a failed DB save and a retry with a new visit ID.
-        var target = $"check-ins/{photoId:N}{Path.GetExtension(key)}";
+        await EnsureCheckInBucketPrivateAsync(ct);
+        // The presigned upload URL stays writable for its lifetime; validate and serve only this private copy.
+        var target = await CopyVerifiedCheckInObjectAsync(key, $"shelf-bags/{photoId:N}{Path.GetExtension(key)}", BucketType.CheckIn, ct);
+        await MarkAsPermanent(target, BucketType.CheckIn, ct);
+        if (key != target) await Delete(key, BucketType.CheckIn, ct);
+        return target;
+    }
+
+    private async Task<string> CopyVerifiedCheckInObjectAsync(string key, string target, BucketType sourceBucket, CancellationToken ct)
+    {
+        // A photo-owned destination survives a failed DB save and a retry with a new parent ID.
         // Live uploads may still change; keep their first private copy.
         if (await GetObjectSize(target, BucketType.CheckIn, ct) != null) return target;
         var sourceSize = await GetObjectSize(key, sourceBucket, ct)

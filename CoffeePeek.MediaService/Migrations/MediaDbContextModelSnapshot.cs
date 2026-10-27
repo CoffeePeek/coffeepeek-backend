@@ -152,6 +152,9 @@ namespace CoffeePeek.MediaService.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
 
+                    b.Property<Guid?>("ShelfBagId")
+                        .HasColumnType("uuid");
+
                     b.Property<Guid?>("ShopAttachmentId")
                         .HasColumnType("uuid");
 
@@ -178,6 +181,8 @@ namespace CoffeePeek.MediaService.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CheckInId");
+
+                    b.HasIndex("ShelfBagId");
 
                     b.HasIndex("Status");
 
