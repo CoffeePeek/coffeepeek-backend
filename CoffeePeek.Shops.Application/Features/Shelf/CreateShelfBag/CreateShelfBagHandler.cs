@@ -14,7 +14,7 @@ public static class CreateShelfBagHandler
         var request = command.Request ?? throw new ValidationException("Request body is required.");
         var storageKey = ShelfBagInput.StorageKey(request.Photo);
         var details = await ShelfBagInput.ResolveCreateAsync(request.CoffeeProductSlug, request.CustomName,
-            request.RoasterName, request.WeightGrams, request.Grind, request.RoastedOn, catalog, ct);
+            request.RoasterName, request.WeightGrams, request.Grind, request.RoastPurpose, request.RoastedOn, catalog, ct);
         if (storageKey == null && details.Name == null)
             throw new ValidationException("A shelf bag needs a photo or a bean (CoffeeProductSlug or CustomName).");
         ShelfBag.EnsureValid(details, storageKey != null, DateTime.UtcNow);

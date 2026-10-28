@@ -22,7 +22,7 @@ public sealed class ShelfLiveTests : IClassFixture<ShopsLiveDatabase>
     }
 
     private static ShelfBag Bag(Guid owner, string name, string? roaster) =>
-        ShelfBag.Create(Guid.NewGuid(), owner, new ShelfBagDetails(null, name, roaster, null, null, null), null, Now);
+        ShelfBag.Create(Guid.NewGuid(), owner, new ShelfBagDetails(null, name, roaster, null, null, null, null), null, Now);
 
     [Fact]
     public async Task ArchiveSearchIsCaseInsensitiveOnNameOrRoasterAndTreatsWildcardsLiterally()

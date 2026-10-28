@@ -34,6 +34,7 @@ Card uploads use Media: `POST /api/Photos/shelf-bag` (see [Card image](#card-ima
   "roasterName": "Sibaristica",
   "weightGrams": 250,
   "grind": "Beans",
+  "roastPurpose": "Espresso",
   "roastedOn": "2026-10-12",
   "addedAtUtc": "2026-10-20T08:00:00Z",
   "finishedAtUtc": null,
@@ -45,7 +46,7 @@ Card uploads use Media: `POST /api/Photos/shelf-bag` (see [Card image](#card-ima
 - `status` is `OnShelf` or `Finished`. `position` is the zero-based shelf index for `OnShelf` and `null` for `Finished`.
 - `photo` is `null` for a bag added without a card. `photo.id` changes when the card is replaced, so clients may cache by URL.
 - `coffeeProductId` is a stable catalog product identity; `coffeeProductSlug` is its currently published slug or `null` when the product is no longer published. `name` is a snapshot taken when the product was selected (or the custom name) and is not rewritten by catalog renames.
-- `grind` is `Beans`, `Ground` or `null`. `roastedOn` is a calendar date. `rating` is 1–5. `buyAgain` is `true` ("Куплю ещё"), `false` ("Больше не возьму") or `null`.
+- `grind` is `Beans`, `Ground` or `null`. `roastPurpose` is `Espresso`, `Filter` or `null` (unknown). `roastedOn` is a calendar date. `rating` is 1–5. `buyAgain` is `true` ("Куплю ещё"), `false` ("Больше не возьму") or `null`.
 - Unknown fields are optional for clients; new fields may be added.
 
 ## Create and edit
@@ -61,6 +62,7 @@ Content-Type: application/json
   "roasterName": null,
   "weightGrams": 250,
   "grind": "Beans",
+  "roastPurpose": "Espresso",
   "roastedOn": "2026-10-12"
 }
 ```
@@ -73,7 +75,7 @@ All fields are optional, but a bag needs a `photo` or a bean (`coffeeProductSlug
 
 `roasterName` is at most 250 characters, `weightGrams` is an integer 1–10000, and `roastedOn` cannot be more than one day in the future. "Today" is the server's UTC date.
 
-`PUT /api/v1/shelf/bags/{id}` sends the same fields. It is a replacement of the details: omitted bean, roaster, weight, grind and roast date are cleared. `photo` is different: send it to replace the card ("Переснять"), omit it to keep the current one. The previous card's bytes stop being readable after the replacement. `PUT` does not change `status`, `position`, `rating` or `buyAgain`. The shelf holds at most 200 bags with `OnShelf` status; creating more returns `409`.
+`PUT /api/v1/shelf/bags/{id}` sends the same fields. It is a replacement of the details: omitted bean, roaster, weight, grind, roast purpose and roast date are cleared. `photo` is different: send it to replace the card ("Переснять"), omit it to keep the current one. The previous card's bytes stop being readable after the replacement. `PUT` does not change `status`, `position`, `rating` or `buyAgain`. The shelf holds at most 200 bags with `OnShelf` status; creating more returns `409`.
 
 Duplicates are allowed: a second bag of the same product is a separate bag. Clients warn before adding one.
 

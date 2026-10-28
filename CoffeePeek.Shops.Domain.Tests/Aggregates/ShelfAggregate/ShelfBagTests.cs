@@ -12,8 +12,9 @@ public class ShelfBagTests
         ShelfBag.Create(Guid.NewGuid(), Guid.NewGuid(), details, photo, Now);
 
     private static ShelfBagDetails Details(string? name = "Nut'n'Berry", string? roaster = "Sibaristica", int? weight = 250,
-        DateOnly? roastedOn = null, Guid? productId = null, ShelfBagGrind? grind = ShelfBagGrind.Beans) =>
-        new(productId, name, roaster, weight, grind, roastedOn);
+        DateOnly? roastedOn = null, Guid? productId = null, ShelfBagGrind? grind = ShelfBagGrind.Beans,
+        ShelfBagRoastPurpose? roastPurpose = ShelfBagRoastPurpose.Espresso) =>
+        new(productId, name, roaster, weight, grind, roastPurpose, roastedOn);
 
     [Fact]
     public void CreateTrimsTextAndKeepsTheSnapshot()
@@ -24,6 +25,7 @@ public class ShelfBagTests
         Assert.Equal("Nut'n'Berry", bag.Name);
         Assert.Equal("Sibaristica", bag.RoasterName);
         Assert.Equal(productId, bag.CoffeeProductId);
+        Assert.Equal(ShelfBagRoastPurpose.Espresso, bag.RoastPurpose);
         Assert.Equal(Now, bag.AddedAtUtc);
         Assert.Null(bag.PhotoId);
     }
@@ -68,15 +70,20 @@ public class ShelfBagTests
         Assert.Throws<DomainException>(() => Create(Details(grind: (ShelfBagGrind)7)));
 
     [Fact]
+    public void UnknownRoastPurposeIsRejected() =>
+        Assert.Throws<DomainException>(() => Create(Details(roastPurpose: (ShelfBagRoastPurpose)7)));
+
+    [Fact]
     public void UpdateReplacesDetailsKeepsAnOmittedCardAndReportsAReplacedOne()
     {
         var bag = Create(Details(), Card);
-        Assert.Null(bag.UpdateDetails(new ShelfBagDetails(null, null, null, null, null, null), null, Now.AddHours(1)));
+        Assert.Null(bag.UpdateDetails(new ShelfBagDetails(null, null, null, null, null, null, null), null, Now.AddHours(1)));
         Assert.Equal(Card.Id, bag.PhotoId);
         Assert.Null(bag.Name);
         Assert.Null(bag.RoasterName);
         Assert.Null(bag.WeightGrams);
         Assert.Null(bag.Grind);
+        Assert.Null(bag.RoastPurpose);
 
         var retake = new ShelfBagPhoto(Guid.NewGuid(), "shelf-bags/0b.png", "image/png");
         Assert.Equal(Card.Id, bag.UpdateDetails(Details(), retake, Now.AddHours(2)));

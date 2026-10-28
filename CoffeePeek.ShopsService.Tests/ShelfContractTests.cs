@@ -18,6 +18,7 @@ using Microsoft.Extensions.Options;
 using Moq;
 using Wolverine;
 using DomainGrind = CoffeePeek.Shops.Domain.Aggregates.ShelfAggregate.ShelfBagGrind;
+using DomainRoastPurpose = CoffeePeek.Shops.Domain.Aggregates.ShelfAggregate.ShelfBagRoastPurpose;
 
 namespace CoffeePeek.ShopsService.Tests;
 
@@ -55,7 +56,8 @@ public class ShelfContractTests
         var photoId = Guid.Parse("33333333-3333-4333-8333-333333333333");
         var addedAt = new DateTime(2026, 10, 20, 8, 0, 0, DateTimeKind.Utc);
         var bag = ShelfBag.Create(bagId, Guid.NewGuid(),
-            new ShelfBagDetails(productId, "Nut'n'Berry", "Sibaristica", 250, DomainGrind.Beans, new DateOnly(2026, 10, 12)),
+            new ShelfBagDetails(productId, "Nut'n'Berry", "Sibaristica", 250, DomainGrind.Beans, DomainRoastPurpose.Espresso,
+                new DateOnly(2026, 10, 12)),
             new ShelfBagPhoto(photoId, $"shelf-bags/{photoId:N}.jpg", "image/jpeg"), addedAt);
         new ShelfLineup(bag.UserId, []).AddToFront(bag);
 
@@ -63,6 +65,7 @@ public class ShelfContractTests
         var actual = JsonSerializer.SerializeToNode(dto, options)!;
 
         Assert.True(JsonNode.DeepEquals(expected, actual), actual.ToJsonString());
+        Assert.Equal("Espresso", actual["roastPurpose"]!.GetValue<string>());
         Assert.DoesNotContain("userId", actual.ToJsonString(), StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("storageKey", actual.ToJsonString(), StringComparison.OrdinalIgnoreCase);
         var roundTrip = JsonSerializer.Deserialize<ShelfBagDto>(expected.ToJsonString(), options)!;
@@ -79,6 +82,7 @@ public class ShelfContractTests
         Assert.Null(create.RoasterName);
         Assert.Equal(250, create.WeightGrams);
         Assert.Equal(CoffeePeek.Contract.Enums.ShelfBagGrind.Beans, create.Grind);
+        Assert.Equal(CoffeePeek.Contract.Enums.ShelfBagRoastPurpose.Espresso, create.RoastPurpose);
         Assert.Equal(new DateOnly(2026, 10, 12), create.RoastedOn);
 
         var finish = JsonSerializer.Deserialize<FinishShelfBagRequest>(Block("\"buyAgain\": true }"), options)!;

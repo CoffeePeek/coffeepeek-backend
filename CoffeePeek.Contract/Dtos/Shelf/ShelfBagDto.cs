@@ -20,6 +20,7 @@ public sealed record ShelfBagDto
     public string? RoasterName { get; init; }
     public int? WeightGrams { get; init; }
     public ShelfBagGrind? Grind { get; init; }
+    public ShelfBagRoastPurpose? RoastPurpose { get; init; }
     public DateOnly? RoastedOn { get; init; }
     public DateTime AddedAtUtc { get; init; }
     public DateTime? FinishedAtUtc { get; init; }

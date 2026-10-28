@@ -4,6 +4,7 @@ using CoffeePeek.Contract.Dtos;
 using CoffeePeek.Shared.Kernel.Exceptions;
 using CoffeePeek.Shops.Domain.Aggregates.ShelfAggregate;
 using DomainGrind = CoffeePeek.Shops.Domain.Aggregates.ShelfAggregate.ShelfBagGrind;
+using DomainRoastPurpose = CoffeePeek.Shops.Domain.Aggregates.ShelfAggregate.ShelfBagRoastPurpose;
 
 namespace CoffeePeek.Shops.Application.Features.Shelf;
 
@@ -13,14 +14,16 @@ internal static class ShelfBagInput
     public const string StorageKeyPrefix = "shelf-bags/";
 
     public static async Task<ShelfBagDetails> ResolveCreateAsync(string? productSlug, string? customName, string? roasterName,
-        int? weightGrams, CoffeePeek.Contract.Enums.ShelfBagGrind? grind, DateOnly? roastedOn, IShelfCatalogLookup catalog, CancellationToken ct)
+        int? weightGrams, CoffeePeek.Contract.Enums.ShelfBagGrind? grind,
+        CoffeePeek.Contract.Enums.ShelfBagRoastPurpose? roastPurpose, DateOnly? roastedOn, IShelfCatalogLookup catalog, CancellationToken ct)
     {
         var (productId, name, productRoaster) = await ResolveBeanAsync(productSlug, customName, catalog, ct);
-        return Details(productId, name, Blank(roasterName) ?? productRoaster, weightGrams, grind, roastedOn);
+        return Details(productId, name, Blank(roasterName) ?? productRoaster, weightGrams, grind, roastPurpose, roastedOn);
     }
 
     public static async Task<ShelfBagDetails> ResolveUpdateAsync(Guid? keptProductId, string? productSlug, string? customName,
-        string? roasterName, int? weightGrams, CoffeePeek.Contract.Enums.ShelfBagGrind? grind, DateOnly? roastedOn, ShelfBag existing,
+        string? roasterName, int? weightGrams, CoffeePeek.Contract.Enums.ShelfBagGrind? grind,
+        CoffeePeek.Contract.Enums.ShelfBagRoastPurpose? roastPurpose, DateOnly? roastedOn, ShelfBag existing,
         IShelfCatalogLookup catalog, CancellationToken ct)
     {
         if (keptProductId.HasValue)
@@ -29,12 +32,12 @@ internal static class ShelfBagInput
                 throw new ValidationException("CoffeeProductId cannot be combined with CoffeeProductSlug or CustomName.");
             if (keptProductId.Value == Guid.Empty || keptProductId != existing.CoffeeProductId)
                 throw new ValidationException("CoffeeProductId must match this bag's selected product.");
-            return Details(existing.CoffeeProductId, existing.Name, roasterName, weightGrams, grind, roastedOn);
+            return Details(existing.CoffeeProductId, existing.Name, roasterName, weightGrams, grind, roastPurpose, roastedOn);
         }
         var (productId, name, productRoaster) = await ResolveBeanAsync(productSlug, customName, catalog, ct);
         // Reselecting the bag's own product keeps the historical name snapshot.
         if (productId.HasValue && productId == existing.CoffeeProductId) name = existing.Name;
-        return Details(productId, name, Blank(roasterName) ?? productRoaster, weightGrams, grind, roastedOn);
+        return Details(productId, name, Blank(roasterName) ?? productRoaster, weightGrams, grind, roastPurpose, roastedOn);
     }
 
     /// <summary>Returns the trimmed storage key of a supplied upload, or null when no photo was sent.</summary>
@@ -73,9 +76,10 @@ internal static class ShelfBagInput
     private static string? Blank(string? value) => string.IsNullOrWhiteSpace(value) ? null : value;
 
     private static ShelfBagDetails Details(Guid? productId, string? name, string? roasterName, int? weightGrams,
-        CoffeePeek.Contract.Enums.ShelfBagGrind? grind, DateOnly? roastedOn)
+        CoffeePeek.Contract.Enums.ShelfBagGrind? grind, CoffeePeek.Contract.Enums.ShelfBagRoastPurpose? roastPurpose, DateOnly? roastedOn)
     {
-        return new ShelfBagDetails(productId, name, roasterName, weightGrams, grind is { } g ? (DomainGrind)g : null, roastedOn);
+        return new ShelfBagDetails(productId, name, roasterName, weightGrams, grind is { } g ? (DomainGrind)g : null,
+            roastPurpose is { } p ? (DomainRoastPurpose)p : null, roastedOn);
     }
 
     private static async Task<(Guid? Id, string? Name, string? RoasterName)> ResolveBeanAsync(string? productSlug,

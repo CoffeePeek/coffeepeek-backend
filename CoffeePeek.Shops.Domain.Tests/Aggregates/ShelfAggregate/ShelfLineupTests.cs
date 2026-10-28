@@ -9,7 +9,7 @@ public class ShelfLineupTests
     private readonly Guid _owner = Guid.NewGuid();
 
     private ShelfBag Bag(string name) =>
-        ShelfBag.Create(Guid.NewGuid(), _owner, new ShelfBagDetails(null, name, null, null, null, null), null, Now);
+        ShelfBag.Create(Guid.NewGuid(), _owner, new ShelfBagDetails(null, name, null, null, null, null, null), null, Now);
 
     private (ShelfLineup Lineup, ShelfBag[] Bags) Shelf(int count)
     {
@@ -142,7 +142,7 @@ public class ShelfLineupTests
         var reloaded = new ShelfLineup(_owner, [bags[2], bags[0], bags[1]]);
         AssertContiguous(reloaded, bags[0], bags[1], bags[2]);
 
-        var stranger = ShelfBag.Create(Guid.NewGuid(), Guid.NewGuid(), new ShelfBagDetails(null, "x", null, null, null, null), null, Now);
+        var stranger = ShelfBag.Create(Guid.NewGuid(), Guid.NewGuid(), new ShelfBagDetails(null, "x", null, null, null, null, null), null, Now);
         Assert.Throws<DomainException>(() => reloaded.AddToFront(stranger));
         Assert.Throws<DomainException>(() => reloaded.Finish(stranger, null, null, Now));
     }

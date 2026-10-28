@@ -18,7 +18,8 @@ public static class UpdateShelfBagHandler
         await bags.LockOwnerAsync(command.UserId, ct);
         var bag = await ShelfBagAccess.GetOwnedAsync(bags, command.UserId, command.BagId, ct);
         var details = await ShelfBagInput.ResolveUpdateAsync(request.CoffeeProductId, request.CoffeeProductSlug,
-            request.CustomName, request.RoasterName, request.WeightGrams, request.Grind, request.RoastedOn, bag, catalog, ct);
+            request.CustomName, request.RoasterName, request.WeightGrams, request.Grind, request.RoastPurpose,
+            request.RoastedOn, bag, catalog, ct);
         if (storageKey == null && bag.PhotoId == null && details.Name == null)
             throw new ValidationException("A shelf bag needs a photo or a bean (CoffeeProductSlug or CustomName).");
         ShelfBag.EnsureValid(details, storageKey != null || bag.PhotoId != null, DateTime.UtcNow);

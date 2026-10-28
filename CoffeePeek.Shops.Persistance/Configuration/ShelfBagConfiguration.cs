@@ -16,6 +16,7 @@ public class ShelfBagConfiguration : IEntityTypeConfiguration<ShelfBag>
             t.HasCheckConstraint("CK_ShelfBags_Rating", "\"Rating\" IS NULL OR \"Rating\" BETWEEN 1 AND 5");
             t.HasCheckConstraint("CK_ShelfBags_Weight", "\"WeightGrams\" IS NULL OR \"WeightGrams\" BETWEEN 1 AND 10000");
             t.HasCheckConstraint("CK_ShelfBags_Grind", "\"Grind\" IS NULL OR \"Grind\" IN (0, 1)");
+            t.HasCheckConstraint("CK_ShelfBags_RoastPurpose", "\"RoastPurpose\" IS NULL OR \"RoastPurpose\" IN (0, 1)");
             t.HasCheckConstraint("CK_ShelfBags_PhotoOrBean", "\"PhotoId\" IS NOT NULL OR \"Name\" IS NOT NULL");
             t.HasCheckConstraint("CK_ShelfBags_Photo",
                 "(\"PhotoId\" IS NULL) = (\"PhotoStorageKey\" IS NULL) AND (\"PhotoId\" IS NULL) = (\"PhotoContentType\" IS NULL)");

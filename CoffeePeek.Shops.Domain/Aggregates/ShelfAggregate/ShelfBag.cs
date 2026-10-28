@@ -23,6 +23,7 @@ public sealed class ShelfBag
     public string? RoasterName { get; private set; }
     public int? WeightGrams { get; private set; }
     public ShelfBagGrind? Grind { get; private set; }
+    public ShelfBagRoastPurpose? RoastPurpose { get; private set; }
     public DateOnly? RoastedOn { get; private set; }
     public DateTime AddedAtUtc { get; private set; }
     public DateTime? FinishedAtUtc { get; private set; }
@@ -111,6 +112,8 @@ public sealed class ShelfBag
             throw new DomainException($"WeightGrams must be between {MinWeightGrams} and {MaxWeightGrams}.");
         if (details.Grind is { } grind && !Enum.IsDefined(grind))
             throw new DomainException("Invalid grind.");
+        if (details.RoastPurpose is { } roastPurpose && !Enum.IsDefined(roastPurpose))
+            throw new DomainException("Invalid roast purpose.");
         if (details.RoastedOn > DateOnly.FromDateTime(nowUtc).AddDays(1))
             throw new DomainException("RoastedOn cannot be more than one day in the future.");
         if (!hasPhoto && name == null)
@@ -125,6 +128,7 @@ public sealed class ShelfBag
         RoasterName = Normalize(details.RoasterName, "RoasterName");
         WeightGrams = details.WeightGrams;
         Grind = details.Grind;
+        RoastPurpose = details.RoastPurpose;
         RoastedOn = details.RoastedOn;
     }
 

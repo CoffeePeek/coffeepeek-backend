@@ -2521,6 +2521,9 @@ namespace CoffeePeek.Shops.Persistance.Migrations
                     b.Property<int?>("Rating")
                         .HasColumnType("integer");
 
+                    b.Property<int?>("RoastPurpose")
+                        .HasColumnType("integer");
+
                     b.Property<DateOnly?>("RoastedOn")
                         .HasColumnType("date");
 
@@ -2559,6 +2562,8 @@ namespace CoffeePeek.Shops.Persistance.Migrations
                             t.HasCheckConstraint("CK_ShelfBags_PhotoOrBean", "\"PhotoId\" IS NOT NULL OR \"Name\" IS NOT NULL");
 
                             t.HasCheckConstraint("CK_ShelfBags_Rating", "\"Rating\" IS NULL OR \"Rating\" BETWEEN 1 AND 5");
+
+                            t.HasCheckConstraint("CK_ShelfBags_RoastPurpose", "\"RoastPurpose\" IS NULL OR \"RoastPurpose\" IN (0, 1)");
 
                             t.HasCheckConstraint("CK_ShelfBags_StatusPosition", "(\"Status\" = 0 AND \"Position\" IS NOT NULL AND \"Position\" >= 0 AND \"FinishedAtUtc\" IS NULL) OR (\"Status\" = 1 AND \"Position\" IS NULL AND \"FinishedAtUtc\" IS NOT NULL)");
 

@@ -1,6 +1,7 @@
 using CoffeePeek.Contract.Dtos.Shelf;
 using CoffeePeek.Shops.Domain.Aggregates.ShelfAggregate;
 using ContractGrind = CoffeePeek.Contract.Enums.ShelfBagGrind;
+using ContractRoastPurpose = CoffeePeek.Contract.Enums.ShelfBagRoastPurpose;
 using ContractStatus = CoffeePeek.Contract.Enums.ShelfBagStatus;
 
 namespace CoffeePeek.Shops.Application.Features.Shelf;
@@ -21,6 +22,7 @@ public static class ShelfBagMapping
         RoasterName = bag.RoasterName,
         WeightGrams = bag.WeightGrams,
         Grind = bag.Grind is { } grind ? (ContractGrind)grind : null,
+        RoastPurpose = bag.RoastPurpose is { } roastPurpose ? (ContractRoastPurpose)roastPurpose : null,
         RoastedOn = bag.RoastedOn,
         AddedAtUtc = DateTime.SpecifyKind(bag.AddedAtUtc, DateTimeKind.Utc),
         FinishedAtUtc = bag.FinishedAtUtc is { } finished ? DateTime.SpecifyKind(finished, DateTimeKind.Utc) : null,

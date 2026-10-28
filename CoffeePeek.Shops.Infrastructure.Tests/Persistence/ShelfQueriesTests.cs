@@ -16,7 +16,7 @@ public class ShelfQueriesTests
         .UseInMemoryDatabase(Guid.NewGuid().ToString()).Options);
 
     private static ShelfBag Bag(Guid owner, string name, ShelfBagPhoto? photo = null) =>
-        ShelfBag.Create(Guid.NewGuid(), owner, new ShelfBagDetails(null, name, null, null, null, null), photo, Now);
+        ShelfBag.Create(Guid.NewGuid(), owner, new ShelfBagDetails(null, name, null, null, null, null, null), photo, Now);
 
     private static IShelfCatalogLookup NoCatalog()
     {

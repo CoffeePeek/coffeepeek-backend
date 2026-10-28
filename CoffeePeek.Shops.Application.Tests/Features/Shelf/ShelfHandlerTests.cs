@@ -21,6 +21,7 @@ using CoffeePeek.Shops.Domain.Aggregates.ShelfAggregate;
 using Moq;
 using Wolverine;
 using ContractGrind = CoffeePeek.Contract.Enums.ShelfBagGrind;
+using ContractRoastPurpose = CoffeePeek.Contract.Enums.ShelfBagRoastPurpose;
 using ContractStatus = CoffeePeek.Contract.Enums.ShelfBagStatus;
 
 namespace CoffeePeek.Shops.Application.Tests.Features.Shelf;
@@ -79,7 +80,8 @@ public class ShelfHandlerTests
         var older = await Custom("Older bag");
         var result = await Create(new CreateShelfBagRequest
         {
-            CoffeeProductSlug = " Nut-N-Berry ", WeightGrams = 250, Grind = ContractGrind.Beans, RoastedOn = new DateOnly(2026, 10, 12)
+            CoffeeProductSlug = " Nut-N-Berry ", WeightGrams = 250, Grind = ContractGrind.Beans,
+            RoastPurpose = ContractRoastPurpose.Filter, RoastedOn = new DateOnly(2026, 10, 12)
         });
 
         Assert.True(result.IsSuccess);
@@ -91,6 +93,7 @@ public class ShelfHandlerTests
         Assert.Equal("Nut'n'Berry", dto.Name);
         Assert.Equal("Sibaristica", dto.RoasterName);
         Assert.Equal(ContractGrind.Beans, dto.Grind);
+        Assert.Equal(ContractRoastPurpose.Filter, dto.RoastPurpose);
         Assert.Null(dto.Photo);
         Assert.Equal(1, _rows.Single(r => r.Id == older.Id).Position);
         _bags.Verify(b => b.LockOwnerAsync(_owner, It.IsAny<CancellationToken>()), Times.Exactly(2));
@@ -171,7 +174,10 @@ public class ShelfHandlerTests
     [Fact]
     public async Task UpdateKeepsTheProductSnapshotAndClearsOmittedDetails()
     {
-        var created = (await Create(new CreateShelfBagRequest { CoffeeProductSlug = "nut-n-berry", WeightGrams = 250 })).Data;
+        var created = (await Create(new CreateShelfBagRequest
+        {
+            CoffeeProductSlug = "nut-n-berry", WeightGrams = 250, RoastPurpose = ContractRoastPurpose.Filter
+        })).Data;
         _catalog.Setup(c => c.GetPublishedSlugsAsync(It.IsAny<IReadOnlyCollection<Guid>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new Dictionary<Guid, string>());
 
@@ -183,6 +189,7 @@ public class ShelfHandlerTests
         Assert.Null(updated.RoasterName);
         Assert.Null(updated.WeightGrams);
         Assert.Equal(ContractGrind.Ground, updated.Grind);
+        Assert.Null(updated.RoastPurpose);
         Assert.Equal(0, updated.Position);
         await Assert.ThrowsAsync<ValidationException>(() => Update(created.Id, new UpdateShelfBagRequest { CoffeeProductId = Guid.NewGuid() }));
         await Assert.ThrowsAsync<ValidationException>(() => Update(created.Id,
