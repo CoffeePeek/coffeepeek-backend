@@ -14,6 +14,8 @@ public sealed record HomeCheckInDto
     public string Text { get; init; } = "";
     public string? BrewMethodCode { get; init; }
     public Guid? CoffeeProductId { get; init; }
+    /// <summary>Current public slug of the product while it is published, for linking to the catalog; null otherwise.</summary>
+    public string? CoffeeProductSlug { get; init; }
     /// <summary>Historical name snapshot, or the author's custom name.</summary>
     public string? BeanName { get; init; }
     /// <summary>Roaster snapshot from the catalog product or the shelf bag.</summary>

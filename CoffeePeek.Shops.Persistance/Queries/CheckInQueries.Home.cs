@@ -35,11 +35,13 @@ public partial class CheckInQueries
 
     private async Task<HomeCheckInDto[]> WithHomeVariantsAsync(HomeCheckInDto[] items, CancellationToken ct)
     {
+        var slugs = await CoffeeProductSlugs.ReadAsync(_db, items.Select(c => c.CoffeeProductId), ct);
         var variants = await CheckInPhotoVariantBatch.ReadAsync(_db, items.SelectMany(c =>
             CheckInPhotoVariantBatch.Photos(c.Photos, c.DrinkPhoto, c.ShelfBagPhoto).Select(p => (c.Id, p))),
             deliveryOptions?.Value.AdvertiseVariants == true, ct);
         return items.Select(c => c with
         {
+            CoffeeProductSlug = c.CoffeeProductId is { } productId ? slugs.GetValueOrDefault(productId) : null,
             Photos = c.Photos.Select(p => CheckInPhotoVariantBatch.WithVariants(p, variants)).ToArray(),
             DrinkPhoto = c.DrinkPhoto is null ? null : CheckInPhotoVariantBatch.WithVariants(c.DrinkPhoto, variants),
             ShelfBagPhoto = c.ShelfBagPhoto is null ? null : CheckInPhotoVariantBatch.WithVariants(c.ShelfBagPhoto, variants)

@@ -42,6 +42,8 @@ Select a published product by `coffeeProductSlug` from the public coffee catalog
 
 A preparation from the author's own shelf bag sends `shelfBagId` instead of the other bean fields (see [shelf-client.md](shelf-client.md)). The bag supplies the bean: its catalog product with the bag's name snapshot, or its custom name, plus its roaster. Combining `shelfBagId` with `coffeeProductSlug` or `customBeanName` is `400`; another user's or a deleted bag is `404`. Responses return `shelfBagId` and a `roasterName` snapshot (from the catalog roaster for a slug selection, from the bag otherwise; `null` for a custom bean). Later bag edits or deletion do not rewrite the entry, so `shelfBagId` may refer to a bag that no longer exists.
 
+Reads (history, single entry, and the global and author-filtered feeds) add `coffeeProductSlug`: the product's current public slug while it is published, for opening it in the catalog, or `null`. It is resolved on every read and never stored, so it follows slug changes; create and update responses leave it `null`. Link by `coffeeProductId`, which never changes.
+
 All fields other than `preparedAt` are optional. Home method codes are `espresso`, `pour_over`, `batch_drip`, `moka_pot`, `cezve`, `aeropress`, `french_press`, and `other`. Clients may remember the last selected code for a one-tap UI, but may omit the field. `tasteScore` is a single result score from 1 through 5; absent scores remain `null`. Optional drink selection uses the existing `drinkSlug` and `customDrinkName` rules from [check-ins.md](check-ins.md).
 
 Example `200` response (identifiers and timestamps shown for illustration):
@@ -61,6 +63,7 @@ Example `200` response (identifiers and timestamps shown for illustration):
     "text": "A batch for friends",
     "brewMethodCode": "batch_drip",
     "coffeeProductId": "22222222-2222-4222-8222-222222222222",
+    "coffeeProductSlug": "honey-bloom",
     "beanName": "Honey Bloom",
     "roasterName": "Sibaristica",
     "shelfBagId": null,
@@ -95,7 +98,7 @@ republish it. Custom bean names, roaster names and custom drink names are includ
 
 Approved home entries appear in the existing global and author-filtered feeds:
 `kind: "Home"`, `shop: null`, `rating: null`, and `home` with `preparedOn`,
-`brewMethodCode`, `coffeeProductId`, `beanName`, `roasterName`, `doseGrams`,
+`brewMethodCode`, `coffeeProductId`, `coffeeProductSlug`, `beanName`, `roasterName`, `doseGrams`,
 `brewDurationSeconds` and `tasteScore`. Public reads never include `shelfBagId`; a shown bag card comes as `shelfBagPhotoUrl` and optional `shelfBagPhotoVariants`, like `drinkPhotoUrl`. Shop entries have `kind: "Shop"`, `home: null`. Shared text,
 author, drink, photos, helpful votes and reporting retain their existing contracts.
 City/shop filters intentionally exclude home entries: no home address is collected.
