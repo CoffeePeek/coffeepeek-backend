@@ -28,6 +28,7 @@ public static class ImportPublishFactory
             candidate.TagSlugs.ToArray(),
             overrideClosed && candidate.GoogleBusinessStatus == ImportGoogleBusinessStatus.ClosedPermanently,
             candidate.ImportedFromFile,
-            MenuDraftMapper.ToSnapshot(candidate.Menu));
+            MenuDraftMapper.ToSnapshot(candidate.Menu),
+            ImportOpeningHoursParser.Parse(candidate.OpeningHours));
     }
 }

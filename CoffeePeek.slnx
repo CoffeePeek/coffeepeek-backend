@@ -61,6 +61,9 @@
     <Project Path="CoffeePeek.Shared.Persistence/CoffeePeek.Shared.Persistence.csproj" />
     <Project Path="CoffeePeek.Shared.Web/CoffeePeek.Shared.Web.csproj" />
   </Folder>
+  <Folder Name="/Tools/">
+    <Project Path="dev/RestoreShopSchedules/RestoreShopSchedules.csproj" />
+  </Folder>
   <Folder Name="/Solution Items/">
     <File Path=".github/workflows/ci-cd.yml" />
     <File Path="CHANGELOG.md" />

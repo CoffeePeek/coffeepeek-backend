@@ -60,6 +60,8 @@ public static class ApplyImportDecisionsHandler
 
             try
             {
+                if (mapped.Value.Status == ImportQueueStatus.Published)
+                    ImportOpeningHoursParser.Parse(candidate.OpeningHours);
                 candidate.Decide(
                     mapped.Value.Status,
                     mapped.Value.Focus,
