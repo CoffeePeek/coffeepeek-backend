@@ -27,7 +27,7 @@ dotnet RestoreShopSchedules.dll reviewed-sources-2026-10-28.json --apply
 The first command is a dry run. The tool reads source hours from the Moderation database on the
 same PostgreSQL server, parses the entire plan before writing, and only selects shops with no
 schedule. It preserves existing schedules, visibility, business status and all other profile
-fields (the aggregate recalculates data completeness). An optional reviewed JSON file maps exact
+fields (existing database triggers recalculate data completeness). An optional reviewed JSON file maps exact
 shop slugs to local hours, used only when the import has no hours. Missing sources are reported
 without inventing hours. Every write advances
 `ProfileRevision`; EF concurrency checks roll back the whole transaction if a profile changed.
@@ -58,3 +58,8 @@ specific branch/address, with official branch information preferred over directo
 The generic Eclair site lists another branch's hours; use the address-specific sources above.
 Комьюнити, Некрасова 3 remains unknown: its profile is hidden/temporarily closed and external
 information also reports possible permanent closure. Do not infer an operating schedule.
+
+The production repair restored 150 schedules from retained import data and 8 from the reviewed
+sources. All 11 Paragraph profiles have hours; the public API returned schedules and a known
+opening state for all 19 checked Paragraph/supplemental profiles. No visible profile remained
+without hours. Existing schedules and unrelated profile fields were verified unchanged.
