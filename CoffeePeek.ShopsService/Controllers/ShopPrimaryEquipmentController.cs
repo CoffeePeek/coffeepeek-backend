@@ -22,7 +22,7 @@ public sealed class ShopPrimaryEquipmentController(IMessageBus bus, IUserContext
             new SetShopPrimaryEquipmentCommand(id, null, request.PrimaryEquipmentIds), ct));
 
     [HttpPut("owner/coffee-shops/{id:guid}/primary-equipment")]
-    [Authorize(Policy = RoleConsts.Owner)]
+    [Authorize]
     [ProducesResponseType<Response<AdminPublishedShopDto>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> SetForOwner(Guid id, SetShopPrimaryEquipmentRequest request, CancellationToken ct) =>
         Ok(await bus.InvokeAsync<Response<AdminPublishedShopDto>>(

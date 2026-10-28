@@ -21,8 +21,11 @@ public static class UpdateRoasterHandler
         CancellationToken ct)
     {
         var roaster = await repository.GetByIdAsync(command.Id, ct);
-        if (roaster is null)
+        if (roaster is null || command.OwnerUserId is { } owner && roaster.OwnerUserId != owner)
             return Response<RoasterDto>.Error(HttpStatusCode.NotFound, "Roaster not found.");
+
+        if (command.ExpectedRevision is { } revision && revision != roaster.ProfileRevision)
+            return Response<RoasterDto>.Error(HttpStatusCode.Conflict, "Roaster profile changed; reload and retry.");
 
         Roaster.ValidateDetails(command.Name, command.About);
         var location = RoasterProfileFields.BuildLocation(command.CityId, command.Address, command.Latitude, command.Longitude);
@@ -33,9 +36,12 @@ public static class UpdateRoasterHandler
         roaster.Update(command.Name, command.About);
         roaster.SetLocation(location);
         roaster.SetContact(contact);
+        roaster.AdvanceProfileRevision();
         if (attached.Length > 0) await bus.PublishAsync(new ShopPhotosAttachedEvent(command.ActorUserId,
             roaster.Id, ShopPhotoAttachmentKind.Roaster, attached));
 
-        return Response<RoasterDto>.Success(mapper.Map<RoasterDto>(roaster));
+        var dto = mapper.Map<RoasterDto>(roaster);
+        dto.ProfileRevision = roaster.ProfileRevision;
+        return Response<RoasterDto>.Success(dto);
     }
 }

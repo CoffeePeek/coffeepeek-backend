@@ -7,6 +7,7 @@ using CoffeePeek.Shops.Domain.Aggregates.CoffeeZoneAggregate;
 using CoffeePeek.Shops.Domain.Aggregates.MenuAggregate;
 using CoffeePeek.Shops.Domain.Aggregates.ShopTagAggregate;
 using CoffeePeek.Shops.Domain.Entities;
+using CoffeePeek.Shops.Domain.Aggregates.OwnershipAggregate;
 using CoffeePeek.Shared.Domain.PublicAddresses;
 using CoffeePeek.Shops.Application.PublicAddresses;
 using CoffeePeek.Shops.Application.Observability;
@@ -23,6 +24,8 @@ public class ShopsDbContext(DbContextOptions<ShopsDbContext> options, IOptions<P
     IPublicAddressOwnerWriter? addressOwners = null) : DbContext(options)
 {
     internal IPublicAddressOwnerWriter AddressOwners { get; } = addressOwners ?? new PublicAddressOwnerWriter();
+    public DbSet<BusinessOwnershipClaim> BusinessOwnershipClaims => Set<BusinessOwnershipClaim>();
+    public DbSet<BusinessOwnershipChange> BusinessOwnershipChanges => Set<BusinessOwnershipChange>();
     public DbSet<CoffeePeek.Shops.Domain.Aggregates.CoffeeProductAggregate.CoffeeProduct> CoffeeProducts => Set<CoffeePeek.Shops.Domain.Aggregates.CoffeeProductAggregate.CoffeeProduct>();
     public DbSet<CoffeePeek.Shops.Domain.Aggregates.CoffeeProductAggregate.CoffeeFilterValue> CoffeeFilterValues => Set<CoffeePeek.Shops.Domain.Aggregates.CoffeeProductAggregate.CoffeeFilterValue>();
     public DbSet<CoffeePeek.Shops.Domain.Aggregates.DiscoveryAggregate.DiscoveryFavorite> DiscoveryFavorites => Set<CoffeePeek.Shops.Domain.Aggregates.DiscoveryAggregate.DiscoveryFavorite>();
@@ -46,6 +49,9 @@ public class ShopsDbContext(DbContextOptions<ShopsDbContext> options, IOptions<P
         var profileRevisionChanged = ChangeTracker.Entries<CoffeeShop>().Any(entry =>
             entry.State == EntityState.Modified &&
             entry.Property(nameof(CoffeeShop.ProfileRevision)).IsModified);
+        var ownershipOrRoasterChanged = ChangeTracker.Entries<BusinessOwnershipClaim>().Any(entry =>
+            entry.State == EntityState.Modified) || ChangeTracker.Entries<Roaster>().Any(entry =>
+            entry.State == EntityState.Modified && entry.Property(nameof(Roaster.ProfileRevision)).IsModified);
         var ownerChanges = PublicAddressesEnabled && ChangeTracker.Entries().Any(e =>
             (e.Entity is IPublicSlugOwner && e.State == EntityState.Added && e.Entity is not CoffeeZone) ||
             PublicAddressWriter.IsNewlyPublished(e));
@@ -61,12 +67,18 @@ public class ShopsDbContext(DbContextOptions<ShopsDbContext> options, IOptions<P
                 return await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
             }, cancellationToken);
         }
-        catch (DbUpdateConcurrencyException) when (profileRevisionChanged)
+        catch (DbUpdateConcurrencyException) when (profileRevisionChanged || ownershipOrRoasterChanged)
         {
             // Do not retain the EF exception as InnerException: the global Wolverine retry
             // predicate walks the exception chain and would retry the stale profile write.
             ShopsTelemetry.ProfileWriteConflict();
-            throw new ConflictException("Shop profile changed; reload and retry.", statusCode: 409);
+            throw new ConflictException("Profile or ownership changed; reload and retry.", statusCode: 409);
+        }
+        catch (DbUpdateException ex) when (ex.InnerException is PostgresException
+                   { SqlState: PostgresErrorCodes.UniqueViolation,
+                     ConstraintName: "IX_BusinessOwnershipClaims_PendingApplicant" })
+        {
+            throw new ConflictException("You already have a pending ownership claim for this business.", statusCode: 409);
         }
         catch (DbUpdateException ex) when (ex.InnerException is PostgresException
                    { SqlState: PostgresErrorCodes.UniqueViolation,
@@ -153,6 +165,8 @@ public class ShopsDbContext(DbContextOptions<ShopsDbContext> options, IOptions<P
         modelBuilder.ApplyConfiguration(new CheckInPhotoVariantManifestConfiguration());
         modelBuilder.ApplyConfiguration(new AppliedShopChangeRequestConfiguration());
         modelBuilder.ApplyConfiguration(new RoasterConfiguration());
+        modelBuilder.ApplyConfiguration(new BusinessOwnershipClaimConfiguration());
+        modelBuilder.ApplyConfiguration(new BusinessOwnershipChangeConfiguration());
         modelBuilder.ApplyConfiguration(new RoasterPhotoConfiguration());
         modelBuilder.ApplyConfiguration(new ShopTagConfiguration());
         modelBuilder.ApplyConfiguration(new ReviewReportConfiguration());

@@ -145,15 +145,17 @@ public class AdminCoffeeShopsController(IMessageBus bus, IUserContext userContex
 
     [HttpPatch("{id:guid}/owner")]
     [ProducesResponseType<Response<AdminPublishedShopDto>>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> AssignOwner(
         Guid id,
         [FromBody] AssignCoffeeShopOwnerRequest request,
         CancellationToken ct)
     {
         var response = await bus.InvokeAsync<Response<AdminPublishedShopDto>>(
-            new AssignCoffeeShopOwnerCommand(id, request.OwnerUserId), ct);
-        return response.IsSuccess ? Ok(response) : NotFound(response);
+            new AssignCoffeeShopOwnerCommand(id, request.OwnerUserId, userContext.GetUserIdOrThrow(), request.Reason), ct);
+        return response.IsSuccess ? Ok(response) : StatusCode(response.StatusCode ?? StatusCodes.Status400BadRequest, response);
     }
 
     /// <summary>Reorder gallery photos. Body must list every shop photo ID in the new display order (first = cover).</summary>

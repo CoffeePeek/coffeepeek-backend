@@ -10,6 +10,8 @@ public class RoasterConfiguration : IEntityTypeConfiguration<Roaster>
     public void Configure(EntityTypeBuilder<Roaster> builder)
     {
         builder.HasKey(r => r.Id);
+        builder.HasIndex(r => r.OwnerUserId);
+        builder.Property(r => r.ProfileRevision).HasDefaultValue(0L).IsConcurrencyToken();
         // Backstop for the read-then-insert idempotency check in CreateRoasterFromModerationService.
         builder.HasIndex(r => r.ModerationId)
             .IsUnique()

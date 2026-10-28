@@ -24,6 +24,8 @@ public class Roaster : Entity<Guid>, IPublicSlugOwner
     public Location? Location { get; private set; }
     public RoasterContact? Contact { get; private set; }
     public Guid? ModerationId { get; private set; }
+    public Guid? OwnerUserId { get; private set; }
+    public long ProfileRevision { get; private set; }
     public ICollection<CoffeeShop> CoffeeShops { get; private set; } = new HashSet<CoffeeShop>();
 
     private readonly List<RoasterPhoto> _photos = [];
@@ -49,6 +51,16 @@ public class Roaster : Entity<Guid>, IPublicSlugOwner
         Name = name.Trim();
         About = about?.Trim();
     }
+
+    public void AssignOwner(Guid? ownerUserId)
+    {
+        if (ownerUserId == Guid.Empty) throw new DomainException("Owner user ID cannot be empty.");
+        if (OwnerUserId == ownerUserId) return;
+        OwnerUserId = ownerUserId;
+        AdvanceProfileRevision();
+    }
+
+    public void AdvanceProfileRevision() => ProfileRevision = checked(ProfileRevision + 1);
 
     public void SetAbout(string? about)
     {

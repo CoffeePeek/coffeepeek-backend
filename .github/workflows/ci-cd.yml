@@ -211,6 +211,9 @@ jobs:
             CoffeeImportRecoveryLiveTests \
             ShopProfileWolverineLiveTests \
             ShopProfileRevisionLiveTests \
+            BusinessOwnershipLiveTests \
+            BusinessOwnershipMigrationLiveTests \
+            RoasterOwnershipRevisionLiveTests \
             ShopVisibilityWolverineLiveTests \
             ShopProfileOutboxLiveTests \
             DrinkCatalogWriteProtocolLiveTests \
@@ -318,6 +321,7 @@ jobs:
           python -m pip install -r dev/coffee-import/requirements.txt
           python -m pip install 'PyYAML==6.0.3'
           python -X utf8 -m unittest discover -s dev -p 'test_discovery_contract.py' -v
+          python -X utf8 dev/test_ownership_smoke.py
           python -X utf8 -m unittest discover -s dev/performance -p 'test_*.py' -v
           python -X utf8 -m unittest discover -s dev/photo-variants -p 'test_photo_*.py' -v
           python -X utf8 -m unittest discover -s dev/coffee-import -p 'test_*.py' -v

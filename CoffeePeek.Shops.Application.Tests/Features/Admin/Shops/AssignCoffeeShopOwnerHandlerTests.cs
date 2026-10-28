@@ -4,6 +4,10 @@ using System.Threading.Tasks;
 using CoffeePeek.Shared.Kernel.Options;
 using CoffeePeek.Shops.Application.Features.Admin.Shops;
 using CoffeePeek.Shops.Application.Features.CoffeeShop.ShopProfile;
+using CoffeePeek.Shops.Application.Features.CoffeeCatalog;
+using CoffeePeek.Shops.Application.Features.Ownership;
+using CoffeePeek.Shops.Application.Abstractions;
+using CoffeePeek.Shops.Domain.Aggregates.OwnershipAggregate;
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
 using Microsoft.Extensions.Options;
 using Moq;
@@ -25,9 +29,10 @@ public sealed class AssignCoffeeShopOwnerHandlerTests
         var repository = new Mock<ICoffeeShopRepository>();
         repository.Setup(x => x.GetByIdAsync(shop.Id, It.IsAny<CancellationToken>())).ReturnsAsync(shop);
         var bus = new Mock<IMessageBus>();
+        var ownership = CreateOwnership(shop, repository.Object, bus.Object);
 
         var result = await AssignCoffeeShopOwnerHandler.Handle(
-            new AssignCoffeeShopOwnerCommand(shop.Id, ownerId), repository.Object, bus.Object,
+            new AssignCoffeeShopOwnerCommand(shop.Id, ownerId, Guid.NewGuid()), repository.Object, ownership,
             MediaOptions, CancellationToken.None);
 
         Assert.True(result.IsSuccess);
@@ -46,10 +51,11 @@ public sealed class AssignCoffeeShopOwnerHandlerTests
         var repository = new Mock<ICoffeeShopRepository>();
         repository.Setup(x => x.GetByIdAsync(shop.Id, It.IsAny<CancellationToken>())).ReturnsAsync(shop);
         var bus = new Mock<IMessageBus>();
+        var ownership = CreateOwnership(shop, repository.Object, bus.Object);
 
         var result = await AssignCoffeeShopOwnerHandler.Handle(
-            new AssignCoffeeShopOwnerCommand(shop.Id, emptyGuid ? Guid.Empty : null),
-            repository.Object, bus.Object, MediaOptions, CancellationToken.None);
+            new AssignCoffeeShopOwnerCommand(shop.Id, emptyGuid ? Guid.Empty : null, Guid.NewGuid()),
+            repository.Object, ownership, MediaOptions, CancellationToken.None);
 
         Assert.True(result.IsSuccess);
         Assert.Null(shop.OwnerUserId);
@@ -59,4 +65,14 @@ public sealed class AssignCoffeeShopOwnerHandlerTests
 
     private static DomainCoffeeShop NewShop() =>
         new(Guid.NewGuid(), "Owner test", null, PriceRange.Cheap, Guid.NewGuid());
+
+    private static BusinessOwnershipService CreateOwnership(DomainCoffeeShop shop, ICoffeeShopRepository repository, IMessageBus bus)
+    {
+        var store = new Mock<IBusinessOwnershipStore>();
+        store.Setup(x => x.GetTargetAsync(BusinessType.CoffeeShop, shop.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(() => new BusinessOwnershipTargetDto(BusinessType.CoffeeShop, shop.Id, shop.Name, "owner-test", shop.OwnerUserId));
+        var users = new Mock<IUserExistenceLookup>();
+        users.Setup(x => x.ExistsAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        return new(store.Object, repository, Mock.Of<IRoasterOwnershipWriter>(), users.Object, bus);
+    }
 }

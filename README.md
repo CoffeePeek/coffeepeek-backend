@@ -234,6 +234,11 @@ integration and fault gates use PostgreSQL, RabbitMQ, Redis and MinIO.
 
 ## API
 
+Business ownership: authenticated users submit claims for coffee shops and roasters; administrators approve,
+reject or revoke access. Owners edit only their assigned profiles, with changes published immediately.
+See [ownership API and local smoke test](docs/business-ownership-api.md). Apply the Shops migration
+`20261028141439_AddBusinessOwnershipClaims` before deploying the updated Shops service and Gateway.
+
 Transactional account emails use [published Resend templates](docs/account-email-templates.md).
 Publish the required templates before deploying AccountService.
 
