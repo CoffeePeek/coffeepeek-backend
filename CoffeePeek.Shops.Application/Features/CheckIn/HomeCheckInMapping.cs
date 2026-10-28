@@ -29,7 +29,8 @@ public static class HomeCheckInMapping
             TasteScore = checkIn.TasteScore,
             Drink = shared.Drink,
             Photos = shared.Photos,
-            DrinkPhoto = shared.DrinkPhoto
+            DrinkPhoto = shared.DrinkPhoto,
+            ShelfBagPhoto = shared.ShelfBagPhoto
         };
     }
 }

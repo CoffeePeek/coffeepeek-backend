@@ -73,6 +73,7 @@ public static class InfrastructureExtensions
         services.AddScoped<ClaimCheckInPhotosHandler>();
         services.AddScoped<ClaimShopPhotosHandler>();
         services.AddScoped<ClaimShelfBagPhotoHandler>();
+        services.AddScoped<CopyShelfBagCardHandler>();
 
         services.AddOptions<MediaPublicUrlOptions>()
             .BindConfiguration(nameof(MediaPublicUrlOptions));

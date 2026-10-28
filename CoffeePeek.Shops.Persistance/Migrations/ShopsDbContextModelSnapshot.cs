@@ -378,6 +378,9 @@ namespace CoffeePeek.Shops.Persistance.Migrations
                     b.Property<Guid?>("ShelfBagId")
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("ShelfBagPhotoId")
+                        .HasColumnType("uuid");
+
                     b.Property<double?>("ShopDistanceMeters")
                         .HasColumnType("double precision");
 

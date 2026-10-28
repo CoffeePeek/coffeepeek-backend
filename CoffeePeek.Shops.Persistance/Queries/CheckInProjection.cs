@@ -27,11 +27,12 @@ internal static class CheckInProjection
             RejectionReason = c.UserId == readerId ? c.RejectionReason : null
         }).ToArray();
         var variants = await CheckInPhotoVariantBatch.ReadAsync(db, items.SelectMany(c =>
-            CheckInPhotoVariantBatch.Photos(c.Photos, c.DrinkPhoto).Select(p => (c.Id, p))), advertiseVariants, ct);
+            CheckInPhotoVariantBatch.Photos(c.Photos, c.DrinkPhoto, c.ShelfBagPhoto).Select(p => (c.Id, p))), advertiseVariants, ct);
         return items.Select(c => c with
         {
             Photos = c.Photos.Select(p => CheckInPhotoVariantBatch.WithVariants(p, variants)).ToArray(),
-            DrinkPhoto = c.DrinkPhoto is null ? null : CheckInPhotoVariantBatch.WithVariants(c.DrinkPhoto, variants)
+            DrinkPhoto = c.DrinkPhoto is null ? null : CheckInPhotoVariantBatch.WithVariants(c.DrinkPhoto, variants),
+            ShelfBagPhoto = c.ShelfBagPhoto is null ? null : CheckInPhotoVariantBatch.WithVariants(c.ShelfBagPhoto, variants)
         }).ToArray();
     }
 }

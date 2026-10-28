@@ -65,12 +65,14 @@ public static class CreateHomeCheckInHandler
                     cutout.SizeBytes, command.UserId, keys.Length, id: cutout.PhotoId));
             }
         }
+        if (request.ShowShelfBag && bean.ShelfBagId is { } bagId && bean.CardPhotoId is { } cardPhotoId)
+            await HomeCheckInBagCard.AttachAsync(checkIn, bagId, cardPhotoId, photos, ct);
 
         repository.Add(checkIn);
         await bus.PublishAsync(new CoffeePeek.Contract.Events.Shops.UserCheckInActivityRecorded(command.UserId, checkIn.CreatedAtUtc));
         if (checkIn.Visibility == CheckInVisibility.Public)
             await bus.PublishAsync(CheckInMapping.ModerationRequest(checkIn));
-        if (keys.Length > 0)
+        if (checkIn.ShopPhotos.Count > 0)
             await bus.PublishAsync(new CheckInPhotosAttachedEvent(command.UserId, checkIn.Id,
                 checkIn.ShopPhotos.OrderBy(p => p.SortIndex).Select(p => p.StorageKey).ToArray(), DateTime.UtcNow));
         await bus.PublishAsync(new CheckInCacheInvalidationRequested(checkIn.Id, null, checkIn.UserId));

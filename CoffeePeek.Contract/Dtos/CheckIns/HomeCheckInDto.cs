@@ -26,4 +26,6 @@ public sealed record HomeCheckInDto
     public CheckInDrinkDto? Drink { get; init; }
     public CheckInPhotoDto[] Photos { get; init; } = [];
     public CheckInPhotoDto? DrinkPhoto { get; init; }
+    /// <summary>Copy of the shelf-bag card, when the author chose to show the bag.</summary>
+    public CheckInPhotoDto? ShelfBagPhoto { get; init; }
 }

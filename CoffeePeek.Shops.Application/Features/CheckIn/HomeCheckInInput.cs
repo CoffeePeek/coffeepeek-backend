@@ -56,7 +56,7 @@ internal static class HomeCheckInInput
             if (shelfBagId.Value == Guid.Empty) throw new ValidationException("ShelfBagId must not be empty.");
             var bag = await repository.GetOwnedShelfBagBeanAsync(userId, shelfBagId.Value, ct)
                 ?? throw new NotFoundException("Shelf bag not found.");
-            return new HomeCheckInBean(bag.CoffeeProductId, bag.Name, bag.RoasterName, shelfBagId);
+            return new HomeCheckInBean(bag.CoffeeProductId, bag.Name, bag.RoasterName, shelfBagId, bag.CardPhotoId);
         }
         if (productSlug == null) return new HomeCheckInBean(null, customBeanName, null, null);
         if (productSlug.Length > 250) throw new ValidationException("CoffeeProductSlug is too long.");

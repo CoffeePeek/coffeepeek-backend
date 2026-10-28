@@ -18,6 +18,8 @@ public sealed record UpdateHomeCheckInRequest
     public string? CustomBeanName { get; init; }
     /// <summary>The author's shelf bag. The entry's current bag keeps its snapshots even if the bag changed or was deleted; omitting it clears the link.</summary>
     public Guid? ShelfBagId { get; init; }
+    /// <summary>Show a copy of the bag's card with the entry. Ignored without a bag or when the bag has no card.</summary>
+    public bool ShowShelfBag { get; init; } = true;
     public decimal? DoseGrams { get; init; }
     public int? BrewDurationSeconds { get; init; }
     public int? TasteScore { get; init; }

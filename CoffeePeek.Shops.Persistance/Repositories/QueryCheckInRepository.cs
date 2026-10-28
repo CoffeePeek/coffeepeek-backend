@@ -142,13 +142,13 @@ public class QueryCheckInRepository(ShopsDbContext dbContext) : IQueryCheckInRep
         return product is null ? null : (product.Id, product.Name, product.RoasterName);
     }
 
-    public async Task<(Guid? CoffeeProductId, string? Name, string? RoasterName)?> GetOwnedShelfBagBeanAsync(Guid userId,
+    public async Task<(Guid? CoffeeProductId, string? Name, string? RoasterName, Guid? CardPhotoId)?> GetOwnedShelfBagBeanAsync(Guid userId,
         Guid bagId, CancellationToken ct = default)
     {
         var bag = await dbContext.ShelfBags.AsNoTracking()
             .Where(b => b.Id == bagId && b.UserId == userId)
-            .Select(b => new { b.CoffeeProductId, b.Name, b.RoasterName })
+            .Select(b => new { b.CoffeeProductId, b.Name, b.RoasterName, b.PhotoId })
             .SingleOrDefaultAsync(ct);
-        return bag is null ? null : (bag.CoffeeProductId, bag.Name, bag.RoasterName);
+        return bag is null ? null : (bag.CoffeeProductId, bag.Name, bag.RoasterName, bag.PhotoId);
     }
 }

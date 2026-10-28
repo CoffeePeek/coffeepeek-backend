@@ -69,7 +69,8 @@ Example `200` response (identifiers and timestamps shown for illustration):
     "tasteScore": 4,
     "drink": null,
     "photos": [],
-    "drinkPhoto": null
+    "drinkPhoto": null,
+    "shelfBagPhoto": null
   },
   "statusCode": null
 }
@@ -95,7 +96,7 @@ republish it. Custom bean names, roaster names and custom drink names are includ
 Approved home entries appear in the existing global and author-filtered feeds:
 `kind: "Home"`, `shop: null`, `rating: null`, and `home` with `preparedOn`,
 `brewMethodCode`, `coffeeProductId`, `beanName`, `roasterName`, `doseGrams`,
-`brewDurationSeconds` and `tasteScore`. Public reads never include `shelfBagId`. Shop entries have `kind: "Shop"`, `home: null`. Shared text,
+`brewDurationSeconds` and `tasteScore`. Public reads never include `shelfBagId`; a shown bag card comes as `shelfBagPhotoUrl` and optional `shelfBagPhotoVariants`, like `drinkPhotoUrl`. Shop entries have `kind: "Shop"`, `home: null`. Shared text,
 author, drink, photos, helpful votes and reporting retain their existing contracts.
 City/shop filters intentionally exclude home entries: no home address is collected.
 `GET /api/v1/check-ins/mine` remains shop-only for compatibility; the client merges
@@ -107,6 +108,10 @@ content edits use `/home/{id}`. Home taste scores never affect shop ratings/coun
 ## Photos
 
 Home entries reuse private check-in storage. Request presigned URLs with authenticated `POST /api/Photos/check-in`, upload each file to its returned URL using the signed `Content-Type` and `x-amz-tagging: is_permanent=False` headers, then send the returned `storageKey` in `photos` on creation. Each `photos` item has `fileName`, `contentType`, `storageKey`, and `size`; only the storage key identifies the upload. Media verifies the owner, uploaded bytes, supported raster MIME, and single use. At most five distinct originals can be attached. The existing optional `drinkPhoto` cutout must be a separate PNG upload and requires at least one original; the backend does not make the cutout.
+
+### Bag card
+
+With `shelfBagId`, `showShelfBag` (default `true`) shows the bag with the entry: the server copies the bag's current card into a new photo of this entry, returned as `shelfBagPhoto` and kept out of `photos` and the five-photo limit. The copy follows the entry's photo rules — readable by the author, and by everyone once the entry is public and approved — and moderators see it. Re-shooting or deleting the bag later does not change it. A bag without a card shows nothing. `showShelfBag: false` attaches no copy. On `PUT`, the same `shelfBagId` with `showShelfBag: true` keeps the current copy; `false`, another bag or no bag removes it and its bytes; turning it on again makes a fresh copy of the bag's current card. A failed copy is `400`, and nothing is saved; retry the request.
 
 The detail response supplies protected photo URLs such as `/api/v1/check-ins/{id}/photos/{photoId}`. Private entries require the owner's bearer token; approved public entries can be read anonymously. The same route checks ownership on each request and returns `404` to other users for private home content. Photo bytes are streamed with private, no-store caching. A deleted entry's bytes are no longer readable through this route. Photos cannot be added or replaced by `PUT`.
 

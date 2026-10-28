@@ -97,6 +97,31 @@ public class MediaUploadedPhotoLookup(
         }
     }
 
+    public async Task<ClaimedCheckInPhotoDto?> CopyShelfBagCardAsync(Guid userId, Guid checkInId, Guid bagId,
+        Guid cardPhotoId, Guid copyId, CancellationToken ct = default)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Post, "/internal/check-in-photos/shelf-bag-card");
+        request.AddGatewayAuthHeader(gatewayAuthOptions.Value.SecretKey);
+        request.Headers.TryAddWithoutValidation(GatewayHeaderConsts.XUserId, userId.ToString());
+        request.Content = JsonContent.Create(new CopyShelfBagCardRequest(checkInId, bagId, cardPhotoId, copyId));
+        try
+        {
+            using var response = await httpClientFactory.CreateClient(HttpClientName).SendAsync(request, ct);
+            if (!response.IsSuccessStatusCode)
+            {
+                logger.LogWarning("Shelf bag card copy returned {StatusCode} for {CheckInId}", (int)response.StatusCode, checkInId);
+                return null;
+            }
+            var payload = await response.Content.ReadFromJsonAsync<Response<ClaimedCheckInPhotoDto>>(cancellationToken: ct);
+            return payload is { IsSuccess: true, Data: not null } ? payload.Data : null;
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
+        {
+            logger.LogWarning(ex, "Shelf bag card copy failed for {CheckInId}", checkInId);
+            return null;
+        }
+    }
+
     public async Task ReleaseCheckInClaimAsync(Guid userId, Guid checkInId, CancellationToken ct = default)
     {
         using var request = new HttpRequestMessage(HttpMethod.Delete, $"/internal/check-in-photos/{checkInId}/claim");

@@ -25,9 +25,10 @@ public interface IQueryCheckInRepository
     Task<Guid?> GetUserIdByIdAsync(Guid checkInId, CancellationToken ct = default);
     Task<(Guid Id, string Name, string RoasterName)?> GetPublishedCoffeeProductBySlugAsync(string slug, CancellationToken ct = default);
     /// <summary>
-    /// The bean of a shelf bag owned by <paramref name="userId"/>, in any status; null for a missing bag or another owner's.
+    /// The bean and current card of a shelf bag owned by <paramref name="userId"/>, in any status; null for a missing bag
+    /// or another owner's.
     /// </summary>
-    Task<(Guid? CoffeeProductId, string? Name, string? RoasterName)?> GetOwnedShelfBagBeanAsync(Guid userId, Guid bagId,
+    Task<(Guid? CoffeeProductId, string? Name, string? RoasterName, Guid? CardPhotoId)?> GetOwnedShelfBagBeanAsync(Guid userId, Guid bagId,
         CancellationToken ct = default);
 
     /// <summary>

@@ -15,9 +15,10 @@ public static class CheckInMapping
         Visibility = (Contract.Enums.CheckInVisibility)c.Visibility,
         ModerationState = (Contract.Enums.CheckInModerationState)c.ModerationState,
         ContentRevision = c.ContentRevision, RejectionReason = c.RejectionReason, Drink = drink ?? (c.DrinkSlug == null ? null : new CheckInDrinkDto(c.DrinkSlug, c.CustomDrinkName, c.DrinkNameRu!, c.DrinkNameEn!)),
-        Photos = c.ShopPhotos.Where(p => p.Id != c.DrinkPhotoId).OrderBy(p => p.SortIndex).ThenBy(p => p.Id)
+        Photos = c.ShopPhotos.Where(p => p.Id != c.DrinkPhotoId && p.Id != c.ShelfBagPhotoId).OrderBy(p => p.SortIndex).ThenBy(p => p.Id)
             .Select(p => Photo(c.Id, p)).ToArray(),
         DrinkPhoto = c.ShopPhotos.Where(p => p.Id == c.DrinkPhotoId).Select(p => Photo(c.Id, p)).SingleOrDefault(),
+        ShelfBagPhoto = c.ShopPhotos.Where(p => p.Id == c.ShelfBagPhotoId).Select(p => Photo(c.Id, p)).SingleOrDefault(),
         HelpfulCount = c.HelpfulCount, IsHelpfulByCurrentUser = helpful,
         CountsForLeaderboard = c.CountsForLeaderboard, LeaderboardStatus = c.LeaderboardStatus
     };
