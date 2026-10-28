@@ -43,7 +43,7 @@ or `Admin` through the gateway and in the owning service:
 | Method | URL | Data available to the web client |
 |--------|-----|----------------------------------|
 | GET | `/api/admin/stats/overview` | All overview cards: users, activity, shops, check-ins, moderation and imports |
-| GET | `/api/admin/stats/users/timeseries?days=30` | User registration chart |
+| GET | `/api/admin/stats/users/timeseries?days=30` | User registration and daily active user charts |
 | GET | `/api/admin/stats/shops/timeseries?days=30` | Shop and check-in charts |
 | GET | `/api/admin/stats/shops/insights` | Ratings, top shops and app downloads |
 | GET | `/api/admin/stats/moderation/insights` | Moderation SLA, queues and moderator workload |
@@ -184,7 +184,7 @@ Edge cases / changes:
 
 ## GET /api/admin/stats/users/timeseries
 
-New user registrations per UTC day.
+New user registrations and daily active users (DAU) per UTC calendar day.
 
 | Query param | Type | Default | Notes |
 |-------------|------|---------|-------|
@@ -200,6 +200,11 @@ New user registrations per UTC day.
       { "date": "2026-09-23", "count": 5 },
       { "date": "2026-09-24", "count": 0 },
       { "date": "2026-09-25", "count": 2 }
+    ],
+    "dailyActiveUsers": [
+      { "date": "2026-09-23", "count": 31 },
+      { "date": "2026-09-24", "count": 0 },
+      { "date": "2026-09-25", "count": 12 }
     ]
   },
   "statusCode": null
@@ -210,6 +215,11 @@ New user registrations per UTC day.
 |-------|---------|
 | `days` | Effective window after clamping |
 | `newUsers` | Exactly `days` entries, ascending by date, last entry = today (UTC). Days without registrations are `0` (zero-filled) |
+| `dailyActiveUsers` | Distinct users with a login or session refresh on each UTC calendar day; multiple sessions, devices and refreshes count once per user per day. Dates match `newUsers`; days without activity are `0` |
+
+The same user may appear on multiple days. Activity uses refresh-token creation timestamps, including tokens that have since expired or been revoked. History is calculated from retained tokens, so deleting tokens or accounts can reduce past counts; it is not an immutable daily snapshot.
+
+Each day runs from 00:00 UTC to the next 00:00 UTC. Today's entry is **incomplete**: label it as such or exclude it when comparing completed days. This calendar-day DAU differs from the overview's rolling last-24-hours `dailyActiveUsers`. For trend charts, plot `dailyActiveUsers` separately from registrations and compare completed days.
 
 ---
 
@@ -413,6 +423,7 @@ export interface AdminDailyCountDto {
 export interface AdminUsersTimeseriesDto {
   days: number;
   newUsers: AdminDailyCountDto[];
+  dailyActiveUsers: AdminDailyCountDto[];
 }
 
 export interface AdminShopsTimeseriesDto {
@@ -513,6 +524,7 @@ const [users, shops] = await Promise.all([
 const rows = users.data.newUsers.map((u, i) => ({
   date: u.date,
   newUsers: u.count,
+  dailyActiveUsers: users.data.dailyActiveUsers[i].count,
   newShops: shops.data.newShops[i]?.count ?? 0,
   newCheckIns: shops.data.newCheckIns[i]?.count ?? 0,
 }));

@@ -110,6 +110,21 @@ public class AdminUserQueryRepository(AccountDbContext dbContext) : IAdminUserQu
         return rows.ToDictionary(r => DateOnly.FromDateTime(r.Day), r => r.Count);
     }
 
+    public async Task<IReadOnlyDictionary<DateOnly, int>> GetDailyActiveUsersPerDayAsync(
+        DateTime fromUtcDate,
+        CancellationToken ct = default)
+    {
+        // shortcut: history depends on retained refresh tokens, use daily aggregates if session/account deletion must not change it.
+        var rows = await dbContext.RefreshTokens
+            .AsNoTracking()
+            .Where(t => t.CreatedAtUtc >= fromUtcDate)
+            .GroupBy(t => t.CreatedAtUtc.Date)
+            .Select(g => new { Day = g.Key, Count = g.Select(t => t.UserId).Distinct().Count() })
+            .ToListAsync(ct);
+
+        return rows.ToDictionary(r => DateOnly.FromDateTime(r.Day), r => r.Count);
+    }
+
     private Task<int> CountActiveUsersSinceAsync(DateTime sinceUtc, CancellationToken ct) =>
         dbContext.RefreshTokens
             .AsNoTracking()

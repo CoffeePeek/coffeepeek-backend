@@ -27,7 +27,7 @@ public class AdminStatsController(IMessageBus bus) : ControllerBase
     }
 
     /// <summary>
-    /// Returns new-user registrations per UTC day, zero-filled, ending today.
+    /// Returns registrations and daily active users per UTC calendar day, zero-filled, ending today (incomplete).
     /// </summary>
     /// <param name="days">Window length in days; default 30, clamped to 1..90.</param>
     /// <param name="cancellationToken">Request cancellation.</param>

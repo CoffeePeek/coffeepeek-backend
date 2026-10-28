@@ -28,10 +28,13 @@ public class AdminUserQueryRepositoryTests
         return user;
     }
 
-    private static void AddTokenCreatedAgo(User user, TimeSpan ago)
+    private static void AddTokenCreatedAgo(User user, TimeSpan ago) =>
+        AddTokenCreatedAt(user, DateTime.UtcNow - ago);
+
+    private static void AddTokenCreatedAt(User user, DateTime createdAtUtc)
     {
         user.AddSession(Guid.NewGuid().ToString("N"), TimeSpan.FromDays(60), "device", "127.0.0.1");
-        user.RefreshTokens.Last().CreatedAtUtc = DateTime.UtcNow - ago;
+        user.RefreshTokens.Last().CreatedAtUtc = createdAtUtc;
     }
 
     [Fact]
@@ -120,6 +123,34 @@ public class AdminUserQueryRepositoryTests
         stats.DailyActiveUsers.Should().Be(1);
         stats.WeeklyActiveUsers.Should().Be(2);
         stats.MonthlyActiveUsers.Should().Be(3);
+    }
+
+    [Fact]
+    public async Task GetDailyActiveUsersPerDayAsync_CountsDistinctUsersPerUtcDayFromStart()
+    {
+        await using var db = CreateContext();
+        var from = new DateTime(2026, 9, 23, 0, 0, 0, DateTimeKind.Utc);
+        var a = NewUser("usera");
+        AddTokenCreatedAt(a, from);
+        AddTokenCreatedAt(a, from.AddDays(1).AddTicks(-1));
+        AddTokenCreatedAt(a, from.AddDays(1));
+        a.RevokeAllSessions();
+        var b = NewUser("userb");
+        b.AddSession("expired-token", TimeSpan.FromDays(-1), "device", "127.0.0.1");
+        b.RefreshTokens.Last().CreatedAtUtc = from.AddDays(1).AddHours(2);
+        var c = NewUser("userc");
+        AddTokenCreatedAt(c, from.AddTicks(-1));
+        db.Users.AddRange(a, b, c);
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        var perDay = await new AdminUserQueryRepository(db)
+            .GetDailyActiveUsersPerDayAsync(from, TestContext.Current.CancellationToken);
+
+        perDay.Should().BeEquivalentTo(new Dictionary<DateOnly, int>
+        {
+            [DateOnly.FromDateTime(from)] = 1,
+            [DateOnly.FromDateTime(from.AddDays(1))] = 2
+        });
     }
 
     [Fact]
