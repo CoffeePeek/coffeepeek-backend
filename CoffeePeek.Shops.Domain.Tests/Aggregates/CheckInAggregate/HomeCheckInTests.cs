@@ -133,4 +133,23 @@ public class HomeCheckInTests
         Assert.Throws<DomainException>(() => checkIn.UpdateHome(null, PreparedAtUtc, PreparedOn,
             null, null, null, null, null, null));
     }
+
+    [Fact]
+    public void BeanSourceKeepsTheBagAndATrimmedRoasterAndRejectsInvalidValues()
+    {
+        var checkIn = CheckIn.CreateHome(Guid.NewGuid(), "author", null, PreparedAtUtc, PreparedOn,
+            null, null, "Gift from Kenya", null, null, null);
+        var bagId = Guid.NewGuid();
+
+        checkIn.SetBeanSource(bagId, "  Sibaristica  ");
+        Assert.Equal(bagId, checkIn.ShelfBagId);
+        Assert.Equal("Sibaristica", checkIn.RoasterNameSnapshot);
+
+        checkIn.SetBeanSource(null, " ");
+        Assert.Null(checkIn.ShelfBagId);
+        Assert.Null(checkIn.RoasterNameSnapshot);
+
+        Assert.Throws<DomainException>(() => checkIn.SetBeanSource(Guid.Empty, null));
+        Assert.Throws<DomainException>(() => checkIn.SetBeanSource(bagId, new string('r', 251)));
+    }
 }

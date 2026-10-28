@@ -23,7 +23,12 @@ public interface IQueryCheckInRepository
         CancellationToken ct = default);
     Task<bool> ExistsByIdAsync(Guid checkInId, CancellationToken ct = default);
     Task<Guid?> GetUserIdByIdAsync(Guid checkInId, CancellationToken ct = default);
-    Task<(Guid Id, string Name)?> GetPublishedCoffeeProductBySlugAsync(string slug, CancellationToken ct = default);
+    Task<(Guid Id, string Name, string RoasterName)?> GetPublishedCoffeeProductBySlugAsync(string slug, CancellationToken ct = default);
+    /// <summary>
+    /// The bean of a shelf bag owned by <paramref name="userId"/>, in any status; null for a missing bag or another owner's.
+    /// </summary>
+    Task<(Guid? CoffeeProductId, string? Name, string? RoasterName)?> GetOwnedShelfBagBeanAsync(Guid userId, Guid bagId,
+        CancellationToken ct = default);
 
     /// <summary>
     /// Serializes check-in creation per user until the current transaction ends, so the cooldown and daily-cap

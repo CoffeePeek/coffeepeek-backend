@@ -163,7 +163,7 @@ public class HomeCheckInHandlerTests
     {
         var productId = Guid.NewGuid();
         _repository.Setup(r => r.GetPublishedCoffeeProductBySlugAsync("honey-bloom",
-            It.IsAny<CancellationToken>())).ReturnsAsync((productId, "Honey Bloom"));
+            It.IsAny<CancellationToken>())).ReturnsAsync((productId, "Honey Bloom", "Sibaristica"));
 
         var result = await Create(new CreateHomeCheckInRequest
         {
@@ -178,6 +178,8 @@ public class HomeCheckInHandlerTests
         Assert.True(result.IsSuccess);
         Assert.Equal(productId, result.Data.CoffeeProductId);
         Assert.Equal("Honey Bloom", result.Data.BeanName);
+        Assert.Equal("Sibaristica", result.Data.RoasterName);
+        Assert.Null(result.Data.ShelfBagId);
         Assert.Equal(75m, result.Data.DoseGrams);
         Assert.Equal(360, result.Data.BrewDurationSeconds);
         Assert.Equal(4, result.Data.TasteScore);
@@ -287,5 +289,88 @@ public class HomeCheckInHandlerTests
             _repository.Object, _unitOfWork.Object, _bus.Object, ct);
         _bus.Verify(b => b.PublishAsync(It.Is<CoffeePeek.Contract.Events.CheckInPhotosDeletedEvent>(message =>
             message.CheckInId == row.Id && message.UserId == _owner && message.DeletedAtUtc == row.DeletedAtUtc)), Times.Once);
+    }
+
+    [Fact]
+    public async Task OwnShelfBagSuppliesTheBeanAndRoasterWithoutACatalogLookup()
+    {
+        var bagId = Guid.NewGuid();
+        var productId = Guid.NewGuid();
+        _repository.Setup(r => r.GetOwnedShelfBagBeanAsync(_owner, bagId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((productId, "Honey Bloom", "Sibaristica"));
+
+        var result = await Create(new CreateHomeCheckInRequest
+        {
+            PreparedAt = "2026-09-20T22:15:00Z", ShelfBagId = bagId, Visibility = CoffeePeek.Contract.Enums.CheckInVisibility.Public
+        });
+
+        Assert.Equal(bagId, result.Data.ShelfBagId);
+        Assert.Equal(productId, result.Data.CoffeeProductId);
+        Assert.Equal("Honey Bloom", result.Data.BeanName);
+        Assert.Equal("Sibaristica", result.Data.RoasterName);
+        _repository.Verify(r => r.GetPublishedCoffeeProductBySlugAsync(It.IsAny<string>(),
+            It.IsAny<CancellationToken>()), Times.Never);
+        _bus.Verify(b => b.PublishAsync(It.Is<CheckInModerationRequestedEvent>(e =>
+            e.Home!.RoasterName == "Sibaristica" && e.Home.BeanName == "Honey Bloom")), Times.Once);
+    }
+
+    [Fact]
+    public async Task CustomBagKeepsItsOwnNameAndAnotherOwnersBagIsNotFound()
+    {
+        var bagId = Guid.NewGuid();
+        _repository.Setup(r => r.GetOwnedShelfBagBeanAsync(_owner, bagId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(((Guid?)null, "Gift from Kenya", (string?)null));
+        var custom = await Create(new CreateHomeCheckInRequest { PreparedAt = "2026-09-20T22:15:00Z", ShelfBagId = bagId });
+        Assert.Null(custom.Data.CoffeeProductId);
+        Assert.Equal("Gift from Kenya", custom.Data.BeanName);
+        Assert.Null(custom.Data.RoasterName);
+
+        await Assert.ThrowsAsync<NotFoundException>(() => Create(new CreateHomeCheckInRequest
+        {
+            PreparedAt = "2026-09-20T22:15:00Z", ShelfBagId = Guid.NewGuid()
+        }));
+        _repository.Verify(r => r.Add(It.IsAny<DomainCheckIn>()), Times.Once);
+    }
+
+    [Theory]
+    [InlineData("honey-bloom", null)]
+    [InlineData(null, "My beans")]
+    public async Task ShelfBagCannotBeCombinedWithAnotherBeanSelector(string? slug, string? customName)
+    {
+        await Assert.ThrowsAsync<ValidationException>(() => Create(new CreateHomeCheckInRequest
+        {
+            PreparedAt = "2026-09-20T22:15:00Z", ShelfBagId = Guid.NewGuid(),
+            CoffeeProductSlug = slug, CustomBeanName = customName
+        }));
+        _repository.Verify(r => r.GetOwnedShelfBagBeanAsync(It.IsAny<Guid>(), It.IsAny<Guid>(),
+            It.IsAny<CancellationToken>()), Times.Never);
+        _repository.Verify(r => r.Add(It.IsAny<DomainCheckIn>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task EditKeepsTheBagsSnapshotsEvenAfterTheBagIsGoneAndClearsTheLinkWithoutIt()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var bagId = Guid.NewGuid();
+        var productId = Guid.NewGuid();
+        var row = DomainCheckIn.CreateHome(_owner, "author", "", PreparedUtc,
+            new DateOnly(2026, 9, 20), null, productId, "Honey Bloom", null, null, null);
+        row.SetBeanSource(bagId, "Sibaristica");
+        _repository.Setup(r => r.GetTrackedByIdAsync(row.Id, ct)).ReturnsAsync(row);
+        var request = new UpdateHomeCheckInRequest { PreparedAt = "2026-09-20T19:15:00Z", ShelfBagId = bagId };
+
+        var kept = await UpdateHomeCheckInHandler.Handle(new(row.Id, _owner, request),
+            _repository.Object, _drinks.Object, _addresses.Object, _unitOfWork.Object, _bus.Object, ct);
+        Assert.Equal(bagId, kept.Data.ShelfBagId);
+        Assert.Equal("Sibaristica", kept.Data.RoasterName);
+        _repository.Verify(r => r.GetOwnedShelfBagBeanAsync(It.IsAny<Guid>(), It.IsAny<Guid>(),
+            It.IsAny<CancellationToken>()), Times.Never);
+
+        var unlinked = await UpdateHomeCheckInHandler.Handle(new(row.Id, _owner,
+                request with { ShelfBagId = null, CoffeeProductId = productId }),
+            _repository.Object, _drinks.Object, _addresses.Object, _unitOfWork.Object, _bus.Object, ct);
+        Assert.Null(unlinked.Data.ShelfBagId);
+        Assert.Equal(productId, unlinked.Data.CoffeeProductId);
+        Assert.Equal("Sibaristica", unlinked.Data.RoasterName);
     }
 }

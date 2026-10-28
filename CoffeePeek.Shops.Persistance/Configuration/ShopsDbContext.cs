@@ -196,6 +196,8 @@ public class ShopsDbContext(DbContextOptions<ShopsDbContext> options, IOptions<P
             entity.HasIndex(c => new { c.UserId, c.Kind, c.CoffeeProductId });
             entity.Property(c => c.BrewMethodCode).HasMaxLength(100);
             entity.Property(c => c.BeanNameSnapshot).HasMaxLength(250);
+            entity.Property(c => c.RoasterNameSnapshot).HasMaxLength(250);
+            entity.HasIndex(c => new { c.UserId, c.ShelfBagId }).HasFilter("\"ShelfBagId\" IS NOT NULL");
             entity.Property(c => c.DoseGrams).HasPrecision(8, 2);
 
             entity.Property(c => c.Note).IsRequired().HasMaxLength(BusinessConstants.MaxCheckInNoteLength);
@@ -239,6 +241,8 @@ public class ShopsDbContext(DbContextOptions<ShopsDbContext> options, IOptions<P
                 "(\"DoseGrams\" IS NULL OR \"DoseGrams\" > 0 AND \"DoseGrams\" <= 10000) AND " +
                 "(\"BrewDurationSeconds\" IS NULL OR \"BrewDurationSeconds\" BETWEEN 1 AND 604800) AND " +
                 "(\"TasteScore\" IS NULL OR \"TasteScore\" BETWEEN 1 AND 5)"));
+            entity.ToTable("CanonicalCheckIns", t => t.HasCheckConstraint("CK_CanonicalCheckIns_HomeBeanSource",
+                "\"Kind\" = 1 OR (\"ShelfBagId\" IS NULL AND \"RoasterNameSnapshot\" IS NULL)"));
 
             // Foreign keys without navigation properties (DDD aggregate separation)
             entity.HasOne<CoffeeShop>()

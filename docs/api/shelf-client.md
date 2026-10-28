@@ -133,6 +133,10 @@ The card is the already processed front of the bag (about 720 px on the long sid
 
 Media checks that the upload belongs to the caller, is fully uploaded, is unused, and is a JPEG, PNG or WebP raster of at most 1 MiB and at most 1280 px on each side. A key is single use. Read the card only through `photo.url`, which checks ownership on every request; never build a MinIO URL from `storageKey`. Deleting a bag makes its card unreadable.
 
+## Home check-ins from a bag
+
+A home check-in may name the bag it was brewed from with `shelfBagId` (see [home-check-ins-client.md](home-check-ins-client.md)). The check-in copies the bag's bean and roaster as snapshots at that moment; editing, finishing or deleting the bag later does not change existing check-ins. Clients list a bag's brews by `shelfBagId` from the author's home check-ins. The bag itself and its card stay private.
+
 ## Errors
 
 | Status | Cause |

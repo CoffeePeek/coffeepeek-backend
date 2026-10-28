@@ -21,8 +21,8 @@ public static class CreateHomeCheckInHandler
     {
         var request = command.Request;
         var (preparedAtUtc, preparedOn) = HomeCheckInInput.ParseTime(request.PreparedAt, request.PreparedOn);
-        var (coffeeProductId, beanName) = await HomeCheckInInput.ResolveBeanAsync(
-            request.CoffeeProductSlug, request.CustomBeanName, repository, ct);
+        var bean = await HomeCheckInInput.ResolveBeanAsync(command.UserId,
+            request.CoffeeProductSlug, request.CustomBeanName, request.ShelfBagId, repository, ct);
         var brewMethodCode = await HomeCheckInInput.ResolveBrewMethodAsync(request.BrewMethodCode, addresses, ct);
         var keys = request.Photos?.Select(p => p?.StorageKey ?? "").ToArray() ?? [];
         if (keys.Length > BusinessConstants.MaxCheckInPhotos || keys.Any(k => string.IsNullOrWhiteSpace(k)
@@ -36,9 +36,10 @@ public static class CreateHomeCheckInHandler
         var allKeys = drinkKey == null ? keys : keys.Append(drinkKey).ToArray();
 
         var checkIn = DomainCheckIn.CreateHome(command.UserId, command.Username, request.Text, preparedAtUtc, preparedOn,
-            brewMethodCode, coffeeProductId, beanName, request.DoseGrams, request.BrewDurationSeconds,
+            brewMethodCode, bean.CoffeeProductId, bean.BeanName, request.DoseGrams, request.BrewDurationSeconds,
             request.TasteScore, CreateUnifiedCheckInHandler.CreateId(command.UserId, allKeys),
             (CheckInVisibility)request.Visibility);
+        checkIn.SetBeanSource(bean.ShelfBagId, bean.RoasterName);
         var drink = await CoffeePeek.Shared.Kernel.Drinks.DrinkSelection.ResolveAsync(
             request.DrinkSlug, request.CustomDrinkName, drinks, ct);
         checkIn.SetDrink(drink);

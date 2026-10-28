@@ -39,7 +39,7 @@ public static class CheckInMapping
     private static HomeCheckInDetailsDto? HomeDetails(DomainCheckIn c) => c.PreparedOn is { } day ? new()
     {
         PreparedOn = day, BrewMethodCode = c.BrewMethodCode, CoffeeProductId = c.CoffeeProductId,
-        BeanName = c.BeanNameSnapshot, DoseGrams = c.DoseGrams,
+        BeanName = c.BeanNameSnapshot, RoasterName = c.RoasterNameSnapshot, DoseGrams = c.DoseGrams,
         BrewDurationSeconds = c.BrewDurationSeconds, TasteScore = c.TasteScore
     } : null;
 

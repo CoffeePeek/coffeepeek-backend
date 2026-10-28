@@ -16,6 +16,8 @@ public sealed record UpdateHomeCheckInRequest
     /// <summary>Select a new currently published catalog product by public slug.</summary>
     public string? CoffeeProductSlug { get; init; }
     public string? CustomBeanName { get; init; }
+    /// <summary>The author's shelf bag. The entry's current bag keeps its snapshots even if the bag changed or was deleted; omitting it clears the link.</summary>
+    public Guid? ShelfBagId { get; init; }
     public decimal? DoseGrams { get; init; }
     public int? BrewDurationSeconds { get; init; }
     public int? TasteScore { get; init; }

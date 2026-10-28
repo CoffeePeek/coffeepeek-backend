@@ -22,6 +22,8 @@ public static class HomeCheckInMapping
             BrewMethodCode = checkIn.BrewMethodCode,
             CoffeeProductId = checkIn.CoffeeProductId,
             BeanName = checkIn.BeanNameSnapshot,
+            RoasterName = checkIn.RoasterNameSnapshot,
+            ShelfBagId = checkIn.ShelfBagId,
             DoseGrams = checkIn.DoseGrams,
             BrewDurationSeconds = checkIn.BrewDurationSeconds,
             TasteScore = checkIn.TasteScore,

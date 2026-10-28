@@ -367,8 +367,15 @@ namespace CoffeePeek.Shops.Persistance.Migrations
                     b.Property<string>("RejectionReason")
                         .HasColumnType("text");
 
+                    b.Property<string>("RoasterNameSnapshot")
+                        .HasMaxLength(250)
+                        .HasColumnType("character varying(250)");
+
                     b.Property<Guid>("RowVersion")
                         .IsConcurrencyToken()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("ShelfBagId")
                         .HasColumnType("uuid");
 
                     b.Property<double?>("ShopDistanceMeters")
@@ -419,6 +426,9 @@ namespace CoffeePeek.Shops.Persistance.Migrations
                         .IsDescending()
                         .HasFilter("\"DeletedAtUtc\" IS NULL AND \"Visibility\" = 1 AND \"ModerationState\" = 2 AND \"ApprovedRevision\" = \"ContentRevision\" AND \"FirstPublishedAtUtc\" IS NOT NULL");
 
+                    b.HasIndex("UserId", "ShelfBagId")
+                        .HasFilter("\"ShelfBagId\" IS NOT NULL");
+
                     b.HasIndex("UserId", "ShopId");
 
                     b.HasIndex("UserId", "Kind", "CoffeeProductId");
@@ -432,6 +442,8 @@ namespace CoffeePeek.Shops.Persistance.Migrations
                     b.ToTable("CanonicalCheckIns", null, t =>
                         {
                             t.HasCheckConstraint("CK_CanonicalCheckIns_CompleteContent", "\"Note\" IS NOT NULL AND length(btrim(\"Note\")) <= 1000 AND ((\"Rating_Place\" IS NULL AND \"Rating_Service\" IS NULL AND \"Rating_Coffee\" IS NULL AND \"Rating_AverageRating\" IS NULL) OR (\"Rating_Place\" IS NOT NULL AND \"Rating_Service\" IS NOT NULL AND \"Rating_Coffee\" IS NOT NULL AND \"Rating_AverageRating\" IS NOT NULL AND \"Rating_Place\" BETWEEN 1 AND 5 AND \"Rating_Service\" BETWEEN 1 AND 5 AND \"Rating_Coffee\" BETWEEN 1 AND 5))");
+
+                            t.HasCheckConstraint("CK_CanonicalCheckIns_HomeBeanSource", "\"Kind\" = 1 OR (\"ShelfBagId\" IS NULL AND \"RoasterNameSnapshot\" IS NULL)");
 
                             t.HasCheckConstraint("CK_CanonicalCheckIns_HomeDetails", "(\"BrewMethodCode\" IS NULL OR length(\"BrewMethodCode\") BETWEEN 1 AND 100) AND (\"CoffeeProductId\" IS NULL OR \"BeanNameSnapshot\" IS NOT NULL AND length(btrim(\"BeanNameSnapshot\")) > 0) AND (\"DoseGrams\" IS NULL OR \"DoseGrams\" > 0 AND \"DoseGrams\" <= 10000) AND (\"BrewDurationSeconds\" IS NULL OR \"BrewDurationSeconds\" BETWEEN 1 AND 604800) AND (\"TasteScore\" IS NULL OR \"TasteScore\" BETWEEN 1 AND 5)");
 

@@ -22,14 +22,15 @@ public static class UpdateHomeCheckInHandler
 
         var request = command.Request;
         var (preparedAtUtc, preparedOn) = HomeCheckInInput.ParseTime(request.PreparedAt, request.PreparedOn);
-        var (coffeeProductId, beanName) = await HomeCheckInInput.ResolveUpdateBeanAsync(
-            request.CoffeeProductId, request.CoffeeProductSlug, request.CustomBeanName, checkIn, repository, ct);
+        var bean = await HomeCheckInInput.ResolveUpdateBeanAsync(command.UserId, request.CoffeeProductId,
+            request.CoffeeProductSlug, request.CustomBeanName, request.ShelfBagId, checkIn, repository, ct);
         var brewMethodCode = await HomeCheckInInput.ResolveBrewMethodAsync(request.BrewMethodCode, addresses, ct, checkIn.BrewMethodCode);
         var drink = await CoffeePeek.Shared.Kernel.Drinks.DrinkSelection.ResolveAsync(
             request.DrinkSlug, request.CustomDrinkName, drinks, ct);
-        checkIn.UpdateHome(request.Text, preparedAtUtc, preparedOn, brewMethodCode, coffeeProductId,
-            beanName, request.DoseGrams, request.BrewDurationSeconds, request.TasteScore,
+        checkIn.UpdateHome(request.Text, preparedAtUtc, preparedOn, brewMethodCode, bean.CoffeeProductId,
+            bean.BeanName, request.DoseGrams, request.BrewDurationSeconds, request.TasteScore,
             request.Visibility.HasValue ? (CheckInVisibility)request.Visibility.Value : null);
+        checkIn.SetBeanSource(bean.ShelfBagId, bean.RoasterName);
         checkIn.SetDrink(drink);
         if (checkIn.Visibility == CheckInVisibility.Public)
             await bus.PublishAsync(CheckInMapping.ModerationRequest(checkIn));

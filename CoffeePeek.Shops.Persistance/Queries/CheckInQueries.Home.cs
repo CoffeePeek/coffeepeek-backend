@@ -19,9 +19,10 @@ public partial class CheckInQueries
     }
 
     public async Task<HomeCheckInPage> GetHomeByUserAsync(Guid userId, int pageNumber, int pageSize,
-        DateOnly? from = null, DateOnly? to = null, CancellationToken ct = default)
+        DateOnly? from = null, DateOnly? to = null, Guid? shelfBagId = null, CancellationToken ct = default)
     {
         var query = HomeRows(userId);
+        if (shelfBagId.HasValue) query = query.Where(c => c.ShelfBagId == shelfBagId.Value);
         if (from.HasValue) query = query.Where(c => c.PreparedOn >= from.Value);
         if (to.HasValue) query = query.Where(c => c.PreparedOn <= to.Value);
         var total = await query.CountAsync(ct);

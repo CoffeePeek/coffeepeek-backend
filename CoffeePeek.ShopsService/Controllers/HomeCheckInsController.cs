@@ -22,16 +22,17 @@ public sealed class HomeCheckInsController(IMessageBus bus, IUserContext userCon
         Result(await bus.InvokeAsync<Response<HomeCheckInDto>>(
             new CreateHomeCheckInCommand(request, userContext.GetUserIdOrThrow(), userContext.GetUsernameOrThrow()), ct));
 
-    /// <summary>List the owner's brews in preparation-time order. Date bounds are inclusive.</summary>
+    /// <summary>List the owner's brews in preparation-time order. Date bounds are inclusive; shelfBagId keeps one bag's brews.</summary>
     [HttpGet]
     [ProducesResponseType(typeof(Response<HomeCheckInPage>), StatusCodes.Status200OK)]
     public async Task<IActionResult> Mine([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 20,
-        [FromQuery] DateOnly? from = null, [FromQuery] DateOnly? to = null, CancellationToken ct = default)
+        [FromQuery] DateOnly? from = null, [FromQuery] DateOnly? to = null, [FromQuery] Guid? shelfBagId = null,
+        CancellationToken ct = default)
     {
         if (from > to) return BadRequest(new ErrorResponse("'from' must be no later than 'to'."));
         pageNumber = Math.Clamp(pageNumber, 1, 10000);
         pageSize = Math.Clamp(pageSize, 1, 100);
-        var page = await queries.GetHomeByUserAsync(userContext.GetUserIdOrThrow(), pageNumber, pageSize, from, to, ct);
+        var page = await queries.GetHomeByUserAsync(userContext.GetUserIdOrThrow(), pageNumber, pageSize, from, to, shelfBagId, ct);
         Response.Headers["X-Total-Count"] = page.TotalCount.ToString();
         Response.Headers["X-Total-Pages"] = ((int)Math.Ceiling(page.TotalCount / (double)pageSize)).ToString();
         Response.Headers["X-Current-Page"] = pageNumber.ToString();

@@ -55,6 +55,17 @@ public sealed partial class CheckIn
         Touch();
     }
 
+    /// <summary>Where the bean came from; set after <see cref="CreateHome"/> or <see cref="UpdateHome"/>.</summary>
+    public void SetBeanSource(Guid? shelfBagId, string? roasterNameSnapshot)
+    {
+        if (Kind != CheckInKind.Home) throw new DomainException("Only home check-ins have a bean source.");
+        if (shelfBagId == Guid.Empty) throw new DomainException("ShelfBagId must not be empty.");
+        var roaster = string.IsNullOrWhiteSpace(roasterNameSnapshot) ? null : roasterNameSnapshot.Trim();
+        if (roaster?.Length > 250) throw new DomainException("Roaster name must contain at most 250 characters.");
+        ShelfBagId = shelfBagId;
+        RoasterNameSnapshot = roaster;
+    }
+
     private void AssignHomeDetails(string? brewMethodCode, Guid? coffeeProductId,
         string? beanNameSnapshot, decimal? doseGrams, int? brewDurationSeconds, int? tasteScore)
     {
