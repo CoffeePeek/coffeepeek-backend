@@ -10,6 +10,8 @@ using CoffeePeek.Shops.Application.Features.CoffeeCatalog;
 using CoffeePeek.Shops.Application.Features.Discovery;
 using CoffeePeek.Shops.Application.Features.CoffeeShop.GetCoffeeShop;
 using CoffeePeek.Shops.Application.Features.CoffeeShop.SearchCoffeeShops;
+using CoffeePeek.Shops.Application.Features.CoffeeShop.GetShopsInBounds;
+using CoffeePeek.Shared.Kernel.Response;
 using CoffeePeek.Shops.Application.PublicAddresses;
 using CoffeePeek.Shops.Domain.Aggregates.CheckInAggregate;
 using CoffeePeek.Shops.Application.Abstractions;
@@ -414,6 +416,101 @@ public sealed class DiscoveryHttpContractTests : IAsyncLifetime
         using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync(ct));
         if (found) Assert.True(body.RootElement.GetProperty("isSuccess").GetBoolean());
         else Assert.Equal("NOT_FOUND", body.RootElement.GetProperty("errorCode").GetString());
+    }
+
+    private const string ValidMap = """{"q":"","filters":{},"bounds":{"minLat":53.8,"minLon":27.4,"maxLat":54,"maxLon":27.7},"zoom":16}""";
+
+    [Theory]
+    [InlineData("\"zoom\":16", "\"zoom\":23")]
+    [InlineData("\"zoom\":16", "\"zoom\":-1")]
+    [InlineData(",\"zoom\":16", "")]
+    [InlineData("\"minLat\":53.8", "\"minLat\":-91")]
+    [InlineData("\"maxLon\":27.7", "\"maxLon\":181")]
+    [InlineData("\"minLat\":53.8", "\"minLat\":55")]
+    [InlineData("\"minLon\":27.4", "\"minLon\":28")]
+    [InlineData("\"minLat\":53.8,", "")]
+    [InlineData("\"maxLat\":54,", "")]
+    [InlineData("\"zoom\":16", "\"zoom\":16,\"userId\":\"00000000-0000-0000-0000-000000000001\"")]
+    [InlineData("\"zoom\":16", "\"zoom\":16,\"sort\":\"name_asc\"")]
+    [InlineData("\"minLat\":53.8", "\"minLat\":53.8,\"unknown\":1")]
+    [InlineData("\"filters\":{}", "\"filters\":{\"unknown\":true}")]
+    [InlineData("\"filters\":{}", "\"filters\":{\"radiusKm\":1}")]
+    [InlineData("\"filters\":{}", "\"filters\":{\"priceRange\":\"unknown\"}")]
+    [InlineData("\"filters\":{}", "\"filters\":{\"menu\":{\"maxPrice\":5}}")]
+    public async Task InvalidMapRequests_ReturnInvalidFilterWithoutReading(string before, string after)
+    {
+        using var response = await Post("/api/v1/coffee-shops/map", ValidMap.Replace(before, after));
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.Equal("INVALID_FILTER", body.RootElement.GetProperty("errorCode").GetString());
+        queries.Verify(q => q.MapShopsAsync(It.IsAny<CoffeeShopMapRequest>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Theory]
+    [InlineData("{}")]
+    [InlineData("{\"zoom\":16}")]
+    [InlineData("{\"bounds\":null,\"zoom\":16}")]
+    public async Task MapRequiresExplicitBounds(string json)
+    {
+        using var response = await Post("/api/v1/coffee-shops/map", json);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        queries.Verify(q => q.MapShopsAsync(It.IsAny<CoffeeShopMapRequest>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Theory]
+    [InlineData("favoritesOnly")]
+    [InlineData("visitedOnly")]
+    public async Task MapPersonalFilters_RequireGatewayAuthenticatedIdentity(string filter)
+    {
+        client.DefaultRequestHeaders.Add(GatewayHeaderConsts.XUserId, Guid.NewGuid().ToString());
+        using var response = await Post("/api/v1/coffee-shops/map", ValidMap.Replace("\"filters\":{}", $"\"filters\":{{\"{filter}\":true}}"));
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        queries.Verify(q => q.MapShopsAsync(It.IsAny<CoffeeShopMapRequest>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task MapRoutes_PreservePublicResponseAndPassAuthenticatedIdentityOnly(bool authenticated)
+    {
+        var shopId = Guid.NewGuid();
+        var userId = authenticated ? Guid.NewGuid() : (Guid?)null;
+        if (userId.HasValue) Authenticate(userId.Value, RoleConsts.User);
+        var result = new GetShopsInBoundsResponse([new() { Id = shopId, Latitude = 53.9m, Longitude = 27.56m, Title = "Map shop" }])
+            { Clusters = [], Zones = [], IsTruncated = false };
+        queries.Setup(q => q.MapShopsAsync(It.IsAny<CoffeeShopMapRequest>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>())).ReturnsAsync(result);
+        bus.Setup(b => b.InvokeAsync<Response<GetShopsInBoundsResponse>>(It.IsAny<GetShopsInBoundsQuery>(), It.IsAny<CancellationToken>(), It.IsAny<TimeSpan?>()))
+            .ReturnsAsync(Response<GetShopsInBoundsResponse>.Success(result));
+        addresses.Setup(a => a.GetForReadAsync(PublicAddressKind.CoffeeShop, It.IsAny<Guid[]>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync([new(shopId, "map-shop", "/coffee-shops/map-shop", 1)]);
+        var json = ValidMap.Replace("\"q\":\"\"", "\"q\":\"Map\"")
+            .Replace("\"filters\":{}", "\"filters\":{\"tags\":[\"laptop-friendly\"],\"favoritesOnly\":" + authenticated.ToString().ToLowerInvariant() + "}");
+        using var map = await Post("/api/v1/coffee-shops/map", json);
+        using var legacy = await client.GetAsync("/api/Map?minLat=53.8&minLon=27.4&maxLat=54&maxLon=27.7", TestContext.Current.CancellationToken);
+        Assert.Equal(HttpStatusCode.OK, map.StatusCode); Assert.Equal(HttpStatusCode.OK, legacy.StatusCode);
+        using var body = JsonDocument.Parse(await map.Content.ReadAsStringAsync());
+        using var oldBody = JsonDocument.Parse(await legacy.Content.ReadAsStringAsync());
+        var data = body.RootElement.GetProperty("data");
+        Assert.Equal(oldBody.RootElement.GetProperty("data").GetRawText(), data.GetRawText());
+        Assert.Equal("map-shop", Assert.Single(data.GetProperty("shops").EnumerateArray()).GetProperty("address").GetProperty("slug").GetString());
+        Assert.False(data.GetProperty("isTruncated").GetBoolean());
+        queries.Verify(q => q.MapShopsAsync(It.Is<CoffeeShopMapRequest>(r => r.Q == "Map" && r.Zoom == 16 &&
+            r.Bounds.MinLat == 53.8m && r.Bounds.MaxLon == 27.7m && r.Filters!.Tags.Single() == "laptop-friendly" &&
+            r.Filters.FavoritesOnly == authenticated), userId, It.IsAny<CancellationToken>()), Times.Once);
+        bus.Verify(b => b.InvokeAsync<Response<GetShopsInBoundsResponse>>(It.Is<GetShopsInBoundsQuery>(q => q.Zoom == null),
+            It.IsAny<CancellationToken>(), It.IsAny<TimeSpan?>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task MapUnknownSlug_PreservesDocumentedValidationError()
+    {
+        queries.Setup(q => q.MapShopsAsync(It.IsAny<CoffeeShopMapRequest>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new DiscoveryException("Unknown public slug.", errors: new() { ["filters.tags"] = ["Unknown public slug."] }));
+        using var response = await Post("/api/v1/coffee-shops/map", ValidMap.Replace("\"filters\":{}", "\"filters\":{\"tags\":[\"missing\"]}"));
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.Equal("INVALID_FILTER", body.RootElement.GetProperty("errorCode").GetString());
+        Assert.True(body.RootElement.GetProperty("errors").TryGetProperty("filters.tags", out _));
     }
 
     private void Authenticate(Guid id, string role)
