@@ -113,3 +113,32 @@ On the integrated tree plus that test correction, the ownership migration test
 and seven filtered-map PostgreSQL cases passed (8/8, no skips) on a new isolated
 PostgreSQL 17.11 cluster with ICU/libc en-US and UTF-8. PR CI supplies the final
 full integration result.
+
+## Production promotion — 2026-10-29
+
+The mobile develop client used the new map route while production still ran
+main `47c3c552`, which did not contain it. Anonymous read-only checks against
+the configured public API returned 404 for both default and filtered POST map
+requests. The list with the same specialty/rating filters returned 200 with
+nine matches, and the legacy GET map returned 200 with 296 shops in the checked
+Minsk viewport. This identified a release-order mismatch rather than missing
+shop data or a marker-rendering failure.
+
+The production release branch integrates develop `abe9773f` onto that main
+revision, preserving the existing ownership changes. It also adds
+`DiscoveryMapQueryLiveTests` to CI's explicit PostgreSQL gate so its seven map
+cases must execute rather than remain skipped during the unconfigured unit
+pass. Production publication remains the existing main-only CI/CD path.
+
+On the integrated release tree, .NET 10.0.113 Release verification passed:
+75 Discovery HTTP contracts, 111 Gateway tests, 89 discovery/map persistence
+tests and four Python OpenAPI/generated-DTO contracts. No selected test failed
+or skipped. DTO generation consistency, the complete publishing-history secret
+scan and `git diff --check` passed. Existing nullable/XML-documentation and
+xUnit analyzer warnings remain. PostgreSQL execution and the full service build
+are verified by release PR CI; these local results do not claim either.
+
+After main publication, verify the public POST map both without filters and
+with the list's identical criteria, at marker and clustered zooms. Keep the
+legacy GET compatible and ensure personal filters still return 401 without
+authentication. No production account writes or mobile changes are required.

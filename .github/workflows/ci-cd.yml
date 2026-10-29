@@ -209,6 +209,7 @@ jobs:
             DiscoveryClassificationLiveTests \
             DiscoveryQueryLiveTests \
             DiscoveryFuzzySearchLiveTests \
+            DiscoveryMapQueryLiveTests \
             CoffeeImportRecoveryLiveTests \
             ShopProfileWolverineLiveTests \
             ShopProfileRevisionLiveTests \
