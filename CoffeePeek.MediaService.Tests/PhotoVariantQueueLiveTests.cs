@@ -24,12 +24,21 @@ public sealed class PhotoVariantQueueLiveTests(MediaVariantsLiveDatabase fixture
         {
             await using var db = new MediaDbContext(new DbContextOptionsBuilder<MediaDbContext>().UseNpgsql(connection).Options);
             await db.GetService<IMigrator>().MigrateAsync("20261008211500_ReserveShopPhotoAttachments", Ct);
-            var photo = Photo(); db.Photos.Add(photo); await db.SaveChangesAsync(Ct);
+            var photo = Photo();
+            // Seed only historical columns: the current EF model also contains newer additions.
+            await db.Database.ExecuteSqlInterpolatedAsync($"""
+                INSERT INTO "Photos" ("Id", "FileName", "ContentType", "StorageKey", "SizeBytes",
+                    "UploadedAt", "Status", "BucketType", "OwnerType", "OwnerId", "CheckInId")
+                VALUES ({photo.Id}, {photo.FileName}, {photo.ContentType}, {photo.StorageKey}, {photo.SizeBytes},
+                    {photo.UploadedAt}, {photo.Status.ToString()}, {photo.BucketType.ToString()},
+                    {photo.OwnerType.ToString()}, {photo.OwnerId}, {photo.CheckInId})
+                """, Ct);
             await db.Database.MigrateAsync(Ct);
             db.ChangeTracker.Clear();
             var loaded = await db.Photos.SingleAsync(Ct);
             Assert.Equal(photo.StorageKey, loaded.StorageKey); Assert.Equal(photo.CheckInId, loaded.CheckInId);
             Assert.Equal(PhotoStatus.Confirmed, loaded.Status);
+            Assert.Null(loaded.ShelfBagId);
             Assert.Empty(await db.PhotoVariantJobs.ToArrayAsync(Ct));
             Assert.False(db.Database.HasPendingModelChanges());
         }
