@@ -1,5 +1,11 @@
 # ShopsService: карта владения данными и контрактов (P03)
 
+Дополнение от 28 октября 2026: `BusinessOwnershipClaims` и `BusinessOwnershipChanges` принадлежат Shops.
+Одобрение заявки, назначение владельца, аудит и outbox сохраняются в одной транзакции `ShopsDbContext`.
+Изменение владельца обжарщика выполняется через `IRoasterOwnershipWriter` модуля CoffeeCatalog;
+`Roasters.OwnerUserId` и `Roasters.ProfileRevision` принадлежат CoffeeCatalog. Доступ owner API определяется
+текущей привязкой пользователя, а не историческим статусом заявки. Контракты: [API владения](business-ownership-api.md).
+
 Срез реализации: 9 октября 2026 года, PR #340. Владельцы записи реализованы через модульные порты; оба architecture baseline пусты. Утверждённые бизнес-решения перечислены в [P02](shops-architecture-decisions.md). Папка, namespace и общий `ShopsDbContext` сами по себе не определяют владение.
 
 Сверены 44 уникальных имени `ToTable` в [EF model snapshot](../CoffeePeek.Shops.Persistance/Migrations/ShopsDbContextModelSnapshot.cs) и три physical public-address таблицы из [миграции registry](../CoffeePeek.Shops.Persistance/Migrations/20260927112559_AddPublicAddressRegistries.cs) и [миграции audit](../CoffeePeek.Shops.Persistance/Migrations/20260928072406_AddPublicAddressAudit.cs). `ShopSchedule`/`ShopScheduleInterval` — отдельные таблицы owned-типов. Wolverine inbox/outbox и инфраструктурные таблицы не перечислены: ими владеет техническая инфраструктура, а не один из бизнес-модулей. Миграции остаются последовательными под единым владельцем `ShopsDbContextModelSnapshot`.

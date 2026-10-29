@@ -6,6 +6,8 @@ using CoffeePeek.Shops.Domain.Aggregates.ShopTagAggregate;
 using CoffeePeek.Shops.Persistance.Queries;
 using CoffeePeek.Shops.Persistance.Repositories;
 using Microsoft.Extensions.DependencyInjection;
+using CoffeePeek.Shops.Application.Features.Ownership;
+using CoffeePeek.Shops.Persistance.Ownership;
 
 namespace CoffeePeek.Shops.Persistance.Modules;
 
@@ -13,6 +15,8 @@ public static class ShopsModule
 {
     public static IServiceCollection AddShopsModule(this IServiceCollection services)
     {
+        services.AddScoped<IBusinessOwnershipStore, BusinessOwnershipStore>();
+        services.AddScoped<BusinessOwnershipService>();
         services.AddScoped<ICoffeeShopQueries, CoffeeShopQueries>();
         services.AddScoped<ICoffeeZoneQueries, CoffeeZoneQueries>();
         services.AddScoped<IQueryCoffeeShopRepository, QueryCoffeeShopRepository>();
