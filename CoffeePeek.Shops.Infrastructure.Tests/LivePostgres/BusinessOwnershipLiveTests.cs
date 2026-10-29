@@ -48,15 +48,23 @@ public sealed class BusinessOwnershipLiveTests : IClassFixture<ShopsLiveDatabase
         var (id, slug) = await SeedBusiness(kind, ct);
         var applicant = Guid.NewGuid();
         var admin = Guid.NewGuid();
-        using var host = CreateHost(id, slug);
+        var photoId = Guid.NewGuid();
+        var evidencePhotos = new Mock<IOwnershipEvidencePhotos>(MockBehavior.Strict);
+        evidencePhotos.Setup(x => x.AttachAsync(applicant, It.IsAny<Guid>(),
+                It.Is<Guid[]>(ids => ids.SequenceEqual(new[] { photoId })), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+        using var host = CreateHost(id, slug, evidencePhotos: evidencePhotos.Object);
         await host.StartAsync(ct);
         try
         {
             var bus = host.Services.GetRequiredService<IMessageBus>();
             var submitted = await bus.InvokeAsync<Response<OwnershipClaimDto>>(
-                new SubmitOwnershipClaimCommand(applicant, kind, slug, "owner@example.test", "Official account access"), ct);
+                new SubmitOwnershipClaimCommand(applicant, kind, slug, "owner@example.test", "Official account access", [photoId]), ct);
             var claimId = submitted.Data!.Id;
             Assert.False(submitted.Data.HasCurrentAccess);
+            Assert.Equal(new[] { photoId }, submitted.Data.EvidencePhotoIds);
+            evidencePhotos.Verify(x => x.AttachAsync(applicant, claimId,
+                It.Is<Guid[]>(ids => ids.SequenceEqual(new[] { photoId })), It.IsAny<CancellationToken>()), Times.Once);
             var approve = new ReviewOwnershipClaimCommand(claimId, admin, true);
             var approved = await bus.InvokeAsync<Response<OwnershipClaimDto>>(approve, ct);
             Assert.True(approved.Data!.HasCurrentAccess);
@@ -68,6 +76,8 @@ public sealed class BusinessOwnershipLiveTests : IClassFixture<ShopsLiveDatabase
             Assert.False(replay.Data.HasCurrentAccess);
 
             await using var read = fixture.Context(false);
+            Assert.Equal(new[] { photoId },
+                (await read.BusinessOwnershipClaims.SingleAsync(x => x.Id == claimId, ct)).EvidencePhotoIds);
             Assert.Null((await new BusinessOwnershipStore(read).GetTargetAsync(kind, id, ct))!.OwnerUserId);
             var changes = await read.BusinessOwnershipChanges.Where(x => x.BusinessId == id)
                 .OrderBy(x => x.CreatedAtUtc).ToArrayAsync(ct);
@@ -211,7 +221,8 @@ public sealed class BusinessOwnershipLiveTests : IClassFixture<ShopsLiveDatabase
     private static IUserExistenceLookup ExistingUser() =>
         Mock.Of<IUserExistenceLookup>(x => x.ExistsAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()) == Task.FromResult(true));
 
-    private IHost CreateHost(Guid businessId, string slug, SaveChangesInterceptor? probe = null) => Host.CreateDefaultBuilder()
+    private IHost CreateHost(Guid businessId, string slug, SaveChangesInterceptor? probe = null,
+        IOwnershipEvidencePhotos? evidencePhotos = null) => Host.CreateDefaultBuilder()
         .ConfigureServices(services =>
         {
             services.AddScoped(_ => probe is null ? fixture.Context(false) : new ShopsDbContext(
@@ -223,6 +234,7 @@ public sealed class BusinessOwnershipLiveTests : IClassFixture<ShopsLiveDatabase
             services.AddScoped<ICoffeeShopRepository, CoffeeShopRepository>();
             services.AddScoped<IRoasterRepository, RoasterRepository>();
             services.AddScoped<IRoasterOwnershipWriter, RoasterOwnershipWriter>();
+            services.AddSingleton(evidencePhotos ?? new Mock<IOwnershipEvidencePhotos>(MockBehavior.Strict).Object);
             services.AddSingleton(ExistingUser());
             services.AddSingleton(Mock.Of<IPublicAddressService>(x => x.ResolveAsync(It.IsAny<PublicAddressKind>(),
                 slug, It.IsAny<CancellationToken>()) == Task.FromResult<PublicAddressMetadata?>(new(businessId, slug, "/test/" + slug, 1))));

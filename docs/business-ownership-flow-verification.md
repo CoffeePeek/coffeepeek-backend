@@ -59,3 +59,13 @@ Validation on Windows, Release configuration:
 Docker/PostgreSQL are unavailable locally. PostgreSQL 17 migration, storage and
 fault acceptance remains delegated to the PR CI run after publication. Local
 skips are not live acceptance. No production data or deployment was changed.
+
+The first repaired CI run (40850386733, 2a1b5456) passed all regular tests,
+10 live Media pipeline/upgrade tests and all 10 required Media backfill tests.
+It then exposed a missing IOwnershipEvidencePhotos registration in the isolated
+BusinessOwnershipLiveTests host: both submit/approve/revoke cases failed during
+Wolverine handler generation. Production DI already registered this service.
+The test host now supplies a strict test double, and both business kinds submit
+photo IDs through IMessageBus, verify attachment to the generated claim ID and
+check persisted photo IDs. The local persistence selection passed 250 tests;
+the 9 PostgreSQL ownership tests remain skipped locally, pending the new CI run.
