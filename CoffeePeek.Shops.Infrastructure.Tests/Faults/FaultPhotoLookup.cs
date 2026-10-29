@@ -1,3 +1,4 @@
+using CoffeePeek.Contract.Dtos.CheckIns;
 using CoffeePeek.Contract.Dtos.ShopPhotos;
 using CoffeePeek.MediaService.Handlers;
 using CoffeePeek.MediaService.Repositories;
@@ -30,4 +31,6 @@ public sealed class FaultPhotoLookup : IUploadedPhotoLookup
         CancellationToken ct = default, string? drinkPhotoStorageKey = null) => throw new NotSupportedException();
     public Task ReleaseCheckInClaimAsync(Guid userId, Guid checkInId, CancellationToken ct = default) =>
         throw new NotSupportedException();
+    public Task<ClaimedCheckInPhotoDto?> CopyShelfBagCardAsync(Guid userId, Guid checkInId, Guid bagId, Guid cardPhotoId,
+        Guid copyId, CancellationToken ct = default) => throw new NotSupportedException();
 }

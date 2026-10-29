@@ -16,7 +16,7 @@ public partial class ModerationReview
         if (checkInId == Guid.Empty || userId == Guid.Empty || shopId == Guid.Empty || contentRevision < 1)
             throw new DomainException("A check-in snapshot requires valid identity and revision.");
         if ((shopId == null) != (home != null) || home?.PreparedOn == default(DateOnly)
-            || home?.BeanName?.Length > 250 || home?.TasteScore is < 1 or > 5
+            || home?.BeanName?.Length > 250 || home?.RoasterName?.Length > 250 || home?.TasteScore is < 1 or > 5
             || home != null && (place != null || service != null || coffee != null))
             throw new DomainException("A home snapshot requires preparation details and no shop rating.");
         if (text?.Trim().Length > BusinessConstants.MaxCheckInTextLength)
@@ -43,6 +43,7 @@ public partial class ModerationReview
         review.LocationAccuracyMeters = locationAccuracyMeters;
         review.LocationCapturedAtUtc = locationCapturedAtUtc;
         if (review.Comment.Length == 0 && photos.Count == 0 && string.IsNullOrWhiteSpace(home?.BeanName)
+            && string.IsNullOrWhiteSpace(home?.RoasterName)
             && string.IsNullOrWhiteSpace(drink?.CustomName))
         {
             review.ModerationStatus = ModerationStatus.Approved;

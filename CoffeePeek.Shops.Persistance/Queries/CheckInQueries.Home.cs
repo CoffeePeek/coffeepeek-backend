@@ -19,9 +19,10 @@ public partial class CheckInQueries
     }
 
     public async Task<HomeCheckInPage> GetHomeByUserAsync(Guid userId, int pageNumber, int pageSize,
-        DateOnly? from = null, DateOnly? to = null, CancellationToken ct = default)
+        DateOnly? from = null, DateOnly? to = null, Guid? shelfBagId = null, CancellationToken ct = default)
     {
         var query = HomeRows(userId);
+        if (shelfBagId.HasValue) query = query.Where(c => c.ShelfBagId == shelfBagId.Value);
         if (from.HasValue) query = query.Where(c => c.PreparedOn >= from.Value);
         if (to.HasValue) query = query.Where(c => c.PreparedOn <= to.Value);
         var total = await query.CountAsync(ct);
@@ -34,13 +35,16 @@ public partial class CheckInQueries
 
     private async Task<HomeCheckInDto[]> WithHomeVariantsAsync(HomeCheckInDto[] items, CancellationToken ct)
     {
+        var slugs = await CoffeeProductSlugs.ReadAsync(_db, items.Select(c => c.CoffeeProductId), ct);
         var variants = await CheckInPhotoVariantBatch.ReadAsync(_db, items.SelectMany(c =>
-            CheckInPhotoVariantBatch.Photos(c.Photos, c.DrinkPhoto).Select(p => (c.Id, p))),
+            CheckInPhotoVariantBatch.Photos(c.Photos, c.DrinkPhoto, c.ShelfBagPhoto).Select(p => (c.Id, p))),
             deliveryOptions?.Value.AdvertiseVariants == true, ct);
         return items.Select(c => c with
         {
+            CoffeeProductSlug = c.CoffeeProductId is { } productId ? slugs.GetValueOrDefault(productId) : null,
             Photos = c.Photos.Select(p => CheckInPhotoVariantBatch.WithVariants(p, variants)).ToArray(),
-            DrinkPhoto = c.DrinkPhoto is null ? null : CheckInPhotoVariantBatch.WithVariants(c.DrinkPhoto, variants)
+            DrinkPhoto = c.DrinkPhoto is null ? null : CheckInPhotoVariantBatch.WithVariants(c.DrinkPhoto, variants),
+            ShelfBagPhoto = c.ShelfBagPhoto is null ? null : CheckInPhotoVariantBatch.WithVariants(c.ShelfBagPhoto, variants)
         }).ToArray();
     }
 

@@ -133,4 +133,45 @@ public class HomeCheckInTests
         Assert.Throws<DomainException>(() => checkIn.UpdateHome(null, PreparedAtUtc, PreparedOn,
             null, null, null, null, null, null));
     }
+
+    [Fact]
+    public void BeanSourceKeepsTheBagAndATrimmedRoasterAndRejectsInvalidValues()
+    {
+        var checkIn = CheckIn.CreateHome(Guid.NewGuid(), "author", null, PreparedAtUtc, PreparedOn,
+            null, null, "Gift from Kenya", null, null, null);
+        var bagId = Guid.NewGuid();
+
+        checkIn.SetBeanSource(bagId, "  Sibaristica  ");
+        Assert.Equal(bagId, checkIn.ShelfBagId);
+        Assert.Equal("Sibaristica", checkIn.RoasterNameSnapshot);
+
+        checkIn.SetBeanSource(null, " ");
+        Assert.Null(checkIn.ShelfBagId);
+        Assert.Null(checkIn.RoasterNameSnapshot);
+
+        Assert.Throws<DomainException>(() => checkIn.SetBeanSource(Guid.Empty, null));
+        Assert.Throws<DomainException>(() => checkIn.SetBeanSource(bagId, new string('r', 251)));
+    }
+
+    [Fact]
+    public void BagCardIsASeparatePhotoThatNeedsALinkedBagAndCanBeDetached()
+    {
+        var owner = Guid.NewGuid();
+        var checkIn = CheckIn.CreateHome(owner, "author", null, PreparedAtUtc, PreparedOn,
+            null, null, "Gift from Kenya", null, null, null);
+        var card = new CheckInPhoto("shelf-bag.jpg", "image/jpeg", "check-ins/copy.jpg", 100, owner, 0);
+        Assert.Throws<DomainException>(() => checkIn.AttachShelfBagPhoto(card));
+
+        var bagId = Guid.NewGuid();
+        checkIn.SetBeanSource(bagId, null);
+        checkIn.AttachShelfBagPhoto(card);
+        Assert.Equal(card.Id, checkIn.ShelfBagPhotoId);
+        Assert.Equal(1, checkIn.NextPhotoSortIndex());
+        Assert.Throws<DomainException>(() => checkIn.SetBeanSource(Guid.NewGuid(), null));
+
+        Assert.Equal(card.Id, checkIn.DetachShelfBagPhoto());
+        Assert.Null(checkIn.ShelfBagPhotoId);
+        Assert.Empty(checkIn.ShopPhotos);
+        Assert.Null(checkIn.DetachShelfBagPhoto());
+    }
 }

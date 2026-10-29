@@ -76,6 +76,19 @@ public class ModerationReviewTests
         review.ModeratedAt.Should().Be(expected == ModerationStatus.Approved ? review.CreatedAtUtc : null);
     }
 
+    [Theory]
+    [InlineData(null, ModerationStatus.Approved)]
+    [InlineData("Sibaristica", ModerationStatus.Pending)]
+    public void HomeSnapshot_RoasterNameIsAuthorTextAndNeedsReview(string? roaster, ModerationStatus expected)
+    {
+        var review = ModerationReview.CreateCheckInSnapshot(Guid.NewGuid(), 1, Guid.NewGuid(), null,
+            "user", "", null, null, null, null, DateTime.UtcNow, [],
+            new HomePreparationSnapshot { PreparedOn = new DateOnly(2026, 10, 28), RoasterName = roaster });
+
+        review.ModerationStatus.Should().Be(expected);
+        review.Home!.RoasterName.Should().Be(roaster);
+    }
+
     [Fact]
     public void AutoApprovedSnapshot_StillAllowsSequencedModeratorDecisions()
     {

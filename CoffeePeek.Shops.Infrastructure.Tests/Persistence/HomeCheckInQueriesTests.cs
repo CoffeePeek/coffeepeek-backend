@@ -37,7 +37,7 @@ public class HomeCheckInQueriesTests
         db.ChangeTracker.Clear();
 
         var queries = new CheckInQueries(db, Moq.Mock.Of<CoffeePeek.Shops.Application.Abstractions.IAuthorVisibilityLookup>());
-        var history = await queries.GetHomeByUserAsync(author, 1, 20, day, day, ct);
+        var history = await queries.GetHomeByUserAsync(author, 1, 20, day, day, ct: ct);
         Assert.Equal(1, history.TotalCount);
         var item = Assert.Single(history.Items);
         Assert.Equal(home.Id, item.Id);

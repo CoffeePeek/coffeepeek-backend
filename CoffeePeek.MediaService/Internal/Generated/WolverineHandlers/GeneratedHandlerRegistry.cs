@@ -11,7 +11,7 @@ namespace Internal.Generated.WolverineHandlers
 
         public override System.Type[] HandlerTypes()
         {
-            return new System.Type[] { typeof(CoffeePeek.MediaService.Consumers.CheckInPhotosAttachedHandler), typeof(CoffeePeek.MediaService.Consumers.CheckInPhotosDeletedHandler), typeof(CoffeePeek.MediaService.Consumers.DeletePhotoHandler), typeof(CoffeePeek.MediaService.Consumers.PhotoReplacedHandler), typeof(CoffeePeek.MediaService.Consumers.ShopPhotosAttachedHandler), typeof(CoffeePeek.MediaService.Handlers.GenerateAvatarUploadHandler), typeof(CoffeePeek.MediaService.Handlers.GenerateShopPhotoHandler), typeof(CoffeePeek.MediaService.Handlers.ResolveUploadedPhotosHandler) };
+            return new System.Type[] { typeof(CoffeePeek.MediaService.Consumers.CheckInPhotoDetachedHandler), typeof(CoffeePeek.MediaService.Consumers.CheckInPhotosAttachedHandler), typeof(CoffeePeek.MediaService.Consumers.CheckInPhotosDeletedHandler), typeof(CoffeePeek.MediaService.Consumers.DeletePhotoHandler), typeof(CoffeePeek.MediaService.Consumers.PhotoReplacedHandler), typeof(CoffeePeek.MediaService.Consumers.ShelfBagPhotoReleasedHandler), typeof(CoffeePeek.MediaService.Consumers.ShopPhotosAttachedHandler), typeof(CoffeePeek.MediaService.Handlers.GenerateAvatarUploadHandler), typeof(CoffeePeek.MediaService.Handlers.GenerateShopPhotoHandler), typeof(CoffeePeek.MediaService.Handlers.ResolveUploadedPhotosHandler) };
         }
 
 

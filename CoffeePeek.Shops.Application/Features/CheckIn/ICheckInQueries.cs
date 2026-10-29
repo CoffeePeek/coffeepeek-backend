@@ -7,7 +7,7 @@ public interface ICheckInQueries
 {
     Task<HomeCheckInDto?> GetHomeByIdAsync(Guid id, Guid? readerId, CancellationToken ct = default);
     Task<HomeCheckInPage> GetHomeByUserAsync(Guid userId, int pageNumber, int pageSize,
-        DateOnly? from = null, DateOnly? to = null, CancellationToken ct = default);
+        DateOnly? from = null, DateOnly? to = null, Guid? shelfBagId = null, CancellationToken ct = default);
     Task<HomeCalendarDayDto[]> GetHomeCalendarAsync(Guid userId, DateOnly from, DateOnly to, CancellationToken ct = default);
     Task<HomeBeanStatsDto[]> GetHomeBeanStatsAsync(Guid userId, CancellationToken ct = default);
     Task<HomeMethodStatsDto[]> GetHomeMethodStatsAsync(Guid userId, CancellationToken ct = default);

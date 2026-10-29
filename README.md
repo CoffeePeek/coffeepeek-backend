@@ -254,7 +254,7 @@ Main route groups through the gateway:
 |---|---|
 | `/api/Users/*`, `/api/Tokens/*` | Account; [profiles and follows](docs/api/profiles.md) |
 | `/api/v1/me/notifications/*`, `/api/admin/notifications/*` | Account; [device push notifications](docs/api/push-notifications.md) |
-| `/api/CoffeeShops/*`, `/api/Map/*`, `/api/Catalogs/*`, `/api/v1/check-ins/*`, `/api/v1/profiles/*`, `/api/menu/*`, `/api/roasters/*`, `/api/owner/*`, `/api/public/stats` | Shops |
+| `/api/CoffeeShops/*`, `/api/Map/*`, `/api/Catalogs/*`, `/api/v1/check-ins/*`, `/api/v1/profiles/*`, `/api/v1/shelf/*` ([coffee shelf](docs/api/shelf-client.md)), `/api/menu/*`, `/api/roasters/*`, `/api/owner/*`, `/api/public/stats` | Shops |
 | `/api/ModerationShops/*`, `/api/v1/moderation/check-ins/*`, `/api/ModerationRoasters/*`, `/api/ShopChangeRequests/*`, `/api/ShopIssueReports/*` | Moderation |
 | `/api/Photos/*` | Media |
 | `/api/admin/*` | Admin tools (Moderator/Admin roles) |

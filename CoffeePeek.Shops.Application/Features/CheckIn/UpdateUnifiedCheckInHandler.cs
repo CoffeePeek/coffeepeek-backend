@@ -60,10 +60,12 @@ public static class UpdateUnifiedCheckInHandler
 
     private static async Task EnsurePhotoBindingsAsync(DomainCheckIn checkIn,IUploadedPhotoLookup photos,CancellationToken ct)
     {
-        if(checkIn.ShopPhotos.Count==0)return;
-        var claim=await photos.ClaimForCheckInAsync(checkIn.UserId,checkIn.Id,checkIn.ShopPhotos.Select(p=>p.StorageKey).ToArray(),ct,
-            checkIn.ShopPhotos.SingleOrDefault(p => p.Id == checkIn.DrinkPhotoId)?.StorageKey);
-        if(!claim.Succeeded || claim.Photos.Count!=checkIn.ShopPhotos.Count || checkIn.ShopPhotos.Any(p=>
+        // A shelf-bag card copy is made by Media for this check-in only; it is not an upload to re-claim.
+        var uploads=checkIn.ShopPhotos.Where(p=>p.Id!=checkIn.ShelfBagPhotoId).ToArray();
+        if(uploads.Length==0)return;
+        var claim=await photos.ClaimForCheckInAsync(checkIn.UserId,checkIn.Id,uploads.Select(p=>p.StorageKey).ToArray(),ct,
+            uploads.SingleOrDefault(p => p.Id == checkIn.DrinkPhotoId)?.StorageKey);
+        if(!claim.Succeeded || claim.Photos.Count!=uploads.Length || uploads.Any(p=>
             !claim.Photos.Any(bound=>bound.PhotoId==p.Id && bound.StorageKey==p.StorageKey)))
             throw new ConflictException("Photo ownership and check-in binding could not be verified.");
     }

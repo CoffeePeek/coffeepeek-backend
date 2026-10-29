@@ -38,35 +38,60 @@ internal static class HomeCheckInInput
         return (timestamp.UtcDateTime, localDate);
     }
 
-    public static async Task<(Guid? CoffeeProductId, string? BeanName)> ResolveBeanAsync(
-        string? productSlug, string? customBeanName, IQueryCheckInRepository repository, CancellationToken ct)
+    /// <summary>
+    /// One of: a published catalog product by slug, a custom name, or the author's own shelf bag. A bag supplies its
+    /// product or custom name and its roaster; another owner's bag is indistinguishable from a missing one.
+    /// </summary>
+    public static async Task<HomeCheckInBean> ResolveBeanAsync(Guid userId, string? productSlug, string? customBeanName,
+        Guid? shelfBagId, IQueryCheckInRepository repository, CancellationToken ct)
     {
         productSlug = string.IsNullOrWhiteSpace(productSlug) ? null : productSlug.Trim().ToLowerInvariant();
         customBeanName = string.IsNullOrWhiteSpace(customBeanName) ? null : customBeanName.Trim();
         if (productSlug != null && customBeanName != null)
             throw new ValidationException("CoffeeProductSlug and CustomBeanName cannot both be supplied.");
-        if (productSlug == null) return (null, customBeanName);
+        if (shelfBagId.HasValue)
+        {
+            if (productSlug != null || customBeanName != null)
+                throw new ValidationException("ShelfBagId cannot be combined with CoffeeProductSlug or CustomBeanName.");
+            if (shelfBagId.Value == Guid.Empty) throw new ValidationException("ShelfBagId must not be empty.");
+            var bag = await repository.GetOwnedShelfBagBeanAsync(userId, shelfBagId.Value, ct)
+                ?? throw new NotFoundException("Shelf bag not found.");
+            return new HomeCheckInBean(bag.CoffeeProductId, bag.Name, bag.RoasterName, shelfBagId, bag.CardPhotoId);
+        }
+        if (productSlug == null) return new HomeCheckInBean(null, customBeanName, null, null);
         if (productSlug.Length > 250) throw new ValidationException("CoffeeProductSlug is too long.");
         var product = await repository.GetPublishedCoffeeProductBySlugAsync(productSlug, ct);
         if (product == null) throw new NotFoundException("Published coffee product not found.");
-        return (product.Value.Id, product.Value.Name);
+        return new HomeCheckInBean(product.Value.Id, product.Value.Name, product.Value.RoasterName, null);
     }
 
-    public static async Task<(Guid? CoffeeProductId, string? BeanName)> ResolveUpdateBeanAsync(
-        Guid? unchangedProductId, string? productSlug, string? customBeanName, DomainCheckIn existing,
+    /// <summary>
+    /// An unchanged <paramref name="shelfBagId"/> or <paramref name="unchangedProductId"/> keeps this entry's snapshots,
+    /// even after the bag was edited or deleted or the product unpublished. Without a bag the link is cleared.
+    /// </summary>
+    public static async Task<HomeCheckInBean> ResolveUpdateBeanAsync(Guid userId, Guid? unchangedProductId,
+        string? productSlug, string? customBeanName, Guid? shelfBagId, DomainCheckIn existing,
         IQueryCheckInRepository repository, CancellationToken ct)
     {
+        var kept = new HomeCheckInBean(existing.CoffeeProductId, existing.BeanNameSnapshot,
+            existing.RoasterNameSnapshot, existing.ShelfBagId);
+        if (shelfBagId.HasValue && shelfBagId == existing.ShelfBagId)
+        {
+            if (unchangedProductId.HasValue || !string.IsNullOrWhiteSpace(productSlug) || !string.IsNullOrWhiteSpace(customBeanName))
+                throw new ValidationException("ShelfBagId cannot be combined with another bean selector.");
+            return kept;
+        }
         if (unchangedProductId.HasValue)
         {
-            if (!string.IsNullOrWhiteSpace(productSlug) || !string.IsNullOrWhiteSpace(customBeanName))
-                throw new ValidationException("CoffeeProductId cannot be combined with CoffeeProductSlug or CustomBeanName.");
+            if (shelfBagId.HasValue || !string.IsNullOrWhiteSpace(productSlug) || !string.IsNullOrWhiteSpace(customBeanName))
+                throw new ValidationException("CoffeeProductId cannot be combined with CoffeeProductSlug, CustomBeanName or ShelfBagId.");
             if (unchangedProductId.Value == Guid.Empty || unchangedProductId != existing.CoffeeProductId)
                 throw new ValidationException("CoffeeProductId must match this entry's selected product.");
-            return (existing.CoffeeProductId, existing.BeanNameSnapshot);
+            return kept with { ShelfBagId = null };
         }
 
-        var selected = await ResolveBeanAsync(productSlug, customBeanName, repository, ct);
-        return selected.CoffeeProductId.HasValue && selected.CoffeeProductId == existing.CoffeeProductId
-            ? (existing.CoffeeProductId, existing.BeanNameSnapshot) : selected;
+        var selected = await ResolveBeanAsync(userId, productSlug, customBeanName, shelfBagId, repository, ct);
+        return selected.ShelfBagId == null && selected.CoffeeProductId.HasValue && selected.CoffeeProductId == existing.CoffeeProductId
+            ? kept with { ShelfBagId = null } : selected;
     }
 }

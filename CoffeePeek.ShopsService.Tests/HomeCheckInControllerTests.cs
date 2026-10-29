@@ -82,7 +82,7 @@ public class HomeCheckInControllerTests
         user.Setup(u => u.GetUserIdOrThrow()).Returns(owner);
         user.Setup(u => u.GetUserId()).Returns(owner);
         var queries = new Mock<ICheckInQueries>();
-        queries.Setup(q => q.GetHomeByUserAsync(owner, 1, 20, day, day, ct))
+        queries.Setup(q => q.GetHomeByUserAsync(owner, 1, 20, day, day, null, ct))
             .ReturnsAsync(new HomeCheckInPage([], 2));
         var controller = new HomeCheckInsController(Mock.Of<IMessageBus>(), user.Object, queries.Object)
         {
@@ -93,6 +93,6 @@ public class HomeCheckInControllerTests
         Assert.IsType<OkObjectResult>(await controller.Mine(from: day, to: day, ct: ct));
         Assert.Equal("2", controller.Response.Headers["X-Total-Count"].ToString());
         Assert.Equal("1", controller.Response.Headers["X-Total-Pages"].ToString());
-        queries.Verify(q => q.GetHomeByUserAsync(owner, 1, 20, day, day, ct), Times.Once);
+        queries.Verify(q => q.GetHomeByUserAsync(owner, 1, 20, day, day, null, ct), Times.Once);
     }
 }

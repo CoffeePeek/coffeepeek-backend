@@ -14,12 +14,20 @@ public sealed record HomeCheckInDto
     public string Text { get; init; } = "";
     public string? BrewMethodCode { get; init; }
     public Guid? CoffeeProductId { get; init; }
+    /// <summary>Current public slug of the product while it is published, for linking to the catalog; null otherwise.</summary>
+    public string? CoffeeProductSlug { get; init; }
     /// <summary>Historical name snapshot, or the author's custom name.</summary>
     public string? BeanName { get; init; }
+    /// <summary>Roaster snapshot from the catalog product or the shelf bag.</summary>
+    public string? RoasterName { get; init; }
+    /// <summary>The author's shelf bag the bean came from; the bag may since have been deleted.</summary>
+    public Guid? ShelfBagId { get; init; }
     public decimal? DoseGrams { get; init; }
     public int? BrewDurationSeconds { get; init; }
     public int? TasteScore { get; init; }
     public CheckInDrinkDto? Drink { get; init; }
     public CheckInPhotoDto[] Photos { get; init; } = [];
     public CheckInPhotoDto? DrinkPhoto { get; init; }
+    /// <summary>Copy of the shelf-bag card, when the author chose to show the bag.</summary>
+    public CheckInPhotoDto? ShelfBagPhoto { get; init; }
 }

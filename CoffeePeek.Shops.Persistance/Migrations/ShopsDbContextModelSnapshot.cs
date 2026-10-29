@@ -367,8 +367,18 @@ namespace CoffeePeek.Shops.Persistance.Migrations
                     b.Property<string>("RejectionReason")
                         .HasColumnType("text");
 
+                    b.Property<string>("RoasterNameSnapshot")
+                        .HasMaxLength(250)
+                        .HasColumnType("character varying(250)");
+
                     b.Property<Guid>("RowVersion")
                         .IsConcurrencyToken()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("ShelfBagId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("ShelfBagPhotoId")
                         .HasColumnType("uuid");
 
                     b.Property<double?>("ShopDistanceMeters")
@@ -419,6 +429,9 @@ namespace CoffeePeek.Shops.Persistance.Migrations
                         .IsDescending()
                         .HasFilter("\"DeletedAtUtc\" IS NULL AND \"Visibility\" = 1 AND \"ModerationState\" = 2 AND \"ApprovedRevision\" = \"ContentRevision\" AND \"FirstPublishedAtUtc\" IS NOT NULL");
 
+                    b.HasIndex("UserId", "ShelfBagId")
+                        .HasFilter("\"ShelfBagId\" IS NOT NULL");
+
                     b.HasIndex("UserId", "ShopId");
 
                     b.HasIndex("UserId", "Kind", "CoffeeProductId");
@@ -432,6 +445,8 @@ namespace CoffeePeek.Shops.Persistance.Migrations
                     b.ToTable("CanonicalCheckIns", null, t =>
                         {
                             t.HasCheckConstraint("CK_CanonicalCheckIns_CompleteContent", "\"Note\" IS NOT NULL AND length(btrim(\"Note\")) <= 1000 AND ((\"Rating_Place\" IS NULL AND \"Rating_Service\" IS NULL AND \"Rating_Coffee\" IS NULL AND \"Rating_AverageRating\" IS NULL) OR (\"Rating_Place\" IS NOT NULL AND \"Rating_Service\" IS NOT NULL AND \"Rating_Coffee\" IS NOT NULL AND \"Rating_AverageRating\" IS NOT NULL AND \"Rating_Place\" BETWEEN 1 AND 5 AND \"Rating_Service\" BETWEEN 1 AND 5 AND \"Rating_Coffee\" BETWEEN 1 AND 5))");
+
+                            t.HasCheckConstraint("CK_CanonicalCheckIns_HomeBeanSource", "\"Kind\" = 1 OR (\"ShelfBagId\" IS NULL AND \"RoasterNameSnapshot\" IS NULL)");
 
                             t.HasCheckConstraint("CK_CanonicalCheckIns_HomeDetails", "(\"BrewMethodCode\" IS NULL OR length(\"BrewMethodCode\") BETWEEN 1 AND 100) AND (\"CoffeeProductId\" IS NULL OR \"BeanNameSnapshot\" IS NOT NULL AND length(btrim(\"BeanNameSnapshot\")) > 0) AND (\"DoseGrams\" IS NULL OR \"DoseGrams\" > 0 AND \"DoseGrams\" <= 10000) AND (\"BrewDurationSeconds\" IS NULL OR \"BrewDurationSeconds\" BETWEEN 1 AND 604800) AND (\"TasteScore\" IS NULL OR \"TasteScore\" BETWEEN 1 AND 5)");
 
@@ -2616,6 +2631,97 @@ namespace CoffeePeek.Shops.Persistance.Migrations
                     b.HasIndex("TagId");
 
                     b.ToTable("RoasterTagAssignments", (string)null);
+                });
+
+            modelBuilder.Entity("CoffeePeek.Shops.Domain.Aggregates.ShelfAggregate.ShelfBag", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("AddedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool?>("BuyAgain")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid?>("CoffeeProductId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("FinishedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("Grind")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Name")
+                        .HasMaxLength(250)
+                        .HasColumnType("character varying(250)");
+
+                    b.Property<string>("PhotoContentType")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<Guid?>("PhotoId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("PhotoStorageKey")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<int?>("Position")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("Rating")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("RoastPurpose")
+                        .HasColumnType("integer");
+
+                    b.Property<DateOnly?>("RoastedOn")
+                        .HasColumnType("date");
+
+                    b.Property<string>("RoasterName")
+                        .HasMaxLength(250)
+                        .HasColumnType("character varying(250)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int?>("WeightGrams")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PhotoId")
+                        .IsUnique()
+                        .HasFilter("\"PhotoId\" IS NOT NULL");
+
+                    b.HasIndex("UserId", "Status", "Position");
+
+                    b.HasIndex("UserId", "Status", "FinishedAtUtc", "Id");
+
+                    b.ToTable("ShelfBags", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_ShelfBags_Grind", "\"Grind\" IS NULL OR \"Grind\" IN (0, 1)");
+
+                            t.HasCheckConstraint("CK_ShelfBags_Photo", "(\"PhotoId\" IS NULL) = (\"PhotoStorageKey\" IS NULL) AND (\"PhotoId\" IS NULL) = (\"PhotoContentType\" IS NULL)");
+
+                            t.HasCheckConstraint("CK_ShelfBags_PhotoOrBean", "\"PhotoId\" IS NOT NULL OR \"Name\" IS NOT NULL");
+
+                            t.HasCheckConstraint("CK_ShelfBags_Rating", "\"Rating\" IS NULL OR \"Rating\" BETWEEN 1 AND 5");
+
+                            t.HasCheckConstraint("CK_ShelfBags_RoastPurpose", "\"RoastPurpose\" IS NULL OR \"RoastPurpose\" IN (0, 1)");
+
+                            t.HasCheckConstraint("CK_ShelfBags_StatusPosition", "(\"Status\" = 0 AND \"Position\" IS NOT NULL AND \"Position\" >= 0 AND \"FinishedAtUtc\" IS NULL) OR (\"Status\" = 1 AND \"Position\" IS NULL AND \"FinishedAtUtc\" IS NOT NULL)");
+
+                            t.HasCheckConstraint("CK_ShelfBags_Weight", "\"WeightGrams\" IS NULL OR \"WeightGrams\" BETWEEN 1 AND 10000");
+                        });
                 });
 
             modelBuilder.Entity("CoffeePeek.Shops.Domain.Aggregates.ShopTagAggregate.ShopTag", b =>
