@@ -4,4 +4,5 @@ namespace CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
 public record AdminShopsInsights(
     AdminRatingAggregate Ratings,
     IReadOnlyList<AdminTopShop> TopShopsByCheckIns,
-    AdminDownloadAggregate Downloads);
+    AdminDownloadAggregate Downloads,
+    AdminShopCoverage? Coverage = null);

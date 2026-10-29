@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -109,7 +110,11 @@ public class GetAdminOverviewStatsHandlerTests
             WeeklyActiveUsers: 33,
             MonthlyActiveUsers: 55,
             EmailConfirmedUsers: 70,
-            GoogleUsers: 20));
+            GoogleUsers: 20,
+            AppleUsers: 15,
+            EmailUsers: 65,
+            Retention: new AdminUserRetentionStats(new DateOnly(2026, 10, 29),
+                new(90, 18), new(70, 7), new(30, 1), new(95, 38))));
 
         _client.Setup(c => c.GetPlatformStatsAsync(_ct)).ReturnsAsync(new AdminPlatformStatsSnapshot(
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, true, true));
@@ -128,5 +133,11 @@ public class GetAdminOverviewStatsHandlerTests
         response.Data.MonthlyActiveUsers.Should().Be(55);
         response.Data.EmailConfirmedUsers.Should().Be(70);
         response.Data.GoogleUsers.Should().Be(20);
+        response.Data.AppleUsers.Should().Be(15);
+        response.Data.EmailUsers.Should().Be(65);
+        response.Data.Retention!.D1.RatePercent.Should().Be(20m);
+        response.Data.Retention.D7.ReturnedUsers.Should().Be(7);
+        response.Data.Retention.D30.EligibleUsers.Should().Be(30);
+        response.Data.Retention.AfterRegistration.RatePercent.Should().Be(40m);
     }
 }

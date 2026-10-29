@@ -93,13 +93,92 @@ public class AdminUserQueryRepositoryTests
         confirmed.ConfirmEmail(confirmed.Credentials.EmailConfirmationToken!);
         var google = User.CreateExternal("google@example.com", "Google", "google-sub-1");
         google.CreatedAtUtc = DateTime.UtcNow;
-        db.Users.AddRange(unconfirmed, confirmed, google);
+        var apple = User.CreateExternal("apple@example.com", "Apple", "apple-sub-1");
+        var lowerGoogle = User.CreateExternal("lower@example.com", "google", "google-sub-2");
+        var other = User.CreateExternal("other@example.com", "Other", "other-sub");
+        db.Users.AddRange(unconfirmed, confirmed, google, apple, lowerGoogle, other);
         await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var stats = await new AdminUserQueryRepository(db).GetStatsAsync(TestContext.Current.CancellationToken);
 
-        stats.EmailConfirmedUsers.Should().Be(2);
-        stats.GoogleUsers.Should().Be(1);
+        stats.EmailConfirmedUsers.Should().Be(5);
+        stats.GoogleUsers.Should().Be(2);
+        stats.AppleUsers.Should().Be(1);
+        stats.EmailUsers.Should().Be(2);
+        stats.OtherAuthUsers.Should().Be(1);
+        (stats.GoogleUsers + stats.AppleUsers + stats.EmailUsers + stats.OtherAuthUsers).Should().Be(stats.TotalUsers);
+    }
+
+    [Fact]
+    public async Task GetStatsAsync_RetentionUsesExactCompleteUtcDaysAndDistinctUsers()
+    {
+        await using var db = CreateContext();
+        var today = DateTime.UtcNow.Date;
+        var returning = NewUser("returning", today.AddDays(-40).AddHours(23).AddMinutes(59));
+        AddTokenCreatedAt(returning, returning.CreatedAtUtc); // Registration-day login is not a return.
+        AddTokenCreatedAt(returning, today.AddDays(-39)); // D1 midnight, less than 24 hours later.
+        AddTokenCreatedAt(returning, today.AddDays(-38).AddTicks(-1)); // Same D1 user, not another return.
+        AddTokenCreatedAt(returning, today.AddDays(-33)); // D7.
+        AddTokenCreatedAt(returning, today.AddDays(-10)); // D30.
+        returning.RevokeAllSessions(); // Logout/revocation must not erase historical activity.
+        var later = NewUser("later", today.AddDays(-40));
+        AddTokenCreatedAt(later, today.AddDays(-38)); // D2 is not D1 or D7.
+        later.SetSoftDelete(); // Include the same retained-account population as totalUsers.
+        var week = NewUser("week", today.AddDays(-8));
+        AddTokenCreatedAt(week, today.AddDays(-1));
+        var month = NewUser("month", today.AddDays(-31));
+        AddTokenCreatedAt(month, today.AddTicks(-1)); // Last instant of D30.
+        var incompleteMonth = NewUser("incompletemonth", today.AddDays(-30));
+        AddTokenCreatedAt(incompleteMonth, today); // D30 is still incomplete.
+        var yesterday = NewUser("yesterday", today.AddDays(-1));
+        AddTokenCreatedAt(yesterday, today); // D1 is still incomplete.
+        var newToday = NewUser("newtoday", today);
+        AddTokenCreatedAt(newToday, today);
+        db.Users.AddRange(returning, later, week, month, incompleteMonth, yesterday, newToday);
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        var stats = await new AdminUserQueryRepository(db).GetStatsAsync(TestContext.Current.CancellationToken);
+
+        stats.Retention.Should().NotBeNull();
+        var retention = stats.Retention!;
+        retention.AsOfDateUtc.Should().Be(DateOnly.FromDateTime(today));
+        retention.D1.Should().Be(new AdminRetentionMetric(5, 1));
+        retention.D1.RatePercent.Should().Be(20m);
+        retention.D7.Should().Be(new AdminRetentionMetric(5, 2));
+        retention.D30.Should().Be(new AdminRetentionMetric(3, 2));
+        retention.D30.RatePercent.Should().Be(66.67m);
+        retention.AfterRegistration.Should().Be(new AdminRetentionMetric(6, 4));
+    }
+
+    [Fact]
+    public async Task GetStatsAsync_EmptyCohortsHaveNullRateRatherThanZeroRetention()
+    {
+        await using var db = CreateContext();
+        db.Users.Add(NewUser("newtoday", DateTime.UtcNow.Date));
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        var retention = (await new AdminUserQueryRepository(db).GetStatsAsync(TestContext.Current.CancellationToken)).Retention!;
+        foreach (var metric in new[] { retention.D1, retention.D7, retention.D30, retention.AfterRegistration })
+        {
+            metric.EligibleUsers.Should().Be(0);
+            metric.ReturnedUsers.Should().Be(0);
+            metric.RatePercent.Should().BeNull();
+        }
+    }
+
+    [Theory]
+    [InlineData(1)]
+    [InlineData(7)]
+    [InlineData(30)]
+    public void RetentionQueries_TranslateToPostgresWithUtcBoundaries(int day)
+    {
+        using var db = CreateNpgsqlContext();
+        var repository = new AdminUserQueryRepository(db);
+        foreach (var query in new[] { repository.BuildDayRetainedUsersQuery(day, DateTime.UtcNow.Date),
+                     repository.BuildReturnedAfterRegistrationQuery(DateTime.UtcNow.Date) })
+        {
+            var sql = query.GroupBy(_ => 1).Select(g => g.Count()).ToQueryString();
+            sql.Should().Contain("EXISTS").And.Contain("AT TIME ZONE 'UTC'");
+        }
     }
 
     [Fact]

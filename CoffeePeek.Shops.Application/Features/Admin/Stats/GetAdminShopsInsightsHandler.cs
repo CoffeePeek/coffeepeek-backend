@@ -34,7 +34,12 @@ public static class GetAdminShopsInsightsHandler
                     .ToList(),
                 TopCountries30Days: downloads.TopCountriesSince
                     .Select(c => new AdminDownloadCountryDto(c.Country, c.Count))
-                    .ToList())));
+                    .ToList()),
+            Coverage: insights.Coverage is { } coverage
+                ? new AdminShopCoverageDto(coverage.TotalShops,
+                    coverage.AverageCompletenessPercent is { } average ? Round2(average) : null,
+                    coverage.ShopsWithCheckIns, coverage.ShopsWithoutCheckIns)
+                : null));
     }
 
     private static decimal Round2(decimal value) => Math.Round(value, 2, MidpointRounding.AwayFromZero);
