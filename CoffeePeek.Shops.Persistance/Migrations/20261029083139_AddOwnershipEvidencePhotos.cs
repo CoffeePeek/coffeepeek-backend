@@ -22,6 +22,14 @@ namespace CoffeePeek.Shops.Persistance.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.Sql("""
+                DO $$ BEGIN
+                  IF EXISTS (SELECT 1 FROM "BusinessOwnershipClaims")
+                     OR EXISTS (SELECT 1 FROM "BusinessOwnershipChanges") THEN
+                    RAISE EXCEPTION 'Ownership history exists; retain this evidence schema and roll forward instead';
+                  END IF;
+                END $$;
+                """);
             migrationBuilder.DropColumn(
                 name: "EvidencePhotoIds",
                 table: "BusinessOwnershipClaims");

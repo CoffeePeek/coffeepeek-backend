@@ -174,7 +174,7 @@ jobs:
           done
           curl --fail --silent http://127.0.0.1:18080/health >/dev/null
           dotnet test CoffeePeek.MediaService.Tests/CoffeePeek.MediaService.Tests.csproj --configuration Release --no-build \
-            --filter 'FullyQualifiedName~CheckInPhotoStorageLiveTests|FullyQualifiedName~PhotoVariantQueueLiveTests|FullyQualifiedName~PhotoVariantPipelineLiveTests|FullyQualifiedName~PhotoVariantOutboxLiveTests' --verbosity normal
+            --filter 'FullyQualifiedName~CheckInPhotoStorageLiveTests|FullyQualifiedName~PhotoVariantQueueLiveTests|FullyQualifiedName~PhotoVariantPipelineLiveTests|FullyQualifiedName~PhotoVariantOutboxLiveTests|FullyQualifiedName~OwnershipEvidenceBindingLiveTests' --verbosity normal
           mkdir -p .test-results/media-backfill
           dotnet CoffeePeek.MediaService.Tests/bin/Release/net10.0/CoffeePeek.MediaService.Tests.dll \
             -class 'CoffeePeek.MediaService.Tests.PhotoBackfillRunLiveTests' \

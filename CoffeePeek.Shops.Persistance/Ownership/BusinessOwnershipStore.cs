@@ -18,6 +18,11 @@ public sealed class BusinessOwnershipStore(ShopsDbContext db) : IBusinessOwnersh
         db.BusinessOwnershipClaims.AnyAsync(x => x.BusinessType == businessType && x.BusinessId == businessId
             && x.ApplicantUserId == applicantUserId && x.Status == OwnershipClaimStatus.Pending, ct);
 
+    public Task<BusinessOwnershipClaim?> GetLatestClaimAsync(BusinessType businessType, Guid businessId, Guid applicantUserId, CancellationToken ct) =>
+        db.BusinessOwnershipClaims.AsNoTracking().Where(x => x.BusinessType == businessType && x.BusinessId == businessId
+                && x.ApplicantUserId == applicantUserId)
+            .OrderByDescending(x => x.CreatedAtUtc).ThenByDescending(x => x.Id).FirstOrDefaultAsync(ct);
+
     public Task<BusinessOwnershipTargetDto?> GetTargetAsync(BusinessType businessType, Guid businessId, CancellationToken ct) =>
         businessType switch
         {

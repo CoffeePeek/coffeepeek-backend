@@ -18,10 +18,11 @@ public sealed class OwnershipEvidenceClient(IHttpClientFactory clients, IOptions
         request.Headers.TryAddWithoutValidation(GatewayHeaderConsts.XUserId, owner.ToString());
         return request;
     }
-    public async Task AttachAsync(Guid applicantId, Guid claimId, Guid[] photoIds, CancellationToken ct)
+    public async Task AttachAsync(Guid applicantId, Guid claimId, Guid[] photoIds, CancellationToken ct,
+        Guid? previousRejectedClaimId = null)
     {
         using var request = Request(HttpMethod.Post, "/internal/ownership-evidence/attach", applicantId);
-        request.Content = JsonContent.Create(new AttachOwnershipEvidenceRequest(claimId, photoIds));
+        request.Content = JsonContent.Create(new AttachOwnershipEvidenceRequest(claimId, photoIds, previousRejectedClaimId));
         using var response = await clients.CreateClient(MediaUploadedPhotoLookup.HttpClientName).SendAsync(request, ct);
         if ((int)response.StatusCode >= 500) throw new ServiceUnavailableException("Evidence storage is unavailable.");
         if (!response.IsSuccessStatusCode) throw new ValidationException("Evidence photos are missing, expired or already attached.");

@@ -26,6 +26,13 @@ namespace CoffeePeek.MediaService.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.Sql("""
+                DO $$ BEGIN
+                  IF EXISTS (SELECT 1 FROM "Photos" WHERE "OwnershipClaimId" IS NOT NULL) THEN
+                    RAISE EXCEPTION 'Ownership evidence history exists; retain these reservations and roll forward instead';
+                  END IF;
+                END $$;
+                """);
             migrationBuilder.DropIndex(
                 name: "IX_Photos_OwnershipClaimId",
                 table: "Photos");

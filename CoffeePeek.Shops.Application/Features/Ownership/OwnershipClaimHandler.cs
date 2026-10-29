@@ -21,15 +21,20 @@ public static class OwnershipClaimHandler
             ?? throw new NotFoundException("Business not found.");
         var target = await store.GetTargetAsync(command.BusinessType, address.EntityId, ct);
         if (target is null || target.IsHidden) throw new NotFoundException("Business not found.");
-        var claim = BusinessOwnershipClaim.Create(command.BusinessType, target.Id, target.Name,
-            target.Slug ?? command.BusinessSlug, command.ApplicantUserId, command.Contact, command.Evidence, command.EvidencePhotoIds);
         if (target.OwnerUserId.HasValue)
             throw new ConflictException("This business already has an owner.");
         if (await store.PendingExistsAsync(command.BusinessType, target.Id, command.ApplicantUserId, ct))
             throw new ConflictException("You already have a pending claim for this business.");
+        var previous = await store.GetLatestClaimAsync(command.BusinessType, target.Id, command.ApplicantUserId, ct);
+        if (previous?.Status == OwnershipClaimStatus.Pending)
+            throw new ConflictException("You already have a pending claim for this business.");
+        var claim = BusinessOwnershipClaim.Create(command.BusinessType, target.Id, target.Name,
+            target.Slug ?? command.BusinessSlug, command.ApplicantUserId, command.Contact, command.Evidence,
+            command.EvidencePhotoIds, previous?.Id);
         if (claim.EvidencePhotoIds.Length > 0)
             await (evidencePhotos ?? throw new InvalidOperationException("Evidence storage is unavailable."))
-                .AttachAsync(command.ApplicantUserId, claim.Id, claim.EvidencePhotoIds, ct);
+                .AttachAsync(command.ApplicantUserId, claim.Id, claim.EvidencePhotoIds, ct,
+                    previous?.Status == OwnershipClaimStatus.Rejected ? previous.Id : null);
         store.AddClaim(claim);
         return Response<OwnershipClaimDto>.Success(OwnershipClaimDto.From(claim, null, admin: false));
     }

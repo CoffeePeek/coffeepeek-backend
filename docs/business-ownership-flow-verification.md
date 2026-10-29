@@ -77,3 +77,32 @@ current model before AddOwnershipEvidencePhotos existed. The upgrade now applies
 all current additive migrations before EF reads. Its rollback guard regression
 also checks that evidence IDs survive the rejected downgrade. The local schema
 selection passed 250 tests, with that single live migration test skipped.
+
+## Review fixes and downgrade protection
+
+CI run 40852467677 (26b3512a) confirmed the upgrade now succeeds, then exposed
+partial downgrade behaviour: EF committed removal of EvidencePhotoIds before
+the older ownership-history guard rejected the next migration. Evidence Down
+migrations now reject history before dropping their column or binding table.
+The historical ownership test retains its assertion that photo IDs survive.
+
+Review discussions 4410547814 / 4410597869 describe the same truncated-image
+validation bug fixed in 2a1b5456. Discussion 4410597875 exposed reuse of a
+deterministic claim ID after rejection. Submission now reads the latest claim
+for the same applicant/business and scopes retry identity to that predecessor.
+Only a rejected predecessor authorizes reuse. Media keeps the original
+reservation and adds immutable claim/photo bindings, so old and new claims
+remain readable without releasing evidence or changing its purpose.
+
+The public mobile request/response DTOs are unchanged. The internal attachment
+request has an optional PreviousRejectedClaimId supplied from Shops history.
+Media adds 20261029100047_AddOwnershipEvidenceBindings; apply it before starting
+the updated service. No database was modified locally.
+
+Final local Release build passed. All 12 suites passed with 2861 successful
+tests; the final infrastructure rebuild includes the two new resubmission
+cases. PostgreSQL tests are skipped locally (278 in the final combined tree).
+New CI coverage includes both business types resubmitting rejected evidence,
+legacy Media reservations, retry without duplicate bindings, history reads,
+foreign-owner denial and protection against dropping binding history. Await
+the exact published revision's PostgreSQL/MinIO run before claiming live success.

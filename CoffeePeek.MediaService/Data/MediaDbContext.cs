@@ -5,6 +5,7 @@ namespace CoffeePeek.MediaService.Data;
 public class MediaDbContext(DbContextOptions<MediaDbContext> options) : DbContext(options)
 {
     public DbSet<PhotoMetadata> Photos => Set<PhotoMetadata>();
+    public DbSet<OwnershipEvidenceBinding> OwnershipEvidenceBindings => Set<OwnershipEvidenceBinding>();
     public DbSet<PhotoVariantJob> PhotoVariantJobs => Set<PhotoVariantJob>();
     public DbSet<PhotoVariant> PhotoVariants => Set<PhotoVariant>();
     public DbSet<PhotoVariantArtifact> PhotoVariantArtifacts => Set<PhotoVariantArtifact>();
@@ -13,6 +14,11 @@ public class MediaDbContext(DbContextOptions<MediaDbContext> options) : DbContex
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<OwnershipEvidenceBinding>(entity =>
+        {
+            entity.HasKey(x => new { x.PhotoId, x.ClaimId });
+            entity.HasOne<PhotoMetadata>().WithMany().HasForeignKey(x => x.PhotoId).OnDelete(DeleteBehavior.Cascade);
+        });
         modelBuilder.Entity<PhotoMetadata>(entity =>
         {
             entity.ToTable("Photos", table => table.HasCheckConstraint(

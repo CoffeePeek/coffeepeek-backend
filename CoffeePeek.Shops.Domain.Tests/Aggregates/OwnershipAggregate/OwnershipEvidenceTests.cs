@@ -18,6 +18,23 @@ public class OwnershipEvidenceTests
         Assert.NotEqual(first.Id, other.Id);
     }
     [Fact]
+    public void ANewAttemptHasItsOwnStableIdentityAfterRejection()
+    {
+        var user = Guid.NewGuid(); var business = Guid.NewGuid();
+        var photos = new[] { Guid.NewGuid(), Guid.NewGuid() };
+        var first = Claim(user, business, photos);
+        first.Review(false, Guid.NewGuid(), "More proof required");
+        var next = BusinessOwnershipClaim.Create(BusinessType.CoffeeShop, business, "Name", "slug",
+            user, "contact", "proof", photos, first.Id);
+        var retry = BusinessOwnershipClaim.Create(BusinessType.CoffeeShop, business, "Name", "slug",
+            user, "contact", "proof", photos.Reverse().ToArray(), first.Id);
+        Assert.NotEqual(first.Id, next.Id);
+        Assert.Equal(next.Id, retry.Id);
+        Assert.Equal(OwnershipClaimStatus.Rejected, first.Status);
+        Assert.Equal(photos, first.EvidencePhotoIds);
+    }
+
+    [Fact]
     public void DuplicateEmptyAndOversizedSetsAreRejected()
     {
         var claim = Claim(Guid.NewGuid(), Guid.NewGuid()); var photo = Guid.NewGuid();

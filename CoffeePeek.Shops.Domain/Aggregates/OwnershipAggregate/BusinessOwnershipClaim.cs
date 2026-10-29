@@ -25,7 +25,8 @@ public sealed class BusinessOwnershipClaim : Entity<Guid>
     private BusinessOwnershipClaim() { }
 
     public static BusinessOwnershipClaim Create(BusinessType businessType, Guid businessId,
-        string name, string slug, Guid applicantUserId, string contact, string evidence, Guid[]? evidencePhotoIds = null)
+        string name, string slug, Guid applicantUserId, string contact, string evidence, Guid[]? evidencePhotoIds = null,
+        Guid? previousClaimId = null)
     {
         if (!Enum.IsDefined(businessType) || businessId == Guid.Empty || applicantUserId == Guid.Empty)
             throw new ValidationException("A valid business and applicant are required.");
@@ -38,7 +39,7 @@ public sealed class BusinessOwnershipClaim : Entity<Guid>
         var photos = ValidateEvidence(evidencePhotoIds ?? []);
         return new BusinessOwnershipClaim
         {
-            Id = EvidenceIdentity(applicantUserId, businessType, businessId, photos), EvidencePhotoIds = photos, BusinessType = businessType, BusinessId = businessId,
+            Id = EvidenceIdentity(applicantUserId, businessType, businessId, photos, previousClaimId), EvidencePhotoIds = photos, BusinessType = businessType, BusinessId = businessId,
             BusinessNameSnapshot = name, BusinessSlugSnapshot = slug, ApplicantUserId = applicantUserId,
             Contact = contact.Trim(), Evidence = evidence.Trim(), CreatedAtUtc = DateTime.UtcNow
         };
@@ -51,11 +52,12 @@ public sealed class BusinessOwnershipClaim : Entity<Guid>
         return photoIds.ToArray();
     }
 
-    private static Guid EvidenceIdentity(Guid applicant, BusinessType type, Guid business, Guid[] photos)
+    private static Guid EvidenceIdentity(Guid applicant, BusinessType type, Guid business, Guid[] photos, Guid? previousClaimId)
     {
         if (photos.Length == 0) return Guid.NewGuid();
         var identity = $"{applicant:N}:{type}:{business:N}:" +
             string.Join(",", photos.Order().Select(id => id.ToString("N")));
+        if (previousClaimId.HasValue) identity += $":after:{previousClaimId.Value:N}";
         return new Guid(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(identity)).AsSpan(0, 16));
     }
 

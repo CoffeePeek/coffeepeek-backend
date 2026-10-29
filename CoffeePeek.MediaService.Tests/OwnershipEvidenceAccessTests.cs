@@ -21,6 +21,7 @@ public class OwnershipEvidenceAccessTests
     private readonly Mock<IPhotoRepository> photos = new();
     private readonly Mock<IStorageService> storage = new();
     private readonly Mock<IUnitOfWork> unit = new();
+    private readonly HashSet<(Guid PhotoId, Guid ClaimId)> bindings = [];
     private InternalOwnershipEvidenceController Controller(bool trusted = true)
     {
         var user = new Mock<IUserContext>(); user.Setup(x => x.GetUserId()).Returns(owner);
@@ -36,6 +37,10 @@ public class OwnershipEvidenceAccessTests
         StorageKey = "ownership-evidence/test", FileName = "proof.png", Status = PhotoStatus.Pending, UploadedAt = DateTime.UtcNow };
     private void Setup(PhotoMetadata photo)
     {
+        photos.Setup(x => x.HasEvidenceBindingAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Guid photoId, Guid claimId, CancellationToken _) => bindings.Contains((photoId, claimId)));
+        photos.Setup(x => x.AddEvidenceBinding(It.IsAny<Guid>(), It.IsAny<Guid>()))
+            .Callback((Guid photoId, Guid claimId) => Assert.True(bindings.Add((photoId, claimId))));
         photos.Setup(x => x.GetByIdAsync(photo.Id, It.IsAny<CancellationToken>())).ReturnsAsync(photo);
         photos.Setup(x => x.AcquireClaimLocksAsync(owner, It.IsAny<IReadOnlyCollection<string>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Mock.Of<IAsyncDisposable>());
@@ -67,6 +72,25 @@ public class OwnershipEvidenceAccessTests
         Assert.Equal(PhotoStatus.Confirmed, photo.Status);
         Assert.IsType<NoContentResult>(await Controller().Attach(new(claim, [photo.Id]), CancellationToken.None));
         Assert.IsType<ConflictResult>(await Controller().Attach(new(Guid.NewGuid(), [photo.Id]), CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task ReusedEvidencePreservesBothClaimsAndRejectsAnUnrelatedReservation()
+    {
+        var photo = Photo(); Setup(photo);
+        Assert.IsType<NoContentResult>(await Controller().Attach(new(claim, [photo.Id]), CancellationToken.None));
+        var next = Guid.NewGuid();
+        Assert.IsType<ConflictResult>(await Controller().Attach(new(next, [photo.Id], Guid.NewGuid()), CancellationToken.None));
+        Assert.IsType<NoContentResult>(await Controller().Attach(new(next, [photo.Id], claim), CancellationToken.None));
+        Assert.IsType<NoContentResult>(await Controller().Attach(new(next, [photo.Id], claim), CancellationToken.None));
+        Assert.Equal(claim, photo.OwnershipClaimId);
+        Assert.Equal(2, bindings.Count);
+        Assert.IsType<EmptyResult>(await Controller().Download(claim, photo.Id, CancellationToken.None));
+        Assert.IsType<EmptyResult>(await Controller().Download(next, photo.Id, CancellationToken.None));
+        var third = Guid.NewGuid();
+        Assert.IsType<NoContentResult>(await Controller().Attach(new(third, [photo.Id], next), CancellationToken.None));
+        Assert.IsType<EmptyResult>(await Controller().Download(third, photo.Id, CancellationToken.None));
+        Assert.IsType<NotFoundResult>(await Controller().Download(Guid.NewGuid(), photo.Id, CancellationToken.None));
     }
 
     [Fact]

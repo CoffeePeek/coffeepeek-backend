@@ -8,6 +8,12 @@ namespace CoffeePeek.MediaService.Repositories;
 
 public class PhotoRepository(MediaDbContext dbContext) : IPhotoRepository
 {
+    public void AddEvidenceBinding(Guid photoId, Guid claimId) =>
+        dbContext.OwnershipEvidenceBindings.Add(new() { PhotoId = photoId, ClaimId = claimId });
+
+    public Task<bool> HasEvidenceBindingAsync(Guid photoId, Guid claimId, CancellationToken ct = default) =>
+        dbContext.OwnershipEvidenceBindings.AnyAsync(x => x.PhotoId == photoId && x.ClaimId == claimId, ct);
+
     private readonly DbSet<PhotoMetadata> _repository = dbContext.Photos;
 
     public void Add(PhotoMetadata metadata)
