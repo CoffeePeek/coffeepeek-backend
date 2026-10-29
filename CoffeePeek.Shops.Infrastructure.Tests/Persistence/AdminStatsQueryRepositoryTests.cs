@@ -34,6 +34,50 @@ public class AdminStatsQueryRepositoryTests
     }
 
     [Fact]
+    public async Task GetInsightsAsync_CoverageUsesAllShopsAndOnlyPublishedShopCheckIns()
+    {
+        await using var db = CreateContext();
+        var withPublic = Shop("Public");
+        var privateOnly = Shop("Private");
+        var deletedOnly = Shop("Deleted");
+        var hidden = Shop("Hidden");
+        db.Shops.AddRange(withPublic, privateOnly, deletedOnly, hidden);
+        db.Entry(withPublic).Property(x => x.DataCompletenessScore).CurrentValue = 100;
+        db.Entry(privateOnly).Property(x => x.DataCompletenessScore).CurrentValue = 50;
+        db.Entry(hidden).Property(x => x.DataCompletenessScore).CurrentValue = 25;
+        db.Entry(hidden).Property(x => x.IsHidden).CurrentValue = true;
+        var deleted = Review(deletedOnly.Id, 3, 3, 3);
+        deleted.Delete();
+        db.CheckIns.AddRange(Review(withPublic.Id, 5, 5, 5), Review(withPublic.Id, 4, 4, 4),
+            CheckInAt(privateOnly.Id, DateTime.UtcNow), deleted, Review(hidden.Id, 5, 5, 5));
+        await db.SaveChangesAsync(_ct);
+
+        var coverage = (await new AdminStatsQueryRepository(db).GetInsightsAsync(Since, _ct)).Coverage!;
+
+        coverage.TotalShops.Should().Be(4);
+        coverage.AverageCompletenessPercent.Should().Be(43.75m);
+        coverage.ShopsWithCheckIns.Should().Be(1);
+        coverage.ShopsWithoutCheckIns.Should().Be(3);
+    }
+
+    [Fact]
+    public async Task GetInsightsAsync_EmptyCatalogHasNoAverageCompleteness()
+    {
+        await using var db = CreateContext();
+        var coverage = (await new AdminStatsQueryRepository(db).GetInsightsAsync(Since, _ct)).Coverage!;
+        coverage.Should().Be(new AdminShopCoverage(0, null, 0, 0));
+    }
+
+    [Fact]
+    public void CoverageQuery_TranslatesToServerSideExistsOnPostgres()
+    {
+        using var db = new ShopsDbContext(new DbContextOptionsBuilder<ShopsDbContext>()
+            .UseNpgsql("Host=localhost;Database=unused;Username=unused;Password=unused").Options);
+        var sql = new AdminStatsQueryRepository(db).BuildCoverageQuery().ToQueryString();
+        sql.Should().Contain("EXISTS").And.Contain("\"ApprovedRevision\"").And.Contain("\"IsHidden\"");
+    }
+
+    [Fact]
     public async Task GetInsightsAsync_RatingsDistributionAndAverages_IgnoreSoftDeleted()
     {
         await using var db = CreateContext();

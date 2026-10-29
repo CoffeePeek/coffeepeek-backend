@@ -11,7 +11,7 @@ namespace CoffeePeek.Contract.Dtos.Admin;
 /// <param name="MonthlyActiveUsers">Distinct users with a login/refresh in the last 30 days (rolling).</param>
 /// <param name="DeletedUsers">Soft-deleted users.</param>
 /// <param name="EmailConfirmedUsers">Users whose email is confirmed (external OAuth users count as confirmed).</param>
-/// <param name="GoogleUsers">Users registered through an external OAuth provider (Google).</param>
+/// <param name="GoogleUsers">Users registered through Google specifically.</param>
 public record AdminOverviewStatsDto(
     int TotalUsers,
     int UsersRegisteredToday,
@@ -31,4 +31,8 @@ public record AdminOverviewStatsDto(
     int MonthlyActiveUsers = 0,
     int DeletedUsers = 0,
     int EmailConfirmedUsers = 0,
-    int GoogleUsers = 0);
+    int GoogleUsers = 0,
+    int AppleUsers = 0,
+    int EmailUsers = 0,
+    int OtherAuthUsers = 0,
+    AdminUserRetentionStatsDto? Retention = null);

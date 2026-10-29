@@ -62,13 +62,21 @@ public class AdminUserQueryRepository(AccountDbContext dbContext) : IAdminUserQu
         var today = now.Date;
 
         // Sequential on purpose: a single scoped DbContext does not support concurrent queries.
-        var totalUsers = await dbContext.Users.CountAsync(ct);
+        // One aggregate keeps provider buckets consistent even if a registration happens during this request.
+        var authProviders = await dbContext.Users.AsNoTracking()
+            .GroupBy(u => u.Credentials.OAuthProvider == null ? "" : u.Credentials.OAuthProvider.ToLower())
+            .Select(g => new { Provider = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.Provider, x => x.Count, ct);
+        var totalUsers = authProviders.Values.Sum();
         var blockedUsers = await dbContext.Users.CountAsync(u => u.IsBlocked && !u.IsSoftDelete, ct);
         var deletedUsers = await dbContext.Users.CountAsync(u => u.IsSoftDelete, ct);
         var activeUsers = await dbContext.Users.CountAsync(u => !u.IsBlocked && !u.IsSoftDelete, ct);
         var registeredToday = await dbContext.Users.CountAsync(u => u.CreatedAtUtc >= today, ct);
         var emailConfirmedUsers = await dbContext.Users.CountAsync(u => u.Credentials.EmailConfirmed, ct);
-        var googleUsers = await dbContext.Users.CountAsync(u => u.Credentials.OAuthProvider != null, ct);
+        var googleUsers = authProviders.GetValueOrDefault("google");
+        var appleUsers = authProviders.GetValueOrDefault("apple");
+        var emailUsers = authProviders.GetValueOrDefault("");
+        var retention = await GetRetentionAsync(today, ct);
 
         // A refresh token is issued on every login and rotation, so its creation time is the activity signal.
         var dailyActiveUsers = await CountActiveUsersSinceAsync(now.AddDays(-1), ct);
@@ -93,8 +101,47 @@ public class AdminUserQueryRepository(AccountDbContext dbContext) : IAdminUserQu
             WeeklyActiveUsers: weeklyActiveUsers,
             MonthlyActiveUsers: monthlyActiveUsers,
             EmailConfirmedUsers: emailConfirmedUsers,
-            GoogleUsers: googleUsers);
+            GoogleUsers: googleUsers,
+            AppleUsers: appleUsers,
+            EmailUsers: emailUsers,
+            OtherAuthUsers: totalUsers - googleUsers - appleUsers - emailUsers,
+            Retention: retention);
     }
+
+    private async Task<AdminUserRetentionStats> GetRetentionAsync(DateTime todayUtc, CancellationToken ct)
+    {
+        var d1 = await GetDayRetentionAsync(1, todayUtc, ct);
+        var d7 = await GetDayRetentionAsync(7, todayUtc, ct);
+        var d30 = await GetDayRetentionAsync(30, todayUtc, ct);
+        var eligible = dbContext.Users.AsNoTracking().Where(u => u.CreatedAtUtc < todayUtc);
+        var eligibleCount = await eligible.CountAsync(ct);
+        var returnedCount = await BuildReturnedAfterRegistrationQuery(todayUtc).CountAsync(ct);
+
+        return new AdminUserRetentionStats(DateOnly.FromDateTime(todayUtc), d1, d7, d30,
+            new AdminRetentionMetric(eligibleCount, returnedCount));
+    }
+
+    private async Task<AdminRetentionMetric> GetDayRetentionAsync(int day, DateTime todayUtc, CancellationToken ct)
+    {
+        // The entire target UTC day must be over; today's incomplete day never enters either count.
+        var cutoff = todayUtc.AddDays(-day);
+        var eligible = await dbContext.Users.CountAsync(u => u.CreatedAtUtc < cutoff, ct);
+        var returned = await BuildDayRetainedUsersQuery(day, todayUtc).CountAsync(ct);
+        return new AdminRetentionMetric(eligible, returned);
+    }
+
+    internal IQueryable<User> BuildDayRetainedUsersQuery(int day, DateTime todayUtc)
+    {
+        var cutoff = todayUtc.AddDays(-day);
+        return dbContext.Users.AsNoTracking().Where(u => u.CreatedAtUtc < cutoff
+            && u.RefreshTokens.Any(t => DateOnly.FromDateTime(t.CreatedAtUtc)
+                == DateOnly.FromDateTime(u.CreatedAtUtc).AddDays(day)));
+    }
+
+    internal IQueryable<User> BuildReturnedAfterRegistrationQuery(DateTime todayUtc) =>
+        dbContext.Users.AsNoTracking().Where(u => u.CreatedAtUtc < todayUtc
+            && u.RefreshTokens.Any(t => DateOnly.FromDateTime(t.CreatedAtUtc) > DateOnly.FromDateTime(u.CreatedAtUtc)
+                && t.CreatedAtUtc < todayUtc));
 
     public async Task<IReadOnlyDictionary<DateOnly, int>> GetNewUsersPerDayAsync(
         DateTime fromUtcDate,
