@@ -5,6 +5,7 @@ public record RoasterDetailsDto
     public int CoffeeShopsCount { get; init; }
     public int CoffeeProductsCount { get; init; }
     public Guid Id { get; init; }
+    public long ProfileRevision { get; init; }
     public required string Name { get; init; }
     public Guid? CityId { get; init; }
     public string? About { get; init; }

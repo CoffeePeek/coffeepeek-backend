@@ -27,6 +27,7 @@ public static class CoffeeCatalogModule
         services.AddScoped<IDiscoveryClassificationStore, DiscoveryClassificationStore>();
         services.AddScoped<IQueryRoasterRepository, QueryRoasterRepository>();
         services.AddScoped<IRoasterRepository, RoasterRepository>();
+        services.AddScoped<IRoasterOwnershipWriter, RoasterOwnershipWriter>();
         return services;
     }
 }

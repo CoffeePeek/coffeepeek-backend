@@ -16,6 +16,7 @@ public class TableOwnershipTests
             [
                 "Shops", "Cities", "CoffeeZones", "CoffeeZoneMembershipOverrides",
                 "ShopSchedule", "ShopScheduleInterval", "ShopPhotos", "AppliedShopChangeRequests",
+                "BusinessOwnershipClaims", "BusinessOwnershipChanges",
                 "BrewMethods", "CoffeeBeans", "EquipmentCategories", "Equipments",
                 "ShopTags", "CoffeeShopTags", "CoffeeShopBrewMethods", "CoffeeShopCoffeeBeans",
                 "CoffeeShopEquipments", "CoffeeShopRoasters"

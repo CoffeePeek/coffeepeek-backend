@@ -21,6 +21,7 @@ public class CrossModuleWriteTests
             .Concat(IlDependencyScanner.GetCalls(persistence,
                 type => type.Namespace is { } ns &&
                         (ns.StartsWith("CoffeePeek.Shops.Persistance.Repositories", StringComparison.Ordinal) ||
+                         ns.StartsWith("CoffeePeek.Shops.Persistance.Ownership", StringComparison.Ordinal) ||
                          ns.StartsWith("CoffeePeek.Shops.Persistance.Menu.", StringComparison.Ordinal) ||
                          ns.StartsWith("CoffeePeek.Shops.Persistance.CoffeeCatalog", StringComparison.Ordinal) ||
                          ns.StartsWith("CoffeePeek.Shops.Persistance.Discovery", StringComparison.Ordinal) ||
@@ -113,6 +114,8 @@ public class CrossModuleWriteTests
         if (name == "CoffeePeek.Shops.Domain.Entities.ShopPhoto")
             return "Shops";
         if (name.Contains(".CoffeeShopAggregate.", StringComparison.Ordinal))
+            return "Shops";
+        if (name.Contains(".OwnershipAggregate.", StringComparison.Ordinal))
             return "Shops";
         return null;
     }
