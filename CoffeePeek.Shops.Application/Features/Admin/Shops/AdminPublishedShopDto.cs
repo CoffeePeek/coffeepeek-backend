@@ -31,4 +31,4 @@ public record AdminPublishedShopDto(
     int DataCompletenessScore = 0,
     IReadOnlyList<Guid>? TagIds = null,
     IReadOnlyList<Guid>? PrimaryEquipmentIds = null,
-    long ProfileRevision = 0);
+    long ProfileRevision = 0, string? PublicSlug = null);

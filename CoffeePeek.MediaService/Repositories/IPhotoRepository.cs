@@ -7,6 +7,8 @@ public interface IPhotoRepository
 {
     void Add(PhotoMetadata metadata);
     void AddRange(IEnumerable<PhotoMetadata> photoMetadatas);
+    void AddEvidenceBinding(Guid photoId, Guid claimId);
+    Task<bool> HasEvidenceBindingAsync(Guid photoId, Guid claimId, CancellationToken ct = default);
     Task<PhotoMetadata?> GetByIdAsync(Guid commandPhotoId, CancellationToken ct = default);
 
     Task<List<PhotoMetadata>> GetByStorageKeysAsync(

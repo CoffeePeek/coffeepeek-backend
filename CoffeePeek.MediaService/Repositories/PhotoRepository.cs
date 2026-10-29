@@ -1,4 +1,4 @@
-﻿using CoffeePeek.MediaService.Data;
+using CoffeePeek.MediaService.Data;
 using Microsoft.EntityFrameworkCore;
 using System.Buffers.Binary;
 using Npgsql;
@@ -8,6 +8,12 @@ namespace CoffeePeek.MediaService.Repositories;
 
 public class PhotoRepository(MediaDbContext dbContext) : IPhotoRepository
 {
+    public void AddEvidenceBinding(Guid photoId, Guid claimId) =>
+        dbContext.OwnershipEvidenceBindings.Add(new() { PhotoId = photoId, ClaimId = claimId });
+
+    public Task<bool> HasEvidenceBindingAsync(Guid photoId, Guid claimId, CancellationToken ct = default) =>
+        dbContext.OwnershipEvidenceBindings.AnyAsync(x => x.PhotoId == photoId && x.ClaimId == claimId, ct);
+
     private readonly DbSet<PhotoMetadata> _repository = dbContext.Photos;
 
     public void Add(PhotoMetadata metadata)
@@ -40,6 +46,7 @@ public class PhotoRepository(MediaDbContext dbContext) : IPhotoRepository
     {
         var expiry = DateTime.UtcNow.AddHours(-24);
         return await _repository.Where(p => p.Id == photoId && p.OwnerId == ownerId
+                && p.OwnerType != OwnerType.OwnershipEvidence && p.OwnershipClaimId == null
                 && p.ShopAttachmentId == null && p.ShelfBagId == null
                 && ((p.CheckInId == null && p.Status == PhotoStatus.Pending && p.UploadedAt >= expiry)
                     || (p.CheckInId == checkInId && (p.Status == PhotoStatus.Pending || p.Status == PhotoStatus.Confirmed))))
@@ -131,6 +138,7 @@ public class PhotoRepository(MediaDbContext dbContext) : IPhotoRepository
         var expiry = DateTime.UtcNow.AddHours(-24);
         return await _repository.Where(p => p.Id == photoId && p.OwnerId == ownerId
                 && p.BucketType == Configuration.BucketType.CheckIn && p.CheckInId == null && p.ShopAttachmentId == null
+                && p.OwnerType != OwnerType.OwnershipEvidence && p.OwnershipClaimId == null
                 && ((p.ShelfBagId == null && p.Status == PhotoStatus.Pending && p.UploadedAt >= expiry)
                     || (p.ShelfBagId == bagId && (p.Status == PhotoStatus.Pending || p.Status == PhotoStatus.Confirmed))))
             .ExecuteUpdateAsync(setters => setters.SetProperty(p => p.ShelfBagId, bagId)

@@ -69,6 +69,13 @@ public class MinIOStorageService : IStorageService, IDisposable
         return new PresignedPhotoMetaData(url, storageKey);
     }
 
+    public Task MarkAsTemporary(string storageKey, BucketType bucketType, CancellationToken ct = default) =>
+        _internalClient.SetObjectTagsAsync(new SetObjectTagsArgs().WithBucket(GetBucketName(bucketType))
+            .WithObject(storageKey).WithTagging(Tagging.GetObjectTags(new Dictionary<string, string>
+            {
+                [IsPermanentTag] = "false"
+            })), ct);
+
     public async Task MarkAsPermanent(string storageKey, BucketType bucketType, CancellationToken ct = default)
     {
         var tags = new Dictionary<string, string>

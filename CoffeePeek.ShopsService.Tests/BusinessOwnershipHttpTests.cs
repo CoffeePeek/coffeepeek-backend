@@ -229,7 +229,7 @@ public sealed class BusinessOwnershipHttpTests
 
     private static OwnershipClaimDto Claim(Guid id) => new(id, BusinessType.CoffeeShop, Guid.NewGuid(),
         "Test shop", "test-shop", Guid.NewGuid(), "owner@example.com", "Official email",
-        OwnershipClaimStatus.Pending, DateTime.UtcNow, null, null, null, false, null);
+        OwnershipClaimStatus.Pending, DateTime.UtcNow, null, null, null, false, null, []);
 
     private sealed class Fixture(WebApplication app, HttpClient client, Mock<IMessageBus> bus) : IAsyncDisposable
     {

@@ -35,6 +35,19 @@ namespace CoffeePeek.MediaService.Migrations
                     b.ToTable("CheckInPhotoTombstones");
                 });
 
+            modelBuilder.Entity("CoffeePeek.MediaService.Data.OwnershipEvidenceBinding", b =>
+                {
+                    b.Property<Guid>("PhotoId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ClaimId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("PhotoId", "ClaimId");
+
+                    b.ToTable("OwnershipEvidenceBindings");
+                });
+
             modelBuilder.Entity("CoffeePeek.MediaService.Data.PhotoBackfillRun", b =>
                 {
                     b.Property<Guid>("Id")
@@ -152,6 +165,9 @@ namespace CoffeePeek.MediaService.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
 
+                    b.Property<Guid?>("OwnershipClaimId")
+                        .HasColumnType("uuid");
+
                     b.Property<Guid?>("ShelfBagId")
                         .HasColumnType("uuid");
 
@@ -181,6 +197,8 @@ namespace CoffeePeek.MediaService.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CheckInId");
+
+                    b.HasIndex("OwnershipClaimId");
 
                     b.HasIndex("ShelfBagId");
 
@@ -378,6 +396,15 @@ namespace CoffeePeek.MediaService.Migrations
                         {
                             t.HasCheckConstraint("CK_PhotoVariantJobs_Priority", "(\"Priority\" = 0 AND \"BackfillRunId\" IS NULL) OR (\"Priority\" = 1 AND \"BackfillRunId\" IS NOT NULL)");
                         });
+                });
+
+            modelBuilder.Entity("CoffeePeek.MediaService.Data.OwnershipEvidenceBinding", b =>
+                {
+                    b.HasOne("CoffeePeek.MediaService.Data.PhotoMetadata", null)
+                        .WithMany()
+                        .HasForeignKey("PhotoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("CoffeePeek.MediaService.Data.PhotoVariant", b =>

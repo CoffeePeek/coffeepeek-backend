@@ -175,6 +175,22 @@ public class ShelfBagPhotoTests
         repo.Verify(r => r.TryClaimAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
+    [Theory]
+    [InlineData(OwnerType.OwnershipEvidence, false)]
+    [InlineData(OwnerType.User, true)]
+    public async Task OwnershipEvidenceCannotBecomeAShelfCard(OwnerType ownerType, bool attached)
+    {
+        var photo = Upload();
+        photo.OwnerType = ownerType;
+        if (attached) photo.OwnershipClaimId = Guid.NewGuid();
+        Stored(photo, Image(SKEncodedImageFormat.Jpeg, 10, 10));
+
+        Assert.Equal(400, (await Claim()).StatusCode);
+
+        _repo.Verify(r => r.TryClaimShelfBagAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
+        _storage.Verify(s => s.SealShelfBagObjectAsync(It.IsAny<string>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
     [Fact]
     public async Task ReleasedCardIsDeletedOnceAndOnlyForItsBag()
     {

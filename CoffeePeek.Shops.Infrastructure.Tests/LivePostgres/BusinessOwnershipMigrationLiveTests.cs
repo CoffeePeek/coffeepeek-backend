@@ -32,7 +32,8 @@ public sealed class BusinessOwnershipMigrationLiveTests
             await SeedPreviousSchemaAsync(db, ct);
             var before = await ArchiveAsync(db, ct);
 
-            await db.GetService<IMigrator>().MigrateAsync(OwnershipMigration, ct);
+            // Queries below use the current model, so apply every subsequent additive migration too.
+            await db.Database.MigrateAsync(ct);
 
             Assert.False(db.Database.HasPendingModelChanges());
             Assert.True(JsonNode.DeepEquals(JsonNode.Parse(before), JsonNode.Parse(await ArchiveAsync(db, ct))));
@@ -55,8 +56,9 @@ public sealed class BusinessOwnershipMigrationLiveTests
             Assert.Empty(await db.BusinessOwnershipClaims.ToArrayAsync(ct));
             Assert.Empty(await db.BusinessOwnershipChanges.ToArrayAsync(ct));
 
+            var evidencePhotoId = Guid.NewGuid();
             var claim = BusinessOwnershipClaim.Create(BusinessType.Roaster, RoasterId, roaster.Name,
-                roaster.PublicSlug!, Guid.NewGuid(), "manager@example.com", "Official business representative.");
+                roaster.PublicSlug!, Guid.NewGuid(), "manager@example.com", "Official business representative.", [evidencePhotoId]);
             db.BusinessOwnershipClaims.Add(claim);
             await db.SaveChangesAsync(ct);
             db.ChangeTracker.Clear();
@@ -64,7 +66,9 @@ public sealed class BusinessOwnershipMigrationLiveTests
             var error = await Assert.ThrowsAsync<PostgresException>(() => db.GetService<IMigrator>().MigrateAsync(Previous, ct));
             Assert.Contains("Ownership history exists", error.MessageText);
             Assert.Contains(OwnershipMigration, await db.Database.GetAppliedMigrationsAsync(ct));
-            Assert.Equal(claim.Id, (await db.BusinessOwnershipClaims.AsNoTracking().SingleAsync(ct)).Id);
+            var retained = await db.BusinessOwnershipClaims.AsNoTracking().SingleAsync(ct);
+            Assert.Equal(claim.Id, retained.Id);
+            Assert.Equal(new[] { evidencePhotoId }, retained.EvidencePhotoIds);
             Assert.True(JsonNode.DeepEquals(JsonNode.Parse(before), JsonNode.Parse(await ArchiveAsync(db, ct))));
         }
         finally

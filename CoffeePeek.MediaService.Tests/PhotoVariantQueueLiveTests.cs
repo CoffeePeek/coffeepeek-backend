@@ -39,6 +39,7 @@ public sealed class PhotoVariantQueueLiveTests(MediaVariantsLiveDatabase fixture
             Assert.Equal(photo.StorageKey, loaded.StorageKey); Assert.Equal(photo.CheckInId, loaded.CheckInId);
             Assert.Equal(PhotoStatus.Confirmed, loaded.Status);
             Assert.Null(loaded.ShelfBagId);
+            Assert.Null(loaded.OwnershipClaimId);
             Assert.Empty(await db.PhotoVariantJobs.ToArrayAsync(Ct));
             Assert.False(db.Database.HasPendingModelChanges());
         }

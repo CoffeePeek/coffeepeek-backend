@@ -5,6 +5,7 @@ namespace CoffeePeek.MediaService.Data;
 public class MediaDbContext(DbContextOptions<MediaDbContext> options) : DbContext(options)
 {
     public DbSet<PhotoMetadata> Photos => Set<PhotoMetadata>();
+    public DbSet<OwnershipEvidenceBinding> OwnershipEvidenceBindings => Set<OwnershipEvidenceBinding>();
     public DbSet<PhotoVariantJob> PhotoVariantJobs => Set<PhotoVariantJob>();
     public DbSet<PhotoVariant> PhotoVariants => Set<PhotoVariant>();
     public DbSet<PhotoVariantArtifact> PhotoVariantArtifacts => Set<PhotoVariantArtifact>();
@@ -13,6 +14,11 @@ public class MediaDbContext(DbContextOptions<MediaDbContext> options) : DbContex
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<OwnershipEvidenceBinding>(entity =>
+        {
+            entity.HasKey(x => new { x.PhotoId, x.ClaimId });
+            entity.HasOne<PhotoMetadata>().WithMany().HasForeignKey(x => x.PhotoId).OnDelete(DeleteBehavior.Cascade);
+        });
         modelBuilder.Entity<PhotoMetadata>(entity =>
         {
             entity.ToTable("Photos", table => table.HasCheckConstraint(
@@ -32,6 +38,8 @@ public class MediaDbContext(DbContextOptions<MediaDbContext> options) : DbContex
             entity.Property(p => p.OwnerType).IsRequired().HasConversion<string>().HasMaxLength(20);
             entity.Property(p => p.OwnerId).IsRequired();
             entity.Property(p => p.CheckInId);
+            entity.Property(p => p.OwnershipClaimId);
+            entity.HasIndex(p => p.OwnershipClaimId);
             entity.Property(p => p.ShelfBagId);
             entity.Property(p => p.ShopAttachmentId);
             entity.Property(p => p.ShopAttachmentKind).HasConversion<string>().HasMaxLength(20);
