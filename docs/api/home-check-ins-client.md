@@ -9,7 +9,7 @@ The API uses the normal `Response<T>` envelope: `{ "isSuccess": true, "message":
 | Method | Route | Result |
 | --- | --- | --- |
 | `POST` | `/api/v1/check-ins/home` | Create a preparation (Private by default); `200` with `HomeCheckInDto`. |
-| `GET` | `/api/v1/check-ins/home?pageNumber=1&pageSize=20&from=2026-09-01&to=2026-09-30` | Owner history; `200` with `{ items, totalCount }`. Date bounds are inclusive and optional. Page number is clamped to 1–10000, size to 1–100. Pagination headers are `X-Total-Count`, `X-Total-Pages`, `X-Current-Page`, `X-Page-Size`. Entries are ordered by preparation time, newest first. |
+| `GET` | `/api/v1/check-ins/home?pageNumber=1&pageSize=20&from=2026-09-01&to=2026-09-30` | Owner history; `200` with `{ items, totalCount }`. Date bounds are inclusive and optional; optional `shelfBagId` keeps only brews from that bag. Page number is clamped to 1–10000, size to 1–100. Pagination headers are `X-Total-Count`, `X-Total-Pages`, `X-Current-Page`, `X-Page-Size`. Entries are ordered by preparation time, newest first. |
 | `GET` | `/api/v1/check-ins/home/calendar?from=2026-09-01&to=2026-09-30` | `200` with `{ preparedOn, brewCount }[]`, one item per date that has a brew. Both dates are required, inclusive, ordered, and at most 366 days apart. |
 | `GET` | `/api/v1/check-ins/home/{id}` | Owner detail or an approved public preparation; inaccessible, deleted, shop, and unknown IDs return `404`. |
 | `PUT` | `/api/v1/check-ins/home/{id}` | Replace editable fields; `200` with updated detail. Existing photos remain attached. |
@@ -40,6 +40,10 @@ Content-Type: application/json
 
 Select a published product by `coffeeProductSlug` from the public coffee catalog (`GET /api/coffees`, `GET /api/coffees/{slug}`). Alternatively send a custom `customBeanName`, or omit both when the bean is unknown. Do not send the slug and custom name together. The response stores a stable `coffeeProductId` for catalog selections and a `beanName` snapshot. Catalog rename or archive does not rewrite an existing entry's name. `coffeeProductId` is a product identity, whereas catalog variant `weightGrams` describes a package; neither is the brew dose.
 
+A preparation from the author's own shelf bag sends `shelfBagId` instead of the other bean fields (see [shelf-client.md](shelf-client.md)). The bag supplies the bean: its catalog product with the bag's name snapshot, or its custom name, plus its roaster. Combining `shelfBagId` with `coffeeProductSlug` or `customBeanName` is `400`; another user's or a deleted bag is `404`. Responses return `shelfBagId` and a `roasterName` snapshot (from the catalog roaster for a slug selection, from the bag otherwise; `null` for a custom bean). Later bag edits or deletion do not rewrite the entry, so `shelfBagId` may refer to a bag that no longer exists.
+
+Reads (history, single entry, and the global and author-filtered feeds) add `coffeeProductSlug`: the product's current public slug while it is published, for opening it in the catalog, or `null`. It is resolved on every read and never stored, so it follows slug changes; create and update responses leave it `null`. Link by `coffeeProductId`, which never changes.
+
 All fields other than `preparedAt` are optional. Home method codes are `espresso`, `pour_over`, `batch_drip`, `moka_pot`, `cezve`, `aeropress`, `french_press`, and `other`. Clients may remember the last selected code for a one-tap UI, but may omit the field. `tasteScore` is a single result score from 1 through 5; absent scores remain `null`. Optional drink selection uses the existing `drinkSlug` and `customDrinkName` rules from [check-ins.md](check-ins.md).
 
 Example `200` response (identifiers and timestamps shown for illustration):
@@ -59,19 +63,23 @@ Example `200` response (identifiers and timestamps shown for illustration):
     "text": "A batch for friends",
     "brewMethodCode": "batch_drip",
     "coffeeProductId": "22222222-2222-4222-8222-222222222222",
+    "coffeeProductSlug": "honey-bloom",
     "beanName": "Honey Bloom",
+    "roasterName": "Sibaristica",
+    "shelfBagId": null,
     "doseGrams": 75,
     "brewDurationSeconds": 360,
     "tasteScore": 4,
     "drink": null,
     "photos": [],
-    "drinkPhoto": null
+    "drinkPhoto": null,
+    "shelfBagPhoto": null
   },
   "statusCode": null
 }
 ```
 
-`PUT` sends the same editable fields as `POST`, including a required `preparedAt`. It is a replacement: omitted optional note, bean, method, dose, duration, score, and drink values are cleared. It does not replace or remove existing photos. To change a preparation date, send the intended `preparedAt` and `preparedOn` again. To **retain an existing catalog bean and its historical name snapshot**, send the `coffeeProductId` returned by this entry and omit `coffeeProductSlug` and `customBeanName`. This works after the product is renamed or archived. A different ID is rejected; a new published slug selects a new product. Sending the same currently published slug also keeps the entry's original name snapshot. Omit all three bean selectors to clear the bean.
+`PUT` sends the same editable fields as `POST`, including a required `preparedAt`. It is a replacement: omitted optional note, bean, method, dose, duration, score, and drink values are cleared. It does not replace or remove existing photos. To change a preparation date, send the intended `preparedAt` and `preparedOn` again. To **retain an existing catalog bean and its historical name snapshot**, send the `coffeeProductId` returned by this entry and omit `coffeeProductSlug` and `customBeanName`. This works after the product is renamed or archived. A different ID is rejected; a new published slug selects a new product. Sending the same currently published slug also keeps the entry's original name snapshot. Omit all three bean selectors to clear the bean. To **keep the entry's bag**, send its `shelfBagId` again without other bean selectors: the entry keeps its snapshots even if the bag has since been edited or deleted. A different `shelfBagId` selects that bag, which must exist and be yours. An update without `shelfBagId` clears the link (keeping `coffeeProductId` keeps the product and roaster snapshots).
 
 ## Publication and public feed
 
@@ -86,12 +94,12 @@ is initially `Public` + `Pending`; show a pending label, not a success claim tha
 everyone can already see it. Approval of the current revision exposes the entry.
 Editing removes the previous approval and submits a fresh snapshot. Hiding or
 deleting immediately removes public read/photo eligibility; stale decisions cannot
-republish it. Custom bean names and custom drink names are included in review.
+republish it. Custom bean names, roaster names and custom drink names are included in review.
 
 Approved home entries appear in the existing global and author-filtered feeds:
 `kind: "Home"`, `shop: null`, `rating: null`, and `home` with `preparedOn`,
-`brewMethodCode`, `coffeeProductId`, `beanName`, `doseGrams`, `brewDurationSeconds`,
-and `tasteScore`. Shop entries have `kind: "Shop"`, `home: null`. Shared text,
+`brewMethodCode`, `coffeeProductId`, `coffeeProductSlug`, `beanName`, `roasterName`, `doseGrams`,
+`brewDurationSeconds` and `tasteScore`. Public reads never include `shelfBagId`; a shown bag card comes as `shelfBagPhotoUrl` and optional `shelfBagPhotoVariants`, like `drinkPhotoUrl`. Shop entries have `kind: "Shop"`, `home: null`. Shared text,
 author, drink, photos, helpful votes and reporting retain their existing contracts.
 City/shop filters intentionally exclude home entries: no home address is collected.
 `GET /api/v1/check-ins/mine` remains shop-only for compatibility; the client merges
@@ -103,6 +111,10 @@ content edits use `/home/{id}`. Home taste scores never affect shop ratings/coun
 ## Photos
 
 Home entries reuse private check-in storage. Request presigned URLs with authenticated `POST /api/Photos/check-in`, upload each file to its returned URL using the signed `Content-Type` and `x-amz-tagging: is_permanent=False` headers, then send the returned `storageKey` in `photos` on creation. Each `photos` item has `fileName`, `contentType`, `storageKey`, and `size`; only the storage key identifies the upload. Media verifies the owner, uploaded bytes, supported raster MIME, and single use. At most five distinct originals can be attached. The existing optional `drinkPhoto` cutout must be a separate PNG upload and requires at least one original; the backend does not make the cutout.
+
+### Bag card
+
+With `shelfBagId`, `showShelfBag` (default `true`) shows the bag with the entry: the server copies the bag's current card into a new photo of this entry, returned as `shelfBagPhoto` and kept out of `photos` and the five-photo limit. The copy follows the entry's photo rules — readable by the author, and by everyone once the entry is public and approved — and moderators see it. Re-shooting or deleting the bag later does not change it. A bag without a card shows nothing. `showShelfBag: false` attaches no copy. On `PUT`, the same `shelfBagId` with `showShelfBag: true` keeps the current copy; `false`, another bag or no bag removes it and its bytes; turning it on again makes a fresh copy of the bag's current card. A failed copy is `400`, and nothing is saved; retry the request.
 
 The detail response supplies protected photo URLs such as `/api/v1/check-ins/{id}/photos/{photoId}`. Private entries require the owner's bearer token; approved public entries can be read anonymously. The same route checks ownership on each request and returns `404` to other users for private home content. Photo bytes are streamed with private, no-store caching. A deleted entry's bytes are no longer readable through this route. Photos cannot be added or replaced by `PUT`.
 

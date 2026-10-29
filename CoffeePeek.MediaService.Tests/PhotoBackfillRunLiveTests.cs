@@ -29,7 +29,15 @@ public sealed class PhotoBackfillRunLiveTests(MediaVariantsLiveDatabase fixture)
         {
             await using var db = new MediaDbContext(new DbContextOptionsBuilder<MediaDbContext>().UseNpgsql(connection).Options);
             await db.GetService<IMigrator>().MigrateAsync("20261018123301_AddPrivatePhotoVariants", Ct);
-            var photo = Photo(); db.Photos.Add(photo); await db.SaveChangesAsync(Ct);
+            var photo = Photo();
+            // Seed only historical columns: the current EF model also contains newer additions.
+            await db.Database.ExecuteSqlInterpolatedAsync($"""
+                INSERT INTO "Photos" ("Id", "FileName", "ContentType", "StorageKey", "SizeBytes",
+                    "UploadedAt", "Status", "BucketType", "OwnerType", "OwnerId", "CheckInId")
+                VALUES ({photo.Id}, {photo.FileName}, {photo.ContentType}, {photo.StorageKey}, {photo.SizeBytes},
+                    {photo.UploadedAt}, {photo.Status.ToString()}, {photo.BucketType.ToString()},
+                    {photo.OwnerType.ToString()}, {photo.OwnerId}, {photo.CheckInId})
+                """, Ct);
             var id = Guid.NewGuid();
             var source = CheckInPhotoVariantIdentity.SourceVersion(photo.Id, photo.StorageKey);
             var digest = new string('a', 64);
@@ -51,6 +59,7 @@ public sealed class PhotoBackfillRunLiveTests(MediaVariantsLiveDatabase fixture)
             Assert.Equal(photo.StorageKey, (await db.Photos.AsNoTracking().SingleAsync(Ct)).StorageKey);
             Assert.NotNull(await new PhotoVariantReads(db).FindAsync(photo.OwnerId, photo.CheckInId!.Value,
                 photo.Id, source, PhotoVariantRecipe.Version, "thumb", "webp", Ct));
+            Assert.Null((await db.Photos.AsNoTracking().SingleAsync(Ct)).OwnershipClaimId);
             Assert.False(db.Database.HasPendingModelChanges());
         }
         finally { await LivePostgresServer.DropDatabaseAsync(connection); }

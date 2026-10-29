@@ -22,12 +22,15 @@ public static class HomeCheckInMapping
             BrewMethodCode = checkIn.BrewMethodCode,
             CoffeeProductId = checkIn.CoffeeProductId,
             BeanName = checkIn.BeanNameSnapshot,
+            RoasterName = checkIn.RoasterNameSnapshot,
+            ShelfBagId = checkIn.ShelfBagId,
             DoseGrams = checkIn.DoseGrams,
             BrewDurationSeconds = checkIn.BrewDurationSeconds,
             TasteScore = checkIn.TasteScore,
             Drink = shared.Drink,
             Photos = shared.Photos,
-            DrinkPhoto = shared.DrinkPhoto
+            DrinkPhoto = shared.DrinkPhoto,
+            ShelfBagPhoto = shared.ShelfBagPhoto
         };
     }
 }

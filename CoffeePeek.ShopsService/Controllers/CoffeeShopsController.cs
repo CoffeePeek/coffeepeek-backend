@@ -1,11 +1,8 @@
 using System.ComponentModel.DataAnnotations;
 using CoffeePeek.Shared.Auth;
 using CoffeePeek.Shared.Kernel.Response;
-using CoffeePeek.Shops.Application.Common.Responses;
-using CoffeePeek.Shops.Application.Features.CoffeeShop.GetCoffeeShop;
 using CoffeePeek.Shops.Application.Features.CoffeeShop.SearchCoffeeShops;
 using Microsoft.AspNetCore.Mvc;
-using Wolverine;
 using CoffeePeek.Contract.Dtos.PublicAddresses;
 using CoffeePeek.Shops.Application.PublicAddresses;
 
@@ -21,14 +18,16 @@ namespace CoffeePeek.ShopsService.Controllers;
 public class CoffeeShopsController(PublicDiscoveryService discovery, IUserContext userContext) : ControllerBase
 {
     /// <summary>
-    /// Search for coffee shops with advanced filters
+    /// Legacy coffee shop picker for check-in creation (deprecated).
     /// </summary>
     /// <remarks>
-    /// This endpoint allows you to search for coffee shops using various filters like city, equipment, beans, and more.
-    /// Results are paginated and include metadata in X-Headers.
+    /// Supports city, q (name or address), page and pageSize only; other parameters return 400.
+    /// Deprecated since 2026-10-26. Migrate to POST /api/v1/coffee-shops/search.
+    /// The existing response and pagination headers are retained for check-in clients.
     /// </remarks>
     /// <response code="200">Returns list of coffee shops. Check X-Total-Count header for pagination metadata.</response>
     [HttpGet]
+    [Obsolete("Legacy check-in picker. Migrate to POST /api/v1/coffee-shops/search. Removal: API-001 in docs/api-deprecations.md.")]
     [ProducesResponseType(typeof(Response<PublicCoffeeShopsResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -37,37 +36,28 @@ public class CoffeeShopsController(PublicDiscoveryService discovery, IUserContex
     public async Task<IActionResult> GetCoffeeShops(
         [FromQuery] string? city = null,
         [FromQuery, MaxLength(100)] string? q = null,
-        [FromQuery] string[]? roasters = null,
-        [FromQuery] string[]? equipments = null,
-        [FromQuery] string[]? beans = null,
-        [FromQuery] string[]? brewMethods = null,
-        [FromQuery] string[]? tags = null,
-        [FromQuery] bool? isOpen = null,
-        [FromQuery] bool? isNew = null,
-        [FromQuery] bool? isVisited = null,
-        [FromQuery] Contract.Enums.PriceRange? priceRange = null,
-        [FromQuery] Contract.Enums.CoffeeShopType? type = null,
-        [FromQuery][Range(0, 5)] decimal? minRating = null,
         [FromQuery][Range(1, 10_000)] int page = 1, // (page-1)*size overflowed int and made Skip throw (500)
         [FromQuery][Range(1, 100)] int pageSize = 10,
         CancellationToken ct = default)
     {
+        Response.Headers["Deprecation"] = "@1792972800";
+        Response.Headers["Link"] = "</api/v1/coffee-shops/search>; rel=\"successor-version\"";
+        var unsupported = Request.Query.Keys
+            .Except(["city", "q", "page", "pageSize"], StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(key => key, _ => new[] { "Use POST /api/v1/coffee-shops/search for advanced filters." });
+        if (unsupported.Count > 0)
+            return BadRequest(new ErrorResponse("Unsupported picker parameters.", "INVALID_FILTER", unsupported) { StatusCode = 400 });
+
         page = Math.Max(1, page);
         pageSize = pageSize <= 0 ? 10 : Math.Min(pageSize, 100);
 
         var query = new SearchCoffeeShopsQuery(
             UserId: userContext.GetUserId(),
             Query: q,
-            IsOpen: isOpen,
-            IsNew: isNew,
-            IsVisited: isVisited,
-            PriceRange: priceRange,
-            Type: type,
-            MinRating: minRating,
             PageNumber: page,
             PageSize: pageSize);
 
-        var response = Response<PublicCoffeeShopsResponse>.Success(await discovery.SearchAsync(query, city, roasters, equipments, beans, brewMethods, tags, ct));
+        var response = Response<PublicCoffeeShopsResponse>.Success(await discovery.SearchAsync(query, city, ct));
 
         if (response is { IsSuccess: true, Data: not null })
         {

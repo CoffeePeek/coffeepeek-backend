@@ -57,6 +57,7 @@ public static class DependencyInjection
         services.AddCommunityModule();
         services.AddCoffeeCatalogModule();
         services.AddDiscoveryModule();
+        services.AddShelfModule();
         services.AddAppDistributionModule();
         services.AddCacheModule();
 

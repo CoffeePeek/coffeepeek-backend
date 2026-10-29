@@ -13,17 +13,7 @@ public interface IAdminUserQueryRepository
 
     /// <summary>New user registrations per UTC day for users created at or after <paramref name="fromUtcDate"/>.</summary>
     Task<IReadOnlyDictionary<DateOnly, int>> GetNewUsersPerDayAsync(DateTime fromUtcDate, CancellationToken ct = default);
-}
 
-public record AdminUserStats(
-    int TotalUsers,
-    int ActiveUsers,
-    int BlockedUsers,
-    int RegisteredToday,
-    IReadOnlyDictionary<string, int> UsersByRole,
-    int DeletedUsers = 0,
-    int DailyActiveUsers = 0,
-    int WeeklyActiveUsers = 0,
-    int MonthlyActiveUsers = 0,
-    int EmailConfirmedUsers = 0,
-    int GoogleUsers = 0);
+    /// <summary>Distinct users with a login/refresh per UTC day at or after <paramref name="fromUtcDate"/>.</summary>
+    Task<IReadOnlyDictionary<DateOnly, int>> GetDailyActiveUsersPerDayAsync(DateTime fromUtcDate, CancellationToken ct = default);
+}

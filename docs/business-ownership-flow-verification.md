@@ -31,3 +31,31 @@ unavailable NuGet vulnerability-feed warnings remain.
 Open gates: apply migrations and verify local Gateway/Media/PostgreSQL/MinIO
 upload-read-approve in a prepared test environment. No production deployment,
 native mobile runtime or manual UI acceptance is certified.
+
+## PR #368 integration repair — 2026-10-29
+
+Merged main 5617fd5b into the ownership branch to resolve conflicts with shelf
+photo reservations, DI registration and both EF models. Rebased the latest
+ownership migration target models on the combined snapshots; existing shelf
+migrations remain in order and ownership columns remain additive.
+
+The failing CI upgrade test seeded an old schema through the current EF model,
+which attempted to write the not-yet-created OwnershipClaimId column. Main's
+historical-column SQL seeds fix this in both variant and backfill upgrade tests;
+the repaired tests also assert old photos have no ownership claim after upgrade.
+
+Evidence validation now decodes all pixels instead of trusting readable headers.
+The truncated-PNG regression first failed at Assert.False, then passed after the
+fix. Shelf claims and evidence attachment reject each other's reservations.
+
+Validation on Windows, Release configuration:
+- CI solution build passed with zero errors; existing analyzer warnings remain.
+- All 12 .NET test suites passed: 2855 passed, 275 live tests skipped.
+- After the final isolation checks, the complete Media suite passed again:
+  227 passed, 20 live tests skipped; combined final coverage is 2858 passed.
+- Model/snapshot checks in Media and Shops passed without connecting to a DB.
+- Full-history secret scan passed: 1143 commits, no leaks.
+
+Docker/PostgreSQL are unavailable locally. PostgreSQL 17 migration, storage and
+fault acceptance remains delegated to the PR CI run after publication. Local
+skips are not live acceptance. No production data or deployment was changed.

@@ -212,7 +212,7 @@ public class DiscoveryQueryStoreTests
     }
 
     [Fact]
-    public async Task SharedBudget_MatchesPriceBrewAndVolumeAtTheSameMenuItem()
+    public async Task ShopMenuFilters_MatchPriceAndBrewAtTheSameMenuItem()
     {
         await using var db = Database(); await db.Database.EnsureCreatedAsync(Ct);
         var city = new City("Test"); city.SetPublicSlug("test-city"); db.Cities.Add(city);
@@ -225,8 +225,8 @@ public class DiscoveryQueryStoreTests
         menu.ApplyManualItem(espresso.Id, MenuItemAvailability.Present, 3, null);
         menu.ApplyManualItem(filter.Id, MenuItemAvailability.Present, 10, null); db.ShopMenus.Add(menu);
         await db.SaveChangesAsync(Ct);
-        var response = await Store(db).SearchDiscoveryAsync(new() { Filters = new() { Brew = ["filter"], Budget = new() { Currency = "BYN", MaxDrinkPrice = 5 } } }, null, Ct);
-        Assert.Empty(response.CoffeeShops!.Items);
+        var response = await Store(db).SearchShopsAsync(new() { Filters = new() { Menu = new() { Brew = ["filter"], Currency = "BYN", MaxPrice = 5 } } }, null, Ct);
+        Assert.Empty(response.Items);
         var shops = await Store(db).SearchShopsAsync(new() { Filters = new() { Menu = new() { Brew = ["espresso"], Currency = "BYN", MaxPrice = 5 } } }, null, Ct);
         var card = Assert.Single(shops.Items); Assert.Equal("espresso", Assert.Single(card.MatchingMenuItems).BrewMethod);
         Assert.Null(card.IsOpen); Assert.Null(card.IsFavorite); Assert.Null(card.IsVisited);

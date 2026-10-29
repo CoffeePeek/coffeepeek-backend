@@ -37,6 +37,7 @@ public sealed partial class DiscoveryQueryStore
         public CoffeeShop Shop { get; set; } = null!;
         public double? Distance { get; set; }
         public decimal Rating { get; set; }
+        public int RatingCount { get; set; }
     }
 
     public async Task<CoffeeShopPage> SearchShopsAsync(CoffeeShopSearchRequest request, Guid? userId, CancellationToken ct)
@@ -51,7 +52,6 @@ public sealed partial class DiscoveryQueryStore
         var tags = await ResolveFiltersAsync(PublicAddressKind.ShopTag, f.Tags, "filters.tags", ct);
         var q = NormalizeQuery(request.Q);
         var shops = db.Shops.AsNoTracking().Where(s => s.Status == CoffeeShopStatus.Active && !s.IsHidden && s.PublicSlug != null);
-        if (q.Length > 0) shops = shops.Where(s => s.Name.ToLower().Replace("ё", "е").Contains(q));
         if (f.City is not null)
         {
             var cityIds = await ResolveFiltersAsync(PublicAddressKind.City, [f.City], "filters.city", ct);
@@ -107,27 +107,61 @@ public sealed partial class DiscoveryQueryStore
         }
         var latitude = (double)(f.Origin?.Latitude ?? 0); var longitude = (double)(f.Origin?.Longitude ?? 0);
         var hasOrigin = f.Origin is not null;
-        var hits = shops.Select(s => new ShopHit
+        var ratings = CheckInEligibility.LatestRatings(db)
+            .Select(r => new { r.ShopId, Value = (r.Rating!.Place + r.Rating.Coffee + r.Rating.Service) / 3m })
+            .GroupBy(r => r.ShopId).Select(g => new
+        {
+            ShopId = g.Key,
+            Rating = (decimal?)g.Average(r => r.Value),
+            Count = (int?)g.Count()
+        });
+        var hits = from s in shops
+            join ratingSummary in ratings on (Guid?)s.Id equals ratingSummary.ShopId into shopRatings
+            from ratingSummary in shopRatings.DefaultIfEmpty()
+            select new ShopHit
         {
             Shop = s,
-            Rating = CheckInEligibility.LatestRatings(db).Where(r => r.ShopId == s.Id)
-                .Select(r => (decimal?)((r.Rating!.Place + r.Rating.Coffee + r.Rating.Service) / 3m)).Average() ?? 0,
+            Rating = ratingSummary.Rating ?? 0,
+            RatingCount = ratingSummary.Count ?? 0,
             Distance = hasOrigin && s.Location.Latitude.HasValue && s.Location.Longitude.HasValue ?
                 12742000 * Math.Asin(Math.Sqrt(Math.Min(1.0,
                     Math.Pow(Math.Sin(((double)s.Location.Latitude.Value - latitude) * Math.PI / 360), 2) +
                     Math.Cos(latitude * Math.PI / 180) * Math.Cos((double)s.Location.Latitude.Value * Math.PI / 180) *
                     Math.Pow(Math.Sin(((double)s.Location.Longitude.Value - longitude) * Math.PI / 360), 2)))) : null
-        });
+        };
         if (f.MinRating is { } rating) hits = hits.Where(h => h.Rating >= rating);
         if (f.RadiusKm is { } radius) hits = hits.Where(h => h.Distance.HasValue && h.Distance <= (double)radius * 1000);
+        var eligibleHits = hits;
+        if (q.Length > 0) hits = hits.Where(h => h.Shop.Name.ToLower().Replace("ё", "е").Contains(q) ||
+            h.Shop.Location.Address.ToLower().Replace("ё", "е").Contains(q));
         var count = await hits.CountAsync(ct);
-        var sort = request.Sort ?? (q.Length > 0 ? "relevance" : hasOrigin ? "distance_asc" : "name_asc");
+        var fuzzy = count == 0 && q.Count(char.IsLetter) >= 4;
+        if (fuzzy)
+        {
+            // Keep indexable pg_trgm operators: a similarity() threshold alone cannot use the GIN index.
+            var candidates = await eligibleHits.Where(h =>
+                    EF.Functions.TrigramsAreSimilar(h.Shop.Name.ToLower().Replace("ё", "е"), q) ||
+                    EF.Functions.TrigramsAreWordSimilar(q, h.Shop.Name.ToLower().Replace("ё", "е")))
+                .OrderByDescending(h => EF.Functions.TrigramsWordSimilarity(q, h.Shop.Name.ToLower().Replace("ё", "е")))
+                .ThenBy(h => h.Shop.Name).ThenBy(h => h.Shop.PublicSlug)
+                // shortcut: fuzzy totals cover the best 200 eligible names; revisit with measured recall and latency.
+                .Take(200).Select(h => h.Shop.Id).ToArrayAsync(ct);
+            count = candidates.Length;
+            hits = eligibleHits.Where(h => candidates.Contains(h.Shop.Id));
+        }
+        if (count == 0) return new() { CurrentPage = request.Page, PageSize = request.PageSize };
+        var sort = request.Sort ?? (q.Length > 0 ? "relevance" : "recommended");
         IOrderedQueryable<ShopHit> ordered = sort switch
         {
+            "recommended" => RecommendShops(hits, userId),
             "rating_desc" => hits.OrderByDescending(h => h.Rating),
             "distance_asc" => hits.OrderBy(h => h.Distance == null).ThenBy(h => h.Distance),
+            "relevance" when fuzzy => hits.OrderByDescending(h =>
+                EF.Functions.TrigramsWordSimilarity(q, h.Shop.Name.ToLower().Replace("ё", "е"))),
             "relevance" => hits.OrderBy(h => h.Shop.Name.ToLower().Replace("ё", "е") == q ? 0 :
-                h.Shop.Name.ToLower().Replace("ё", "е").StartsWith(q) ? 1 : h.Shop.Name.ToLower().Replace("ё", "е").Contains(" " + q) ? 2 : 3),
+                h.Shop.Name.ToLower().Replace("ё", "е").StartsWith(q) ? 1 :
+                h.Shop.Name.ToLower().Replace("ё", "е").Contains(" " + q) ? 2 :
+                h.Shop.Name.ToLower().Replace("ё", "е").Contains(q) ? 3 : 4),
             _ => hits.OrderBy(h => h.Shop.Name)
         };
         var page = await ordered.ThenBy(h => h.Shop.Name).ThenBy(h => h.Shop.PublicSlug)
@@ -173,5 +207,31 @@ public sealed partial class DiscoveryQueryStore
                 };
             }).ToArray(), TotalItems = count, TotalPages = (count + request.PageSize - 1) / request.PageSize, CurrentPage = request.Page, PageSize = request.PageSize
         };
+    }
+
+    private IOrderedQueryable<ShopHit> RecommendShops(IQueryable<ShopHit> hits, Guid? userId)
+    {
+        var favorites = db.DiscoveryFavorites.Where(f => f.UserId == userId);
+        var favoriteShops = favorites.Where(f => f.Kind == "coffee_shop").Select(f => f.EntityId);
+        var favoriteRoasters = favorites.Where(f => f.Kind == "roaster").Select(f => f.EntityId);
+        var favoriteDrinks = favorites.Where(f => f.Kind == "drink").Select(f => f.EntityId);
+        var liked = CheckInEligibility.LatestRatings(db).Where(r => r.UserId == userId &&
+            (r.Rating!.Place + r.Rating.Coffee + r.Rating.Service) / 3m >= 4m).Select(r => r.ShopId!.Value);
+        var roasterShops = db.Shops.Where(s => s.Roasters.Any(r => favoriteRoasters.Contains(r.Id))).Select(s => s.Id);
+        var drinks = db.Set<ShopMenuItem>().Where(i => i.Availability == MenuItemAvailability.Present &&
+            i.DrinkDefinition != null && i.DrinkDefinition.IsActive &&
+            favoriteDrinks.Contains(i.DrinkDefinitionId));
+        var drinkShops = from menu in db.ShopMenus join drink in drinks on menu.Id equals drink.ShopMenuId select menu.CoffeeShopId;
+
+        // shortcut: fixed prior and weights are a cold-start baseline; recalibrate with ranking outcome data.
+        return hits.OrderByDescending(h =>
+            0.45 * ((double)h.Rating * h.RatingCount + 3.5 * 5) / ((h.RatingCount + 5) * 5)
+            + (h.Distance.HasValue ? 0.35 / (1 + h.Distance.Value / 1500) : 0)
+            + 0.05 * h.Shop.DataCompletenessScore / 100
+            + (userId.HasValue ? 0.15 * (
+                favoriteShops.Contains(h.Shop.Id) || liked.Contains(h.Shop.Id)
+                    ? 1.0
+                    : (roasterShops.Contains(h.Shop.Id) ? 0.6 : 0)
+                    + (drinkShops.Contains(h.Shop.Id) ? 0.4 : 0)) : 0));
     }
 }

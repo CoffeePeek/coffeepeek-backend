@@ -30,8 +30,23 @@ public class AdminStatsQueryRepository(ShopsDbContext dbContext) : IAdminStatsQu
         var topByCheckIns = await GetTopShopsByCheckInsAsync(sinceUtc, cancellationToken);
         var downloads = await GetDownloadsAsync(sinceUtc, cancellationToken);
 
-        return new AdminShopsInsights(ratings, topByCheckIns, downloads);
+        var coverage = await GetCoverageAsync(cancellationToken);
+        return new AdminShopsInsights(ratings, topByCheckIns, downloads, coverage);
     }
+
+    private async Task<AdminShopCoverage> GetCoverageAsync(CancellationToken ct) =>
+        await BuildCoverageQuery().SingleOrDefaultAsync(ct) ?? new AdminShopCoverage(0, null, 0, 0);
+
+    // One SQL statement gives all four values the same catalog snapshot.
+    internal IQueryable<AdminShopCoverage> BuildCoverageQuery() =>
+        dbContext.Shops.AsNoTracking().Select(s => new
+        {
+            s.DataCompletenessScore,
+            HasCheckIns = !s.IsHidden && dbContext.CheckIns.Where(CheckInEligibility.CurrentPublic)
+                .Any(c => c.Kind == CheckInKind.Shop && c.ShopId == s.Id)
+        }).GroupBy(_ => 1).Select(g => new AdminShopCoverage(
+            g.Count(), g.Average(s => (decimal?)s.DataCompletenessScore),
+            g.Count(s => s.HasCheckIns), g.Count(s => !s.HasCheckIns)));
 
     public async Task<AdminShopsDailyCounts> GetDailyCountsAsync(
         DateTime fromUtcDate,

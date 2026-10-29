@@ -208,6 +208,7 @@ jobs:
             CheckInPhotoAdvertisementLiveTests \
             DiscoveryClassificationLiveTests \
             DiscoveryQueryLiveTests \
+            DiscoveryFuzzySearchLiveTests \
             CoffeeImportRecoveryLiveTests \
             ShopProfileWolverineLiveTests \
             ShopProfileRevisionLiveTests \

@@ -1,6 +1,6 @@
 # Admin: dashboard statistics
 
-Read-only statistics for the admin dashboard: user engagement (DAU/WAU/MAU), per-day timeseries, rating and top-shop insights, app downloads, and moderation SLA / queues / workload.
+Read-only statistics for the admin dashboard: registration providers, user engagement (DAU/WAU/MAU), registration retention, shop completeness and check-in coverage, per-day timeseries, rating and top-shop insights, app downloads, and moderation SLA / queues / workload.
 
 Base URL: gateway host, e.g. `https://api.example.com` or Aspire `http://localhost:5000`.
 
@@ -43,7 +43,7 @@ or `Admin` through the gateway and in the owning service:
 | Method | URL | Data available to the web client |
 |--------|-----|----------------------------------|
 | GET | `/api/admin/stats/overview` | All overview cards: users, activity, shops, check-ins, moderation and imports |
-| GET | `/api/admin/stats/users/timeseries?days=30` | User registration chart |
+| GET | `/api/admin/stats/users/timeseries?days=30` | User registration and daily active user charts |
 | GET | `/api/admin/stats/shops/timeseries?days=30` | Shop and check-in charts |
 | GET | `/api/admin/stats/shops/insights` | Ratings, top shops and app downloads |
 | GET | `/api/admin/stats/moderation/insights` | Moderation SLA, queues and moderator workload |
@@ -90,6 +90,72 @@ continues to use `/api/admin/stats/overview` for those totals.
 ---
 
 ## Response envelope
+
+### Dashboard additions — 2026-10-29
+
+`GET /api/admin/stats/overview` adds `appleUsers`, `emailUsers`,
+`otherAuthUsers` and `retention`. `googleUsers` now counts Google specifically,
+not every OAuth provider. Provider matching is case-insensitive; no provider
+(null/empty) means email/password. These disjoint buckets sum to `totalUsers`,
+including retained blocked and soft-deleted accounts. Confirmed email is a
+separate attribute, not a registration provider.
+
+```ts
+interface AdminRetentionMetricDto {
+  eligibleUsers: number;
+  returnedUsers: number;
+  ratePercent: number | null;
+}
+interface AdminUserRetentionStatsDto {
+  asOfDateUtc: string; // YYYY-MM-DD: exclusive end of observation, today at 00:00 UTC
+  d1: AdminRetentionMetricDto;
+  d7: AdminRetentionMetricDto;
+  d30: AdminRetentionMetricDto;
+  afterRegistration: AdminRetentionMetricDto;
+}
+```
+
+Dn is **exact-day retention**, not "returned at any point within N days".
+For registration on UTC date R, a user is returned on Dn if at least one refresh
+token was issued on `[R+n, R+n+1)`. The denominator contains all retained users
+whose target day has completely ended: `CreatedAtUtc < todayUtc - n days`.
+Multiple tokens/devices count once; revoked/expired tokens still represent past
+activity. D0 login alone is not a return. Different Dn metrics can have different
+denominators. Rates are rounded to two decimals; no eligible users means `null`,
+whereas an eligible cohort with no returns means `0`.
+
+`afterRegistration` counts users registered before today; returned users have a
+login/refresh on any later UTC date before today. Thus all retention metrics have
+the same exclusive observation end, `asOfDateUtc`, and exclude today's partial
+activity. Counts span all retained registrations, independently of the 7/30/90-day
+timeseries selector. This is **login/refresh retention**, not app-open analytics:
+visits using an existing access token without refresh are not observed. Deleting
+account/session history can change historical counts; purged accounts cannot be
+reconstructed. No new tracking or migration is required.
+
+`GET /api/admin/stats/shops/insights` adds `coverage`:
+
+```ts
+interface AdminShopCoverageDto {
+  totalShops: number;
+  averageCompletenessPercent: number | null;
+  shopsWithCheckIns: number;
+  shopsWithoutCheckIns: number;
+}
+```
+
+The population is every catalog shop, including hidden and closed shops, matching
+the overview's total. Completeness is the arithmetic mean of persisted
+`DataCompletenessScore` (0–100), rounded to two decimals; an empty catalog returns
+`null`. Coverage counts each shop once if it has a current public, approved,
+non-deleted **Shop-kind** check-in (approved revision equals content revision),
+over all time. Home check-ins and check-ins on hidden shops are not public coverage.
+`shopsWithCheckIns + shopsWithoutCheckIns == totalShops`.
+
+These additions keep existing URLs and authorization. Old web clients can ignore
+the added fields. During deployment, a missing/null `retention` or `coverage`, or
+missing provider counts, must display unavailable instead of fabricated zeros.
+The web dashboard displays the new blocks for both Admin and Moderator.
 
 All endpoints return HTTP `200` with the standard envelope (camelCase JSON):
 
@@ -184,7 +250,7 @@ Edge cases / changes:
 
 ## GET /api/admin/stats/users/timeseries
 
-New user registrations per UTC day.
+New user registrations and daily active users (DAU) per UTC calendar day.
 
 | Query param | Type | Default | Notes |
 |-------------|------|---------|-------|
@@ -200,6 +266,11 @@ New user registrations per UTC day.
       { "date": "2026-09-23", "count": 5 },
       { "date": "2026-09-24", "count": 0 },
       { "date": "2026-09-25", "count": 2 }
+    ],
+    "dailyActiveUsers": [
+      { "date": "2026-09-23", "count": 31 },
+      { "date": "2026-09-24", "count": 0 },
+      { "date": "2026-09-25", "count": 12 }
     ]
   },
   "statusCode": null
@@ -210,6 +281,11 @@ New user registrations per UTC day.
 |-------|---------|
 | `days` | Effective window after clamping |
 | `newUsers` | Exactly `days` entries, ascending by date, last entry = today (UTC). Days without registrations are `0` (zero-filled) |
+| `dailyActiveUsers` | Distinct users with a login or session refresh on each UTC calendar day; multiple sessions, devices and refreshes count once per user per day. Dates match `newUsers`; days without activity are `0` |
+
+The same user may appear on multiple days. Activity uses refresh-token creation timestamps, including tokens that have since expired or been revoked. History is calculated from retained tokens, so deleting tokens or accounts can reduce past counts; it is not an immutable daily snapshot.
+
+Each day runs from 00:00 UTC to the next 00:00 UTC. Today's entry is **incomplete**: label it as such or exclude it when comparing completed days. This calendar-day DAU differs from the overview's rolling last-24-hours `dailyActiveUsers`. For trend charts, plot `dailyActiveUsers` separately from registrations and compare completed days.
 
 ---
 
@@ -402,6 +478,10 @@ export interface AdminOverviewStatsDto {
   deletedUsers: number;
   emailConfirmedUsers: number;
   googleUsers: number;
+  appleUsers: number;
+  emailUsers: number;
+  otherAuthUsers: number;
+  retention: AdminUserRetentionStatsDto | null;
 }
 
 // Timeseries
@@ -413,6 +493,7 @@ export interface AdminDailyCountDto {
 export interface AdminUsersTimeseriesDto {
   days: number;
   newUsers: AdminDailyCountDto[];
+  dailyActiveUsers: AdminDailyCountDto[];
 }
 
 export interface AdminShopsTimeseriesDto {
@@ -461,6 +542,7 @@ export interface AdminAppDownloadStatsDto {
 }
 
 export interface AdminShopsInsightsDto {
+  coverage: AdminShopCoverageDto | null;
   ratings: AdminRatingStatsDto;
   topShopsByCheckIns30Days: AdminTopShopDto[];
   downloads: AdminAppDownloadStatsDto;
@@ -513,6 +595,7 @@ const [users, shops] = await Promise.all([
 const rows = users.data.newUsers.map((u, i) => ({
   date: u.date,
   newUsers: u.count,
+  dailyActiveUsers: users.data.dailyActiveUsers[i].count,
   newShops: shops.data.newShops[i]?.count ?? 0,
   newCheckIns: shops.data.newCheckIns[i]?.count ?? 0,
 }));

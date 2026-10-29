@@ -50,6 +50,15 @@ public class CreateShopFromImportService(
         shop.SetContact(item.Instagram, email: null, item.Website, FirstPhone(item.Phone));
         shop.SetCoffeeFocus((CoffeeFocusType)(int)item.Type);
 
+        if (item.Schedules is { Count: > 0 })
+        {
+            var schedules = item.Schedules.Select(day => ShopSchedule.Create(day.DayOfWeek, day.IsClosed,
+                (day.Intervals ?? []).Select(i => ShopScheduleInterval.Create(i.OpenTime, i.CloseTime)).ToList())).ToList();
+            var result = shop.ReplaceSchedules(schedules);
+            if (result.IsFailed) throw new DomainException(result.Errors[0].Message);
+            shop.AdvanceProfileRevision();
+        }
+
         if (item.TemporarilyClosed)
             shop.SetStatus(CoffeeShopStatus.TemporarilyClosed);
 

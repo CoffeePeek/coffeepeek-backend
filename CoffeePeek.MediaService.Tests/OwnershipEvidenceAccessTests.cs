@@ -68,6 +68,19 @@ public class OwnershipEvidenceAccessTests
         Assert.IsType<NoContentResult>(await Controller().Attach(new(claim, [photo.Id]), CancellationToken.None));
         Assert.IsType<ConflictResult>(await Controller().Attach(new(Guid.NewGuid(), [photo.Id]), CancellationToken.None));
     }
+
+    [Fact]
+    public async Task APhotoReservedForAShelfBagCannotBecomeEvidence()
+    {
+        var photo = Photo();
+        photo.ShelfBagId = Guid.NewGuid();
+        Setup(photo);
+
+        Assert.IsType<ConflictResult>(await Controller().Attach(new(claim, [photo.Id]), CancellationToken.None));
+
+        unit.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        storage.Verify(x => x.MarkAsPermanent(It.IsAny<string>(), It.IsAny<BucketType>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
     [Fact]
     public async Task UnattachedForeignAndWrongClaimPhotosAreNotReadable()
     {

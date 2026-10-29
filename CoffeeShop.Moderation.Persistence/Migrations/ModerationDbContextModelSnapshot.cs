@@ -826,6 +826,10 @@ namespace CoffeeShop.Moderation.Persistence.Migrations
                             b1.Property<DateOnly>("PreparedOn")
                                 .HasColumnType("date");
 
+                            b1.Property<string>("RoasterName")
+                                .HasMaxLength(250)
+                                .HasColumnType("character varying(250)");
+
                             b1.Property<int?>("TasteScore")
                                 .HasColumnType("integer");
 

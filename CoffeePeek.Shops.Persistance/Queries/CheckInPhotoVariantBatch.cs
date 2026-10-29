@@ -36,8 +36,9 @@ internal static class CheckInPhotoVariantBatch
         return result;
     }
 
-    public static IEnumerable<CheckInPhotoDto> Photos(CheckInPhotoDto[] photos, CheckInPhotoDto? drink) =>
-        drink is null ? photos : photos.Append(drink);
+    public static IEnumerable<CheckInPhotoDto> Photos(CheckInPhotoDto[] photos, CheckInPhotoDto? drink,
+        CheckInPhotoDto? shelfBag = null) =>
+        photos.Concat(new[] { drink, shelfBag }.OfType<CheckInPhotoDto>());
 
     public static CheckInPhotoDto WithVariants(CheckInPhotoDto photo, Dictionary<Guid, CheckInPhotoVariantDto[]> variants) =>
         photo with { Variants = variants.GetValueOrDefault(photo.Id) };

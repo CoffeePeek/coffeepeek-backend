@@ -17,6 +17,10 @@ public sealed record CreateHomeCheckInRequest
     /// <summary>Slug from the public coffee catalog; mutually exclusive with CustomBeanName.</summary>
     public string? CoffeeProductSlug { get; init; }
     public string? CustomBeanName { get; init; }
+    /// <summary>The author's shelf bag: supplies its product or custom name and roaster. Mutually exclusive with the other bean fields.</summary>
+    public Guid? ShelfBagId { get; init; }
+    /// <summary>Show a copy of the bag's card with the entry. Ignored without a bag or when the bag has no card.</summary>
+    public bool ShowShelfBag { get; init; } = true;
     /// <summary>Dry coffee used for the entire preparation, in grams.</summary>
     public decimal? DoseGrams { get; init; }
     /// <summary>Total preparation time, in seconds.</summary>

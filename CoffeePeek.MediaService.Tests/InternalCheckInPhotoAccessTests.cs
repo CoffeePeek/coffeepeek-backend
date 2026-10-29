@@ -86,7 +86,8 @@ public class InternalCheckInPhotoAccessTests
     private static InternalCheckInPhotosController Create(Mock<IPhotoRepository> repo, Mock<ICheckInPhotoReader> storage, Mock<IUserContext> user)
     {
         var controller = new InternalCheckInPhotosController(new ClaimCheckInPhotosHandler(repo.Object, Mock.Of<IStorageService>(),
-            Mock.Of<IUnitOfWork>()), repo.Object, storage.Object, user.Object,
+            Mock.Of<IUnitOfWork>()), new CopyShelfBagCardHandler(repo.Object, Mock.Of<IStorageService>(), Mock.Of<IUnitOfWork>()),
+            repo.Object, storage.Object, user.Object,
             Options.Create(new GatewayAuthOptions { SecretKey = "secret" }));
         controller.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() };
         controller.Response.Body = new MemoryStream();

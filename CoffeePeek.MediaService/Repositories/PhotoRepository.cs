@@ -1,4 +1,4 @@
-﻿using CoffeePeek.MediaService.Data;
+using CoffeePeek.MediaService.Data;
 using Microsoft.EntityFrameworkCore;
 using System.Buffers.Binary;
 using Npgsql;
@@ -41,7 +41,7 @@ public class PhotoRepository(MediaDbContext dbContext) : IPhotoRepository
         var expiry = DateTime.UtcNow.AddHours(-24);
         return await _repository.Where(p => p.Id == photoId && p.OwnerId == ownerId
                 && p.OwnerType != OwnerType.OwnershipEvidence && p.OwnershipClaimId == null
-                && p.ShopAttachmentId == null
+                && p.ShopAttachmentId == null && p.ShelfBagId == null
                 && ((p.CheckInId == null && p.Status == PhotoStatus.Pending && p.UploadedAt >= expiry)
                     || (p.CheckInId == checkInId && (p.Status == PhotoStatus.Pending || p.Status == PhotoStatus.Confirmed))))
             .ExecuteUpdateAsync(setters => setters.SetProperty(p => p.CheckInId, checkInId)
@@ -126,4 +126,21 @@ public class PhotoRepository(MediaDbContext dbContext) : IPhotoRepository
         _repository.AsNoTracking().FirstOrDefaultAsync(p => p.Id == photoId && p.CheckInId == checkInId
             && p.OwnerId == ownerId && p.BucketType == Configuration.BucketType.CheckIn
             && (p.Status == PhotoStatus.Pending || p.Status == PhotoStatus.Confirmed), ct);
+
+    public async Task<bool> TryClaimShelfBagAsync(Guid photoId, Guid ownerId, Guid bagId, CancellationToken ct = default)
+    {
+        var expiry = DateTime.UtcNow.AddHours(-24);
+        return await _repository.Where(p => p.Id == photoId && p.OwnerId == ownerId
+                && p.BucketType == Configuration.BucketType.CheckIn && p.CheckInId == null && p.ShopAttachmentId == null
+                && p.OwnerType != OwnerType.OwnershipEvidence && p.OwnershipClaimId == null
+                && ((p.ShelfBagId == null && p.Status == PhotoStatus.Pending && p.UploadedAt >= expiry)
+                    || (p.ShelfBagId == bagId && (p.Status == PhotoStatus.Pending || p.Status == PhotoStatus.Confirmed))))
+            .ExecuteUpdateAsync(setters => setters.SetProperty(p => p.ShelfBagId, bagId)
+                .SetProperty(p => p.ClaimedAtUtc, DateTime.UtcNow), ct) == 1;
+    }
+
+    public Task<PhotoMetadata?> GetShelfBagPhotoAsync(Guid bagId, Guid photoId, Guid ownerId, CancellationToken ct = default) =>
+        _repository.AsNoTracking().FirstOrDefaultAsync(p => p.Id == photoId && p.ShelfBagId == bagId
+            && p.OwnerId == ownerId && p.BucketType == Configuration.BucketType.CheckIn
+            && p.Status == PhotoStatus.Confirmed, ct);
 }

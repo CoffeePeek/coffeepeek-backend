@@ -25,6 +25,7 @@ public class CrossModuleWriteTests
                          ns.StartsWith("CoffeePeek.Shops.Persistance.Menu.", StringComparison.Ordinal) ||
                          ns.StartsWith("CoffeePeek.Shops.Persistance.CoffeeCatalog", StringComparison.Ordinal) ||
                          ns.StartsWith("CoffeePeek.Shops.Persistance.Discovery", StringComparison.Ordinal) ||
+                         ns.StartsWith("CoffeePeek.Shops.Persistance.Shelf", StringComparison.Ordinal) ||
                          ns.StartsWith("CoffeePeek.Shops.Persistance.PublicAddresses", StringComparison.Ordinal))))
             .Where(call => IsCrossModuleWrite(call.Caller, call.Callee))
             .Select(call => $"{CallerName(call.Caller)} -> " +
@@ -111,6 +112,8 @@ public class CrossModuleWriteTests
             return "Community";
         if (name.Contains(".DiscoveryAggregate.", StringComparison.Ordinal))
             return "Discovery";
+        if (name.Contains(".ShelfAggregate.", StringComparison.Ordinal))
+            return "Shelf";
         if (name == "CoffeePeek.Shops.Domain.Entities.ShopPhoto")
             return "Shops";
         if (name.Contains(".CoffeeShopAggregate.", StringComparison.Ordinal))
@@ -155,6 +158,9 @@ public class CrossModuleWriteTests
         if (name.Contains(".Features.Discovery.", StringComparison.Ordinal) ||
             name.Contains(".Persistance.Discovery.", StringComparison.Ordinal))
             return "Discovery";
+        if (name.Contains(".Features.Shelf.", StringComparison.Ordinal) ||
+            name.Contains(".Persistance.Shelf.", StringComparison.Ordinal))
+            return "Shelf";
         if (name.Contains(".Features.AppDownloads.", StringComparison.Ordinal) ||
             name.Contains(".Persistance.Repositories.AppDistributionRepository", StringComparison.Ordinal))
             return "AppDistribution";

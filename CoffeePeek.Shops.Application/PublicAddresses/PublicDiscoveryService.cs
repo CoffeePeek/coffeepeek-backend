@@ -39,24 +39,10 @@ public sealed class PublicDiscoveryService(IPublicAddressService addresses, IPro
     public async Task<Guid> ResolveIdAsync(PublicAddressKind kind, string slug, CancellationToken ct) =>
         (await addresses.ResolveAsync(kind, slug, ct))?.EntityId ?? throw new NotFoundException("Entity not found.");
 
-    public async Task<PublicCoffeeShopsResponse> SearchAsync(SearchCoffeeShopsQuery query, string? city,
-        string[]? roasters, string[]? equipments, string[]? beans, string[]? brewMethods, string[]? tags, CancellationToken ct)
+    public async Task<PublicCoffeeShopsResponse> SearchAsync(SearchCoffeeShopsQuery query, string? city, CancellationToken ct)
     {
-        // Resolve public filters once. Never silently ignore unknown filters and return all shops.
         var cityId = city is null ? (Guid?)null : await ResolveIdAsync(PublicAddressKind.City, city, ct);
-        Guid[]? roasterIds = null;
-        if (roasters is not null)
-        {
-            roasterIds = await addresses.ResolveIdsAsync(PublicAddressKind.Roaster, roasters, ct);
-        }
-        query = query with
-        {
-            CityId = cityId, Roasters = roasterIds,
-            Equipments = await FilterAsync(PublicAddressKind.Equipment, equipments, ct),
-            Beans = await FilterAsync(PublicAddressKind.CoffeeBean, beans, ct),
-            BrewMethods = await FilterAsync(PublicAddressKind.BrewMethod, brewMethods, ct),
-            Tags = await FilterAsync(PublicAddressKind.ShopTag, tags, ct)
-        };
+        query = query with { CityId = cityId };
         // Current visibility and pagination come from the database, rather than a legacy cached GUID page.
         var (items, count) = await queries.Search(query, ct);
         if (query.UserId is { } userId)
@@ -145,11 +131,6 @@ public sealed class PublicDiscoveryService(IPublicAddressService addresses, IPro
     private async Task<Dictionary<Guid, PublicAddressDto>> ReadAsync(PublicAddressKind kind, IEnumerable<Guid> ids, CancellationToken ct) =>
         (await addresses.GetForReadAsync(kind, ids.Where(x => x != Guid.Empty).Distinct().ToArray(), ct))
         .ToDictionary(x => x.EntityId, PublicAddressDto.From);
-
-    private Task<Guid[]?> FilterAsync(PublicAddressKind kind, string[]? slugs, CancellationToken ct) =>
-        slugs is null ? Task.FromResult<Guid[]?>(null) : ResolveFilterAsync(kind, slugs, ct);
-    private async Task<Guid[]?> ResolveFilterAsync(PublicAddressKind kind, string[] slugs, CancellationToken ct) =>
-        await addresses.ResolveIdsAsync(kind, slugs, ct);
 
     public async Task<PublicBeanDto[]> BeansAsync(CancellationToken ct)
     {

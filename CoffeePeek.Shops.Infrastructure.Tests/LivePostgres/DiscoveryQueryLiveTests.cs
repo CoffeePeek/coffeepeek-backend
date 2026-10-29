@@ -7,6 +7,9 @@ using CoffeePeek.Shops.Application.Mapper;
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeProductAggregate;
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
 using CoffeePeek.Shops.Domain.Aggregates.MenuAggregate;
+using CoffeePeek.Shops.Domain.Aggregates.CheckInAggregate;
+using CoffeePeek.Shops.Domain.Aggregates.DiscoveryAggregate;
+using CoffeePeek.Shops.Domain.Entities;
 using CoffeePeek.Shops.Domain.Aggregates.RoasterTagAggregate;
 using CoffeePeek.Shops.Persistance.Configuration;
 using CoffeePeek.Shops.Persistance.Queries;
@@ -121,16 +124,13 @@ public sealed class DiscoveryQueryLiveTests : IClassFixture<ShopsLiveDatabase>
         Assert.Contains(yo.Id, ids); Assert.Contains(e.Id, ids);
         Assert.Equal(yo.Name, first.Concat(second).Single(s => s.Id == yo.Id).Name);
 
-        if (!byAddress)
+        var discovery = await Store(db).SearchShopsAsync(new()
         {
-            var discovery = await Store(db).SearchShopsAsync(new()
-            {
-                Q = query, Filters = new() { City = city.PublicSlug }
-            }, null, Ct);
-            Assert.Equal(2, discovery.TotalItems);
-            Assert.Contains(discovery.Items, s => s.Address.Slug == yo.PublicSlug);
-            Assert.Contains(discovery.Items, s => s.Address.Slug == e.PublicSlug);
-        }
+            Q = query, Filters = new() { City = city.PublicSlug }
+        }, null, Ct);
+        Assert.Equal(2, discovery.TotalItems);
+        Assert.Contains(discovery.Items, s => s.Address.Slug == yo.PublicSlug);
+        Assert.Contains(discovery.Items, s => s.Address.Slug == e.PublicSlug);
     }
 
     [Theory]
@@ -423,6 +423,61 @@ public sealed class DiscoveryQueryLiveTests : IClassFixture<ShopsLiveDatabase>
         Assert.Equal((0, 2, 0), (result[1].CoffeeShopsCount, result[1].CoffeeProductsCount, result[1].AvailableCoffeeProducts));
         Assert.Equal((0, 1, 0), (result[2].CoffeeShopsCount, result[2].CoffeeProductsCount, result[2].AvailableCoffeeProducts));
         Assert.All(result, r => Assert.Equal(tag.Slug, Assert.Single(r.Tags).Slug));
+    }
+
+    [Theory]
+    [InlineData("coffee_shop")]
+    [InlineData("roaster")]
+    [InlineData("drink")]
+    public async Task Recommendations_ApplyConfidenceAndPersonalPreferencesBeforePaging_InPostgres(string kind)
+    {
+        await using var db = fixture.Context(false);
+        var city = new City(Key()); city.SetPublicSlug(Key()); db.Cities.Add(city);
+        var single = ShopsLiveDatabase.NewShop("A single author", city.Id); single.SetPublicSlug(Key());
+        var reliable = ShopsLiveDatabase.NewShop("Z reliable", city.Id); reliable.SetPublicSlug(Key());
+        foreach (var shop in new[] { single, reliable }) shop.SetLocation(city.Id, "Street", 53.9m, 27.56m);
+        db.Shops.AddRange(single, reliable);
+        var user = Guid.NewGuid(); var repeatVisitor = Guid.NewGuid();
+        void Rate(CoffeeShop shop, Guid author, int score, int daysAgo)
+        {
+            var time = DateTime.UtcNow.AddDays(-daysAgo);
+            var row = CheckIn.CreateUnified(author, shop.Id, "author", "visit", Rating.Create(score, score, score), time, CheckInVisibility.Public);
+            row.CreatedAtUtc = time;
+            row.ApplyModerationDecision(1, Guid.NewGuid(), 1, CheckInModerationState.Approved, null, time);
+            db.CheckIns.Add(row);
+        }
+        for (var i = 1; i <= 3; i++) Rate(single, repeatVisitor, 5, i);
+        for (var i = 0; i < 8; i++) Rate(reliable, Guid.NewGuid(), 4, 1);
+        var entityId = single.Id;
+        if (kind == "roaster")
+        {
+            var roaster = AddRoaster(db, Key());
+            single.SetRoasters([roaster]); reliable.SetRoasters([AddRoaster(db, Key())]);
+            entityId = roaster.Id;
+        }
+        if (kind == "drink")
+        {
+            var drink = CoffeeDrinkDefinition.CreateWithId(Guid.NewGuid(), Key(), "Эспрессо", "Espresso", CoffeeDrinkCategory.Espresso, "", 0);
+            db.CoffeeDrinkDefinitions.Add(drink); entityId = drink.Id;
+            var menu = ShopMenu.Create(single.Id); menu.ApplyManualItem(drink.Id, MenuItemAvailability.Present, 3, null); db.ShopMenus.Add(menu);
+            var otherDrink = CoffeeDrinkDefinition.CreateWithId(Guid.NewGuid(), Key(), "Фильтр", "Filter", CoffeeDrinkCategory.Filter, "", 0);
+            db.CoffeeDrinkDefinitions.Add(otherDrink);
+            var otherMenu = ShopMenu.Create(reliable.Id); otherMenu.ApplyManualItem(otherDrink.Id, MenuItemAvailability.Present, 3, null); db.ShopMenus.Add(otherMenu);
+        }
+        db.DiscoveryFavorites.Add(new(user, kind, entityId));
+        await db.SaveChangesAsync(Ct); db.ChangeTracker.Clear();
+        var store = Store(db);
+        var request = new CoffeeShopSearchRequest { Filters = new() { City = city.PublicSlug, Origin = new() { Latitude = 53.9m, Longitude = 27.56m } }, PageSize = 1 };
+        Assert.Equal(reliable.PublicSlug, Assert.Single((await store.SearchShopsAsync(request, null, Ct)).Items).Address.Slug);
+        Assert.Equal(reliable.PublicSlug, Assert.Single((await store.SearchShopsAsync(request, Guid.NewGuid(), Ct)).Items).Address.Slug);
+        var personal = await store.SearchShopsAsync(request, user, Ct);
+        Assert.Equal(2, personal.TotalItems);
+        var card = Assert.Single(personal.Items);
+        Assert.Equal(single.PublicSlug, card.Address.Slug); Assert.Equal(5m, card.Rating); Assert.Equal(3, card.CheckInCount);
+        request.Page = 2;
+        Assert.Equal(reliable.PublicSlug, Assert.Single((await store.SearchShopsAsync(request, user, Ct)).Items).Address.Slug);
+        request.Page = 1; request.Sort = "rating_desc";
+        Assert.Equal(single.PublicSlug, Assert.Single((await store.SearchShopsAsync(request, null, Ct)).Items).Address.Slug);
     }
 
     [Fact]

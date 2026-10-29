@@ -80,3 +80,5 @@ Community owns check-in photo records in `CheckInPhotos`; the coffee-shop profil
 Use `photos[].url` from authorized shop check-in reads and `drinkPhotoUrl` for the cutout. `/api/v1/check-ins/{id}/photos/{photoId}` checks the current author or approved-public visibility on every request, including for home entries. Private or hidden content cannot be read through that route by other users. Never build a public MinIO URL from `storageKey`.
 
 The old review upload action and unversioned check-in routes were removed. Use `/api/Photos/check-in` and `/api/v1/check-ins` for coffee-shop visits, or `/api/v1/check-ins/home` for home brews.
+
+Coffee-shelf bag cards use their own purpose, `POST /api/Photos/shelf-bag` (exactly one JPEG, PNG or WebP of at most 1 MiB, private `shelf-bags/` keys). A check-in cannot claim a shelf-bag upload; see [the shelf contract](shelf-client.md#card-image).

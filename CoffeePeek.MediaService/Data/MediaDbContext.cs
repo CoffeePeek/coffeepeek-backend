@@ -34,6 +34,7 @@ public class MediaDbContext(DbContextOptions<MediaDbContext> options) : DbContex
             entity.Property(p => p.CheckInId);
             entity.Property(p => p.OwnershipClaimId);
             entity.HasIndex(p => p.OwnershipClaimId);
+            entity.Property(p => p.ShelfBagId);
             entity.Property(p => p.ShopAttachmentId);
             entity.Property(p => p.ShopAttachmentKind).HasConversion<string>().HasMaxLength(20);
             entity.Property(p => p.ClaimedAtUtc);
@@ -44,6 +45,7 @@ public class MediaDbContext(DbContextOptions<MediaDbContext> options) : DbContex
             entity.HasIndex(p => new { p.OwnerType, p.OwnerId });
             entity.HasIndex(p => p.Status);
             entity.HasIndex(p => p.CheckInId);
+            entity.HasIndex(p => p.ShelfBagId);
             entity.HasIndex(p => new { p.ShopAttachmentId, p.ShopAttachmentKind });
         });
 

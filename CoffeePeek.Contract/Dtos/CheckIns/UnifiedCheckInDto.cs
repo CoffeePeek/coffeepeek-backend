@@ -21,6 +21,8 @@ public record UnifiedCheckInDto
     public string? RejectionReason { get; init; }
     public CheckInDrinkDto? Drink { get; init; }
     public CheckInPhotoDto? DrinkPhoto { get; init; }
+    /// <summary>Copy of the shelf-bag card shown with a home check-in.</summary>
+    public CheckInPhotoDto? ShelfBagPhoto { get; init; }
     public CheckInPhotoDto[] Photos { get; init; } = [];
     public int HelpfulCount { get; init; }
     public bool IsHelpfulByCurrentUser { get; init; }

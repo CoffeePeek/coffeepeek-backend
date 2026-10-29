@@ -298,16 +298,19 @@ public sealed class PublicAddressGatewaySmokeTests
         var cityEnvelope = await Get("/api/Catalogs/cities/by-slug/MINSK", HttpStatusCode.OK, "shops");
         cityEnvelope!["address"]!["canonicalPath"]!.GetValue<string>().Should().Be("/cities/minsk");
         NoInternalIds(cityEnvelope);
-        var list = await Get("/api/CoffeeShops?city=minsk&roasters=beans-roastery&beans=arabica&equipments=la-marzocco-linea&brewMethods=v60&tags=dog-friendly", HttpStatusCode.OK, "shops");
+        var list = await Get("/api/CoffeeShops?city=minsk&q=26&page=1&pageSize=10", HttpStatusCode.OK, "shops");
         NoInternalIds(list);
         list!["data"]!["coffeeShops"]![0]!["address"]!["slug"]!.GetValue<string>().Should().Be("26-october-16");
         list["data"]!["coffeeShops"]![0]!["beans"]![0]!["slug"]!.GetValue<string>().Should().Be("arabica");
         capturedSearch!.CityId.Should().Be(city.Id);
-        capturedSearch.Roasters.Should().Equal(roaster.Id);
-        capturedSearch.Beans.Should().Equal(bean.Id);
-        capturedSearch.Equipments.Should().Equal(equipment.Id);
-        capturedSearch.BrewMethods.Should().Equal(method.Id);
-        capturedSearch.Tags.Should().Equal(tag.Id);
+        capturedSearch.Query.Should().Be("26");
+        capturedSearch.PageNumber.Should().Be(1);
+        capturedSearch.PageSize.Should().Be(10);
+        capturedSearch.Roasters.Should().BeNull();
+        capturedSearch.Beans.Should().BeNull();
+        capturedSearch.Equipments.Should().BeNull();
+        capturedSearch.BrewMethods.Should().BeNull();
+        capturedSearch.Tags.Should().BeNull();
         foreach (var catalog in new[] { "cities", "beans", "equipments", "brew-methods" })
         {
             var catalogJson = await Get("/api/Catalogs/" + catalog, HttpStatusCode.OK, "shops");
@@ -321,7 +324,7 @@ public sealed class PublicAddressGatewaySmokeTests
         publicRoaster["address"]!["slug"]!.GetValue<string>().Should().Be("beans-roastery");
         publicRoaster["coffeeProductsCount"]!.GetValue<int>().Should().Be(1);
         publicRoaster["availableCoffeeProducts"]!.GetValue<int>().Should().Be(1);
-        foreach (var route in new[] { "/api/Catalogs/roasters", "/api/v1/roasters/search", "/api/v1/roasters/facets" })
+        foreach (var route in new[] { "/api/Catalogs/roasters", "/api/v1/roasters/search", "/api/v1/roasters/facets", "/api/v1/discovery/search" })
         {
             using var removed = route.StartsWith("/api/v1/")
                 ? await http.PostAsJsonAsync(route, new { }, Ct) : await http.GetAsync(route, Ct);
@@ -338,7 +341,7 @@ public sealed class PublicAddressGatewaySmokeTests
         NoInternalIds(map);
         map!["data"]!["shops"]![0]!["address"]!["slug"]!.GetValue<string>().Should().Be("26-october-16");
         await Get($"/api/CoffeeShops?beans={bean.Id}", HttpStatusCode.BadRequest, "shops");
-        await Get("/api/CoffeeShops?beans=unknown", HttpStatusCode.NotFound, "shops");
+        await Get("/api/CoffeeShops?city=unknown", HttpStatusCode.NotFound, "shops");
         await Get($"/api/CoffeeShops/{shop.Id}", HttpStatusCode.BadRequest, "shops");
         using (var oldLookup = await http.GetAsync($"/api/CoffeeShops/{shop.Id}/public-address", Ct))
             oldLookup.StatusCode.Should().Be(HttpStatusCode.NotFound);

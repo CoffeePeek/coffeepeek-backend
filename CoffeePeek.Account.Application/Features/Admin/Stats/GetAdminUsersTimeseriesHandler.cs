@@ -17,11 +17,16 @@ public static class GetAdminUsersTimeseriesHandler
         var from = DailySeries.WindowStartUtc(todayUtc, days);
 
         var counts = await userRepository.GetNewUsersPerDayAsync(from, ct);
+        var activeCounts = await userRepository.GetDailyActiveUsersPerDayAsync(from, ct);
 
         var series = DailySeries.Fill(DateOnly.FromDateTime(todayUtc), days, counts)
             .Select(x => new AdminDailyCountDto(x.Date, x.Count))
             .ToList();
 
-        return Response<AdminUsersTimeseriesDto>.Success(new AdminUsersTimeseriesDto(days, series));
+        var activeSeries = DailySeries.Fill(DateOnly.FromDateTime(todayUtc), days, activeCounts)
+            .Select(x => new AdminDailyCountDto(x.Date, x.Count))
+            .ToList();
+
+        return Response<AdminUsersTimeseriesDto>.Success(new AdminUsersTimeseriesDto(days, series, activeSeries));
     }
 }

@@ -18,7 +18,8 @@
       "CoffeePeek.ModerationService.Tests\\CoffeePeek.ModerationService.Tests.csproj",
       "CoffeePeek.Shops.Infrastructure.Tests\\CoffeePeek.Shops.Infrastructure.Tests.csproj",
       "CoffeePeek.ShopsService.Tests\\CoffeePeek.ShopsService.Tests.csproj",
-      "CoffeePeek.Gateway.Tests\\CoffeePeek.Gateway.Tests.csproj"
+      "CoffeePeek.Gateway.Tests\\CoffeePeek.Gateway.Tests.csproj",
+      "dev\\RestoreShopSchedules\\RestoreShopSchedules.csproj"
     ]
   }
 }

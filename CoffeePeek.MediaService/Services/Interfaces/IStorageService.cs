@@ -24,5 +24,7 @@ public interface IStorageService
     Task<bool> IsCheckInBucketPrivateAsync(CancellationToken ct = default);
     Task<string> MoveToCheckInStorageAsync(string key, Guid photoId, CancellationToken ct = default,
         BucketType sourceBucket = BucketType.Shop);
+    /// <summary>Copies a shelf-bag upload to an immutable private key (shelf-bags/{photoId:N}.ext), marks it permanent and removes the upload.</summary>
+    Task<string> SealShelfBagObjectAsync(string key, Guid photoId, CancellationToken ct = default);
     Task CopyToAsync(string key, BucketType bucket, Stream destination, CancellationToken ct = default);
 }

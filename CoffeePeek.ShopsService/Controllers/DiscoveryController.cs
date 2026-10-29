@@ -13,9 +13,6 @@ namespace CoffeePeek.ShopsService.Controllers;
 public sealed class DiscoveryController(IDiscoveryQueryStore queries, IDiscoveryClassificationStore classification,
     IPublicCoffeeCatalogReader catalog, IUserContext user) : ControllerBase
 {
-    [HttpPost("api/v1/discovery/search")]
-    public Task<IActionResult> Discovery(DiscoverySearchRequest request, CancellationToken ct) =>
-        Search(request, () => queries.SearchDiscoveryAsync(request, user.GetUserId(), ct));
     [HttpPost("api/v1/coffee-shops/search")]
     public Task<IActionResult> Shops(CoffeeShopSearchRequest request, CancellationToken ct) =>
         Search(request, () => queries.SearchShopsAsync(request, user.GetUserId(), ct));

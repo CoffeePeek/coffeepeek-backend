@@ -244,13 +244,17 @@ Publish the required templates before deploying AccountService.
 
 With the dev scripts, interactive documentation for all services is at `http://localhost:8080/scalar`.
 
+Shop search uses `POST /api/v1/coffee-shops/search`. The legacy `GET /api/CoffeeShops` is deprecated
+and limited to check-in selection (`q`, `city`, `page`, `pageSize`). Its removal is tracked as
+[API-001](docs/api-deprecations.md#api-001). The unused `POST /api/v1/discovery/search` has been removed.
+
 Main route groups through the gateway:
 
 | Routes | Service |
 |---|---|
 | `/api/Users/*`, `/api/Tokens/*` | Account; [profiles and follows](docs/api/profiles.md) |
 | `/api/v1/me/notifications/*`, `/api/admin/notifications/*` | Account; [device push notifications](docs/api/push-notifications.md) |
-| `/api/CoffeeShops/*`, `/api/Map/*`, `/api/Catalogs/*`, `/api/v1/check-ins/*`, `/api/v1/profiles/*`, `/api/menu/*`, `/api/roasters/*`, `/api/owner/*`, `/api/public/stats` | Shops |
+| `/api/CoffeeShops/*`, `/api/Map/*`, `/api/Catalogs/*`, `/api/v1/check-ins/*`, `/api/v1/profiles/*`, `/api/v1/shelf/*` ([coffee shelf](docs/api/shelf-client.md)), `/api/menu/*`, `/api/roasters/*`, `/api/owner/*`, `/api/public/stats` | Shops |
 | `/api/ModerationShops/*`, `/api/v1/moderation/check-ins/*`, `/api/ModerationRoasters/*`, `/api/ShopChangeRequests/*`, `/api/ShopIssueReports/*` | Moderation |
 | `/api/Photos/*` | Media |
 | `/api/admin/*` | Admin tools (Moderator/Admin roles) |

@@ -4,6 +4,7 @@ using CoffeePeek.MediaService.Commands;
 using CoffeePeek.MediaService.Commands.Base;
 using CoffeePeek.MediaService.Configuration;
 using CoffeePeek.MediaService.Responses;
+using CoffeePeek.MediaService.Services;
 using CoffeePeek.Shared.Auth;
 using CoffeePeek.Shared.Kernel.Response;
 using Microsoft.AspNetCore.Mvc;
@@ -65,6 +66,22 @@ public class PhotosController(IMessageBus bus, IUserContext userContext) : Contr
     [ProducesResponseType<Response<List<GenerateUploadUrlResponse>>>(StatusCodes.Status200OK)]
     public Task<IActionResult> GenerateCheckInUploadUrls([FromBody] List<PhotoRequest> requests, CancellationToken ct) =>
         Generate(requests, "check-ins", BucketType.CheckIn, ct);
+
+    /// <summary>
+    /// Generate one presigned upload url for a shelf-bag card in the private check-in bucket (prefix shelf-bags/).
+    /// Exactly one JPEG, PNG or WebP of at most 1 MiB; Media validates the bytes when Shops claims the upload.
+    /// </summary>
+    [HttpPost("shelf-bag")]
+    [Description("Get url for presigned upload of a shelf-bag card")]
+    [ProducesResponseType<Response<List<GenerateUploadUrlResponse>>>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> GenerateShelfBagUploadUrl([FromBody] List<PhotoRequest> requests, CancellationToken ct)
+    {
+        if (requests is not [{ } request] || !ShelfBagPhotoValidation.IsAllowedContentType(request.ContentType)
+            || request.SizeBytes is <= 0 or > ShelfBagPhotoValidation.MaxSizeBytes
+            || string.IsNullOrWhiteSpace(request.FileName) || request.FileName.Length > 255)
+            return BadRequest(new ErrorResponse("Send exactly one JPEG, PNG or WebP card of at most 1 MiB."));
+        return await Generate(requests, "shelf-bags", BucketType.CheckIn, ct);
+    }
 
     /// <summary>
     /// Resolve trusted metadata for photos the caller uploaded and has not attached yet.

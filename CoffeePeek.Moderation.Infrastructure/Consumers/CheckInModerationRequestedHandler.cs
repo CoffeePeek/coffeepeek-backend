@@ -40,7 +40,8 @@ public static class CheckInModerationRequestedHandler
             drink, message.VisitedAtUtc, photos, message.Home is { } home ? new HomePreparationSnapshot
             {
                 PreparedOn = home.PreparedOn, BrewMethodCode = home.BrewMethodCode,
-                CoffeeProductId = home.CoffeeProductId, BeanName = home.BeanName, DoseGrams = home.DoseGrams,
+                CoffeeProductId = home.CoffeeProductId, BeanName = home.BeanName, RoasterName = home.RoasterName,
+                DoseGrams = home.DoseGrams,
                 BrewDurationSeconds = home.BrewDurationSeconds, TasteScore = home.TasteScore
             } : null, message.LeaderboardGeoStatus, message.ShopDistanceMeters,
             message.LocationAccuracyMeters, message.LocationCapturedAtUtc);

@@ -30,6 +30,10 @@ public sealed record PublicCheckInDto
     public string? DrinkPhotoUrl { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public CheckInPhotoVariantDto[]? DrinkPhotoVariants { get; init; }
+    /// <summary>Copy of the author's shelf-bag card for a home check-in; null when no bag is shown.</summary>
+    public string? ShelfBagPhotoUrl { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public CheckInPhotoVariantDto[]? ShelfBagPhotoVariants { get; init; }
     public CheckInPhotoDto[] Photos { get; init; } = [];
     public int HelpfulCount { get; init; }
     public bool IsHelpfulByCurrentUser { get; init; }

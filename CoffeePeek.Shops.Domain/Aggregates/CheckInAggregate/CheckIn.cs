@@ -28,6 +28,10 @@ public sealed partial class CheckIn : AggregateRoot<Guid>
     public string? BrewMethodCode { get; private set; }
     public Guid? CoffeeProductId { get; private set; }
     public string? BeanNameSnapshot { get; private set; }
+    /// <summary>Roaster of the bean at selection time: the catalog roaster or the shelf bag's roaster.</summary>
+    public string? RoasterNameSnapshot { get; private set; }
+    /// <summary>The author's shelf bag the bean came from; may outlive the bag, so it has no foreign key.</summary>
+    public Guid? ShelfBagId { get; private set; }
     public decimal? DoseGrams { get; private set; }
     public int? BrewDurationSeconds { get; private set; }
     public int? TasteScore { get; private set; }
@@ -52,6 +56,8 @@ public sealed partial class CheckIn : AggregateRoot<Guid>
     public Rating? Rating { get; private set; }
 
     public Guid? DrinkPhotoId { get; private set; }
+    /// <summary>The copy of the shelf-bag card shown with a home check-in; one of <see cref="ShopPhotos"/>.</summary>
+    public Guid? ShelfBagPhotoId { get; private set; }
 
     private readonly List<CheckInPhoto> _shopPhotos = [];
     public IReadOnlyCollection<CheckInPhoto> ShopPhotos => _shopPhotos.AsReadOnly();

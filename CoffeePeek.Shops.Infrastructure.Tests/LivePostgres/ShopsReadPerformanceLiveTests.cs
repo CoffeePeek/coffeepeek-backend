@@ -45,7 +45,7 @@ public sealed class ShopsReadPerformanceLiveTests(ShopsLiveDatabase fixture) : I
             db.Cities.Add(city); await db.SaveChangesAsync(ct); db.ChangeTracker.Clear();
             for (var i = 0; i < ShopCount; i++)
             {
-                var shop = new CoffeeShop(null, "Performance " + i, null,
+                var shop = new CoffeeShop(null, i == ShopCount - 1 ? "Starbucks" : "Performance " + i, null,
                     CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate.PriceRange.Moderate, Guid.NewGuid());
                 shop.SetLocation(city.Id, "Synthetic address", 53.9m + i % 10 / 10000m, 27.56m + i % 7 / 10000m);
                 shop.SetPublicSlug("performance-shop-" + i);
@@ -87,7 +87,8 @@ public sealed class ShopsReadPerformanceLiveTests(ShopsLiveDatabase fixture) : I
                 product.AttachSource(source); product.SetStatus(CoffeePublicationStatus.Published); db.CoffeeProducts.Add(product);
             }
             await db.SaveChangesAsync(ct);
-            await db.Database.ExecuteSqlRawAsync("ANALYZE", ct);
+            // Finish bulk-load GIN maintenance before measuring steady-state index selection.
+            await db.Database.ExecuteSqlRawAsync("VACUUM ANALYZE", ct);
         }
 
         var output = Environment.GetEnvironmentVariable("COFFEEPEEK_PERF_RESULTS")
@@ -95,6 +96,8 @@ public sealed class ShopsReadPerformanceLiveTests(ShopsLiveDatabase fixture) : I
         Directory.CreateDirectory(output);
         var results = new List<ReadPerformanceResult>();
         foreach (var scenario in new[] { "profile", "admin-1", "admin-50", "owner-50", "discovery-shops-1", "discovery-shops-50",
+                     "discovery-shops-personal-50", "discovery-shops-text-hit", "discovery-shops-text-short",
+                     "discovery-shops-text-miss", "discovery-shops-text-typo", "discovery-shops-text-unique-typo",
                      "discovery-coffees-50", "facets", "map-clusters", "map-zones", "map-markers" })
         {
             using var warmProbe = new ReadPerformanceCommandProbe(capturePlans: true);
@@ -107,6 +110,11 @@ public sealed class ShopsReadPerformanceLiveTests(ShopsLiveDatabase fixture) : I
                 {
                     command.Connection = connection;
                     var plan = (string)(await command.ExecuteScalarAsync(ct))!;
+                    if (scenario == "discovery-shops-text-unique-typo" && command.CommandText.Contains(" % "))
+                    {
+                        Assert.Contains(" <% ", command.CommandText);
+                        Assert.Contains("IX_Shops_NormalizedName_GIN", plan);
+                    }
                     using var json = JsonDocument.Parse(plan);
                     plans.Add(new { Sql = command.CommandText,
                         Parameters = command.Parameters.Cast<NpgsqlParameter>().Select(p => new
@@ -136,6 +144,8 @@ public sealed class ShopsReadPerformanceLiveTests(ShopsLiveDatabase fixture) : I
         }
         Assert.Equal(results.Single(r => r.Scenario == "admin-1").MaxSql, results.Single(r => r.Scenario == "admin-50").MaxSql);
         Assert.Equal(results.Single(r => r.Scenario == "discovery-shops-1").MaxSql, results.Single(r => r.Scenario == "discovery-shops-50").MaxSql);
+        Assert.Equal(results.Single(r => r.Scenario == "discovery-shops-text-hit").MaxSql + 1,
+            results.Single(r => r.Scenario == "discovery-shops-text-typo").MaxSql);
         var report = JsonSerializer.Serialize(new { Experimental = true, Shops = ShopCount, Products = ProductCount,
             Offers = ProductCount * 2, Zones = 2, ApprovedVisits = 1000,
             Runtime = System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription,
@@ -170,8 +180,20 @@ public sealed class ShopsReadPerformanceLiveTests(ShopsLiveDatabase fixture) : I
             if (scenario.StartsWith("discovery-shops", StringComparison.Ordinal))
             {
                 var pageSize = scenario == "discovery-shops-1" ? 1 : 50;
-                var page = await store.SearchShopsAsync(new CoffeeShopSearchRequest { PageSize = pageSize }, null, token);
-                Assert.Equal(ShopCount, page.TotalItems); Assert.Equal(pageSize, page.Items.Length); return;
+                var query = scenario switch
+                {
+                    "discovery-shops-text-hit" => "Performance 1000",
+                    "discovery-shops-text-short" => "zz",
+                    "discovery-shops-text-miss" => "zzqyxzzq",
+                    "discovery-shops-text-typo" => "Perfrmance",
+                    "discovery-shops-text-unique-typo" => "Starbuks",
+                    _ => ""
+                };
+                var page = await store.SearchShopsAsync(new CoffeeShopSearchRequest { Q = query, PageSize = pageSize },
+                    scenario == "discovery-shops-personal-50" ? owner : null, token);
+                var expected = query.Length == 0 ? ShopCount : scenario == "discovery-shops-text-hit" ? 11 :
+                    scenario == "discovery-shops-text-typo" ? 200 : scenario == "discovery-shops-text-unique-typo" ? 1 : 0;
+                Assert.Equal(expected, page.TotalItems); Assert.Equal(Math.Min(pageSize, expected), page.Items.Length); return;
             }
             if (scenario == "discovery-coffees-50")
             {

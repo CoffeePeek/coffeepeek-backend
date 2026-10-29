@@ -32,6 +32,7 @@ public class ClaimCheckInPhotosHandler(IPhotoRepository repository, IStorageServ
         if (ordered.Any(p => p == null || p.OwnerType == OwnerType.OwnershipEvidence || p.OwnershipClaimId != null || !GenerateShopPhotoHandler.IsSafePhotoContentType(p.ContentType)
                 || p.BucketType is not (BucketType.Shop or BucketType.CheckIn)
                 || p.ShopAttachmentId != null
+                || p.ShelfBagId != null || p.StorageKey.StartsWith(ClaimShelfBagPhotoHandler.StorageKeyPrefix, StringComparison.Ordinal)
                 || (p.CheckInId != null && p.CheckInId != request.CheckInId)
                 || (p.CheckInId == null && (p.Status != PhotoStatus.Pending || p.IsExpired))
                 || (p.CheckInId == request.CheckInId && p.Status is not (PhotoStatus.Pending or PhotoStatus.Confirmed)))

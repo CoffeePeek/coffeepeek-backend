@@ -14,7 +14,7 @@ namespace CoffeePeek.MediaService.Controllers;
 [ApiController]
 [Route("internal/check-in-photos")]
 [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
-public class InternalCheckInPhotosController(ClaimCheckInPhotosHandler claims, IPhotoRepository repository,
+public class InternalCheckInPhotosController(ClaimCheckInPhotosHandler claims, CopyShelfBagCardHandler cardCopies, IPhotoRepository repository,
     ICheckInPhotoReader reader, IUserContext userContext, IOptions<GatewayAuthOptions> authOptions) : ControllerBase
 {
     private bool IsTrusted => GatewayAuthVerifier.IsTrusted(Request.Headers[GatewayHeaderConsts.XGatewayAuth],
@@ -26,6 +26,14 @@ public class InternalCheckInPhotosController(ClaimCheckInPhotosHandler claims, I
         if (!IsTrusted || userContext.GetUserId() is not { } ownerId) return Unauthorized();
         var response = await claims.ClaimAsync(request, ownerId, ct);
         return response.IsSuccess ? Ok(response) : BadRequest(response);
+    }
+
+    [HttpPost("shelf-bag-card")]
+    public async Task<IActionResult> CopyShelfBagCard([FromBody] CopyShelfBagCardRequest request, CancellationToken ct)
+    {
+        if (!IsTrusted || userContext.GetUserId() is not { } ownerId) return Unauthorized();
+        var response = await cardCopies.CopyAsync(request, ownerId, ct);
+        return response.IsSuccess ? Ok(response) : StatusCode(response.StatusCode ?? 400, response);
     }
 
     [HttpDelete("{checkInId:guid}/claim")]

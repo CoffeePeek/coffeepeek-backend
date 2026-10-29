@@ -31,6 +31,8 @@ public class PhotoMetadata
 
     public Guid? OwnershipClaimId { get; set; }
     public Guid? CheckInId { get; set; }
+    /// <summary>Shops shelf bag that owns this private card; set when Shops claims a shelf-bags/ upload.</summary>
+    public Guid? ShelfBagId { get; set; }
     public Guid? ShopAttachmentId { get; set; }
     public ShopPhotoAttachmentKind? ShopAttachmentKind { get; set; }
     public DateTime? ClaimedAtUtc { get; set; }

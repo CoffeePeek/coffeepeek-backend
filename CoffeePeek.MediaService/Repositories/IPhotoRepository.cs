@@ -21,4 +21,6 @@ public interface IPhotoRepository
     Task<List<PhotoMetadata>> GetClaimPhotosAsync(Guid ownerId, IReadOnlyCollection<string> storageKeys, CancellationToken ct = default);
     Task ReleaseClaimAsync(Guid ownerId, Guid checkInId, CancellationToken ct = default);
     Task<PhotoMetadata?> GetCheckInPhotoAsync(Guid checkInId, Guid photoId, Guid ownerId, CancellationToken ct = default);
+    Task<bool> TryClaimShelfBagAsync(Guid photoId, Guid ownerId, Guid bagId, CancellationToken ct = default);
+    Task<PhotoMetadata?> GetShelfBagPhotoAsync(Guid bagId, Guid photoId, Guid ownerId, CancellationToken ct = default);
 }

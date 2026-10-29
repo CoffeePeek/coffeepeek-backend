@@ -38,7 +38,7 @@ public sealed class InternalOwnershipEvidenceController(IPhotoRepository photos,
         if (candidates.Count != request.PhotoIds.Length || candidates.Any(p => p.OwnerId != owner
             || p.OwnerType != OwnerType.OwnershipEvidence || p.BucketType != BucketType.CheckIn
             || p.Status is not (PhotoStatus.Pending or PhotoStatus.Confirmed)
-            || p.CheckInId != null || p.ShopAttachmentId != null
+            || p.CheckInId != null || p.ShopAttachmentId != null || p.ShelfBagId != null
             || (p.OwnershipClaimId != null && p.OwnershipClaimId != request.ClaimId)
             || (p.OwnershipClaimId == null && (p.Status != PhotoStatus.Pending || p.IsExpired)))) return Conflict();
         foreach (var photo in candidates)
