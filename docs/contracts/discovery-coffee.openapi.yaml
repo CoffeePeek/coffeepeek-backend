@@ -214,12 +214,161 @@ x-contract-rules:
     relevance. Price sort без currency/weight: 400. Персональный фильтр без JWT: 401. Несвежая admin version: 409
     VERSION_CONFLICT. Невалидный/неопубликованный slug карточки: 404.'
 paths:
+  /api/v1/coffee-shops/map:
+    post:
+      operationId: mapCoffeeShopsV1
+      summary: Кофейни на карте с общими фильтрами поиска
+      description: >-
+        q и filters полностью совпадают с поиском списком, включая персональные фильтры и поиск по адресу.
+        Географические границы применяются после общего отбора. Нечёткий поиск выбирает те же максимум 200
+        подходящих кофеен до ограничения областью карты. На малом масштабе возвращаются кластеры, затем зоны,
+        на крупном — маркеры. Счётчик зоны учитывает подходящие кофейни во всей зоне, в том числе за границей
+        видимой области; пустые зоны не возвращаются. Общая геометрия зон и ручные исключения сохраняются.
+        Максимум 500 объектов ответа; источник кластеров ограничен 20000 точками. isTruncated сообщает об
+        ограничении результата. При одинаковых фильтрах карта показывает подходящие кофейни с координатами
+        в bounds. Существующий GET /api/Map сохраняет прежний контракт. Ответы не кэшируются.
+      tags:
+      - Discovery
+      security:
+      - {}
+      - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CoffeeShopMapRequest'
+            example:
+              q: ''
+              filters:
+                tags: [laptop-friendly]
+              bounds:
+                minLat: 53.88
+                minLon: 27.50
+                maxLat: 53.92
+                maxLon: 27.60
+              zoom: 14
+      responses:
+        '200':
+          description: Стандартный Response<PublicMapDto>, совпадающий по форме с GET /api/Map.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [isSuccess, message, data]
+                properties:
+                  isSuccess:
+                    type: boolean
+                    const: true
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    additionalProperties: false
+                    required: [shops, clusters, zones, isTruncated]
+                    properties:
+                      shops:
+                        type: array
+                        items:
+                          type: object
+                          required: [address, latitude, longitude, title, type, primaryZone]
+                          properties:
+                            address:
+                              $ref: '#/components/schemas/PublicAddress'
+                            latitude:
+                              type: number
+                            longitude:
+                              type: number
+                            title:
+                              type: string
+                            type:
+                              anyOf:
+                              - type: string
+                                enum: [Specialty, CoffeeBar, Cafe]
+                              - type: 'null'
+                            primaryZone:
+                              anyOf:
+                              - $ref: '#/components/schemas/PublicAddress'
+                              - type: 'null'
+                      clusters:
+                        type: array
+                        items:
+                          type: object
+                          required: [id, latitude, longitude, count, bounds]
+                          properties:
+                            id:
+                              type: string
+                            latitude:
+                              type: number
+                            longitude:
+                              type: number
+                            count:
+                              type: integer
+                            bounds:
+                              type: object
+                              required: [minLatitude, minLongitude, maxLatitude, maxLongitude]
+                              properties:
+                                minLatitude:
+                                  type: number
+                                minLongitude:
+                                  type: number
+                                maxLatitude:
+                                  type: number
+                                maxLongitude:
+                                  type: number
+                      zones:
+                        type: array
+                        items:
+                          type: object
+                          required: [address, name, description, latitude, longitude, radiusMeters, shopCount, polygon, color]
+                          properties:
+                            address:
+                              $ref: '#/components/schemas/PublicAddress'
+                            name:
+                              type: string
+                            description:
+                              type: [string, 'null']
+                            latitude:
+                              type: number
+                            longitude:
+                              type: number
+                            radiusMeters:
+                              type: integer
+                            shopCount:
+                              type: integer
+                              minimum: 1
+                            polygon:
+                              type: array
+                              items:
+                                $ref: '#/components/schemas/Geo'
+                            color:
+                              type: string
+                      isTruncated:
+                        type: boolean
+        '400':
+          description: Некорректные фильтры, границы или масштаб; неизвестный или неактивный публичный адрес.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Персональные фильтры требуют аутентификации.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Сервис данных временно недоступен.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
   /api/v1/coffee-shops/search:
     post:
       operationId: searchCoffeeShopsV1
-      summary: Отдельный поиск кофеен со своей фильтрацией
-      description: Полный собственный набор фильтров кофеен, независимый от общего поиска. Существующий GET /api/CoffeeShops
-        сохраняет свой текущий контракт.
+      summary: Поиск кофеен списком с общей фильтрацией поиска и карты
+      description: Общие правила отбора с POST /api/v1/coffee-shops/map; список добавляет сортировку и пагинацию.
+        Существующий GET /api/CoffeeShops сохраняет свой текущий контракт.
       tags:
       - Discovery
       security:
@@ -2903,6 +3052,46 @@ components:
       - checkedAtUtc
       description: Подходящая позиция меню объясняет совпадение по цене/приготовлению. При ценовом фильтре price
         не null. Время проверки относится к меню. Это цена напитка, не зерна.
+    CoffeeShopMapRequest:
+      type: object
+      additionalProperties: false
+      required: [bounds, zoom]
+      properties:
+        q:
+          type: string
+          maxLength: 100
+          default: ''
+          description: Те же нормализация, поиск по названию/адресу и нечёткий поиск, что в CoffeeShopSearchRequest.
+        filters:
+          $ref: '#/components/schemas/ShopFilters'
+        bounds:
+          $ref: '#/components/schemas/CoffeeShopMapBounds'
+        zoom:
+          type: integer
+          minimum: 0
+          maximum: 22
+    CoffeeShopMapBounds:
+      type: object
+      additionalProperties: false
+      required: [minLat, minLon, maxLat, maxLon]
+      description: Включительные границы области; minLat <= maxLat и minLon <= maxLon.
+      properties:
+        minLat:
+          type: number
+          minimum: -90
+          maximum: 90
+        minLon:
+          type: number
+          minimum: -180
+          maximum: 180
+        maxLat:
+          type: number
+          minimum: -90
+          maximum: 90
+        maxLon:
+          type: number
+          minimum: -180
+          maximum: 180
     CoffeeShopSearchRequest:
       type: object
       additionalProperties: false
