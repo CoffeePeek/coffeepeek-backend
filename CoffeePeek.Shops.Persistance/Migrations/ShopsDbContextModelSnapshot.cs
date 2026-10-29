@@ -2415,6 +2415,12 @@ namespace CoffeePeek.Shops.Persistance.Migrations
                         .HasMaxLength(4000)
                         .HasColumnType("character varying(4000)");
 
+                    b.PrimitiveCollection<Guid[]>("EvidencePhotoIds")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid[]")
+                        .HasDefaultValueSql("ARRAY[]::uuid[]");
+
                     b.Property<DateTime?>("ReviewedAtUtc")
                         .HasColumnType("timestamp with time zone");
 

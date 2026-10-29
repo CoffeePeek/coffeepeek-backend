@@ -7,5 +7,6 @@ public enum OwnerType
 {
     User,
     Shop,
-    Coffee
+    Coffee,
+    OwnershipEvidence
 }

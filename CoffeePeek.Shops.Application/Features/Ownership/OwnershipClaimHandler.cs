@@ -10,7 +10,7 @@ namespace CoffeePeek.Shops.Application.Features.Ownership;
 public static class OwnershipClaimHandler
 {
     public static async Task<Response<OwnershipClaimDto>> Handle(SubmitOwnershipClaimCommand command,
-        IBusinessOwnershipStore store, IPublicAddressService addresses, IUnitOfWork unitOfWork, CancellationToken ct)
+        IBusinessOwnershipStore store, IPublicAddressService addresses, IUnitOfWork unitOfWork, CancellationToken ct, IOwnershipEvidencePhotos? evidencePhotos = null)
     {
         if (!Enum.IsDefined(command.BusinessType) || command.ApplicantUserId == Guid.Empty)
             throw new ValidationException("A valid business type and applicant are required.");
@@ -22,11 +22,14 @@ public static class OwnershipClaimHandler
         var target = await store.GetTargetAsync(command.BusinessType, address.EntityId, ct);
         if (target is null || target.IsHidden) throw new NotFoundException("Business not found.");
         var claim = BusinessOwnershipClaim.Create(command.BusinessType, target.Id, target.Name,
-            target.Slug ?? command.BusinessSlug, command.ApplicantUserId, command.Contact, command.Evidence);
+            target.Slug ?? command.BusinessSlug, command.ApplicantUserId, command.Contact, command.Evidence, command.EvidencePhotoIds);
         if (target.OwnerUserId.HasValue)
             throw new ConflictException("This business already has an owner.");
         if (await store.PendingExistsAsync(command.BusinessType, target.Id, command.ApplicantUserId, ct))
             throw new ConflictException("You already have a pending claim for this business.");
+        if (claim.EvidencePhotoIds.Length > 0)
+            await (evidencePhotos ?? throw new InvalidOperationException("Evidence storage is unavailable."))
+                .AttachAsync(command.ApplicantUserId, claim.Id, claim.EvidencePhotoIds, ct);
         store.AddClaim(claim);
         return Response<OwnershipClaimDto>.Success(OwnershipClaimDto.From(claim, null, admin: false));
     }

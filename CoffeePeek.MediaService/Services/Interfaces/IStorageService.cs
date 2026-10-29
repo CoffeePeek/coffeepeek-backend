@@ -13,6 +13,8 @@ public interface IStorageService
         CancellationToken ct = default,
         string? keyPrefix = null);
 
+    Task MarkAsTemporary(string storageKey, BucketType bucketType, CancellationToken ct = default);
+
     Task MarkAsPermanent(string storageKey, BucketType bucketType, CancellationToken ct = default);
 
     /// <summary>Size in bytes of the stored object, or null when the object does not exist.</summary>

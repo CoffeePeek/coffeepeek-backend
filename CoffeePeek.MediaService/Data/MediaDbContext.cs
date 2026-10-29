@@ -32,6 +32,8 @@ public class MediaDbContext(DbContextOptions<MediaDbContext> options) : DbContex
             entity.Property(p => p.OwnerType).IsRequired().HasConversion<string>().HasMaxLength(20);
             entity.Property(p => p.OwnerId).IsRequired();
             entity.Property(p => p.CheckInId);
+            entity.Property(p => p.OwnershipClaimId);
+            entity.HasIndex(p => p.OwnershipClaimId);
             entity.Property(p => p.ShopAttachmentId);
             entity.Property(p => p.ShopAttachmentKind).HasConversion<string>().HasMaxLength(20);
             entity.Property(p => p.ClaimedAtUtc);

@@ -39,6 +39,31 @@ public sealed class OwnershipClaimHandlerTests
     }
 
     [Fact]
+    public async Task EvidenceMustAttachBeforeTheClaimCanBeSavedAndNeverGrantsAccess()
+    {
+        var f = new Fixture();
+        var addresses = new Mock<IPublicAddressService>();
+        addresses.Setup(x => x.ResolveAsync(PublicAddressKind.CoffeeShop, "business", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new PublicAddressMetadata(f.Shop.Id, "business", "/coffee-shops/business", 1));
+        var evidence = new Mock<IOwnershipEvidencePhotos>();
+        var photos = new[] { Guid.NewGuid() };
+        var command = new SubmitOwnershipClaimCommand(f.Applicant, BusinessType.CoffeeShop,
+            "business", "contact", "proof", photos);
+        var result = await OwnershipClaimHandler.Handle(command, f.Store.Object, addresses.Object,
+            Mock.Of<IUnitOfWork>(), CancellationToken.None, evidence.Object);
+        Assert.Equal(photos, result.Data.EvidencePhotoIds);
+        Assert.False(result.Data.HasCurrentAccess);
+        evidence.Verify(x => x.AttachAsync(f.Applicant, result.Data.Id, photos, It.IsAny<CancellationToken>()), Times.Once);
+        f.Store.Verify(x => x.AddClaim(It.IsAny<BusinessOwnershipClaim>()), Times.Once);
+        f.Store.Invocations.Clear();
+        evidence.Setup(x => x.AttachAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<Guid[]>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new ValidationException("Evidence was not found."));
+        await Assert.ThrowsAsync<ValidationException>(() => OwnershipClaimHandler.Handle(command,
+            f.Store.Object, addresses.Object, Mock.Of<IUnitOfWork>(), CancellationToken.None, evidence.Object));
+        f.Store.Verify(x => x.AddClaim(It.IsAny<BusinessOwnershipClaim>()), Times.Never);
+    }
+
+    [Fact]
     public async Task DuplicatePendingAndOwnedBusinessesCannotBeClaimed()
     {
         var f = new Fixture();

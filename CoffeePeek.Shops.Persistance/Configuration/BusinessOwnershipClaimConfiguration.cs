@@ -8,6 +8,7 @@ public sealed class BusinessOwnershipClaimConfiguration : IEntityTypeConfigurati
 {
     public void Configure(EntityTypeBuilder<BusinessOwnershipClaim> builder)
     {
+        builder.Property(x => x.EvidencePhotoIds).HasColumnType("uuid[]").HasDefaultValueSql("ARRAY[]::uuid[]");
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Id).ValueGeneratedNever();
         builder.Property(x => x.BusinessNameSnapshot).IsRequired().HasMaxLength(500);

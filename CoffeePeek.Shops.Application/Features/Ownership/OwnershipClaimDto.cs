@@ -6,11 +6,11 @@ public record OwnershipClaimDto(Guid Id, BusinessType BusinessType, Guid Busines
     string BusinessNameSnapshot, string BusinessSlugSnapshot, Guid ApplicantUserId,
     string Contact, string Evidence, OwnershipClaimStatus Status, DateTime CreatedAtUtc,
     Guid? ReviewedByUserId, DateTime? ReviewedAtUtc, string? DecisionReason,
-    bool HasCurrentAccess, Guid? CurrentOwnerUserId)
+    bool HasCurrentAccess, Guid? CurrentOwnerUserId, Guid[] EvidencePhotoIds)
 {
     public static OwnershipClaimDto From(BusinessOwnershipClaim claim, Guid? currentOwnerUserId, bool admin) =>
         new(claim.Id, claim.BusinessType, claim.BusinessId, claim.BusinessNameSnapshot,
             claim.BusinessSlugSnapshot, claim.ApplicantUserId, claim.Contact, claim.Evidence, claim.Status,
             claim.CreatedAtUtc, claim.ReviewedByUserId, claim.ReviewedAtUtc, claim.DecisionReason,
-            currentOwnerUserId == claim.ApplicantUserId, admin ? currentOwnerUserId : null);
+            currentOwnerUserId == claim.ApplicantUserId, admin ? currentOwnerUserId : null, claim.EvidencePhotoIds.ToArray());
 }

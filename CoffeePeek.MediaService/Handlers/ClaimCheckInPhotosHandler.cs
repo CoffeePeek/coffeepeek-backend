@@ -29,7 +29,7 @@ public class ClaimCheckInPhotosHandler(IPhotoRepository repository, IStorageServ
                 && (p.StorageKey == key || p.OriginalStorageKey == key)).Take(2).ToArray();
             return matches.Length == 1 ? matches[0] : null;
         }).ToArray();
-        if (ordered.Any(p => p == null || !GenerateShopPhotoHandler.IsSafePhotoContentType(p.ContentType)
+        if (ordered.Any(p => p == null || p.OwnerType == OwnerType.OwnershipEvidence || p.OwnershipClaimId != null || !GenerateShopPhotoHandler.IsSafePhotoContentType(p.ContentType)
                 || p.BucketType is not (BucketType.Shop or BucketType.CheckIn)
                 || p.ShopAttachmentId != null
                 || (p.CheckInId != null && p.CheckInId != request.CheckInId)

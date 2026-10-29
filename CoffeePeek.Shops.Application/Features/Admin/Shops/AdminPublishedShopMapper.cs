@@ -59,7 +59,7 @@ public static class AdminPublishedShopMapper
         shop.DataCompletenessScore,
         shop.ShopTags.Select(t => t.TagId).ToList(),
         shop.ShopEquipments.Where(a => a.IsPrimary).Select(a => a.EquipmentId).ToList(),
-        shop.ProfileRevision);
+        shop.ProfileRevision, shop.PublicSlug);
 
     public static IReadOnlyList<AdminShopPhotoDto> MapPhotos(
         IReadOnlyCollection<ShopPhoto> photos,

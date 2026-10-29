@@ -40,6 +40,7 @@ public class PhotoRepository(MediaDbContext dbContext) : IPhotoRepository
     {
         var expiry = DateTime.UtcNow.AddHours(-24);
         return await _repository.Where(p => p.Id == photoId && p.OwnerId == ownerId
+                && p.OwnerType != OwnerType.OwnershipEvidence && p.OwnershipClaimId == null
                 && p.ShopAttachmentId == null
                 && ((p.CheckInId == null && p.Status == PhotoStatus.Pending && p.UploadedAt >= expiry)
                     || (p.CheckInId == checkInId && (p.Status == PhotoStatus.Pending || p.Status == PhotoStatus.Confirmed))))
