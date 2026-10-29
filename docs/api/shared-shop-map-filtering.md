@@ -131,7 +131,7 @@ cases must execute rather than remain skipped during the unconfigured unit
 pass. Production publication remains the existing main-only CI/CD path.
 
 On the integrated release tree, .NET 10.0.113 Release verification passed:
-75 Discovery HTTP contracts, 111 Gateway tests, 89 discovery/map persistence
+75 Discovery HTTP contracts, 111 Gateway tests, 91 discovery/map persistence
 tests and four Python OpenAPI/generated-DTO contracts. No selected test failed
 or skipped. DTO generation consistency, the complete publishing-history secret
 scan and `git diff --check` passed. Existing nullable/XML-documentation and
@@ -142,3 +142,14 @@ After main publication, verify the public POST map both without filters and
 with the list's identical criteria, at marker and clustered zooms. Keep the
 legacy GET compatible and ensure personal filters still return 401 without
 authentication. No production account writes or mobile changes are required.
+
+Production review also identified an unnecessary check-in rating aggregate in
+the default map SQL. An isolated Npgsql translation probe confirmed the join
+was retained even though the map only projected shop coordinates. Map reads
+without minimum-rating or radius predicates now select shop candidates without
+that aggregate; list reads and filtered rating/radius paths remain unchanged.
+The same eligibility predicates and fuzzy fallback still apply. Two additional
+SQL translation regressions verify the aggregate is absent for the default map
+and retained when the minimum-rating filter needs it. All 91 selected persistence
+cases passed after this correction, without failures or skips. No database was
+used by the translation probe. PR CI reruns against this corrected head.

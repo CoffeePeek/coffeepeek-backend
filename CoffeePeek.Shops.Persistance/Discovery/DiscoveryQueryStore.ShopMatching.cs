@@ -132,6 +132,9 @@ public sealed partial class DiscoveryQueryStore
                     Math.Cos(latitude * Math.PI / 180) * Math.Cos((double)s.Location.Latitude.Value * Math.PI / 180) *
                     Math.Pow(Math.Sin(((double)s.Location.Longitude.Value - longitude) * Math.PI / 360), 2)))) : null
         };
+        // Map geometry needs no rating aggregation or distance projection without these predicates.
+        if (!includeTotal && f.MinRating is null && f.RadiusKm is null)
+            hits = shops.Select(s => new ShopHit { Shop = s });
         if (f.MinRating is { } rating) hits = hits.Where(h => h.Rating >= rating);
         if (f.RadiusKm is { } radius) hits = hits.Where(h => h.Distance.HasValue && h.Distance <= (double)radius * 1000);
         var eligibleHits = hits;
