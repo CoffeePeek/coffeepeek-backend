@@ -96,3 +96,20 @@ No failure was suppressed or converted to a skip.
 Nullable/XML-documentation and existing test-analyzer warnings remain. Tests
 used synthetic data only; no production account, data or endpoint was changed.
 Device review and acceptance against a deployed backend remain release gates.
+
+## Develop integration — 2026-10-29
+
+Integrated develop `26b3512a` into the feature branch at `44f11c1b`.
+Discovery HTTP contracts passed again (75/75). The first PR CI run exposed an
+existing ownership migration test that rolled back later migrations before
+checking the original ownership guard, thereby removing `EvidencePhotoIds`.
+The test now executes the original ownership migration's generated Down script
+directly. All original post-failure claim, evidence-photo and historical-data
+assertions remain, with an additional unchanged-migration-history assertion.
+This verifies that migration's guard, not atomic rollback of a whole chain;
+production migrations are unchanged. The original CI failure is retained.
+
+On the integrated tree plus that test correction, the ownership migration test
+and seven filtered-map PostgreSQL cases passed (8/8, no skips) on a new isolated
+PostgreSQL 17.11 cluster with ICU/libc en-US and UTF-8. PR CI supplies the final
+full integration result.
