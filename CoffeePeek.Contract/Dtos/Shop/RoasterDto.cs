@@ -8,6 +8,7 @@ public class RoasterDto
     /// <summary>Published coffee products, independent of packaging and stock; null on references without statistics.</summary>
     public int? CoffeeProductsCount { get; set; }
 
+    public string? PublicSlug { get; set; }
     public Guid Id { get; set; }
     public long ProfileRevision { get; set; }
     public string Name { get; set; }

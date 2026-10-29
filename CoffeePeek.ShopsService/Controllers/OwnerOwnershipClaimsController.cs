@@ -28,7 +28,7 @@ public sealed class OwnerOwnershipClaimsController(IMessageBus bus, IUserContext
             return BadRequest(new ErrorResponse("businessType is required."));
 
         var response = await bus.InvokeAsync<Response<OwnershipClaimDto>>(new SubmitOwnershipClaimCommand(
-            userContext.GetUserIdOrThrow(), businessType, request.BusinessSlug, request.Contact, request.Evidence), ct);
+            userContext.GetUserIdOrThrow(), businessType, request.BusinessSlug, request.Contact, request.Evidence, request.EvidencePhotoIds), ct);
         return response.IsSuccess
             ? CreatedAtAction(nameof(GetById), new { id = response.Data.Id }, response)
             : StatusCode(response.StatusCode ?? StatusCodes.Status400BadRequest, response);

@@ -59,6 +59,7 @@ public sealed class PhotoBackfillRunLiveTests(MediaVariantsLiveDatabase fixture)
             Assert.Equal(photo.StorageKey, (await db.Photos.AsNoTracking().SingleAsync(Ct)).StorageKey);
             Assert.NotNull(await new PhotoVariantReads(db).FindAsync(photo.OwnerId, photo.CheckInId!.Value,
                 photo.Id, source, PhotoVariantRecipe.Version, "thumb", "webp", Ct));
+            Assert.Null((await db.Photos.AsNoTracking().SingleAsync(Ct)).OwnershipClaimId);
             Assert.False(db.Database.HasPendingModelChanges());
         }
         finally { await LivePostgresServer.DropDatabaseAsync(connection); }

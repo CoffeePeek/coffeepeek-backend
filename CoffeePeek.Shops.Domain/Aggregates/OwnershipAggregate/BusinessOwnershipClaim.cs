@@ -14,6 +14,7 @@ public sealed class BusinessOwnershipClaim : Entity<Guid>
     public string BusinessSlugSnapshot { get; private set; } = null!;
     public Guid ApplicantUserId { get; private set; }
     public string Contact { get; private set; } = null!;
+    public Guid[] EvidencePhotoIds { get; private set; } = [];
     public string Evidence { get; private set; } = null!;
     public OwnershipClaimStatus Status { get; private set; }
     public Guid? ReviewedByUserId { get; private set; }
@@ -24,7 +25,7 @@ public sealed class BusinessOwnershipClaim : Entity<Guid>
     private BusinessOwnershipClaim() { }
 
     public static BusinessOwnershipClaim Create(BusinessType businessType, Guid businessId,
-        string name, string slug, Guid applicantUserId, string contact, string evidence)
+        string name, string slug, Guid applicantUserId, string contact, string evidence, Guid[]? evidencePhotoIds = null)
     {
         if (!Enum.IsDefined(businessType) || businessId == Guid.Empty || applicantUserId == Guid.Empty)
             throw new ValidationException("A valid business and applicant are required.");
@@ -34,12 +35,28 @@ public sealed class BusinessOwnershipClaim : Entity<Guid>
             throw new ValidationException($"Contact must contain 1–{MaxContactLength} characters.");
         if (string.IsNullOrWhiteSpace(evidence) || evidence.Trim().Length > MaxEvidenceLength)
             throw new ValidationException($"Evidence must contain 1–{MaxEvidenceLength} characters.");
+        var photos = ValidateEvidence(evidencePhotoIds ?? []);
         return new BusinessOwnershipClaim
         {
-            Id = Guid.NewGuid(), BusinessType = businessType, BusinessId = businessId,
+            Id = EvidenceIdentity(applicantUserId, businessType, businessId, photos), EvidencePhotoIds = photos, BusinessType = businessType, BusinessId = businessId,
             BusinessNameSnapshot = name, BusinessSlugSnapshot = slug, ApplicantUserId = applicantUserId,
             Contact = contact.Trim(), Evidence = evidence.Trim(), CreatedAtUtc = DateTime.UtcNow
         };
+    }
+
+    private static Guid[] ValidateEvidence(Guid[] photoIds)
+    {
+        if (photoIds.Length > 3 || photoIds.Any(id => id == Guid.Empty) || photoIds.Distinct().Count() != photoIds.Length)
+            throw new ValidationException("Up to three distinct evidence photos are supported.");
+        return photoIds.ToArray();
+    }
+
+    private static Guid EvidenceIdentity(Guid applicant, BusinessType type, Guid business, Guid[] photos)
+    {
+        if (photos.Length == 0) return Guid.NewGuid();
+        var identity = $"{applicant:N}:{type}:{business:N}:" +
+            string.Join(",", photos.Order().Select(id => id.ToString("N")));
+        return new Guid(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(identity)).AsSpan(0, 16));
     }
 
     public bool Review(bool approve, Guid actorUserId, string? reason)
