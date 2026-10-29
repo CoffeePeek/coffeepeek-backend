@@ -69,3 +69,11 @@ The test host now supplies a strict test double, and both business kinds submit
 photo IDs through IMessageBus, verify attachment to the generated claim ID and
 check persisted photo IDs. The local persistence selection passed 250 tests;
 the 9 PostgreSQL ownership tests remain skipped locally, pending the new CI run.
+
+CI run 40851508564 (02bae0c0) passed all 9 ownership scenarios, including both
+business kinds with evidence IDs. It next failed the historical ownership
+upgrade test: that test stopped at AddBusinessOwnershipClaims and queried the
+current model before AddOwnershipEvidencePhotos existed. The upgrade now applies
+all current additive migrations before EF reads. Its rollback guard regression
+also checks that evidence IDs survive the rejected downgrade. The local schema
+selection passed 250 tests, with that single live migration test skipped.
