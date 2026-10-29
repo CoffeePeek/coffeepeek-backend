@@ -25,11 +25,11 @@ namespace Internal.Generated.WolverineHandlers
 
         public override async System.Threading.Tasks.Task HandleAsync(Wolverine.Runtime.MessageContext context, System.Threading.CancellationToken cancellation)
         {
+            var shopPriceRangeWriter = new CoffeePeek.Shops.Application.Features.CoffeeShop.ShopProfile.ShopPriceRangeWriter();
             await using var serviceScope = _serviceScopeFactory.CreateAsyncScope();
             Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<Wolverine.Runtime.ScopedMessageContextHolder>(serviceScope.ServiceProvider).Context = context;
             // This service has been marked as requiring service location independent of Wolverine's ability to use constructor injection of everything else
             var shopsDbContext = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<CoffeePeek.Shops.Persistance.Configuration.ShopsDbContext>(serviceScope.ServiceProvider);
-            var shopPriceRangeWriter = new CoffeePeek.Shops.Application.Features.CoffeeShop.ShopProfile.ShopPriceRangeWriter();
             var coffeeShopRepository = new CoffeePeek.Shops.Persistance.Repositories.CoffeeShopRepository(shopsDbContext);
             var queryCoffeeDrinkRepository = new CoffeePeek.Shops.Persistance.Repositories.QueryCoffeeDrinkRepository(shopsDbContext);
             var unitOfWorkOfShopsDbContext = new CoffeePeek.Shared.Persistence.Data.UnitOfWork<CoffeePeek.Shops.Persistance.Configuration.ShopsDbContext>(shopsDbContext);

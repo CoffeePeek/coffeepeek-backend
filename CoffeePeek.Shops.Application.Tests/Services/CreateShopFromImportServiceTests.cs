@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using CoffeePeek.Contract.Constants;
 using CoffeePeek.Contract.Dtos.Menu;
+using CoffeePeek.Contract.Dtos.Schedule;
 using CoffeePeek.Contract.Enums;
 using CoffeePeek.Contract.Events.Moderation;
 using CoffeePeek.Shared.Domain.Interfaces.Infrastructure;
@@ -73,7 +74,9 @@ public class CreateShopFromImportServiceTests
             null,
             Contract.Enums.CoffeeShopType.Specialty,
             [slug],
-            TemporarilyClosed: false);
+            TemporarilyClosed: false,
+            Schedules: [new ScheduleDto(DayOfWeek.Monday, false,
+                [new ShopScheduleIntervalDto { OpenTime = TimeSpan.FromHours(5), CloseTime = TimeSpan.FromHours(19) }])]);
 
         var shopId = await CreateSut().CreateShopFromImportAsync(item, _ct);
 
@@ -86,6 +89,9 @@ public class CreateShopFromImportServiceTests
         added.ModerationId.Should().Be(candidateId);
         added.OwnerUserId.Should().BeNull();
         added.ImportedFromFileAt.Should().BeNull();
+        added.Schedules.Should().ContainSingle();
+        added.Schedules.Single().Intervals.Single().OpenTime.Should().Be(TimeSpan.FromHours(5));
+        added.ProfileRevision.Should().Be(1);
         _bus.Verify(b => b.PublishAsync(It.Is<CoffeePeek.Contract.Events.Shops.ShopPublished>(
             e => e.ShopId == shopId && e.Name == item.Name)), Times.Once);
         _bus.Verify(b => b.PublishAsync(It.Is<ShopProfileCacheInvalidationRequested>(

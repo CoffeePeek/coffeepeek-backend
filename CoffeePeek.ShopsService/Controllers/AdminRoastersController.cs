@@ -1,4 +1,3 @@
-using CoffeePeek.Contract.Dtos;
 using CoffeePeek.Contract.Dtos.Shop;
 using CoffeePeek.Shared.Auth;
 using CoffeePeek.Shared.Auth.Constants;
@@ -8,6 +7,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using CoffeePeek.Shops.Application.Features.Catalogs.GetAllRoasters;
 using CoffeePeek.Shops.Application.Features.Catalogs.GetRoasterById;
+using CoffeePeek.Shops.Application.Features.Ownership;
+using CoffeePeek.Shops.Domain.Aggregates.OwnershipAggregate;
 using Wolverine;
 
 namespace CoffeePeek.ShopsService.Controllers;
@@ -58,25 +59,34 @@ public class AdminRoastersController(IMessageBus bus, IUserContext userContext) 
     [HttpPatch("{id:guid}")]
     [ProducesResponseType<Response<RoasterDto>>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> Update(
         Guid id,
         [FromBody] UpdateRoasterRequest request,
-        CancellationToken ct)
+        CancellationToken ct,
+        [FromHeader(Name = "If-Match")] string? ifMatch = null)
     {
-        var command = new UpdateRoasterCommand(
-            id,
-            request.Name,
-            request.About,
-            request.CityId,
-            request.Address,
-            request.Latitude,
-            request.Longitude,
-            request.InstagramLink,
-            request.SiteLink,
-            request.Photos,
-            userContext.GetUserIdOrThrow());
+        if (!ShopProfileRevisionHeader.TryParse(ifMatch, out var revision))
+            return BadRequest(Response<RoasterDto>.Error(System.Net.HttpStatusCode.BadRequest,
+                "If-Match must contain a nonnegative profile revision."));
+        var command = request.ToCommand(id, userContext.GetUserIdOrThrow(), revision);
         var response = await bus.InvokeAsync<Response<RoasterDto>>(command, ct);
-        return response.IsSuccess ? Ok(response) : NotFound(response);
+        return response.IsSuccess ? Ok(response) : StatusCode(response.StatusCode ?? StatusCodes.Status400BadRequest, response);
+    }
+
+    [HttpPatch("{id:guid}/owner")]
+    [Authorize(Policy = RoleConsts.Admin)]
+    [ProducesResponseType<Response<BusinessOwnershipTargetDto>>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> AssignOwner(Guid id, [FromBody] AssignRoasterOwnerRequest request, CancellationToken ct)
+    {
+        var response = await bus.InvokeAsync<Response<BusinessOwnershipTargetDto>>(
+            new AssignBusinessOwnerCommand(BusinessType.Roaster, id, request.OwnerUserId,
+                userContext.GetUserIdOrThrow(), request.Reason), ct);
+        return response.IsSuccess ? Ok(response) : StatusCode(response.StatusCode ?? StatusCodes.Status400BadRequest, response);
     }
 
     [HttpDelete("{id:guid}")]
@@ -88,14 +98,3 @@ public class AdminRoastersController(IMessageBus bus, IUserContext userContext) 
         return response.IsSuccess ? Ok(response) : NotFound(response);
     }
 }
-
-public record UpdateRoasterRequest(
-    string Name,
-    string? About = null,
-    Guid? CityId = null,
-    string? Address = null,
-    decimal? Latitude = null,
-    decimal? Longitude = null,
-    string? InstagramLink = null,
-    string? SiteLink = null,
-    List<UploadedPhotoDto>? Photos = null);

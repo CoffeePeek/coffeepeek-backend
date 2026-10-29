@@ -46,19 +46,14 @@ public class QueryRoasterRepository(ShopsDbContext dbContext) : IQueryRoasterRep
             .Where(r => r.ModerationId == id)
             .Select(r => (Guid?)r.Id)
             .FirstOrDefaultAsync(ct);
-}
 
-public class RoasterRepository(ShopsDbContext dbContext) : IRoasterRepository
-{
-    public Task<Roaster?> GetByIdAsync(Guid id, CancellationToken ct = default) =>
-        dbContext.Roasters
-            .Include(r => r.Photos)
-            .FirstOrDefaultAsync(r => r.Id == id, ct);
-
-    public Task<Roaster?> GetByNameAsync(string name, CancellationToken ct = default) =>
-        dbContext.Roasters.FirstOrDefaultAsync(r => EF.Functions.ILike(r.Name, name), ct);
-
-    public void Add(Roaster roaster) => dbContext.Roasters.Add(roaster);
-
-    public void Remove(Roaster roaster) => dbContext.Roasters.Remove(roaster);
+    public async Task<(Roaster[] Items, int TotalCount)> GetByOwnerAsync(
+        Guid ownerUserId, int page, int pageSize, CancellationToken ct)
+    {
+        var query = _repository.AsNoTracking().Where(r => r.OwnerUserId == ownerUserId);
+        var total = await query.CountAsync(ct);
+        var items = await query.Include(r => r.Photos).OrderBy(r => r.Name).ThenBy(r => r.Id)
+            .Skip((page - 1) * pageSize).Take(pageSize).ToArrayAsync(ct);
+        return (items, total);
+    }
 }

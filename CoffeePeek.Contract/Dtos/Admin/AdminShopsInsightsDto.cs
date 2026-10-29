@@ -7,4 +7,5 @@ namespace CoffeePeek.Contract.Dtos.Admin;
 public record AdminShopsInsightsDto(
     AdminRatingStatsDto Ratings,
     IReadOnlyList<AdminTopShopDto> TopShopsByCheckIns30Days,
-    AdminAppDownloadStatsDto Downloads);
+    AdminAppDownloadStatsDto Downloads,
+    AdminShopCoverageDto? Coverage = null);

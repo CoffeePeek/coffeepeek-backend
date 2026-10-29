@@ -1,8 +1,10 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Net.Http.Headers;
+using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Text;
+using CoffeePeek.Account.Application.Features.Admin.Stats;
 using CoffeePeek.Account.Application.Features.Admin.Users;
 using CoffeePeek.AccountService.Controllers;
 using CoffeePeek.Contract.Dtos.Admin;
@@ -33,7 +35,11 @@ public sealed class ModeratorDashboardGatewayTests
     {
         var bus = new Mock<IMessageBus>(MockBehavior.Strict);
         ReadResponse<AdminOverviewStatsDto>(bus);
-        ReadResponse<AdminUsersTimeseriesDto>(bus);
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        bus.Setup(x => x.InvokeAsync<Response<AdminUsersTimeseriesDto>>(
+                It.IsAny<GetAdminUsersTimeseriesQuery>(), It.IsAny<CancellationToken>(), null))
+            .ReturnsAsync(Response<AdminUsersTimeseriesDto>.Success(new(1,
+                [new(today, 2)], [new(today, 31)])));
         ReadResponse<AdminShopsTimeseriesDto>(bus);
         ReadResponse<AdminShopsInsightsDto>(bus);
         ReadResponse<AdminModerationInsightsDto>(bus);
@@ -84,7 +90,7 @@ public sealed class ModeratorDashboardGatewayTests
         using var client = new HttpClient { BaseAddress = new Uri(gateway.Urls.Single()) };
         string[] reads =
         [
-            "/api/admin/stats/overview", "/api/admin/stats/users/timeseries?days=7",
+            "/api/admin/stats/overview", "/api/admin/stats/users/timeseries?days=1",
             "/api/admin/stats/shops/insights", "/api/admin/stats/shops/timeseries?days=7",
             "/api/admin/stats/moderation/insights", "/api/admin/users/stats",
             "/api/admin/users?page=2&pageSize=10&search=test&role=Moderator"
@@ -105,6 +111,13 @@ public sealed class ModeratorDashboardGatewayTests
                 {
                     Assert.Equal("2", response.Headers.GetValues("X-Current-Page").Single());
                     Assert.Equal("10", response.Headers.GetValues("X-Page-Size").Single());
+                }
+                if (expected == HttpStatusCode.OK && path.StartsWith("/api/admin/stats/users/timeseries"))
+                {
+                    var stats = await response.Content.ReadFromJsonAsync<Response<AdminUsersTimeseriesDto>>(Ct);
+                    Assert.NotNull(stats);
+                    Assert.Equal(new AdminDailyCountDto(today, 2), Assert.Single(stats.Data.NewUsers));
+                    Assert.Equal(new AdminDailyCountDto(today, 31), Assert.Single(stats.Data.DailyActiveUsers));
                 }
             }
         }

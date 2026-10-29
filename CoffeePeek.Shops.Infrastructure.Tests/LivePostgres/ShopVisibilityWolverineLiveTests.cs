@@ -3,6 +3,10 @@ using CoffeePeek.Shared.Kernel.Options;
 using CoffeePeek.Shared.Kernel.Response;
 using CoffeePeek.Shared.Persistence.Cache.Redis;
 using CoffeePeek.Shops.Application.Features.Admin.Shops;
+using CoffeePeek.Shops.Application.Abstractions;
+using CoffeePeek.Shops.Application.Features.CoffeeCatalog;
+using CoffeePeek.Shops.Application.Features.Ownership;
+using CoffeePeek.Shops.Persistance.Ownership;
 using CoffeePeek.Shops.Application.Features.Admin.Shops.SetShopTags;
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
 using CoffeePeek.Shops.Domain.Aggregates.ShopTagAggregate;
@@ -78,6 +82,12 @@ public sealed class ShopVisibilityWolverineLiveTests : IClassFixture<ShopsLiveDa
             {
                 services.AddScoped(_ => fixture.Context());
                 services.AddScoped<ICoffeeShopRepository, CoffeeShopRepository>();
+                services.AddScoped<IBusinessOwnershipStore, BusinessOwnershipStore>();
+                services.AddScoped<BusinessOwnershipService>();
+                services.AddScoped<IRoasterRepository, RoasterRepository>();
+                services.AddScoped<IRoasterOwnershipWriter, RoasterOwnershipWriter>();
+                services.AddSingleton(Mock.Of<IUserExistenceLookup>(x =>
+                    x.ExistsAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()) == Task.FromResult(true)));
                 services.AddScoped<IQueryShopTagRepository, QueryShopTagRepository>();
                 services.AddSingleton(cache.Object);
                 services.AddSingleton<IOptions<MediaPublicUrlOptions>>(Options.Create(
@@ -136,7 +146,7 @@ public sealed class ShopVisibilityWolverineLiveTests : IClassFixture<ShopsLiveDa
             Assert.True(await tagsInvalidated.Task.WaitAsync(TimeSpan.FromSeconds(10), ct));
 
             var ownership = await bus.InvokeAsync<Response<AdminPublishedShopDto>>(
-                new AssignCoffeeShopOwnerCommand(shop.Id, ownerId), ct);
+                new AssignCoffeeShopOwnerCommand(shop.Id, ownerId, Guid.NewGuid()), ct);
             Assert.True(ownership.IsSuccess);
             Assert.Equal(4, ownership.Data!.ProfileRevision);
             Assert.True(await ownerInvalidated.Task.WaitAsync(TimeSpan.FromSeconds(10), ct));

@@ -41,11 +41,11 @@ namespace Internal.Generated.WolverineHandlers
 
         public override async System.Threading.Tasks.Task HandleAsync(Wolverine.Runtime.MessageContext context, System.Threading.CancellationToken cancellation)
         {
-            var httpMenuPhotoDownloader = new CoffeePeek.Shops.Infrastructure.Menu.HttpMenuPhotoDownloader(_httpClientFactory2, _loggerOfHttpMenuPhotoDownloader);
             await using var serviceScope = _serviceScopeFactory.CreateAsyncScope();
             Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<Wolverine.Runtime.ScopedMessageContextHolder>(serviceScope.ServiceProvider).Context = context;
             // This service has been marked as requiring service location independent of Wolverine's ability to use constructor injection of everything else
             var shopsDbContext = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<CoffeePeek.Shops.Persistance.Configuration.ShopsDbContext>(serviceScope.ServiceProvider);
+            var httpMenuPhotoDownloader = new CoffeePeek.Shops.Infrastructure.Menu.HttpMenuPhotoDownloader(_httpClientFactory2, _loggerOfHttpMenuPhotoDownloader);
             var queryCoffeeDrinkRepository = new CoffeePeek.Shops.Persistance.Repositories.QueryCoffeeDrinkRepository(shopsDbContext);
             var openAiMenuVisionParser = new CoffeePeek.Shops.Infrastructure.Menu.OpenAiMenuVisionParser(_httpClientFactory1, _optionsOfOpenAiOptions, _loggerOfOpenAiMenuVisionParser);
             // The actual message body

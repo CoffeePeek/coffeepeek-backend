@@ -20,7 +20,7 @@ public static class GetRoasterByIdHandler
         CancellationToken ct)
     {
         var roaster = await repository.GetByIdWithShopsAndPhotosAsync(query.Id, ct);
-        if (roaster is null)
+        if (roaster is null || query.OwnerUserId is { } owner && roaster.OwnerUserId != owner)
             return Response<RoasterDetailsDto>.Error(HttpStatusCode.NotFound, "Roaster not found.");
 
         var counts = (await coffees.RoasterCountsAsync([roaster.Id], ct)).GetValueOrDefault(roaster.Id);
@@ -34,6 +34,7 @@ public static class GetRoasterByIdHandler
     internal static RoasterDetailsDto ToDto(Roaster roaster, MediaPublicUrlOptions mediaOptions) => new()
     {
         Id = roaster.Id,
+        ProfileRevision = roaster.ProfileRevision,
         Name = roaster.Name,
         About = roaster.About,
         CityId = roaster.Location?.CityId,

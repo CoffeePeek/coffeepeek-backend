@@ -62,5 +62,6 @@ public sealed class InternalRoasterExistenceControllerTests
         public Task<IEnumerable<Roaster>> GetByIds(List<Guid> ids, CancellationToken ct) => throw new NotImplementedException();
         public Task<Roaster?> GetByIdWithShopsAndPhotosAsync(Guid id, CancellationToken ct = default) => throw new NotImplementedException();
         public Task<Guid?> GetIdByModerationId(Guid id, CancellationToken ct = default) => throw new NotImplementedException();
+        public Task<(Roaster[] Items, int TotalCount)> GetByOwnerAsync(Guid ownerUserId, int page, int pageSize, CancellationToken ct) => throw new NotImplementedException();
     }
 }

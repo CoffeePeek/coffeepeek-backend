@@ -62,7 +62,8 @@ public class GetAdminShopsTimeseriesHandlerTests
                 new AdminRatingAggregate(3, 26m / 9m, 3m, 3m, 8m / 3m,
                     [(1, 1), (2, 0), (3, 1), (4, 0), (5, 1)]),
                 [new AdminTopShop(shopId, "Alpha", 3)],
-                new AdminDownloadAggregate(3, 2, [("android", 2, 2)], [("DE", 1), ("unknown", 1)])));
+                new AdminDownloadAggregate(3, 2, [("android", 2, 2)], [("DE", 1), ("unknown", 1)]),
+                new AdminShopCoverage(12, 43.755m, 4, 8)));
 
         var response = await GetAdminShopsInsightsHandler.Handle(
             new GetAdminShopsInsightsQuery(), _repository.Object, _ct);
@@ -73,5 +74,9 @@ public class GetAdminShopsTimeseriesHandlerTests
         response.Data.TopShopsByCheckIns30Days.Single().Name.Should().Be("Alpha");
         response.Data.Downloads.Last30Days.Should().Be(2);
         response.Data.Downloads.TopCountries30Days.Select(c => c.Country).Should().Equal("DE", "unknown");
+        response.Data.Coverage!.AverageCompletenessPercent.Should().Be(43.76m);
+        response.Data.Coverage.TotalShops.Should().Be(12);
+        response.Data.Coverage.ShopsWithCheckIns.Should().Be(4);
+        response.Data.Coverage.ShopsWithoutCheckIns.Should().Be(8);
     }
 }

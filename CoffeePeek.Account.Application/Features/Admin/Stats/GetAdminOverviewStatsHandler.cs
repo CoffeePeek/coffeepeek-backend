@@ -39,6 +39,16 @@ public static class GetAdminOverviewStatsHandler
             MonthlyActiveUsers: userStats.MonthlyActiveUsers,
             DeletedUsers: userStats.DeletedUsers,
             EmailConfirmedUsers: userStats.EmailConfirmedUsers,
-            GoogleUsers: userStats.GoogleUsers));
+            GoogleUsers: userStats.GoogleUsers,
+            AppleUsers: userStats.AppleUsers,
+            EmailUsers: userStats.EmailUsers,
+            OtherAuthUsers: userStats.OtherAuthUsers,
+            Retention: userStats.Retention is { } retention
+                ? new AdminUserRetentionStatsDto(retention.AsOfDateUtc, ToDto(retention.D1),
+                    ToDto(retention.D7), ToDto(retention.D30), ToDto(retention.AfterRegistration))
+                : null));
     }
+
+    private static AdminRetentionMetricDto ToDto(AdminRetentionMetric metric) =>
+        new(metric.EligibleUsers, metric.ReturnedUsers, metric.RatePercent);
 }

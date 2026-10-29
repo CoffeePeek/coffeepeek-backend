@@ -234,10 +234,19 @@ integration and fault gates use PostgreSQL, RabbitMQ, Redis and MinIO.
 
 ## API
 
+Business ownership: authenticated users submit claims for coffee shops and roasters; administrators approve,
+reject or revoke access. Owners edit only their assigned profiles, with changes published immediately.
+See [ownership API and local smoke test](docs/business-ownership-api.md). Apply the Shops migration
+`20261028141439_AddBusinessOwnershipClaims` before deploying the updated Shops service and Gateway.
+
 Transactional account emails use [published Resend templates](docs/account-email-templates.md).
 Publish the required templates before deploying AccountService.
 
 With the dev scripts, interactive documentation for all services is at `http://localhost:8080/scalar`.
+
+Shop search uses `POST /api/v1/coffee-shops/search`. The legacy `GET /api/CoffeeShops` is deprecated
+and limited to check-in selection (`q`, `city`, `page`, `pageSize`). Its removal is tracked as
+[API-001](docs/api-deprecations.md#api-001). The unused `POST /api/v1/discovery/search` has been removed.
 
 Main route groups through the gateway:
 

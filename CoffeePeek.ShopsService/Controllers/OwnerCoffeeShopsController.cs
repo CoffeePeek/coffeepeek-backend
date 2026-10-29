@@ -1,5 +1,4 @@
 using CoffeePeek.Shared.Auth;
-using CoffeePeek.Shared.Auth.Constants;
 using CoffeePeek.Shared.Kernel.Exceptions;
 using CoffeePeek.Shared.Kernel.Response;
 using CoffeePeek.Shops.Application.Features.Admin.Shops;
@@ -18,9 +17,10 @@ namespace CoffeePeek.ShopsService.Controllers;
 /// <summary>Owner portal for managing assigned coffee shops.</summary>
 [ApiController]
 [Route("api/owner/coffee-shops")]
-[Authorize(Policy = RoleConsts.Owner)]
+[Authorize]
 [Tags("Owner")]
 [ProducesErrorResponseType(typeof(ErrorResponse))]
+[ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
 public class OwnerCoffeeShopsController(IMessageBus bus, IUserContext userContext) : ControllerBase
 {
     [HttpGet]

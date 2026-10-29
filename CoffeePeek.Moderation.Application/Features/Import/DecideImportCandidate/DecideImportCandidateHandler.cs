@@ -22,6 +22,8 @@ public static class DecideImportCandidateHandler
 
         try
         {
+            if (command.Status == ContractStatus.Published)
+                ImportOpeningHoursParser.Parse(candidate.OpeningHours);
             candidate.Decide(
                 ShopImportCandidateMapper.ToDomain(command.Status),
                 command.Type is null ? null : ShopImportCandidateMapper.ToDomain(command.Type.Value),

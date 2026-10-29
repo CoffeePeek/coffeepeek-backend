@@ -5,6 +5,7 @@ using CoffeePeek.Shared.Web.Extensions;
 using CoffeePeek.Shared.Web.Handlers;
 using CoffeePeek.Shared.Web.Sentry;
 using CoffeePeek.ShopsService.Handlers;
+using Microsoft.AspNetCore.Mvc.Controllers;
 
 namespace CoffeePeek.ShopsService;
 
@@ -15,6 +16,14 @@ public static class DependencyInjection
         services.AddOpenApi(options =>
         {
             options.AddDocumentTransformer<BearerSecurityTransformer>();
+            // ASP.NET Core 10.0.5 does not infer controller operation deprecation from Obsolete.
+            options.AddOperationTransformer((operation, context, _) =>
+            {
+                if (context.Description.ActionDescriptor is ControllerActionDescriptor action &&
+                    action.MethodInfo.IsDefined(typeof(ObsoleteAttribute), inherit: true))
+                    operation.Deprecated = true;
+                return Task.CompletedTask;
+            });
         });
         
         services.AddControllersModule();

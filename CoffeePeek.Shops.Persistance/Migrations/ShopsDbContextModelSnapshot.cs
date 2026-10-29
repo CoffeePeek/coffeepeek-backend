@@ -1857,6 +1857,15 @@ namespace CoffeePeek.Shops.Persistance.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
+                    b.Property<Guid?>("OwnerUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("ProfileRevision")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasDefaultValue(0L);
+
                     b.Property<string>("PublicSlug")
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)")
@@ -1875,6 +1884,8 @@ namespace CoffeePeek.Shops.Persistance.Migrations
                     b.HasIndex("ModerationId")
                         .IsUnique()
                         .HasFilter("\"ModerationId\" IS NOT NULL");
+
+                    b.HasIndex("OwnerUserId");
 
                     b.HasIndex("PublicSlug")
                         .IsUnique()
@@ -2327,6 +2338,133 @@ namespace CoffeePeek.Shops.Persistance.Migrations
                     b.HasIndex("ShopMenuId");
 
                     b.ToTable("ShopMenuPhotos", (string)null);
+                });
+
+            modelBuilder.Entity("CoffeePeek.Shops.Domain.Aggregates.OwnershipAggregate.BusinessOwnershipChange", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ActorUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("BusinessId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("BusinessType")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid?>("ClaimId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("NewOwnerUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("PreviousOwnerUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Reason")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClaimId")
+                        .IsUnique()
+                        .HasFilter("\"ClaimId\" IS NOT NULL");
+
+                    b.HasIndex("BusinessType", "BusinessId", "CreatedAtUtc", "Id");
+
+                    b.ToTable("BusinessOwnershipChanges", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_BusinessOwnershipChanges_Owners", "\"PreviousOwnerUserId\" IS DISTINCT FROM \"NewOwnerUserId\"");
+
+                            t.HasCheckConstraint("CK_BusinessOwnershipChanges_Type", "\"BusinessType\" IN (0, 1)");
+                        });
+                });
+
+            modelBuilder.Entity("CoffeePeek.Shops.Domain.Aggregates.OwnershipAggregate.BusinessOwnershipClaim", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ApplicantUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("BusinessId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("BusinessNameSnapshot")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("BusinessSlugSnapshot")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<int>("BusinessType")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Contact")
+                        .IsRequired()
+                        .HasMaxLength(320)
+                        .HasColumnType("character varying(320)");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DecisionReason")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<string>("Evidence")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)");
+
+                    b.Property<DateTime?>("ReviewedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("ReviewedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("Revision")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ApplicantUserId", "CreatedAtUtc", "Id");
+
+                    b.HasIndex("BusinessType", "BusinessId", "ApplicantUserId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_BusinessOwnershipClaims_PendingApplicant")
+                        .HasFilter("\"Status\" = 0");
+
+                    b.HasIndex("Status", "CreatedAtUtc", "Id");
+
+                    b.ToTable("BusinessOwnershipClaims", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_BusinessOwnershipClaims_Content", "length(btrim(\"Contact\")) BETWEEN 1 AND 320 AND length(btrim(\"Evidence\")) BETWEEN 1 AND 4000");
+
+                            t.HasCheckConstraint("CK_BusinessOwnershipClaims_Decision", "(\"Status\" = 0 AND \"ReviewedByUserId\" IS NULL AND \"ReviewedAtUtc\" IS NULL AND \"DecisionReason\" IS NULL) OR (\"Status\" IN (1, 2) AND \"ReviewedByUserId\" IS NOT NULL AND \"ReviewedAtUtc\" IS NOT NULL AND (\"Status\" = 1 OR (\"DecisionReason\" IS NOT NULL AND length(btrim(\"DecisionReason\")) > 0)))");
+
+                            t.HasCheckConstraint("CK_BusinessOwnershipClaims_Type", "\"BusinessType\" IN (0, 1)");
+                        });
                 });
 
             modelBuilder.Entity("CoffeePeek.Shops.Domain.Aggregates.ReviewAggregate.ReviewReport", b =>
