@@ -63,9 +63,15 @@ public sealed class BusinessOwnershipMigrationLiveTests
             await db.SaveChangesAsync(ct);
             db.ChangeTracker.Clear();
 
-            var error = await Assert.ThrowsAsync<PostgresException>(() => db.GetService<IMigrator>().MigrateAsync(Previous, ct));
+            // Exercise this migration's guard, not rollback atomicity across later migrations.
+            // A full chain rollback would first remove later columns such as EvidencePhotoIds.
+            var rollbackScript = db.GetService<IMigrator>().GenerateScript(
+                OwnershipMigration, Previous, MigrationsSqlGenerationOptions.NoTransactions);
+            var migrationsBeforeRollback = (await db.Database.GetAppliedMigrationsAsync(ct)).ToArray();
+            var error = await Assert.ThrowsAsync<PostgresException>(() => db.Database.ExecuteSqlRawAsync(rollbackScript, ct));
             Assert.Contains("Ownership history exists", error.MessageText);
             Assert.Contains(OwnershipMigration, await db.Database.GetAppliedMigrationsAsync(ct));
+            Assert.Equal(migrationsBeforeRollback, (await db.Database.GetAppliedMigrationsAsync(ct)).ToArray());
             var retained = await db.BusinessOwnershipClaims.AsNoTracking().SingleAsync(ct);
             Assert.Equal(claim.Id, retained.Id);
             Assert.Equal(new[] { evidencePhotoId }, retained.EvidencePhotoIds);
