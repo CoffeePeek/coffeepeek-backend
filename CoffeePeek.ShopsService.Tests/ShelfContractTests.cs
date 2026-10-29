@@ -27,7 +27,7 @@ public class ShelfContractTests
 {
     private static readonly string Root = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../"));
 
-    private static string Doc() => File.ReadAllText(Path.Combine(Root, "docs/api/shelf-client.md"));
+    private static string Doc() => File.ReadAllText(Path.Combine(Root, "docs/api/shelf-client.md")).ReplaceLineEndings("\n");
 
     private static string[] JsonBlocks() => Regex.Matches(Doc(), "```(?:json|http)\\n(.*?)```", RegexOptions.Singleline)
         .Select(m => m.Groups[1].Value)

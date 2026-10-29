@@ -39,6 +39,7 @@
         "helpfulCount": 2,
         "isHelpfulByCurrentUser": false,
         "drinkPhotoUrl": null,
+        "shelfBagPhotoUrl": null,
         "kind": "Shop",
         "home": null,
         "countsForLeaderboard": false,

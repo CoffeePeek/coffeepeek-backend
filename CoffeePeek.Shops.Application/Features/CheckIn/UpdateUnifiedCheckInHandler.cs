@@ -1,9 +1,4 @@
-        // A shelf-bag card copy is created by Media for this check-in only, so it is not an upload to re-claim.
-        var uploads=checkIn.ShopPhotos.Where(p=>p.Id!=checkIn.ShelfBagPhotoId).ToArray();
-        if(uploads.Length==0)return;
-        var claim=await photos.ClaimForCheckInAsync(checkIn.UserId,checkIn.Id,uploads.Select(p=>p.StorageKey).ToArray(),ct,
-            uploads.SingleOrDefault(p => p.Id == checkIn.DrinkPhotoId)?.StorageKey);
-        if(!claim.Succeeded || claim.Photos.Count!=uploads.Length || uploads.Any(p=>using CoffeePeek.Contract.Dtos.CheckIns;
+using CoffeePeek.Contract.Dtos.CheckIns;
 using CoffeePeek.Shared.Kernel;
 using CoffeePeek.Shared.Kernel.Exceptions;
 using CoffeePeek.Shared.Kernel.Response;

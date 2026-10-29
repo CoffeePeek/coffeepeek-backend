@@ -1,4 +1,5 @@
 using CoffeePeek.MediaService;
+using System.Reflection;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
@@ -14,6 +15,34 @@ namespace CoffeePeek.MediaService.Tests;
 // needing live services — any exception other than MissingPreBuiltTypesException means we got past it.
 public class WolverinePreGeneratedHandlersTests
 {
+    [Fact]
+    public void EveryDiscoveredHandler_HasRegistryEntryAndPreGeneratedCode()
+    {
+        // Static discovery only sees the generated registry, so a startup smoke test cannot detect
+        // an entirely omitted consumer. Compare the source conventions with both generated artifacts.
+        var assembly = typeof(InfrastructureExtensions).Assembly;
+        var methodNames = new HashSet<string>(StringComparer.Ordinal)
+            { "Handle", "HandleAsync", "Handles", "Consume", "Consumes", "ConsumeAsync" };
+        var discovered = assembly.GetTypes()
+            .Where(t => t.IsClass && (!t.IsAbstract || t.IsSealed)
+                && (t.Name.EndsWith("Handler", StringComparison.Ordinal) || t.Name.EndsWith("Consumer", StringComparison.Ordinal)))
+            .SelectMany(t => t.GetMethods(BindingFlags.Public | BindingFlags.Static | BindingFlags.Instance | BindingFlags.DeclaredOnly)
+                .Where(m => methodNames.Contains(m.Name))
+                .Select(m => (Handler: t, Message: m.GetParameters().FirstOrDefault()?.ParameterType)))
+            .Where(x => x.Message?.Namespace?.StartsWith("CoffeePeek", StringComparison.Ordinal) == true)
+            .ToArray();
+        var registryType = Assert.Single(assembly.GetTypes().Where(t => !t.IsAbstract && typeof(HandlerRegistry).IsAssignableFrom(t)));
+        var registered = ((HandlerRegistry)Activator.CreateInstance(registryType)!).HandlerTypes().ToHashSet();
+        var generatedNames = assembly.GetTypes().Where(t => t.Namespace == "Internal.Generated.WolverineHandlers")
+            .Select(t => t.Name).ToArray();
+        var missing = discovered.Where(x => !registered.Contains(x.Handler)
+                || !generatedNames.Any(name => name.StartsWith(x.Message!.Name + "Handler", StringComparison.Ordinal)))
+            .Select(x => x.Message!.Name).Distinct().Order(StringComparer.Ordinal).ToArray();
+
+        Assert.True(missing.Length == 0, "Missing registry entry or pre-generated adapter for: " + string.Join(", ", missing)
+            + ". Run 'dotnet run -- codegen write' in CoffeePeek.MediaService and commit the output.");
+    }
+
     [Fact]
     public async Task ProductionMediaHost_StartsPastWolverineHandlerCheck()
     {

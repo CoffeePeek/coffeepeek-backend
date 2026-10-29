@@ -1,6 +1,7 @@
 using CoffeePeek.Shops.Application.Features.Shelf;
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeProductAggregate;
 using CoffeePeek.Shops.Persistance.Configuration;
+using CoffeePeek.Shops.Persistance.Queries;
 using Microsoft.EntityFrameworkCore;
 
 namespace CoffeePeek.Shops.Persistance.Shelf;
@@ -19,7 +20,5 @@ public sealed class ShelfCatalogLookup(ShopsDbContext db) : IShelfCatalogLookup
 
     public async Task<IReadOnlyDictionary<Guid, string>> GetPublishedSlugsAsync(IReadOnlyCollection<Guid> productIds,
         CancellationToken ct) =>
-        await db.CoffeeProducts.AsNoTracking()
-            .Where(p => productIds.Contains(p.Id) && p.Status == CoffeePublicationStatus.Published && p.PublicSlug != null)
-            .ToDictionaryAsync(p => p.Id, p => p.PublicSlug!, ct);
+        await CoffeeProductSlugs.ReadAsync(db, productIds.Select(id => (Guid?)id), ct);
 }

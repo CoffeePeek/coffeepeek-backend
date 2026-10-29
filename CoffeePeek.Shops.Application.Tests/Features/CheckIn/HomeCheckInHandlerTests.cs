@@ -364,8 +364,11 @@ public class HomeCheckInHandlerTests
             _repository.Object, _drinks.Object, _addresses.Object, _photos.Object, _unitOfWork.Object, _bus.Object, ct);
         Assert.Equal(bagId, kept.Data.ShelfBagId);
         Assert.Equal("Sibaristica", kept.Data.RoasterName);
-        _repository.Verify(r => r.GetOwnedShelfBagBeanAsync(It.IsAny<Guid>(), It.IsAny<Guid>(),
-            It.IsAny<CancellationToken>()), Times.Never);
+        Assert.Equal("Honey Bloom", kept.Data.BeanName);
+        Assert.Equal(productId, kept.Data.CoffeeProductId);
+        Assert.Null(kept.Data.ShelfBagPhoto);
+        // Showing a previously hidden card checks the current bag; a missing bag must not replace its snapshots.
+        _repository.Verify(r => r.GetOwnedShelfBagBeanAsync(_owner, bagId, ct), Times.Once);
 
         var unlinked = await UpdateHomeCheckInHandler.Handle(new(row.Id, _owner,
                 request with { ShelfBagId = null, CoffeeProductId = productId }),

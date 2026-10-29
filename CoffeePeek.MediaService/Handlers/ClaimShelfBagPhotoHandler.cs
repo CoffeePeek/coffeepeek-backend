@@ -39,7 +39,11 @@ public class ClaimShelfBagPhotoHandler(IPhotoRepository repository, IStorageServ
         if (photo.Status != PhotoStatus.Pending || (photo.ShelfBagId == null && photo.IsExpired)
             || !ShelfBagPhotoValidation.IsAllowedContentType(photo.ContentType))
             return Invalid("Photo is no longer available or is not a JPEG, PNG or WebP.");
-        var uploadedSize = await storage.GetObjectSize(photo.StorageKey, BucketType.CheckIn, ct);
+        // Sealing can finish (and remove the upload) before the new storage key is saved. Prefer that
+        // immutable copy on retry, even if the still-valid upload URL has since replaced the original.
+        var destination = ShelfBagPhotoStorageKey.Sealed(photo.Id, photo.StorageKey);
+        var uploadedSize = await storage.GetObjectSize(destination, BucketType.CheckIn, ct)
+            ?? (destination == photo.StorageKey ? null : await storage.GetObjectSize(photo.StorageKey, BucketType.CheckIn, ct));
         if (uploadedSize is null or <= 0 or > ShelfBagPhotoValidation.MaxSizeBytes)
             return Invalid("Photo was not uploaded or is larger than 1 MiB.");
 

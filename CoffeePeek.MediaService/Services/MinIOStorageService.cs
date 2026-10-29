@@ -169,7 +169,7 @@ public class MinIOStorageService : IStorageService, IDisposable
     {
         await EnsureCheckInBucketPrivateAsync(ct);
         // The presigned upload URL stays writable for its lifetime; validate and serve only this private copy.
-        var target = await CopyVerifiedCheckInObjectAsync(key, $"shelf-bags/{photoId:N}{Path.GetExtension(key)}", BucketType.CheckIn, ct);
+        var target = await CopyVerifiedCheckInObjectAsync(key, ShelfBagPhotoStorageKey.Sealed(photoId, key), BucketType.CheckIn, ct);
         await MarkAsPermanent(target, BucketType.CheckIn, ct);
         if (key != target) await Delete(key, BucketType.CheckIn, ct);
         return target;

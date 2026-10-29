@@ -55,8 +55,12 @@ public class ShelfBagPhotoTests
             .ReturnsAsync([photo]);
         _repo.Setup(r => r.TryClaimShelfBagAsync(photo.Id, _owner, _bag, It.IsAny<CancellationToken>())).ReturnsAsync(true);
         var sealedKey = $"shelf-bags/{photo.Id:N}.jpg";
+        var sealedExists = false;
         _storage.Setup(s => s.GetObjectSize(It.IsAny<string>(), BucketType.CheckIn, It.IsAny<CancellationToken>())).ReturnsAsync(bytes.Length);
-        _storage.Setup(s => s.SealShelfBagObjectAsync(It.IsAny<string>(), photo.Id, It.IsAny<CancellationToken>())).ReturnsAsync(sealedKey);
+        _storage.Setup(s => s.GetObjectSize(sealedKey, BucketType.CheckIn, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(() => sealedExists ? bytes.Length : (long?)null);
+        _storage.Setup(s => s.SealShelfBagObjectAsync(It.IsAny<string>(), photo.Id, It.IsAny<CancellationToken>()))
+            .Callback(() => sealedExists = true).ReturnsAsync(sealedKey);
         _storage.Setup(s => s.CopyToAsync(sealedKey, BucketType.CheckIn, It.IsAny<Stream>(), It.IsAny<CancellationToken>()))
             .Returns((string _, BucketType _, Stream target, CancellationToken ct) => target.WriteAsync(bytes, ct).AsTask());
     }
@@ -189,8 +193,10 @@ public class ShelfBagPhotoTests
         _storage.Verify(s => s.Delete(photo.StorageKey, BucketType.CheckIn, It.IsAny<CancellationToken>()), Times.Once);
     }
 
-    [Fact]
-    public async Task UploadRouteIssuesExactlyOnePrivateShelfKey()
+    [Theory]
+    [InlineData("\n")]
+    [InlineData("\r\n")]
+    public async Task UploadRouteIssuesExactlyOnePrivateShelfKey(string lineEnding)
     {
         var bus = new Mock<IMessageBus>();
         var user = new Mock<IUserContext>();
@@ -201,9 +207,10 @@ public class ShelfBagPhotoTests
             .ReturnsAsync(Response<List<GenerateUploadUrlResponse>>.Success([]));
         var controller = new PhotosController(bus.Object, user.Object);
         var doc = File.ReadAllText(Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../docs/api/shelf-client.md")));
-        var example = Regex.Match(doc, @"POST /api/Photos/shelf-bag\n\s*Content-Type: application/json\n\s*\n\s*(\[.*?\])", RegexOptions.Singleline)
-            .Groups[1].Value;
-        var requests = JsonSerializer.Deserialize<List<PhotoRequest>>(example, JsonSerializerOptions.Web)!;
+        doc = doc.ReplaceLineEndings(lineEnding);
+        var example = Regex.Match(doc, @"POST /api/Photos/shelf-bag\r?\n\s*Content-Type: application/json\r?\n\s*\r?\n\s*(\[.*?\])", RegexOptions.Singleline);
+        Assert.True(example.Success, "The documented shelf-bag upload request must contain a JSON example.");
+        var requests = JsonSerializer.Deserialize<List<PhotoRequest>>(example.Groups[1].Value, JsonSerializerOptions.Web)!;
 
         Assert.IsType<OkObjectResult>(await controller.GenerateShelfBagUploadUrl(requests, Ct));
         Assert.Equal("shelf-bags", captured!.StorageKeyPrefix);
