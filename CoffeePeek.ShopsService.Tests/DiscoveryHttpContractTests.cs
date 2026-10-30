@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
+using CoffeePeek.Contract.Dtos.Coffee;
 using CoffeePeek.Contract.Dtos.Discovery;
 using CoffeePeek.Contract.Dtos.CoffeeShop;
 using CoffeePeek.Contract.Dtos.PublicAddresses;
@@ -79,7 +80,7 @@ public sealed class DiscoveryHttpContractTests : IAsyncLifetime
             .ThrowsAsync(new DiscoveryException("Coffee changed; reload.", 409, "VERSION_CONFLICT"));
         app = builder.Build();
         app.UseExceptionHandler();
-        app.UseAuthentication(); app.UseAuthorization(); app.MapControllers();
+        app.UseAuthentication(); app.UseAuthorization(); app.UseResponseCaching(); app.MapControllers();
         await app.StartAsync();
         var address = app.Services.GetRequiredService<IServer>().Features.Get<IServerAddressesFeature>()!.Addresses.Single();
         client = new HttpClient { BaseAddress = new Uri(address) };
@@ -250,6 +251,59 @@ public sealed class DiscoveryHttpContractTests : IAsyncLifetime
         Assert.Equal(HttpStatusCode.Unauthorized, favorite.StatusCode);
         favorites.Verify(f => f.SetAsync(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
         bus.Verify(b => b.InvokeAsync(It.IsAny<SetDiscoveryFavoriteCommand>(), It.IsAny<CancellationToken>(), It.IsAny<TimeSpan?>()), Times.Never);
+    }
+
+    [Theory]
+    [InlineData("/api/coffees?search=one", "/api/coffees?search=two")]
+    [InlineData("/api/roasters/example/coffees?search=one", "/api/roasters/example/coffees?search=two")]
+    public async Task CoffeeLists_CacheSuccessfulResponsesByQuery(string firstUrl, string secondUrl)
+    {
+        catalog.Setup(c => c.ListAsync(It.IsAny<CoffeeCatalogFilter>(), It.IsAny<CancellationToken>()))
+            .Returns((CoffeeCatalogFilter filter, CancellationToken _) => Task.FromResult(
+                new PublicPage<CoffeeProductDto>([], filter.Search == "one" ? 1 : 2, 1, 1, 20)));
+
+        using var first = await client.GetAsync(firstUrl, TestContext.Current.CancellationToken);
+        using var repeated = await client.GetAsync(firstUrl, TestContext.Current.CancellationToken);
+        using var second = await client.GetAsync(secondUrl, TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.OK, first.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, repeated.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, second.StatusCode);
+        Assert.True(first.Headers.CacheControl?.Public);
+        Assert.Equal(TimeSpan.FromMinutes(2), first.Headers.CacheControl?.MaxAge);
+        Assert.Equal(1, (await first.Content.ReadFromJsonAsync<JsonElement>(TestContext.Current.CancellationToken)).GetProperty("data").GetProperty("totalItems").GetInt32());
+        Assert.Equal(2, (await second.Content.ReadFromJsonAsync<JsonElement>(TestContext.Current.CancellationToken)).GetProperty("data").GetProperty("totalItems").GetInt32());
+        catalog.Verify(c => c.ListAsync(It.IsAny<CoffeeCatalogFilter>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
+    }
+
+    [Fact]
+    public async Task CoffeeDetails_CacheOnlySuccessfulResponses()
+    {
+        queries.Setup(q => q.CoffeeDetailsAsync("published", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new CoffeeDetails { Name = "Published coffee" });
+        catalog.Setup(c => c.GetAsync("published", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new CoffeeProductDto(new PublicAddressDto("published", "/coffees/published", 1),
+                new PublicRoasterSummaryDto(null, "Roaster", null, null),
+                new CoffeeContentDto("Published coffee", null, "roasted_beans", "whole_beans", "single_origin",
+                    null, null, null, null, null, [], [], [], []), [], [], [], null));
+
+        using var published = await client.GetAsync("/api/v1/coffees/published", TestContext.Current.CancellationToken);
+        using var missing = await client.GetAsync("/api/v1/coffees/missing", TestContext.Current.CancellationToken);
+        using var legacyPublished = await client.GetAsync("/api/coffees/published", TestContext.Current.CancellationToken);
+        using var legacyMissing = await client.GetAsync("/api/coffees/missing", TestContext.Current.CancellationToken);
+        using var search = await client.PostAsync("/api/v1/coffees/search", Content("{}"), TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.OK, published.StatusCode);
+        Assert.True(published.Headers.CacheControl?.Public);
+        Assert.Equal(TimeSpan.FromMinutes(2), published.Headers.CacheControl?.MaxAge);
+        Assert.Equal(HttpStatusCode.NotFound, missing.StatusCode);
+        Assert.True(missing.Headers.CacheControl?.NoStore);
+        Assert.Equal(HttpStatusCode.OK, legacyPublished.StatusCode);
+        Assert.True(legacyPublished.Headers.CacheControl?.Public);
+        Assert.Equal(TimeSpan.FromMinutes(2), legacyPublished.Headers.CacheControl?.MaxAge);
+        Assert.Equal(HttpStatusCode.NotFound, legacyMissing.StatusCode);
+        Assert.True(legacyMissing.Headers.CacheControl?.NoStore);
+        Assert.True(search.Headers.CacheControl?.NoStore);
     }
 
     [Theory]
