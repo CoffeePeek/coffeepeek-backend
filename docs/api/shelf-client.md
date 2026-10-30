@@ -2,7 +2,7 @@
 
 The shelf is a signed-in user's private list of coffee bags at home. A bag is added from a scanned card image, stands on the shelf in a user-chosen order, and moves to the archive when it is finished. Every route requires `Authorization: Bearer <user JWT>` and acts on the caller's own shelf; nobody else can read it, and another owner's bag answers `404`.
 
-Use the gateway base URL. Responses use the normal `Response<T>` envelope (`{ "isSuccess": true, "message": "Operation successful", "data": ... }`) and `Cache-Control: no-store`. Shops owns shelf rows; Media owns the card image bytes.
+Use the gateway base URL. Responses use the normal `Response<T>` envelope (`{ "isSuccess": true, "message": "Operation successful", "data": ... }`) and `Cache-Control: no-store`, except card bytes as described below. Shops owns shelf rows; Media owns the card image bytes.
 
 ## Routes
 
@@ -16,7 +16,7 @@ Use the gateway base URL. Responses use the normal `Response<T>` envelope (`{ "i
 | `POST` | `/api/v1/shelf/bags/{id}/finish` | Move a shelf bag to the archive; `200` with `ShelfBagDto`. |
 | `POST` | `/api/v1/shelf/bags/{id}/restore` | Return an archived bag to the shelf; `200` with `ShelfBagDto`. |
 | `DELETE` | `/api/v1/shelf/bags/{id}` | Delete a mistaken bag from the shelf or archive; `200` success envelope. |
-| `GET` | `/api/v1/shelf/bags/{id}/photos/{photoId}` | Owner-only card bytes (`private, no-store`). |
+| `GET` | `/api/v1/shelf/bags/{id}/photos/{photoId}` | Owner-only card bytes (`private, max-age` up to 300 seconds, limited by token expiry). |
 
 Card uploads use Media: `POST /api/Photos/shelf-bag` (see [Card image](#card-image)).
 
@@ -45,6 +45,7 @@ Card uploads use Media: `POST /api/Photos/shelf-bag` (see [Card image](#card-ima
 
 - `status` is `OnShelf` or `Finished`. `position` is the zero-based shelf index for `OnShelf` and `null` for `Finished`.
 - `photo` is `null` for a bag added without a card. `photo.id` changes when the card is replaced, so clients may cache by URL.
+- Card responses have a photo-ID ETag. After freshness expires, `If-None-Match` still checks ownership and returns `304` only for the same card. A deleted or replaced card returns `404`; a client may retain a previously fetched card for up to five minutes while its private cache entry is fresh. Clients must discard their cache on account change or sign-out.
 - `coffeeProductId` is a stable catalog product identity; `coffeeProductSlug` is its currently published slug or `null` when the product is no longer published. `name` is a snapshot taken when the product was selected (or the custom name) and is not rewritten by catalog renames.
 - `grind` is `Beans`, `Ground` or `null`. `roastPurpose` is `Espresso`, `Filter` or `null` (unknown). `roastedOn` is a calendar date. `rating` is 1–5. `buyAgain` is `true` ("Куплю ещё"), `false` ("Больше не возьму") or `null`.
 - Unknown fields are optional for clients; new fields may be added.
