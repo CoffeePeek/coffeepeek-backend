@@ -68,7 +68,7 @@ app.UseAuthentication();
 app.UseMiddleware<CheckInPhotoAuthenticationMiddleware>();
 app.UseAuthorization();
 
-app.UseResponseCaching();
+app.UseQueryAwareResponseCaching();
 
 // Gateway-level structured logging: route, cluster, status code, duration, correlation ID.
 app.UseMiddleware<GatewayRequestLoggingMiddleware>();

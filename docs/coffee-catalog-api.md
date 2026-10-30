@@ -114,7 +114,7 @@ GiST с KNN имеет смысл только при подтверждённо
 
 Карточка содержит `address`, `roaster`, `content`, `countries`, `photos`, `variants`, `updatedAtUtc`. `photos[]` имеет `fullUrl`, `urls` (размеры существующего `PhotoUrlsDto`), `isPrimary`, `sortIndex`. Это ссылки на сохранённые файлы Media, доступные независимо от исходного сайта. `photos=[]` означает отсутствие фотографии; клиент показывает заглушку.
 
-Вариант содержит `weightGrams` (может быть `null`), `price`, `currency`, `grind`, `roastPurpose`, `availability`, `availabilityScope`, `sellerName`, `sourceUrl`, `checkedAtUtc`. Наличие: `InStock`, `OutOfStock`, `Unknown`; область: `online` или `in_store`. River даёт наличие в кофейне. Оформление заказа происходит по `sourceUrl` на сайте продавца. Изменения каталога читаются из БД со следующего запроса, ответы не кешируются.
+Вариант содержит `weightGrams` (может быть `null`), `price`, `currency`, `grind`, `roastPurpose`, `availability`, `availabilityScope`, `sellerName`, `sourceUrl`, `checkedAtUtc`. Наличие: `InStock`, `OutOfStock`, `Unknown`; область: `online` или `in_store`. River даёт наличие в кофейне. Оформление заказа происходит по `sourceUrl` на сайте продавца. Успешные GET-ответы списков и карточек кофе кешируются на 120 секунд с учётом всех параметров URL; изменения могут стать видимы с задержкой до двух минут. Отсутствующие карточки и поисковые POST-ответы не кешируются.
 
 ## Административные маршруты
 
