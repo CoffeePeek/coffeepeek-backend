@@ -37,10 +37,15 @@ public class ShelfPhotoCacheTests
         Assert.Equal("Authorization, Cookie", controller.Response.Headers.Vary);
         Assert.Equal(3, controller.Response.Body.Length);
 
-        var conditional = CreateController(owner, queries, media);
-        conditional.Request.Headers.IfNoneMatch = $"\"shelf-{card:N}\"";
-        Assert.Equal(304, Assert.IsType<StatusCodeResult>(await conditional.Photo(bag, card,
-            TestContext.Current.CancellationToken)).StatusCode);
+        var etag = $"\"shelf-{card:N}\"";
+        foreach (var condition in new[] { etag, $"W/{etag}", $"\"other\", {etag}",
+                     $"\"other,inside\", W/{etag}", "*" })
+        {
+            var conditional = CreateController(owner, queries, media);
+            conditional.Request.Headers.IfNoneMatch = condition;
+            Assert.Equal(304, Assert.IsType<StatusCodeResult>(await conditional.Photo(bag, card,
+                TestContext.Current.CancellationToken)).StatusCode);
+        }
         Assert.Equal(1, media.Calls);
 
         queries.Setup(q => q.GetPhotoAsync(owner, bag, card, It.IsAny<CancellationToken>()))

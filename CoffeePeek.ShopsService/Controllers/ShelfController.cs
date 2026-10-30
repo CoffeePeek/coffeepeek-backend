@@ -12,6 +12,7 @@ using CoffeePeek.Shops.Infrastructure.Media;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Microsoft.Net.Http.Headers;
 using Wolverine;
 
 namespace CoffeePeek.ShopsService.Controllers;
@@ -104,7 +105,7 @@ public sealed class ShelfController(IMessageBus bus, IUserContext user, IShelfQu
         var expiry = AccessTokenExpiry.Read(User);
         if (expiry is null || expiry <= DateTimeOffset.UtcNow) return Unauthorized();
         var etag = $"\"shelf-{photoId:N}\"";
-        if (IsCardContentType(photo.ContentType) && Request.Headers.IfNoneMatch.ToString() == etag)
+        if (IsCardContentType(photo.ContentType) && MatchesIfNoneMatch(etag))
         {
             SetPhotoCacheHeaders(etag, expiry.Value);
             return StatusCode(StatusCodes.Status304NotModified);
@@ -142,4 +143,9 @@ public sealed class ShelfController(IMessageBus bus, IUserContext user, IShelfQu
 
     private static bool IsCardContentType(string? contentType) =>
         contentType?.ToLowerInvariant() is "image/jpeg" or "image/png" or "image/webp";
+
+    private bool MatchesIfNoneMatch(string etag) =>
+        EntityTagHeaderValue.TryParseList(Request.Headers.IfNoneMatch.Select(value => value ?? "").ToArray(), out var tags)
+        && tags.Any(tag => tag == EntityTagHeaderValue.Any ||
+            tag.Compare(new EntityTagHeaderValue(etag), useStrongComparison: false));
 }
