@@ -403,6 +403,9 @@ namespace CoffeePeek.Account.Persistence.Migrations
                     b.Property<bool>("IsRevoked")
                         .HasColumnType("boolean");
 
+                    b.Property<DateTime>("SessionExpiresAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("Token")
                         .IsRequired()
                         .HasMaxLength(1000)

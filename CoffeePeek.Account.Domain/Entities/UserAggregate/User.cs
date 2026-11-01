@@ -119,32 +119,44 @@ public class User : AggregateRoot<Guid>, IPublicSlugOwner
         return sanitized;
     }
 
-    public void AddSession(string token, TimeSpan ttl, string device, string ip)
+    public RefreshToken AddSession(string token, TimeSpan ttl, string device, string ip,
+        TimeSpan? absoluteLifetime = null, DateTime? nowUtc = null)
     {
+        var now = nowUtc ?? DateTime.UtcNow;
         if (_refreshTokens.Count(t => t.IsActive) >= BusinessConstants.MaxActiveSessions)
         {
             _refreshTokens.Where(t => t.IsActive).OrderBy(t => t.CreatedAtUtc).First().Revoke();
         }
 
-        _refreshTokens.Add(new RefreshToken(Id, token, ttl, device, ip));
+        var refreshToken = RefreshToken.Create(Id, token, ttl, device, ip,
+            now.Add(absoluteLifetime ?? TimeSpan.FromDays(365)), now);
+        _refreshTokens.Add(refreshToken);
+        return refreshToken;
     }
 
-    /// <returns>
-    /// <c>false</c> when the token is revoked, expired or unknown: every session is revoked (reuse detection).
-    /// Deliberately does not throw — an exception rolls back the handler transaction and the revocation with it.
-    /// </returns>
-    public bool RotateRefreshToken(string oldRefreshToken, string newRefreshToken, TimeSpan ttl, string device, string ip)
+    /// <summary>
+    /// Expired or unknown tokens do not affect other sessions. Reuse of an unexpired revoked token
+    /// revokes every session; the caller must commit that revocation before returning an error.
+    /// </summary>
+    public RefreshTokenRotationStatus RotateRefreshToken(string oldRefreshToken, string newRefreshToken,
+        TimeSpan ttl, string device, string ip, DateTime? nowUtc = null)
     {
+        var now = nowUtc ?? DateTime.UtcNow;
         var existing = _refreshTokens.FirstOrDefault(t => t.Token == oldRefreshToken);
-        if (existing is not { IsActive: true })
+        if (existing is null)
+            return RefreshTokenRotationStatus.Invalid;
+        if (existing.IsExpiredAt(now))
+            return RefreshTokenRotationStatus.Expired;
+        if (existing.IsRevoked)
         {
             RevokeAllSessions();
-            return false;
+            return RefreshTokenRotationStatus.Reused;
         }
 
         existing.Revoke();
-        AddSession(newRefreshToken, ttl, device, ip);
-        return true;
+        _refreshTokens.Add(RefreshToken.Create(Id, newRefreshToken, ttl, device, ip,
+            existing.SessionExpiresAtUtc, now));
+        return RefreshTokenRotationStatus.Success;
     }
 
     public void RevokeAllSessions() => _refreshTokens.ForEach(t => t.Revoke());

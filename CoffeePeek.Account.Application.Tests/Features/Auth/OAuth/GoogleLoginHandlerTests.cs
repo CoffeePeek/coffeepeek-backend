@@ -122,7 +122,7 @@ public class GoogleLoginHandlerTests
                 Email = "user@gmail.com",
                 Username = "user",
                 AvatarUrl = "https://example.com/a.png"
-            });
+            }, DateTime.UtcNow.AddDays(90));
         var response = Response<GoogleLoginResponse>.Success(payload);
 
         var json = JsonSerializer.Serialize(response, new JsonSerializerOptions(JsonSerializerDefaults.Web));

@@ -135,6 +135,16 @@ its scripts also supply the connection strings and other required settings.
 - **Gateway secret.** `GatewayAuth:SecretKey` must be identical in the gateway and every service. The key committed
   in `appsettings.json` is a public development value and is **rejected outside the Development environment**.
 - **JWT secret.** Account issues tokens and Gateway validates them. Both must use the same `JWTOptions:SecretKey`.
+- **Session lifetime.** `JWTOptions:RefreshTokenLifetimeDays` defaults to **90 days** without a successful
+  refresh. Each refresh rotates the token and renews this inactivity window, capped by the fixed session
+  deadline: **365 days** from login (`JWTOptions:RefreshTokenAbsoluteLifetimeDays`). Cookie expiry and
+  native `refreshTokenExpiresAt` reflect this cap. Expired tokens return 401 for that client without revoking
+  other devices. Reuse of a revoked, unexpired token retains the existing account-wide revocation behavior.
+  Production variables are `JWT_REFRESH_TOKEN_DAYS=90` and `JWT_REFRESH_TOKEN_ABSOLUTE_DAYS=365`;
+  update existing environment overrides when deploying. Apply the Account migration before starting the
+  new version. Legacy tokens retain their existing expiry until the next successful refresh; expired tokens
+  are not revived. Their absolute deadline is backfilled as token creation time + 365 days because the
+  original login time was not stored across rotations. New sessions preserve the login deadline throughout.
 - **Yandex geocoding.** Shops and Moderation both require `YandexApiOptions:ApiKey`; production Compose supplies
   the existing `YANDEX_GEOCODER_API_KEY` to both services. For local development, configure
   `YandexApiOptions__ApiKey` in `dev/dev.local.env` or set the option in each host's user secrets.
