@@ -85,25 +85,26 @@ public class AdminUserQueryRepositoryTests
     }
 
     [Fact]
-    public async Task GetStatsAsync_CountsEmailConfirmedAndGoogleUsers()
+    public async Task GetStatsAsync_CountsEmailConfirmedAndOAuthProviders()
     {
         await using var db = CreateContext();
         var unconfirmed = NewUser("unconfirmed");
         var confirmed = NewUser("confirmed");
         confirmed.ConfirmEmail(confirmed.Credentials.EmailConfirmationToken!);
-        var google = User.CreateExternal("google@example.com", "Google", "google-sub-1");
+        var google = User.CreateExternal("google@example.com", "GoogleProvider", "google-sub-1");
         google.CreatedAtUtc = DateTime.UtcNow;
-        var apple = User.CreateExternal("apple@example.com", "Apple", "apple-sub-1");
+        var apple = User.CreateExternal("apple@example.com", "AppleProvider", "apple-sub-1");
         var lowerGoogle = User.CreateExternal("lower@example.com", "google", "google-sub-2");
+        var lowerApple = User.CreateExternal("lower-apple@example.com", "apple", "apple-sub-2");
         var other = User.CreateExternal("other@example.com", "Other", "other-sub");
-        db.Users.AddRange(unconfirmed, confirmed, google, apple, lowerGoogle, other);
+        db.Users.AddRange(unconfirmed, confirmed, google, apple, lowerGoogle, lowerApple, other);
         await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var stats = await new AdminUserQueryRepository(db).GetStatsAsync(TestContext.Current.CancellationToken);
 
-        stats.EmailConfirmedUsers.Should().Be(5);
+        stats.EmailConfirmedUsers.Should().Be(6);
         stats.GoogleUsers.Should().Be(2);
-        stats.AppleUsers.Should().Be(1);
+        stats.AppleUsers.Should().Be(2);
         stats.EmailUsers.Should().Be(2);
         stats.OtherAuthUsers.Should().Be(1);
         (stats.GoogleUsers + stats.AppleUsers + stats.EmailUsers + stats.OtherAuthUsers).Should().Be(stats.TotalUsers);

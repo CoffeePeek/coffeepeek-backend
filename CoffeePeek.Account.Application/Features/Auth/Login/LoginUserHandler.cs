@@ -25,6 +25,7 @@ public class LoginUserHandler
         return Response<LoginResponse>.Success(new LoginResponse(
             result.AccessToken,
             result.RefreshToken,
-            result.ExpiredAt));
+            result.ExpiredAt,
+            result.RefreshTokenExpiresAt));
     }
 }

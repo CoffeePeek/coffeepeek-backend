@@ -182,7 +182,7 @@ public class UserTests
     }
 
     [Fact]
-    public void RotateRefreshToken_WithInvalidToken_ShouldRevokeAllAndReturnFalse()
+    public void RotateRefreshToken_WithUnknownToken_ShouldPreserveOtherSessions()
     {
         // Arrange
         var user = User.Register("test@example.com", "testuser", "hash", Role.Create("User"));
@@ -192,8 +192,8 @@ public class UserTests
         var rotated = user.RotateRefreshToken("invalid_token", "new_token", TimeSpan.FromDays(7), "device", "ip");
 
         // Assert
-        rotated.Should().BeFalse();
-        user.RefreshTokens.Should().OnlyContain(t => !t.IsActive);
+        rotated.Should().Be(RefreshTokenRotationStatus.Invalid);
+        user.RefreshTokens.Should().OnlyContain(t => t.IsActive);
         user.RefreshTokens.Should().NotContain(t => t.Token == "new_token");
     }
 

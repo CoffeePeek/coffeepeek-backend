@@ -73,8 +73,11 @@ public class AdminUserQueryRepository(AccountDbContext dbContext) : IAdminUserQu
         var activeUsers = await dbContext.Users.CountAsync(u => !u.IsBlocked && !u.IsSoftDelete, ct);
         var registeredToday = await dbContext.Users.CountAsync(u => u.CreatedAtUtc >= today, ct);
         var emailConfirmedUsers = await dbContext.Users.CountAsync(u => u.Credentials.EmailConfirmed, ct);
-        var googleUsers = authProviders.GetValueOrDefault("google");
-        var appleUsers = authProviders.GetValueOrDefault("apple");
+        // OAuth login stores GoogleProvider/AppleProvider; include older short names too.
+        var googleUsers = authProviders.GetValueOrDefault("google")
+            + authProviders.GetValueOrDefault("googleprovider");
+        var appleUsers = authProviders.GetValueOrDefault("apple")
+            + authProviders.GetValueOrDefault("appleprovider");
         var emailUsers = authProviders.GetValueOrDefault("");
         var retention = await GetRetentionAsync(today, ct);
 

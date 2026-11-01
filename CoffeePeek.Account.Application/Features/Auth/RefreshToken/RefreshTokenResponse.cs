@@ -5,4 +5,5 @@ namespace CoffeePeek.Account.Application.Features.Auth.RefreshToken;
 public record RefreshTokenResponse(
     string AccessToken,
     [property: JsonIgnore] string RefreshToken,
-    DateTime AccessTokenExpiresAt);
+    DateTime AccessTokenExpiresAt,
+    [property: JsonIgnore] DateTime RefreshTokenExpiresAt);

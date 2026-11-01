@@ -18,5 +18,8 @@ public class JWTOptions
     public int AccessTokenLifetimeMinutes { get; set; }
 
     [Range(1, 365)]
-    public int RefreshTokenLifetimeDays { get; set; }
+    public int RefreshTokenLifetimeDays { get; set; } = 90;
+
+    [Range(1, 365)]
+    public int RefreshTokenAbsoluteLifetimeDays { get; set; } = 365;
 }

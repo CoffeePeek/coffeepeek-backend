@@ -4,14 +4,12 @@ using CoffeePeek.Account.Application.Common.Models;
 using CoffeePeek.Account.Application.Features.Auth.AppleLogin;
 using CoffeePeek.AccountService.Controllers;
 using CoffeePeek.AccountService.Controllers.Contracts;
-using CoffeePeek.Shared.Auth.Options;
 using CoffeePeek.Shared.Kernel.Exceptions;
 using CoffeePeek.Shared.Kernel.Response;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
-using MsOptions = Microsoft.Extensions.Options.Options;
 using Moq;
 using Wolverine;
 
@@ -32,7 +30,7 @@ public sealed class AppleWebTokensControllerTests
         context.Request.Headers.UserAgent = "Browser";
         context.Connection.RemoteIpAddress = IPAddress.Parse("192.0.2.1");
         if (cookieState is not null) context.Request.Headers.Cookie = "__Host-cp-apple-state=" + cookieState;
-        return new AppleWebTokensController(_bus.Object, MsOptions.Create(new JWTOptions { RefreshTokenLifetimeDays = 7 }))
+        return new AppleWebTokensController(_bus.Object)
         {
             ControllerContext = new ControllerContext { HttpContext = context }
         };
@@ -64,7 +62,7 @@ public sealed class AppleWebTokensControllerTests
                 It.Is<object>(c => c is AppleLoginCommand && ((AppleLoginCommand)c).ChallengeId == challengeId &&
                     ((AppleLoginCommand)c).IdToken == "apple-id-token" && ((AppleLoginCommand)c).DeviceName == "Browser" &&
                     ((AppleLoginCommand)c).IpAddress == "192.0.2.1"), It.IsAny<CancellationToken>(), null))
-            .ReturnsAsync(Response<AppleLoginResponse>.Success(new AppleLoginResponse("access-secret", "refresh-secret", DateTime.UtcNow.AddMinutes(15))));
+            .ReturnsAsync(Response<AppleLoginResponse>.Success(new AppleLoginResponse("access-secret", "refresh-secret", DateTime.UtcNow.AddMinutes(15), DateTime.UtcNow.AddDays(90))));
         var controller = Controller(State);
 
         var result = await controller.AppleCallback(new AppleCallbackRequest { State = State, Code = "apple-code" },

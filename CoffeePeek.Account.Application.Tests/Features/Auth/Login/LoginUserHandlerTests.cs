@@ -38,7 +38,7 @@ public class LoginUserHandlerTests
         // Arrange
         var command = CreateCommand();
         _authServiceMock.Setup(s => s.LoginAsync(command.Email, command.Password, command.DeviceName, command.IpAddress))
-            .ReturnsAsync(new AuthResult { AccessToken = "access", RefreshToken = "refresh", ExpiredAt = DateTime.UtcNow.AddMinutes(15) });
+            .ReturnsAsync(new AuthResult { AccessToken = "access", RefreshToken = "refresh", ExpiredAt = DateTime.UtcNow.AddMinutes(15), RefreshTokenExpiresAt = DateTime.UtcNow.AddDays(90) });
 
         // Act
         var response = await LoginUserHandler.Handle(command, _authServiceMock.Object, _filter, _ct);
@@ -55,7 +55,7 @@ public class LoginUserHandlerTests
         // Arrange
         var command = CreateCommand("new@example.com");
         _authServiceMock.Setup(s => s.LoginAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
-            .ReturnsAsync(new AuthResult { AccessToken = "a", RefreshToken = "r", ExpiredAt = DateTime.UtcNow.AddMinutes(15) });
+            .ReturnsAsync(new AuthResult { AccessToken = "a", RefreshToken = "r", ExpiredAt = DateTime.UtcNow.AddMinutes(15), RefreshTokenExpiresAt = DateTime.UtcNow.AddDays(90) });
 
         _filter.MightExist("new@example.com").Should().BeFalse("email not added yet");
 

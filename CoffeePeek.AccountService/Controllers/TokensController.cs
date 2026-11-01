@@ -4,12 +4,10 @@ using CoffeePeek.Account.Application.Features.Auth.OAuthLogin;
 using CoffeePeek.Account.Application.Features.Auth.RefreshToken;
 using CoffeePeek.AccountService.Controllers.Contracts;
 using CoffeePeek.Shared.Auth;
-using CoffeePeek.Shared.Auth.Options;
 using CoffeePeek.Shared.Kernel.Exceptions;
 using CoffeePeek.Shared.Kernel.Response;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Options;
 using Wolverine;
 
 namespace CoffeePeek.AccountService.Controllers;
@@ -20,8 +18,7 @@ namespace CoffeePeek.AccountService.Controllers;
 [ProducesErrorResponseType(typeof(ErrorResponse))]
 public class TokensController(
     IMessageBus bus,
-    IUserContext userContext,
-    IOptions<JWTOptions> jwtOptions) : ControllerBase
+    IUserContext userContext) : ControllerBase
 {
     /// <summary>
     /// Login user and get token
@@ -40,7 +37,7 @@ public class TokensController(
 
         var response = await bus.InvokeAsync<Response<LoginResponse>>(command);
 
-        Response.Cookies.Append("refreshToken", response.Data.RefreshToken, CreateRefreshTokenCookieOptions());
+        Response.Cookies.Append("refreshToken", response.Data.RefreshToken, CreateRefreshTokenCookieOptions(response.Data.RefreshTokenExpiresAt));
 
         return Ok(response);
     }
@@ -66,7 +63,7 @@ public class TokensController(
             return StatusCode(response.StatusCode ?? StatusCodes.Status400BadRequest, response);
 
         if (response.IsSuccess && response.Data is not null)
-            Response.Cookies.Append("refreshToken", response.Data.RefreshToken, CreateRefreshTokenCookieOptions());
+            Response.Cookies.Append("refreshToken", response.Data.RefreshToken, CreateRefreshTokenCookieOptions(response.Data.RefreshTokenExpiresAt));
 
         return Ok(response);
     }
@@ -88,7 +85,8 @@ public class TokensController(
         return Ok(ToNativeResponse(
             response.Data.AccessToken,
             response.Data.RefreshToken,
-            response.Data.AccessTokenExpiresAt));
+            response.Data.AccessTokenExpiresAt,
+            response.Data.RefreshTokenExpiresAt));
     }
 
     /// <summary>
@@ -110,7 +108,8 @@ public class TokensController(
         return Ok(ToNativeResponse(
             response.Data.AccessToken,
             response.Data.RefreshToken,
-            response.Data.AccessTokenExpiresAt));
+            response.Data.AccessTokenExpiresAt,
+            response.Data.RefreshTokenExpiresAt));
     }
 
     /// <summary>
@@ -139,12 +138,12 @@ public class TokensController(
 
             if (response is not { IsSuccess: true, Data: not null })
             {
-                // Token reuse: the handler returns (not throws) so the session revocation is committed.
+                // Expiration and token reuse both require this client to sign in again.
                 DeleteRefreshTokenCookie();
                 return StatusCode(response.StatusCode ?? StatusCodes.Status401Unauthorized, response);
             }
 
-            Response.Cookies.Append("refreshToken", response.Data.RefreshToken, CreateRefreshTokenCookieOptions());
+            Response.Cookies.Append("refreshToken", response.Data.RefreshToken, CreateRefreshTokenCookieOptions(response.Data.RefreshTokenExpiresAt));
             return Ok(response);
         }
         catch (UnauthorizedException)
@@ -193,13 +192,13 @@ public class TokensController(
         return NoContent();
     }
 
-    private CookieOptions CreateRefreshTokenCookieOptions() => new()
+    private static CookieOptions CreateRefreshTokenCookieOptions(DateTime expiresAtUtc) => new()
     {
         HttpOnly = true,
         Secure = true,
         SameSite = SameSiteMode.Strict,
         Path = "/api/tokens",
-        Expires = DateTimeOffset.UtcNow.AddDays(jwtOptions.Value.RefreshTokenLifetimeDays)
+        Expires = new DateTimeOffset(expiresAtUtc)
     };
 
     private void DeleteRefreshTokenCookie() =>
@@ -211,13 +210,14 @@ public class TokensController(
             Path = "/api/tokens"
         });
 
-    private Response<NativeTokenResponse> ToNativeResponse(
+    private static Response<NativeTokenResponse> ToNativeResponse(
         string accessToken,
         string refreshToken,
-        DateTime accessTokenExpiresAt) =>
+        DateTime accessTokenExpiresAt,
+        DateTime refreshTokenExpiresAt) =>
         Response<NativeTokenResponse>.Success(new NativeTokenResponse(
             accessToken,
             refreshToken,
             accessTokenExpiresAt,
-            DateTime.UtcNow.AddDays(jwtOptions.Value.RefreshTokenLifetimeDays)));
+            refreshTokenExpiresAt));
 }

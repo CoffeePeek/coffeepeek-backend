@@ -229,6 +229,7 @@ public sealed class PublicAddressGatewaySmokeTests
         await account.StartAsync(Ct);
 
         var shopsBuilder = ControllerHost(typeof(PublicCityAddressesController));
+        shopsBuilder.Services.AddResponseCaching();
         shopsBuilder.Services.AddScoped(_ => Shops());
         shopsBuilder.Services.AddScoped<CoffeePeek.Shops.Application.PublicAddresses.IPublicAddressService, PublicAddressService>();
         shopsBuilder.Services.AddScoped<IQueryCityRepository, QueryCityRepository>();
@@ -552,6 +553,7 @@ public sealed class PublicAddressGatewaySmokeTests
         app.UseExceptionHandler();
         app.UseAuthentication();
         app.UseAuthorization();
+        if (service == "shops") app.UseResponseCaching();
         app.MapControllers();
         app.MapGet("/health", () => "healthy");
     }

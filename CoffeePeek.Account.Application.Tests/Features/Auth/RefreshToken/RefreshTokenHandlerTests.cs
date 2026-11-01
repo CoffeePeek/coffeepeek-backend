@@ -29,7 +29,8 @@ public class RefreshTokenHandlerTests
         Issuer = "TestIssuer",
         Audience = "TestAudience",
         AccessTokenLifetimeMinutes = 15,
-        RefreshTokenLifetimeDays = 7
+        RefreshTokenLifetimeDays = 90,
+        RefreshTokenAbsoluteLifetimeDays = 365
     });
     private readonly CancellationToken _ct = CancellationToken.None;
 
@@ -56,6 +57,7 @@ public class RefreshTokenHandlerTests
         response.Data.RefreshToken.Should().Be("new_refresh");
         user.RefreshTokens.Should().ContainSingle(t => t.IsActive && t.DeviceName == "Android" && t.IpAddress == "203.0.113.7");
         response.Data.AccessTokenExpiresAt.Should().BeCloseTo(DateTime.UtcNow.AddMinutes(15), TimeSpan.FromSeconds(2));
+        response.Data.RefreshTokenExpiresAt.Should().BeCloseTo(DateTime.UtcNow.AddDays(90), TimeSpan.FromSeconds(2));
     }
 
     [Fact]
@@ -116,13 +118,19 @@ public class RefreshTokenHandlerTests
         _jwtMock.Verify(j => j.GenerateAccessToken(It.IsAny<DomainUser>()), Times.Never);
     }
 
-    [Fact]
-    public async Task Handle_WithExpiredToken_ReturnsUnauthorized()
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    [InlineData(true, true)]
+    public async Task Handle_WithExpiredToken_PreservesOtherDevices(bool absoluteExpiry, bool revoked)
     {
         var role = Role.Create("User");
         var user = DomainUser.Register("user@example.com", "testuser", "hash", role);
-        user.AddSession("expired_token", TimeSpan.FromMilliseconds(1), "Chrome", "127.0.0.1");
-        await Task.Delay(10);
+        var expired = user.AddSession("expired_token", absoluteExpiry ? TimeSpan.FromDays(90) : TimeSpan.FromDays(-1),
+            "Chrome", "127.0.0.1", absoluteLifetime: absoluteExpiry ? TimeSpan.FromDays(-1) : TimeSpan.FromDays(365));
+        if (revoked) expired.Revoke();
+        var otherDevice = user.AddSession("other-device", TimeSpan.FromDays(90), "Android", "203.0.113.7");
         _userRepoMock.Setup(r => r.GetByRefreshToken("expired_token", _ct)).ReturnsAsync(user);
         _revokedUserStoreMock
             .Setup(x => x.RevokeAsync(It.IsAny<Guid>(), It.IsAny<TimeSpan>(), _ct))
@@ -131,6 +139,30 @@ public class RefreshTokenHandlerTests
         var response = await RefreshTokenHandler.Handle(new RefreshTokenCommand("expired_token"), _userRepoMock.Object, _jwtMock.Object, _jwtOptions, _revokedUserStoreMock.Object, _unitOfWorkMock.Object, _ct);
 
         response.IsSuccess.Should().BeFalse();
-        response.Message.Should().Contain("Security breach");
+        response.StatusCode.Should().Be(401);
+        response.Message.Should().Be(RefreshTokenHandler.TokenExpiredMessage);
+        otherDevice.IsActive.Should().BeTrue();
+        user.RefreshTokens.Should().HaveCount(2);
+        _revokedUserStoreMock.Verify(x => x.RevokeAsync(It.IsAny<Guid>(), It.IsAny<TimeSpan>(), It.IsAny<CancellationToken>()), Times.Never);
+        _unitOfWorkMock.Verify(u => u.SaveChangesAsync(_ct), Times.Never);
+        _jwtMock.Verify(j => j.GenerateAccessToken(It.IsAny<DomainUser>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Handle_NearAbsoluteDeadline_ReturnsActualRefreshExpiry()
+    {
+        var user = CreateUserWithSession("other-device");
+        var token = user.AddSession("near-limit", TimeSpan.FromDays(90), "Android", "203.0.113.7",
+            absoluteLifetime: TimeSpan.FromDays(1));
+        _userRepoMock.Setup(r => r.GetByRefreshToken("near-limit", _ct)).ReturnsAsync(user);
+        _jwtMock.Setup(j => j.GenerateRefreshToken()).Returns("new-refresh");
+        _jwtMock.Setup(j => j.GenerateAccessToken(user)).Returns("new-access");
+
+        var response = await RefreshTokenHandler.Handle(new("near-limit"), _userRepoMock.Object, _jwtMock.Object,
+            _jwtOptions, _revokedUserStoreMock.Object, _unitOfWorkMock.Object, _ct);
+
+        response.IsSuccess.Should().BeTrue();
+        response.Data.RefreshTokenExpiresAt.Should().Be(token.SessionExpiresAtUtc);
+        user.RefreshTokens.Single(t => t.Token == "new-refresh").SessionExpiresAtUtc.Should().Be(token.SessionExpiresAtUtc);
     }
 }

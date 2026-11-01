@@ -2,9 +2,7 @@ using System.Security.Cryptography;
 using System.Text;
 using CoffeePeek.Account.Application.Common.Interfaces;
 using CoffeePeek.Account.Application.Features.Auth.AppleLogin;
-using CoffeePeek.Shared.Auth.Options;
 using CoffeePeek.Shared.Kernel.Response;
-using Microsoft.Extensions.Options;
 using Wolverine;
 using CoffeePeek.AccountService.Controllers.Contracts;
 using CoffeePeek.Shared.Kernel.Exceptions;
@@ -18,7 +16,7 @@ namespace CoffeePeek.AccountService.Controllers;
 [Route("api/Tokens/apple")]
 [Tags("Tokens management")]
 [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
-public sealed class AppleWebTokensController(IMessageBus bus, IOptions<JWTOptions> jwtOptions) : ControllerBase
+public sealed class AppleWebTokensController(IMessageBus bus) : ControllerBase
 {
     private const string AppleStateCookie = "__Host-cp-apple-state";
 
@@ -71,17 +69,17 @@ public sealed class AppleWebTokensController(IMessageBus bus, IOptions<JWTOption
         if (response is not { IsSuccess: true, Data: not null })
             return StatusCode(response.StatusCode ?? StatusCodes.Status401Unauthorized, response);
 
-        Response.Cookies.Append("refreshToken", response.Data.RefreshToken, CreateRefreshTokenCookieOptions());
+        Response.Cookies.Append("refreshToken", response.Data.RefreshToken, CreateRefreshTokenCookieOptions(response.Data.RefreshTokenExpiresAt));
         return Redirect(webClientUrl);
     }
 
-    private CookieOptions CreateRefreshTokenCookieOptions() => new()
+    private static CookieOptions CreateRefreshTokenCookieOptions(DateTime expiresAtUtc) => new()
     {
         HttpOnly = true,
         Secure = true,
         SameSite = SameSiteMode.Strict,
         Path = "/api/tokens",
-        Expires = DateTimeOffset.UtcNow.AddDays(jwtOptions.Value.RefreshTokenLifetimeDays)
+        Expires = new DateTimeOffset(expiresAtUtc)
     };
 
     private static CookieOptions AppleStateCookieOptions() => new()

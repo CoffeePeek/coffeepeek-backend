@@ -136,7 +136,7 @@ public class RefreshTokenAdditionalTests
     }
 
     [Fact]
-    public void Create_WithVeryLargeTtl_ShouldCreateValidToken()
+    public void Create_WithVeryLargeTtl_ShouldCapExpirationAtSessionDeadline()
     {
         // Arrange
         var userId = Guid.NewGuid();
@@ -147,7 +147,8 @@ public class RefreshTokenAdditionalTests
 
         // Assert
         refreshToken.IsActive.Should().BeTrue();
-        refreshToken.ExpiryDate.Should().BeOnOrAfter(DateTime.UtcNow.AddDays(3640)); // ~10 years from now
+        refreshToken.ExpiryDate.Should().Be(refreshToken.SessionExpiresAtUtc);
+        refreshToken.SessionExpiresAtUtc.Should().Be(refreshToken.CreatedAtUtc.AddDays(365));
     }
 
     [Theory]

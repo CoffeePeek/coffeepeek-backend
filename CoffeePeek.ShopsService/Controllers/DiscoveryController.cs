@@ -41,11 +41,16 @@ public sealed class DiscoveryController(IDiscoveryQueryStore queries, IDiscovery
         (await catalog.PublicTagsAsync(ct)).Select(t => new PublicTag { Slug = t.Slug, Name = t.Name,
             Description = t.Description, SortOrder = t.SortOrder }).ToArray()));
     [HttpGet("api/v1/coffees/{slug}")]
+    [ResponseCache(Duration = 120, Location = ResponseCacheLocation.Any)]
     public async Task<IActionResult> Details(string slug, CancellationToken ct)
     {
         var result = await queries.CoffeeDetailsAsync(slug, ct);
-        return result is null ? NotFound(new ErrorResponse("Coffee not found.", "NOT_FOUND") { StatusCode = 404 })
-            : Ok(Response<CoffeeDetails>.Success(result));
+        if (result is null)
+        {
+            Response.Headers.CacheControl = "no-store";
+            return NotFound(new ErrorResponse("Coffee not found.", "NOT_FOUND") { StatusCode = 404 });
+        }
+        return Ok(Response<CoffeeDetails>.Success(result));
     }
     private static bool Personal(ShopFilters? filters) =>
         filters?.FavoritesOnly == true || filters?.VisitedOnly == true;

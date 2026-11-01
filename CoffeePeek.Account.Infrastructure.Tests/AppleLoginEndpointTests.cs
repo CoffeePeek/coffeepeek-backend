@@ -42,7 +42,7 @@ public sealed class AppleLoginEndpointTests
                                    ((AppleLoginCommand)m).IdToken == "test-token"),
                 It.IsAny<CancellationToken>(), null))
             .ReturnsAsync(success
-                ? Response<AppleLoginResponse>.Success(new AppleLoginResponse("access-token", "refresh-token", DateTime.UtcNow.AddMinutes(15)))
+                ? Response<AppleLoginResponse>.Success(new AppleLoginResponse("access-token", "refresh-token", DateTime.UtcNow.AddMinutes(15), DateTime.UtcNow.AddDays(90)))
                 : Response<AppleLoginResponse>.Error(HttpStatusCode.Unauthorized, "Invalid Apple token"));
 
         var builder = WebApplication.CreateBuilder(new WebApplicationOptions
