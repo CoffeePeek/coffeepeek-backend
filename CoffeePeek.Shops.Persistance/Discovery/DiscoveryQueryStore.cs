@@ -4,6 +4,7 @@ using CoffeePeek.Contract.Dtos.Discovery;
 using CoffeePeek.Shared.Kernel.Options;
 using CoffeePeek.Shared.Kernel;
 using CoffeePeek.Shops.Application.Features.Discovery;
+using CoffeePeek.Shops.Application.Features.CoffeeShop.GetShopsInBounds;
 using CoffeePeek.Shops.Application.PublicAddresses;
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeProductAggregate;
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
@@ -16,7 +17,7 @@ using DPhoto = CoffeePeek.Contract.Dtos.Discovery.Photo;
 namespace CoffeePeek.Shops.Persistance.Discovery;
 
 public sealed partial class DiscoveryQueryStore(ShopsDbContext db, IPublicAddressService addresses,
-    IOptions<MediaPublicUrlOptions> media) : IDiscoveryQueryStore
+    IOptions<MediaPublicUrlOptions> media, IOptions<MapClusteringOptions>? mapOptions = null) : IDiscoveryQueryStore
 {
     private static readonly string[] Groups = ["brew", "caffeine", "roast", "acidity", "processing", "fermentation", "taste", "composition"];
     private static readonly Dictionary<string, string> GroupNames = new()

@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
+using CoffeePeek.Contract.Dtos.Coffee;
 using CoffeePeek.Contract.Dtos.Discovery;
 using CoffeePeek.Contract.Dtos.CoffeeShop;
 using CoffeePeek.Contract.Dtos.PublicAddresses;
@@ -10,6 +11,8 @@ using CoffeePeek.Shops.Application.Features.CoffeeCatalog;
 using CoffeePeek.Shops.Application.Features.Discovery;
 using CoffeePeek.Shops.Application.Features.CoffeeShop.GetCoffeeShop;
 using CoffeePeek.Shops.Application.Features.CoffeeShop.SearchCoffeeShops;
+using CoffeePeek.Shops.Application.Features.CoffeeShop.GetShopsInBounds;
+using CoffeePeek.Shared.Kernel.Response;
 using CoffeePeek.Shops.Application.PublicAddresses;
 using CoffeePeek.Shops.Domain.Aggregates.CheckInAggregate;
 using CoffeePeek.Shops.Application.Abstractions;
@@ -77,7 +80,7 @@ public sealed class DiscoveryHttpContractTests : IAsyncLifetime
             .ThrowsAsync(new DiscoveryException("Coffee changed; reload.", 409, "VERSION_CONFLICT"));
         app = builder.Build();
         app.UseExceptionHandler();
-        app.UseAuthentication(); app.UseAuthorization(); app.MapControllers();
+        app.UseAuthentication(); app.UseAuthorization(); app.UseResponseCaching(); app.MapControllers();
         await app.StartAsync();
         var address = app.Services.GetRequiredService<IServer>().Features.Get<IServerAddressesFeature>()!.Addresses.Single();
         client = new HttpClient { BaseAddress = new Uri(address) };
@@ -251,6 +254,59 @@ public sealed class DiscoveryHttpContractTests : IAsyncLifetime
     }
 
     [Theory]
+    [InlineData("/api/coffees?search=one", "/api/coffees?search=two")]
+    [InlineData("/api/roasters/example/coffees?search=one", "/api/roasters/example/coffees?search=two")]
+    public async Task CoffeeLists_CacheSuccessfulResponsesByQuery(string firstUrl, string secondUrl)
+    {
+        catalog.Setup(c => c.ListAsync(It.IsAny<CoffeeCatalogFilter>(), It.IsAny<CancellationToken>()))
+            .Returns((CoffeeCatalogFilter filter, CancellationToken _) => Task.FromResult(
+                new PublicPage<CoffeeProductDto>([], filter.Search == "one" ? 1 : 2, 1, 1, 20)));
+
+        using var first = await client.GetAsync(firstUrl, TestContext.Current.CancellationToken);
+        using var repeated = await client.GetAsync(firstUrl, TestContext.Current.CancellationToken);
+        using var second = await client.GetAsync(secondUrl, TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.OK, first.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, repeated.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, second.StatusCode);
+        Assert.True(first.Headers.CacheControl?.Public);
+        Assert.Equal(TimeSpan.FromMinutes(2), first.Headers.CacheControl?.MaxAge);
+        Assert.Equal(1, (await first.Content.ReadFromJsonAsync<JsonElement>(TestContext.Current.CancellationToken)).GetProperty("data").GetProperty("totalItems").GetInt32());
+        Assert.Equal(2, (await second.Content.ReadFromJsonAsync<JsonElement>(TestContext.Current.CancellationToken)).GetProperty("data").GetProperty("totalItems").GetInt32());
+        catalog.Verify(c => c.ListAsync(It.IsAny<CoffeeCatalogFilter>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
+    }
+
+    [Fact]
+    public async Task CoffeeDetails_CacheOnlySuccessfulResponses()
+    {
+        queries.Setup(q => q.CoffeeDetailsAsync("published", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new CoffeeDetails { Name = "Published coffee" });
+        catalog.Setup(c => c.GetAsync("published", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new CoffeeProductDto(new PublicAddressDto("published", "/coffees/published", 1),
+                new PublicRoasterSummaryDto(null, "Roaster", null, null),
+                new CoffeeContentDto("Published coffee", null, "roasted_beans", "whole_beans", "single_origin",
+                    null, null, null, null, null, [], [], [], []), [], [], [], null));
+
+        using var published = await client.GetAsync("/api/v1/coffees/published", TestContext.Current.CancellationToken);
+        using var missing = await client.GetAsync("/api/v1/coffees/missing", TestContext.Current.CancellationToken);
+        using var legacyPublished = await client.GetAsync("/api/coffees/published", TestContext.Current.CancellationToken);
+        using var legacyMissing = await client.GetAsync("/api/coffees/missing", TestContext.Current.CancellationToken);
+        using var search = await client.PostAsync("/api/v1/coffees/search", Content("{}"), TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.OK, published.StatusCode);
+        Assert.True(published.Headers.CacheControl?.Public);
+        Assert.Equal(TimeSpan.FromMinutes(2), published.Headers.CacheControl?.MaxAge);
+        Assert.Equal(HttpStatusCode.NotFound, missing.StatusCode);
+        Assert.True(missing.Headers.CacheControl?.NoStore);
+        Assert.Equal(HttpStatusCode.OK, legacyPublished.StatusCode);
+        Assert.True(legacyPublished.Headers.CacheControl?.Public);
+        Assert.Equal(TimeSpan.FromMinutes(2), legacyPublished.Headers.CacheControl?.MaxAge);
+        Assert.Equal(HttpStatusCode.NotFound, legacyMissing.StatusCode);
+        Assert.True(legacyMissing.Headers.CacheControl?.NoStore);
+        Assert.True(search.Headers.CacheControl?.NoStore);
+    }
+
+    [Theory]
     [InlineData(null, false)]
     [InlineData(null, true)]
     [InlineData("recommended", false)]
@@ -414,6 +470,101 @@ public sealed class DiscoveryHttpContractTests : IAsyncLifetime
         using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync(ct));
         if (found) Assert.True(body.RootElement.GetProperty("isSuccess").GetBoolean());
         else Assert.Equal("NOT_FOUND", body.RootElement.GetProperty("errorCode").GetString());
+    }
+
+    private const string ValidMap = """{"q":"","filters":{},"bounds":{"minLat":53.8,"minLon":27.4,"maxLat":54,"maxLon":27.7},"zoom":16}""";
+
+    [Theory]
+    [InlineData("\"zoom\":16", "\"zoom\":23")]
+    [InlineData("\"zoom\":16", "\"zoom\":-1")]
+    [InlineData(",\"zoom\":16", "")]
+    [InlineData("\"minLat\":53.8", "\"minLat\":-91")]
+    [InlineData("\"maxLon\":27.7", "\"maxLon\":181")]
+    [InlineData("\"minLat\":53.8", "\"minLat\":55")]
+    [InlineData("\"minLon\":27.4", "\"minLon\":28")]
+    [InlineData("\"minLat\":53.8,", "")]
+    [InlineData("\"maxLat\":54,", "")]
+    [InlineData("\"zoom\":16", "\"zoom\":16,\"userId\":\"00000000-0000-0000-0000-000000000001\"")]
+    [InlineData("\"zoom\":16", "\"zoom\":16,\"sort\":\"name_asc\"")]
+    [InlineData("\"minLat\":53.8", "\"minLat\":53.8,\"unknown\":1")]
+    [InlineData("\"filters\":{}", "\"filters\":{\"unknown\":true}")]
+    [InlineData("\"filters\":{}", "\"filters\":{\"radiusKm\":1}")]
+    [InlineData("\"filters\":{}", "\"filters\":{\"priceRange\":\"unknown\"}")]
+    [InlineData("\"filters\":{}", "\"filters\":{\"menu\":{\"maxPrice\":5}}")]
+    public async Task InvalidMapRequests_ReturnInvalidFilterWithoutReading(string before, string after)
+    {
+        using var response = await Post("/api/v1/coffee-shops/map", ValidMap.Replace(before, after));
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.Equal("INVALID_FILTER", body.RootElement.GetProperty("errorCode").GetString());
+        queries.Verify(q => q.MapShopsAsync(It.IsAny<CoffeeShopMapRequest>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Theory]
+    [InlineData("{}")]
+    [InlineData("{\"zoom\":16}")]
+    [InlineData("{\"bounds\":null,\"zoom\":16}")]
+    public async Task MapRequiresExplicitBounds(string json)
+    {
+        using var response = await Post("/api/v1/coffee-shops/map", json);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        queries.Verify(q => q.MapShopsAsync(It.IsAny<CoffeeShopMapRequest>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Theory]
+    [InlineData("favoritesOnly")]
+    [InlineData("visitedOnly")]
+    public async Task MapPersonalFilters_RequireGatewayAuthenticatedIdentity(string filter)
+    {
+        client.DefaultRequestHeaders.Add(GatewayHeaderConsts.XUserId, Guid.NewGuid().ToString());
+        using var response = await Post("/api/v1/coffee-shops/map", ValidMap.Replace("\"filters\":{}", $"\"filters\":{{\"{filter}\":true}}"));
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        queries.Verify(q => q.MapShopsAsync(It.IsAny<CoffeeShopMapRequest>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task MapRoutes_PreservePublicResponseAndPassAuthenticatedIdentityOnly(bool authenticated)
+    {
+        var shopId = Guid.NewGuid();
+        var userId = authenticated ? Guid.NewGuid() : (Guid?)null;
+        if (userId.HasValue) Authenticate(userId.Value, RoleConsts.User);
+        var result = new GetShopsInBoundsResponse([new() { Id = shopId, Latitude = 53.9m, Longitude = 27.56m, Title = "Map shop" }])
+            { Clusters = [], Zones = [], IsTruncated = false };
+        queries.Setup(q => q.MapShopsAsync(It.IsAny<CoffeeShopMapRequest>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>())).ReturnsAsync(result);
+        bus.Setup(b => b.InvokeAsync<Response<GetShopsInBoundsResponse>>(It.IsAny<GetShopsInBoundsQuery>(), It.IsAny<CancellationToken>(), It.IsAny<TimeSpan?>()))
+            .ReturnsAsync(Response<GetShopsInBoundsResponse>.Success(result));
+        addresses.Setup(a => a.GetForReadAsync(PublicAddressKind.CoffeeShop, It.IsAny<Guid[]>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync([new(shopId, "map-shop", "/coffee-shops/map-shop", 1)]);
+        var json = ValidMap.Replace("\"q\":\"\"", "\"q\":\"Map\"")
+            .Replace("\"filters\":{}", "\"filters\":{\"tags\":[\"laptop-friendly\"],\"favoritesOnly\":" + authenticated.ToString().ToLowerInvariant() + "}");
+        using var map = await Post("/api/v1/coffee-shops/map", json);
+        using var legacy = await client.GetAsync("/api/Map?minLat=53.8&minLon=27.4&maxLat=54&maxLon=27.7", TestContext.Current.CancellationToken);
+        Assert.Equal(HttpStatusCode.OK, map.StatusCode); Assert.Equal(HttpStatusCode.OK, legacy.StatusCode);
+        using var body = JsonDocument.Parse(await map.Content.ReadAsStringAsync());
+        using var oldBody = JsonDocument.Parse(await legacy.Content.ReadAsStringAsync());
+        var data = body.RootElement.GetProperty("data");
+        Assert.Equal(oldBody.RootElement.GetProperty("data").GetRawText(), data.GetRawText());
+        Assert.Equal("map-shop", Assert.Single(data.GetProperty("shops").EnumerateArray()).GetProperty("address").GetProperty("slug").GetString());
+        Assert.False(data.GetProperty("isTruncated").GetBoolean());
+        queries.Verify(q => q.MapShopsAsync(It.Is<CoffeeShopMapRequest>(r => r.Q == "Map" && r.Zoom == 16 &&
+            r.Bounds.MinLat == 53.8m && r.Bounds.MaxLon == 27.7m && r.Filters!.Tags.Single() == "laptop-friendly" &&
+            r.Filters.FavoritesOnly == authenticated), userId, It.IsAny<CancellationToken>()), Times.Once);
+        bus.Verify(b => b.InvokeAsync<Response<GetShopsInBoundsResponse>>(It.Is<GetShopsInBoundsQuery>(q => q.Zoom == null),
+            It.IsAny<CancellationToken>(), It.IsAny<TimeSpan?>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task MapUnknownSlug_PreservesDocumentedValidationError()
+    {
+        queries.Setup(q => q.MapShopsAsync(It.IsAny<CoffeeShopMapRequest>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new DiscoveryException("Unknown public slug.", errors: new() { ["filters.tags"] = ["Unknown public slug."] }));
+        using var response = await Post("/api/v1/coffee-shops/map", ValidMap.Replace("\"filters\":{}", "\"filters\":{\"tags\":[\"missing\"]}"));
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.Equal("INVALID_FILTER", body.RootElement.GetProperty("errorCode").GetString());
+        Assert.True(body.RootElement.GetProperty("errors").TryGetProperty("filters.tags", out _));
     }
 
     private void Authenticate(Guid id, string role)

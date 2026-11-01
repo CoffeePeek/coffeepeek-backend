@@ -20,15 +20,23 @@ public sealed class CoffeeCatalogController(IPublicCoffeeCatalogReader store) : 
     public async Task<IActionResult> Roasters(CancellationToken ct, [FromQuery] string[]? tags = null) =>
         Ok(Response<PublicRoasterDto[]>.Success(await store.RoastersAsync(tags ?? [], ct)));
     [HttpGet("api/coffees")]
+    [ResponseCache(Duration = 120, Location = ResponseCacheLocation.Any, VaryByQueryKeys = new[] { "*" })]
     public async Task<IActionResult> List([FromQuery] CoffeeCatalogFilter filter, CancellationToken ct) =>
         Ok(Response<PublicPage<CoffeeProductDto>>.Success(await store.ListAsync(filter, ct)));
     [HttpGet("api/roasters/{slug}/coffees")]
+    [ResponseCache(Duration = 120, Location = ResponseCacheLocation.Any, VaryByQueryKeys = new[] { "*" })]
     public async Task<IActionResult> ForRoaster(string slug, [FromQuery] CoffeeCatalogFilter filter, CancellationToken ct)
     { filter.RoasterSlug = slug; return await List(filter, ct); }
     [HttpGet("api/coffees/{slug}")]
+    [ResponseCache(Duration = 120, Location = ResponseCacheLocation.Any)]
     public async Task<IActionResult> Get(string slug, CancellationToken ct)
     {
         var item = await store.GetAsync(slug, ct);
-        return item is null ? NotFound() : Ok(Response<CoffeeProductDto>.Success(item));
+        if (item is null)
+        {
+            Response.Headers.CacheControl = "no-store";
+            return NotFound();
+        }
+        return Ok(Response<CoffeeProductDto>.Success(item));
     }
 }
