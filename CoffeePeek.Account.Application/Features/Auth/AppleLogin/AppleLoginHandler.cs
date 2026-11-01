@@ -44,7 +44,9 @@ public static class AppleLoginHandler
         user.EnsureCanAuthenticate();
         var accessToken = tokens.GenerateAccessToken(user);
         var refreshToken = tokens.GenerateRefreshToken();
-        user.AddSession(refreshToken, TimeSpan.FromDays(options.Value.RefreshTokenLifetimeDays), request.DeviceName, request.IpAddress);
+        var session = user.AddSession(refreshToken, TimeSpan.FromDays(options.Value.RefreshTokenLifetimeDays),
+            request.DeviceName, request.IpAddress,
+            absoluteLifetime: TimeSpan.FromDays(options.Value.RefreshTokenAbsoluteLifetimeDays));
         try
         {
             await unitOfWork.SaveChangesAsync(ct);
@@ -57,11 +59,13 @@ public static class AppleLoginHandler
             user.EnsureCanAuthenticate();
             accessToken = tokens.GenerateAccessToken(user);
             refreshToken = tokens.GenerateRefreshToken();
-            user.AddSession(refreshToken, TimeSpan.FromDays(options.Value.RefreshTokenLifetimeDays), request.DeviceName, request.IpAddress);
+            session = user.AddSession(refreshToken, TimeSpan.FromDays(options.Value.RefreshTokenLifetimeDays),
+                request.DeviceName, request.IpAddress,
+                absoluteLifetime: TimeSpan.FromDays(options.Value.RefreshTokenAbsoluteLifetimeDays));
             await unitOfWork.SaveChangesAsync(ct);
         }
         return Response<AppleLoginResponse>.Success(new(accessToken, refreshToken,
-            DateTime.UtcNow.AddMinutes(options.Value.AccessTokenLifetimeMinutes)));
+            DateTime.UtcNow.AddMinutes(options.Value.AccessTokenLifetimeMinutes), session.ExpiryDate));
     }
 
     private static Response<AppleLoginResponse> InvalidLogin() =>

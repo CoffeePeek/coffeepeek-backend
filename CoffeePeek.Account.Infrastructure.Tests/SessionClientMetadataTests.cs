@@ -7,7 +7,6 @@ using CoffeePeek.Account.Domain.Entities.UserAggregate;
 using CoffeePeek.AccountService.Controllers;
 using CoffeePeek.AccountService.Controllers.Contracts;
 using CoffeePeek.Shared.Auth;
-using CoffeePeek.Shared.Auth.Options;
 using CoffeePeek.Shared.Kernel.Response;
 using CoffeePeek.Shared.Web.Extensions;
 using FluentAssertions;
@@ -16,7 +15,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using MsOptions = Microsoft.Extensions.Options.Options;
 using Moq;
 using Wolverine;
 
@@ -37,12 +35,12 @@ public class SessionClientMetadataTests
         var bus = new Mock<IMessageBus>();
         var expires = DateTime.UtcNow.AddMinutes(15);
         bus.Setup(b => b.InvokeAsync<Response<LoginResponse>>(It.IsAny<object>(), default, null))
-            .ReturnsAsync(Response<LoginResponse>.Success(new("access", "refresh", expires)));
+            .ReturnsAsync(Response<LoginResponse>.Success(new("access", "refresh", expires, DateTime.UtcNow.AddDays(90))));
         bus.Setup(b => b.InvokeAsync<Response<GoogleLoginResponse>>(It.IsAny<object>(), default, null))
             .ReturnsAsync(Response<GoogleLoginResponse>.Success(new("access", "refresh", expires,
-                new GoogleLoginUser { Email = "user@example.com", Username = "user", AvatarUrl = "" })));
+                new GoogleLoginUser { Email = "user@example.com", Username = "user", AvatarUrl = "" }, DateTime.UtcNow.AddDays(90))));
         bus.Setup(b => b.InvokeAsync<Response<RefreshTokenResponse>>(It.IsAny<object>(), default, null))
-            .ReturnsAsync(Response<RefreshTokenResponse>.Success(new("access", "refresh", expires)));
+            .ReturnsAsync(Response<RefreshTokenResponse>.Success(new("access", "refresh", expires, DateTime.UtcNow.AddDays(90))));
 
         var configuration = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
         {
@@ -54,7 +52,7 @@ public class SessionClientMetadataTests
         app.UseForwardedHeaders();
         app.Run(async context =>
         {
-            var controller = new TokensController(bus.Object, Mock.Of<IUserContext>(), MsOptions.Create(new JWTOptions()))
+            var controller = new TokensController(bus.Object, Mock.Of<IUserContext>())
             {
                 ControllerContext = new ControllerContext { HttpContext = context }
             };

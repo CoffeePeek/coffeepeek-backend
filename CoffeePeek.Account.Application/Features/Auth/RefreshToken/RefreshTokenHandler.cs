@@ -1,5 +1,6 @@
 ﻿using System.Net;
 using CoffeePeek.Account.Application.Common.Interfaces;
+using CoffeePeek.Account.Domain.Entities;
 using CoffeePeek.Account.Domain.Entities.UserAggregate;
 using CoffeePeek.Shared.Auth;
 using CoffeePeek.Shared.Auth.Options;
@@ -13,6 +14,7 @@ namespace CoffeePeek.Account.Application.Features.Auth.RefreshToken;
 public class RefreshTokenHandler
 {
     public const string TokenReusedMessage = "Security breach: Token reused.";
+    public const string TokenExpiredMessage = "Refresh token has expired. Please sign in again.";
 
     public static async Task<Response<RefreshTokenResponse>> Handle(
         RefreshTokenCommand request,
@@ -37,7 +39,11 @@ public class RefreshTokenHandler
             request.DeviceName,
             request.IpAddress);
 
-        if (!rotated)
+        if (rotated == RefreshTokenRotationStatus.Expired)
+            return Response<RefreshTokenResponse>.Error(HttpStatusCode.Unauthorized, TokenExpiredMessage);
+        if (rotated == RefreshTokenRotationStatus.Invalid)
+            throw new UnauthorizedException("Invalid refresh token");
+        if (rotated == RefreshTokenRotationStatus.Reused)
         {
             // Return instead of throw so the transaction commits the session revocation.
             await unitOfWork.SaveChangesAsync(ct);
@@ -51,6 +57,7 @@ public class RefreshTokenHandler
         return Response<RefreshTokenResponse>.Success(new RefreshTokenResponse(
             newAccessToken,
             newRefreshTokenValue,
-            DateTime.UtcNow.AddMinutes(jwtOptions.Value.AccessTokenLifetimeMinutes)));
+            DateTime.UtcNow.AddMinutes(jwtOptions.Value.AccessTokenLifetimeMinutes),
+            user.RefreshTokens.Single(t => t.Token == newRefreshTokenValue).ExpiryDate));
     }
 }

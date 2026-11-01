@@ -38,7 +38,8 @@ x-redis-env: &redis-env
 x-jwt-env: &jwt-env
   JWTOptions__SecretKey: ${JWT_SECRET_KEY}
   JWTOptions__AccessTokenLifetimeMinutes: ${JWT_ACCESS_TOKEN_MINUTES:-60}
-  JWTOptions__RefreshTokenLifetimeDays: ${JWT_REFRESH_TOKEN_DAYS:-30}
+  JWTOptions__RefreshTokenLifetimeDays: ${JWT_REFRESH_TOKEN_DAYS:-90}
+  JWTOptions__RefreshTokenAbsoluteLifetimeDays: ${JWT_REFRESH_TOKEN_ABSOLUTE_DAYS:-365}
   JWTOptions__Audience: CoffeePeek.API
   JWTOptions__Issuer: CoffeePeek.WEB
 

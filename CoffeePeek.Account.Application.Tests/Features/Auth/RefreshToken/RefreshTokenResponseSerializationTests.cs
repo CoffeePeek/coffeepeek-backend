@@ -15,7 +15,7 @@ public class RefreshTokenResponseSerializationTests
         var response = Response<RefreshTokenResponse>.Success(new RefreshTokenResponse(
             "new-access",
             "secret-refresh",
-            DateTime.UtcNow.AddMinutes(15)));
+            DateTime.UtcNow.AddMinutes(15), DateTime.UtcNow.AddDays(90)));
 
         var json = JsonSerializer.Serialize(response, new JsonSerializerOptions(JsonSerializerDefaults.Web));
 

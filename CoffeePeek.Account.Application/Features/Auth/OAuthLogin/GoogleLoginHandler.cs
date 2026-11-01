@@ -37,11 +37,12 @@ public static class GoogleLoginHandler
         var accessToken = tokenService.GenerateAccessToken(user);
         var refreshToken = tokenService.GenerateRefreshToken();
 
-        user.AddSession(
+        var session = user.AddSession(
             refreshToken,
             ttl: TimeSpan.FromDays(options.Value.RefreshTokenLifetimeDays),
             request.DeviceName,
-            request.IpAddress);
+            request.IpAddress,
+            absoluteLifetime: TimeSpan.FromDays(options.Value.RefreshTokenAbsoluteLifetimeDays));
 
         try
         {
@@ -55,7 +56,9 @@ public static class GoogleLoginHandler
                 payload.Email, ProviderConsts.GoogleProvider, payload.Subject, ct);
             accessToken = tokenService.GenerateAccessToken(user);
             refreshToken = tokenService.GenerateRefreshToken();
-            user.AddSession(refreshToken, TimeSpan.FromDays(options.Value.RefreshTokenLifetimeDays), request.DeviceName, request.IpAddress);
+            session = user.AddSession(refreshToken, TimeSpan.FromDays(options.Value.RefreshTokenLifetimeDays),
+                request.DeviceName, request.IpAddress,
+                absoluteLifetime: TimeSpan.FromDays(options.Value.RefreshTokenAbsoluteLifetimeDays));
             await unitOfWork.SaveChangesAsync(ct);
         }
 
@@ -68,6 +71,7 @@ public static class GoogleLoginHandler
                 Email = user.Credentials.Email,
                 AvatarUrl = payload.Picture ?? string.Empty,
                 Username = user.Username
-            }));
+            },
+            session.ExpiryDate));
     }
 }

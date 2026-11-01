@@ -6,4 +6,5 @@ public record GoogleLoginResponse(
     string AccessToken,
     [property: JsonIgnore] string RefreshToken,
     DateTime AccessTokenExpiresAt,
-    GoogleLoginUser User);
+    GoogleLoginUser User,
+    [property: JsonIgnore] DateTime RefreshTokenExpiresAt);

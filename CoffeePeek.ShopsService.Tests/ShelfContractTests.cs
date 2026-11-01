@@ -97,12 +97,15 @@ public class ShelfContractTests
     }
 
     [Fact]
-    public void EveryDocumentedRouteIsAnOwnerOnlyNoStoreActionAndRoutedByTheGateway()
+    public void DocumentedRoutesAreOwnerOnlyWithNoStoreExceptTheImmutableCard()
     {
         var type = typeof(ShelfController);
         Assert.Equal("api/v1/shelf", type.GetCustomAttribute<RouteAttribute>()!.Template);
         Assert.NotNull(type.GetCustomAttribute<AuthorizeAttribute>());
-        Assert.True(type.GetCustomAttribute<ResponseCacheAttribute>()!.NoStore);
+        var photo = type.GetMethod(nameof(ShelfController.Photo))!;
+        Assert.Null(photo.GetCustomAttribute<ResponseCacheAttribute>());
+        Assert.All(type.GetMethods().Where(m => m.GetCustomAttributes<HttpMethodAttribute>().Any() && m != photo),
+            method => Assert.True(method.GetCustomAttribute<ResponseCacheAttribute>()?.NoStore));
         Assert.DoesNotContain(type.GetMethods(), m => m.GetCustomAttribute<AllowAnonymousAttribute>() != null);
 
         var routes = type.GetMethods().SelectMany(m => m.GetCustomAttributes<HttpMethodAttribute>()

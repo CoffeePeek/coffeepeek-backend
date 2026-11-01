@@ -33,18 +33,20 @@ public class AuthService(
         var accessToken = jwtTokenService.GenerateAccessToken(user);
         var refreshToken = jwtTokenService.GenerateRefreshToken();
 
+        var session = user.AddSession(
+            refreshToken,
+            ttl: TimeSpan.FromDays(jwtOptions.Value.RefreshTokenLifetimeDays),
+            device,
+            ip,
+            absoluteLifetime: TimeSpan.FromDays(jwtOptions.Value.RefreshTokenAbsoluteLifetimeDays));
+
         var authResult = new AuthResult
         {
             AccessToken = accessToken,
             RefreshToken = refreshToken,
-            ExpiredAt = DateTime.UtcNow.AddMinutes(jwtOptions.Value.AccessTokenLifetimeMinutes)
+            ExpiredAt = DateTime.UtcNow.AddMinutes(jwtOptions.Value.AccessTokenLifetimeMinutes),
+            RefreshTokenExpiresAt = session.ExpiryDate
         };
-        
-        user.AddSession(
-            authResult.RefreshToken,
-            ttl: TimeSpan.FromDays(jwtOptions.Value.RefreshTokenLifetimeDays),
-            device,
-            ip);
 
         return authResult;
     }
