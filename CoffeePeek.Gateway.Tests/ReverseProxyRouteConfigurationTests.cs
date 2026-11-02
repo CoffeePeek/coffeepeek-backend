@@ -17,6 +17,21 @@ namespace CoffeePeek.Gateway.Tests;
 public class ReverseProxyRouteConfigurationTests
 {
     [Fact]
+    public void FavoriteCollectionsAllowAnonymousSingleReadsButRequireIdentityForListsAndWrites()
+    {
+        using var document = LoadGatewayAppsettings();
+        var routes = document.RootElement.GetProperty("ReverseProxy").GetProperty("Routes");
+        var read = routes.GetProperty("shops-favorite-collection-read-route");
+        read.GetProperty("Match").GetProperty("Path").GetString().Should().Be("/api/v1/favorite-collections/{id:guid}");
+        read.GetProperty("Match").GetProperty("Methods").EnumerateArray().Select(v => v.GetString()).Should().Equal("GET");
+        read.GetProperty("AuthorizationPolicy").GetString().Should().Be("Anonymous");
+        read.GetProperty("RateLimiterPolicy").GetString().Should().Be("global");
+        var owner = routes.GetProperty("shops-favorite-collections-owner-route");
+        owner.GetProperty("AuthorizationPolicy").GetString().Should().Be("Authenticated");
+        owner.GetProperty("Match").GetProperty("Methods").EnumerateArray().Select(v => v.GetString()).Should().Equal("GET", "POST", "DELETE");
+    }
+
+    [Fact]
     public void ProfileFollowWritesRequireIdentityAndPublicProfileReadsUseOwningServices()
     {
         using var document = LoadGatewayAppsettings();

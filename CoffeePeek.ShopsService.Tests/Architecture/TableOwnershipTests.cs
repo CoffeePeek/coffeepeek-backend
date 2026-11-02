@@ -29,7 +29,7 @@ public class TableOwnershipTests
                 "CoffeeProducts", "CoffeeProductCountries", "CoffeeProductSources",
                 "CoffeeProductPhotos", "CoffeeVariants", "CoffeeImportRuns", "CoffeeFilterValues", "Countries"
             ],
-            ["Discovery"] = ["DiscoveryFavorites"],
+            ["Discovery"] = ["DiscoveryFavorites", "FavoriteCollections", "FavoriteCollectionItems"],
             ["Shelf"] = ["ShelfBags"],
             ["AppDistribution"] =
                 ["AndroidReleases", "AppDistributionSettings", "AppDistributionAuditLogs", "AppDownloadRedirectEvents"]

@@ -10,6 +10,7 @@ public static class DiscoveryModule
     {
         services.AddScoped<IDiscoveryQueryStore, DiscoveryQueryStore>();
         services.AddScoped<IDiscoveryFavoritesStore, DiscoveryFavoritesStore>();
+        services.AddScoped<IFavoriteCollectionsStore, FavoriteCollectionsStore>();
         return services;
     }
 }
