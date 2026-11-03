@@ -46,7 +46,9 @@ public sealed partial class SavedCollectionsStore(ShopsDbContext db, IPublicAddr
         if (preference.CollectionId == null) return null;
         var row = await Lists(owner).AsNoTracking().Include(c => c.Items)
             .SingleOrDefaultAsync(c => c.Id == preference.CollectionId && c.Visibility == "public", ct);
-        return row == null ? null : await DetailAsync(row, ct);
+        if (row == null) return null;
+        var detail = await DetailAsync(row, ct);
+        return detail with { ItemCount = detail.Items.Length };
     }
 
     public async Task<CollectionCoverAccess?> CoverAsync(Guid? owner, Guid id, Guid photoId, CancellationToken ct)

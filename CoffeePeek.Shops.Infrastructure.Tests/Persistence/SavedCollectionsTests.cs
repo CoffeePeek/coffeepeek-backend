@@ -143,6 +143,30 @@ public sealed class SavedCollectionsTests
     }
 
     [Fact]
+    public async Task FeaturedPublicCountIncludesOnlyReturnedCardsAfterAPlaceBecomesUnavailable()
+    {
+        await using var db = Database();
+        var retained = Roaster("retained"); var removed = Roaster("removed");
+        db.Roasters.AddRange(retained, removed);
+        db.DiscoveryFavorites.AddRange(new(owner, "roaster", retained.Id), new(owner, "roaster", removed.Id));
+        await db.SaveChangesAsync(Ct);
+        var store = Store(db);
+        var row = await store.CreateAsync(owner, new() { Title = "Featured", Visibility = "public",
+            Items = [Item("retained"), Item("removed")] }, Ct);
+        await store.SetFeaturedAsync(owner, row.Id, Ct);
+        db.Roasters.Remove(removed);
+        await db.SaveChangesAsync(Ct);
+        db.ChangeTracker.Clear();
+
+        var featured = await store.PublicFeaturedAsync(owner, Ct);
+        Assert.NotNull(featured);
+        Assert.Single(featured.Items);
+        Assert.Equal(featured.Items.Length, featured.ItemCount);
+        Assert.Equal((await store.GetPublicAsync(row.Id, Ct))!.ItemCount, featured.ItemCount);
+        Assert.Equal(2, await db.Set<SavedCollectionItem>().CountAsync(Ct));
+    }
+
+    [Fact]
     public async Task CoversRequireCurrentPhotoIdentityAndPublicVisibilityAndNeverExposeStorageKeys()
     {
         await using var db = Database(); var store = Store(db);

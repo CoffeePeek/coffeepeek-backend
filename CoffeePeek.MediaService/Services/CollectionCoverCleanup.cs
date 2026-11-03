@@ -13,14 +13,18 @@ public sealed class CollectionCoverCleanup(MediaDbContext db, IPhotoRepository r
     public async Task RunAsync(CancellationToken ct)
     {
         var cutoff = clock.GetUtcNow().UtcDateTime.AddHours(-24);
-        var candidates = await db.Photos.AsNoTracking().Where(p => (p.Status == PhotoStatus.Pending || p.Status == PhotoStatus.Deleted) && p.UploadedAt < cutoff
+        // Claiming can happen near the upload's expiry. Give the Shops transaction its own
+        // grace period before treating an uncommitted reference as an abandoned save.
+        var candidates = await db.Photos.AsNoTracking().Where(p => (p.Status == PhotoStatus.Pending || p.Status == PhotoStatus.Deleted)
+                && (p.ClaimedAtUtc ?? p.UploadedAt) < cutoff
                 && p.BucketType == BucketType.CheckIn && p.StorageKey.StartsWith("collection-covers/"))
             .OrderBy(p => p.UploadedAt).Take(100).Select(p => new { p.Id, p.OwnerId, Key = p.OriginalStorageKey ?? p.StorageKey }).ToArrayAsync(ct);
         foreach (var candidate in candidates)
         {
             await using var claimLock = await repository.AcquireClaimLocksAsync(candidate.OwnerId, [candidate.Key], ct);
             var photo = (await repository.GetClaimPhotosAsync(candidate.OwnerId, [candidate.Key], ct)).SingleOrDefault(p => p.Id == candidate.Id);
-            if (photo == null || photo.Status is not (PhotoStatus.Pending or PhotoStatus.Deleted) || photo.UploadedAt >= cutoff) continue;
+            if (photo == null || photo.Status is not (PhotoStatus.Pending or PhotoStatus.Deleted)
+                || (photo.ClaimedAtUtc ?? photo.UploadedAt) >= cutoff) continue;
             bool? current = photo.Status == PhotoStatus.Pending && photo.CollectionId is { } collectionId && photo.CollectionCoverValidatedAtUtc != null
                 ? await references.IsCurrentAsync(photo.OwnerId, collectionId, photo.Id, ct) : false;
             if (current == null) continue;

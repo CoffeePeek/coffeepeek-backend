@@ -98,6 +98,25 @@ public class CollectionCoverTests
     }
 
     [Fact]
+    public async Task RetryingValidatedPendingCoverRenewsTheClaimGracePeriodBeforeReturning()
+    {
+        var photo = Upload();
+        Stored(photo, Image(SKEncodedImageFormat.Jpeg, 10, 10));
+        Assert.True((await Claim()).IsSuccess);
+        photo.UploadedAt = DateTime.UtcNow.AddHours(-30);
+        photo.ClaimedAtUtc = photo.UploadedAt;
+        _uow.Invocations.Clear();
+        var retryStarted = DateTime.UtcNow;
+
+        Assert.True((await Claim()).IsSuccess);
+
+        Assert.True(photo.ClaimedAtUtc >= retryStarted);
+        Assert.Equal(PhotoStatus.Pending, photo.Status);
+        _uow.Verify(u => u.SaveChangesAsync(Ct), Times.Once);
+        _storage.Verify(s => s.SealCollectionCoverObjectAsync(It.IsAny<string>(), photo.Id, Ct), Times.Once);
+    }
+
+    [Fact]
     public async Task ACardAttachedToAnotherBagIsAConflict()
     {
         var photo = Upload();

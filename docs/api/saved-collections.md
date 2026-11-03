@@ -39,7 +39,8 @@ server-relative URL against the API origin. Private URLs require authentication;
 storage keys and arbitrary external cover URLs never appear in read DTOs.
 `canonicalPath` is null for private library lists and `/collections/{id:N}` for
 public ones. Public common-read DTOs expose `itemCount` from the actually returned
-`items` array, including when unavailable targets have been omitted. Public snapshot DTOs gain optional/defaulted `mode`, `visibility`,
+`items` array, including when unavailable targets have been omitted. The public
+featured-profile detail uses the same count rule. Public snapshot DTOs gain optional/defaulted `mode`, `visibility`,
 `description`, `coverPhoto`, `revision`, and `updatedAtUtc` without losing fields.
 
 Create body:
@@ -111,7 +112,9 @@ cover. Replacement/removal/account deletion emits idempotent release events.
 A Discovery cover-use ledger prevents a replaced upload being reused while its
 old release is in flight. Re-uploading the same image yields a fresh identity.
 
-An hourly bounded cleanup reconciles up to 100 cover uploads older than 24 hours.
+An hourly bounded cleanup reconciles up to 100 cover uploads abandoned for at least
+24 hours since their last claim, or since upload when never claimed. The claim
+time is rechecked under the photo lock, allowing an in-flight Shops save to commit.
 Unclaimed/abandoned objects are deleted, including their original upload keys.
 For a validated claim it asks Shops whether the photo is still current: current
 covers are confirmed, unreferenced ones are deleted, and unavailable authority

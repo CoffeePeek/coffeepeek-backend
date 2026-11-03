@@ -37,7 +37,15 @@ public class ClaimCollectionCoverHandler(IPhotoRepository repository, IStorageSe
             return Response<ClaimedCollectionCoverDto>.Error(HttpStatusCode.Conflict, "The upload is already attached to another collection.");
         if (photo.CollectionId == request.CollectionId && photo.CollectionCoverValidatedAtUtc != null
             && photo.Status is PhotoStatus.Pending or PhotoStatus.Confirmed)
+        {
+            if (photo.Status == PhotoStatus.Pending)
+            {
+                // A retry starts another Shops save, which is not visible to reconciliation until commit.
+                photo.ClaimedAtUtc = DateTime.UtcNow;
+                await unitOfWork.SaveChangesAsync(ct);
+            }
             return Success(photo);
+        }
         if (photo.Status != PhotoStatus.Pending || (photo.CollectionId == null && photo.IsExpired)
             || !PrivateCardPhotoValidation.IsAllowedContentType(photo.ContentType))
             return Invalid("Photo is no longer available or is not a JPEG, PNG or WebP.");
@@ -52,7 +60,7 @@ public class ClaimCollectionCoverHandler(IPhotoRepository repository, IStorageSe
         if (!await repository.TryClaimCollectionCoverAsync(photo.Id, ownerId, request.CollectionId, ct))
             return Response<ClaimedCollectionCoverDto>.Error(HttpStatusCode.Conflict, "The upload is already attached to another collection.");
         photo.CollectionId = request.CollectionId;
-        photo.ClaimedAtUtc ??= DateTime.UtcNow;
+        photo.ClaimedAtUtc = DateTime.UtcNow;
         var sealedKey = await storage.SealCollectionCoverObjectAsync(photo.StorageKey, photo.Id, ct);
         photo.OriginalStorageKey ??= photo.StorageKey;
         photo.StorageKey = sealedKey;

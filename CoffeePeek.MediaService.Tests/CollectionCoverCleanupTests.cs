@@ -46,6 +46,57 @@ public sealed class CollectionCoverCleanupTests
     }
 
     [Fact]
+    public async Task RecentlyClaimedOldUploadIsRetainedWhileItsCollectionSaveMayStillBeInFlight()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        await using var db = new MediaDbContext(new DbContextOptionsBuilder<MediaDbContext>().UseInMemoryDatabase(Guid.NewGuid().ToString()).Options);
+        var photo = Photo("collection-covers/sealed/recent-claim.jpg", DateTime.UtcNow.AddHours(-25));
+        photo.OriginalStorageKey = "collection-covers/recent-upload.jpg";
+        photo.CollectionId = Guid.NewGuid();
+        photo.ClaimedAtUtc = DateTime.UtcNow.AddMinutes(-1);
+        photo.CollectionCoverValidatedAtUtc = photo.ClaimedAtUtc;
+        db.Photos.Add(photo); await db.SaveChangesAsync(ct);
+        var repo = Repository(photo); var storage = new Mock<IStorageService>(MockBehavior.Strict);
+        var references = new Mock<ICollectionCoverReferenceLookup>();
+        references.Setup(r => r.IsCurrentAsync(photo.OwnerId, photo.CollectionId.Value, photo.Id, ct)).ReturnsAsync(false);
+        var uow = new Mock<IUnitOfWork>();
+
+        await new CollectionCoverCleanup(db, repo.Object, storage.Object, references.Object, TimeProvider.System, uow.Object).RunAsync(ct);
+
+        Assert.Equal(PhotoStatus.Pending, photo.Status);
+        Assert.Single(db.Photos);
+        references.VerifyNoOtherCalls();
+        storage.VerifyNoOtherCalls();
+        repo.VerifyNoOtherCalls();
+    }
+
+    [Fact]
+    public async Task ClaimCompletedAfterCandidateSelectionIsRecheckedUnderThePhotoLock()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        await using var db = new MediaDbContext(new DbContextOptionsBuilder<MediaDbContext>().UseInMemoryDatabase(Guid.NewGuid().ToString()).Options);
+        var photo = Photo("collection-covers/late-claim.jpg", DateTime.UtcNow.AddHours(-25));
+        photo.CollectionId = Guid.NewGuid();
+        photo.ClaimedAtUtc = photo.UploadedAt;
+        db.Photos.Add(photo); await db.SaveChangesAsync(ct);
+        var repo = Repository(photo);
+        repo.Setup(r => r.GetClaimPhotosAsync(photo.OwnerId, It.IsAny<IReadOnlyCollection<string>>(), ct))
+            .Callback(() => { photo.ClaimedAtUtc = DateTime.UtcNow; photo.CollectionCoverValidatedAtUtc = DateTime.UtcNow; })
+            .ReturnsAsync([photo]);
+        var storage = new Mock<IStorageService>(MockBehavior.Strict);
+        var references = new Mock<ICollectionCoverReferenceLookup>();
+        references.Setup(r => r.IsCurrentAsync(photo.OwnerId, photo.CollectionId.Value, photo.Id, ct)).ReturnsAsync(false);
+        var uow = new Mock<IUnitOfWork>();
+
+        await new CollectionCoverCleanup(db, repo.Object, storage.Object, references.Object, TimeProvider.System, uow.Object).RunAsync(ct);
+
+        Assert.Equal(PhotoStatus.Pending, photo.Status);
+        Assert.Single(db.Photos);
+        references.VerifyNoOtherCalls();
+        storage.VerifyNoOtherCalls();
+    }
+
+    [Fact]
     public async Task AbandonedUploadExpiresWhileFreshUploadsAndOtherPurposesRemainUntouched()
     {
         var ct = TestContext.Current.CancellationToken;
