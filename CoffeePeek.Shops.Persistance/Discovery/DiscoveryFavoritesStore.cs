@@ -19,30 +19,8 @@ public sealed class DiscoveryFavoritesStore(ShopsDbContext db, IPublicAddressSer
     public async Task<DiscoveryFavoriteItem[]> ListAsync(Guid userId, CancellationToken ct)
     {
         var favorites = await db.DiscoveryFavorites.AsNoTracking().Where(f => f.UserId == userId).ToArrayAsync(ct);
-        var shopIds = favorites.Where(f => f.Kind == "coffee_shop").Select(f => f.EntityId).ToArray();
-        var roasterIds = favorites.Where(f => f.Kind == "roaster").Select(f => f.EntityId).ToArray();
-        var drinkIds = favorites.Where(f => f.Kind == "drink").Select(f => f.EntityId).ToArray();
-        var shops = await db.Shops.AsNoTracking().Where(s => shopIds.Contains(s.Id) && s.Status == CoffeeShopStatus.Active && !s.IsHidden && s.PublicSlug != null)
-            .Select(s => new { s.Id, s.Name, Slug = s.PublicSlug!, Revision = s.SlugRevision,
-                PhotoKey = s.ShopPhotos.OrderBy(p => p.SortIndex).ThenBy(p => p.Id).Select(p => p.StorageKey).FirstOrDefault() })
-            .ToDictionaryAsync(s => s.Id, ct);
-        var roasters = await db.Roasters.AsNoTracking().Where(r => roasterIds.Contains(r.Id) && r.PublicSlug != null)
-            .Select(r => new { r.Id, r.Name, Slug = r.PublicSlug!, Revision = r.SlugRevision,
-                PhotoKey = r.Photos.OrderBy(p => p.SortIndex).ThenBy(p => p.Id).Select(p => p.StorageKey).FirstOrDefault() })
-            .ToDictionaryAsync(r => r.Id, ct);
-        var drinks = await db.CoffeeDrinkDefinitions.AsNoTracking().Where(d => drinkIds.Contains(d.Id) && d.IsActive)
-            .Select(d => new { d.Id, d.Slug, d.NameRu }).ToDictionaryAsync(d => d.Id, ct);
-        return favorites.OrderByDescending(f => f.CreatedAtUtc).ThenBy(f => f.Kind).ThenBy(f => f.EntityId)
-            .Select(f => f.Kind == "coffee_shop" && shops.TryGetValue(f.EntityId, out var shop)
-                ? new DiscoveryFavoriteItem { Kind = f.Kind, CreatedAtUtc = f.CreatedAtUtc, Name = shop.Name, CoverPhoto = Photo(shop.PhotoKey),
-                    Address = new() { Slug = shop.Slug, Revision = shop.Revision, CanonicalPath = $"/coffee-shops/{shop.Slug}" } }
-                : f.Kind == "roaster" && roasters.TryGetValue(f.EntityId, out var roaster)
-                    ? new DiscoveryFavoriteItem { Kind = f.Kind, CreatedAtUtc = f.CreatedAtUtc, Name = roaster.Name, CoverPhoto = Photo(roaster.PhotoKey),
-                        Address = new() { Slug = roaster.Slug, Revision = roaster.Revision, CanonicalPath = $"/roasters/{roaster.Slug}" } }
-                    : f.Kind == "drink" && drinks.TryGetValue(f.EntityId, out var drink)
-                        ? new DiscoveryFavoriteItem { Kind = f.Kind, CreatedAtUtc = f.CreatedAtUtc, Name = drink.NameRu,
-                            Drink = new() { Slug = drink.Slug } }
-                        : null).Where(f => f is not null).Select(f => f!).ToArray();
+        var ordered = favorites.OrderByDescending(f => f.CreatedAtUtc).ThenBy(f => f.Kind).ThenBy(f => f.EntityId).ToArray();
+        return await DiscoveryFavoriteCards.ReadAsync(db, ordered, media, ct);
     }
 
     public async Task SetAsync(Guid userId, string kind, string slug, bool favorite, CancellationToken ct)
@@ -89,13 +67,4 @@ public sealed class DiscoveryFavoritesStore(ShopsDbContext db, IPublicAddressSer
         }
     }
 
-    private Photo? Photo(string? key)
-    {
-        if (string.IsNullOrEmpty(key) || media is null) return null;
-        var options = media.Value;
-        var url = MediaStorageUrlBuilder.BuildPublicUrl(options.PublicEndpoint, options.ShopBucketName, key);
-        if (url is null) return null;
-        return new() { FullUrl = url, Urls = CoffeePeek.Contract.Dtos.PhotoUrlsDto.Create(
-            options.PublicEndpoint, options.ImageProxyEndpoint, options.ShopBucketName, key) };
-    }
 }

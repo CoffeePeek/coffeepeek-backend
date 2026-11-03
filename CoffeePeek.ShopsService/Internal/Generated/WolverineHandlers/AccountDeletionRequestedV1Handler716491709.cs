@@ -28,6 +28,8 @@ namespace Internal.Generated.WolverineHandlers
             var shopsDbContext = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<CoffeePeek.Shops.Persistance.Configuration.ShopsDbContext>(serviceScope.ServiceProvider);
             var unitOfWorkOfShopsDbContext = new CoffeePeek.Shared.Persistence.Data.UnitOfWork<CoffeePeek.Shops.Persistance.Configuration.ShopsDbContext>(shopsDbContext);
             var shelfBagRepository = new CoffeePeek.Shops.Persistance.Shelf.ShelfBagRepository(shopsDbContext);
+            // This service has been marked as requiring service location independent of Wolverine's ability to use constructor injection of everything else
+            var favoriteCollectionsStore = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<CoffeePeek.Shops.Application.Features.Discovery.IFavoriteCollectionsStore>(serviceScope.ServiceProvider);
             // The actual message body
             var accountDeletionRequestedV1 = (CoffeePeek.Contract.Events.Account.AccountDeletionRequestedV1)context.Envelope.Message;
 
@@ -43,11 +45,13 @@ namespace Internal.Generated.WolverineHandlers
 
             try
             {
-                System.Diagnostics.Activity.Current?.SetTag("message.handler", "CoffeePeek.Shops.Application.Features.Shelf.DeleteAccountShelf.DeleteAccountShelfHandler");
-                System.Diagnostics.Activity.Current?.SetTag("handler.type", "CoffeePeek.Shops.Application.Features.Shelf.DeleteAccountShelf.DeleteAccountShelfHandler");
 
                 // The actual message execution
                 await CoffeePeek.Shops.Application.Features.Shelf.DeleteAccountShelf.DeleteAccountShelfHandler.Handle(accountDeletionRequestedV1, shelfBagRepository, context, unitOfWorkOfShopsDbContext, cancellation).ConfigureAwait(false);
+
+
+                // The actual message execution
+                await CoffeePeek.Shops.Application.Features.Discovery.DeleteAccountFavoriteCollectionsHandler.Handle(accountDeletionRequestedV1, favoriteCollectionsStore, cancellation).ConfigureAwait(false);
 
 
                 // Added by EF Core Transaction Middleware
@@ -71,4 +75,3 @@ namespace Internal.Generated.WolverineHandlers
 
 
 }
-
