@@ -43,8 +43,13 @@ not a hard concurrency quota.
 
 Collection fields are `id`, `title`, `canonicalPath`, `createdAtUtc`, `items`.
 The link is `https://coffeepeek.by/collections/{id:N}` (lowercase 32-digit GUID).
-Cards extend the existing Discovery favorite projection with nullable `cityName`
-and `streetAddress`. Summaries contain `id`, `title`, `canonicalPath`,
+Cards extend the existing Discovery favorite projection with nullable `cityName`,
+`streetAddress`, `rating` and `checkInCount`. Shop statistics use the same current
+approved public visits and latest eligible rating per author as Discovery shop
+cards. Private, pending and stale-revision scores are excluded. Roasters do not
+receive shop statistics. All shops precede all roasters, preserving selection
+order within each kind; clients apply that order before pagination too.
+Summaries contain `id`, `title`, `canonicalPath`,
 `createdAtUtc`, and original membership `itemCount`. Public `items` can be shorter
 than that count when targets become unavailable. The owner can revoke the link;
 downloaded images and copies already delivered to recipients cannot be recalled.

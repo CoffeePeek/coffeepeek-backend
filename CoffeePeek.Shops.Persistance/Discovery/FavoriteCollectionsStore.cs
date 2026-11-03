@@ -5,6 +5,7 @@ using CoffeePeek.Shops.Application.Features.Discovery;
 using CoffeePeek.Shops.Application.PublicAddresses;
 using CoffeePeek.Shops.Domain.Aggregates.DiscoveryAggregate;
 using CoffeePeek.Shops.Persistance.Configuration;
+using CoffeePeek.Shops.Persistance.Queries;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
@@ -96,16 +97,28 @@ public sealed class FavoriteCollectionsStore(ShopsDbContext db, IPublicAddressSe
     {
         var shopSlugs = items.Where(i => i.Kind == "coffee_shop").Select(i => i.Address!.Slug).ToArray();
         var shops = await db.Shops.AsNoTracking().Where(s => shopSlugs.Contains(s.PublicSlug!))
-            .Select(s => new { s.PublicSlug, StreetAddress = s.Location == null ? null : s.Location.Address,
+            .Select(s => new { s.Id, s.PublicSlug, StreetAddress = s.Location == null ? null : s.Location.Address,
                 CityId = s.Location == null ? (Guid?)null : s.Location.CityId }).ToDictionaryAsync(s => s.PublicSlug!, ct);
-        var cityIds = shops.Values.Select(s => s.CityId).ToArray();
+        var roasterSlugs = items.Where(i => i.Kind == "roaster").Select(i => i.Address!.Slug).ToArray();
+        var roasters = await db.Roasters.AsNoTracking().Where(r => roasterSlugs.Contains(r.PublicSlug!))
+            .Select(r => new { r.Id, r.PublicSlug, StreetAddress = r.Location == null ? null : r.Location.Address,
+                CityId = r.Location == null ? (Guid?)null : r.Location.CityId }).ToDictionaryAsync(r => r.PublicSlug!, ct);
+        var shopIds = shops.Values.Select(s => s.Id).ToArray();
+        var counts = await CheckInEligibility.Public(db).Where(c => c.ShopId != null && shopIds.Contains(c.ShopId.Value))
+            .GroupBy(c => c.ShopId!.Value).Select(g => new { Id = g.Key, Count = g.Count() }).ToDictionaryAsync(g => g.Id, g => g.Count, ct);
+        var ratings = await CheckInEligibility.LatestRatings(db).Where(c => c.ShopId != null && shopIds.Contains(c.ShopId.Value))
+            .GroupBy(c => c.ShopId!.Value).Select(g => new { Id = g.Key, Rating = g.Average(c => (c.Rating!.Place + c.Rating.Coffee + c.Rating.Service) / 3m) })
+            .ToDictionaryAsync(g => g.Id, g => (decimal?)Math.Round(g.Rating, 2), ct);
+        var cityIds = shops.Values.Select(s => s.CityId).Concat(roasters.Values.Select(r => r.CityId)).ToArray();
         var cities = await db.Cities.AsNoTracking().Where(c => cityIds.Contains(c.Id)).ToDictionaryAsync(c => c.Id, c => c.Name, ct);
         return new() { Id = collection.Id, Title = collection.Title, CanonicalPath = $"/collections/{collection.Id:N}",
-            CreatedAtUtc = collection.CreatedAtUtc, Items = items.Select(item => {
+            CreatedAtUtc = collection.CreatedAtUtc, Items = items.OrderBy(item => item.Kind == "coffee_shop" ? 0 : 1).Select(item => {
                 var shop = item.Kind == "coffee_shop" ? shops.GetValueOrDefault(item.Address!.Slug) : null;
+                var location = shop ?? roasters.GetValueOrDefault(item.Address!.Slug);
                 return new FavoriteCollectionPlace { Kind = item.Kind, Address = item.Address, Name = item.Name,
-                    CoverPhoto = item.CoverPhoto, CreatedAtUtc = collection.CreatedAtUtc, StreetAddress = shop?.StreetAddress,
-                    CityName = shop?.CityId is { } cityId ? cities.GetValueOrDefault(cityId) : null };
+                    CoverPhoto = item.CoverPhoto, CreatedAtUtc = collection.CreatedAtUtc, StreetAddress = location?.StreetAddress,
+                    CityName = location?.CityId is { } cityId ? cities.GetValueOrDefault(cityId) : null,
+                    Rating = shop is null ? null : ratings.GetValueOrDefault(shop.Id), CheckInCount = shop is null ? null : counts.GetValueOrDefault(shop.Id) };
             }).ToArray() };
     }
 }

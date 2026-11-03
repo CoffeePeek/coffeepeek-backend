@@ -3,6 +3,7 @@ using CoffeePeek.Shops.Application.Features.Discovery;
 using CoffeePeek.Shops.Application.PublicAddresses;
 using CoffeePeek.Shops.Domain.Aggregates.DiscoveryAggregate;
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
+using CoffeePeek.Shops.Domain.Aggregates.CheckInAggregate;
 using CoffeePeek.Shops.Domain.Entities;
 using CoffeePeek.Shops.Persistance.Configuration;
 using CoffeePeek.Shops.Persistance.Discovery;
@@ -13,6 +14,51 @@ namespace CoffeePeek.Shops.Infrastructure.Tests.Persistence;
 
 public sealed class FavoriteCollectionsTests
 {
+    [Fact]
+    public async Task ShopCardsUseOnlyCurrentPublicRatingsAndCounts_AndRoastersFollowAllShops()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        await using var db = Database();
+        var owner = Guid.NewGuid();
+        var shop = new CoffeeShop(null, "Shop", null, CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate.PriceRange.Moderate, Guid.NewGuid());
+        shop.SetPublicSlug("shop");
+        shop.SetLocation(Guid.NewGuid(), "Test street, 83", 53m, 27m);
+        var roaster = Roaster("Roaster", "roaster");
+        db.Shops.Add(shop);
+        db.Roasters.Add(roaster);
+        db.DiscoveryFavorites.AddRange(new(owner, "coffee_shop", shop.Id), new(owner, "roaster", roaster.Id));
+        var time = DateTime.UtcNow.AddDays(-2);
+        var user = Guid.NewGuid();
+        var old = ApprovedVisit(user, shop.Id, 2, time);
+        var latest = ApprovedVisit(user, shop.Id, 5, time.AddHours(1));
+        var other = ApprovedVisit(Guid.NewGuid(), shop.Id, 3, time);
+        var privateVisit = CheckIn.CreateUnified(Guid.NewGuid(), shop.Id, "private", "private", Rating.Create(1, 1, 1), time);
+        var pending = CheckIn.CreateUnified(Guid.NewGuid(), shop.Id, "pending", "pending", Rating.Create(1, 1, 1), time, CheckInVisibility.Public);
+        db.CheckIns.AddRange(old, latest, other, privateVisit, pending);
+        await db.SaveChangesAsync(ct);
+        var store = new FavoriteCollectionsStore(db, Mock.Of<IPublicAddressService>());
+        var created = await store.CreateAsync(owner, new() { Title = "Places", Items = [
+            new() { Kind = "roaster", Slug = "roaster" }, new() { Kind = "coffee_shop", Slug = "shop" }] }, ct);
+        Assert.Equal(["coffee_shop", "roaster"], created.Items.Select(i => i.Kind));
+        Assert.Equal(4m, created.Items[0].Rating);
+        Assert.Equal(3, created.Items[0].CheckInCount);
+        Assert.Equal("Test street, 83", created.Items[0].StreetAddress);
+        Assert.Null(created.Items[1].Rating);
+        Assert.Null(created.Items[1].CheckInCount);
+        latest.ChangeVisibility(CheckInVisibility.Private);
+        await db.SaveChangesAsync(ct);
+        var opened = await store.GetAsync(created.Id, ct);
+        Assert.Equal(2.5m, opened!.Items[0].Rating);
+        Assert.Equal(2, opened.Items[0].CheckInCount);
+    }
+
+    private static CheckIn ApprovedVisit(Guid user, Guid shop, int score, DateTime time)
+    {
+        var visit = CheckIn.CreateUnified(user, shop, "public", "public", Rating.Create(score, score, score), time, CheckInVisibility.Public);
+        visit.ApplyModerationDecision(1, Guid.NewGuid(), 1, CheckInModerationState.Approved, null, time);
+        return visit;
+    }
+
     [Fact]
     public async Task SharesOnlySelectedPlaces_InRequestedOrder_AndSurvivesUnfavoriteAndRename()
     {
