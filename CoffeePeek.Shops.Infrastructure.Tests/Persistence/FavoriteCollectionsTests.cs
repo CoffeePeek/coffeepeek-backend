@@ -119,9 +119,9 @@ public sealed class FavoriteCollectionsTests
     }
 
     [Theory]
-    [InlineData("", 1)] [InlineData(" \t", 1)] [InlineData("Valid", 0)] [InlineData("Valid", 101)]
+    [InlineData("", 1)] [InlineData(" \t", 1)] [InlineData("Valid", 0)]
     [InlineData("Title\nwith controls", 1)]
-    public async Task RejectsInvalidTitlesAndSelectionBounds(string title, int count)
+    public async Task RejectsInvalidTitlesAndEmptySelection(string title, int count)
     {
         var ct = TestContext.Current.CancellationToken;
         await using var db = Database();
@@ -183,6 +183,26 @@ public sealed class FavoriteCollectionsTests
         Assert.Null(await store.GetAsync(deleted.Id, ct));
         Assert.NotNull(await store.GetAsync(retained.Id, ct));
         Assert.Single(await db.FavoriteCollections.Include(c => c.Items).ToArrayAsync(ct));
+    }
+
+    [Fact]
+    public async Task MoreThanAHundredSavedPlacesPassHttpValidationAndRemainInThePublicCollection()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        await using var db = Database();
+        var owner = Guid.NewGuid();
+        var roasters = Enumerable.Range(1, 125).Select(i => Roaster($"Roaster {i}", $"roaster-{i}")).ToArray();
+        db.Roasters.AddRange(roasters);
+        db.DiscoveryFavorites.AddRange(roasters.Select(r => new DiscoveryFavorite(owner, "roaster", r.Id)));
+        await db.SaveChangesAsync(ct);
+        var request = Request(roasters.Select(r => r.PublicSlug!).ToArray());
+        System.ComponentModel.DataAnnotations.Validator.ValidateObject(request,
+            new System.ComponentModel.DataAnnotations.ValidationContext(request), validateAllProperties: true);
+        var store = new FavoriteCollectionsStore(db, Mock.Of<IPublicAddressService>());
+        var created = await store.CreateAsync(owner, request, ct);
+        var opened = await store.GetAsync(created.Id, ct);
+        Assert.Equal(125, created.Items.Length);
+        Assert.Equal(created.Items.Select(i => i.Address!.Slug), opened!.Items.Select(i => i.Address!.Slug));
     }
 
     private static ShopsDbContext Database() => new(new DbContextOptionsBuilder<ShopsDbContext>().UseInMemoryDatabase(Guid.NewGuid().ToString()).Options);

@@ -88,7 +88,7 @@ public sealed class FavoriteCollectionsStore(ShopsDbContext db, IPublicAddressSe
     private static void Validate(CreateFavoriteCollectionRequest request)
     {
         if (string.IsNullOrWhiteSpace(request.Title) || request.Title.Trim().Length > 100 || request.Title.Any(char.IsControl) ||
-            request.Items is null || request.Items.Length is < 1 or > 100 ||
+            request.Items is null || request.Items.Length < 1 ||
             request.Items.Any(i => i is null || i.Kind is not ("coffee_shop" or "roaster") || !PublicSlug.IsValid(i.Slug)))
             throw new DiscoveryException("Invalid collection title or selection.", 400, "INVALID_COLLECTION");
     }

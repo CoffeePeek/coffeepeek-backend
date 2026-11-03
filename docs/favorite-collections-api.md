@@ -32,7 +32,7 @@ and item rows; repeating the account-deletion event is safe.
 }
 ```
 
-Title: trimmed, 1–100 characters, no controls. Selection: 1–100 distinct
+Title: trimmed, 1–100 characters, no controls. Selection: one or more distinct
 `coffee_shop`/`roaster` targets, all currently in the caller's favorites and
 publicly available. Public-address aliases resolve before deduplication; the
 client cannot select another account's private membership. Invalid selections

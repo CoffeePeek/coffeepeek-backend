@@ -18,7 +18,7 @@ public sealed class FavoriteCollection
         var selected = favorites.ToArray();
         title = title.Trim();
         if (ownerId == Guid.Empty || title.Length is < 1 or > 100 || title.Any(char.IsControl) ||
-            selected.Length is < 1 or > 100 || selected.Any(f => f.UserId != ownerId || f.Kind is not ("coffee_shop" or "roaster")) ||
+            selected.Length < 1 || selected.Any(f => f.UserId != ownerId || f.Kind is not ("coffee_shop" or "roaster")) ||
             selected.Select(f => (f.Kind, f.EntityId)).Distinct().Count() != selected.Length)
             throw new DomainException("Invalid favorite collection.");
         Id = Guid.NewGuid(); OwnerId = ownerId; Title = title; CreatedAtUtc = DateTime.UtcNow;
