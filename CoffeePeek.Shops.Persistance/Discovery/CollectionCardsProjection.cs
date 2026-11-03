@@ -44,9 +44,7 @@ internal sealed class CollectionCardsProjection(ShopsDbContext db, IOptions<Medi
         return new() { Id = collection.Id, Title = collection.Title, CanonicalPath = $"/collections/{collection.Id:N}",
             Mode = collection.Mode, Visibility = collection.Visibility, Description = collection.Description,
             Revision = collection.Revision, UpdatedAtUtc = collection.UpdatedAtUtc,
-            CoverPhoto = collection.CoverPhotoId is { } photoId ? new SavedCollectionCoverDto(photoId,
-                collection.Visibility == "public" ? $"/api/v1/favorite-collections/{collection.Id}/cover/{photoId}"
-                    : $"/api/v1/saved-collections/{collection.Id}/cover/{photoId}") : null,
+            CoverPhoto = CollectionCoverProjection.Read(collection.Id, collection.Visibility, collection.CoverPhotoId),
             CreatedAtUtc = collection.CreatedAtUtc, Items = items.OrderBy(item => item.Kind == "coffee_shop" ? 0 : 1).Select(item => {
                 var shop = item.Kind == "coffee_shop" ? shops.GetValueOrDefault(item.Address!.Slug) : null;
                 var location = shop ?? roasters.GetValueOrDefault(item.Address!.Slug);

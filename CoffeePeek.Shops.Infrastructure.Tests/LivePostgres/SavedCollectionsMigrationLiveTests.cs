@@ -105,8 +105,8 @@ public sealed class SavedCollectionsMigrationLiveTests
             await using var first = Context(connection); await using var second = Context(connection);
             await using var firstTransaction = await first.Database.BeginTransactionAsync(Ct);
             await using var secondTransaction = await second.Database.BeginTransactionAsync(Ct);
-            await Store(first).UpdateAsync(owner, row.Id, new() { Title = "Committed", ExpectedRevision = row.Revision }, Ct);
-            var waiting = Store(second).UpdateAsync(owner, row.Id, new() { Title = "Stale", ExpectedRevision = row.Revision }, Ct);
+            await Store(first).UpdateAsync(owner, row.Id, new() { Title = "Committed", Visibility = "private", ExpectedRevision = row.Revision }, Ct);
+            var waiting = Store(second).UpdateAsync(owner, row.Id, new() { Title = "Stale", Visibility = "private", ExpectedRevision = row.Revision }, Ct);
             await LivePostgresServer.WaitForLockWaitsAsync(connection, "advisory", 1, Ct);
             await firstTransaction.CommitAsync(Ct);
             var conflict = await Assert.ThrowsAsync<DiscoveryException>(() => waiting);

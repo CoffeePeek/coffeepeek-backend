@@ -17,25 +17,34 @@ public sealed partial class SavedCollectionsStore
     {
         if (items == null) throw new DiscoveryException("Items are required.", 400, "INVALID_COLLECTION");
         var selected = new List<DiscoveryFavorite>();
+        var seen = new HashSet<(string Kind, Guid Id)>();
+        var existingKeys = existing.Select(i => (i.Kind, i.EntityId)).ToHashSet();
         foreach (var item in items)
         {
             if (item == null) throw new DiscoveryException("Invalid place.", 400, "INVALID_COLLECTION");
             var id = await ResolveAsync(item.Kind, item.Slug, ct);
-            if (id == Guid.Empty || selected.Any(f => f.Kind == item.Kind && f.EntityId == id))
+            if (id == Guid.Empty || !seen.Add((item.Kind, id)))
                 throw new DiscoveryException("Select distinct available places.", 400, "INVALID_COLLECTION");
-            if (existing.All(i => i.Kind != item.Kind || i.EntityId != id))
-                await EnsureFavoriteAsync(owner, item.Kind, id, ct);
             selected.Add(new(owner, item.Kind, id));
         }
+        var additions = selected.Where(i => !existingKeys.Contains((i.Kind, i.EntityId))).ToArray();
+        if (additions.Length > 0) await EnsureFavoritesAsync(owner, additions, ct);
         return selected;
     }
 
-    private async Task EnsureFavoriteAsync(Guid owner, string kind, Guid id, CancellationToken ct)
+    private Task EnsureFavoriteAsync(Guid owner, string kind, Guid id, CancellationToken ct) =>
+        EnsureFavoritesAsync(owner, [new(owner, kind, id)], ct);
+
+    private async Task EnsureFavoritesAsync(Guid owner, DiscoveryFavorite[] items, CancellationToken ct)
     {
-        if (!await db.DiscoveryFavorites.AnyAsync(f => f.UserId == owner && f.Kind == kind && f.EntityId == id, ct))
+        var ids = items.Select(i => i.EntityId).ToArray();
+        var favorites = await db.DiscoveryFavorites.AsNoTracking().Where(f => f.UserId == owner && ids.Contains(f.EntityId))
+            .Select(f => new { f.Kind, f.EntityId }).ToArrayAsync(ct);
+        var keys = favorites.Select(f => (f.Kind, f.EntityId)).ToHashSet();
+        if (items.Any(i => !keys.Contains((i.Kind, i.EntityId))))
             throw new DiscoveryException("Place must be in your favorites.", 409, "COLLECTION_CHANGED");
-        var visible = await DiscoveryFavoriteCards.ReadAsync(db, [new DiscoveryFavorite(owner, kind, id)], media, ct);
-        if (visible.Length != 1) throw new DiscoveryException("Place is no longer available.", 409, "COLLECTION_CHANGED");
+        var visible = await DiscoveryFavoriteCards.ReadAsync(db, items, media, ct);
+        if (visible.Length != items.Length) throw new DiscoveryException("Place is no longer available.", 409, "COLLECTION_CHANGED");
     }
 
     private async Task<Guid> ResolveAsync(string? kind, string? slug, CancellationToken ct)

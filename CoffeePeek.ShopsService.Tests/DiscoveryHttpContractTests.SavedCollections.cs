@@ -36,6 +36,7 @@ public sealed partial class DiscoveryHttpContractTests
         {
             ("POST", "/api/v1/saved-collections", "{}"),
             ("POST", "/api/v1/saved-collections", "{"),
+            ("PUT", "/api/v1/saved-collections/11111111-1111-1111-1111-111111111111", "{\"title\":\"Valid\",\"expectedRevision\":1}"),
             ("PUT", "/api/v1/saved-collections/11111111-1111-1111-1111-111111111111", "{\"title\":\"Valid\",\"expectedRevision\":0}"),
             ("PUT", "/api/v1/saved-collections/membership/roaster/sample", "{\"collectionIds\":\"invalid\"}")
         })
@@ -142,6 +143,22 @@ public sealed partial class DiscoveryHttpContractTests
         Assert.Equal("Public description", item.GetProperty("description").GetString());
         Assert.Equal(2, item.GetProperty("items").GetArrayLength());
         Assert.Equal(2, item.GetProperty("itemCount").GetInt32());
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task UnavailableCoverMediaReturnsServiceUnavailableWithoutWritingImageBytes(bool timeout)
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var owner = Guid.NewGuid(); var id = Guid.NewGuid(); var photo = Guid.NewGuid();
+        saved.Setup(s => s.CoverAsync(null, id, photo, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new CollectionCoverAccess(owner, id, photo, "image/jpeg"));
+        coverHttp.Setup(f => f.CreateClient(It.IsAny<string>()))
+            .Throws(timeout ? new TaskCanceledException("Media timeout") : new HttpRequestException("Media unavailable"));
+        using var response = await client.GetAsync($"/api/v1/favorite-collections/{id}/cover/{photo}", ct);
+        Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
+        Assert.Contains("no-store", response.Headers.CacheControl!.ToString());
     }
 
     [Fact]

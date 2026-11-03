@@ -45,8 +45,22 @@ public sealed class MediaCollectionCoverClient(IHttpClientFactory clients, IOpti
     public async Task<HttpResponseMessage> DownloadAsync(CollectionCoverAccess photo, CancellationToken ct)
     {
         using var request = Request(HttpMethod.Get, $"/internal/collection-covers/{photo.CollectionId}/{photo.PhotoId}", photo.OwnerId);
-        return await clients.CreateClient(MediaUploadedPhotoLookup.HttpClientName)
-            .SendAsync(request, HttpCompletionOption.ResponseHeadersRead, ct);
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        timeout.CancelAfter(TimeSpan.FromSeconds(5));
+        var response = await clients.CreateClient(MediaUploadedPhotoLookup.HttpClientName)
+            .SendAsync(request, HttpCompletionOption.ResponseHeadersRead, timeout.Token);
+        try
+        {
+            // Covers are at most 1 MiB. Buffer within the same deadline so a stalled Media
+            // body fails before the public response starts, while keeping memory bounded.
+            await response.Content.LoadIntoBufferAsync(1048576, timeout.Token);
+            return response;
+        }
+        catch
+        {
+            response.Dispose();
+            throw;
+        }
     }
 
     private HttpRequestMessage Request(HttpMethod method, string path, Guid owner)

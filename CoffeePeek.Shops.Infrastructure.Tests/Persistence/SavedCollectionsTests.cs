@@ -65,11 +65,39 @@ public sealed class SavedCollectionsTests
         Assert.Equal("public", publicRow.Visibility);
         Assert.Equal("Edited", publicRow.Title);
         var conflict = await Assert.ThrowsAsync<DiscoveryException>(() => store.UpdateAsync(owner, row.Id,
-            new() { Title = "Stale", ExpectedRevision = row.Revision, CoverUpload = Upload("never") }, Ct));
+            new() { Title = "Stale", Visibility = "private", ExpectedRevision = row.Revision, CoverUpload = Upload("never") }, Ct));
         Assert.Equal("COLLECTION_CONFLICT", conflict.ErrorCode);
         Assert.Equal(409, conflict.StatusCode);
         Assert.Equal("Edited", (await store.GetAsync(owner, row.Id, Ct))!.Title);
-        Assert.Null(await store.UpdateAsync(Guid.NewGuid(), row.Id, new() { Title = "Foreign", ExpectedRevision = updated.Revision }, Ct));
+        Assert.Null(await store.UpdateAsync(Guid.NewGuid(), row.Id, new() { Title = "Foreign", Visibility = "private", ExpectedRevision = updated.Revision }, Ct));
+        covers.VerifyNoOtherCalls();
+    }
+
+    [Fact]
+    public async Task MetadataUpdateWithoutVisibilityCannotPrivatizeOrUnfeatureAPublicCollection()
+    {
+        await using var db = Database(); var store = Store(db);
+        var row = await store.CreateAsync(owner, new() { Title = "Published", Visibility = "public" }, Ct);
+        await store.SetFeaturedAsync(owner, row.Id, Ct);
+        var error = await Assert.ThrowsAsync<DiscoveryException>(() => store.UpdateAsync(owner, row.Id,
+            new() { Title = "Edited", ExpectedRevision = row.Revision }, Ct));
+        Assert.Equal("INVALID_COLLECTION", error.ErrorCode);
+        Assert.NotNull(await store.GetPublicAsync(row.Id, Ct));
+        Assert.Equal(row.Id, (await store.FeaturedAsync(owner, Ct)).CollectionId);
+    }
+
+    [Fact]
+    public async Task NewNonFavoriteRejectsTheWholeSelectionBeforeClaimingACover()
+    {
+        await using var db = Database(); var store = Store(db);
+        var favorite = Roaster("favorite"); var other = Roaster("other");
+        db.Roasters.AddRange(favorite, other);
+        db.DiscoveryFavorites.Add(new(owner, "roaster", favorite.Id));
+        await db.SaveChangesAsync(Ct);
+        var error = await Assert.ThrowsAsync<DiscoveryException>(() => store.CreateAsync(owner,
+            new() { Title = "Invalid", Items = [Item("favorite"), Item("other")], CoverUpload = Upload("unclaimed") }, Ct));
+        Assert.Equal("COLLECTION_CHANGED", error.ErrorCode);
+        Assert.Empty(db.SavedCollections);
         covers.VerifyNoOtherCalls();
     }
 
@@ -131,7 +159,7 @@ public sealed class SavedCollectionsTests
         await store.SetFeaturedAsync(owner, first.Id, Ct);
         await store.SetFeaturedAsync(owner, second.Id, Ct);
         Assert.Equal(second.Id, (await store.PublicFeaturedAsync(owner, Ct))!.Id);
-        await store.UpdateAsync(owner, second.Id, new() { Title = "Second", ExpectedRevision = second.Revision }, Ct);
+        await store.UpdateAsync(owner, second.Id, new() { Title = "Second", Visibility = "private", ExpectedRevision = second.Revision }, Ct);
         Assert.Null((await store.FeaturedAsync(owner, Ct)).CollectionId);
         Assert.Null(await store.PublicFeaturedAsync(owner, Ct));
         await store.SetFeaturedAsync(owner, first.Id, Ct);
@@ -174,6 +202,7 @@ public sealed class SavedCollectionsTests
         covers.Setup(c => c.ClaimAsync(owner, It.IsAny<Guid>(), upload.StorageKey, Ct))
             .ReturnsAsync(new ClaimedCollectionCoverDto(photoId, $"collection-covers/sealed/{photoId:N}.jpg", "image/jpeg", 100));
         var row = await store.CreateAsync(owner, new() { Title = "Cover", CoverUpload = upload }, Ct);
+        Assert.Equal(row.CoverPhoto, (await store.ListAsync(owner, null, null, Ct)).Single().CoverPhoto);
         Assert.Contains("/saved-collections/", row.CoverPhoto!.Url);
         Assert.Null(await store.CoverAsync(null, row.Id, photoId, Ct));
         Assert.Null(await store.CoverAsync(Guid.NewGuid(), row.Id, photoId, Ct));
@@ -182,14 +211,15 @@ public sealed class SavedCollectionsTests
         row = (await store.UpdateAsync(owner, row.Id, new() { Title = row.Title, Visibility = "public", ExpectedRevision = row.Revision }, Ct))!;
         await store.SetFeaturedAsync(owner, row.Id, Ct);
         Assert.NotNull(await store.CoverAsync(null, row.Id, photoId, Ct));
+        Assert.Equal(row.CoverPhoto, (await store.ListAsync(owner, null, null, Ct)).Single().CoverPhoto);
         var publicRow = await store.GetPublicAsync(row.Id, Ct);
         Assert.Contains("/favorite-collections/", publicRow!.CoverPhoto!.Url);
         Assert.DoesNotContain("storageKey", JsonSerializer.Serialize(publicRow, JsonSerializerOptions.Web), StringComparison.OrdinalIgnoreCase);
-        row = (await store.UpdateAsync(owner, row.Id, new() { Title = row.Title, ExpectedRevision = row.Revision }, Ct))!;
+        row = (await store.UpdateAsync(owner, row.Id, new() { Title = row.Title, Visibility = "private", ExpectedRevision = row.Revision }, Ct))!;
         Assert.Null(await store.CoverAsync(null, row.Id, photoId, Ct));
         Assert.Null(await store.GetPublicAsync(row.Id, Ct));
         Assert.Null(await store.PublicFeaturedAsync(owner, Ct));
-        row = (await store.UpdateAsync(owner, row.Id, new() { Title = row.Title, ExpectedRevision = row.Revision, RemoveCover = true }, Ct))!;
+        row = (await store.UpdateAsync(owner, row.Id, new() { Title = row.Title, Visibility = "private", ExpectedRevision = row.Revision, RemoveCover = true }, Ct))!;
         Assert.Null(row.CoverPhoto);
         Assert.Null(await store.CoverAsync(owner, row.Id, photoId, Ct));
     }
@@ -204,9 +234,9 @@ public sealed class SavedCollectionsTests
         covers.Setup(c => c.ClaimAsync(owner, It.IsAny<Guid>(), Upload("new").StorageKey, Ct))
             .ReturnsAsync(new ClaimedCollectionCoverDto(newId, "collection-covers/sealed/new.jpg", "image/jpeg", 100));
         var row = await store.CreateAsync(owner, new() { Title = "Photos", CoverUpload = Upload("old") }, Ct);
-        row = (await store.UpdateAsync(owner, row.Id, new() { Title = row.Title, CoverUpload = Upload("new"), ExpectedRevision = row.Revision }, Ct))!;
+        row = (await store.UpdateAsync(owner, row.Id, new() { Title = row.Title, Visibility = "private", CoverUpload = Upload("new"), ExpectedRevision = row.Revision }, Ct))!;
         await Assert.ThrowsAsync<DiscoveryException>(() => store.UpdateAsync(owner, row.Id,
-            new() { Title = row.Title, CoverUpload = Upload("old"), ExpectedRevision = row.Revision }, Ct));
+            new() { Title = row.Title, Visibility = "private", CoverUpload = Upload("old"), ExpectedRevision = row.Revision }, Ct));
         Assert.Equal(newId, (await store.GetAsync(owner, row.Id, Ct))!.CoverPhoto!.Id);
         bus.Verify(b => b.PublishAsync(It.Is<CollectionCoverReleasedEvent>(e => e.PhotoId == oldId && e.CollectionId == row.Id),
             It.IsAny<DeliveryOptions>()), Times.Once);

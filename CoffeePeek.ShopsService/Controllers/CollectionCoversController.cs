@@ -21,7 +21,11 @@ public sealed class CollectionCoversController(ISavedCollectionsStore collection
     private async Task<IActionResult> DownloadAsync(CollectionCoverAccess? photo, CancellationToken ct)
     {
         if (photo == null) return NotFound();
-        using var response = await media.DownloadAsync(photo, ct);
+        HttpResponseMessage response;
+        try { response = await media.DownloadAsync(photo, ct); }
+        catch (Exception ex) when (!ct.IsCancellationRequested && ex is (HttpRequestException or OperationCanceledException))
+        { return StatusCode(503); }
+        using var responseLease = response;
         if (!response.IsSuccessStatusCode)
             return StatusCode(response.StatusCode == System.Net.HttpStatusCode.NotFound ? 404 : 503);
         var type = response.Content.Headers.ContentType?.MediaType?.ToLowerInvariant();

@@ -55,6 +55,9 @@ Metadata PUT body:
 { "title": "Weekend coffee", "description": null, "visibility": "public", "expectedRevision": 1, "removeCover": false }
 ```
 
+Metadata PUT requires an explicit `visibility`; omitting it returns 400
+`INVALID_COLLECTION` and cannot silently privatize a public list.
+
 Title is trimmed, 1–100 characters, without controls. Description is nullable,
 at most 1000 characters, and permits newlines/tabs. Visibility is `private` or
 `public`; new library lists default to private. Private means owner-only, including
@@ -69,6 +72,8 @@ New members must already be the owner's available server favorites. Existing
 membership survives later unfavoriting and slug changes; stable entity IDs and
 mutable positions preserve order. All shops precede roasters in public projection,
 preserving order within each group. The prior 100-item selection cap is absent.
+New-member favorite and availability checks are batched, and duplicate/existing
+membership checks use sets. Public-address resolution retains per-slug alias handling.
 The existing separate 100-active-links quota remains for snapshots; library lists
 have their own 100-active-list creation guard.
 
@@ -76,7 +81,10 @@ Picker PUT body is `{ "collectionIds": ["11111111-1111-1111-1111-111111111111"] 
 An empty array removes the target from all owned library lists. Foreign, deleted
 or snapshot IDs reject the entire request. Repeating the same membership set is
 idempotent, including revisions. This operation never writes global favorites or
-snapshot membership. Owner writes serialize through a transaction-scoped lock;
+snapshot membership. Deletion revokes all access immediately; revoked list metadata
+and memberships remain in Shops until account deletion, which physically removes
+them. Retaining the ID and cover-use ledger prevents delayed requests from reusing
+a released upload. Repeated deletion remains idempotent. Owner writes serialize through a transaction-scoped lock;
 metadata/items version mismatch returns 409 `COLLECTION_CONFLICT`. Invalid input
 uses 400 `INVALID_COLLECTION`; unavailable/new non-favorite targets use 409
 `COLLECTION_CHANGED`.
@@ -121,7 +129,10 @@ covers are confirmed, unreferenced ones are deleted, and unavailable authority
 retains the object for retry. These service-to-service endpoints require signed
 gateway identity headers and have no public Gateway routes. Public cover streams
 check current list visibility, owner association and exact photo ID on every read;
-responses disable caching and content sniffing.
+responses disable caching and content sniffing. Shops buffers each Media cover
+response within a five-second deadline and a 1 MiB bound before sending public
+bytes. Media connection failures, timeouts and invalid oversized responses return
+503; client-request cancellation is propagated.
 
 ## Privacy audit and verification
 
@@ -143,41 +154,3 @@ Shops/Media migrations; production Wolverine registry/startup checks. No product
 database/account writes or deployment are part of these checks. In-memory tests
 do not certify PostgreSQL locking/migration execution, real MinIO policy/sealing,
 RabbitMQ delivery, or deployment; those remain separate integration gates.
-
-## Verification record — 2026-11-03
-
-Working patch on `31efbde7`, branch `codex/saved-collections`:
-
-- Release solution build passed. Unit/contract runs passed: Shops persistence 28,
-  Media 244 (live classes excluded), Shops HTTP/ownership/registry 107, Gateway
-  routes 34: 413 passed, zero failures/skips within those executed selections.
-  Cross-contract review added a public two-card HTTP serialization assertion for
-  `itemCount: 2` and a zero-count check when a legacy target becomes unavailable;
-  the affected 107 HTTP/ownership/registry and 28 persistence cases passed again.
-  Media's existing `photoId`/`uploadUrl` reservation response is retained.
-- Both EF pending-model checks returned no differences. Generated upgrade and
-  idempotent SQL were inspected without connecting to a database. Migrations are
-  `20261103135540_AddSavedCollectionLibrary` (four new Saved tables only) and
-  `20261103134700_AddCollectionCovers` (two nullable Media columns and an index).
-  Both downgrade bodies refuse to discard new populated library/binding data;
-  the historical snapshot schema and PK are untouched.
-- Production Wolverine adapters/registries were generated with the normal CLI.
-  Only new commands/consumers, their registries and account-deletion integration
-  remain in the diff; unrelated generator order/format churn was excluded. The
-  actual registry and production-startup suites passed in the selections above.
-- A first compile found a missing address-enum import; a later test edit placed
-  an assertion in the wrong method. Both were corrected before the successful
-  runs. Original failure logs remain local, separate from successful reruns.
-- This Windows host has no running Docker Linux engine. PostgreSQL DDL and owner
-  lock tests were compiled but not executed locally: the two Shops live cases
-  and one Media live case report skipped without `COFFEEPEEK_LIVE_PG`.
-- CI explicitly runs
-  `CoffeePeek.Shops.Infrastructure.Tests.LivePostgres.SavedCollectionsMigrationLiveTests`
-  and `CoffeePeek.MediaService.Tests.CollectionCoverMigrationLiveTests` against
-  its disposable PostgreSQL 17 service. Each uses `-failSkips` and nonzero TRX
-  executed/passed checks. The cases preserve populated legacy rows/PK/order,
-  prove physical private-row isolation, exercise guarded downgrade and verify
-  real advisory-lock/stale-version behavior. Passing CI evidence is still needed.
-- History and staged-addition secret scans reported no leaks. No commit, PR,
-  production deployment, real-account write, or existing user-data migration was
-  performed during these local checks. SQL/log/capture artifacts stay ignored.

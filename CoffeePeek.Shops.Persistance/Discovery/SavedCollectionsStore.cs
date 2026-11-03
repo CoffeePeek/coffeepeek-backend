@@ -72,11 +72,8 @@ public sealed partial class SavedCollectionsStore(ShopsDbContext db, IPublicAddr
     }
 
     private static SavedCollectionSummary Summary(SavedCollection row, Guid? featured, string? kind, Guid? target) =>
-        new(row.Id, row.Title, row.Description, row.Visibility, Cover(row), row.Items.Count, row.Revision,
+        new(row.Id, row.Title, row.Description, row.Visibility, CollectionCoverProjection.Read(row.Id, row.Visibility, row.CoverPhotoId), row.Items.Count, row.Revision,
             target.HasValue && row.Items.Any(i => i.Kind == kind && i.EntityId == target), featured == row.Id,
             row.Visibility == "public" ? $"/collections/{row.Id:N}" : null);
 
-    private static SavedCollectionCoverDto? Cover(SavedCollection row) => row.CoverPhotoId is { } photoId
-        ? new(photoId, $"/api/v1/{(row.Visibility == "public" ? "favorite-collections" : "saved-collections")}/{row.Id}/cover/{photoId}")
-        : null;
 }
