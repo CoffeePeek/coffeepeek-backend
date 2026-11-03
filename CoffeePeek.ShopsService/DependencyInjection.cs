@@ -38,8 +38,10 @@ public static class DependencyInjection
                     return previous(context);
                 var errors = context.ModelState.Where(e => e.Value?.Errors.Count > 0).ToDictionary(e => e.Key,
                     e => e.Value!.Errors.Select(error => string.IsNullOrWhiteSpace(error.ErrorMessage) ? "Invalid value." : error.ErrorMessage).ToArray());
+                var code = context.ActionDescriptor is ControllerActionDescriptor { ControllerName: "SavedCollections" }
+                    ? "INVALID_COLLECTION" : "INVALID_FILTER";
                 return new Microsoft.AspNetCore.Mvc.BadRequestObjectResult(new CoffeePeek.Shared.Kernel.Response.ErrorResponse(
-                    "Invalid request.", "INVALID_FILTER", errors) { StatusCode = 400 });
+                    "Invalid request.", code, errors) { StatusCode = 400 });
             };
         });
         services.AddOptions<CoffeePeek.Shared.Kernel.Options.CoffeeImportAuthOptions>()

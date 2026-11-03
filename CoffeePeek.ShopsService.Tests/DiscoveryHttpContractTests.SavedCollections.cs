@@ -28,6 +28,29 @@ public sealed partial class DiscoveryHttpContractTests
     }
 
     [Fact]
+    public async Task InvalidSavedCollectionBodyUsesCollectionErrorCodeBeforeInvokingAnyCommand()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        Authenticate(Guid.NewGuid(), RoleConsts.User);
+        foreach (var (method, path, body) in new[]
+        {
+            ("POST", "/api/v1/saved-collections", "{}"),
+            ("POST", "/api/v1/saved-collections", "{"),
+            ("PUT", "/api/v1/saved-collections/11111111-1111-1111-1111-111111111111", "{\"title\":\"Valid\",\"expectedRevision\":0}"),
+            ("PUT", "/api/v1/saved-collections/membership/roaster/sample", "{\"collectionIds\":\"invalid\"}")
+        })
+        {
+            using var request = new HttpRequestMessage(new HttpMethod(method), path) { Content = Content(body) };
+            using var response = await client.SendAsync(request, ct);
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+            using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync(ct));
+            Assert.Equal("INVALID_COLLECTION", json.RootElement.GetProperty("errorCode").GetString());
+        }
+        bus.VerifyNoOtherCalls();
+        saved.VerifyNoOtherCalls();
+    }
+
+    [Fact]
     public async Task OwnerPickerLoadsMembershipInOneReadAndGlobalFavoritesAreNotRead()
     {
         var ct = TestContext.Current.CancellationToken; var owner = Guid.NewGuid();
