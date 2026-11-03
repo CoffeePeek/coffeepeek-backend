@@ -73,6 +73,9 @@ public static class InfrastructureExtensions
         services.AddScoped<ClaimCheckInPhotosHandler>();
         services.AddScoped<ClaimShopPhotosHandler>();
         services.AddScoped<ClaimShelfBagPhotoHandler>();
+        services.AddScoped<ClaimCollectionCoverHandler>();
+        services.AddScoped<CollectionCoverCleanup>();
+        services.AddHostedService<CollectionCoverCleanupWorker>();
         services.AddScoped<CopyShelfBagCardHandler>();
 
         services.AddOptions<MediaPublicUrlOptions>()
@@ -91,6 +94,14 @@ public static class InfrastructureExtensions
         services.AddScoped<PhotoBackfillInspector>();
         services.AddScoped<PhotoBackfillRuns>();
         services.AddServiceDiscovery();
+        services.AddHttpClient<ICollectionCoverReferenceLookup, CollectionCoverReferenceLookup>(http =>
+            {
+                http.BaseAddress = new Uri($"http://{AppResources.ShopsService}");
+                http.Timeout = TimeSpan.FromSeconds(20);
+            })
+            .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false, UseCookies = false })
+            .RemoveAllLoggers()
+            .AddServiceDiscovery();
         services.AddHttpClient<IPhotoBackfillCandidateSource, PhotoBackfillCandidateClient>(http =>
             {
                 http.BaseAddress = new Uri($"http://{AppResources.ShopsService}");

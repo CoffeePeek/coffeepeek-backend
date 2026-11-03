@@ -140,6 +140,12 @@ namespace CoffeePeek.MediaService.Migrations
                     b.Property<DateTime?>("ClaimedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<DateTime?>("CollectionCoverValidatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("CollectionId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("ContentType")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -197,6 +203,8 @@ namespace CoffeePeek.MediaService.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CheckInId");
+
+                    b.HasIndex("CollectionId");
 
                     b.HasIndex("OwnershipClaimId");
 

@@ -15,7 +15,7 @@ namespace CoffeePeek.ShopsService.Controllers;
 public sealed class DiscoveryFavoritesController(IDiscoveryFavoritesStore favorites, IUserContext user, IMessageBus bus,
     IProfileAddressLookup profiles) : ControllerBase
 {
-    // Favorites form the public "Любимые" section of a profile. Account filters unavailable users.
+    // Global favorites are private. Public profile collections are an explicit, independent opt-in.
     [AllowAnonymous]
     [HttpGet("api/v1/profiles/{authorSlug}/favorites")]
     [ProducesResponseType(typeof(Response<DiscoveryFavoriteItem[]>), StatusCodes.Status200OK)]
@@ -24,6 +24,7 @@ public sealed class DiscoveryFavoritesController(IDiscoveryFavoritesStore favori
     {
         var profile = await profiles.ResolveAsync(authorSlug, ct);
         if (profile is null) return NotFound();
+        if (user.GetUserId() != profile.EntityId) return Ok(Response<DiscoveryFavoriteItem[]>.Success([]));
         return Ok(Response<DiscoveryFavoriteItem[]>.Success(await favorites.ListAsync(profile.EntityId, ct)));
     }
 

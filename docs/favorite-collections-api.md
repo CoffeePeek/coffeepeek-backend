@@ -1,5 +1,11 @@
 # Favorite collections
 
+Mutable owner libraries now have a separate contract and physical tables; see
+[Saved collections](api/saved-collections.md). The snapshot create/list/revoke
+contract below remains unchanged. Anonymous GET-by-ID also resolves explicitly
+public library lists after the legacy snapshot lookup; private library rows and
+their covers never enter these historical snapshot tables.
+
 Discovery owns `FavoriteCollections` and `FavoriteCollectionItems`. A creator
 explicitly publishes selected favorite shops/roasters. Membership uses stable
 entity GUIDs and positions, so later unfavoriting or slug changes do not change

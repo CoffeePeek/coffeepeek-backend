@@ -23,5 +23,6 @@ public sealed class DiscoveryExceptionFilter : IExceptionFilter
 
     public static bool IsDiscoveryAction(Microsoft.AspNetCore.Mvc.Abstractions.ActionDescriptor descriptor) =>
         descriptor is ControllerActionDescriptor action && action.ControllerTypeInfo.Name is
-            "DiscoveryController" or "AdminCoffeeClassificationController" or "DiscoveryFavoritesController" or "FavoriteCollectionsController";
+            "DiscoveryController" or "AdminCoffeeClassificationController" or "DiscoveryFavoritesController" or "FavoriteCollectionsController"
+            or "SavedCollectionsController" or "ProfileCollectionController" or "CollectionCoversController";
 }

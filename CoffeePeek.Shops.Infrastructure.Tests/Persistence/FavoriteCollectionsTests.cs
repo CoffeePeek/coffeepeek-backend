@@ -112,6 +112,7 @@ public sealed class FavoriteCollectionsTests
         Assert.NotNull(await store.GetAsync(created.Id, ct));
         db.Roasters.Remove(place); await db.SaveChangesAsync(ct);
         Assert.Empty((await store.GetAsync(created.Id, ct))!.Items);
+        Assert.Equal(0, (await store.GetAsync(created.Id, ct))!.ItemCount);
         Assert.True(await store.RevokeAsync(owner, created.Id, ct));
         Assert.True(await store.RevokeAsync(owner, created.Id, ct));
         Assert.Null(await store.GetAsync(created.Id, ct));

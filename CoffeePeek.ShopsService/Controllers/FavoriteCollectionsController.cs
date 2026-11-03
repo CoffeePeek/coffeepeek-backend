@@ -10,7 +10,8 @@ namespace CoffeePeek.ShopsService.Controllers;
 
 [ApiController, Authorize, Route("api/v1/favorite-collections")]
 [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
-public sealed class FavoriteCollectionsController(IFavoriteCollectionsStore collections, IUserContext user, IMessageBus bus) : ControllerBase
+public sealed class FavoriteCollectionsController(IFavoriteCollectionsStore collections, IUserContext user, IMessageBus bus,
+    ISavedCollectionsStore? saved = null) : ControllerBase
 {
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateFavoriteCollectionRequest request, CancellationToken ct)
@@ -22,7 +23,7 @@ public sealed class FavoriteCollectionsController(IFavoriteCollectionsStore coll
     [AllowAnonymous, HttpGet("{id:guid}")]
     public async Task<IActionResult> Get(Guid id, CancellationToken ct)
     {
-        var collection = await collections.GetAsync(id, ct);
+        var collection = await collections.GetAsync(id, ct) ?? (saved == null ? null : await saved.GetPublicAsync(id, ct));
         return collection is null ? NotFound() : Ok(Response<FavoriteCollectionDto>.Success(collection));
     }
 

@@ -2121,6 +2121,124 @@ namespace CoffeePeek.Shops.Persistance.Migrations
                         });
                 });
 
+            modelBuilder.Entity("CoffeePeek.Shops.Domain.Aggregates.DiscoveryAggregate.SavedCollection", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("CoverContentType")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<Guid?>("CoverPhotoId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("CoverStorageKey")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<Guid>("OwnerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("Revision")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasDefaultValue(1L);
+
+                    b.Property<DateTime?>("RevokedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTime>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Visibility")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasDefaultValue("private");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OwnerId", "CreatedAtUtc");
+
+                    b.ToTable("SavedCollections", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_SavedCollections_Visibility", "\"Visibility\" IN ('public', 'private')");
+                        });
+                });
+
+            modelBuilder.Entity("CoffeePeek.Shops.Domain.Aggregates.DiscoveryAggregate.SavedCollectionCoverUse", b =>
+                {
+                    b.Property<Guid>("PhotoId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("CollectionId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("PhotoId");
+
+                    b.HasIndex("CollectionId");
+
+                    b.ToTable("SavedCollectionCoverUses", (string)null);
+                });
+
+            modelBuilder.Entity("CoffeePeek.Shops.Domain.Aggregates.DiscoveryAggregate.SavedCollectionItem", b =>
+                {
+                    b.Property<Guid>("CollectionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Kind")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<Guid>("EntityId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Position")
+                        .HasColumnType("integer");
+
+                    b.HasKey("CollectionId", "Kind", "EntityId");
+
+                    b.HasIndex("CollectionId", "Position");
+
+                    b.ToTable("SavedCollectionItems", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_SavedCollectionItems_Kind", "\"Kind\" IN ('coffee_shop', 'roaster')");
+                        });
+                });
+
+            modelBuilder.Entity("CoffeePeek.Shops.Domain.Aggregates.DiscoveryAggregate.SavedCollectionPreference", b =>
+                {
+                    b.Property<Guid>("OwnerId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("CollectionId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("OwnerId");
+
+                    b.HasIndex("CollectionId");
+
+                    b.ToTable("SavedCollectionPreferences", (string)null);
+                });
+
             modelBuilder.Entity("CoffeePeek.Shops.Domain.Aggregates.MenuAggregate.CoffeeDrinkDefinition", b =>
                 {
                     b.Property<Guid>("Id")
@@ -3442,6 +3560,32 @@ namespace CoffeePeek.Shops.Persistance.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("CoffeePeek.Shops.Domain.Aggregates.DiscoveryAggregate.SavedCollectionCoverUse", b =>
+                {
+                    b.HasOne("CoffeePeek.Shops.Domain.Aggregates.DiscoveryAggregate.SavedCollection", null)
+                        .WithMany()
+                        .HasForeignKey("CollectionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("CoffeePeek.Shops.Domain.Aggregates.DiscoveryAggregate.SavedCollectionItem", b =>
+                {
+                    b.HasOne("CoffeePeek.Shops.Domain.Aggregates.DiscoveryAggregate.SavedCollection", null)
+                        .WithMany("Items")
+                        .HasForeignKey("CollectionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("CoffeePeek.Shops.Domain.Aggregates.DiscoveryAggregate.SavedCollectionPreference", b =>
+                {
+                    b.HasOne("CoffeePeek.Shops.Domain.Aggregates.DiscoveryAggregate.SavedCollection", null)
+                        .WithMany()
+                        .HasForeignKey("CollectionId")
+                        .OnDelete(DeleteBehavior.SetNull);
+                });
+
             modelBuilder.Entity("CoffeePeek.Shops.Domain.Aggregates.MenuAggregate.MenuOcrJob", b =>
                 {
                     b.HasOne("CoffeePeek.Shops.Domain.Aggregates.MenuAggregate.ShopMenu", null)
@@ -3610,6 +3754,11 @@ namespace CoffeePeek.Shops.Persistance.Migrations
                 });
 
             modelBuilder.Entity("CoffeePeek.Shops.Domain.Aggregates.DiscoveryAggregate.FavoriteCollection", b =>
+                {
+                    b.Navigation("Items");
+                });
+
+            modelBuilder.Entity("CoffeePeek.Shops.Domain.Aggregates.DiscoveryAggregate.SavedCollection", b =>
                 {
                     b.Navigation("Items");
                 });

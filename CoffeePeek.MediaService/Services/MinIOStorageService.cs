@@ -182,6 +182,15 @@ public class MinIOStorageService : IStorageService, IDisposable
         return target;
     }
 
+    public async Task<string> SealCollectionCoverObjectAsync(string key, Guid photoId, CancellationToken ct = default)
+    {
+        await EnsureCheckInBucketPrivateAsync(ct);
+        var target = await CopyVerifiedCheckInObjectAsync(key, CollectionCoverPhotoStorageKey.Sealed(photoId, key), BucketType.CheckIn, ct);
+        await MarkAsTemporary(target, BucketType.CheckIn, ct);
+        if (key != target) await Delete(key, BucketType.CheckIn, ct);
+        return target;
+    }
+
     private async Task<string> CopyVerifiedCheckInObjectAsync(string key, string target, BucketType sourceBucket, CancellationToken ct)
     {
         // A photo-owned destination survives a failed DB save and a retry with a new parent ID.

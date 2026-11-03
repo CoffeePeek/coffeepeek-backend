@@ -88,6 +88,8 @@ public static class DependencyInjection
         services.AddScoped<OwnershipEvidenceClient>();
         services.AddScoped<CoffeePeek.Shops.Application.Features.Ownership.IOwnershipEvidencePhotos, OwnershipEvidenceClient>();
         services.AddScoped<MediaShelfBagPhotoClient>();
+        services.AddScoped<MediaCollectionCoverClient>();
+        services.AddScoped<CoffeePeek.Shops.Application.Features.Discovery.ICollectionCoverStore, MediaCollectionCoverClient>();
         services.AddScoped<CoffeePeek.Shops.Application.Features.Shelf.IShelfBagPhotoStore, MediaShelfBagPhotoClient>();
         services.AddScoped<IMenuVisionParser, OpenAiMenuVisionParser>();
         services.AddScoped<IMenuPhotoDownloader, HttpMenuPhotoDownloader>();

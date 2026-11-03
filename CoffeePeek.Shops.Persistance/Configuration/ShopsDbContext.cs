@@ -30,6 +30,9 @@ public class ShopsDbContext(DbContextOptions<ShopsDbContext> options, IOptions<P
     public DbSet<CoffeePeek.Shops.Domain.Aggregates.CoffeeProductAggregate.CoffeeFilterValue> CoffeeFilterValues => Set<CoffeePeek.Shops.Domain.Aggregates.CoffeeProductAggregate.CoffeeFilterValue>();
     public DbSet<CoffeePeek.Shops.Domain.Aggregates.DiscoveryAggregate.DiscoveryFavorite> DiscoveryFavorites => Set<CoffeePeek.Shops.Domain.Aggregates.DiscoveryAggregate.DiscoveryFavorite>();
     public DbSet<CoffeePeek.Shops.Domain.Aggregates.DiscoveryAggregate.FavoriteCollection> FavoriteCollections => Set<CoffeePeek.Shops.Domain.Aggregates.DiscoveryAggregate.FavoriteCollection>();
+    public DbSet<CoffeePeek.Shops.Domain.Aggregates.DiscoveryAggregate.SavedCollection> SavedCollections => Set<CoffeePeek.Shops.Domain.Aggregates.DiscoveryAggregate.SavedCollection>();
+    public DbSet<CoffeePeek.Shops.Domain.Aggregates.DiscoveryAggregate.SavedCollectionPreference> SavedCollectionPreferences => Set<CoffeePeek.Shops.Domain.Aggregates.DiscoveryAggregate.SavedCollectionPreference>();
+    public DbSet<CoffeePeek.Shops.Domain.Aggregates.DiscoveryAggregate.SavedCollectionCoverUse> SavedCollectionCoverUses => Set<CoffeePeek.Shops.Domain.Aggregates.DiscoveryAggregate.SavedCollectionCoverUse>();
     public DbSet<CoffeePeek.Shops.Domain.Aggregates.CoffeeProductAggregate.Country> Countries => Set<CoffeePeek.Shops.Domain.Aggregates.CoffeeProductAggregate.Country>();
     public DbSet<CoffeePeek.Shops.Domain.Aggregates.CoffeeProductAggregate.CoffeeProductSource> CoffeeProductSources => Set<CoffeePeek.Shops.Domain.Aggregates.CoffeeProductAggregate.CoffeeProductSource>();
     public DbSet<CoffeePeek.Shops.Domain.Aggregates.CoffeeProductAggregate.CoffeeImportRun> CoffeeImportRuns => Set<CoffeePeek.Shops.Domain.Aggregates.CoffeeProductAggregate.CoffeeImportRun>();
@@ -150,6 +153,10 @@ public class ShopsDbContext(DbContextOptions<ShopsDbContext> options, IOptions<P
         CoffeeCatalogConfiguration.Configure(modelBuilder);
         modelBuilder.ApplyConfiguration(new FavoriteCollectionConfiguration());
         modelBuilder.ApplyConfiguration(new FavoriteCollectionItemConfiguration());
+        modelBuilder.ApplyConfiguration(new SavedCollectionConfiguration());
+        modelBuilder.ApplyConfiguration(new SavedCollectionItemConfiguration());
+        modelBuilder.ApplyConfiguration(new SavedCollectionPreferenceConfiguration());
+        modelBuilder.ApplyConfiguration(new SavedCollectionCoverUseConfiguration());
         modelBuilder.HasPostgresExtension("pg_trgm");
         PublicSlugConfiguration.Configure(modelBuilder.Entity<ShopTag>(), "ShopTags", "PublicSlug");
         PublicSlugConfiguration.Configure(modelBuilder.Entity<BrewMethod>(), "BrewMethods");
