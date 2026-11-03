@@ -39,6 +39,7 @@ public static class InfrastructureExtensions
                 typeof(CoffeePeek.Shops.Application.Features.CoffeeCatalog.ICoffeeImportWriter),
                 typeof(CoffeePeek.Shops.Application.Features.Discovery.IDiscoveryFavoritesStore),
                 typeof(CoffeePeek.Shops.Application.Features.Discovery.IFavoriteCollectionsStore),
+                typeof(CoffeePeek.Shops.Application.Features.Discovery.ISavedCollectionsStore),
                 typeof(CoffeePeek.Shops.Application.Features.Discovery.IDiscoveryClassificationStore),
                 typeof(CoffeePeek.Shops.Application.Features.Feed.ICheckInFeedReader),
                 typeof(CoffeePeek.Shops.Application.PublicAddresses.IPublicCheckInProjector),

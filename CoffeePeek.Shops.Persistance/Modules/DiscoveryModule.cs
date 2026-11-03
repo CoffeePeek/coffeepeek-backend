@@ -11,6 +11,7 @@ public static class DiscoveryModule
         services.AddScoped<IDiscoveryQueryStore, DiscoveryQueryStore>();
         services.AddScoped<IDiscoveryFavoritesStore, DiscoveryFavoritesStore>();
         services.AddScoped<IFavoriteCollectionsStore, FavoriteCollectionsStore>();
+        services.AddScoped<ISavedCollectionsStore, SavedCollectionsStore>();
         return services;
     }
 }

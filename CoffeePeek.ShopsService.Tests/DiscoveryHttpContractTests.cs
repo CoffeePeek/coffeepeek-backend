@@ -25,7 +25,7 @@ using Wolverine;
 
 namespace CoffeePeek.ShopsService.Tests;
 
-public sealed class DiscoveryHttpContractTests : IAsyncLifetime
+public sealed partial class DiscoveryHttpContractTests : IAsyncLifetime
 {
     private WebApplication app = null!;
     private HttpClient client = null!;
@@ -39,6 +39,9 @@ public sealed class DiscoveryHttpContractTests : IAsyncLifetime
     private readonly Mock<ICoffeeShopQueries> legacyShops = new();
     private readonly Mock<IPublicAddressService> addresses = new();
     private readonly Mock<IQueryCheckInRepository> checkIns = new();
+    private readonly Mock<ISavedCollectionsStore> saved = new();
+    private readonly Mock<IFavoriteCollectionsStore> snapshots = new();
+    private readonly Mock<IHttpClientFactory> coverHttp = new(MockBehavior.Strict);
 
     public async ValueTask InitializeAsync()
     {
@@ -57,6 +60,11 @@ public sealed class DiscoveryHttpContractTests : IAsyncLifetime
         builder.Services.AddSingleton(legacyShops.Object);
         builder.Services.AddSingleton(addresses.Object);
         builder.Services.AddSingleton(checkIns.Object);
+        builder.Services.AddSingleton(saved.Object);
+        builder.Services.AddSingleton(snapshots.Object);
+        builder.Services.AddSingleton(new CoffeePeek.Shops.Infrastructure.Media.MediaCollectionCoverClient(coverHttp.Object,
+            Microsoft.Extensions.Options.Options.Create(new CoffeePeek.Shared.Auth.Options.GatewayAuthOptions { SecretKey = Secret }),
+            Microsoft.Extensions.Logging.Abstractions.NullLogger<CoffeePeek.Shops.Infrastructure.Media.MediaCollectionCoverClient>.Instance));
         builder.Services.AddSingleton(Mock.Of<IPublicCheckInProjector>());
         builder.Services.AddScoped<PublicDiscoveryService>();
         addresses.Setup(a => a.GetForReadAsync(It.IsAny<PublicAddressKind>(), It.IsAny<Guid[]>(), It.IsAny<CancellationToken>()))
@@ -370,7 +378,7 @@ public sealed class DiscoveryHttpContractTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task PublicFavorites_ResolveRequestedProfile_ForGuestsAndAuthenticatedViewers()
+    public async Task GlobalFavoritesArePrivateForGuestsAndOtherViewers_ButRemainAvailableToTheirOwner()
     {
         var author = Guid.NewGuid();
         profiles.Setup(p => p.ResolveAsync("glasha", It.IsAny<CancellationToken>()))
@@ -384,13 +392,15 @@ public sealed class DiscoveryHttpContractTests : IAsyncLifetime
             using var response = await client.GetAsync("/api/v1/profiles/glasha/favorites", TestContext.Current.CancellationToken);
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
             using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
-            var item = body.RootElement.GetProperty("data")[0];
-            Assert.Equal("Матча латте", item.GetProperty("name").GetString());
-            Assert.Equal("matcha_latte", item.GetProperty("drink").GetProperty("slug").GetString());
-            Assert.Equal(JsonValueKind.Null, item.GetProperty("address").ValueKind);
-            Assert.False(item.TryGetProperty("userId", out _));
+            Assert.Empty(body.RootElement.GetProperty("data").EnumerateArray());
         }
-        favorites.Verify(f => f.ListAsync(author, It.IsAny<CancellationToken>()), Times.Exactly(2));
+        favorites.Verify(f => f.ListAsync(author, It.IsAny<CancellationToken>()), Times.Never);
+        Authenticate(author, RoleConsts.User);
+        using var owned = await client.GetAsync("/api/v1/profiles/glasha/favorites", TestContext.Current.CancellationToken);
+        Assert.Equal(HttpStatusCode.OK, owned.StatusCode);
+        using var ownedBody = JsonDocument.Parse(await owned.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
+        Assert.Equal("matcha_latte", ownedBody.RootElement.GetProperty("data")[0].GetProperty("drink").GetProperty("slug").GetString());
+        favorites.Verify(f => f.ListAsync(author, It.IsAny<CancellationToken>()), Times.Once);
         favorites.Verify(f => f.SetAsync(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 

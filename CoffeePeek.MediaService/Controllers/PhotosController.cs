@@ -83,6 +83,17 @@ public class PhotosController(IMessageBus bus, IUserContext userContext) : Contr
         return await Generate(requests, "shelf-bags", BucketType.CheckIn, ct);
     }
 
+    /// <summary>One private JPEG/PNG/WebP collection-cover upload, at most 1 MiB; bytes are validated on claim.</summary>
+    [HttpPost("collection-cover")]
+    public async Task<IActionResult> GenerateCollectionCoverUploadUrl([FromBody] List<PhotoRequest> requests, CancellationToken ct)
+    {
+        if (requests is not [{ } request] || !PrivateCardPhotoValidation.IsAllowedContentType(request.ContentType)
+            || request.SizeBytes is <= 0 or > PrivateCardPhotoValidation.MaxSizeBytes
+            || string.IsNullOrWhiteSpace(request.FileName) || request.FileName.Length > 255)
+            return BadRequest(new ErrorResponse("Send exactly one JPEG, PNG or WebP cover of at most 1 MiB."));
+        return await Generate(requests, "collection-covers", BucketType.CheckIn, ct);
+    }
+
     /// <summary>
     /// Resolve trusted metadata for photos the caller uploaded and has not attached yet.
     /// Service-to-service endpoint (used by Shops); always scoped to the authenticated caller,

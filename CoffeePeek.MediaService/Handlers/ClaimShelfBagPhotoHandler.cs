@@ -30,7 +30,7 @@ public class ClaimShelfBagPhotoHandler(IPhotoRepository repository, IStorageServ
         var photo = matches.Count == 1 ? matches[0] : null;
         if (photo == null || photo.OwnerId != ownerId || photo.BucketType != BucketType.CheckIn
             || photo.OwnerType == OwnerType.OwnershipEvidence || photo.OwnershipClaimId != null
-            || photo.CheckInId != null || photo.ShopAttachmentId != null
+            || photo.CheckInId != null || photo.ShopAttachmentId != null || photo.CollectionId != null
             || !(photo.OriginalStorageKey ?? photo.StorageKey).StartsWith(StorageKeyPrefix, StringComparison.Ordinal))
             return Invalid("Photo was not found or does not belong to you.");
         if (photo.ShelfBagId is { } bagId && bagId != request.BagId)

@@ -47,7 +47,8 @@ public class PhotoRepository(MediaDbContext dbContext) : IPhotoRepository
         var expiry = DateTime.UtcNow.AddHours(-24);
         return await _repository.Where(p => p.Id == photoId && p.OwnerId == ownerId
                 && p.OwnerType != OwnerType.OwnershipEvidence && p.OwnershipClaimId == null
-                && p.ShopAttachmentId == null && p.ShelfBagId == null
+                && p.ShopAttachmentId == null && p.ShelfBagId == null && p.CollectionId == null
+                && !p.StorageKey.StartsWith("collection-covers/")
                 && ((p.CheckInId == null && p.Status == PhotoStatus.Pending && p.UploadedAt >= expiry)
                     || (p.CheckInId == checkInId && (p.Status == PhotoStatus.Pending || p.Status == PhotoStatus.Confirmed))))
             .ExecuteUpdateAsync(setters => setters.SetProperty(p => p.CheckInId, checkInId)
@@ -138,6 +139,7 @@ public class PhotoRepository(MediaDbContext dbContext) : IPhotoRepository
         var expiry = DateTime.UtcNow.AddHours(-24);
         return await _repository.Where(p => p.Id == photoId && p.OwnerId == ownerId
                 && p.BucketType == Configuration.BucketType.CheckIn && p.CheckInId == null && p.ShopAttachmentId == null
+                && p.CollectionId == null
                 && p.OwnerType != OwnerType.OwnershipEvidence && p.OwnershipClaimId == null
                 && ((p.ShelfBagId == null && p.Status == PhotoStatus.Pending && p.UploadedAt >= expiry)
                     || (p.ShelfBagId == bagId && (p.Status == PhotoStatus.Pending || p.Status == PhotoStatus.Confirmed))))
@@ -149,4 +151,23 @@ public class PhotoRepository(MediaDbContext dbContext) : IPhotoRepository
         _repository.AsNoTracking().FirstOrDefaultAsync(p => p.Id == photoId && p.ShelfBagId == bagId
             && p.OwnerId == ownerId && p.BucketType == Configuration.BucketType.CheckIn
             && p.Status == PhotoStatus.Confirmed, ct);
+
+    public async Task<bool> TryClaimCollectionCoverAsync(Guid photoId, Guid ownerId, Guid collectionId, CancellationToken ct = default)
+    {
+        var expiry = DateTime.UtcNow.AddHours(-24);
+        return await _repository.Where(p => p.Id == photoId && p.OwnerId == ownerId
+                && p.BucketType == Configuration.BucketType.CheckIn && p.CheckInId == null && p.ShopAttachmentId == null
+                && p.ShelfBagId == null && p.OwnerType != OwnerType.OwnershipEvidence && p.OwnershipClaimId == null
+                && ((p.CollectionId == null && p.Status == PhotoStatus.Pending && p.UploadedAt >= expiry)
+                    || (p.CollectionId == collectionId && (p.Status == PhotoStatus.Pending || p.Status == PhotoStatus.Confirmed))))
+            .ExecuteUpdateAsync(setters => setters.SetProperty(p => p.CollectionId, collectionId)
+                .SetProperty(p => p.ClaimedAtUtc, DateTime.UtcNow), ct) == 1;
+    }
+
+    public Task<PhotoMetadata?> GetCollectionCoverAsync(Guid collectionId, Guid photoId, Guid ownerId, CancellationToken ct = default) =>
+        _repository.AsNoTracking().FirstOrDefaultAsync(p => p.Id == photoId && p.CollectionId == collectionId
+            && p.OwnerId == ownerId && p.BucketType == Configuration.BucketType.CheckIn
+            && p.StorageKey.StartsWith("collection-covers/sealed/")
+            && p.CollectionCoverValidatedAtUtc != null
+            && (p.Status == PhotoStatus.Pending || p.Status == PhotoStatus.Confirmed), ct);
 }

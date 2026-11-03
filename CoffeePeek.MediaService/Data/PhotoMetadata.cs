@@ -33,6 +33,9 @@ public class PhotoMetadata
     public Guid? CheckInId { get; set; }
     /// <summary>Shops shelf bag that owns this private card; set when Shops claims a shelf-bags/ upload.</summary>
     public Guid? ShelfBagId { get; set; }
+    /// <summary>Discovery-owned collection cover; always stored privately and served through an access gate.</summary>
+    public Guid? CollectionId { get; set; }
+    public DateTime? CollectionCoverValidatedAtUtc { get; set; }
     public Guid? ShopAttachmentId { get; set; }
     public ShopPhotoAttachmentKind? ShopAttachmentKind { get; set; }
     public DateTime? ClaimedAtUtc { get; set; }

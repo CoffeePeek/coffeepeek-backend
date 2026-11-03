@@ -5,6 +5,8 @@ namespace CoffeePeek.MediaService.Repositories;
 
 public interface IPhotoRepository
 {
+    Task<bool> TryClaimCollectionCoverAsync(Guid photoId, Guid ownerId, Guid collectionId, CancellationToken ct = default);
+    Task<PhotoMetadata?> GetCollectionCoverAsync(Guid collectionId, Guid photoId, Guid ownerId, CancellationToken ct = default);
     void Add(PhotoMetadata metadata);
     void AddRange(IEnumerable<PhotoMetadata> photoMetadatas);
     void AddEvidenceBinding(Guid photoId, Guid claimId);

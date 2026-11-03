@@ -29,6 +29,12 @@ public class ReverseProxyRouteConfigurationTests
         var owner = routes.GetProperty("shops-favorite-collections-owner-route");
         owner.GetProperty("AuthorizationPolicy").GetString().Should().Be("Authenticated");
         owner.GetProperty("Match").GetProperty("Methods").EnumerateArray().Select(v => v.GetString()).Should().Equal("GET", "POST", "DELETE");
+        var library = routes.GetProperty("shops-saved-collections-owner-route");
+        library.GetProperty("AuthorizationPolicy").GetString().Should().Be("Authenticated");
+        library.GetProperty("Match").GetProperty("Methods").EnumerateArray().Select(v => v.GetString()).Should().Equal("GET", "POST", "PUT", "DELETE");
+        var cover = routes.GetProperty("shops-favorite-collection-cover-route");
+        cover.GetProperty("AuthorizationPolicy").GetString().Should().Be("Anonymous");
+        cover.GetProperty("Match").GetProperty("Methods").EnumerateArray().Select(v => v.GetString()).Should().Equal("GET");
     }
 
     [Fact]
