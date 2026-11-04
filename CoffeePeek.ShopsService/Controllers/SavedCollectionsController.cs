@@ -53,10 +53,15 @@ public sealed class SavedCollectionsController(ISavedCollectionsStore collection
     }
 
     [HttpPut("membership/{kind}/{slug}")]
-    public async Task<IActionResult> SetMembership(string kind, string slug, [FromBody] SetSavedCollectionMembershipRequest request, CancellationToken ct) =>
-        Ok(Response<SavedCollectionSummary[]>.Success(await bus.InvokeAsync<SavedCollectionSummary[]>(
+    public async Task<IActionResult> SetMembership(string kind, string slug, [FromBody] SetSavedCollectionMembershipRequest request, CancellationToken ct)
+    {
+        var result = await bus.InvokeAsync<SavedCollectionMembershipResult>(
             new SetSavedCollectionMembershipCommand(user.GetUserIdOrThrow(), kind, slug, request.CollectionIds,
-                request.AddedCollectionIds, request.RemovedCollectionIds), ct)));
+                request.AddedCollectionIds, request.RemovedCollectionIds), ct);
+        Response.Headers["X-CoffeePeek-Is-Favorite"] = result.IsFavorite ? "true" : "false";
+        Response.Headers["X-CoffeePeek-Membership-Changed"] = result.MembershipChanged ? "true" : "false";
+        return Ok(Response<SavedCollectionSummary[]>.Success(result.Collections));
+    }
 
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> Delete(Guid id, CancellationToken ct) =>

@@ -7,7 +7,7 @@ namespace CoffeePeek.Shops.Persistance.Discovery;
 
 public sealed partial class SavedCollectionsStore
 {
-    public async Task<SavedCollectionSummary[]> SetMembershipAsync(Guid owner, string kind, string slug, Guid[] collectionIds,
+    public async Task<SavedCollectionMembershipResult> SetMembershipAsync(Guid owner, string kind, string slug, Guid[] collectionIds,
         CancellationToken ct, Guid[]? addedCollectionIds = null, Guid[]? removedCollectionIds = null)
     {
         if (!ValidIds(collectionIds) || (addedCollectionIds == null) != (removedCollectionIds == null) ||
@@ -44,7 +44,9 @@ public sealed partial class SavedCollectionsStore
         }
         await FlushAsync(ct);
         if (membershipChanged) await SyncFavoritesAsync(owner, [(kind, target)], ct);
-        return await ListAsync(owner, kind, slug, ct);
+        var isFavorite = collectionIds.Length > 0 || await db.DiscoveryFavorites.AsNoTracking()
+            .AnyAsync(f => f.UserId == owner && f.Kind == kind && f.EntityId == target, ct);
+        return new(await ListAsync(owner, kind, slug, ct), isFavorite, membershipChanged);
     }
 
     private static bool ValidIds(Guid[]? ids) => ids != null && ids.All(id => id != Guid.Empty) &&

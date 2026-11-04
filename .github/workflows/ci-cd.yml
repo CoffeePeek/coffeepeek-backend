@@ -234,6 +234,7 @@ jobs:
             BusinessOwnershipMigrationLiveTests \
             SavedCollectionsMigrationLiveTests \
             CanonicalSavedCollectionDefaultMigrationLiveTests \
+            SavedCollectionMembershipReceiptLiveTests \
             ShelfProfileVisibilityMigrationLiveTests \
             RoasterOwnershipRevisionLiveTests \
             ShopVisibilityWolverineLiveTests \

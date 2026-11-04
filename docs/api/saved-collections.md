@@ -107,6 +107,17 @@ metadata/items version mismatch returns 409 `COLLECTION_CONFLICT`. Invalid input
 uses 400 `INVALID_COLLECTION`; unavailable targets use 409
 `COLLECTION_CHANGED`.
 
+A successful picker PUT keeps `data` as the existing summary array and adds two
+response headers, including when the array is empty: `X-CoffeePeek-Is-Favorite`
+and `X-CoffeePeek-Membership-Changed`, each the lowercase literal `true` or
+`false`. They are calculated in the same owner transaction as the write. The
+favorite state includes active membership and any preserved private legacy heart;
+an unchanged membership request does not clear a legacy-only heart. The changed
+flag describes the actual rebased membership change, not whether the client sent
+nonempty deltas, and can be false for an already-applied removal. Clients must not
+infer a false heart from an array with no `containsItem` entries. If either header
+is absent on an older backend, its value is unknown.
+
 ## Cover upload and lifecycle
 
 Only Save starts uploading. The client can create an empty list first, retain its

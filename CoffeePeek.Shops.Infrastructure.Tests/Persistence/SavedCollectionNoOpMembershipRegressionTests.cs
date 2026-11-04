@@ -28,7 +28,9 @@ public sealed class SavedCollectionNoOpMembershipRegressionTests
         var result = await Store(db).SetMembershipAsync(owner, kind, "private-heart", [], ct,
             delta ? [] : null, delta ? [] : null);
 
-        var summary = Assert.Single(result);
+        Assert.False(result.MembershipChanged);
+        Assert.True(result.IsFavorite);
+        var summary = Assert.Single(result.Collections);
         Assert.False(summary.ContainsItem);
         Assert.Equal(0, summary.ItemCount);
         Assert.Equal(revision, summary.Revision);
@@ -46,8 +48,10 @@ public sealed class SavedCollectionNoOpMembershipRegressionTests
 
         var result = await Store(db).SetMembershipAsync(owner, kind, "private-heart", [], ct, [], [canonical.Id]);
 
-        Assert.False(Assert.Single(result).ContainsItem);
-        Assert.Equal(canonical.Revision, Assert.Single(result).Revision);
+        Assert.False(result.MembershipChanged);
+        Assert.True(result.IsFavorite);
+        Assert.False(Assert.Single(result.Collections).ContainsItem);
+        Assert.Equal(canonical.Revision, Assert.Single(result.Collections).Revision);
         await AssertPrivateLegacyHeartAsync(db, owner, kind, target, ct);
     }
 
@@ -62,8 +66,10 @@ public sealed class SavedCollectionNoOpMembershipRegressionTests
 
         var result = await Store(db).SetMembershipAsync(owner, kind, "private-heart", [canonical.Id], ct, [], []);
 
-        Assert.False(Assert.Single(result).ContainsItem);
-        Assert.Equal(canonical.Revision, Assert.Single(result).Revision);
+        Assert.False(result.MembershipChanged);
+        Assert.True(result.IsFavorite);
+        Assert.False(Assert.Single(result.Collections).ContainsItem);
+        Assert.Equal(canonical.Revision, Assert.Single(result.Collections).Revision);
         await AssertPrivateLegacyHeartAsync(db, owner, kind, target, ct);
     }
 
@@ -83,11 +89,33 @@ public sealed class SavedCollectionNoOpMembershipRegressionTests
         var result = await store.SetMembershipAsync(owner, kind, "private-heart", [], ct,
             delta ? [] : null, delta ? [canonical.Id] : null);
 
-        Assert.False(Assert.Single(result).ContainsItem);
-        Assert.Equal(0, Assert.Single(result).ItemCount);
+        Assert.True(result.MembershipChanged);
+        Assert.False(result.IsFavorite);
+        Assert.False(Assert.Single(result.Collections).ContainsItem);
+        Assert.Equal(0, Assert.Single(result.Collections).ItemCount);
         Assert.Empty(await db.DiscoveryFavorites.Where(f => f.UserId == owner).ToArrayAsync(ct));
         Assert.Empty(await Favorites(db).ListAsync(owner, ct));
         Assert.Empty(await db.Set<SavedCollectionItem>().Where(i => i.CollectionId == canonical.Id).ToArrayAsync(ct));
+    }
+
+    [Theory]
+    [InlineData("coffee_shop")]
+    [InlineData("roaster")]
+    public async Task EmptyLibraryNoOpReturnsAnAuthoritativeFalseWithoutCreatingCollections(string kind)
+    {
+        var ct = TestContext.Current.CancellationToken;
+        await using var db = Database();
+        var (owner, _, canonical) = await PrivateLegacyHeartAsync(db, kind, ct);
+        db.DiscoveryFavorites.RemoveRange(db.DiscoveryFavorites);
+        db.SavedCollections.Remove(canonical);
+        await db.SaveChangesAsync(ct);
+
+        var result = await Store(db).SetMembershipAsync(owner, kind, "private-heart", [], ct, [], []);
+
+        Assert.Empty(result.Collections);
+        Assert.False(result.IsFavorite);
+        Assert.False(result.MembershipChanged);
+        Assert.Empty(await db.SavedCollections.ToArrayAsync(ct));
     }
 
     private static async Task<(Guid Owner, Guid Target, SavedCollection Default)> PrivateLegacyHeartAsync(

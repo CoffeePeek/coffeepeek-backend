@@ -95,18 +95,45 @@ public sealed partial class DiscoveryHttpContractTests
     {
         var ct = TestContext.Current.CancellationToken; var owner = Guid.NewGuid(); var id = Guid.NewGuid();
         Authenticate(owner, RoleConsts.User);
-        bus.Setup(b => b.InvokeAsync<SavedCollectionSummary[]>(It.Is<SetSavedCollectionMembershipCommand>(c =>
+        bus.Setup(b => b.InvokeAsync<SavedCollectionMembershipResult>(It.Is<SetSavedCollectionMembershipCommand>(c =>
                 c.OwnerId == owner && c.CollectionIds.SequenceEqual(new[] { id }) &&
                 c.AddedCollectionIds != null && c.AddedCollectionIds.SequenceEqual(new[] { id }) &&
                 c.RemovedCollectionIds != null && c.RemovedCollectionIds.Length == 0),
-            It.IsAny<CancellationToken>(), It.IsAny<TimeSpan?>())).ReturnsAsync([]);
+            It.IsAny<CancellationToken>(), It.IsAny<TimeSpan?>())).ReturnsAsync(new SavedCollectionMembershipResult([], true, true));
         using var response = await client.PutAsJsonAsync("/api/v1/saved-collections/membership/roaster/sample",
             new { collectionIds = new[] { id }, addedCollectionIds = new[] { id }, removedCollectionIds = Array.Empty<Guid>() }, ct);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        bus.Verify(b => b.InvokeAsync<SavedCollectionSummary[]>(It.Is<SetSavedCollectionMembershipCommand>(c =>
+        bus.Verify(b => b.InvokeAsync<SavedCollectionMembershipResult>(It.Is<SetSavedCollectionMembershipCommand>(c =>
                 c.AddedCollectionIds != null && c.AddedCollectionIds.SequenceEqual(new[] { id }) &&
                 c.RemovedCollectionIds != null && c.RemovedCollectionIds.Length == 0),
             It.IsAny<CancellationToken>(), It.IsAny<TimeSpan?>()), Times.Once);
+    }
+
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    [InlineData(true, true)]
+    public async Task MembershipReceiptUsesHeadersAndPreservesTheLegacyArrayWithoutAdditionalReads(bool favorite, bool changed)
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var owner = Guid.NewGuid();
+        Authenticate(owner, RoleConsts.User);
+        bus.Setup(b => b.InvokeAsync<SavedCollectionMembershipResult>(It.Is<SetSavedCollectionMembershipCommand>(c => c.OwnerId == owner),
+            It.IsAny<CancellationToken>(), It.IsAny<TimeSpan?>()))
+            .ReturnsAsync(new SavedCollectionMembershipResult([], favorite, changed));
+
+        using var response = await client.PutAsJsonAsync("/api/v1/saved-collections/membership/roaster/sample",
+            new { collectionIds = Array.Empty<Guid>(), addedCollectionIds = Array.Empty<Guid>(), removedCollectionIds = Array.Empty<Guid>() }, ct);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(favorite ? "true" : "false", Assert.Single(response.Headers.GetValues("X-CoffeePeek-Is-Favorite")));
+        Assert.Equal(changed ? "true" : "false", Assert.Single(response.Headers.GetValues("X-CoffeePeek-Membership-Changed")));
+        using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync(ct));
+        Assert.Equal(JsonValueKind.Array, json.RootElement.GetProperty("data").ValueKind);
+        Assert.Equal(0, json.RootElement.GetProperty("data").GetArrayLength());
+        saved.VerifyNoOtherCalls();
+        favorites.VerifyNoOtherCalls();
     }
 
     [Fact]

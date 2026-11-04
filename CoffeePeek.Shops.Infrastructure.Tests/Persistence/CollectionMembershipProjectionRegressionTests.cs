@@ -30,7 +30,9 @@ public sealed class CollectionMembershipProjectionRegressionTests
 
         var result = await collections.SetMembershipAsync(owner, kind, "membership-target", [], ct);
 
-        Assert.All(result, item => { Assert.False(item.ContainsItem); Assert.Equal(0, item.ItemCount); });
+        Assert.True(result.MembershipChanged);
+        Assert.False(result.IsFavorite);
+        Assert.All(result.Collections, item => { Assert.False(item.ContainsItem); Assert.Equal(0, item.ItemCount); });
         var loaded = await collections.ListAsync(owner, kind, "membership-target", ct);
         Assert.DoesNotContain(loaded, item => item.ContainsItem);
         Assert.Empty(await new DiscoveryFavoritesStore(db, Mock.Of<IPublicAddressService>()).ListAsync(owner, ct));
@@ -51,7 +53,9 @@ public sealed class CollectionMembershipProjectionRegressionTests
 
         var result = await collections.SetMembershipAsync(owner, kind, "membership-target", [list.Id], ct);
 
-        var selected = Assert.Single(result);
+        Assert.True(result.MembershipChanged);
+        Assert.True(result.IsFavorite);
+        var selected = Assert.Single(result.Collections);
         Assert.True(selected.ContainsItem);
         Assert.Equal(1, selected.ItemCount);
         Assert.Equal(target, Assert.Single(await db.DiscoveryFavorites.Where(f => f.UserId == owner).ToArrayAsync(ct)).EntityId);
@@ -76,10 +80,12 @@ public sealed class CollectionMembershipProjectionRegressionTests
 
         var result = await collections.SetMembershipAsync(owner, kind, "membership-target", [second.Id], ct);
 
-        Assert.False(result.Single(item => item.Id == first.Id).ContainsItem);
-        Assert.Equal(0, result.Single(item => item.Id == first.Id).ItemCount);
-        Assert.True(result.Single(item => item.Id == second.Id).ContainsItem);
-        Assert.Equal(1, result.Single(item => item.Id == second.Id).ItemCount);
+        Assert.True(result.MembershipChanged);
+        Assert.True(result.IsFavorite);
+        Assert.False(result.Collections.Single(item => item.Id == first.Id).ContainsItem);
+        Assert.Equal(0, result.Collections.Single(item => item.Id == first.Id).ItemCount);
+        Assert.True(result.Collections.Single(item => item.Id == second.Id).ContainsItem);
+        Assert.Equal(1, result.Collections.Single(item => item.Id == second.Id).ItemCount);
         Assert.Single(await new DiscoveryFavoritesStore(db, Mock.Of<IPublicAddressService>()).ListAsync(owner, ct));
     }
 

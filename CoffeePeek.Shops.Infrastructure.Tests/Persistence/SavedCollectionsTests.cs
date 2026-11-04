@@ -210,10 +210,14 @@ public sealed class SavedCollectionsTests
         Assert.Empty((await store.GetAsync(owner, first.Id, Ct))!.Items);
         await Assert.ThrowsAsync<DiscoveryException>(() => store.SetMembershipAsync(owner, "roaster", "sample", [snapshot.Id], Ct));
         var selected = await store.SetMembershipAsync(owner, "roaster", "sample", [first.Id, second.Id], Ct);
-        Assert.True(selected.All(s => s.ContainsItem));
-        var revisions = selected.ToDictionary(s => s.Id, s => s.Revision);
+        Assert.True(selected.MembershipChanged);
+        Assert.True(selected.IsFavorite);
+        Assert.True(selected.Collections.All(s => s.ContainsItem));
+        var revisions = selected.Collections.ToDictionary(s => s.Id, s => s.Revision);
         var repeated = await store.SetMembershipAsync(owner, "roaster", "sample", [first.Id, second.Id], Ct);
-        Assert.All(repeated, s => Assert.Equal(revisions[s.Id], s.Revision));
+        Assert.False(repeated.MembershipChanged);
+        Assert.True(repeated.IsFavorite);
+        Assert.All(repeated.Collections, s => Assert.Equal(revisions[s.Id], s.Revision));
         await store.SetMembershipAsync(owner, "roaster", "sample", [], Ct);
         Assert.All(await store.ListAsync(owner, "roaster", "sample", Ct), s => Assert.False(s.ContainsItem));
         Assert.Empty(db.DiscoveryFavorites);
