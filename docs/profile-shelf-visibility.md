@@ -96,3 +96,10 @@ zero failures/skips (`host-identity-rerun.log` and its TRX). Together with the
 unchanged 17 persistence and 2 generated-handler checks, 136 non-live cases are
 verified. The one PostgreSQL migration case remains locally skipped; no new
 live-database acceptance is claimed.
+
+The first PR CI run 41795135171 failed the complete table-ownership inventory:
+the new table was mapped but not yet declared in the Shelf owner list. The
+inventory and module ownership document now include `ShelfProfilePreferences`;
+the assertion remains strict for every mapped table. This was a gap in the
+initial targeted local selection, not evidence that the PostgreSQL gate ran.
+The original failed CI run remains available for comparison with its successor.

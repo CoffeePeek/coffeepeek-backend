@@ -30,7 +30,7 @@ public class TableOwnershipTests
                 "CoffeeProductPhotos", "CoffeeVariants", "CoffeeImportRuns", "CoffeeFilterValues", "Countries"
             ],
             ["Discovery"] = ["DiscoveryFavorites", "FavoriteCollections", "FavoriteCollectionItems", "SavedCollections", "SavedCollectionItems", "SavedCollectionPreferences", "SavedCollectionCoverUses"],
-            ["Shelf"] = ["ShelfBags"],
+            ["Shelf"] = ["ShelfBags", "ShelfProfilePreferences"],
             ["AppDistribution"] =
                 ["AndroidReleases", "AppDistributionSettings", "AppDistributionAuditLogs", "AppDownloadRedirectEvents"]
         };
