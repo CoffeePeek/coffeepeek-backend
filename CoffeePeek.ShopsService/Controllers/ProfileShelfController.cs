@@ -18,7 +18,10 @@ public sealed class ProfileShelfController(IProfileAddressLookup profiles, IShel
     {
         var profile = await profiles.ResolveAsync(authorSlug, ct);
         if (profile == null) return NotFound();
-        return Ok(Response<PublicShelfDto?>.Success(await shelf.PublicAsync(profile.EntityId, profile.Slug, ct)));
+        var result = await shelf.PublicAsync(profile.EntityId, profile.Slug, ct);
+        // Catalog reads may await other services: rebind access to the same author before returning any cards.
+        if ((await profiles.ResolveAsync(authorSlug, ct))?.EntityId != profile.EntityId) return NotFound();
+        return Ok(Response<PublicShelfDto?>.Success(result));
     }
 
     [AllowAnonymous, HttpGet("bags/{bagId:guid}/photos/{photoId:guid}")]
@@ -38,7 +41,8 @@ public sealed class ProfileShelfController(IProfileAddressLookup profiles, IShel
         var type = response.Content.Headers.ContentType?.MediaType?.ToLowerInvariant();
         if (type is not ("image/jpeg" or "image/png" or "image/webp") || type != photo.ContentType.ToLowerInvariant()) return StatusCode(503);
         // Visibility, profile access and the current bag/photo are authoritative again after Media has responded.
-        if (await profiles.ResolveAsync(authorSlug, ct) == null || await shelf.PublicPhotoAsync(photo.OwnerId, bagId, photoId, ct) == null)
+        if ((await profiles.ResolveAsync(authorSlug, ct))?.EntityId != photo.OwnerId
+            || await shelf.PublicPhotoAsync(photo.OwnerId, bagId, photoId, ct) == null)
             return NotFound();
         Response.ContentType = type;
         await response.Content.CopyToAsync(Response.Body, ct);

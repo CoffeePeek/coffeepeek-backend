@@ -47,14 +47,17 @@ have an empty string name; clients use their localized placeholder. Unknown or
 unpublished catalog slugs and absent/unsupported photos are null. No owner IDs,
 archive entries, rating/verdict, weight/date, private storage keys or owner-only
 URLs are serialized. The opt-in is checked again after catalog lookup.
+The controller then resolves the profile again and requires the same author ID;
+revoked access or a reassigned slug cannot deliver the previous author's cards.
 
 Public photo URLs have the form
 `/api/v1/profiles/{slug}/shelf/bags/{bagId}/photos/{photoId}`. Each read resolves
 profile visibility, checks the flag and current active bag/photo, then internally
 downloads Media bytes as the owner. The response is buffered under a five-second,
 1 MiB bound matching the existing private-card validation. Profile and bag/photo
-access are checked again after Media responds. Only matching JPEG/PNG/WebP MIME
-types are delivered. Responses use `no-store`, `nosniff`; no redirects, 304 or
+access and the original author identity are checked again after Media responds.
+Only matching JPEG/PNG/WebP MIME types are delivered. Responses use `no-store`,
+`nosniff`; no redirects, 304 or
 public cache is used. Caller cancellation propagates; unavailable/oversized or
 invalid Media responses fail before writing public bytes.
 
@@ -82,3 +85,14 @@ their ignored logs remain in `artifacts/profile-shelf`. No production service or
 database changes are made by this implementation workflow. Unrelated proven
 whitespace-only generator output was excluded; generated formatting was cleaned
 without changing handler behavior.
+
+Final independent review identified an access/author race not covered by the
+initial 114 passing HTTP cases: profile visibility or slug ownership could change
+while catalog/Media work was awaited. The controller now re-resolves access and
+binds the result to the same author before returning JSON or photo bytes. Two
+delayed HTTP regressions cover revoked access and a different author, and a
+photo regression covers slug reassignment. The focused rerun passed 117 cases,
+zero failures/skips (`host-identity-rerun.log` and its TRX). Together with the
+unchanged 17 persistence and 2 generated-handler checks, 136 non-live cases are
+verified. The one PostgreSQL migration case remains locally skipped; no new
+live-database acceptance is claimed.

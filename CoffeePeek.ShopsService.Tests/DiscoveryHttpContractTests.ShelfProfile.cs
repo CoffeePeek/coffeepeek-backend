@@ -87,4 +87,27 @@ public sealed partial class DiscoveryHttpContractTests
         Assert.Equal(HttpStatusCode.NotFound, photo.StatusCode);
         shelfProfiles.VerifyNoOtherCalls(); coverHttp.VerifyNoOtherCalls();
     }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task DelayedPublicShelfReadCannotOutliveProfileAccessOrAuthorIdentity(bool reassigned)
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var owner = Guid.NewGuid();
+        PublicAddressMetadata? current = new(owner, "author", "/users/author", 1);
+        profiles.Setup(p => p.ResolveAsync("author", It.IsAny<CancellationToken>())).ReturnsAsync(() => current);
+        var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var delayed = new TaskCompletionSource<PublicShelfDto?>(TaskCreationOptions.RunContinuationsAsynchronously);
+        shelfProfiles.Setup(s => s.PublicAsync(owner, "author", It.IsAny<CancellationToken>()))
+            .Returns(() => { started.TrySetResult(); return delayed.Task; });
+        var pending = client.GetAsync("/api/v1/profiles/author/shelf", ct);
+        await started.Task.WaitAsync(TimeSpan.FromSeconds(5), ct);
+        current = reassigned ? new(Guid.NewGuid(), "author", "/users/author", 2) : null;
+        delayed.SetResult(new([new(Guid.NewGuid(), "Must stay private", null, null, null)], 1));
+        using var response = await pending;
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        Assert.DoesNotContain("Must stay private", await response.Content.ReadAsStringAsync(ct));
+        profiles.Verify(p => p.ResolveAsync("author", It.IsAny<CancellationToken>()), Times.Exactly(2));
+    }
 }

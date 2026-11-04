@@ -76,6 +76,19 @@ public sealed class ProfileShelfPhotoTests
         Assert.Equal(0, handler.Calls);
     }
 
+    [Fact]
+    public async Task ReassignedProfileSlugCannotDeliverTheOriginalAuthorsPhoto()
+    {
+        var handler = new PhotoHandler(); var controller = Controller(handler);
+        profiles.SetupSequence(p => p.ResolveAsync("author", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new PublicAddressMetadata(owner, "author", "/users/author", 1))
+            .ReturnsAsync(new PublicAddressMetadata(Guid.NewGuid(), "author", "/users/author", 2));
+        Assert.IsType<NotFoundResult>(await controller.Photo("author", bag, photo, TestContext.Current.CancellationToken));
+        Assert.Equal(0, controller.Response.Body.Length);
+        Assert.Equal(1, handler.Calls);
+        shelf.Verify(s => s.PublicPhotoAsync(owner, bag, photo, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
     [Theory]
     [InlineData("text/html", 3)]
     [InlineData("image/png", 3)]
