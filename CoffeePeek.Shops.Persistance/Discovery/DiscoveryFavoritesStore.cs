@@ -57,9 +57,12 @@ public sealed class DiscoveryFavoritesStore(ShopsDbContext db, IPublicAddressSer
             _ => id != Guid.Empty
         };
         if (!exists) throw new DiscoveryException("Public entity not found.", 404, "NOT_FOUND");
+        // Wolverine already owns the request transaction. Raw store callers own one here so
+        // the default-list advisory lock and favorite/collection writes share the same commit.
+        await using var ownedTransaction = db.Database.IsNpgsql() && db.Database.CurrentTransaction == null
+            ? await db.Database.BeginTransactionAsync(ct) : null;
         if (kind != "drink")
         {
-            await SavedCollectionDefault.LockAsync(db, userId, ct);
             if (favorite)
             {
                 var collection = await SavedCollectionDefault.EnsureAsync(db, userId, ct);
@@ -70,6 +73,7 @@ public sealed class DiscoveryFavoritesStore(ShopsDbContext db, IPublicAddressSer
             }
             else
             {
+                await SavedCollectionDefault.LockAsync(db, userId, ct);
                 var collections = await db.SavedCollections.Include(c => c.Items)
                     .Where(c => c.OwnerId == userId && c.RevokedAtUtc == null &&
                         c.Items.Any(i => i.Kind == kind && i.EntityId == id)).ToArrayAsync(ct);
@@ -95,6 +99,7 @@ public sealed class DiscoveryFavoritesStore(ShopsDbContext db, IPublicAddressSer
             // A concurrent idempotent PUT has already inserted the same user's favorite.
             foreach (var entry in ex.Entries) entry.State = EntityState.Detached;
         }
+        if (ownedTransaction != null) await ownedTransaction.CommitAsync(ct);
     }
 
 }
