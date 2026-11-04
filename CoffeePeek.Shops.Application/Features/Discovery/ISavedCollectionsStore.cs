@@ -10,7 +10,8 @@ public interface ISavedCollectionsStore
     Task<SavedCollectionDto> CreateAsync(Guid owner, CreateSavedCollectionRequest request, CancellationToken ct);
     Task<SavedCollectionDto?> UpdateAsync(Guid owner, Guid id, UpdateSavedCollectionRequest request, CancellationToken ct);
     Task<SavedCollectionDto?> ReplaceItemsAsync(Guid owner, Guid id, ReplaceSavedCollectionItemsRequest request, CancellationToken ct);
-    Task<SavedCollectionSummary[]> SetMembershipAsync(Guid owner, string kind, string slug, Guid[] collectionIds, CancellationToken ct);
+    Task<SavedCollectionMembershipResult> SetMembershipAsync(Guid owner, string kind, string slug, Guid[] collectionIds,
+        CancellationToken ct, Guid[]? addedCollectionIds = null, Guid[]? removedCollectionIds = null);
     Task<bool> DeleteAsync(Guid owner, Guid id, CancellationToken ct);
     Task DeleteForOwnerAsync(Guid owner, CancellationToken ct);
     Task<FeaturedCollectionPreference> FeaturedAsync(Guid owner, CancellationToken ct);

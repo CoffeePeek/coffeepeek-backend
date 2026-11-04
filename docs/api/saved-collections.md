@@ -7,9 +7,9 @@ revoke flows remain immutable export snapshots and retain their links. Library
 DTOs have `mode: "list"`; historical DTOs remain `mode: "snapshot"`. The historical
 `FavoriteCollections`/`FavoriteCollectionItems` tables, their primary keys and
 rows are unchanged. A pre-feature binary cannot select private library rows,
-including during mixed-version rollout or rollback. Server
-favorites remain independent. Saving a global favorite opens the client picker;
-cancelling that picker does not undo the favorite.
+including during mixed-version rollout or rollback. Owner favorites include
+legacy rows and shop/roaster membership in any active owned list. A private
+legacy heart remains private if the owner cancels the collection picker.
 
 ## HTTP contract
 
@@ -20,10 +20,11 @@ no-store`. Owner routes use the authenticated identity, never a body owner ID.
 | --- | --- | --- |
 | GET | `/saved-collections?kind=roaster&slug=sample` | Owner summaries; optional target adds `containsItem` in one read |
 | POST | `/saved-collections` | Owner creates an empty or populated library list, 201 |
+| PUT | `/saved-collections/default` | Idempotently returns or creates the owner's canonical «Избранное», 200 |
 | GET | `/saved-collections/{id}` | Owner detail, including private lists; foreign/missing/snapshot IDs are 404 |
 | PUT | `/saved-collections/{id}` | Owner replaces editable metadata with `expectedRevision` |
 | PUT | `/saved-collections/{id}/items` | Owner replaces ordered items with `expectedRevision`; empty is valid |
-| PUT | `/saved-collections/membership/{kind}/{slug}` | Atomically sets the target's owned library memberships |
+| PUT | `/saved-collections/membership/{kind}/{slug}` | Atomically applies owner picker changes; optional deltas preserve untouched concurrent memberships |
 | DELETE | `/saved-collections/{id}` | Owner removes a library list; repeated owner deletion is idempotent |
 | GET/PUT | `/saved-collections/featured` | Owner preference `{ "collectionId": null }` or one owned public library ID |
 | GET | `/profiles/{authorSlug}/collection` | Anonymous featured public detail or `data: null`; unavailable profile is 404 |
@@ -32,13 +33,22 @@ no-store`. Owner routes use the authenticated identity, never a body owner ID.
 | GET | `/saved-collections/{id}/cover/{photoId}` | Owner-only current cover, including private lists |
 
 Summary fields: `id`, `mode`, `title`, `description`, `visibility`, `coverPhoto`,
-`itemCount`, `revision`, `containsItem`, `isFeatured`, `canonicalPath`. Detail adds
+`itemCount`, `revision`, `containsItem`, `isFeatured`, `isDefault`, `canonicalPath`. Detail adds
 `createdAtUtc`, `updatedAtUtc`, and the existing public shop/roaster `items`.
 `coverPhoto` is nullable `{ "id": "...", "url": "/api/v1/..." }`. Resolve its
 server-relative URL against the API origin. Private URLs require authentication;
 storage keys and arbitrary external cover URLs never appear in read DTOs.
 `canonicalPath` is null for private library lists and `/collections/{id:N}` for
-public ones. Public common-read DTOs expose `itemCount` from the actually returned
+public ones. `isDefault` is a server-owned identity marker and persists when its
+list is renamed or made public. The first ensure adopts the oldest owned active
+list titled exactly «Избранное», without changing its visibility or merging other
+same-title lists; otherwise it creates a private empty list. An older client POST
+with the exact empty private «Избранное» shape is also treated idempotently, so
+it cannot recreate the default after publication. On first private ensure only,
+available legacy shop/roaster hearts absent from every owned list
+are added to the default. Existing public defaults are never filled from private
+legacy hearts. Drinks stay in legacy favorites and cannot be collection members.
+Public common-read DTOs expose `itemCount` from the actually returned
 `items` array, including when unavailable targets have been omitted. The public
 featured-profile detail uses the same count rule. Public snapshot DTOs gain optional/defaulted `mode`, `visibility`,
 `description`, `coverPhoto`, `revision`, and `updatedAtUtc` without losing fields.
@@ -68,26 +78,45 @@ foreign/private/snapshot IDs cannot be featured.
 
 Items PUT body is `{ "items": [{ "kind": "roaster", "slug": "sample" }],
 "expectedRevision": 2 }`. Allowed kinds are `coffee_shop` and `roaster`.
-New members must already be the owner's available server favorites. Existing
-membership survives later unfavoriting and slug changes; stable entity IDs and
+New members must be available public shops or roasters. A legacy unheart removes
+the target from every active owned list; slug changes retain stable entity IDs and
 mutable positions preserve order. All shops precede roasters in public projection,
 preserving order within each group. The prior 100-item selection cap is absent.
-New-member favorite and availability checks are batched, and duplicate/existing
+Availability checks are batched, and duplicate/existing
 membership checks use sets. Public-address resolution retains per-slug alias handling.
 The existing separate 100-active-links quota remains for snapshots; library lists
 have their own 100-active-list creation guard.
 
-Picker PUT body is `{ "collectionIds": ["11111111-1111-1111-1111-111111111111"] }`.
-An empty array removes the target from all owned library lists. Foreign, deleted
+Picker PUT accepts `{ "collectionIds": ["11111111-1111-1111-1111-111111111111"],
+"addedCollectionIds": [], "removedCollectionIds": [] }`. When both delta arrays
+are supplied, the server applies them to current membership under the owner lock;
+`collectionIds` remains a compatibility fallback for older servers and clients.
+With no deltas, an empty `collectionIds` removes the target from all owned lists. Foreign, deleted
 or snapshot IDs reject the entire request. Repeating the same membership set is
-idempotent, including revisions. This operation never writes global favorites or
-snapshot membership. Deletion revokes all access immediately; revoked list metadata
+idempotent, including revisions. Active collection membership synchronizes the
+legacy favorite projection; clearing the target from all lists removes its legacy
+favorite. Heart PUT adds a shop/roaster to the canonical default only while that
+list is private. If it is public, the heart remains private until an explicit picker
+selection; no private heart is implicitly published. Heart DELETE removes the target
+from all active owned lists. These operations never change immutable snapshot membership.
+Deletion revokes all access immediately; revoked list metadata
 and memberships remain in Shops until account deletion, which physically removes
 them. Retaining the ID and cover-use ledger prevents delayed requests from reusing
 a released upload. Repeated deletion remains idempotent. Owner writes serialize through a transaction-scoped lock;
 metadata/items version mismatch returns 409 `COLLECTION_CONFLICT`. Invalid input
-uses 400 `INVALID_COLLECTION`; unavailable/new non-favorite targets use 409
+uses 400 `INVALID_COLLECTION`; unavailable targets use 409
 `COLLECTION_CHANGED`.
+
+A successful picker PUT keeps `data` as the existing summary array and adds two
+response headers, including when the array is empty: `X-CoffeePeek-Is-Favorite`
+and `X-CoffeePeek-Membership-Changed`, each the lowercase literal `true` or
+`false`. They are calculated in the same owner transaction as the write. The
+favorite state includes active membership and any preserved private legacy heart;
+an unchanged membership request does not clear a legacy-only heart. The changed
+flag describes the actual rebased membership change, not whether the client sent
+nonempty deltas, and can be false for an already-applied removal. Clients must not
+infer a false heart from an array with no `containsItem` entries. If either header
+is absent on an older backend, its value is unknown.
 
 ## Cover upload and lifecycle
 

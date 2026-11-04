@@ -16,6 +16,52 @@ namespace CoffeePeek.Shops.Infrastructure.Tests.Persistence;
 public sealed class DiscoveryFavoritesTests
 {
     [Fact]
+    public async Task HeartAddsToCanonicalDefaultAndUnheartRemovesEveryOwnedMembership()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        await using var db = new ShopsDbContext(new DbContextOptionsBuilder<ShopsDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString()).Options);
+        var place = new Roaster("Collected"); place.SetPublicSlug("collected");
+        db.Roasters.Add(place);
+        var owner = Guid.NewGuid(); var other = Guid.NewGuid();
+        var first = SavedCollection.CreateList(owner, Guid.NewGuid(), "Public", null, "public",
+            favorites: [new(owner, "roaster", place.Id)]);
+        var second = SavedCollection.CreateList(owner, Guid.NewGuid(), "Private", null, "private",
+            favorites: [new(owner, "roaster", place.Id)]);
+        var foreign = SavedCollection.CreateList(other, Guid.NewGuid(), "Foreign", null, "private",
+            favorites: [new(other, "roaster", place.Id)]);
+        db.SavedCollections.AddRange(first, second, foreign); await db.SaveChangesAsync(ct);
+        var store = new DiscoveryFavoritesStore(db, Mock.Of<IPublicAddressService>());
+        Assert.Single(await store.ListAsync(owner, ct));
+        await store.SetAsync(owner, "roaster", "collected", true, ct);
+        Assert.Single(await db.SavedCollections.Where(c => c.OwnerId == owner && c.IsDefault).ToArrayAsync(ct));
+        Assert.Equal(3, await db.Set<SavedCollectionItem>().CountAsync(i => i.EntityId == place.Id &&
+            db.SavedCollections.Any(c => c.Id == i.CollectionId && c.OwnerId == owner), ct));
+        await store.SetAsync(owner, "roaster", "collected", false, ct);
+        Assert.Empty(await store.ListAsync(owner, ct));
+        Assert.Empty(await db.DiscoveryFavorites.Where(f => f.UserId == owner).ToArrayAsync(ct));
+        Assert.Single((await db.SavedCollections.Include(c => c.Items).SingleAsync(c => c.Id == foreign.Id, ct)).Items);
+    }
+
+    [Fact]
+    public async Task HeartDoesNotPublishIntoAPublicDefaultBeforeExplicitCollectionSelection()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        await using var db = new ShopsDbContext(new DbContextOptionsBuilder<ShopsDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString()).Options);
+        var place = new Roaster("Private heart"); place.SetPublicSlug("private-heart");
+        db.Roasters.Add(place); await db.SaveChangesAsync(ct);
+        var owner = Guid.NewGuid();
+        var row = SavedCollection.CreateList(owner, Guid.NewGuid(), "Избранное", null, "public");
+        row.MarkDefault(); db.SavedCollections.Add(row); await db.SaveChangesAsync(ct);
+        var store = new DiscoveryFavoritesStore(db, Mock.Of<IPublicAddressService>());
+        await store.SetAsync(owner, "roaster", "private-heart", true, ct);
+        Assert.Single(await store.ListAsync(owner, ct));
+        Assert.Empty((await db.SavedCollections.Include(c => c.Items).SingleAsync(c => c.Id == row.Id, ct)).Items);
+        Assert.Single(db.DiscoveryFavorites);
+    }
+
+    [Fact]
     public async Task RepeatedUpdatesAreIdempotent_AndOneUserCannotRemoveAnotherUsersFavorite()
     {
         var ct = TestContext.Current.CancellationToken;

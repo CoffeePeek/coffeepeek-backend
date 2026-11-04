@@ -7,31 +7,50 @@ namespace CoffeePeek.Shops.Persistance.Discovery;
 
 public sealed partial class SavedCollectionsStore
 {
-    public async Task<SavedCollectionSummary[]> SetMembershipAsync(Guid owner, string kind, string slug, Guid[] collectionIds, CancellationToken ct)
+    public async Task<SavedCollectionMembershipResult> SetMembershipAsync(Guid owner, string kind, string slug, Guid[] collectionIds,
+        CancellationToken ct, Guid[]? addedCollectionIds = null, Guid[]? removedCollectionIds = null)
     {
-        if (collectionIds == null || collectionIds.Any(id => id == Guid.Empty) || collectionIds.Distinct().Count() != collectionIds.Length)
+        if (!ValidIds(collectionIds) || (addedCollectionIds == null) != (removedCollectionIds == null) ||
+            addedCollectionIds != null && (!ValidIds(addedCollectionIds) || !ValidIds(removedCollectionIds!) ||
+                addedCollectionIds.Intersect(removedCollectionIds!).Any()))
             throw new DiscoveryException("Invalid collection selection.", 400, "INVALID_COLLECTION");
         await LockOwnerAsync(owner, ct);
         var target = await ResolveAsync(kind, slug, ct);
         if (target == Guid.Empty) throw new DiscoveryException("Place not found.", 404, "NOT_FOUND");
         var rows = await Lists(owner).Include(c => c.Items).ToArrayAsync(ct);
-        if (collectionIds.Any(id => rows.All(c => c.Id != id)))
+        var requested = addedCollectionIds == null ? collectionIds :
+            addedCollectionIds.Concat(removedCollectionIds!);
+        if (requested.Any(id => rows.All(c => c.Id != id)))
             throw new DiscoveryException("Collection not found.", 404, "NOT_FOUND");
-        var additions = rows.Where(c => collectionIds.Contains(c.Id) && c.Items.All(i => i.Kind != kind || i.EntityId != target)).ToArray();
-        if (additions.Length > 0) await EnsureFavoriteAsync(owner, kind, target, ct);
+        if (addedCollectionIds != null)
+        {
+            var current = rows.Where(c => c.Items.Any(i => i.Kind == kind && i.EntityId == target)).Select(c => c.Id);
+            collectionIds = current.Union(addedCollectionIds).Except(removedCollectionIds!).ToArray();
+        }
+        var adding = rows.Any(c => collectionIds.Contains(c.Id) &&
+            c.Items.All(i => i.Kind != kind || i.EntityId != target));
+        if (adding) await EnsureVisibleAsync([new(owner, kind, target)], ct);
+        var membershipChanged = false;
         foreach (var row in rows)
         {
             var has = row.Items.Any(i => i.Kind == kind && i.EntityId == target);
             var selected = collectionIds.Contains(row.Id);
             if (has == selected) continue;
+            membershipChanged = true;
             var items = row.Items.OrderBy(i => i.Position).Select(i => new DiscoveryFavorite(owner, i.Kind, i.EntityId)).ToList();
             if (selected) items.Add(new(owner, kind, target));
             else items.RemoveAll(i => i.Kind == kind && i.EntityId == target);
             row.ReplaceItems(items);
         }
         await FlushAsync(ct);
-        return await ListAsync(owner, kind, slug, ct);
+        if (membershipChanged) await SyncFavoritesAsync(owner, [(kind, target)], ct);
+        var isFavorite = collectionIds.Length > 0 || await db.DiscoveryFavorites.AsNoTracking()
+            .AnyAsync(f => f.UserId == owner && f.Kind == kind && f.EntityId == target, ct);
+        return new(await ListAsync(owner, kind, slug, ct), isFavorite, membershipChanged);
     }
+
+    private static bool ValidIds(Guid[]? ids) => ids != null && ids.All(id => id != Guid.Empty) &&
+        ids.Distinct().Count() == ids.Length;
 
     public async Task<FeaturedCollectionPreference> SetFeaturedAsync(Guid owner, Guid? id, CancellationToken ct)
     {

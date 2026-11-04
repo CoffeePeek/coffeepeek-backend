@@ -320,6 +320,25 @@ public sealed class DiscoveryQueryLiveTests : IClassFixture<ShopsLiveDatabase>
     }
 
     [Fact]
+    public async Task FavoriteWriterPreservesAmbientTransactionAndRollsBackDefaultMembership()
+    {
+        await using var db = fixture.Context(false);
+        var roaster = AddRoaster(db, Key()); await db.SaveChangesAsync(Ct);
+        var user = Guid.NewGuid();
+        await using (var transaction = await db.Database.BeginTransactionAsync(Ct))
+        {
+            await new DiscoveryFavoritesStore(db, Mock.Of<IPublicAddressService>())
+                .SetAsync(user, "roaster", roaster.PublicSlug!, true, Ct);
+            Assert.Same(transaction, db.Database.CurrentTransaction);
+            Assert.Single(await db.SavedCollections.Where(c => c.OwnerId == user && c.IsDefault).ToArrayAsync(Ct));
+            await transaction.RollbackAsync(Ct);
+        }
+        await using var read = fixture.Context(false);
+        Assert.Empty(await read.DiscoveryFavorites.Where(f => f.UserId == user).ToArrayAsync(Ct));
+        Assert.Empty(await read.SavedCollections.Where(c => c.OwnerId == user).ToArrayAsync(Ct));
+    }
+
+    [Fact]
     public async Task CoffeeNumberAndSpecialPrefixes_SortAfterLetters_BeforePagination_ExecuteInPostgres()
     {
         await using var db = fixture.Context(false);

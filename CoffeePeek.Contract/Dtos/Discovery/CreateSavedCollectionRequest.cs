@@ -10,4 +10,5 @@ public sealed class CreateSavedCollectionRequest
     public string Visibility { get; init; } = "private";
     public FavoriteCollectionSelection[] Items { get; init; } = [];
     public UploadedPhotoDto? CoverUpload { get; init; }
+    public bool IsDefault { get; init; }
 }

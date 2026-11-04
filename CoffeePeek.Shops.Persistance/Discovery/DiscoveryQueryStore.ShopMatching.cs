@@ -82,7 +82,13 @@ public sealed partial class DiscoveryQueryStore
             shops = f.IsNew.Value ? shops.Where(s => s.CreatedAtUtc >= cutoff) : shops.Where(s => s.CreatedAtUtc < cutoff);
         }
         if (f.VisitedOnly) shops = shops.Where(s => db.CheckIns.Any(c => c.ShopId == s.Id && c.UserId == userId && c.DeletedAtUtc == null));
-        if (f.FavoritesOnly) shops = shops.Where(s => db.DiscoveryFavorites.Any(c => c.Kind == "coffee_shop" && c.EntityId == s.Id && c.UserId == userId));
+        if (f.FavoritesOnly)
+        {
+            var collectionFavorites = OwnedCollectionItems(userId, "coffee_shop");
+            shops = shops.Where(s =>
+                db.DiscoveryFavorites.Any(c => c.Kind == "coffee_shop" && c.EntityId == s.Id && c.UserId == userId) ||
+                collectionFavorites.Any(i => i.EntityId == s.Id));
+        }
         if (f.IsOpen.HasValue)
         {
             var day = now.DayOfWeek;

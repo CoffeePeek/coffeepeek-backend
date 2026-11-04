@@ -2145,6 +2145,11 @@ namespace CoffeePeek.Shops.Persistance.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
 
+                    b.Property<bool>("IsDefault")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
                     b.Property<Guid>("OwnerId")
                         .HasColumnType("uuid");
 
@@ -2173,6 +2178,10 @@ namespace CoffeePeek.Shops.Persistance.Migrations
                         .HasDefaultValue("private");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("OwnerId")
+                        .IsUnique()
+                        .HasFilter("\"IsDefault\" = true AND \"RevokedAtUtc\" IS NULL");
 
                     b.HasIndex("OwnerId", "CreatedAtUtc");
 

@@ -9,10 +9,10 @@ public sealed class DiscoveryFavorite
     public Guid EntityId { get; private set; }
     public DateTime CreatedAtUtc { get; private set; }
     private DiscoveryFavorite() { }
-    public DiscoveryFavorite(Guid userId, string kind, Guid entityId)
+    public DiscoveryFavorite(Guid userId, string kind, Guid entityId, DateTime? createdAtUtc = null)
     {
         if (userId == Guid.Empty || entityId == Guid.Empty || kind is not ("coffee_shop" or "roaster" or "drink"))
             throw new DomainException("Invalid discovery favorite.");
-        UserId = userId; Kind = kind; EntityId = entityId; CreatedAtUtc = DateTime.UtcNow;
+        UserId = userId; Kind = kind; EntityId = entityId; CreatedAtUtc = createdAtUtc ?? DateTime.UtcNow;
     }
 }

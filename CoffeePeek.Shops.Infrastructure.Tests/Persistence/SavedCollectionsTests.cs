@@ -28,6 +28,99 @@ public sealed class SavedCollectionsTests
     private static UploadedPhotoDto Upload(string suffix) => new("cover.jpg", "image/jpeg", $"collection-covers/{suffix}.jpg", 100);
 
     [Fact]
+    public async Task DefaultIdentitySurvivesPublishingRenamingAndRepeatedEnsureWithoutReimportingRemovedFavorites()
+    {
+        await using var db = Database(); var store = Store(db);
+        var selected = Roaster("selected"); var orphan = Roaster("orphan");
+        db.Roasters.AddRange(selected, orphan);
+        db.DiscoveryFavorites.AddRange(new(owner, "roaster", selected.Id), new(owner, "roaster", orphan.Id));
+        await db.SaveChangesAsync(Ct);
+        var other = await store.CreateAsync(owner, new() { Title = "Public", Visibility = "public", Items = [Item("selected")] }, Ct);
+        var canonical = await store.CreateAsync(owner, new() { Title = "Избранное", IsDefault = true }, Ct);
+        Assert.Equal("private", canonical.Visibility);
+        Assert.Equal("orphan", Assert.Single(canonical.Items).Address!.Slug);
+        Assert.True(canonical.IsDefault);
+        var published = (await store.UpdateAsync(owner, canonical.Id, new() { Title = "Renamed", Visibility = "public",
+            ExpectedRevision = canonical.Revision }, Ct))!;
+        Assert.Equal(canonical.Id, published.Id);
+        await store.SetMembershipAsync(owner, "roaster", "orphan", [], Ct);
+        var ensured = await store.CreateAsync(owner, new() { Title = "Избранное", IsDefault = true }, Ct);
+        var legacyRetry = await store.CreateAsync(owner, new() { Title = "Избранное" }, Ct);
+        Assert.Equal(canonical.Id, ensured.Id);
+        Assert.Equal(canonical.Id, legacyRetry.Id);
+        Assert.Equal("public", ensured.Visibility);
+        Assert.Equal("Renamed", ensured.Title);
+        Assert.Empty(ensured.Items);
+        Assert.Equal(2, (await store.ListAsync(owner, null, null, Ct)).Length);
+        Assert.True((await store.GetAsync(owner, canonical.Id, Ct))!.IsDefault);
+        Assert.False((await store.GetAsync(owner, other.Id, Ct))!.IsDefault);
+    }
+
+    [Fact]
+    public async Task AdoptingExistingPublicDefaultDoesNotExposePrivateLegacyHearts()
+    {
+        await using var db = Database(); var store = Store(db);
+        var place = Roaster("private-heart"); db.Roasters.Add(place);
+        db.DiscoveryFavorites.Add(new(owner, "roaster", place.Id)); await db.SaveChangesAsync(Ct);
+        var existing = await store.CreateAsync(owner, new() { Title = "Избранное", Visibility = "public" }, Ct);
+        var canonical = await store.CreateAsync(owner, new() { Title = "Избранное", IsDefault = true }, Ct);
+        Assert.Equal(existing.Id, canonical.Id);
+        Assert.True(canonical.IsDefault);
+        Assert.Empty(canonical.Items);
+        Assert.Single(db.DiscoveryFavorites);
+        Assert.Single(await store.ListAsync(owner, null, null, Ct));
+    }
+
+    [Fact]
+    public async Task MembershipWithoutLegacyHeartCreatesAndClearsEffectiveFavorite()
+    {
+        await using var db = Database(); var store = Store(db);
+        var place = Roaster("new-member"); db.Roasters.Add(place); await db.SaveChangesAsync(Ct);
+        var row = await store.CreateAsync(owner, new() { Title = "Private" }, Ct);
+        await store.SetMembershipAsync(owner, "roaster", "new-member", [row.Id], Ct);
+        Assert.Single(db.DiscoveryFavorites);
+        Assert.True((await store.ListAsync(owner, "roaster", "new-member", Ct)).Single().ContainsItem);
+        await store.SetMembershipAsync(owner, "roaster", "new-member", [], Ct);
+        Assert.Empty(db.DiscoveryFavorites);
+        Assert.False((await store.ListAsync(owner, "roaster", "new-member", Ct)).Single().ContainsItem);
+    }
+
+    [Fact]
+    public async Task PickerDeltasRebaseOnCurrentMembershipAndPreserveUntouchedLists()
+    {
+        await using var db = Database(); var store = Store(db);
+        var place = Roaster("rebase"); db.Roasters.Add(place); await db.SaveChangesAsync(Ct);
+        var first = await store.CreateAsync(owner, new() { Title = "First" }, Ct);
+        var second = await store.CreateAsync(owner, new() { Title = "Second" }, Ct);
+        var deleted = await store.CreateAsync(owner, new() { Title = "Deleted" }, Ct);
+        await store.DeleteAsync(owner, deleted.Id, Ct);
+        await store.SetMembershipAsync(owner, "roaster", "rebase", [first.Id], Ct);
+        await store.SetMembershipAsync(owner, "roaster", "rebase", [second.Id, deleted.Id], Ct, [second.Id], []);
+        var selected = await store.ListAsync(owner, "roaster", "rebase", Ct);
+        Assert.All(selected, row => Assert.True(row.ContainsItem));
+        await store.SetMembershipAsync(owner, "roaster", "rebase", [], Ct, [], [second.Id]);
+        selected = await store.ListAsync(owner, "roaster", "rebase", Ct);
+        Assert.True(selected.Single(row => row.Id == first.Id).ContainsItem);
+        Assert.False(selected.Single(row => row.Id == second.Id).ContainsItem);
+        Assert.Single(db.DiscoveryFavorites);
+    }
+
+    [Fact]
+    public async Task UnavailableShopCanBeRemovedFromCollectionWithoutVisibilityCheck()
+    {
+        await using var db = Database(); var store = Store(db);
+        var shop = new CoffeeShop(null, "Hidden", null,
+            CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate.PriceRange.Moderate, Guid.NewGuid());
+        shop.SetPublicSlug("hidden-shop"); db.Shops.Add(shop); await db.SaveChangesAsync(Ct);
+        var row = await store.CreateAsync(owner, new() { Title = "Places",
+            Items = [new FavoriteCollectionSelection { Kind = "coffee_shop", Slug = "hidden-shop" }] }, Ct);
+        shop.SetHidden(true); await db.SaveChangesAsync(Ct);
+        await store.SetMembershipAsync(owner, "coffee_shop", "hidden-shop", [], Ct);
+        Assert.Empty((await store.GetAsync(owner, row.Id, Ct))!.Items);
+        Assert.Empty(db.DiscoveryFavorites);
+    }
+
+    [Fact]
     public async Task EmptyLibraryDefaultsPrivateAndNeverAppearsInLegacySnapshotListsOrAnonymousReads()
     {
         await using var db = Database();
@@ -87,22 +180,22 @@ public sealed class SavedCollectionsTests
     }
 
     [Fact]
-    public async Task NewNonFavoriteRejectsTheWholeSelectionBeforeClaimingACover()
+    public async Task NewAvailablePlacesCanBeCollectedWithoutALegacyFavorite()
     {
         await using var db = Database(); var store = Store(db);
         var favorite = Roaster("favorite"); var other = Roaster("other");
         db.Roasters.AddRange(favorite, other);
         db.DiscoveryFavorites.Add(new(owner, "roaster", favorite.Id));
         await db.SaveChangesAsync(Ct);
-        var error = await Assert.ThrowsAsync<DiscoveryException>(() => store.CreateAsync(owner,
-            new() { Title = "Invalid", Items = [Item("favorite"), Item("other")], CoverUpload = Upload("unclaimed") }, Ct));
-        Assert.Equal("COLLECTION_CHANGED", error.ErrorCode);
-        Assert.Empty(db.SavedCollections);
+        var created = await store.CreateAsync(owner,
+            new() { Title = "Places", Items = [Item("favorite"), Item("other")] }, Ct);
+        Assert.Equal(2, created.Items.Length);
+        Assert.Equal(2, await db.DiscoveryFavorites.CountAsync(Ct));
         covers.VerifyNoOtherCalls();
     }
 
     [Fact]
-    public async Task AtomicPickerChangesOnlyOwnedMutableListsAndNeverGlobalFavoritesOrSnapshots()
+    public async Task AtomicPickerChangesOwnedListsAndSynchronizesFavoriteProjectionWithoutTouchingSnapshots()
     {
         await using var db = Database();
         var place = Roaster("sample"); db.Roasters.Add(place);
@@ -117,18 +210,22 @@ public sealed class SavedCollectionsTests
         Assert.Empty((await store.GetAsync(owner, first.Id, Ct))!.Items);
         await Assert.ThrowsAsync<DiscoveryException>(() => store.SetMembershipAsync(owner, "roaster", "sample", [snapshot.Id], Ct));
         var selected = await store.SetMembershipAsync(owner, "roaster", "sample", [first.Id, second.Id], Ct);
-        Assert.True(selected.All(s => s.ContainsItem));
-        var revisions = selected.ToDictionary(s => s.Id, s => s.Revision);
+        Assert.True(selected.MembershipChanged);
+        Assert.True(selected.IsFavorite);
+        Assert.True(selected.Collections.All(s => s.ContainsItem));
+        var revisions = selected.Collections.ToDictionary(s => s.Id, s => s.Revision);
         var repeated = await store.SetMembershipAsync(owner, "roaster", "sample", [first.Id, second.Id], Ct);
-        Assert.All(repeated, s => Assert.Equal(revisions[s.Id], s.Revision));
+        Assert.False(repeated.MembershipChanged);
+        Assert.True(repeated.IsFavorite);
+        Assert.All(repeated.Collections, s => Assert.Equal(revisions[s.Id], s.Revision));
         await store.SetMembershipAsync(owner, "roaster", "sample", [], Ct);
         Assert.All(await store.ListAsync(owner, "roaster", "sample", Ct), s => Assert.False(s.ContainsItem));
-        Assert.Single(db.DiscoveryFavorites);
+        Assert.Empty(db.DiscoveryFavorites);
         Assert.Single((await legacy.GetAsync(snapshot.Id, Ct))!.Items);
     }
 
     [Fact]
-    public async Task ReorderingUsesStableEntityKeysAndExistingItemsSurviveUnfavoriteAndRename()
+    public async Task ReorderingUsesStableEntityKeysAndRebuildsFavoriteProjectionAfterLegacyRowsDisappear()
     {
         await using var db = Database();
         var places = new[] { Roaster("first"), Roaster("second"), Roaster("third") };
@@ -143,7 +240,7 @@ public sealed class SavedCollectionsTests
         Assert.Equal(["third", "renamed"], (await store.GetAsync(owner, row.Id, Ct))!.Items.Select(i => i.Address!.Slug));
         var entity = await db.SavedCollections.Include(c => c.Items).SingleAsync(Ct);
         Assert.Equal([places[2].Id, places[1].Id], entity.Items.OrderBy(i => i.Position).Select(i => i.EntityId));
-        Assert.Empty(db.DiscoveryFavorites);
+        Assert.Equal(2, await db.DiscoveryFavorites.CountAsync(Ct));
     }
 
     [Fact]

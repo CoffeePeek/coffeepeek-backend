@@ -21,6 +21,13 @@ public sealed class FavoriteCollectionsStore(ShopsDbContext db, IPublicAddressSe
         if (await db.FavoriteCollections.CountAsync(c => c.OwnerId == owner && c.RevokedAtUtc == null, ct) >= 100)
             throw new DiscoveryException("Revoke an existing collection before creating another.", 409, "COLLECTION_LIMIT");
         var favorites = await db.DiscoveryFavorites.AsNoTracking().Where(f => f.UserId == owner).ToArrayAsync(ct);
+        var members = await (from c in db.SavedCollections.AsNoTracking()
+            join i in db.Set<SavedCollectionItem>().AsNoTracking() on c.Id equals i.CollectionId
+            where c.OwnerId == owner && c.RevokedAtUtc == null
+            select new { i.Kind, i.EntityId, c.CreatedAtUtc }).ToArrayAsync(ct);
+        var keys = favorites.Select(f => (f.Kind, f.EntityId)).ToHashSet();
+        favorites = favorites.Concat(members.GroupBy(i => (i.Kind, i.EntityId)).Where(g => !keys.Contains(g.Key))
+            .Select(g => new DiscoveryFavorite(owner, g.Key.Kind, g.Key.EntityId, g.Min(i => i.CreatedAtUtc)))).ToArray();
         var selected = new List<DiscoveryFavorite>();
         foreach (var item in request.Items)
         {

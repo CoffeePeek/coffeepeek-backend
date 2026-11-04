@@ -42,6 +42,27 @@ public sealed class DiscoveryShopRankingTests
     }
 
     [Theory]
+    [InlineData("coffee_shop")]
+    [InlineData("roaster")]
+    public async Task CollectionOnlyMembershipPersonalizesOwnerRecommendations(string kind)
+    {
+        await using var db = Database();
+        var baseline = Shop(db, "A-baseline"); var preferred = Shop(db, "Z-preferred");
+        var owner = Guid.NewGuid(); var entityId = preferred.Id;
+        if (kind == "roaster")
+        {
+            var roaster = new Roaster("Collected"); roaster.SetPublicSlug("collected");
+            db.Roasters.Add(roaster); preferred.SetRoasters([roaster]); entityId = roaster.Id;
+        }
+        db.SavedCollections.Add(SavedCollection.CreateList(owner, Guid.NewGuid(), "Collected", null, "private",
+            favorites: [new(owner, kind, entityId)]));
+        await db.SaveChangesAsync(Ct);
+        var store = Store(db);
+        Assert.Equal(preferred.PublicSlug, (await store.SearchShopsAsync(new(), owner, Ct)).Items[0].Address.Slug);
+        Assert.Equal(baseline.PublicSlug, (await store.SearchShopsAsync(new(), Guid.NewGuid(), Ct)).Items[0].Address.Slug);
+    }
+
+    [Theory]
     [InlineData("")]
     [InlineData("   ")]
     public async Task ReliableRatingsOutrankOnePerfectAuthor_AndUnratedShopsRemainNeutral(string query)

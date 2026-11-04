@@ -37,7 +37,10 @@ public sealed partial class DiscoveryQueryStore
         var cityIdsOnPage = rows.Values.Select(s => s.Location.CityId).Distinct().ToArray();
         var cities = await db.Cities.AsNoTracking().Where(c => cityIdsOnPage.Contains(c.Id)).ToDictionaryAsync(c => c.Id, ct);
         var visited = userId.HasValue ? await db.CheckIns.AsNoTracking().Where(c => c.UserId == userId && c.ShopId != null && c.DeletedAtUtc == null && ids.Contains(c.ShopId.Value)).Select(c => c.ShopId!.Value).Distinct().ToArrayAsync(ct) : [];
-        var favorites = userId.HasValue ? await db.DiscoveryFavorites.AsNoTracking().Where(c => c.UserId == userId && c.Kind == "coffee_shop" && ids.Contains(c.EntityId)).Select(c => c.EntityId).ToArrayAsync(ct) : [];
+        var favorites = userId.HasValue ? await db.DiscoveryFavorites.AsNoTracking()
+            .Where(c => c.UserId == userId && c.Kind == "coffee_shop" && ids.Contains(c.EntityId))
+            .Select(c => c.EntityId).Union(OwnedCollectionItems(userId, "coffee_shop")
+                .Where(i => ids.Contains(i.EntityId)).Select(i => i.EntityId)).ToArrayAsync(ct) : [];
         var checkInCounts = await CheckInEligibility.Public(db).Where(r => r.ShopId != null && ids.Contains(r.ShopId.Value))
             .GroupBy(r => r.ShopId!.Value).Select(g => new { Id = g.Key, Count = g.Count() }).ToDictionaryAsync(g => g.Id, g => g.Count, ct);
         var matchedMenu = f.Menu is null ? null : MatchingMenuItems(f.Menu);
@@ -76,8 +79,10 @@ public sealed partial class DiscoveryQueryStore
     private IOrderedQueryable<ShopHit> RecommendShops(IQueryable<ShopHit> hits, Guid? userId)
     {
         var favorites = db.DiscoveryFavorites.Where(f => f.UserId == userId);
-        var favoriteShops = favorites.Where(f => f.Kind == "coffee_shop").Select(f => f.EntityId);
-        var favoriteRoasters = favorites.Where(f => f.Kind == "roaster").Select(f => f.EntityId);
+        var favoriteShops = favorites.Where(f => f.Kind == "coffee_shop").Select(f => f.EntityId)
+            .Union(OwnedCollectionItems(userId, "coffee_shop").Select(i => i.EntityId));
+        var favoriteRoasters = favorites.Where(f => f.Kind == "roaster").Select(f => f.EntityId)
+            .Union(OwnedCollectionItems(userId, "roaster").Select(i => i.EntityId));
         var favoriteDrinks = favorites.Where(f => f.Kind == "drink").Select(f => f.EntityId);
         var liked = CheckInEligibility.LatestRatings(db).Where(r => r.UserId == userId &&
             (r.Rating!.Place + r.Rating.Coffee + r.Rating.Service) / 3m >= 4m).Select(r => r.ShopId!.Value);

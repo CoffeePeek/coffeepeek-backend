@@ -38,9 +38,12 @@ public sealed class SavedCollectionsMigrationLiveTests
             await using var db = Context(connection);
             await db.GetService<IMigrator>().MigrateAsync(Previous, Ct);
             var owner = Guid.NewGuid();
-            await SeedPlacesAsync(db, owner);
+            var favorites = await SeedPlacesAsync(db, owner);
             var snapshots = new FavoriteCollectionsStore(db, Mock.Of<IPublicAddressService>());
-            var snapshot = await snapshots.CreateAsync(owner, new() { Title = "Historical snapshot", Items = [Item("second"), Item("first")] }, Ct);
+            // Seed the historical schema directly: the current writer also reads the later saved-library tables.
+            var snapshot = new FavoriteCollection(owner, "Historical snapshot", favorites);
+            db.FavoriteCollections.Add(snapshot);
+            await db.SaveChangesAsync(Ct);
             var before = await ArchiveAsync(db);
             var key = await SnapshotPrimaryKeyAsync(db);
             await db.Database.MigrateAsync(Ct);
@@ -118,13 +121,16 @@ public sealed class SavedCollectionsMigrationLiveTests
         finally { await LivePostgresServer.DropDatabaseAsync(connection); }
     }
 
-    private static async Task SeedPlacesAsync(ShopsDbContext db, Guid owner)
+    private static async Task<DiscoveryFavorite[]> SeedPlacesAsync(ShopsDbContext db, Guid owner)
     {
         var first = new Roaster("First"); first.SetPublicSlug("first");
         var second = new Roaster("Second"); second.SetPublicSlug("second");
         db.Roasters.AddRange(first, second);
-        db.DiscoveryFavorites.AddRange(new DiscoveryFavorite(owner, "roaster", first.Id), new DiscoveryFavorite(owner, "roaster", second.Id));
+        var firstFavorite = new DiscoveryFavorite(owner, "roaster", first.Id);
+        var secondFavorite = new DiscoveryFavorite(owner, "roaster", second.Id);
+        db.DiscoveryFavorites.AddRange(firstFavorite, secondFavorite);
         await db.SaveChangesAsync(Ct);
+        return [secondFavorite, firstFavorite];
     }
 
     private static Task<string> ArchiveAsync(ShopsDbContext db) => db.Database.SqlQueryRaw<string>("""
