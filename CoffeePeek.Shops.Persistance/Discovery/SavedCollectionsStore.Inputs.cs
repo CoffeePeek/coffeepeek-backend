@@ -26,7 +26,8 @@ public sealed partial class SavedCollectionsStore
                 throw new DiscoveryException("Select distinct available places.", 400, "INVALID_COLLECTION");
             selected.Add(new(owner, item.Kind, id));
         }
-        await EnsureVisibleAsync(selected.ToArray(), ct);
+        var retained = existing.Select(item => (item.Kind, item.EntityId)).ToHashSet();
+        await EnsureVisibleAsync(selected.Where(item => !retained.Contains((item.Kind, item.EntityId))).ToArray(), ct);
         return selected;
     }
 
