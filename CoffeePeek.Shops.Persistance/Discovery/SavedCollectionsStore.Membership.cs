@@ -30,18 +30,20 @@ public sealed partial class SavedCollectionsStore
         var adding = rows.Any(c => collectionIds.Contains(c.Id) &&
             c.Items.All(i => i.Kind != kind || i.EntityId != target));
         if (adding) await EnsureVisibleAsync([new(owner, kind, target)], ct);
+        var membershipChanged = false;
         foreach (var row in rows)
         {
             var has = row.Items.Any(i => i.Kind == kind && i.EntityId == target);
             var selected = collectionIds.Contains(row.Id);
             if (has == selected) continue;
+            membershipChanged = true;
             var items = row.Items.OrderBy(i => i.Position).Select(i => new DiscoveryFavorite(owner, i.Kind, i.EntityId)).ToList();
             if (selected) items.Add(new(owner, kind, target));
             else items.RemoveAll(i => i.Kind == kind && i.EntityId == target);
             row.ReplaceItems(items);
         }
         await FlushAsync(ct);
-        await SyncFavoritesAsync(owner, [(kind, target)], ct);
+        if (membershipChanged) await SyncFavoritesAsync(owner, [(kind, target)], ct);
         return await ListAsync(owner, kind, slug, ct);
     }
 
