@@ -233,6 +233,7 @@ jobs:
             BusinessOwnershipLiveTests \
             BusinessOwnershipMigrationLiveTests \
             SavedCollectionsMigrationLiveTests \
+            ShelfProfileVisibilityMigrationLiveTests \
             RoasterOwnershipRevisionLiveTests \
             ShopVisibilityWolverineLiveTests \
             ShopProfileOutboxLiveTests \

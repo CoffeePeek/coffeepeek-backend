@@ -40,7 +40,7 @@ namespace Internal.Generated.WolverineHandlers
 
         public override async System.Threading.Tasks.Task HandleAsync(Wolverine.Runtime.MessageContext context, System.Threading.CancellationToken cancellation)
         {
-            await using var serviceScope = _serviceScopeFactory1.CreateAsyncScope();
+            await using var serviceScope = _serviceScopeFactory2.CreateAsyncScope();
             Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<Wolverine.Runtime.ScopedMessageContextHolder>(serviceScope.ServiceProvider).Context = context;
             // This service has been marked as requiring service location independent of Wolverine's ability to use constructor injection of everything else
             var shopsDbContext = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<CoffeePeek.Shops.Persistance.Configuration.ShopsDbContext>(serviceScope.ServiceProvider);
@@ -52,7 +52,7 @@ namespace Internal.Generated.WolverineHandlers
 
             System.Diagnostics.Activity.Current?.SetTag("message.handler", "CoffeePeek.Shops.Infrastructure.Consumers.ParseMenuOcrJobRequestedEventHandler");
             System.Diagnostics.Activity.Current?.SetTag("handler.type", "CoffeePeek.Shops.Infrastructure.Consumers.ParseMenuOcrJobRequestedEventHandler");
-            var parseMenuOcrJobRequestedEventHandler = new CoffeePeek.Shops.Infrastructure.Consumers.ParseMenuOcrJobRequestedEventHandler(_serviceScopeFactory2, _optionsOfMediaPublicUrlOptions, openAiMenuVisionParser, queryCoffeeDrinkRepository, httpMenuPhotoDownloader, _optionsOfMenuPriceRangeOptions, _loggerOfParseMenuOcrJobRequestedEventHandler);
+            var parseMenuOcrJobRequestedEventHandler = new CoffeePeek.Shops.Infrastructure.Consumers.ParseMenuOcrJobRequestedEventHandler(_serviceScopeFactory1, _optionsOfMediaPublicUrlOptions, openAiMenuVisionParser, queryCoffeeDrinkRepository, httpMenuPhotoDownloader, _optionsOfMenuPriceRangeOptions, _loggerOfParseMenuOcrJobRequestedEventHandler);
 
             // The actual message execution
             await parseMenuOcrJobRequestedEventHandler.Handle(parseMenuOcrJobRequestedEvent, cancellation).ConfigureAwait(false);

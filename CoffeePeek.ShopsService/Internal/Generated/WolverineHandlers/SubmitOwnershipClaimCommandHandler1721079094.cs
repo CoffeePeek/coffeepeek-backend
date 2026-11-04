@@ -28,11 +28,11 @@ namespace Internal.Generated.WolverineHandlers
 
         public override async System.Threading.Tasks.Task HandleAsync(Wolverine.Runtime.MessageContext context, System.Threading.CancellationToken cancellation)
         {
+            var ownershipEvidenceClient = new CoffeePeek.Shops.Infrastructure.Media.OwnershipEvidenceClient(_httpClientFactory, _optionsOfGatewayAuthOptions);
             await using var serviceScope = _serviceScopeFactory.CreateAsyncScope();
             Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<Wolverine.Runtime.ScopedMessageContextHolder>(serviceScope.ServiceProvider).Context = context;
             // This service has been marked as requiring service location independent of Wolverine's ability to use constructor injection of everything else
             var shopsDbContext = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<CoffeePeek.Shops.Persistance.Configuration.ShopsDbContext>(serviceScope.ServiceProvider);
-            var ownershipEvidenceClient = new CoffeePeek.Shops.Infrastructure.Media.OwnershipEvidenceClient(_httpClientFactory, _optionsOfGatewayAuthOptions);
             var unitOfWorkOfShopsDbContext = new CoffeePeek.Shared.Persistence.Data.UnitOfWork<CoffeePeek.Shops.Persistance.Configuration.ShopsDbContext>(shopsDbContext);
             var businessOwnershipStore = new CoffeePeek.Shops.Persistance.Ownership.BusinessOwnershipStore(shopsDbContext);
             // This service has been marked as requiring service location independent of Wolverine's ability to use constructor injection of everything else

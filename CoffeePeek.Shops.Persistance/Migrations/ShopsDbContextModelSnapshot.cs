@@ -2902,6 +2902,22 @@ namespace CoffeePeek.Shops.Persistance.Migrations
                         });
                 });
 
+            modelBuilder.Entity("CoffeePeek.Shops.Domain.Aggregates.ShelfAggregate.ShelfProfilePreference", b =>
+                {
+                    b.Property<Guid>("OwnerId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("IsVisible")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
+                    b.HasKey("OwnerId");
+
+                    b.ToTable("ShelfProfilePreferences", (string)null);
+                });
+
             modelBuilder.Entity("CoffeePeek.Shops.Domain.Aggregates.ShopTagAggregate.ShopTag", b =>
                 {
                     b.Property<Guid>("Id")

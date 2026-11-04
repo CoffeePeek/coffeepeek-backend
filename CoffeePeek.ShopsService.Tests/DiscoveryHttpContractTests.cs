@@ -41,6 +41,7 @@ public sealed partial class DiscoveryHttpContractTests : IAsyncLifetime
     private readonly Mock<IQueryCheckInRepository> checkIns = new();
     private readonly Mock<ISavedCollectionsStore> saved = new();
     private readonly Mock<IFavoriteCollectionsStore> snapshots = new();
+    private readonly Mock<CoffeePeek.Shops.Application.Features.Shelf.IShelfProfileStore> shelfProfiles = new();
     private readonly Mock<IHttpClientFactory> coverHttp = new(MockBehavior.Strict);
 
     public async ValueTask InitializeAsync()
@@ -62,6 +63,10 @@ public sealed partial class DiscoveryHttpContractTests : IAsyncLifetime
         builder.Services.AddSingleton(checkIns.Object);
         builder.Services.AddSingleton(saved.Object);
         builder.Services.AddSingleton(snapshots.Object);
+        builder.Services.AddSingleton(shelfProfiles.Object);
+        builder.Services.AddSingleton(new CoffeePeek.Shops.Infrastructure.Media.MediaShelfBagPhotoClient(coverHttp.Object,
+            Microsoft.Extensions.Options.Options.Create(new CoffeePeek.Shared.Auth.Options.GatewayAuthOptions { SecretKey = Secret }),
+            Microsoft.Extensions.Logging.Abstractions.NullLogger<CoffeePeek.Shops.Infrastructure.Media.MediaShelfBagPhotoClient>.Instance));
         builder.Services.AddSingleton(new CoffeePeek.Shops.Infrastructure.Media.MediaCollectionCoverClient(coverHttp.Object,
             Microsoft.Extensions.Options.Options.Create(new CoffeePeek.Shared.Auth.Options.GatewayAuthOptions { SecretKey = Secret }),
             Microsoft.Extensions.Logging.Abstractions.NullLogger<CoffeePeek.Shops.Infrastructure.Media.MediaCollectionCoverClient>.Instance));

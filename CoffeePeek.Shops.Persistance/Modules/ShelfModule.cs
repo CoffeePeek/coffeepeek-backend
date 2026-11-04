@@ -13,6 +13,7 @@ public static class ShelfModule
         services.AddScoped<IShelfBagRepository, ShelfBagRepository>();
         services.AddScoped<IShelfCatalogLookup, ShelfCatalogLookup>();
         services.AddScoped<IShelfQueries, ShelfQueries>();
+        services.AddScoped<IShelfProfileStore, ShelfProfileStore>();
         return services;
     }
 }
