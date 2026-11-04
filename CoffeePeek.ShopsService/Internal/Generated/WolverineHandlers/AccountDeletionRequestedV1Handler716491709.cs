@@ -25,11 +25,13 @@ namespace Internal.Generated.WolverineHandlers
             await using var serviceScope = _serviceScopeFactory.CreateAsyncScope();
             Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<Wolverine.Runtime.ScopedMessageContextHolder>(serviceScope.ServiceProvider).Context = context;
             // This service has been marked as requiring service location independent of Wolverine's ability to use constructor injection of everything else
-            var savedCollectionsStore = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<CoffeePeek.Shops.Application.Features.Discovery.ISavedCollectionsStore>(serviceScope.ServiceProvider);
-            // This service has been marked as requiring service location independent of Wolverine's ability to use constructor injection of everything else
             var shopsDbContext = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<CoffeePeek.Shops.Persistance.Configuration.ShopsDbContext>(serviceScope.ServiceProvider);
             var unitOfWorkOfShopsDbContext = new CoffeePeek.Shared.Persistence.Data.UnitOfWork<CoffeePeek.Shops.Persistance.Configuration.ShopsDbContext>(shopsDbContext);
             var shelfBagRepository = new CoffeePeek.Shops.Persistance.Shelf.ShelfBagRepository(shopsDbContext);
+            // This service has been marked as requiring service location independent of Wolverine's ability to use constructor injection of everything else
+            var shelfProfileStore = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<CoffeePeek.Shops.Application.Features.Shelf.IShelfProfileStore>(serviceScope.ServiceProvider);
+            // This service has been marked as requiring service location independent of Wolverine's ability to use constructor injection of everything else
+            var savedCollectionsStore = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<CoffeePeek.Shops.Application.Features.Discovery.ISavedCollectionsStore>(serviceScope.ServiceProvider);
             // This service has been marked as requiring service location independent of Wolverine's ability to use constructor injection of everything else
             var favoriteCollectionsStore = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<CoffeePeek.Shops.Application.Features.Discovery.IFavoriteCollectionsStore>(serviceScope.ServiceProvider);
             // The actual message body
@@ -50,6 +52,10 @@ namespace Internal.Generated.WolverineHandlers
 
                 // The actual message execution
                 await CoffeePeek.Shops.Application.Features.Shelf.DeleteAccountShelf.DeleteAccountShelfHandler.Handle(accountDeletionRequestedV1, shelfBagRepository, context, unitOfWorkOfShopsDbContext, cancellation).ConfigureAwait(false);
+
+
+                // The actual message execution
+                await CoffeePeek.Shops.Application.Features.Shelf.DeleteAccountShelf.DeleteShelfProfilePreferenceHandler.Handle(accountDeletionRequestedV1, shelfProfileStore, cancellation).ConfigureAwait(false);
 
 
                 // The actual message execution

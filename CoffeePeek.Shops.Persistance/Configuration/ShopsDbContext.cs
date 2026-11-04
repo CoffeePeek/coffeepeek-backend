@@ -33,6 +33,7 @@ public class ShopsDbContext(DbContextOptions<ShopsDbContext> options, IOptions<P
     public DbSet<CoffeePeek.Shops.Domain.Aggregates.DiscoveryAggregate.SavedCollection> SavedCollections => Set<CoffeePeek.Shops.Domain.Aggregates.DiscoveryAggregate.SavedCollection>();
     public DbSet<CoffeePeek.Shops.Domain.Aggregates.DiscoveryAggregate.SavedCollectionPreference> SavedCollectionPreferences => Set<CoffeePeek.Shops.Domain.Aggregates.DiscoveryAggregate.SavedCollectionPreference>();
     public DbSet<CoffeePeek.Shops.Domain.Aggregates.DiscoveryAggregate.SavedCollectionCoverUse> SavedCollectionCoverUses => Set<CoffeePeek.Shops.Domain.Aggregates.DiscoveryAggregate.SavedCollectionCoverUse>();
+    public DbSet<CoffeePeek.Shops.Domain.Aggregates.ShelfAggregate.ShelfProfilePreference> ShelfProfilePreferences => Set<CoffeePeek.Shops.Domain.Aggregates.ShelfAggregate.ShelfProfilePreference>();
     public DbSet<CoffeePeek.Shops.Domain.Aggregates.CoffeeProductAggregate.Country> Countries => Set<CoffeePeek.Shops.Domain.Aggregates.CoffeeProductAggregate.Country>();
     public DbSet<CoffeePeek.Shops.Domain.Aggregates.CoffeeProductAggregate.CoffeeProductSource> CoffeeProductSources => Set<CoffeePeek.Shops.Domain.Aggregates.CoffeeProductAggregate.CoffeeProductSource>();
     public DbSet<CoffeePeek.Shops.Domain.Aggregates.CoffeeProductAggregate.CoffeeImportRun> CoffeeImportRuns => Set<CoffeePeek.Shops.Domain.Aggregates.CoffeeProductAggregate.CoffeeImportRun>();
@@ -182,6 +183,7 @@ public class ShopsDbContext(DbContextOptions<ShopsDbContext> options, IOptions<P
         modelBuilder.ApplyConfiguration(new ShopTagConfiguration());
         modelBuilder.ApplyConfiguration(new ReviewReportConfiguration());
         modelBuilder.ApplyConfiguration(new ShelfBagConfiguration());
+        modelBuilder.ApplyConfiguration(new ShelfProfilePreferenceConfiguration());
         modelBuilder.ApplyConfiguration(new CoffeeShopTagConfiguration());
         modelBuilder.ApplyConfiguration(new CoffeeDrinkDefinitionConfiguration());
         modelBuilder.ApplyConfiguration(new ShopMenuConfiguration());

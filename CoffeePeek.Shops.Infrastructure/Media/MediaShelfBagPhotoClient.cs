@@ -49,6 +49,22 @@ public class MediaShelfBagPhotoClient(IHttpClientFactory clients, IOptions<Gatew
             .SendAsync(request, HttpCompletionOption.ResponseHeadersRead, ct);
     }
 
+    /// <summary>Public profile delivery stays within the existing 1 MiB private-card policy and a five-second deadline.</summary>
+    public async Task<HttpResponseMessage> DownloadPublicAsync(Guid ownerId, Guid bagId, Guid photoId, CancellationToken ct)
+    {
+        using var request = Request(HttpMethod.Get, $"/internal/shelf-bag-photos/{bagId}/{photoId}", ownerId);
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        timeout.CancelAfter(TimeSpan.FromSeconds(5));
+        var response = await clients.CreateClient(MediaUploadedPhotoLookup.HttpClientName)
+            .SendAsync(request, HttpCompletionOption.ResponseHeadersRead, timeout.Token);
+        try
+        {
+            await response.Content.LoadIntoBufferAsync(1048576, timeout.Token);
+            return response;
+        }
+        catch { response.Dispose(); throw; }
+    }
+
     private HttpRequestMessage Request(HttpMethod method, string path, Guid userId)
     {
         var request = new HttpRequestMessage(method, path);
