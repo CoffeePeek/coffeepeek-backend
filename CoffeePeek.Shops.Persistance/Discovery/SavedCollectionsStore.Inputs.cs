@@ -18,7 +18,6 @@ public sealed partial class SavedCollectionsStore
         if (items == null) throw new DiscoveryException("Items are required.", 400, "INVALID_COLLECTION");
         var selected = new List<DiscoveryFavorite>();
         var seen = new HashSet<(string Kind, Guid Id)>();
-        var existingKeys = existing.Select(i => (i.Kind, i.EntityId)).ToHashSet();
         foreach (var item in items)
         {
             if (item == null) throw new DiscoveryException("Invalid place.", 400, "INVALID_COLLECTION");
@@ -27,22 +26,12 @@ public sealed partial class SavedCollectionsStore
                 throw new DiscoveryException("Select distinct available places.", 400, "INVALID_COLLECTION");
             selected.Add(new(owner, item.Kind, id));
         }
-        var additions = selected.Where(i => !existingKeys.Contains((i.Kind, i.EntityId))).ToArray();
-        if (additions.Length > 0) await EnsureFavoritesAsync(owner, additions, ct);
+        await EnsureVisibleAsync(selected.ToArray(), ct);
         return selected;
     }
 
-    private Task EnsureFavoriteAsync(Guid owner, string kind, Guid id, CancellationToken ct) =>
-        EnsureFavoritesAsync(owner, [new(owner, kind, id)], ct);
-
-    private async Task EnsureFavoritesAsync(Guid owner, DiscoveryFavorite[] items, CancellationToken ct)
+    private async Task EnsureVisibleAsync(DiscoveryFavorite[] items, CancellationToken ct)
     {
-        var ids = items.Select(i => i.EntityId).ToArray();
-        var favorites = await db.DiscoveryFavorites.AsNoTracking().Where(f => f.UserId == owner && ids.Contains(f.EntityId))
-            .Select(f => new { f.Kind, f.EntityId }).ToArrayAsync(ct);
-        var keys = favorites.Select(f => (f.Kind, f.EntityId)).ToHashSet();
-        if (items.Any(i => !keys.Contains((i.Kind, i.EntityId))))
-            throw new DiscoveryException("Place must be in your favorites.", 409, "COLLECTION_CHANGED");
         var visible = await DiscoveryFavoriteCards.ReadAsync(db, items, media, ct);
         if (visible.Length != items.Length) throw new DiscoveryException("Place is no longer available.", 409, "COLLECTION_CHANGED");
     }

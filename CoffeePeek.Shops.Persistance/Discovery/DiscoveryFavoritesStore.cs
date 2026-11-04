@@ -19,7 +19,15 @@ public sealed class DiscoveryFavoritesStore(ShopsDbContext db, IPublicAddressSer
     public async Task<DiscoveryFavoriteItem[]> ListAsync(Guid userId, CancellationToken ct)
     {
         var favorites = await db.DiscoveryFavorites.AsNoTracking().Where(f => f.UserId == userId).ToArrayAsync(ct);
-        var ordered = favorites.OrderByDescending(f => f.CreatedAtUtc).ThenBy(f => f.Kind).ThenBy(f => f.EntityId).ToArray();
+        var members = await (from c in db.SavedCollections.AsNoTracking()
+            join i in db.Set<SavedCollectionItem>().AsNoTracking() on c.Id equals i.CollectionId
+            where c.OwnerId == userId && c.RevokedAtUtc == null
+            select new { i.Kind, i.EntityId, c.CreatedAtUtc }).ToArrayAsync(ct);
+        var keys = favorites.Select(f => (f.Kind, f.EntityId)).ToHashSet();
+        var added = members.GroupBy(i => (i.Kind, i.EntityId)).Where(g => !keys.Contains(g.Key))
+            .Select(g => new DiscoveryFavorite(userId, g.Key.Kind, g.Key.EntityId, g.Min(i => i.CreatedAtUtc)));
+        var ordered = favorites.Concat(added).OrderByDescending(f => f.CreatedAtUtc)
+            .ThenBy(f => f.Kind).ThenBy(f => f.EntityId).ToArray();
         return await DiscoveryFavoriteCards.ReadAsync(db, ordered, media, ct);
     }
 
@@ -49,6 +57,28 @@ public sealed class DiscoveryFavoritesStore(ShopsDbContext db, IPublicAddressSer
             _ => id != Guid.Empty
         };
         if (!exists) throw new DiscoveryException("Public entity not found.", 404, "NOT_FOUND");
+        if (kind != "drink")
+        {
+            await SavedCollectionDefault.LockAsync(db, userId, ct);
+            if (favorite)
+            {
+                var collection = await SavedCollectionDefault.EnsureAsync(db, userId, ct);
+                if (collection.Visibility == "private" && !collection.Items.Any(i => i.Kind == kind && i.EntityId == id))
+                    collection.ReplaceItems(collection.Items.OrderBy(i => i.Position)
+                        .Select(i => new DiscoveryFavorite(userId, i.Kind, i.EntityId))
+                        .Append(new DiscoveryFavorite(userId, kind, id)));
+            }
+            else
+            {
+                var collections = await db.SavedCollections.Include(c => c.Items)
+                    .Where(c => c.OwnerId == userId && c.RevokedAtUtc == null &&
+                        c.Items.Any(i => i.Kind == kind && i.EntityId == id)).ToArrayAsync(ct);
+                foreach (var collection in collections)
+                    collection.ReplaceItems(collection.Items.OrderBy(i => i.Position)
+                        .Where(i => i.Kind != kind || i.EntityId != id)
+                        .Select(i => new DiscoveryFavorite(userId, i.Kind, i.EntityId)));
+            }
+        }
         var row = await db.DiscoveryFavorites.FindAsync([userId, kind, id], ct);
         if (favorite && row is null) db.DiscoveryFavorites.Add(new DiscoveryFavorite(userId, kind, id));
         if (!favorite && row is not null) db.DiscoveryFavorites.Remove(row);

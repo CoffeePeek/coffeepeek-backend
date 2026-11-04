@@ -30,6 +30,14 @@ public sealed class SavedCollectionsController(ISavedCollectionsStore collection
         return CreatedAtAction(nameof(Get), new { id = row.Id }, Response<SavedCollectionDto>.Success(row));
     }
 
+    [HttpPut("default")]
+    public async Task<IActionResult> EnsureDefault(CancellationToken ct)
+    {
+        var row = await bus.InvokeAsync<SavedCollectionDto>(new CreateSavedCollectionCommand(
+            user.GetUserIdOrThrow(), new CreateSavedCollectionRequest { Title = "Избранное", IsDefault = true }), ct);
+        return Ok(Response<SavedCollectionDto>.Success(row));
+    }
+
     [HttpPut("{id:guid}")]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateSavedCollectionRequest request, CancellationToken ct)
     {
@@ -47,7 +55,8 @@ public sealed class SavedCollectionsController(ISavedCollectionsStore collection
     [HttpPut("membership/{kind}/{slug}")]
     public async Task<IActionResult> SetMembership(string kind, string slug, [FromBody] SetSavedCollectionMembershipRequest request, CancellationToken ct) =>
         Ok(Response<SavedCollectionSummary[]>.Success(await bus.InvokeAsync<SavedCollectionSummary[]>(
-            new SetSavedCollectionMembershipCommand(user.GetUserIdOrThrow(), kind, slug, request.CollectionIds), ct)));
+            new SetSavedCollectionMembershipCommand(user.GetUserIdOrThrow(), kind, slug, request.CollectionIds,
+                request.AddedCollectionIds, request.RemovedCollectionIds), ct)));
 
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> Delete(Guid id, CancellationToken ct) =>

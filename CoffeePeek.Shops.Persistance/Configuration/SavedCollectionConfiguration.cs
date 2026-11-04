@@ -13,11 +13,13 @@ public sealed class SavedCollectionConfiguration : IEntityTypeConfiguration<Save
         entity.Ignore(c => c.Mode);
         entity.Property(c => c.Title).HasMaxLength(100).IsRequired();
         entity.Property(c => c.Visibility).HasMaxLength(20).HasDefaultValue("private").IsRequired();
+        entity.Property(c => c.IsDefault).HasDefaultValue(false).IsRequired();
         entity.Property(c => c.Description).HasMaxLength(1000);
         entity.Property(c => c.CoverStorageKey).HasMaxLength(255);
         entity.Property(c => c.CoverContentType).HasMaxLength(100);
         entity.Property(c => c.Revision).HasDefaultValue(1L).IsConcurrencyToken();
         entity.HasIndex(c => new { c.OwnerId, c.CreatedAtUtc });
+        entity.HasIndex(c => c.OwnerId).IsUnique().HasFilter("\"IsDefault\" = true AND \"RevokedAtUtc\" IS NULL");
         entity.ToTable(table => table.HasCheckConstraint("CK_SavedCollections_Visibility", "\"Visibility\" IN ('public', 'private')"));
         entity.HasMany(c => c.Items).WithOne().HasForeignKey(i => i.CollectionId).OnDelete(DeleteBehavior.Cascade);
     }

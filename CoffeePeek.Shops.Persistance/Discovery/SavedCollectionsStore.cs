@@ -68,12 +68,12 @@ public sealed partial class SavedCollectionsStore(ShopsDbContext db, IPublicAddr
         var featured = await FeaturedAsync(row.OwnerId, ct);
         return new(row.Id, row.Title, row.Description, row.Visibility, projection.CoverPhoto, row.Items.Count,
             row.Revision, featured.CollectionId == row.Id, row.Visibility == "public" ? projection.CanonicalPath : null,
-            row.CreatedAtUtc, row.UpdatedAtUtc, projection.Items);
+            row.CreatedAtUtc, row.UpdatedAtUtc, projection.Items, row.IsDefault);
     }
 
     private static SavedCollectionSummary Summary(SavedCollection row, Guid? featured, string? kind, Guid? target) =>
         new(row.Id, row.Title, row.Description, row.Visibility, CollectionCoverProjection.Read(row.Id, row.Visibility, row.CoverPhotoId), row.Items.Count, row.Revision,
             target.HasValue && row.Items.Any(i => i.Kind == kind && i.EntityId == target), featured == row.Id,
-            row.Visibility == "public" ? $"/collections/{row.Id:N}" : null);
+            row.Visibility == "public" ? $"/collections/{row.Id:N}" : null, row.IsDefault);
 
 }

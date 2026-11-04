@@ -2,6 +2,7 @@ using CoffeePeek.Contract.Dtos.Discovery;
 using CoffeePeek.Shops.Application.Features.Discovery;
 using CoffeePeek.Shops.Domain.Aggregates.CheckInAggregate;
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
+using CoffeePeek.Shops.Domain.Aggregates.DiscoveryAggregate;
 using CoffeePeek.Shops.Domain.Entities;
 using CoffeePeek.Shops.Persistance.Configuration;
 using Microsoft.EntityFrameworkCore;
@@ -14,6 +15,29 @@ public sealed class DiscoveryMapQueryTests
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
     private static ShopsDbContext Database() => new(new DbContextOptionsBuilder<ShopsDbContext>()
         .UseInMemoryDatabase(Guid.NewGuid().ToString()).Options);
+
+    [Fact]
+    public async Task PublicAndPrivateCollectionsBothDriveOwnerFavoriteCardAndPersonalFilters()
+    {
+        await using var db = Database();
+        var data = await SeedAsync(db, Ct);
+        db.DiscoveryFavorites.RemoveRange(db.DiscoveryFavorites.Where(f => f.UserId == data.UserId));
+        var collection = SavedCollection.CreateList(data.UserId, Guid.NewGuid(), "Places", null, "private",
+            favorites: [new(data.UserId, "coffee_shop", data.Matching.Id)]);
+        db.SavedCollections.Add(collection); await db.SaveChangesAsync(Ct);
+        var store = Store(db);
+        foreach (var visibility in new[] { "private", "public" })
+        {
+            var cards = await store.SearchShopsAsync(new() { PageSize = 100 }, data.UserId, Ct);
+            Assert.True(Assert.Single(cards.Items, c => c.Address.Slug == data.Matching.PublicSlug).IsFavorite);
+            await AssertParityAsync(store, new() { FavoritesOnly = true }, data.UserId, [data.Matching], Ct);
+            var foreign = await store.SearchShopsAsync(new() { PageSize = 100 }, Guid.NewGuid(), Ct);
+            Assert.False(Assert.Single(foreign.Items, c => c.Address.Slug == data.Matching.PublicSlug).IsFavorite);
+            collection.Edit("Places", null, visibility, null, false);
+            await db.SaveChangesAsync(Ct);
+        }
+        Assert.Equal(collection.Id, (await db.SavedCollections.SingleAsync(Ct)).Id);
+    }
 
     [Fact]
     public async Task EveryShopFilter_SelectsTheSameEligibleShopsForListAndMarkers()

@@ -2,7 +2,7 @@ using CoffeePeek.Shared.Kernel.Exceptions;
 
 namespace CoffeePeek.Shops.Domain.Aggregates.DiscoveryAggregate;
 
-/// <summary>Editable owner library. Global favorites and exported snapshots remain independent.</summary>
+/// <summary>Editable owner library. One owner collection can carry the stable default identity.</summary>
 public sealed class SavedCollection
 {
     public Guid Id { get; private set; }
@@ -10,6 +10,7 @@ public sealed class SavedCollection
     public string Title { get; private set; } = null!;
     public string Mode => "list";
     public string Visibility { get; private set; } = "private";
+    public bool IsDefault { get; private set; }
     public string? Description { get; private set; }
     public Guid? CoverPhotoId { get; private set; }
     public string? CoverStorageKey { get; private set; }
@@ -22,6 +23,8 @@ public sealed class SavedCollection
     private SavedCollection() { }
 
     public void Revoke() => RevokedAtUtc ??= DateTime.UtcNow;
+
+    public void MarkDefault() => IsDefault = true;
 
     public static SavedCollection CreateList(Guid ownerId, Guid id, string title, string? description, string visibility,
         SavedCollectionCover? cover = null, IEnumerable<DiscoveryFavorite>? favorites = null)
