@@ -1,10 +1,10 @@
 namespace CoffeePeek.Shops.Domain.Aggregates.ShelfAggregate;
 
-/// <summary>Explicit opt-in to displaying the current shelf on the owner's public profile.</summary>
+/// <summary>Controls the current shelf's public profile visibility; visible by default.</summary>
 public sealed class ShelfProfilePreference
 {
     public Guid OwnerId { get; private set; }
-    public bool IsVisible { get; private set; }
+    public bool IsVisible { get; private set; } = true;
     private ShelfProfilePreference() { }
     public ShelfProfilePreference(Guid ownerId) => OwnerId = ownerId;
     public void SetVisibility(bool isVisible) => IsVisible = isVisible;

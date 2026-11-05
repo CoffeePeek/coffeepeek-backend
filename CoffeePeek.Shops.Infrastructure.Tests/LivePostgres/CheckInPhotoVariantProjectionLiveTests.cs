@@ -47,7 +47,7 @@ public sealed class CheckInPhotoVariantProjectionLiveTests(ShopsLiveDatabase fix
             const int revision = 4;
             // Seed the historical schema without depending on columns added to the current EF model.
             await db.Database.ExecuteSqlInterpolatedAsync($"""
-                INSERT INTO "CanonicalCheckIns" ("Id", "UserId", "Username", "Note", "Kind", "PreparedOn",
+                INSERT INTO "CheckIns" ("Id", "UserId", "Username", "Note", "Kind", "PreparedOn",
                     "VisitedAt", "Visibility", "ContentRevision", "ApprovedRevision", "ModerationState",
                     "ModerationDecisionSequence", "HelpfulCount", "RowVersion", "CreatedAtUtc", "FirstPublishedAtUtc", "DrinkPhotoId")
                 VALUES ({checkInId}, {ownerId}, 'photo-author', '', 1, '2024-01-01', '2024-01-01T00:00:00Z',

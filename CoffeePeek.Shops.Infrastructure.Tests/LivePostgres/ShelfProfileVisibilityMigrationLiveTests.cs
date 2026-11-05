@@ -14,7 +14,7 @@ namespace CoffeePeek.Shops.Infrastructure.Tests.LivePostgres;
 public sealed class ShelfProfileVisibilityMigrationLiveTests
 {
     [Fact]
-    public async Task UpgradeKeepsExistingShelfPrivateAndPreferencesPersistAndRollbackPreservesBags()
+    public async Task UpgradeUsesPublicDefaultAndOptOutPersistsAndRollbackPreservesBags()
     {
         Assert.SkipUnless(LivePostgresServer.IsConfigured, LivePostgresServer.SkipReason);
         var ct = TestContext.Current.CancellationToken;
@@ -31,20 +31,20 @@ public sealed class ShelfProfileVisibilityMigrationLiveTests
             await db.Database.MigrateAsync(ct);
             Assert.False(db.Database.HasPendingModelChanges());
             var store = new ShelfProfileStore(db, Mock.Of<IShelfCatalogLookup>());
-            Assert.False((await store.VisibilityAsync(owner, ct)).IsVisible);
-            Assert.Null(await store.PublicAsync(owner, "author", ct));
+            Assert.True((await store.VisibilityAsync(owner, ct)).IsVisible);
+            Assert.Equal(bag.Id, Assert.Single((await store.PublicAsync(owner, "author", ct))!.Items).Id);
             await using (var transaction = await db.Database.BeginTransactionAsync(ct))
             {
-                await store.SetVisibilityAsync(owner, true, ct);
+                await store.SetVisibilityAsync(owner, false, ct);
                 await transaction.CommitAsync(ct);
             }
             db.ChangeTracker.Clear();
-            Assert.True((await store.VisibilityAsync(owner, ct)).IsVisible);
-            Assert.Equal(bag.Id, Assert.Single((await store.PublicAsync(owner, "author", ct))!.Items).Id);
+            Assert.False((await store.VisibilityAsync(owner, ct)).IsVisible);
+            Assert.Null(await store.PublicAsync(owner, "author", ct));
             await db.GetService<IMigrator>().MigrateAsync(previous, ct);
             Assert.Equal("Existing private coffee", (await db.ShelfBags.AsNoTracking().SingleAsync(ct)).Name);
             await db.Database.MigrateAsync(ct);
-            Assert.False((await store.VisibilityAsync(owner, ct)).IsVisible);
+            Assert.True((await store.VisibilityAsync(owner, ct)).IsVisible);
         }
         finally { await LivePostgresServer.DropDatabaseAsync(connection); }
     }

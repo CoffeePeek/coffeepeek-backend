@@ -1,4 +1,4 @@
-# Public profile shelf (opt-in)
+# Public profile shelf
 
 Shelf owns this preference and projection in Shops. Account remains the source
 of profile addresses and viewer visibility; no Account database reads or writes
@@ -7,7 +7,8 @@ were added. Existing `/api/v1/shelf` owner/archive/photo contracts are unchanged
 ## Owner preference
 
 Authenticated `GET /api/v1/shelf/profile-visibility` returns the normal envelope
-with `data: { "isVisible": false }` when no preference exists. Authenticated PUT
+with `data: { "isVisible": true }` when no preference exists. Shelves are public
+by default; an explicitly saved `false` hides the shelf. Authenticated PUT
 to the same route requires an explicit JSON boolean, including explicit `false`:
 
 ```json
@@ -46,7 +47,7 @@ Only active OnShelf bags are projected, in current shelf order. Photo-only bags
 have an empty string name; clients use their localized placeholder. Unknown or
 unpublished catalog slugs and absent/unsupported photos are null. No owner IDs,
 archive entries, rating/verdict, weight/date, private storage keys or owner-only
-URLs are serialized. The opt-in is checked again after catalog lookup.
+URLs are serialized. The visibility setting is checked again after catalog lookup.
 The controller then resolves the profile again and requires the same author ID;
 revoked access or a reassigned slug cannot deliver the previous author's cards.
 
@@ -61,7 +62,36 @@ Only matching JPEG/PNG/WebP MIME types are delivered. Responses use `no-store`,
 public cache is used. Caller cancellation propagates; unavailable/oversized or
 invalid Media responses fail before writing public bytes.
 
-## Migration and verification
+## Public-by-default rollout
+
+`DefaultShelfProfileVisibilityToPublic` changes the database column default to
+`true`. Missing preference rows also mean visible in application reads. The
+migration preserves stored values, including `false`; owners can still hide
+their shelf through the existing PUT endpoint.
+
+To publish **all existing shelves**, including those explicitly hidden, stop
+shelf writers, apply Shops migrations, then run once from the repository root:
+
+```bash
+bash dev/publish-all-shelves.sh
+```
+
+For the local development Compose environment use `--dev`. The production
+command uses `deploy/.env` and its PostgreSQL container; the local command uses
+`dev/docker-compose.dev.yml`. Both target only `cpshopsdb` and stop on SQL errors.
+The SQL can also be run directly with
+`psql -X -v ON_ERROR_STOP=1 -d cpshopsdb -f dev/publish-all-shelves.sql`.
+
+The script creates visible preferences for all existing bag owners and changes
+every stored hidden preference to visible, including owners with empty shelves.
+It uses one transaction and table write locks with a 30-second lock timeout,
+and reports the number of inserted or changed preferences. Repeating it without
+intervening changes reports zero; running it after someone hides their shelf
+publishes that shelf again. It is an explicit one-time operator action, not a
+step to add to every deployment. Start the updated Shops service afterwards.
+Archive entries and the private fields remain excluded from the public response.
+
+## Original opt-in rollout and verification (historical)
 
 `20261104065015_AddShelfProfileVisibility` adds only the independent
 `ShelfProfilePreferences` table with default `IsVisible=false`. Existing shelves

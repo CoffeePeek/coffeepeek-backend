@@ -2,7 +2,7 @@ using CoffeePeek.Shared.Kernel.Exceptions;
 
 namespace CoffeePeek.Shops.Domain.Aggregates.ShelfAggregate;
 
-/// <summary>One bag of coffee on a user's private shelf. Positions are maintained by <see cref="ShelfLineup"/>.</summary>
+/// <summary>One bag of coffee on a user's shelf. Positions are maintained by <see cref="ShelfLineup"/>.</summary>
 public sealed class ShelfBag
 {
     public const int MaxTextLength = 250;

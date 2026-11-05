@@ -3,6 +3,7 @@ using CoffeePeek.Shared.Kernel.Options;
 using CoffeePeek.Shared.Web.Geocoding;
 using CoffeePeek.Shops.Application.Abstractions;
 using CoffeePeek.Shops.Application.Features.CheckIn;
+using CoffeePeek.Shops.Infrastructure.AppDistribution;
 using CoffeePeek.Shops.Application.Services;
 using CoffeePeek.Shops.Infrastructure.Account;
 using CoffeePeek.Shops.Infrastructure.Consumers;
@@ -24,6 +25,7 @@ public static class DependencyInjection
     {
         services.AddYandexGeocoding();
         services.AddHostedService<CoffeePeek.Shops.Infrastructure.Observability.ShopsDurabilityMetrics>();
+        services.AddHostedService<AppDownloadRedirectRetentionService>();
         services.AddHttpClient("account-user-lookup", client =>
         {
             client.BaseAddress = new Uri($"http://{AppResources.AccountService}");

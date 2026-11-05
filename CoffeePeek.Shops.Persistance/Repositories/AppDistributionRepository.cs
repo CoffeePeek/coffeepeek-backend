@@ -53,6 +53,11 @@ public class AppDistributionRepository(ShopsDbContext dbContext) : IAppDistribut
     public Task<bool> HasRedirectEventAsync(Guid eventId, CancellationToken ct = default) =>
         dbContext.AppDownloadRedirectEvents.AsNoTracking().AnyAsync(x => x.Id == eventId, ct);
 
+    public Task<int> DeleteRedirectEventsBeforeAsync(DateTime cutoffUtc, CancellationToken ct = default) =>
+        dbContext.AppDownloadRedirectEvents
+            .Where(x => x.Timestamp < cutoffUtc)
+            .ExecuteDeleteAsync(ct);
+
     public void AddAuditLog(AppDistributionAuditLog auditLog) => dbContext.AppDistributionAuditLogs.Add(auditLog);
 
     public void AddRedirectEvent(AppDownloadRedirectEvent redirectEvent) =>

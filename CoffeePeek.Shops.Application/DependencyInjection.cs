@@ -1,5 +1,6 @@
 using CoffeePeek.Shops.Application.Mapper;
 using CoffeePeek.Shops.Application.Modules;
+using CoffeePeek.Shops.Application.Features.AppDownloads;
 using CoffeePeek.Shared.Kernel.Options;
 using Mapster;
 using MapsterMapper;
@@ -19,6 +20,11 @@ public static class DependencyInjection
 
         services.AddOptions<OpenAiOptions>()
             .BindConfiguration(nameof(OpenAiOptions))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
+        services.AddOptions<AppDownloadAnalyticsRetentionOptions>()
+            .BindConfiguration(nameof(AppDownloadAnalyticsRetentionOptions))
             .ValidateDataAnnotations()
             .ValidateOnStart();
 

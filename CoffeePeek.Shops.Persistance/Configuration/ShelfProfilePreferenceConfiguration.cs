@@ -10,6 +10,6 @@ public sealed class ShelfProfilePreferenceConfiguration : IEntityTypeConfigurati
     {
         entity.ToTable("ShelfProfilePreferences");
         entity.HasKey(p => p.OwnerId);
-        entity.Property(p => p.IsVisible).HasDefaultValue(false);
+        entity.Property(p => p.IsVisible).HasDefaultValue(true);
     }
 }

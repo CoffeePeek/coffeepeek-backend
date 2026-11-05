@@ -32,6 +32,7 @@
       <ProjectReference Include="..\CoffeePeek.Shops.Infrastructure\CoffeePeek.Shops.Infrastructure.csproj" />
       <ProjectReference Include="..\CoffeePeek.MediaService\CoffeePeek.MediaService.csproj" />
       <Content Include="../dev/imports/**/coffees.json" Link="CoffeeSnapshots/%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+      <Content Include="../dev/publish-all-shelves.sql" Link="publish-all-shelves.sql" CopyToOutputDirectory="PreserveNewest" />
     </ItemGroup>
 
 </Project>

@@ -71,13 +71,13 @@ public sealed class CheckInPhotoMigrationLiveTests : IClassFixture<CheckInPhotoM
             var sql = violation switch
             {
                 "owner" => "UPDATE \"ShopPhotos\" SET \"OwnerId\"='00000000-0000-0000-0000-000000000001' WHERE \"CanonicalCheckInId\" IS NOT NULL",
-                "gallery" => "UPDATE \"ShopPhotos\" SET \"CoffeeShopId\"=(SELECT \"ShopId\" FROM \"CanonicalCheckIns\" LIMIT 1) WHERE \"CanonicalCheckInId\" IS NOT NULL",
+                "gallery" => "UPDATE \"ShopPhotos\" SET \"CoffeeShopId\"=(SELECT \"ShopId\" FROM \"CheckIns\" LIMIT 1) WHERE \"CanonicalCheckInId\" IS NOT NULL",
                 "duplicate" => "UPDATE \"ShopPhotos\" SET \"StorageKey\"='duplicate' WHERE \"CanonicalCheckInId\" IS NOT NULL",
                 "metadata" => "UPDATE \"ShopPhotos\" SET \"SizeBytes\"=0 WHERE \"CanonicalCheckInId\" IS NOT NULL",
                 _ => """
                     INSERT INTO "ShopPhotos" ("Id", "FileName", "ContentType", "StorageKey", "SizeBytes", "OwnerId", "SortIndex", "CanonicalCheckInId", "CreatedAtUtc")
                     SELECT gen_random_uuid(), 'photo.jpg', 'image/jpeg', gen_random_uuid()::text, 42, c."UserId", n, c."Id", now()
-                    FROM "CanonicalCheckIns" c CROSS JOIN generate_series(0,5) n WHERE c."Id"=@visit
+                    FROM "CheckIns" c CROSS JOIN generate_series(0,5) n WHERE c."Id"=@visit
                     """
             };
             await db.Database.ExecuteSqlRawAsync(sql, [new NpgsqlParameter("visit", visitId)], ct);

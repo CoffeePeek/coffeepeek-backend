@@ -1,6 +1,6 @@
 # Client contract: coffee shelf
 
-The shelf is a signed-in user's private list of coffee bags at home. A bag is added from a scanned card image, stands on the shelf in a user-chosen order, and moves to the archive when it is finished. Every route requires `Authorization: Bearer <user JWT>` and acts on the caller's own shelf; nobody else can read it, and another owner's bag answers `404`.
+The shelf is a signed-in user's list of coffee bags at home. A bag is added from a scanned card image, stands on the shelf in a user-chosen order, and moves to the archive when it is finished. The owner routes below require `Authorization: Bearer <user JWT>` and act on the caller's own shelf; another owner's bag answers `404`. A limited projection of the current shelf is public in the user's profile by default. The archive and personal fields remain owner-only.
 
 Use the gateway base URL. Responses use the normal `Response<T>` envelope (`{ "isSuccess": true, "message": "Operation successful", "data": ... }`) and `Cache-Control: no-store`, except card bytes as described below. Shops owns shelf rows; Media owns the card image bytes.
 
@@ -17,6 +17,15 @@ Use the gateway base URL. Responses use the normal `Response<T>` envelope (`{ "i
 | `POST` | `/api/v1/shelf/bags/{id}/restore` | Return an archived bag to the shelf; `200` with `ShelfBagDto`. |
 | `DELETE` | `/api/v1/shelf/bags/{id}` | Delete a mistaken bag from the shelf or archive; `200` success envelope. |
 | `GET` | `/api/v1/shelf/bags/{id}/photos/{photoId}` | Owner-only card bytes (`private, max-age` up to 300 seconds, limited by token expiry). |
+| `GET` | `/api/v1/shelf/profile-visibility` | `200` with `{ isVisible }`; `true` if the owner has never saved a preference. |
+| `PUT` | `/api/v1/shelf/profile-visibility` | Save an explicit `{ "isVisible": true }` or `{ "isVisible": false }`; `200` with the saved preference. |
+
+Guests can read `GET /api/v1/profiles/{slug}/shelf` and its public photo URLs.
+Only active bags are shown, with `id`, `name`, `roasterName`, `coffeeSlug` and
+`photoUrl`. A hidden shelf returns `200` with `data: null`; an unavailable or
+inaccessible profile returns `404`. Weight, dates, ratings and archive entries
+are not public. See [profile shelf visibility](../profile-shelf-visibility.md)
+for the complete public contract and the one-time publication script.
 
 Card uploads use Media: `POST /api/Photos/shelf-bag` (see [Card image](#card-image)).
 
@@ -136,7 +145,7 @@ Media checks that the upload belongs to the caller, is fully uploaded, is unused
 
 ## Home check-ins from a bag
 
-A home check-in may name the bag it was brewed from with `shelfBagId` (see [home-check-ins-client.md](home-check-ins-client.md)). The check-in copies the bag's bean and roaster as snapshots at that moment; editing, finishing or deleting the bag later does not change existing check-ins. Clients list a bag's brews by `shelfBagId` from the author's home check-ins. The bag itself and its card stay private: an entry that shows the bag gets its own copy of the card, which follows the entry's visibility.
+A home check-in may name the bag it was brewed from with `shelfBagId` (see [home-check-ins-client.md](home-check-ins-client.md)). The check-in copies the bag's bean and roaster as snapshots at that moment; editing, finishing or deleting the bag later does not change existing check-ins. Clients list a bag's brews by `shelfBagId` from the author's home check-ins. An entry that shows the bag gets its own copy of the card, which follows the entry's visibility independently of the shelf's profile visibility.
 
 ## Errors
 
@@ -148,7 +157,7 @@ A home check-in may name the bag it was brewed from with `shelfBagId` (see [home
 | `409` | Stale order, finishing an archived bag, restoring a shelf bag, a full shelf, or an upload already attached elsewhere (including a retried create whose first attempt succeeded). |
 | `503` | Media is unavailable while a card is claimed; retry with the same upload. |
 
-Errors use the project's error envelope and never reveal another owner's shelf. Deleting an account deletes its shelf and makes its cards unreadable.
+Errors use the project's error envelope. Owner routes never reveal another owner's private shelf data. Deleting an account deletes its shelf and makes its cards unreadable.
 
 ## Mobile Sandbox
 

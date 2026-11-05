@@ -352,7 +352,7 @@ class Rollout:
               'public',c."DeletedAtUtc" IS NULL AND c."Visibility"=1 AND c."ModerationState"=2
                 AND c."ApprovedRevision"=c."ContentRevision" AND (c."Kind"=1 OR EXISTS
                   (SELECT 1 FROM "Shops" s WHERE s."Id"=c."ShopId" AND NOT s."IsHidden")))
-              FROM "CheckInPhotos" p LEFT JOIN "CanonicalCheckIns" c ON c."Id"=p."CanonicalCheckInId" AND p."OwnerId"=c."UserId"
+              FROM "CheckInPhotos" p LEFT JOIN "CheckIns" c ON c."Id"=p."CanonicalCheckInId" AND p."OwnerId"=c."UserId"
               LEFT JOIN "CheckInPhotoVariantManifests" m ON m."PhotoId"=p."Id" AND m."CheckInId"=c."Id"
                 AND m."SourceVersion"='{source}' AND m."RecipeVersion"={recipe}
                 AND NOT EXISTS(SELECT 1 FROM "CheckInPhotoVariantManifests" newer WHERE newer."PhotoId"=m."PhotoId"

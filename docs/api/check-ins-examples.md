@@ -68,7 +68,7 @@ Physical cleanup of abandoned reservations is outside this change.
 
 Deploy MediaService first, apply Shops migration `20261012082218_CheckInDrinkPhoto`,
 then deploy all ShopsService instances before releasing the mobile client. The
-migration only adds nullable `CanonicalCheckIns.DrinkPhotoId`; old rows need no
+migration only adds nullable `CheckIns.DrinkPhotoId`; old rows need no
 backfill. Do not roll back that column after cutouts have been written: old code
 would treat them as gallery photos. No Media or Moderation schema change is needed.
 MediaService includes SkiaSharp and its Linux native assets for bounded PNG decoding.

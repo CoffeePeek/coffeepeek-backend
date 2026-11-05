@@ -22,7 +22,7 @@ public sealed class CheckInPhotoVariantProjection(ShopsDbContext db) : ICheckInP
         await db.Database.ExecuteSqlInterpolatedAsync($"""
             INSERT INTO "CheckInPhotoVariantManifests" ("PhotoId", "CheckInId", "SourceVersion", "RecipeVersion", "VariantsJson")
             SELECT p."Id", c."Id", {message.SourceVersion}, {message.RecipeVersion}, CAST({json} AS jsonb)
-            FROM "CheckInPhotos" p JOIN "CanonicalCheckIns" c ON c."Id" = p."CanonicalCheckInId"
+            FROM "CheckInPhotos" p JOIN "CheckIns" c ON c."Id" = p."CanonicalCheckInId"
             WHERE p."Id" = {message.PhotoId} AND p."StorageKey" = {key}
               AND c."Id" = {message.CheckInId} AND c."UserId" = {message.OwnerId} AND c."DeletedAtUtc" IS NULL
             ON CONFLICT ("PhotoId", "SourceVersion", "RecipeVersion") DO NOTHING

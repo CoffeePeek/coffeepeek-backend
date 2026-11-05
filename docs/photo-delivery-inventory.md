@@ -4,7 +4,7 @@ Read-only инвентаризация из PR 15 [общего плана](phot
 
 ## Границы данных
 
-Community читает собственные `CanonicalCheckIns` / `CheckInPhotos`. `ShopPhotos`, legacy bridge и галереи не становятся источником привязок. Внутренний `POST /internal/check-in-photo-backfill/candidates` возвращает до 100 привязок с keyset cursor `(SortAtUtc, CheckInId, PhotoId)` по убыванию. Cutoff `BeforeUtc` фиксируется для прохода; `RecentSinceUtc` отделяет последние публикации. Фазы: `RecentPublicShop` → `OtherShop` → `Home` → `PublicShopArchive`. Public означает действующий approved revision и видимую кофейню, как в обычном Community public query.
+Community читает собственные `CheckIns` / `CheckInPhotos`. `ShopPhotos`, legacy bridge и галереи не становятся источником привязок. Внутренний `POST /internal/check-in-photo-backfill/candidates` возвращает до 100 привязок с keyset cursor `(SortAtUtc, CheckInId, PhotoId)` по убыванию. Cutoff `BeforeUtc` фиксируется для прохода; `RecentSinceUtc` отделяет последние публикации. Фазы: `RecentPublicShop` → `OtherShop` → `Home` → `PublicShopArchive`. Public означает действующий approved revision и видимую кофейню, как в обычном Community public query.
 
 Это наблюдение живых данных, не snapshot и не delta stream. Поздняя транзакция или смена видимости могут переместить фото между фазами. SQLite checkpoint исключает повторный подсчёт PhotoId, отдельно считает повторные наблюдения и изменённые source versions. Для сверки после завершения нужен новый полный проход с новым checkpoint, без старого cursor. Идентификаторы хранятся на диске; память не растёт с размером архива.
 

@@ -41,13 +41,15 @@ public sealed partial class DiscoveryHttpContractTests
     {
         var ct = TestContext.Current.CancellationToken; var owner = Guid.NewGuid();
         Authenticate(owner, RoleConsts.User);
-        shelfProfiles.Setup(s => s.VisibilityAsync(owner, It.IsAny<CancellationToken>())).ReturnsAsync(new ShelfProfileVisibilityDto(false));
+        shelfProfiles.Setup(s => s.VisibilityAsync(owner, It.IsAny<CancellationToken>())).ReturnsAsync(new ShelfProfileVisibilityDto(true));
         shelfProfiles.Setup(s => s.SetVisibilityAsync(owner, visible, It.IsAny<CancellationToken>())).ReturnsAsync(new ShelfProfileVisibilityDto(visible));
         bus.Setup(b => b.InvokeAsync<ShelfProfileVisibilityDto>(It.IsAny<SetShelfProfileVisibilityCommand>(), It.IsAny<CancellationToken>(), It.IsAny<TimeSpan?>()))
             .Returns((object command, CancellationToken token, TimeSpan? _) => SetShelfProfileVisibilityHandler.Handle((SetShelfProfileVisibilityCommand)command, shelfProfiles.Object, token));
         using var read = await client.GetAsync("/api/v1/shelf/profile-visibility", ct);
         Assert.Equal(HttpStatusCode.OK, read.StatusCode);
         Assert.Contains("no-store", read.Headers.CacheControl!.ToString());
+        using var initial = JsonDocument.Parse(await read.Content.ReadAsStringAsync(ct));
+        Assert.True(initial.RootElement.GetProperty("data").GetProperty("isVisible").GetBoolean());
         using var response = await client.PutAsync("/api/v1/shelf/profile-visibility", Content($"{{\"isVisible\":{visible.ToString().ToLowerInvariant()}}}"), ct);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync(ct));

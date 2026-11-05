@@ -55,8 +55,9 @@ public sealed class ShelfProfileStore(ShopsDbContext db, IShelfCatalogLookup cat
         await db.SaveChangesAsync(ct);
     }
 
-    private Task<bool> VisibleAsync(Guid owner, CancellationToken ct) =>
-        db.ShelfProfilePreferences.AsNoTracking().AnyAsync(p => p.OwnerId == owner && p.IsVisible, ct);
+    private async Task<bool> VisibleAsync(Guid owner, CancellationToken ct) =>
+        await db.ShelfProfilePreferences.AsNoTracking().Where(p => p.OwnerId == owner)
+            .Select(p => (bool?)p.IsVisible).SingleOrDefaultAsync(ct) ?? true;
 
     private Task LockOwnerAsync(Guid owner, CancellationToken ct) => db.Database.IsNpgsql()
         ? db.Database.ExecuteSqlInterpolatedAsync($"SELECT pg_advisory_xact_lock(hashtextextended({"shelf:" + owner}, 0))", ct)

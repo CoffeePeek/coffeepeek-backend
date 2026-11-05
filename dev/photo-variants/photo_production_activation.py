@@ -345,7 +345,7 @@ class Activation:
           'public', TRUE, 'checkInId', c."Id", 'photoId', p."Id", 'ownerId', c."UserId",
           'storageKey', p."StorageKey", 'sourceVersion', m."SourceVersion", 'recipeVersion', m."RecipeVersion",
           'variants', m."VariantsJson")
-          FROM "CanonicalCheckIns" c JOIN "CheckInPhotos" p ON p."CanonicalCheckInId"=c."Id" AND p."OwnerId"=c."UserId"
+          FROM "CheckIns" c JOIN "CheckInPhotos" p ON p."CanonicalCheckInId"=c."Id" AND p."OwnerId"=c."UserId"
           JOIN "CheckInPhotoVariantManifests" m ON m."PhotoId"=p."Id" AND m."CheckInId"=c."Id"
           WHERE c."DeletedAtUtc" IS NULL AND c."Visibility"=1 AND c."ModerationState"=2
             AND c."ApprovedRevision"=c."ContentRevision" AND c."UserId"<>'{user_id}'::uuid

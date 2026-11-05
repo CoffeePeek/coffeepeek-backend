@@ -108,12 +108,16 @@ public class ShelfContractTests
             method => Assert.True(method.GetCustomAttribute<ResponseCacheAttribute>()?.NoStore));
         Assert.DoesNotContain(type.GetMethods(), m => m.GetCustomAttribute<AllowAnonymousAttribute>() != null);
 
-        var routes = type.GetMethods().SelectMany(m => m.GetCustomAttributes<HttpMethodAttribute>()
-                .Select(a => $"{a.HttpMethods.Single()} /api/v1/shelf{(string.IsNullOrEmpty(a.Template) ? "" : "/" + a.Template)}"))
+        var visibilityType = typeof(ShelfProfileVisibilityController);
+        Assert.NotNull(visibilityType.GetCustomAttribute<AuthorizeAttribute>());
+        Assert.True(visibilityType.GetCustomAttribute<ResponseCacheAttribute>()?.NoStore);
+        var routes = new[] { type, visibilityType }.SelectMany(controller => controller.GetMethods()
+                .SelectMany(m => m.GetCustomAttributes<HttpMethodAttribute>()
+                    .Select(a => $"{a.HttpMethods.Single()} /{controller.GetCustomAttribute<RouteAttribute>()!.Template}{(string.IsNullOrEmpty(a.Template) ? "" : "/" + a.Template)}")))
             .Select(r => r.Replace(":guid", "")).OrderBy(r => r).ToArray();
         var documented = Regex.Matches(Doc(), @"^\| `(GET|POST|PUT|DELETE)` \| `([^`?]+)", RegexOptions.Multiline)
             .Select(m => $"{m.Groups[1].Value} {m.Groups[2].Value}").OrderBy(r => r).ToArray();
-        Assert.Equal(9, documented.Length);
+        Assert.Equal(11, documented.Length);
         Assert.Equal(documented, routes);
 
         using var config = JsonDocument.Parse(File.ReadAllText(Path.Combine(Root, "CoffeePeek.Gateway/appsettings.json")));

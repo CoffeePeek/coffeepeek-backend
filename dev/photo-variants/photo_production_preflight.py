@@ -14,7 +14,7 @@ import urllib.request
 SERVICES = ("postgres", "redis", "rabbitmq", "minio", "minio-init", "checkin-renderer",
             "account", "shops", "moderation", "media", "gateway", "caddy")
 DATABASES = ("cpaccountdb", "cpshopsdb", "cpmoderationdb", "cpmediadb")
-TABLES = ("__EFMigrationsHistory", "Users", "CanonicalCheckIns", "CheckInPhotos", "ShopPhotos", "Shops",
+TABLES = ("__EFMigrationsHistory", "Users", "CheckIns", "CheckInPhotos", "ShopPhotos", "Shops",
           "CheckInPhotoVariantManifests", "Photos", "PhotoVariantJobs", "PhotoVariants",
           "PhotoVariantArtifacts", "CheckInPhotoTombstones", "PhotoBackfillRuns")
 COLUMNS = ("Id", "StorageKey", "OwnerId", "CheckInId", "BucketType", "Status", "ShopAttachmentId", "Priority",
@@ -248,12 +248,12 @@ def count_queries(database, schema):
             if schema["tables"].get(table):
                 queries[table] = f'''SELECT json_build_object('total', count(*)) FROM "{table}";'''
     if database == "cpshopsdb":
-        if has(schema, "CanonicalCheckIns", "CreatedAtUtc", "DeletedAtUtc", "Kind", "Visibility", "ModerationState", "ApprovedRevision", "ContentRevision"):
+        if has(schema, "CheckIns", "CreatedAtUtc", "DeletedAtUtc", "Kind", "Visibility", "ModerationState", "ApprovedRevision", "ContentRevision"):
             queries["checkIns"] = '''SELECT json_build_object('total', count(*), 'active', count(*) FILTER (WHERE "DeletedAtUtc" IS NULL),
               'home', count(*) FILTER (WHERE "DeletedAtUtc" IS NULL AND "Kind"=1),
               'shop', count(*) FILTER (WHERE "DeletedAtUtc" IS NULL AND "Kind"=0),
               'approvedPublicBusinessState', count(*) FILTER (WHERE "DeletedAtUtc" IS NULL AND "Visibility"=1 AND "ModerationState"=2 AND "ApprovedRevision"="ContentRevision"),
-              'recent30Days', count(*) FILTER (WHERE "CreatedAtUtc" >= now() - interval '30 days')) FROM "CanonicalCheckIns";'''
+              'recent30Days', count(*) FILTER (WHERE "CreatedAtUtc" >= now() - interval '30 days')) FROM "CheckIns";'''
         if has(schema, "CheckInPhotos", "CreatedAtUtc"):
             queries["checkInPhotos"] = '''SELECT json_build_object('total', count(*), 'recent30Days', count(*) FILTER
               (WHERE "CreatedAtUtc" >= now() - interval '30 days')) FROM "CheckInPhotos";'''

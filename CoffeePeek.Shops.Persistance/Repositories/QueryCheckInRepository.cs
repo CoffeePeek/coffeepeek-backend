@@ -16,7 +16,7 @@ public class QueryCheckInRepository(ShopsDbContext dbContext) : IQueryCheckInRep
     {
         // Serialize eligibility and votes with edit/delete/moderation on the SAME canonical row.
         // The unique vote key still makes duplicate requests idempotent.
-        await dbContext.Database.ExecuteSqlInterpolatedAsync($"SELECT 1 FROM \"CanonicalCheckIns\" WHERE \"Id\" = {id} FOR UPDATE", ct);
+        await dbContext.Database.ExecuteSqlInterpolatedAsync($"SELECT 1 FROM \"CheckIns\" WHERE \"Id\" = {id} FOR UPDATE", ct);
         var eligible = await Queries.CheckInEligibility.Public(dbContext).AnyAsync(c => c.Id == id, ct);
         if (!eligible) throw new CoffeePeek.Shared.Kernel.Exceptions.NotFoundException("Check-in not found.");
         var changed = helpful
@@ -24,13 +24,13 @@ public class QueryCheckInRepository(ShopsDbContext dbContext) : IQueryCheckInRep
                 WITH inserted AS (
                     INSERT INTO "CheckInHelpfulVotes" ("CheckInId", "UserId", "CreatedAtUtc") VALUES ({id}, {userId}, {DateTime.UtcNow})
                     ON CONFLICT ("CheckInId", "UserId") DO NOTHING RETURNING "CheckInId"
-                ) UPDATE "CanonicalCheckIns" SET "HelpfulCount" = "HelpfulCount" + 1, "RowVersion" = {Guid.NewGuid()}
+                ) UPDATE "CheckIns" SET "HelpfulCount" = "HelpfulCount" + 1, "RowVersion" = {Guid.NewGuid()}
                   WHERE "Id" = {id} AND EXISTS (SELECT 1 FROM inserted)
                 """, ct)
             : await dbContext.Database.ExecuteSqlInterpolatedAsync($"""
                 WITH deleted AS (
                     DELETE FROM "CheckInHelpfulVotes" WHERE "CheckInId" = {id} AND "UserId" = {userId} RETURNING "CheckInId"
-                ) UPDATE "CanonicalCheckIns" SET "HelpfulCount" = GREATEST("HelpfulCount" - 1, 0), "RowVersion" = {Guid.NewGuid()}
+                ) UPDATE "CheckIns" SET "HelpfulCount" = GREATEST("HelpfulCount" - 1, 0), "RowVersion" = {Guid.NewGuid()}
                   WHERE "Id" = {id} AND EXISTS (SELECT 1 FROM deleted)
                 """, ct);
         var count = await _repository.AsNoTracking().Where(c => c.Id == id).Select(c => c.HelpfulCount).SingleAsync(ct);

@@ -9,6 +9,7 @@ public interface IAppDistributionRepository
     Task<AndroidRelease[]> GetAndroidReleasesAsync(CancellationToken ct = default);
     Task<AndroidRelease[]> GetPublishedAndroidReleasesAsync(CancellationToken ct = default);
     Task<bool> HasRedirectEventAsync(Guid eventId, CancellationToken ct = default);
+    Task<int> DeleteRedirectEventsBeforeAsync(DateTime cutoffUtc, CancellationToken ct = default);
     void AddAndroidRelease(AndroidRelease release);
     void AddAuditLog(AppDistributionAuditLog auditLog);
     void AddRedirectEvent(AppDownloadRedirectEvent redirectEvent);

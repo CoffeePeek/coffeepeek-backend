@@ -24,7 +24,7 @@ public class AdditiveCanonicalSchemaTests
         Assert.DoesNotContain("DROP TABLE", script);
         Assert.DoesNotContain("DROP COLUMN", script);
         Assert.DoesNotContain("RENAME", script);
-        Assert.Equal("CanonicalCheckIns", db.Model.FindEntityType(typeof(CheckIn))!.GetTableName());
+        Assert.Equal("CheckIns", db.Model.FindEntityType(typeof(CheckIn))!.GetTableName());
         Assert.Contains(db.Model.FindEntityType(typeof(ShopPhoto))!.GetForeignKeys(),
             fk => fk.PrincipalEntityType.ClrType == typeof(CheckIn) && fk.Properties.Single().Name == "CanonicalCheckInId");
     }
