@@ -44,7 +44,7 @@ public sealed class CheckInPhotoMigrationDatabase : LiveDatabase<ShopsDbContext>
         // Historical rows must not depend on columns added to the current EF model.
         foreach (var row in new[] { visit, deleted })
             await db.Database.ExecuteSqlInterpolatedAsync($"""
-                INSERT INTO "CheckIns" ("Id", "UserId", "ShopId", "Username", "Note", "VisitedAt",
+                INSERT INTO "CanonicalCheckIns" ("Id", "UserId", "ShopId", "Username", "Note", "VisitedAt",
                     "Visibility", "ContentRevision", "ApprovedRevision", "ModerationState", "ModerationSubmissionId",
                     "ModerationDecisionSequence", "DeletedAtUtc", "HelpfulCount", "FirstPublishedAtUtc", "RowVersion",
                     "Rating_Place", "Rating_Service", "Rating_Coffee", "Rating_AverageRating", "CreatedAtUtc", "UpdatedAtUtc")
