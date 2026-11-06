@@ -39,6 +39,7 @@ public sealed class BusinessOwnershipMigrationLiveTests
             Assert.True(JsonNode.DeepEquals(JsonNode.Parse(before), JsonNode.Parse(await ArchiveAsync(db, ct))));
             var shop = await db.Shops.AsNoTracking().Include(s => s.ShopPhotos).SingleAsync(s => s.Id == ShopId, ct);
             Assert.Equal(OwnerId, shop.OwnerUserId);
+            Assert.False(shop.IsNew);
             Assert.Equal(37, shop.ProfileRevision);
             Assert.Equal("Historical shop", shop.Name);
             Assert.Equal("Shop profile before ownership requests", shop.Description);
@@ -109,7 +110,7 @@ public sealed class BusinessOwnershipMigrationLiveTests
 
     private static Task<string> ArchiveAsync(ShopsDbContext db, CancellationToken ct) => db.Database.SqlQueryRaw<string>("""
         SELECT jsonb_build_object(
-            'shops', (SELECT jsonb_agg(to_jsonb(s) ORDER BY s."Id") FROM "Shops" s),
+            'shops', (SELECT jsonb_agg(to_jsonb(s)-'IsNew' ORDER BY s."Id") FROM "Shops" s),
             'roasters', (SELECT jsonb_agg(to_jsonb(r)-'OwnerUserId'-'ProfileRevision' ORDER BY r."Id") FROM "Roasters" r),
             'shopPhotos', (SELECT jsonb_agg(to_jsonb(p) ORDER BY p."Id") FROM "ShopPhotos" p),
             'roasterPhotos', (SELECT jsonb_agg(to_jsonb(p) ORDER BY p."Id") FROM "RoasterPhotos" p))::text AS "Value"
