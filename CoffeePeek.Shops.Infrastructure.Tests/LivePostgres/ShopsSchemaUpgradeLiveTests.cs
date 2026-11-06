@@ -120,7 +120,7 @@ public sealed class ShopsSchemaUpgradeLiveTests
     private static Task<string> ArchiveAsync(ShopsDbContext db, CancellationToken ct) => db.Database.SqlQueryRaw<string>("""
         SELECT jsonb_build_object(
             'cities',(SELECT jsonb_agg(to_jsonb(c) ORDER BY c."Id") FROM "Cities" c),
-            'shops',(SELECT jsonb_agg(to_jsonb(s)-'ProfileRevision' ORDER BY s."Id") FROM "Shops" s),
+            'shops',(SELECT jsonb_agg(to_jsonb(s)-'ProfileRevision'-'IsNew' ORDER BY s."Id") FROM "Shops" s),
             'equipment',(SELECT jsonb_agg(to_jsonb(e) ORDER BY e."Id") FROM "Equipments" e),
             'assignments',(SELECT jsonb_agg(to_jsonb(a)-'CategoryId'-'IsPrimary' ORDER BY a."CoffeeShopId",a."EquipmentId") FROM "CoffeeShopEquipments" a),
             'menus',(SELECT jsonb_agg(to_jsonb(m) ORDER BY m."Id") FROM "ShopMenus" m),
