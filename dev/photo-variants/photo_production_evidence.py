@@ -19,7 +19,7 @@ import photo_production_canary as canary
 OPERATIONS = {"evidence-before", "evidence-after"}
 MARKER = "coffeepeek-photo-production-evidence-v1"
 MAX_ROWS = 4000
-TABLES = ("CheckIns", "CheckInPhotos")
+TABLES = ("CanonicalCheckIns", "CheckInPhotos")
 STAT_SERVICES = ("checkin-renderer", "media", "gateway")
 JOB_STATES = {"Pending", "Processing", "Ready", "RetryScheduled", "Failed", "Cancelled"}
 LATENCY_FIELDS = ("samples", "below1Second", "from1To10Seconds", "from10To60Seconds", "atLeast60Seconds",
@@ -99,7 +99,7 @@ class Evidence:
         # A single SELECT gives both tables the same PostgreSQL statement snapshot.
         exclusion = "'" + canary.identity(excluded) + "'::uuid" if excluded else "NULL::uuid"
         parts = []
-        for table, parent in (("CheckIns", "Id"), ("CheckInPhotos", "CanonicalCheckInId")):
+        for table, parent in (("CanonicalCheckIns", "Id"), ("CheckInPhotos", "CanonicalCheckInId")):
             parts.append(f''''{table}', COALESCE((SELECT json_agg(json_build_object(
               'id', bounded."Id", 'fingerprint', md5(to_jsonb(bounded)::text)))
               FROM (SELECT * FROM "{table}" WHERE {exclusion} IS NULL OR "{parent}"<>{exclusion}
