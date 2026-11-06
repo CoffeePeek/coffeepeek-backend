@@ -85,7 +85,7 @@ public sealed class SavedCollectionsMigrationLiveTests
             await db.GetService<IMigrator>().MigrateAsync(Previous, Ct);
             Assert.Equal(key, await SnapshotPrimaryKeyAsync(db));
             Assert.True(JsonNode.DeepEquals(JsonNode.Parse(before), JsonNode.Parse(await ArchiveAsync(db))));
-            Assert.Equal(snapshot.Id, (await snapshots.GetAsync(snapshot.Id, Ct))!.Id);
+            Assert.Equal(snapshot.Id, (await db.FavoriteCollections.AsNoTracking().SingleAsync(Ct)).Id);
         }
         finally { await LivePostgresServer.DropDatabaseAsync(connection); }
     }
