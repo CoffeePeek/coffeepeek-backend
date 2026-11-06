@@ -25,18 +25,22 @@ public sealed class CheckInPhotoMigrationDatabase : LiveDatabase<ShopsDbContext>
 
     internal static async Task SeedAsync(ShopsDbContext db, Guid visitId, CancellationToken ct)
     {
-        var city = new City("photo-upgrade-" + Guid.NewGuid().ToString("N"));
-        var shop = ShopsLiveDatabase.NewShop("photo-upgrade", city.Id);
-        var visit = CheckIn.CreateUnified(Guid.NewGuid(), shop.Id, "author", "approved",
+        var cityId = Guid.NewGuid();
+        var shopId = Guid.NewGuid();
+        var createdAtUtc = DateTime.UtcNow;
+        await db.Database.ExecuteSqlInterpolatedAsync($"""
+            INSERT INTO "Cities" ("Id", "Name", "Slug", "SlugRevision", "CreatedAtUtc")
+            VALUES ({cityId}, {"photo-upgrade-" + Guid.NewGuid().ToString("N")}, NULL, 0, {createdAtUtc});
+            INSERT INTO "Shops" ("Id", "Name", "Description", "PriceRange", "Status", "IsHidden", "Slug", "SlugRevision",
+                "ProfileRevision", "CreatorId", "ModerationId", "DataCompletenessScore", "CreatedAtUtc", "CityId", "Address", "IsAddressValidated")
+            VALUES ({shopId}, 'photo-upgrade', NULL, 1, 0, false, NULL, 0, 0, NULL, NULL, 0, {createdAtUtc}, {cityId}, 'photo-upgrade address', false);
+            """, ct);
+        var visit = CheckIn.CreateUnified(Guid.NewGuid(), shopId, "author", "approved",
             Rating.Create(4, 4, 4), DateTime.UtcNow.AddDays(-1), CheckInVisibility.Public, visitId);
-        Assert.True(visit.ApplyModerationDecision(1, Guid.NewGuid(), 1, CheckInModerationState.Approved, null, DateTime.UtcNow));
-        var deleted = CheckIn.CreateUnified(visit.UserId, shop.Id, "author", "deleted",
+        Assert.True(visit.ApplyModerationDecision(1, Guid.NewGuid(), 1, CheckInModerationState.Approved, null, createdAtUtc));
+        var deleted = CheckIn.CreateUnified(visit.UserId, shopId, "author", "deleted",
             Rating.Create(3, 3, 3), DateTime.UtcNow.AddDays(-2));
         deleted.Delete();
-        shop.AddPhotos([new ShopPhoto("gallery.jpg", "image/jpeg", "shops/gallery", 42, Guid.NewGuid())]);
-        db.Cities.Add(city);
-        db.Shops.Add(shop);
-        await db.SaveChangesAsync(ct);
         // Historical rows must not depend on columns added to the current EF model.
         foreach (var row in new[] { visit, deleted })
             await db.Database.ExecuteSqlInterpolatedAsync($"""
