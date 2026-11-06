@@ -14,7 +14,8 @@ public record UpdateAdminCoffeeShopCommand(
     ShopLocationPatch? Location,
     ShopContactsPatch? Contacts,
     IReadOnlyList<ScheduleDto>? Schedules,
-    ShopCatalogsPatch? Catalogs)
+    ShopCatalogsPatch? Catalogs,
+    bool? IsNew = null)
 {
     public long? ExpectedRevision { get; init; }
 }

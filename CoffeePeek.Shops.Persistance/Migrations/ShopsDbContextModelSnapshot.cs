@@ -1665,6 +1665,11 @@ namespace CoffeePeek.Shops.Persistance.Migrations
                     b.Property<bool>("IsHidden")
                         .HasColumnType("boolean");
 
+                    b.Property<bool>("IsNew")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
                     b.Property<Guid?>("ModerationId")
                         .HasColumnType("uuid");
 

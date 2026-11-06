@@ -129,7 +129,8 @@ public class UpdateAdminCoffeeShopHandlerTests
                         new ShopScheduleIntervalDto { OpenTime = TimeSpan.FromHours(8), CloseTime = TimeSpan.FromHours(18) }
                     ])
                 ],
-                new ShopCatalogsPatch([equipment.Id], [], [], [])),
+                new ShopCatalogsPatch([equipment.Id], [], [], []),
+                IsNew: true),
             _shops.Object, _cities.Object, _equipment.Object, _beans.Object, _roasters.Object, _brew.Object,
             _bus.Object, _media, geocoder.Object, _ct);
 
@@ -143,6 +144,8 @@ public class UpdateAdminCoffeeShopHandlerTests
         result.Data!.Location!.Address.Should().Be("Немига 5");
         result.Data.Contacts!.PhoneNumber.Should().Be("+375291112233");
         result.Data.TagIds.Should().ContainSingle().Which.Should().Be(tagId);
+        shop.IsNew.Should().BeTrue();
+        result.Data.IsNew.Should().BeTrue();
         _bus.Verify(b => b.PublishAsync(It.Is<ShopProfileCacheInvalidationRequested>(e => e.ShopId == shop.Id)), Times.Once);
         _uow.Verify(u => u.SaveChangesAsync(_ct), Times.Never);
         _cache.VerifyNoOtherCalls();

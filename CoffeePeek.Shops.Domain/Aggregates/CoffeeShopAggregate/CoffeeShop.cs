@@ -85,7 +85,8 @@ public sealed class CoffeeShop : Entity<Guid>, IPublicSlugOwner
 
     #region Domain Logic
 
-    public bool IsNew => CreatedAtUtc > DateTime.UtcNow.AddDays(-BusinessConstants.ItNewEntityInDays);
+    /// <summary>Moderation-controlled label shown for newly added coffee shops.</summary>
+    public bool IsNew { get; private set; }
     public bool? IsOpen => IsOpenAtUtc(DateTime.UtcNow);
 
     /// <summary>
@@ -171,6 +172,11 @@ public sealed class CoffeeShop : Entity<Guid>, IPublicSlugOwner
     public void SetHidden(bool hidden)
     {
         IsHidden = hidden;
+    }
+
+    public void SetNew(bool isNew)
+    {
+        IsNew = isNew;
     }
 
     public void AssignOwner(Guid? ownerUserId)

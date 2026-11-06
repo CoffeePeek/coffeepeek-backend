@@ -39,7 +39,6 @@ public static class BusinessConstants
 
     #region CoffeeShop
 
-    public const int ItNewEntityInDays = 30;
 
     public const int MaxCoffeeShopNameLength = 100;
     public const int MaxCoffeeShopDescriptionLength = 500;

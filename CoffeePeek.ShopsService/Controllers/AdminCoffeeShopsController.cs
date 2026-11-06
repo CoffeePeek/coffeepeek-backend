@@ -102,7 +102,8 @@ public class AdminCoffeeShopsController(IMessageBus bus, IUserContext userContex
                     request.Catalogs.EquipmentIds,
                     request.Catalogs.BeanIds,
                     request.Catalogs.RoasterIds,
-                    request.Catalogs.BrewMethodIds))
+                    request.Catalogs.BrewMethodIds),
+            request.IsNew)
         {
             ExpectedRevision = expectedRevision
         };

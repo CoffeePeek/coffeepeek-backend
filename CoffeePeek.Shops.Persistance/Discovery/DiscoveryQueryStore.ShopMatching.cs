@@ -2,7 +2,6 @@ using CoffeePeek.Shops.Persistance.Queries;
 using CoffeePeek.Contract.Dtos.Discovery;
 using CoffeePeek.Shops.Application.Features.Discovery;
 using CoffeePeek.Shops.Application.PublicAddresses;
-using CoffeePeek.Shops.Domain;
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
 using CoffeePeek.Shops.Domain.Aggregates.MenuAggregate;
 using Microsoft.EntityFrameworkCore;
@@ -77,10 +76,7 @@ public sealed partial class DiscoveryQueryStore
         }
         var now = DateTime.UtcNow;
         if (f.IsNew.HasValue)
-        {
-            var cutoff = now.AddDays(-BusinessConstants.ItNewEntityInDays);
-            shops = f.IsNew.Value ? shops.Where(s => s.CreatedAtUtc >= cutoff) : shops.Where(s => s.CreatedAtUtc < cutoff);
-        }
+            shops = shops.Where(s => s.IsNew == f.IsNew.Value);
         if (f.VisitedOnly) shops = shops.Where(s => db.CheckIns.Any(c => c.ShopId == s.Id && c.UserId == userId && c.DeletedAtUtc == null));
         if (f.FavoritesOnly)
         {

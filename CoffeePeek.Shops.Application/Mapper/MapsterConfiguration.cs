@@ -36,9 +36,8 @@ public static class MapsterConfiguration
             .Map(dest => dest.Beans, src => src.CoffeeBeans)
             .Map(dest => dest.Equipments, src => src.ShopEquipments.Select(a => a.Equipment))
             .Map(dest => dest.Type, src => (Contract.Enums.CoffeeShopType?)(int?)src.Type)
-            // IsOpen/IsNew patched after materialize in CoffeeShopQueries (Schedules not in ProjectTo)
+            // IsOpen is patched after materialize in CoffeeShopQueries (Schedules not in ProjectTo)
             .Ignore(dest => dest.IsOpen)
-            .Ignore(dest => dest.IsNew)
             // Rating and CheckInCount are set manually in handlers via repository
             .Ignore(dest => dest.Rating)
             .Ignore(dest => dest.CheckInCount)
@@ -119,9 +118,8 @@ public static class MapsterConfiguration
             .Map(d => d.ShopContact, s => s.Contact)
             .Map(d => d.Schedules, s => s.Schedules)
             .Map(dest => dest.Equipments, src => src.ShopEquipments.Select(a => a.Equipment))
-            // IsOpen/IsNew patched after materialize in CoffeeShopQueries (computed props are not ProjectTo-safe)
+            // IsOpen is patched after materialize in CoffeeShopQueries (computed props are not ProjectTo-safe)
             .Ignore(dest => dest.IsOpen)
-            .Ignore(dest => dest.IsNew)
             .Map(dest => dest.Type, src => (Contract.Enums.CoffeeShopType?)(int?)src.Type)
             // Tags loaded separately in CoffeeShopQueries.GetDetailsById
             .Ignore(dest => dest.Tags)

@@ -12,4 +12,5 @@ public record UpdateAdminCoffeeShopRequest(
     UpdateShopLocationRequest? Location = null,
     UpdateShopContactsRequest? Contacts = null,
     IReadOnlyList<ScheduleDto>? Schedules = null,
-    UpdateShopCatalogsRequest? Catalogs = null);
+    UpdateShopCatalogsRequest? Catalogs = null,
+    bool? IsNew = null);

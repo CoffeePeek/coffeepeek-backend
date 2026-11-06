@@ -5,7 +5,6 @@ using CoffeePeek.Shops.Application.Features.CoffeeShop.GetCoffeeShop;
 using CoffeePeek.Shops.Application.Features.CoffeeShop.GetShopsInBounds;
 using CoffeePeek.Shops.Application.Features.CoffeeShop.SearchCoffeeShops;
 using CoffeePeek.Shops.Application.Features.Menu;
-using CoffeePeek.Shops.Domain;
 using CoffeePeek.Shops.Domain.Aggregates.CoffeeShopAggregate;
 using CoffeePeek.Shops.Domain.Aggregates.MenuAggregate;
 using CoffeePeek.Shops.Persistance.Configuration;
@@ -100,12 +99,7 @@ public class CoffeeShopQueries(
         }
 
         if (request.IsNew.HasValue)
-        {
-            var cutoff = DateTime.UtcNow.AddDays(-BusinessConstants.ItNewEntityInDays);
-            query = request.IsNew.Value
-                ? query.Where(s => s.CreatedAtUtc >= cutoff)
-                : query.Where(s => s.CreatedAtUtc < cutoff);
-        }
+            query = query.Where(s => s.IsNew == request.IsNew.Value);
 
         if (request.IsVisited.HasValue && request.UserId.HasValue)
         {
@@ -167,7 +161,7 @@ public class CoffeeShopQueries(
             .ProjectToType<ShortShopDto>(mapper.Config)
             .ToArrayAsync(ct);
 
-        await PatchOpenAndNewFlagsAsync(items, ct);
+        await PatchOpenFlagsAsync(items, ct);
         await PatchRatingsAsync(items, ct);
 
         return (items, totalCount);
@@ -202,11 +196,10 @@ public class CoffeeShopQueries(
             .AsNoTracking()
             .AsSplitQuery()
             .Where(s => s.Id == id)
-            .Select(s => new { s.CreatedAtUtc, s.Status, s.Schedules, CoffeeFocus = s.Type })
+            .Select(s => new { s.IsNew, s.Status, s.Schedules, CoffeeFocus = s.Type })
             .FirstOrDefaultAsync(ct);
 
         var now = DateTime.UtcNow;
-        var isNew = state is not null && state.CreatedAtUtc >= now.AddDays(-BusinessConstants.ItNewEntityInDays);
         var isOpen = state is null ? null : ComputeIsOpen(state.Status, state.Schedules, now);
 
         var catalog = await drinkRepository.GetActiveAsync(ct);
@@ -216,7 +209,7 @@ public class CoffeeShopQueries(
         {
             Tags = tags,
             Photos = dto.Photos ?? [],
-            IsNew = isNew,
+            IsNew = state?.IsNew ?? false,
             IsOpen = isOpen,
             Type = (CoffeeShopType?)(int?)state?.CoffeeFocus,
             Menu = ShopMenuDtoFactory.FromShopMenu(menu, catalog, mediaOptions.Value)
@@ -266,14 +259,13 @@ public class CoffeeShopQueries(
         }
     }
 
-    private async Task PatchOpenAndNewFlagsAsync(ShortShopDto[] items, CancellationToken ct)
+    private async Task PatchOpenFlagsAsync(ShortShopDto[] items, CancellationToken ct)
     {
         if (items.Length == 0)
             return;
 
         var ids = items.Select(i => i.Id).ToArray();
         var now = DateTime.UtcNow;
-        var newCutoff = now.AddDays(-BusinessConstants.ItNewEntityInDays);
 
         // Schedules and their owned Intervals are two nested collections — split to avoid the
         // cartesian-product warning/cost of loading them via a single joined query.
@@ -281,7 +273,7 @@ public class CoffeeShopQueries(
             .AsNoTracking()
             .AsSplitQuery()
             .Where(s => ids.Contains(s.Id))
-            .Select(s => new { s.Id, s.CreatedAtUtc, s.Status, s.Schedules, CoffeeFocus = s.Type })
+            .Select(s => new { s.Id, s.Status, s.Schedules, CoffeeFocus = s.Type })
             .ToListAsync(ct);
 
         var byId = states.ToDictionary(s => s.Id);
@@ -290,7 +282,6 @@ public class CoffeeShopQueries(
             if (!byId.TryGetValue(item.Id, out var state))
                 continue;
 
-            item.IsNew = state.CreatedAtUtc >= newCutoff;
             item.IsOpen = ComputeIsOpen(state.Status, state.Schedules, now);
             item.Type = (CoffeeShopType?)(int?)state.CoffeeFocus;
         }

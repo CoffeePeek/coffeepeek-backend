@@ -65,6 +65,7 @@ internal sealed class DiscoveryMapTestData
         db.Cities.Add(data.City);
         data.Matching = Shop(db, data.City, "Ёлка Coffeehouse");
         data.Other = Shop(db, data.City, "Plain", 53.92m);
+        data.Matching.SetNew(true);
         data.Matching.SetPriceRange(PriceRange.Cheap);
         data.Matching.SetCoffeeFocus(CoffeeFocusType.Specialty);
         data.Other.SetCoffeeFocus(CoffeeFocusType.Cafe);
@@ -73,9 +74,6 @@ internal sealed class DiscoveryMapTestData
         await data.AddReferencesAsync(db, ct);
         data.AddMenu(db);
         data.AddPersonalData(db);
-        await db.SaveChangesAsync(ct);
-        // The live harness stamps Added entities. Backdate only after the insert.
-        data.Other.CreatedAtUtc = DateTime.UtcNow.AddYears(-1);
         await db.SaveChangesAsync(ct);
         db.ChangeTracker.Clear();
         return data;

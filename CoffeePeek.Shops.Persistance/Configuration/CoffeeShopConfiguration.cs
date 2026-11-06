@@ -14,6 +14,7 @@ public class CoffeeShopConfiguration : IEntityTypeConfiguration<CoffeeShop>
         builder.Property(x => x.Name).HasMaxLength(BusinessConstants.MaxCoffeeShopNameLength);
         builder.Property(x => x.Description).HasMaxLength(BusinessConstants.MaxCoffeeShopDescriptionLength);
         builder.Property(x => x.Type);
+        builder.Property(x => x.IsNew).HasDefaultValue(false);
         builder.Property(x => x.ProfileRevision).HasDefaultValue(0L).IsConcurrencyToken();
         builder.Property(x => x.DataCompletenessScore)
             .HasDefaultValue((short)0);

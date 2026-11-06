@@ -61,6 +61,8 @@ public static class UpdateAdminCoffeeShopHandler
         shop.UpdateDetails(command.Name, command.Description, priceRange);
         if (command.Status.HasValue)
             shop.SetStatus(command.Status.Value);
+        if (command.IsNew.HasValue)
+            shop.SetNew(command.IsNew.Value);
         shop.AdvanceProfileRevision();
 
         await bus.PublishAsync(new ShopProfileCacheInvalidationRequested(shop.Id));
